@@ -12,11 +12,11 @@ notifications, then Electron for desktop, then mobile. AG-UI means every respons
 purpose-built interface - restaurant queries produce pages with maps and reviews, not chat
 bubbles.
 
-### Preprocessing
+### Concierge
 
-The concierge layer that sits between user input and AI processing. Analyzes requests,
+The intelligent layer that sits between user input and AI processing. Analyzes requests,
 selects models, determines response strategy, enhances queries automatically. Users see a
-simple swift/balanced/deep slider; the preprocessing layer handles everything else.
+simple swift/balanced/deep slider; the Concierge handles everything else.
 
 ### Memory
 
@@ -51,8 +51,7 @@ watching for signals, escalating what matters. The shift from reactive to proact
 
 Voice as a first-class citizen. Talk to Carmenta, talk with Carmenta. Natural voice
 experience that actually works. Deep specification comes separately - this component
-covers STT, TTS, voice-first interaction patterns, and integration with the preprocessing
-layer.
+covers STT, TTS, voice-first interaction patterns, and integration with the Concierge.
 
 ### Browser Automation
 
