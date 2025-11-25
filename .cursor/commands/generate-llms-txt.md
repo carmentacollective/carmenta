@@ -1,1 +1,0 @@
-../../.claude/commands/generate-llms-txt.md
