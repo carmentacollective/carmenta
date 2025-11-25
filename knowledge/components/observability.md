@@ -80,8 +80,8 @@ Track quality signals over time:
 
 ### Product Decisions
 
-- **User visibility**: Do users see any observability data? Response times? Token usage?
-- **Developer access**: Who can access traces? Privacy implications of seeing user
+- **User visibility**: Do we see any observability data? Response times? Token usage?
+- **Developer access**: Who can access traces? Privacy implications of seeing
   conversations?
 - **Alerting**: What conditions trigger alerts? Who gets notified?
 

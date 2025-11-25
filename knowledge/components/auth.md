@@ -1,23 +1,23 @@
 # Auth
 
-Authentication and user accounts - who users are, how they log in, and how we manage
-their identity across sessions and devices.
+Authentication and user accounts - who we are, how we log in, and how we manage
+our identity across sessions and devices.
 
 ## Why This Exists
 
-Users need accounts. Memory needs to know whose memory it is. Service connections need
+We need accounts. Memory needs to know whose memory it is. Service connections need
 to belong to someone. Conversations need to persist across devices. AI team
 configurations need to be personal.
 
 Auth is the foundation that makes personalization possible. Without identity, Carmenta
-is just another stateless chatbot. With identity, it becomes your AI partner that
-knows you and grows with you.
+is just another stateless chatbot. With identity, it becomes our AI partner that
+knows us and grows with us.
 
 ## Core Functions
 
 ### Authentication
 
-How users prove who they are:
+How we prove who we are:
 - Email/password (classic, reliable)
 - Social login (Google, GitHub, etc.)
 - Magic links (passwordless)
@@ -25,7 +25,7 @@ How users prove who they are:
 
 ### Session Management
 
-Keep users logged in appropriately:
+Keep us logged in appropriately:
 - Secure session handling
 - Multi-device support
 - Session invalidation and logout
@@ -41,7 +41,7 @@ Lifecycle of user accounts:
 
 ### Authorization
 
-What users can access:
+What we can access:
 - Role-based access (if needed)
 - Resource ownership (my conversations, my memory)
 - Sharing permissions (if we support collaboration)
@@ -50,8 +50,8 @@ What users can access:
 
 Auth and Service Connectivity are closely related but distinct:
 
-- **Auth** handles Carmenta user identity - who you are to Carmenta
-- **Service Connectivity** handles third-party OAuth - connecting your external accounts
+- **Auth** handles Carmenta user identity - who we are to Carmenta
+- **Service Connectivity** handles third-party OAuth - connecting our external accounts
 
 They interact at key points:
 - Service connections belong to authenticated users
@@ -74,7 +74,7 @@ simplify the architecture.
 
 ## Success Criteria
 
-- Users can sign up and log in without friction
+- We can sign up and log in without friction
 - Sessions persist appropriately across devices
 - Security best practices followed (no password breaches, secure tokens)
 - Account deletion fully cleans up user data
@@ -97,10 +97,10 @@ simplify the architecture.
 
 - **Auth methods**: Which login methods do we support at launch? What's the priority
   order?
-- **Required vs. optional**: Can users try Carmenta before creating an account? Anonymous
+- **Required vs. optional**: Can we try Carmenta before creating an account? Anonymous
   mode?
-- **Data portability**: How do users export their data? What format?
-- **Account linking**: Can users link multiple auth methods to one account?
+- **Data portability**: How do we export our data? What format?
+- **Account linking**: Can we link multiple auth methods to one account?
 
 ### Technical Specifications Needed
 

@@ -1,18 +1,18 @@
 # Analytics
 
-Product analytics - understanding how users actually use Carmenta. What features get
-used, where users struggle, what drives engagement and retention. The foundation for
+Product analytics - understanding how we actually use Carmenta. What features get
+used, where we struggle, what drives engagement and retention. The foundation for
 data-informed product decisions.
 
 ## Why This Exists
 
-Building without analytics is building blind. You think you know how users behave, but
-you don't. Analytics reveals the truth: which features matter, where users drop off,
+Building without analytics is building blind. You think you know how people behave, but
+you don't. Analytics reveals the truth: which features matter, where we drop off,
 what correlates with retention, how behavior changes over time.
 
-For an AI product, analytics is especially important. User satisfaction isn't just
-about clicks - it's about whether the AI actually helped. Did they complete their task?
-Did they come back? Did they engage deeper or bounce? These signals inform both product
+For an AI product, analytics is especially important. Satisfaction isn't just
+about clicks - it's about whether the AI actually helped. Did we complete our task?
+Did we come back? Did we engage deeper or bounce? These signals inform both product
 decisions and the Product Intelligence component's feedback loop.
 
 ## Core Functions
@@ -59,7 +59,7 @@ Track the metrics that matter:
 
 ## Success Criteria
 
-- Clear visibility into how users actually use the product
+- Clear visibility into how we actually use the product
 - Can answer "is this feature working?" with data
 - Retention and engagement trends are visible and actionable
 - Analytics implementation doesn't slow down the product
@@ -82,8 +82,8 @@ Track the metrics that matter:
 ### Product Decisions
 
 - **Privacy stance**: What data do we collect? What do we explicitly not collect? How
-  transparent are we with users?
-- **User controls**: Can users opt out of analytics? What's mandatory vs. optional?
+  transparent are we?
+- **User controls**: Can we opt out of analytics? What's mandatory vs. optional?
 - **Metrics hierarchy**: What are our north star metrics? What do we optimize for?
 
 ### Technical Specifications Needed

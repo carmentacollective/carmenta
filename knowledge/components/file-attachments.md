@@ -6,11 +6,11 @@ incorporation.
 
 ## Why This Exists
 
-Users have files. PDFs of research papers. Screenshots of errors. Spreadsheets with data.
+We have files. PDFs of research papers. Screenshots of errors. Spreadsheets with data.
 Presentations to review. An AI assistant that can only process text input misses a huge
-part of how people actually work.
+part of how we actually work.
 
-File Attachments lets users drop files into conversations and have Carmenta understand
+File Attachments lets us drop files into conversations and have Carmenta understand
 them. A PDF gets chunked and indexed for retrieval. An image gets analyzed visually. A
 spreadsheet gets parsed for data. The file becomes part of the conversation context.
 
@@ -18,7 +18,7 @@ spreadsheet gets parsed for data. The file becomes part of the conversation cont
 
 ### Upload Handling
 
-Accept files from users:
+Accept files:
 - Drag-and-drop and file picker interfaces
 - Support for common file types (PDF, images, documents, spreadsheets)
 - Size limits and validation
@@ -59,11 +59,11 @@ Make file content available to the AI:
 
 ## Success Criteria
 
-- Users can easily attach files to conversations
+- We can easily attach files to conversations
 - Files are processed quickly enough not to block conversation
 - AI responses demonstrate understanding of file content
 - File storage is secure and reliable
-- Common file types work without user effort
+- Common file types work without effort
 
 ---
 
@@ -85,7 +85,7 @@ Make file content available to the AI:
   order for adding more?
 - **Size limits**: What are reasonable file size limits? How do we communicate them?
 - **Retention**: How long do files persist? Tied to conversation retention? Separate?
-- **Multi-file handling**: Can users attach multiple files? How do we handle context
+- **Multi-file handling**: Can we attach multiple files? How do we handle context
   limits with many files?
 
 ### Technical Specifications Needed

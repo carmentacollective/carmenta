@@ -6,12 +6,12 @@ users through setup and demonstrates capabilities.
 
 ## Why This Exists
 
-First impressions matter. Users who have a great first five minutes become long-term
-users. Users who bounce in confusion never come back.
+First impressions matter. We have a great first five minutes and become long-term
+users. We bounce in confusion and never come back.
 
 Onboarding has to accomplish multiple goals: collect enough information to personalize
-the experience, demonstrate what Carmenta can do, set expectations, and get users to
-value quickly. This is a delicate balance - too long and users abandon, too short and
+the experience, demonstrate what Carmenta can do, set expectations, and get us to
+value quickly. This is a delicate balance - too long and we abandon, too short and
 the AI doesn't have enough context to be useful.
 
 The Concierge approach means onboarding is a conversation, not a form. The AI asks
@@ -29,7 +29,7 @@ Gather information to personalize the experience:
 
 ### Capability Demonstration
 
-Show users what Carmenta can do:
+Show us what Carmenta can do:
 - Interactive examples of key capabilities
 - Guided first tasks that deliver immediate value
 - Showcase differentiated features (memory, voice, AG-UI)
@@ -61,10 +61,10 @@ Set up the relationship with the AI team:
 
 ## Success Criteria
 
-- Users complete onboarding and understand core value
+- We complete onboarding and understand core value
 - Enough information collected for meaningful personalization
 - Time to first valuable interaction is short
-- Users connect at least one high-value service
+- We connect at least one high-value service
 - Abandonment rate is low
 
 ---
@@ -77,7 +77,7 @@ Set up the relationship with the AI team:
   the right balance?
 - **Progressive disclosure**: Do we collect everything upfront or learn over time? What's
   essential for first session?
-- **Skip and return**: Can users skip onboarding and come back? How do we handle
+- **Skip and return**: Can we skip onboarding and come back? How do we handle
   incomplete profiles?
 - **State management**: How do we track onboarding progress? Resume interrupted sessions?
 

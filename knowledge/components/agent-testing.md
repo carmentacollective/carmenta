@@ -1,6 +1,6 @@
 # Agent Testing
 
-AI agents that use Carmenta as users would. Generates usage signals that Product
+AI agents that use Carmenta as we would. Generates usage signals that Product
 Intelligence processes. Enables finding product-market fit in hours instead of months.
 AI agents test, AI PM synthesizes, AI builds, repeat.
 
@@ -11,7 +11,7 @@ You can't run a thousand humans through onboarding to find the friction points. 
 have humans continuously exercise every feature combination.
 
 Agent Testing creates synthetic users - AI agents that interact with Carmenta the way
-real users would. They generate usage signals at scale. They find edge cases humans would
+we would. They generate usage signals at scale. They find edge cases humans would
 miss. They exercise the product continuously.
 
 Combined with Product Intelligence, this creates the self-improvement loop: agents test,
@@ -64,8 +64,8 @@ Measure and track product quality:
 
 ## Success Criteria
 
-- Synthetic users generate signals that match real user behavior patterns
-- Testing catches issues before real users encounter them
+- Synthetic users generate signals that match real behavior patterns
+- Testing catches issues before we encounter them
 - Continuous testing detects regressions quickly
 - Test coverage reaches meaningful breadth of use cases
 - Quality benchmarks improve measurably over time

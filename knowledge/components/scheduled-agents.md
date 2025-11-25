@@ -45,7 +45,7 @@ Beyond schedules, agents can watch and act:
 
 ### Notification and Delivery
 
-How scheduled agent output reaches users:
+How scheduled agent output reaches us:
 - Push notifications (PWA/mobile)
 - Email digests
 - In-app surfaces (dashboard, briefing view)
@@ -61,10 +61,10 @@ How scheduled agent output reaches users:
 
 ## Success Criteria
 
-- Users receive valuable, timely information without asking
+- We receive valuable, timely information without asking
 - Schedules are easy to set up and modify
 - Noise is low - scheduled agents surface signal, not noise
-- Users feel prepared, not overwhelmed
+- We feel prepared, not overwhelmed
 - Clear feedback on what's scheduled and when it last ran
 
 ---
@@ -82,11 +82,11 @@ How scheduled agent output reaches users:
 
 ### Product Decisions
 
-- **Default schedules**: Do users start with pre-configured schedules? Or build from
+- **Default schedules**: Do we start with pre-configured schedules? Or build from
   scratch?
-- **Schedule builder UX**: How do users define and modify schedules? Natural language?
+- **Schedule builder UX**: How do we define and modify schedules? Natural language?
   Visual builder? Templates?
-- **Notification preferences**: How much control do users have over when/how they're
+- **Notification preferences**: How much control do we have over when/how we're
   notified? Quiet hours? Channels?
 - **Signal vs. noise**: What thresholds determine if something is worth surfacing?
   User-defined? AI-determined?

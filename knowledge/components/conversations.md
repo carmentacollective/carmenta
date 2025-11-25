@@ -6,8 +6,8 @@ state.
 
 ## Why This Exists
 
-Users have many conversations over time. They need to find past conversations, continue
-interrupted threads, organize related discussions, and understand their history with
+We have many conversations over time. We need to find past conversations, continue
+interrupted threads, organize related discussions, and understand our history with
 Carmenta.
 
 This is distinct from Memory. Memory handles what Carmenta knows and can retrieve for
@@ -35,7 +35,7 @@ Access and navigate conversation history:
 
 ### Organization
 
-Help users manage their conversations:
+Help us manage our conversations:
 - Automatic titling and categorization
 - Manual organization (folders, tags, favorites)
 - Archive and delete capabilities
@@ -59,7 +59,7 @@ Reliable storage and access:
 
 ## Success Criteria
 
-- Users can always find and continue past conversations
+- We can always find and continue past conversations
 - Organization requires minimal effort
 - Search finds relevant conversations quickly
 - History is reliable and never loses messages
@@ -83,12 +83,12 @@ Reliable storage and access:
 ### Product Decisions
 
 - **Organization paradigm**: Flat list with search? Folders? Tags? Workspaces? What
-  matches how users think?
+  matches how we think?
 - **Auto-organization**: How much does Carmenta organize automatically? Title generation?
   Category inference? Date-based grouping?
 - **Conversation boundaries**: What makes something a new conversation vs. continuing an
-  old one? User choice? Time-based? Topic-based?
-- **Sharing**: Can users share conversations? Export? Collaborate?
+  old one? Our choice? Time-based? Topic-based?
+- **Sharing**: Can we share conversations? Export? Collaborate?
 
 ### Technical Specifications Needed
 

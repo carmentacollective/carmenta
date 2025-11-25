@@ -20,10 +20,10 @@ Carmenta is AI building itself.
 
 ### User Feedback Processing
 
-Turn user signals into product understanding:
+Turn our signals into product understanding:
 - Collect explicit feedback (ratings, comments, requests)
 - Analyze implicit signals (usage patterns, abandonment, confusion)
-- Identify patterns across users - one complaint is anecdote, twenty is signal
+- Identify patterns - one complaint is anecdote, twenty is signal
 - Distinguish target user feedback from non-user feedback
 - Update knowledge files with learnings
 
@@ -49,7 +49,7 @@ Connect dots across signals:
 Keep the knowledge base true:
 - Update component specifications with learnings
 - Refine understanding of personas based on behavior
-- Adjust boundaries based on what users actually need
+- Adjust boundaries based on what we actually need
 - Maintain roadmap relevance as signals arrive
 
 ## Integration Points
@@ -87,9 +87,9 @@ Keep the knowledge base true:
 
 - **Human in the loop**: When does Product Intelligence act autonomously vs. surface for
   human decision? What's the escalation criteria?
-- **Feedback channels**: How do users provide explicit feedback? Rating system? Free-form?
+- **Feedback channels**: How do we provide explicit feedback? Rating system? Free-form?
   Prompted questions?
-- **Transparency**: Do users see how their feedback influences the product? Privacy
+- **Transparency**: Do we see how our feedback influences the product? Privacy
   considerations?
 - **Prioritization framework**: How do we weight different signals? Target user feedback
   vs. power user vs. casual?

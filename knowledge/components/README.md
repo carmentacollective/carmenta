@@ -109,4 +109,9 @@ funnels. Data-informed product decisions feeding into Product Intelligence.
 ### [Error Handling](error-handling.md)
 
 Error tracking, reporting, and recovery. Catch problems, alert the team, recover
-gracefully. Users see helpful messages, not stack traces.
+gracefully. We see helpful messages, not stack traces.
+
+### [Data Storage](data-storage.md)
+
+Database infrastructure - PostgreSQL for relational data, Redis for caching and
+real-time. Hosting options, ORM choices, vector storage considerations.

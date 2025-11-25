@@ -9,8 +9,8 @@ Things break. APIs fail. Models hallucinate. Edge cases surprise you. The questi
 isn't whether errors will happen - it's whether you'll know about them, understand
 them, and fix them quickly.
 
-Good error handling is invisible to users when it works. Errors get caught, logged,
-and often recovered from automatically. When errors do surface, users get helpful
+Good error handling is invisible when it works. Errors get caught, logged,
+and often recovered from automatically. When errors do surface, we get helpful
 messages, not stack traces. And developers get the context they need to fix issues
 fast.
 
@@ -62,7 +62,7 @@ Handle errors gracefully:
 - Errors are captured with enough context to debug
 - Critical errors alert the team immediately
 - Error trends are visible and tracked
-- Users see helpful messages, not technical errors
+- We see helpful messages, not technical errors
 - Recovery happens automatically when possible
 
 ---
@@ -79,9 +79,9 @@ Handle errors gracefully:
 
 ### Product Decisions
 
-- **User communication**: How do we communicate errors to users? Toast? Modal? Inline?
-- **Error detail level**: How much do we tell users about what went wrong?
-- **Recovery options**: What actions can users take when errors occur? Retry? Report?
+- **User communication**: How do we communicate errors? Toast? Modal? Inline?
+- **Error detail level**: How much do we share about what went wrong?
+- **Recovery options**: What actions can we take when errors occur? Retry? Report?
 
 ### Technical Specifications Needed
 

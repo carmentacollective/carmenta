@@ -42,7 +42,7 @@ Additional agents with focused capabilities:
 How agents work together:
 - Shared access to Memory and context
 - Handoffs between specialists when tasks require multiple capabilities
-- Clear ownership - users know which agent is handling what
+- Clear ownership - we know which agent is handling what
 - Escalation paths when agents need human input
 
 ## Integration Points
@@ -51,15 +51,15 @@ How agents work together:
 - **Memory**: All agents read from and write to shared context
 - **Service Connectivity**: Agents use external services to complete tasks
 - **Scheduled Agents**: Some team member work happens on schedules
-- **Interface**: Users see which agent is working, can direct requests
+- **Interface**: We see which agent is working, can direct requests
 
 ## Success Criteria
 
-- Users feel like they have a capable team, not just a chatbot
+- We feel like we have a capable team, not just a chatbot
 - DCOS genuinely reduces cognitive load and catches dropped balls
 - Specialized agents produce better output than generalist prompting
 - Team coordination is invisible - it just works
-- Users can trust the team to work autonomously on appropriate tasks
+- We can trust the team to work autonomously on appropriate tasks
 
 ---
 
@@ -77,12 +77,12 @@ How agents work together:
 
 ### Product Decisions
 
-- **Team composition**: Is DCOS + 4 specialists right? Too many? Too few? Should users
-  customize their team?
-- **Agent visibility**: Do users see agent names, personalities? Or is it abstracted as
+- **Team composition**: Is DCOS + 4 specialists right? Too many? Too few? Can we
+  customize our team?
+- **Agent visibility**: Do we see agent names, personalities? Or is it abstracted as
   "the team"?
 - **Autonomy levels**: What can agents do without asking? What requires confirmation?
-  User-configurable?
+  Configurable preferences?
 - **DCOS personality**: How does she communicate? What's her voice? The vision mentions
   "she" - is gendering right?
 
@@ -97,7 +97,7 @@ How agents work together:
 ### Research Needed
 
 - Evaluate agent frameworks (LangGraph, CrewAI, AutoGen, Agency Swarm)
-- Study how users relate to named AI agents vs. generic assistants
+- Study how people relate to named AI agents vs. generic assistants
 - Research commitment tracking and follow-up patterns (GTD, executive assistant practices)
 - Benchmark multi-agent vs. single-agent performance on complex tasks
 - Review anthropomorphization research - benefits and risks

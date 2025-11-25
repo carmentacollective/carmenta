@@ -1,20 +1,20 @@
 # Concierge
 
-The Concierge sits between user input and AI processing - the intelligent layer that
+The Concierge sits between our input and AI processing - the intelligent layer that
 transforms casual requests into optimized queries, selects the right models, and
-determines how to respond. Users experience a simple interface while the Concierge
-handles complexity invisibly.
+determines how to respond. We experience a simple interface while the Concierge handles
+complexity invisibly.
 
 ## Why This Exists
 
 Every AI interaction involves choices: which model, what context to include, how to
 structure the query, what response strategy fits best. Most interfaces push these choices
-to users who don't want to think about them, or make rigid default choices that work
+to us when we don't want to think about them, or make rigid default choices that work
 poorly for many cases.
 
 The Concierge makes these choices intelligently for each request. A quick question gets a
 fast model. A research task gets a thorough one. A creative request gets appropriate
-temperature. Users get what they need without understanding the machinery.
+temperature. We get what we need without understanding the machinery.
 
 The Concierge is foundational to everything else. It determines what the Interface needs
 to display, what Memory to retrieve, which agents to invoke. Building it first means
@@ -25,14 +25,14 @@ other components can be designed around known output types rather than retrofitt
 ### Request Analysis
 
 When a message arrives, the Concierge classifies what kind of request it is and
-determines how to handle it. Classification should happen fast enough that users don't
+determines how to handle it. Classification should happen fast enough that we don't
 perceive delay.
 
 ### Query Enhancement
 
-User requests rarely arrive optimized for AI processing. The Concierge transforms them
+Our requests rarely arrive optimized for AI processing. The Concierge transforms them
 by adding context from Memory, structuring prompts for optimal model performance, and
-aligning response tone with user preferences.
+aligning response tone with our preferences.
 
 ### Model Selection
 
@@ -46,10 +46,10 @@ Beyond model selection, the Concierge determines how to respond: direct chat com
 purpose-built AG-UI interface, tool routing, multi-agent dispatch, or asking for
 clarification when the request is too ambiguous.
 
-## User Controls
+## Controls
 
-While the Concierge handles complexity automatically, users get simple overrides when
-they want them - likely a speed/quality tradeoff and possibly response mode preferences.
+While the Concierge handles complexity automatically, we get simple overrides when we
+want them - likely a speed/quality tradeoff and possibly response mode preferences.
 
 ## Integration Points
 
@@ -60,10 +60,10 @@ they want them - likely a speed/quality tradeoff and possibly response mode pref
 
 ## Success Criteria
 
-- Users don't think about the Concierge - they just get good responses
+- We don't think about the Concierge - we just get good responses
 - Quick questions feel quick, deep analysis feels thorough
-- Cost efficiency without user involvement
-- Respects explicit user preferences when provided
+- Cost efficiency without our involvement
+- Respects our explicit preferences when provided
 
 ---
 
@@ -83,10 +83,10 @@ they want them - likely a speed/quality tradeoff and possibly response mode pref
 - **Request type taxonomy**: What categories of requests do we recognize? Initial
   thinking: quick lookup, conversation, deep analysis, creative generation, task
   execution, emotional support. Is this complete? Too granular?
-- **User controls**: What knobs do users get? Speed/quality slider? Response mode
-  selection? Persona preferences? Or keep it fully automatic?
+- **Controls**: What knobs do we get? Speed/quality slider? Response mode selection?
+  Persona preferences? Or keep it fully automatic?
 - **AG-UI triggering**: When does a response become a purpose-built interface vs. chat?
-  User choice, Concierge choice, or both?
+  Our choice, Concierge choice, or both?
 
 ### Technical Specifications Needed
 

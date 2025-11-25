@@ -1,19 +1,18 @@
 # Memory
 
-Context and memory management - the system that remembers who you are, what you're
-working on, what you've decided, who you know, and what you've learned. The AI always
-has the context it needs without users explaining their situation every conversation.
+Context and memory management - the system that remembers who we are, what we're working
+on, what we've decided, who we know, and what we've learned. We always have the context
+we need without re-explaining our situation every conversation.
 
 ## Why This Exists
 
 The biggest failure of current AI interfaces is amnesia. Every conversation starts
-fresh. You explain your job, your project, your preferences - again and again. Context
-that should persist doesn't.
+fresh. We explain our job, our project, our preferences - again and again. Context that
+should persist doesn't.
 
 Memory fixes this. Carmenta builds and maintains understanding over time. The Concierge
-pulls relevant context for every request. The AI knows you're a startup founder working
-on a fintech product, that you prefer direct communication, that you met Sarah at that
-conference last month, that you decided to use Postgres over MongoDB.
+pulls relevant context for every request. We're known - our role, our communication
+style, the people we've mentioned, the decisions we've made.
 
 This is what makes AI feel like a partner instead of a stranger.
 
@@ -25,15 +24,15 @@ Memory and Conversations are distinct but related:
 - **Conversations** stores the raw message history (who said what, when)
 
 Memory is what Carmenta "knows" - distilled understanding. Conversations is what was
-"said" - the transcript. Memory might store "User decided to use Postgres over MongoDB
+"said" - the transcript. Memory might store "We decided to use Postgres over MongoDB
 for the new project" while Conversations stores the actual discussion where that
 decision was made.
 
 ## Core Functions
 
-### User Profile
+### Profile
 
-Persistent understanding of who the user is:
+Persistent understanding of who we are:
 - Professional context (role, company, industry, projects)
 - Communication preferences (tone, verbosity, expertise level)
 - Goals and priorities
@@ -49,7 +48,7 @@ What's been discussed across all conversations:
 
 ### Knowledge Base
 
-Information the user has explicitly shared or that Carmenta has learned:
+Information we've explicitly shared or that Carmenta has learned:
 - Documents and files processed
 - Facts and preferences stated
 - Patterns observed over time
@@ -72,11 +71,11 @@ Make stored context available when needed:
 
 ## Success Criteria
 
-- AI responses feel contextually aware without user prompting
-- Users never have to re-explain established context
+- Responses feel contextually aware without us prompting
+- We never have to re-explain established context
 - Memory retrieval doesn't noticeably slow responses
-- Users can see and manage what Carmenta remembers
-- Privacy controls let users delete or exclude information
+- We can see and manage what Carmenta remembers
+- Privacy controls let us delete or exclude information
 
 ---
 
@@ -95,11 +94,11 @@ Make stored context available when needed:
 
 ### Product Decisions
 
-- **Memory visibility**: Can users see what Carmenta remembers? Edit it? How transparent
+- **Memory visibility**: Can we see what Carmenta remembers? Edit it? How transparent
   is the system?
-- **Memory scope**: Per-user only? Shared team memory? Organization-wide knowledge?
-- **Forgetting**: How do users make Carmenta forget things? Granular deletion?
-  Time-based decay? Categories of "don't remember this"?
+- **Memory scope**: Per-person only? Shared team memory? Organization-wide knowledge?
+- **Forgetting**: How do we make Carmenta forget things? Granular deletion? Time-based
+  decay? Categories of "don't remember this"?
 - **Privacy boundaries**: What should Carmenta never store? How do we handle sensitive
   information?
 

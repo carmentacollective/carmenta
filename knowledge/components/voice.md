@@ -19,7 +19,7 @@ Voice that you actually want to use.
 ### Speech-to-Text (STT)
 
 Convert voice input to text:
-- Real-time transcription as user speaks
+- Real-time transcription as we speak
 - High accuracy across accents and environments
 - Handle background noise gracefully
 - Support for multiple languages
@@ -46,7 +46,7 @@ Some interactions work better in voice:
 - Quick questions while multitasking
 - Brainstorming and thinking out loud
 - Dictation and long-form input
-- Accessibility for users who can't type easily
+- Accessibility when typing is difficult
 
 ## Integration Points
 
@@ -61,7 +61,7 @@ Some interactions work better in voice:
 - Latency is low enough for natural conversation
 - Transcription is accurate enough to avoid frustration
 - Works in reasonable ambient noise conditions
-- Users choose voice when it's the right modality, not avoid it
+- We choose voice when it's the right modality, not avoid it
 
 ---
 
@@ -80,8 +80,8 @@ Some interactions work better in voice:
 
 - **Activation model**: Always listening with wake word? Push-to-talk? Both? Privacy
   considerations?
-- **Voice persona**: What does Carmenta sound like? One voice or multiple? User choice?
-- **Interruption behavior**: Can users interrupt? How does Carmenta handle it?
+- **Voice persona**: What does Carmenta sound like? One voice or multiple? Our choice?
+- **Interruption behavior**: Can we interrupt? How does Carmenta handle it?
 - **Fallback behavior**: What happens when voice fails? Graceful degradation to text?
 
 ### Technical Specifications Needed

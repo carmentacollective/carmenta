@@ -6,15 +6,15 @@ servers remain supported for custom integrations.
 
 ## Why This Exists
 
-AI assistants that can't access your actual tools are limited to conversation. Real
+AI assistants that can't access our actual tools are limited to conversation. Real
 productivity requires reaching into Gmail, Calendar, Notion, GitHub, and the other
 services where work actually happens.
 
 Current solutions are fragmented. ChatGPT plugins came and went. MCP is promising but
-requires technical setup. Most users just copy-paste between AI and their tools.
+requires technical setup. Most of us just copy-paste between AI and our tools.
 
 Carmenta provides native, seamless integrations. Connect once, use everywhere. The AI
-can read your calendar, draft emails, check GitHub issues, search your Notion - without
+can read our calendar, draft emails, check GitHub issues, search our Notion - without
 leaving the conversation.
 
 ## Core Functions
@@ -65,7 +65,7 @@ For services without native integration or custom internal tools:
 - Connect to a service in under a minute
 - Service operations feel instant (appropriate caching/prefetch)
 - Clear feedback when operations succeed or fail
-- Users understand what Carmenta can access
+- We understand what Carmenta can access
 - Security: minimal scopes, encrypted credentials, audit logging
 
 ---
@@ -87,11 +87,11 @@ For services without native integration or custom internal tools:
 
 - **Service prioritization**: Which integrations are MVP vs. later? What do target users
   need most urgently?
-- **Scope granularity**: Do users control exactly what permissions each service gets? Or
+- **Scope granularity**: Do we control exactly what permissions each service gets? Or
   keep it simple with sensible defaults?
 - **Shared vs. individual**: Can team members share service connections? Or always
   per-user?
-- **Service discovery**: How do users find out what Carmenta can connect to? Prominent
+- **Service discovery**: How do we find out what Carmenta can connect to? Prominent
   showcase vs. discovered through use?
 
 ### Technical Specifications Needed

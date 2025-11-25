@@ -1,6 +1,6 @@
 # Interface
 
-The web application shell and AG-UI protocol implementation. This is where users
+The web application shell and AG-UI protocol implementation. This is where we
 interact with Carmenta - the visual layer that renders responses, captures input, and
 orchestrates the experience across devices.
 
@@ -59,7 +59,7 @@ others. CopilotKit provides a reference React client implementation. We can eith
 ### Input Capture
 
 Text input with support for voice (via Voice component), file attachments, and
-potentially other modalities. The input layer captures user intent and passes it to the
+potentially other modalities. The input layer captures our intent and passes it to the
 Concierge for processing.
 
 ### Response Rendering
@@ -121,7 +121,7 @@ Each platform adds capabilities but web remains primary.
 - **Response type taxonomy**: What categories of generative UI do we support? Cards,
   reports, interactive forms... what's MVP vs. later?
 - **Conversation organization**: Flat list of chats? Folders? Tags? Workspaces?
-- **Customization**: Do users customize the interface? Themes? Density? Or keep it
+- **Customization**: Can we customize the interface? Themes? Density? Or keep it
   simple and opinionated?
 
 ### Technical Specifications Needed
