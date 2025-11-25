@@ -1,16 +1,11 @@
 {
   "cSpell.words": [
-    "Carmenta",
+    "carmenta",
     "docstrings",
     "frontmatter",
     "gitmoji",
-    "logfire",
     "noqa",
-    "pydantic",
-    "pytest",
-    "tavily",
-    "worktree",
-    "worktrees"
+    "worktree"
   ],
   "editor.formatOnSave": true,
   "files.trimTrailingWhitespace": true,
@@ -108,5 +103,25 @@
       "comments": false,
       "strings": true
     }
-  }
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#d3547c",
+    "activityBar.background": "#d3547c",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#77d14e",
+    "activityBarBadge.foreground": "#15202b",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#d3547c",
+    "statusBar.background": "#c2325f",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#d3547c",
+    "statusBarItem.remoteBackground": "#c2325f",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#c2325f",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#c2325f99",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  },
+  "peacock.color": "#c2325f"
 }
