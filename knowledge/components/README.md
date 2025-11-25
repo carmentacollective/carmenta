@@ -1,94 +1,90 @@
 # Carmenta Components
 
 This directory contains specifications for each major Carmenta component. Components are
-listed roughly in build order - foundational pieces first, then layers that depend on them.
+listed roughly in build order - foundational pieces first, then layers that depend on
+them.
+
+Each component spec includes:
+- **Why it exists** - the problem it solves
+- **Core functions** - what it does
+- **Integration points** - how it connects to other components
+- **Success criteria** - how we know it's working
+- **Open questions** - architecture, product decisions, specs needed, and research
 
 ## Foundation Layer
 
-### Interface
+### [Concierge](concierge.md)
 
-The web application shell and AG-UI protocol implementation. Web first, then PWA for
-notifications, then Electron for desktop, then mobile. AG-UI means every response is a
-purpose-built interface - restaurant queries produce pages with maps and reviews, not chat
-bubbles.
+The intelligent layer between user input and AI processing. Classifies requests, selects
+models, determines response strategy, enhances queries. Users see a simple interface; the
+Concierge handles complexity invisibly.
 
-### Concierge
+### [Interface](interface.md)
 
-The intelligent layer that sits between user input and AI processing. Analyzes requests,
-selects models, determines response strategy, enhances queries automatically. Users see a
-simple swift/balanced/deep slider; the Concierge handles everything else.
+Web application shell and AG-UI protocol. Purpose-built responses - chat when chat makes
+sense, rich interactive experiences when they don't. Web first, then PWA, Electron,
+mobile.
 
-### Memory
+### [Memory](memory.md)
 
-Context and memory management system. Remembers who you are, what you're working on, what
-you've decided, who you know. Provides retrieval for all other components. The AI always
-has the context it needs without users explaining their situation every conversation.
+Context and memory management. Remembers who you are, what you're working on, what you've
+decided, who you know. The AI always has context without re-explanation.
 
-### Service Connectivity
+### [Service Connectivity](service-connectivity.md)
 
-Native integrations with external services. Productivity (Notion, ClickUp, Miro, Linear),
-communication (Gmail, Slack, LinkedIn, X), storage (Drive, Dropbox), media (YouTube,
-Instagram, Photos, Spotify), AI/data (Limitless, Fireflies, Exa), dev (GitHub, Sentry),
-finance (Monarch, CoinMarketCap), calendar/contacts. One subscription covers everything.
-MCP servers remain supported for custom integrations.
+Native integrations with external services. Connect once, use everywhere - Gmail,
+Calendar, Notion, GitHub, and more. One subscription covers full connectivity. MCP
+servers for custom integrations.
 
 ## Intelligence Layer
 
-### AI Team
+### [AI Team](ai-team.md)
 
-The Digital Chief of Staff and additional team members. DCOS tracks commitments across
-conversations, maintains knowledge base, anticipates needs, handles operational
-coordination. Additional members: Researcher, Analyst, Creator, Reviewer. Each
-specialized, all working from shared context.
+Digital Chief of Staff and specialized agents. DCOS tracks commitments, maintains
+knowledge, anticipates needs. Additional team members: Researcher, Analyst, Creator,
+Reviewer. One person becomes a team.
 
-### Scheduled Agents
+### [Scheduled Agents](scheduled-agents.md)
 
-Agents that run on schedules, not just on demand. Daily briefings, hourly monitoring,
-weekly research digests. Combined with proactive intelligence: preparing for meetings,
-watching for signals, escalating what matters. The shift from reactive to proactive.
+Agents that run on schedules. Daily briefings, meeting prep, monitoring, research
+digests. Carmenta works while you sleep and surfaces what matters when you're ready.
 
-### Voice
+### [Voice](voice.md)
 
-Voice as a first-class citizen. Talk to Carmenta, talk with Carmenta. Natural voice
-experience that actually works. Deep specification comes separately - this component
-covers STT, TTS, voice-first interaction patterns, and integration with the Concierge.
+First-class voice interaction. STT, TTS, natural conversation. Talk to Carmenta while
+driving, cooking, or thinking out loud. Not an afterthought - a core modality.
 
-### Browser Automation
+### [Browser Automation](browser-automation.md)
 
-Browse the web as the user, with their sessions and logins. Deep research requiring
-authentication, task execution across web applications. Differentiates from tools that
-only access public web.
+Browse the web as the user with their sessions. Deep research behind authentication, task
+execution in web apps without APIs. Access what matters, not just what's public.
 
 ## Self-Building Layer
 
-### Product Intelligence
+### [Product Intelligence](product-intelligence.md)
 
-How Carmenta improves itself. AI product manager that processes user feedback, analyzes
-competitor capabilities, synthesizes insights into product improvements. The automated
-feedback loop that compresses traditional product development timelines.
+AI product manager that processes feedback, analyzes competitors, synthesizes insights.
+The structural advantage - Carmenta improves itself. Feedback loops compressed from
+quarters to days.
 
-### Agent Testing
+### [Agent Testing](agent-testing.md)
 
-AI agents that use Carmenta as users would. Generates usage signals that product
-intelligence processes. Enables finding product-market fit in hours instead of months.
-AI agents test, AI PM synthesizes, AI builds, repeat.
+AI agents that use Carmenta as users would. Synthetic users at scale generate signals for
+Product Intelligence. The self-improvement loop: test, synthesize, build, repeat.
 
 ## Supporting Components
 
-### Onboarding
+### [Onboarding](onboarding.md)
 
-First-run experience and user profile creation. Collects goals, preferences, communication
-style. Sets up initial AI team configuration. The AI Concierge guides users through setup
-and demonstrates capabilities.
+First-run experience. Profile collection, capability demonstration, service connection,
+AI team introduction. Conversational onboarding through the Concierge.
 
-### Conversations
+### [Conversations](conversations.md)
 
-Chat management, history, organization. Separate from Memory (which handles context
-retrieval) - this handles the conversation data model, threading, attachments, and UI
-state.
+Chat management, history, organization. The actual message history and UI state, distinct
+from Memory. Find, continue, organize, search conversation history.
 
-### File Attachments
+### [File Attachments](file-attachments.md)
 
-Upload processing for PDFs, images, documents. RAG for text-heavy content, direct
-processing for images, format conversion as needed. Secure storage, automatic context
-incorporation.
+Upload processing for PDFs, images, documents. RAG for text, vision for images. Files
+become conversation context automatically.
