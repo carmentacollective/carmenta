@@ -1,0 +1,56 @@
+CARMENTA SOURCE-AVAILABLE LICENSE
+Version 1.0, November 2025
+
+Copyright (c) 2025 Carmenta Collective
+All rights reserved.
+
+TERMS AND CONDITIONS
+
+1. DEFINITIONS
+   "Software" refers to Carmenta and all associated documentation files.
+   "You" refers to any individual or entity exercising permissions granted by this License.
+   "Competing Product" means any product, service, or offering that provides, in whole or in substantial part, similar functionality to the Software for interfacing with AI systems.
+   "Commercial Use" means any use of the Software for direct or indirect commercial advantage or monetary compensation.
+
+2. GRANT OF RIGHTS
+   Subject to the terms and conditions of this License, You are hereby granted a worldwide, royalty-free, non-exclusive, non-transferable license to:
+
+   a) View, study, and analyze the source code of the Software for personal, educational, or research purposes.
+   b) Modify the Software for personal, non-commercial use only.
+   c) Create derivative works for personal, non-commercial use only.
+   d) Use the Software for internal business operations that do not compete with the Software.
+
+3. RESTRICTIONS
+   You may NOT:
+
+   a) Use the Software or any derivative works to create, maintain, or contribute to a Competing Product.
+   b) Distribute, sublicense, sell, lease, rent, or commercially exploit the Software or any derivative works.
+   c) Offer the Software as a service (SaaS) or as part of any service offering.
+   d) Remove, alter, or obscure any proprietary notices on the Software.
+   e) Use the Software in any way that directly or indirectly generates revenue, except for internal business operations that do not compete with the Software.
+   f) Repackage, rebrand, or white-label the Software for distribution or sale.
+
+4. CONTRIBUTIONS
+   Any contributions, suggestions, or feedback You provide regarding the Software shall become the property of Carmenta Collective, and You hereby assign all rights, title, and interest in such contributions to Carmenta Collective.
+
+5. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. TERMINATION
+   This License automatically terminates if You violate any of its terms and conditions. Upon termination, You must immediately cease all use of the Software and destroy all copies in your possession.
+
+7. GOVERNING LAW
+   This License shall be governed by and construed in accordance with the laws of the jurisdiction in which Carmenta Collective is established, without regard to conflict of law principles.
+
+8. ENTIRE AGREEMENT
+   This License constitutes the entire agreement between the parties concerning the use of the Software and supersedes all prior or contemporaneous agreements, understandings, and communications.
+
+9. SEVERABILITY
+   If any provision of this License is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.
+
+10. NO CONVERSION
+    This License does not convert to any other license type over time. The restrictions and permissions defined herein remain in effect indefinitely unless explicitly superseded by a new license version issued by Carmenta Collective.
+
+---
+
+For commercial licensing, partnerships, or questions about this license, contact: hello@carmenta.ai
