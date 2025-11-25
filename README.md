@@ -1,6 +1,6 @@
 # Carmenta
 
-A unified interface to AI for people who build at the speed of thought.
+A heart centered interface to AI for people who build at the speed of thought.
 
 ## Why Carmenta
 
