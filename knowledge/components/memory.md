@@ -17,6 +17,18 @@ conference last month, that you decided to use Postgres over MongoDB.
 
 This is what makes AI feel like a partner instead of a stranger.
 
+## Relationship to Conversations
+
+Memory and Conversations are distinct but related:
+
+- **Memory** stores extracted facts, context, and learnings from conversations
+- **Conversations** stores the raw message history (who said what, when)
+
+Memory is what Carmenta "knows" - distilled understanding. Conversations is what was
+"said" - the transcript. Memory might store "User decided to use Postgres over MongoDB
+for the new project" while Conversations stores the actual discussion where that
+decision was made.
+
 ## Core Functions
 
 ### User Profile
@@ -105,3 +117,4 @@ Make stored context available when needed:
 - Study how personal AI products handle long-term memory (Character.ai, Pi, etc.)
 - Benchmark vector database options for our scale expectations
 - Research privacy patterns for AI memory systems
+- Study GDPR/privacy requirements for AI memory (data deletion, export, retention)
