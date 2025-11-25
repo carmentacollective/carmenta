@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-main-branch.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/selective-staging.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
