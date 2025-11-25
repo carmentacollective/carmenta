@@ -11,7 +11,21 @@ Each component spec includes:
 - **Success criteria** - how we know it's working
 - **Open questions** - architecture, product decisions, specs needed, and research
 
-## Foundation Layer
+## Foundation
+
+### [Foundation](foundation.md)
+
+The technology stack and development environment. Next.js, React, TypeScript, Node.js,
+pnpm, and the toolchain that makes development fast and reliable. Everything else is
+built on this.
+
+### [Hosting](hosting.md)
+
+Where Carmenta runs. Render for web services, background workers, cron jobs, and managed
+databases. Chosen for long-running LLM requests, unlimited scheduled agents, and
+predictable costs.
+
+## Core Layer
 
 ### [Concierge](concierge.md)
 
