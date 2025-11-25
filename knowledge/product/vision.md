@@ -17,12 +17,11 @@ and a chat window.
 
 Carmenta is AI building itself.
 
-User feedback flows directly into product improvement. Competitor capabilities are
-automatically analyzed and absorbed. The product evolves faster than any human
-engineering team can match.
+User feedback flows directly into product improvement. Competitor capabilities are automatically analyzed and absorbed. AI agents use the product continuously, generating usage signals that the AI product manager processes into improvements.
 
-Traditional products improve at the speed of human engineering cycles. Carmenta improves
-at the speed of AI iteration. This is the structural advantage that compounds over time.
+Traditional products find product-market fit over months of user research and iteration cycles. Carmenta compresses this into hours: AI agents test, AI product manager synthesizes, AI builds, repeat. The feedback loop that takes competitors quarters takes Carmenta days.
+
+This is the structural advantage that compounds over time.
 
 ## Philosophical Foundation
 
