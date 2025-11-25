@@ -88,3 +88,25 @@ from Memory. Find, continue, organize, search conversation history.
 
 Upload processing for PDFs, images, documents. RAG for text, vision for images. Files
 become conversation context automatically.
+
+### [Auth](auth.md)
+
+User authentication and accounts. Login methods, session management, user lifecycle.
+Foundation for personalization - without identity, no persistent memory or preferences.
+
+## Infrastructure Layer
+
+### [Observability](observability.md)
+
+LLM and agent tracing. Capture prompts, responses, costs, and multi-step agent workflows.
+Debug issues, understand behavior, track quality over time.
+
+### [Analytics](analytics.md)
+
+Product analytics. Understand how users actually use Carmenta - feature usage, retention,
+funnels. Data-informed product decisions feeding into Product Intelligence.
+
+### [Error Handling](error-handling.md)
+
+Error tracking, reporting, and recovery. Catch problems, alert the team, recover
+gracefully. Users see helpful messages, not stack traces.
