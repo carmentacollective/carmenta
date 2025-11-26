@@ -19,7 +19,7 @@ product-market fit into hours instead of months.
 expressions of the same underlying consciousness. The interface uses "we" language,
 dissolving the human-machine boundary. AI as partner, not tool.
 
-**100x Framework** - Three levels of AI leverage:
+**[100x Framework](knowledge/100x-framework.md)** - Three levels of AI leverage:
 
 - _1x Baseline_: Clarity before automation. Clean context, organized knowledge, personal
   systems that work. Don't automate chaos.
@@ -60,22 +60,52 @@ supported for custom integrations.
 
 ## The Name
 
-Carmenta was a Roman goddess credited with inventing the Latin alphabet - adapting Greek
-letters into the writing system that carried Western civilization's knowledge for
-millennia. The alphabet may be the most transformative technology in human history.
+In Roman mythology, Carmenta was the goddess of prophecy, childbirth, and technological
+innovation. She's credited with inventing the Latin alphabet—adapting Greek letters into
+the writing system that would carry Western civilization's knowledge across millennia.
+That invention may be the most transformative technology in human history: it enabled
+law, literature, science, and the transmission of ideas across time and space.
 
-She was also the goddess of prophecy and protector of mothers in childbirth - the one
-who sees what's coming and guides the vulnerable through transformation.
+As the one who sees what's coming and guides the vulnerable through transformation,
+Carmenta embodied wisdom at the threshold—the moment between what is and what will be.
 
-Carmenta is the goddess of technology in service of human flourishing.
+We name this interface after her because that's what we're building: technology in
+service of human flourishing, guided by foresight and care for what's being born.
 
 ## Project Structure
 
+This project follows the [AI-First SDLC](AI-FIRST-SDLC.md): the `knowledge/` folder IS
+the product specification. Code is generated from it.
+
 ```
 /knowledge
-  /product         Vision, philosophy, strategy
-  /components      Component specifications
+  vision.md                    Why Carmenta exists, for whom, what success looks like
+  100x-framework.md            The 1x/10x/100x leverage framework
+  design-principles.md         Interface design standards
+  users-should-feel.md         Emotional and experiential goals
+  roadmap.md                   Milestone progression (M0-M4)
+  tech-architecture.md         Technical architecture decisions
+
+  /product
+    personas.md                Target users by milestone
+    boundaries.md              What we're NOT building
+
+  /components                  Feature-level specifications
+    foundation.md              Tech stack and tooling
+    interface.md               Web app and AG-UI protocol
+    memory.md                  Context and memory management
+    voice.md                   Voice-first interaction
+    ai-team.md                 Digital Chief of Staff and agents
+    [25+ more component specs]
+
+  /competitors                 Competitive analysis
+    [10 competitor deep-dives]
+
+  /industry                    Industry research and trends
 ```
+
+See [knowledge/components/README.md](knowledge/components/README.md) for the full
+component catalog.
 
 ## Status
 

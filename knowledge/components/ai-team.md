@@ -1,13 +1,18 @@
 # AI Team
 
 The Digital Chief of Staff and additional team members - specialized AI agents that work
-alongside you. One person becomes a team of ten. The 10x layer of the 100x Framework.
+alongside you. One person becomes a team of ten. The
+[10x layer](../100x-framework.md#capacity-achieving-10x-your-ai-team) of the
+[100x Framework](../100x-framework.md).
 
 ## Why This Exists
 
-The 100x Framework progression is clear: first achieve 1x (flow state, presence, zone of
-genius), then multiply with 10x (AI team). The AI Team only delivers value when built on
-the foundation of someone operating at their full human capability.
+The [100x Framework](../100x-framework.md) progression is clear: first achieve
+[1x](../100x-framework.md#efficiency-achieving-1x-your-100-baseline) (flow state,
+presence, zone of genius), then multiply with
+[10x](../100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team). The AI Team
+only delivers value when built on the foundation of someone operating at their full
+human capability.
 
 A single AI assistant can answer questions and generate content, but the AI Team creates
 something different: persistent, specialized agents that operate from shared context.
