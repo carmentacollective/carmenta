@@ -103,3 +103,26 @@ want them - likely a speed/quality tradeoff and possibly response mode preferenc
 - Benchmark different classification approaches (dedicated model vs. self-routing)
 - Analyze latency/cost tradeoffs across model tiers
 - Study how other products handle automatic model selection (if any do it well)
+
+### To Investigate: Middleware/Pipeline Architecture
+
+Open WebUI uses inlet/outlet filters that intercept requests and responses. Better
+Chatbot has visual workflows that transform data between steps. Both allow cross-cutting
+concerns (logging, transformation, validation, routing) without touching core logic.
+
+Currently the Concierge handles preprocessing as a monolith. A middleware pattern could
+allow:
+- Pluggable request transformers (add context, rewrite queries, inject instructions)
+- Pluggable response processors (format output, extract artifacts, trigger side effects)
+- User-defined pipelines for custom workflows
+- Easier testing of individual transformation steps
+
+Questions to explore:
+- Does Carmenta need this flexibility, or is the Concierge sufficient?
+- Would middleware add latency that hurts the "speed of thought" goal?
+- Is this solving a real problem or adding complexity prematurely?
+- Could start simple (Concierge only) and add middleware later if needed?
+
+Reference implementations to study:
+- Open WebUI pipeline system in ../reference/open-webui/
+- Better Chatbot workflow engine in ../reference/better-chatbot/
