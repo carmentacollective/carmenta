@@ -25,6 +25,11 @@ Where Carmenta runs. Render for web services, background workers, cron jobs, and
 databases. Chosen for long-running LLM requests, unlimited scheduled agents, and
 predictable costs.
 
+### [Testing](testing.md)
+
+Comprehensive testing infrastructure. Vitest for unit and integration tests, Playwright
+for end-to-end. Built for confidence to move fast.
+
 ## Core Layer
 
 ### [Concierge](concierge.md)
@@ -47,10 +52,26 @@ decided, who you know. The AI always has context without re-explanation.
 ### [Service Connectivity](service-connectivity.md)
 
 Native integrations with external services. Connect once, use everywhere - Gmail,
-Calendar, Notion, GitHub, and more. One subscription covers full connectivity. MCP
-servers for custom integrations.
+Calendar, Notion, GitHub, and more. One subscription covers full connectivity.
+
+### [External Tools](external-tools.md)
+
+MCP-based tool connections - Carmenta reaching into the world. Featured tools with
+one-click setup, community tools with ratings, custom MCP servers for technical users.
+The complexity of MCP abstracted into human terms.
 
 ## Intelligence Layer
+
+### [Model Intelligence](model-intelligence.md)
+
+The routing rubric for model selection. Built from external benchmarks, our own
+validation, and production signals. The Concierge consults this for every request -
+which model for which task.
+
+### [Prompt Testing](prompt-testing.md)
+
+Prompts are code. Versioned, evaluated across models, iterated to measurable targets.
+Verifies our prompts work correctly across the models we route to.
 
 ### [AI Team](ai-team.md)
 
@@ -98,6 +119,12 @@ AI team introduction. Conversational onboarding through the Concierge.
 Chat management, history, organization. The actual message history and UI state, distinct
 from Memory. Find, continue, organize, search conversation history.
 
+### [Conversation Sync](conversation-sync.md)
+
+Sync conversations from other AI platforms into Carmenta. Your ChatGPT history, Claude
+conversations - unified in one place. Reduces switching cost, preserves accumulated
+context.
+
 ### [Artifacts](artifacts.md)
 
 Persistent storage for AI-generated content. Code, documents, diagrams, reports, and
@@ -125,6 +152,11 @@ Debug issues, understand behavior, track quality over time.
 
 Product analytics. Understand how users actually use Carmenta - feature usage, retention,
 funnels. Data-informed product decisions feeding into Product Intelligence.
+
+### [Usage Metering](usage-metering.md)
+
+Track token consumption and API costs per user. Foundation for understanding costs,
+identifying heavy users, and enabling usage-based billing.
 
 ### [Error Handling](error-handling.md)
 
