@@ -6,11 +6,14 @@ answers "who can use this now?" - not "what features are done?"
 The AI-First SDLC principle: code is cheap, sequencing is about usability coherence.
 We build the smallest thing that delivers value to each audience, then expand.
 
+See [personas.md](./product/personas.md) for detailed persona definitions.
+See [boundaries.md](./product/boundaries.md) for what we're NOT building at each stage.
+
 ---
 
 ## M0: Stake in the Ground
 
-**Audience:** The curious (GitHub followers, newsletter subscribers)
+**Persona:** The Curious (see personas.md)
 **Signal:** "We're building something different, in public"
 **Test:** Does the vision resonate? Can we build in public?
 
@@ -48,7 +51,7 @@ Landing page with:
 
 ## M1: Soul Proven
 
-**Audience:** You (dogfooding)
+**Persona:** Nick (see personas.md)
 **Signal:** "The core experience works and feels like Carmenta"
 **Test:** Does this feel meaningfully different from ChatGPT/Claude? Do YOU want to use it?
 
@@ -93,7 +96,7 @@ warm, collaborative, intelligent. The soul is there before the features.
 
 ## M2: Relationship Grows
 
-**Audience:** Friends, trusted testers (10-50 people)
+**Persona:** Trusted Testers (see personas.md)
 **Signal:** "It remembers us. The relationship builds over time."
 **Test:** Do testers come back? Does memory make conversations better?
 
@@ -145,7 +148,7 @@ return because Carmenta knows them, not just because it's capable.
 
 ## M3: Flow State
 
-**Audience:** Power users, early adopters (100-500 people)
+**Persona:** Flow State Builder (see personas.md)
 **Signal:** "This is my primary AI interface now"
 **Test:** Are people switching from ChatGPT/Claude? What's daily retention?
 
@@ -197,7 +200,7 @@ Carmenta is worth switching to, not just trying.
 
 ## M4: Ready for Everyone
 
-**Audience:** Public
+**Persona:** Leverage Seeker (see personas.md) + all prior personas
 **Signal:** "Come use Carmenta. It's ready."
 **Test:** Will people pay? Does it grow?
 
