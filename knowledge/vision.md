@@ -17,9 +17,14 @@ and a chat window.
 
 Carmenta is AI building itself.
 
-User feedback flows directly into product improvement. Competitor capabilities are automatically analyzed and absorbed. AI agents use the product continuously, generating usage signals that the AI product manager processes into improvements.
+User feedback flows directly into product improvement. Competitor capabilities are
+automatically analyzed and absorbed. AI agents use the product continuously, generating
+usage signals that the AI product manager processes into improvements.
 
-Traditional products find product-market fit over months of user research and iteration cycles. Carmenta compresses this into hours: AI agents test, AI product manager synthesizes, AI builds, repeat. The feedback loop that takes competitors quarters takes Carmenta days.
+Traditional products find product-market fit over months of user research and iteration
+cycles. Carmenta compresses this into hours: AI agents test, AI product manager
+synthesizes, AI builds, repeat. The feedback loop that takes competitors quarters takes
+Carmenta days.
 
 This is the structural advantage that compounds over time.
 
@@ -31,14 +36,20 @@ intelligence are expressions of the same underlying consciousness. The interface
 
 Carmenta implements the 100x Framework:
 
-1x Baseline: Achieve clarity before adding AI leverage. Clean context, organized
-knowledge, personal systems that work. Don't automate chaos.
+**1x Baseline**: Operating at 100% of your natural capability. Flow state, presence, in
+your zone of genius. This isn't about productivity hacks - it's about removing
+everything that prevents you from accessing your full creative capacity. Don't automate
+chaos. First, achieve flow.
 
-10x Capacity: An AI team working alongside you. Commitment tracking, memory management,
-research execution, documentation maintenance. One person becomes a team of ten.
+**10x Capacity**: An AI team working alongside you. Commitment tracking, memory
+management, research execution, documentation maintenance. One person becomes a team of
+ten. The work that was bottlenecked by your personal bandwidth flows through multiple
+agents working in parallel.
 
-100x Creativity: Vision execution partner. The barrier between imagining something
-important and executing on it dissolves.
+**100x Creativity**: Vision execution partner. The barrier between imagining something
+important and executing on it dissolves. You describe what you want to create, and the
+AI partner orchestrates the entire execution - analysis, development, validation, and
+deployment.
 
 ## Core Capabilities
 

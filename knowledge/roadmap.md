@@ -152,8 +152,13 @@ retention?
 
 ### What This Proves
 
-Voice-first is actually better for builders. Speed + polish create flow state. Carmenta
-is worth switching to, not just trying.
+M3 achieves the 1x baseline: flow state, presence, zone of genius. Voice-first removes
+the translation layer between thought and expression. Speed and polish create the
+foundation where your best work emerges naturally. This is operating at 100% of natural
+capability - the prerequisite for 10x (AI team) and 100x (vision execution).
+
+Carmenta becomes worth switching to because it enables you to work at your full human
+capability, not just because it has more features.
 
 ### Components
 
@@ -186,6 +191,7 @@ is worth switching to, not just trying.
 - Model selection feels right (quick questions fast, deep analysis thorough)
 - Users report switching from other AI tools
 - Daily retention among active users
+- Users report sustained presence and flow state - the 1x foundation is achieved
 
 ### Not Yet
 
@@ -203,8 +209,13 @@ use Carmenta. It's ready." **Test:** Will people pay? Does it grow?
 
 ### What This Proves
 
-The full vision delivers value people pay for. Service integrations multiply capability.
-AI team provides leverage beyond conversation.
+The 10x layer works: AI team multiplies the 1x foundation. Service integrations enable
+the team to actually do things. One person operating at 100% baseline (1x) becomes a
+team of ten (10x). The Digital Chief of Staff demonstrably reduces cognitive load and
+protects flow state while expanding capacity.
+
+This validates the full value proposition: foundation (1x) enables multiplication (10x),
+and people pay for genuine leverage.
 
 ### Components
 
@@ -235,7 +246,9 @@ AI team provides leverage beyond conversation.
 - Public signup works smoothly
 - Onboarding converts visitors to active users
 - At least 3 high-value service integrations work
-- AI team demonstrably reduces cognitive load
+- AI team demonstrably reduces cognitive load and multiplies capacity
+- Users report feeling like they have a team, not just a tool
+- The 10x multiplication is measurable: work that took days now takes hours
 - Paying users exist and renew
 - Growth metrics trending positive
 
@@ -289,13 +302,17 @@ earlier components are prerequisites for later ones.
 
 ### Sequencing Decisions
 
-- **Voice vs. integrations priority**: M3 prioritizes voice, M4 prioritizes
-  integrations. Could swap if user research shows integrations are higher value earlier.
+- Voice vs. integrations priority: M3 prioritizes voice because it's the 1x foundation
+  (flow state, presence, zone of genius). M4 prioritizes integrations because they
+  enable the AI team (10x capacity multiplication). This sequence is deliberate: you
+  can't multiply what isn't working at 100%.
 
-- **AI team timing**: Currently M4. Could pull DCOS into M3 if it proves essential to
-  the "switching" value prop.
+- AI team timing: Currently M4. The AI Team requires the 1x foundation (M3) to deliver
+  value. Adding team capacity before achieving flow state would create more complexity,
+  not more leverage.
 
-- **File attachments**: Currently M3. Could be M2 if testers need it for real use.
+- File attachments: Currently M3. Files support the flow state by enabling seamless
+  context switching without breaking presence.
 
 ### Scope Management
 

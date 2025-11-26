@@ -20,10 +20,12 @@ ChatGPT, Claude, Cursor, Claude Code. Context fragments across tools. Every conv
 starts fresh. No AI remembers who you are, what you're working on, what you've decided.
 
 **Needs**:
+
 - One interface that feels like home
 - AI that knows your context without re-explaining
-- Voice-first for flow state
+- Voice-first to maintain flow state
 - Heart-centered tone that matches your philosophy
+- Operating at 100% of natural capability - presence, not chaos management
 
 **Success signal**: You actually use Carmenta instead of switching to Claude.ai or
 ChatGPT. Not because you built it, but because it's better for how you work.
@@ -42,6 +44,7 @@ mutuals. Indie hackers, AI enthusiasts, fellow builders.
 about people building in public with a clear philosophy.
 
 **Needs**:
+
 - Quick understanding of why this is different
 - Signal that this is serious, not vaporware
 - Way to follow along without commitment
@@ -64,6 +67,7 @@ edges to core value. Willing to tolerate bugs in exchange for something genuinel
 different.
 
 **Needs**:
+
 - Invitation that feels special, not spam
 - Quick onboarding that respects their time
 - Clear feedback channels
@@ -85,26 +89,31 @@ who would switch from existing tools and eventually pay.
 ### The Flow State Builder (M3: Primary Target)
 
 **Who**: Indie hackers, startup founders, solo creators, technical professionals who
-ship fast. People who treat AI as a thinking partner, not just a tool.
+ship fast. People who treat AI as a thinking partner and want to operate at 100% of
+their natural capability - flow state, presence, zone of genius.
 
 **Archetype**: Someone building a SaaS product while consulting part-time. Uses AI 20+
 times per day. Currently bounces between ChatGPT Plus, Claude Pro, and various
-specialized tools.
+specialized tools. Knows that fragmented tools fragment attention.
 
 **Situation**:
+
 - Pays for multiple AI subscriptions ($20-100/month total)
 - Context scattered across tools and conversations
 - Voice feels faster than typing but current voice AI is clunky
 - Wants AI that adapts to them, not the other way around
 
 **Needs**:
-- Speed: responses that keep pace with thought
+
+- Speed: responses that keep pace with thought, preserving flow state
 - Memory: AI that builds understanding over time
-- Voice: natural conversation, not transcription + text
+- Voice: natural conversation that feels like thinking out loud
 - Intelligence: right model for each task, automatically
-- Integration: AI that can actually do things, not just suggest
+- Integration: AI that can actually do things
+- Foundation for 10x: once at 1x baseline, ready for AI team leverage
 
 **Current alternatives**:
+
 - ChatGPT: Good general capability, weak memory, voice is okay
 - Claude: Best for deep work, no voice, no memory persistence
 - Cursor/Claude Code: Great for code, not for everything else
@@ -112,32 +121,39 @@ specialized tools.
 **Switching trigger**: "This is my default AI now" - measured by daily active use
 replacing other tools, not just adding to the stack.
 
-**Why this matters for M3**: Voice + intelligence + memory is the bundle that creates
-switching. If this persona doesn't switch, we haven't found product-market fit.
+**Why this matters for M3**: Voice + intelligence + memory creates the 1x foundation -
+flow state, presence, zone of genius. This is the baseline that makes 10x (AI team) and
+100x (vision execution) possible. If this persona stays fragmented across tools, we
+haven't achieved the 1x foundation.
 
 ---
 
 ### The Leverage Seeker (M4: Expansion Target)
 
 **Who**: Professionals who want AI team, not AI tool. Executives, consultants, agency
-owners, creators with audiences. People whose time is extremely valuable.
+owners, creators with audiences. People whose time is extremely valuable and who are
+ready to multiply their 1x baseline with 10x leverage.
 
 **Archetype**: Runs a small agency or consultancy. Has more opportunities than capacity.
 Wants to say yes to more without burning out.
 
 **Situation**:
+
 - Time is the bottleneck, not money
 - Would pay significantly for genuine leverage
 - Skeptical of AI hype but open to tools that actually work
 - Needs AI that handles operational load, not just answers questions
 
 **Needs**:
+
 - AI team that works autonomously (Digital Chief of Staff)
 - Proactive intelligence (daily briefings, meeting prep)
 - Service integrations that actually do things
-- Reliable execution, not just suggestions
+- Reliable execution while they stay in their zone of genius
+- 10x capacity multiplication: one person becomes a team of ten
 
 **Current alternatives**:
+
 - Human assistants (expensive, limited hours)
 - Various AI tools cobbled together (fragmented, manual orchestration)
 - Nothing (just overwhelmed)
@@ -145,8 +161,9 @@ Wants to say yes to more without burning out.
 **Willingness to pay**: Premium pricing if it delivers real leverage. This persona
 doesn't optimize for cost - they optimize for time saved.
 
-**Why this matters for M4**: This is the monetization persona. They validate that
-Carmenta delivers value worth paying for.
+**Why this matters for M4**: This persona validates the 10x layer - that AI team
+multiplies capacity when built on the 1x foundation. They validate that Carmenta
+delivers leverage worth paying premium pricing for.
 
 ---
 

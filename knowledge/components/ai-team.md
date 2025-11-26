@@ -5,14 +5,19 @@ alongside you. One person becomes a team of ten. The 10x layer of the 100x Frame
 
 ## Why This Exists
 
-A single AI assistant hits limits. It can answer questions and generate content, but it
-can't maintain ongoing awareness of your work, track commitments across conversations,
-or proactively handle operational coordination.
+The 100x Framework progression is clear: first achieve 1x (flow state, presence, zone of
+genius), then multiply with 10x (AI team). The AI Team only delivers value when built on
+the foundation of someone operating at their full human capability.
 
-The AI Team creates persistent, specialized agents that operate from shared context.
+A single AI assistant can answer questions and generate content, but the AI Team creates
+something different: persistent, specialized agents that operate from shared context.
+Where a chat interface requires your attention, the AI Team works alongside you,
+handling operational coordination while you stay in your zone of genius.
+
 The Digital Chief of Staff (DCOS) is the first and most important - she tracks
 commitments, maintains the knowledge base, anticipates needs, handles operational
-coordination while you focus on what only you can do.
+coordination while you focus on what only you can do. This preserves your flow state
+rather than fragmenting it.
 
 Additional team members specialize: research, analysis, creation, review. Each brings
 focused capability. All work from the same Memory, the same understanding of who you are
@@ -22,24 +27,33 @@ and what you're working on.
 
 ### Digital Chief of Staff
 
-The anchor team member:
-- **Commitment tracking**: Remembers what you said you'd do, follows up appropriately
-- **Knowledge maintenance**: Keeps Memory organized and current
-- **Anticipatory support**: Prepares for upcoming meetings, watches for relevant signals
-- **Operational coordination**: Handles routine tasks, escalates what needs attention
-- **Context bridging**: Ensures continuity across conversations and time
+The anchor team member who protects your flow state:
+
+- Commitment tracking: Remembers what you said you'd do, follows up appropriately
+- Knowledge maintenance: Keeps Memory organized and current
+- Anticipatory support: Prepares for upcoming meetings, watches for relevant signals
+- Operational coordination: Handles routine tasks, escalates what needs attention
+- Context bridging: Ensures continuity across conversations and time
+
+The DCOS removes cognitive load so your full attention remains available for creative
+work and strategic thinking.
 
 ### Specialized Team Members
 
 Additional agents with focused capabilities:
-- **Researcher**: Deep investigation, source evaluation, comprehensive reports
-- **Analyst**: Data interpretation, pattern recognition, synthesis
-- **Creator**: Writing, ideation, content generation
-- **Reviewer**: Quality assurance, fact-checking, critique
+
+- Researcher: Deep investigation, source evaluation, comprehensive reports
+- Analyst: Data interpretation, pattern recognition, synthesis
+- Creator: Writing, ideation, content generation
+- Reviewer: Quality assurance, fact-checking, critique
+
+Each specialist handles work that would otherwise fragment your attention and pull you
+out of flow state.
 
 ### Team Coordination
 
 How agents work together:
+
 - Shared access to Memory and context
 - Handoffs between specialists when tasks require multiple capabilities
 - Clear ownership - we know which agent is handling what
@@ -71,8 +85,8 @@ How agents work together:
   CrewAI, AutoGen)? What's the right level of control vs. speed?
 - **Agent identity**: Are agents truly separate entities or personas on the same model?
   Does it matter technically? Experientially?
-- **State management**: How do agents maintain state across sessions? Separate from
-  user Memory?
+- **State management**: How do agents maintain state across sessions? Separate from user
+  Memory?
 - **Concurrency**: Can multiple agents work simultaneously? How do we handle conflicts?
 
 ### Product Decisions
@@ -98,6 +112,7 @@ How agents work together:
 
 - Evaluate agent frameworks (LangGraph, CrewAI, AutoGen, Agency Swarm)
 - Study how people relate to named AI agents vs. generic assistants
-- Research commitment tracking and follow-up patterns (GTD, executive assistant practices)
+- Research commitment tracking and follow-up patterns (GTD, executive assistant
+  practices)
 - Benchmark multi-agent vs. single-agent performance on complex tasks
 - Review anthropomorphization research - benefits and risks
