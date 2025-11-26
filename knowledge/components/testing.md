@@ -222,18 +222,28 @@ Tests run actual PostgreSQL queries instead of mocked returns. In-memory WASM ex
 requires no external database. Tests verify migrations work correctly. Each test gets
 fresh schema via DROP/CREATE for isolation.
 
+## Integration with Prompt Testing
+
+Traditional tests (unit, integration, E2E) verify code behavior. Prompt tests verify AI
+behavior. Both are essential.
+
+Prompt Testing (see [prompt-testing.md](./prompt-testing.md)) handles:
+- Multi-model evaluation of prompt functions
+- LLM-as-judge assertions for semantic correctness
+- Iteration workflow for prompt optimization
+- Regression prevention for prompt changes
+
+The two systems complement each other:
+- Unit tests verify prompt functions return correct message structures
+- Prompt tests verify those messages produce correct AI behavior
+- Integration tests verify the full pipeline (prompt → model → response → UI)
+
 ## Open Questions
 
 ### Test Organization
 
 Should we co-locate tests with source files or keep separate __tests__ directory? How
 do we handle tests that need external services like Redis or external APIs?
-
-### AI Testing Strategy
-
-How do we test AI/LLM interactions? Options include mock responses, recorded fixtures,
-or live calls in integration. How do we test the Concierge's response quality without
-making tests flaky?
 
 ### CI Performance
 
