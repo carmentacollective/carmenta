@@ -54,7 +54,7 @@ expression. Thinking out loud with a partner who keeps pace. This is the
 at 100% of natural capability. Presence, not chaos management. The foundation where your
 best work emerges naturally.
 
-Not Alone: Building becomes collaborative. Carmenta remembers commitments, tracks what
+Belonging: Building becomes collaborative. Carmenta remembers commitments, tracks what
 they said they'd do, anticipates what's coming. The lonely 2am idea session becomes a
 dialogue. The forgotten follow-up becomes impossible to miss. Supported in creation, not
 just assisted with tasks.

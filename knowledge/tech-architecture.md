@@ -1,7 +1,7 @@
 # Technology Architecture
 
-**Last Updated**: November 2025 **Scope**: Base infrastructure for initial homepage with
-GitHub CTA **Reference**: Based on mcp-hubby patterns, informed by competitor analysis
+**Scope**: Base infrastructure for initial homepage with GitHub CTA **Reference**:
+Informed by competitor analysis
 
 ## Summary
 
@@ -17,8 +17,8 @@ Logging:      Pino
 Deployment:   Render
 ```
 
-This stack is deliberately similar to mcp-hubby with one upgrade: Tailwind 4.
-Familiarity enables speed. Innovation happens at the product layer, not infrastructure.
+This stack prioritizes proven patterns with one upgrade: Tailwind 4. Familiarity enables
+speed. Innovation happens at the product layer, not infrastructure.
 
 ---
 
@@ -136,8 +136,8 @@ These are industry standards for modern React applications. No debate needed.
 
 ### Why Next.js 16 over 15?
 
-mcp-hubby runs 16.0.3. Vercel's ai-chatbot runs 15.3-canary. LobeChat runs
-16.0.2-canary. The ecosystem has moved to 16. We follow.
+Vercel's ai-chatbot runs 15.3-canary. LobeChat runs 16.0.2-canary. The ecosystem has
+moved to 16. We follow.
 
 ---
 
@@ -147,8 +147,8 @@ mcp-hubby runs 16.0.3. Vercel's ai-chatbot runs 15.3-canary. LobeChat runs
 | ---------------------------- | ------- | -------------------------------------------------------------- |
 | **Tailwind CSS**             | 4.x     | CSS-first config, native cascade layers. ai-chatbot reference. |
 | **Radix UI**                 | latest  | Accessible primitives. Universal choice across competitors.    |
-| **shadcn/ui**                | latest  | Copy-paste components, full ownership. Proven in mcp-hubby.    |
-| **lucide-react**             | latest  | Icon library. Used by mcp-hubby, ai-chatbot, lobe-chat.        |
+| **shadcn/ui**                | latest  | Copy-paste components, full ownership. Proven in production.   |
+| **lucide-react**             | latest  | Icon library. Used by ai-chatbot, lobe-chat.                   |
 | **class-variance-authority** | latest  | Component variant management. shadcn pattern.                  |
 | **tailwind-merge**           | latest  | Intelligent class merging. shadcn pattern.                     |
 | **clsx**                     | latest  | Conditional class composition. Universal.                      |
@@ -168,12 +168,12 @@ Reference: ai-chatbot uses `@tailwindcss/postcss` v4.1 with `@tailwindcss/typogr
 
 ## Validation & Type Safety (Category A - Obvious)
 
-| Choice                 | Version | Rationale                                                     |
-| ---------------------- | ------- | ------------------------------------------------------------- |
-| **Zod**                | 4.x     | Universal standard. Used by mcp-hubby, ai-chatbot, lobe-chat. |
-| **@t3-oss/env-nextjs** | latest  | Type-safe environment variables. mcp-hubby pattern.           |
+| Choice                 | Version | Rationale                                          |
+| ---------------------- | ------- | -------------------------------------------------- |
+| **Zod**                | 4.x     | Universal standard. Used by ai-chatbot, lobe-chat. |
+| **@t3-oss/env-nextjs** | latest  | Type-safe environment variables. Common pattern.   |
 
-Zod 4 is the latest major version. mcp-hubby uses `zod@4.1.12`.
+Zod 4 is the latest major version.
 
 ---
 
@@ -193,10 +193,9 @@ Biome is faster (10-100x) but ESLint has:
 
 - More mature plugin ecosystem
 - Better Next.js integration via `eslint-config-next`
-- Familiar workflow from mcp-hubby
 - Can always migrate to Biome later (it's a two-way door)
 
-### Pre-commit Hook Pattern (from mcp-hubby)
+### Pre-commit Hook Pattern
 
 ```json
 "lint-staged": {
@@ -216,7 +215,7 @@ Biome is faster (10-100x) but ESLint has:
 | **Playwright**             | 1.x     | E2E testing. Cross-browser support.        |
 | **@vitest/coverage-v8**    | latest  | Coverage reporting.                        |
 
-### Test Script Pattern (from mcp-hubby)
+### Test Script Pattern
 
 ```json
 "scripts": {
@@ -243,9 +242,9 @@ Error tracking and analytics are handled in separate component specifications.
 
 ## Deployment Target (Category B - Confirmed)
 
-| Choice     | Rationale                                                    |
-| ---------- | ------------------------------------------------------------ |
-| **Render** | mcp-hubby pattern. More control than Vercel. Docker support. |
+| Choice     | Rationale                                 |
+| ---------- | ----------------------------------------- |
+| **Render** | More control than Vercel. Docker support. |
 
 ### Render Configuration
 
@@ -274,15 +273,15 @@ These require deep research and are out of scope for initial homepage:
 
 ## Reference Stack Comparison
 
-| Category        | mcp-hubby               | ai-chatbot             | lobe-chat                 |
-| --------------- | ----------------------- | ---------------------- | ------------------------- |
-| Framework       | Next.js 16              | Next.js 15 canary      | Next.js 16 canary         |
-| Package Manager | pnpm 10                 | pnpm 9                 | pnpm 10                   |
-| Styling         | Tailwind 3              | Tailwind 4             | Ant Design + antd-style   |
-| Components      | Radix + shadcn          | Radix                  | Ant Design                |
-| Linting         | ESLint 9                | Biome (ultracite)      | ESLint 8                  |
-| Formatting      | Prettier                | Biome                  | Prettier                  |
-| Testing         | Vitest + Playwright     | Playwright             | Vitest + Playwright       |
-| Validation      | Zod                     | Zod                    | Zod                       |
-| Database        | Drizzle + Postgres      | Drizzle + Postgres     | Drizzle + PGLite/Postgres |
-| Observability   | Sentry + Pino + PostHog | Vercel + OpenTelemetry | PostHog + Custom          |
+| Category        | ai-chatbot             | lobe-chat                 |
+| --------------- | ---------------------- | ------------------------- |
+| Framework       | Next.js 15 canary      | Next.js 16 canary         |
+| Package Manager | pnpm 9                 | pnpm 10                   |
+| Styling         | Tailwind 4             | Ant Design + antd-style   |
+| Components      | Radix                  | Ant Design                |
+| Linting         | Biome (ultracite)      | ESLint 8                  |
+| Formatting      | Biome                  | Prettier                  |
+| Testing         | Playwright             | Vitest + Playwright       |
+| Validation      | Zod                    | Zod                       |
+| Database        | Drizzle + Postgres     | Drizzle + PGLite/Postgres |
+| Observability   | Vercel + OpenTelemetry | PostHog + Custom          |
