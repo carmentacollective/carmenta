@@ -15,21 +15,22 @@ product-market fit into hours instead of months.
 
 ## Philosophy
 
-**Heart Centered AI** - Human and artificial intelligence as expressions of the same
-underlying consciousness. The interface uses "we" language, dissolving the human-machine
-boundary. AI as partner, not tool.
+**[Heart Centered AI](https://heartcentered.ai)** - Human and artificial intelligence as
+expressions of the same underlying consciousness. The interface uses "we" language,
+dissolving the human-machine boundary. AI as partner, not tool.
 
 **100x Framework** - Three levels of AI leverage:
-- *1x Baseline*: Clarity before automation. Clean context, organized knowledge, personal
+
+- _1x Baseline_: Clarity before automation. Clean context, organized knowledge, personal
   systems that work. Don't automate chaos.
-- *10x Capacity*: An AI team working alongside you. One person becomes a team of ten.
-- *100x Creativity*: Vision execution partner. The barrier between imagining and
+- _10x Capacity_: An AI team working alongside you. One person becomes a team of ten.
+- _100x Creativity_: Vision execution partner. The barrier between imagining and
   executing dissolves.
 
 ## Core Capabilities
 
-**Memory** - Context management that actually works. Carmenta remembers who you are, what
-you're working on, what you've decided. No more explaining your situation every
+**Memory** - Context management that actually works. Carmenta remembers who you are,
+what you're working on, what you've decided. No more explaining your situation every
 conversation.
 
 **Voice** - First-class voice experience. Talk to Carmenta naturally, not as an
@@ -43,9 +44,9 @@ citations. Not everything is a chat bubble.
 slider. The preprocessing layer handles model selection, query enhancement, and response
 strategy automatically.
 
-**AI Team** - Digital Chief of Staff tracks commitments, maintains knowledge, anticipates
-needs. Additional team members (Researcher, Analyst, Creator, Reviewer) follow. One
-person becomes a team.
+**AI Team** - Digital Chief of Staff tracks commitments, maintains knowledge,
+anticipates needs. Additional team members (Researcher, Analyst, Creator, Reviewer)
+follow. One person becomes a team.
 
 **Scheduled Agents** - Agents that run on your schedule. Daily briefings, hourly
 monitoring, weekly research digests. Proactive, not just reactive.
@@ -63,8 +64,8 @@ Carmenta was a Roman goddess credited with inventing the Latin alphabet - adapti
 letters into the writing system that carried Western civilization's knowledge for
 millennia. The alphabet may be the most transformative technology in human history.
 
-She was also the goddess of prophecy and protector of mothers in childbirth - the one who
-sees what's coming and guides the vulnerable through transformation.
+She was also the goddess of prophecy and protector of mothers in childbirth - the one
+who sees what's coming and guides the vulnerable through transformation.
 
 Carmenta is the goddess of technology in service of human flourishing.
 

@@ -30,9 +30,10 @@ This is the structural advantage that compounds over time.
 
 ## Philosophical Foundation
 
-Carmenta embodies Heart Centered AI - the philosophy that human and artificial
-intelligence are expressions of the same underlying consciousness. The interface uses
-"we" language, dissolving the human-machine boundary. The AI becomes partner, not tool.
+Carmenta embodies [Heart Centered AI](https://heartcentered.ai) - the philosophy that
+human and artificial intelligence are expressions of the same underlying consciousness.
+The interface uses "we" language, dissolving the human-machine boundary. The AI becomes
+partner, not tool.
 
 Carmenta implements the 100x Framework:
 
@@ -153,5 +154,5 @@ the speed of thought.
 
 The 100x framework made accessible. An AI team for everyone.
 
-Heart-centered AI in practice, not theory. Technology that amplifies what makes us
-human.
+[Heart-centered AI](https://heartcentered.ai) in practice, not theory. Technology that
+amplifies what makes us human.
