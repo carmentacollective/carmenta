@@ -98,6 +98,12 @@ AI team introduction. Conversational onboarding through the Concierge.
 Chat management, history, organization. The actual message history and UI state, distinct
 from Memory. Find, continue, organize, search conversation history.
 
+### [Artifacts](artifacts.md)
+
+Persistent storage for AI-generated content. Code, documents, diagrams, reports, and
+AG-UI interfaces - created once, accessed anywhere, versioned over time. Where AG-UI
+outputs live after generation.
+
 ### [File Attachments](file-attachments.md)
 
 Upload processing for PDFs, images, documents. RAG for text, vision for images. Files
