@@ -37,8 +37,9 @@ aligning response tone with our preferences.
 ### Model Selection
 
 Different requests need different models. Quick questions get fast, cheap models. Deep
-analysis gets powerful, expensive ones. The Concierge optimizes for speed, capability,
-and cost based on request type.
+analysis gets powerful, expensive ones. The Concierge queries Model Intelligence (see
+[model-intelligence.md](./model-intelligence.md)) to select optimally based on current
+benchmark data - not static mappings.
 
 ### Response Strategy
 
@@ -53,7 +54,8 @@ want them - likely a speed/quality tradeoff and possibly response mode preferenc
 
 ## Integration Points
 
-- **Memory**: Primary consumer. Every request triggers context retrieval.
+- **Model Intelligence**: Queries for model selection. Provides real benchmark data, not guesses.
+- **Memory**: Every request triggers context retrieval.
 - **Interface**: Signals how to render responses (chat, rich media, structured reports).
 - **AI Team**: Routes complex requests to specialized agents.
 - **Service Connectivity**: Orchestrates access to external services when needed.
