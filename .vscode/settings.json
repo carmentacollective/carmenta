@@ -1,10 +1,12 @@
 {
   "cSpell.words": [
+    "autotask",
     "carmenta",
     "docstrings",
     "frontmatter",
     "gitmoji",
     "noqa",
+    "SDLC",
     "worktree"
   ],
   "editor.formatOnSave": true,

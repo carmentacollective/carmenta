@@ -21,10 +21,15 @@ execution partner).
 
 ## Project Structure
 
-knowledge/product - Vision, philosophy, strategy documents knowledge/components -
-Component specifications knowledge/competitors - Competitive analysis
+This project follows the AI-First SDLC (@AI-FIRST-SDLC.md): the `knowledge/` folder IS
+the product specification. Code is generated from it. The specification is the IP.
 
-Early development. No code yet. Focus on architecture and design.
+- knowledge/vision.md - Why Carmenta exists, for whom, what success looks like
+- knowledge/components/ - Feature-level specifications
+- knowledge/competitors/ - Competitive analysis
+
+Early development. No code yet. The `/knowledge` command is the dialogue interface for
+maintaining product understanding.
 
 ## Commands
 
