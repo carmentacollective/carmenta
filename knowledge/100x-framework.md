@@ -49,10 +49,6 @@ to existing structure.
 
 ### Practical Behaviors
 
-Make Context Human-Readable: Choose a transparent knowledge base like Notion over a
-black-box RAG database. You need to see, understand, and correct your data. The much
-better approach is a self-updating, self-organizing documentation database in Notion.
-
 Remove Low-Value Cognitive Load: Automate inbox triage, receipt filing, and routine
 notifications while preserving real-time visibility for critical, time-sensitive
 information like login codes or meeting changes.
