@@ -7,10 +7,8 @@ const config: NextConfig = {
 
     reactStrictMode: true,
 
-    typescript: {
-        // Skip type checking during builds since we do it in CI
-        ignoreBuildErrors: true,
-    },
+    // Type checking happens during build for safety
+    // CI also runs type-check separately for faster feedback
 
     // Exclude unnecessary files from build trace collection
     outputFileTracingExcludes: {
@@ -52,6 +50,10 @@ const config: NextConfig = {
                         value: "nosniff",
                     },
                     {
+                        // Disabled per OWASP recommendation - modern browsers don't need it
+                        // and it can introduce security vulnerabilities in older browsers.
+                        // We rely on CSP for XSS protection instead (added in M1+).
+                        // See: https://owasp.org/www-project-secure-headers/
                         key: "X-XSS-Protection",
                         value: "0",
                     },
