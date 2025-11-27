@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:render": "./scripts/render-deploy.sh",
     "start": "next start",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
