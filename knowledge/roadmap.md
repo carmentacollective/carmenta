@@ -153,13 +153,13 @@ retention?
 ### What This Proves
 
 M3 achieves the
-[1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline): flow
-state, presence, zone of genius. Voice-first removes the translation layer between
+[1x baseline](./context/100x-framework.md#efficiency-achieving-1x-your-100-baseline):
+flow state, presence, zone of genius. Voice-first removes the translation layer between
 thought and expression. Speed and polish create the foundation where your best work
 emerges naturally. This is operating at 100% of natural capability - the prerequisite
-for [10x](./100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team) and
-[100x](./100x-framework.md#creativity-achieving-100x-vision-execution-partner) (vision
-execution).
+for [10x](./context/100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team) and
+[100x](./context/100x-framework.md#creativity-achieving-100x-vision-execution-partner)
+(vision execution).
 
 Carmenta becomes worth switching to because it enables you to work at your full human
 capability, not just because it has more features.
@@ -196,8 +196,8 @@ capability, not just because it has more features.
 - Users report switching from other AI tools
 - Daily retention among active users
 - Users report sustained presence and flow state - the
-  [1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline) is
-  achieved
+  [1x foundation](./context/100x-framework.md#efficiency-achieving-1x-your-100-baseline)
+  is achieved
 
 ### Not Yet
 
@@ -215,10 +215,10 @@ use Carmenta. It's ready." **Test:** Will people pay? Does it grow?
 
 ### What This Proves
 
-The [10x layer](./100x-framework.md#capacity-achieving-10x-your-ai-team) works: AI team
-multiplies the
-[1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline). Service
-integrations enable the team to actually do things. One person operating at 100%
+The [10x layer](./context/100x-framework.md#capacity-achieving-10x-your-ai-team) works:
+AI team multiplies the
+[1x foundation](./context/100x-framework.md#efficiency-achieving-1x-your-100-baseline).
+Service integrations enable the team to actually do things. One person operating at 100%
 baseline (1x) becomes a team of ten (10x). The Digital Chief of Staff demonstrably
 reduces cognitive load and protects flow state while expanding capacity.
 

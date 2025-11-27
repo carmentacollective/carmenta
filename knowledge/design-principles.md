@@ -10,10 +10,10 @@ Stripe, and Linear.
 
 We design for professionals who want to operate at 100% of their natural capability -
 flow state, presence, zone of genius
-([1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline)). Our
-interfaces preserve and amplify this baseline. Everything should feel fast, focused, and
-refined. Every interaction should feel intentional, never accidental. The best interface
-is one that maintains flow rather than fragmenting it.
+([1x baseline](./context/100x-framework.md#efficiency-achieving-1x-your-100-baseline)).
+Our interfaces preserve and amplify this baseline. Everything should feel fast, focused,
+and refined. Every interaction should feel intentional, never accidental. The best
+interface is one that maintains flow rather than fragmenting it.
 
 Consistency builds trust and preserves flow state. When patterns repeat predictably,
 users develop muscle memory. They stop thinking about the interface and stay in their

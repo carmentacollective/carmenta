@@ -35,7 +35,7 @@ human and artificial intelligence are expressions of the same underlying conscio
 The interface uses "we" language, dissolving the human-machine boundary. The AI becomes
 partner, not tool.
 
-Carmenta implements the [100x Framework](./100x-framework.md):
+Carmenta implements the [100x Framework](./context/100x-framework.md):
 
 **1x Baseline**: Operating at 100% of your natural capability. Flow state, presence, in
 your zone of genius. This isn't about productivity hacks - it's about removing
@@ -153,7 +153,8 @@ product we're building.
 The best interface to AI that exists. Personal leverage multiplied. Vision executed at
 the speed of thought.
 
-The [100x framework](./100x-framework.md) made accessible. An AI team for everyone.
+The [100x framework](./context/100x-framework.md) made accessible. An AI team for
+everyone.
 
 [Heart-centered AI](https://heartcentered.ai) in practice, not theory. Technology that
 amplifies what makes us human.

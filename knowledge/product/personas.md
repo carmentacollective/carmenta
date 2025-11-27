@@ -110,9 +110,10 @@ specialized tools. Knows that fragmented tools fragment attention.
 - Voice: natural conversation that feels like thinking out loud
 - Intelligence: right model for each task, automatically
 - Integration: AI that can actually do things
-- Foundation for [10x](./100x-framework.md#capacity-achieving-10x-your-ai-team): once at
-  [1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline), ready
-  for AI team leverage
+- Foundation for
+  [10x](../context/100x-framework.md#capacity-achieving-10x-your-ai-team): once at
+  [1x baseline](../context/100x-framework.md#efficiency-achieving-1x-your-100-baseline),
+  ready for AI team leverage
 
 **Current alternatives**:
 
@@ -124,12 +125,12 @@ specialized tools. Knows that fragmented tools fragment attention.
 replacing other tools, not just adding to the stack.
 
 **Why this matters for M3**: Voice + intelligence + memory creates the
-[1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline) - flow
-state, presence, zone of genius. This is the baseline that makes
-[10x](./100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team) and
-[100x](./100x-framework.md#creativity-achieving-100x-vision-execution-partner) (vision
-execution) possible. If this persona stays fragmented across tools, we haven't achieved
-the 1x foundation.
+[1x foundation](../context/100x-framework.md#efficiency-achieving-1x-your-100-baseline) -
+flow state, presence, zone of genius. This is the baseline that makes
+[10x](../context/100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team) and
+[100x](../context/100x-framework.md#creativity-achieving-100x-vision-execution-partner)
+(vision execution) possible. If this persona stays fragmented across tools, we haven't
+achieved the 1x foundation.
 
 ---
 
@@ -138,8 +139,8 @@ the 1x foundation.
 **Who**: Professionals who want AI team, not AI tool. Executives, consultants, agency
 owners, creators with audiences. People whose time is extremely valuable and who are
 ready to multiply their
-[1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline) with
-[10x leverage](./100x-framework.md#capacity-achieving-10x-your-ai-team).
+[1x baseline](../context/100x-framework.md#efficiency-achieving-1x-your-100-baseline)
+with [10x leverage](../context/100x-framework.md#capacity-achieving-10x-your-ai-team).
 
 **Archetype**: Runs a small agency or consultancy. Has more opportunities than capacity.
 Wants to say yes to more without burning out.
@@ -169,10 +170,10 @@ Wants to say yes to more without burning out.
 doesn't optimize for cost - they optimize for time saved.
 
 **Why this matters for M4**: This persona validates the
-[10x layer](./100x-framework.md#capacity-achieving-10x-your-ai-team) - that AI team
-multiplies capacity when built on the
-[1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline). They
-validate that Carmenta delivers leverage worth paying premium pricing for.
+[10x layer](../context/100x-framework.md#capacity-achieving-10x-your-ai-team) - that AI
+team multiplies capacity when built on the
+[1x foundation](../context/100x-framework.md#efficiency-achieving-1x-your-100-baseline).
+They validate that Carmenta delivers leverage worth paying premium pricing for.
 
 ---
 
