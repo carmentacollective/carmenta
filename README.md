@@ -74,8 +74,8 @@ service of human flourishing, guided by foresight and care for what's being born
 
 ## Project Structure
 
-This project follows the [AI-First SDLC](AI-FIRST-SDLC.md): the `knowledge/` folder IS
-the product specification. Code is generated from it.
+This project follows [AI-First Development](knowledge/ai-first-development.md): the
+`knowledge/` folder IS the product specification. Code is generated from it.
 
 ```
 /knowledge

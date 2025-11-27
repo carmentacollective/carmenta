@@ -221,10 +221,12 @@ Most treat voice as text input/output translation. OpenAI Realtime API integrati
 RAG is bolted on everywhere. Token-based context management is an afterthought. No one
 treats memory/context as the core architecture problem it is.
 
-### 4. AI-First SDLC as Product Philosophy
+### 4. AI-First Development as Product Philosophy
 
 LobeChat has the best tooling, but none position AI-assisted development as their
-product philosophy. Carmenta's spec-driven approach from AI-FIRST-SDLC.md is unique.
+product philosophy. Carmenta's spec-driven approach from ai-first-development.md is
+unique. More significantly, Carmenta is designed to be self-improving: AI agents test,
+AI PM synthesizes feedback, AI builds improvements. The product improves itself.
 
 ### 5. Speed of Thought Interface
 

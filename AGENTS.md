@@ -22,8 +22,9 @@ execution partner).
 
 ## Project Structure
 
-This project follows the AI-First SDLC (@AI-FIRST-SDLC.md): the `knowledge/` folder IS
-the product specification. Code is generated from it. The specification is the IP.
+This project follows AI-First Development (@knowledge/ai-first-development.md): the
+`knowledge/` folder IS the product specification. Code is generated from it. The
+specification is the IP.
 
 - knowledge/vision.md - Why Carmenta exists, for whom, what success looks like
 - knowledge/components/ - Feature-level specifications
