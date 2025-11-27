@@ -175,6 +175,22 @@ Reference: ai-chatbot uses `@tailwindcss/postcss` v4.1 with `@tailwindcss/typogr
 
 Zod 4 is the latest major version.
 
+### Environment Variable Pattern
+
+Type-safe environment variable management using `@t3-oss/env-nextjs` with Zod.
+
+Variables are optional at import time to support tests, CI, and partial environments.
+Validation happens at point of use with `assertEnv()`. Critical variables validated at
+production startup in `instrumentation.ts` via `validateProductionEnv()`.
+
+Benefits:
+
+- Type-safe access with autocomplete
+- Lazy validation - optional at import, validated when needed
+- Production fail-fast - missing critical vars caught at startup
+- Test-friendly - `skipValidation` allows tests without full env
+- Client/server separation enforced by schema
+
 ---
 
 ## Linting & Formatting (Category B - Confirmed)
@@ -258,6 +274,18 @@ next.config).
 
 ---
 
+## Data Layer (Category B - Confirmed)
+
+| Choice          | Version | Rationale                                        |
+| --------------- | ------- | ------------------------------------------------ |
+| **Drizzle ORM** | latest  | Type-safe, lightweight, SQL-like syntax.         |
+| **postgres**    | latest  | PostgreSQL driver for Drizzle. Render-compatible.|
+
+Drizzle provides type-safe database access with minimal abstraction over SQL. Pairs with
+Render-managed PostgreSQL for production.
+
+---
+
 ## Deferred Decisions (Category D - Deep)
 
 These require deep research and are out of scope for initial homepage:
@@ -265,7 +293,7 @@ These require deep research and are out of scope for initial homepage:
 - **Chat UI primitives** - assistant-ui vs custom vs CopilotKit
 - **Voice input** - OpenAI Realtime vs Whisper vs browser APIs
 - **State management** - Zustand (LobeChat pattern) vs React Context vs other
-- **Database** - PostgreSQL (Drizzle) vs PGLite for local-first
+- **Local-first database** - PGLite for offline support (complementing PostgreSQL)
 - **Authentication** - Clerk vs NextAuth vs custom
 - **MCP integration** - Architecture patterns from LibreChat/LobeChat
 
