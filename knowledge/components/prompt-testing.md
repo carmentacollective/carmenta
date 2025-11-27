@@ -1,7 +1,8 @@
 # Prompt Testing
 
-Prompts are code. They define Carmenta's behavior as much as TypeScript does. We test them
-with the same rigor - versioned, evaluated across models, iterated to measurable targets.
+Prompts are code. They define Carmenta's behavior as much as TypeScript does. We test
+them with the same rigor - versioned, evaluated across models, iterated to measurable
+targets.
 
 This is distinct from Model Intelligence. Model Intelligence tells us which models are
 best for which tasks (built from external benchmarks). Prompt Testing verifies our
@@ -11,7 +12,8 @@ prompts work correctly across the models we'll route to.
 
 In an AI-first product, prompts ARE the specification. The Concierge's classification
 prompt determines which model handles a request. The memory retrieval prompt determines
-what context gets included. The response generation prompt determines how we're answered.
+what context gets included. The response generation prompt determines how we're
+answered.
 
 Untested prompts are bugs waiting to happen. A "small improvement" to a classification
 prompt might route research questions to the fast model. A tweaked system prompt might
@@ -34,7 +36,7 @@ export function classifyRequest(userMessage: string, recentContext: string[]) {
   return {
     messages: [
       {
-        role: 'system',
+        role: "system",
         content: `You are a request classifier for an AI assistant.
 
 Classify the user's request into exactly one category:
@@ -45,24 +47,25 @@ Classify the user's request into exactly one category:
 - TASK_EXECUTION: Actions that need tools or external services
 - EMOTIONAL: Support, encouragement, personal matters
 
-Output only the category name, nothing else.`
+Output only the category name, nothing else.`,
       },
       {
-        role: 'user',
-        content: userMessage
-      }
-    ]
+        role: "user",
+        content: userMessage,
+      },
+    ],
   };
 }
 ```
 
 ### Multi-Model Evaluation
 
-Every prompt runs against multiple models. What works on Claude might fail on GPT. What's
-cheap on Haiku might be wrong. We test across our model tiers to ensure consistent
-behavior.
+Every prompt runs against multiple models. What works on Claude might fail on GPT.
+What's cheap on Haiku might be wrong. We test across our model tiers to ensure
+consistent behavior.
 
 Default test providers:
+
 - claude-3-5-haiku (fast tier)
 - claude-3-5-sonnet (balanced tier)
 - gpt-4o-mini (fast tier alternative)
@@ -73,12 +76,15 @@ Default test providers:
 Tests verify prompt behavior through multiple assertion types:
 
 **LLM-as-Judge**: Another model evaluates if the output meets criteria
+
 ```yaml
 - type: llm-rubric
-  value: "Should classify coding questions as TASK_EXECUTION or DEEP_ANALYSIS, not QUICK"
+  value:
+    "Should classify coding questions as TASK_EXECUTION or DEEP_ANALYSIS, not QUICK"
 ```
 
 **Contains/Excludes**: Output must include or exclude specific strings
+
 ```yaml
 - type: contains-any
   value: ["QUICK", "CONVERSATION", "DEEP_ANALYSIS"]
@@ -87,12 +93,14 @@ Tests verify prompt behavior through multiple assertion types:
 ```
 
 **Custom Logic**: JavaScript assertions for complex validation
+
 ```yaml
 - type: javascript
   value: "['QUICK','CONVERSATION','DEEP_ANALYSIS','CREATIVE','TASK_EXECUTION','EMOTIONAL'].includes(output.trim())"
 ```
 
 **Regex**: Pattern matching
+
 ```yaml
 - type: regex
   value: "^(QUICK|CONVERSATION|DEEP_ANALYSIS|CREATIVE|TASK_EXECUTION|EMOTIONAL)$"
@@ -130,6 +138,7 @@ packages/prompts/
 Each prompt gets a directory with three files:
 
 **eval.yaml** - Test configuration
+
 ```yaml
 description: Classify user requests into routing categories
 
@@ -147,8 +156,9 @@ tests:
 ```
 
 **prompt.ts** - Thin wrapper importing production code
+
 ```typescript
-import { classifyRequest } from '@carmenta/prompts';
+import { classifyRequest } from "@carmenta/prompts";
 
 interface PromptVars {
   userMessage: string;
@@ -162,64 +172,52 @@ export default function generatePrompt({ vars }: { vars: PromptVars }) {
 ```
 
 **tests/basic-case.ts** - Test cases
+
 ```typescript
 const testCases = [
   // Quick lookups
   {
     vars: { userMessage: "What time is it in Tokyo?" },
-    assert: [
-      { type: 'contains', value: 'QUICK' }
-    ]
+    assert: [{ type: "contains", value: "QUICK" }],
   },
   {
     vars: { userMessage: "Convert 100 USD to EUR" },
-    assert: [
-      { type: 'contains', value: 'QUICK' }
-    ]
+    assert: [{ type: "contains", value: "QUICK" }],
   },
 
   // Deep analysis
   {
     vars: { userMessage: "Analyze the competitive landscape for AI chat interfaces" },
-    assert: [
-      { type: 'contains', value: 'DEEP_ANALYSIS' }
-    ]
+    assert: [{ type: "contains", value: "DEEP_ANALYSIS" }],
   },
   {
-    vars: { userMessage: "Help me understand the tradeoffs between PostgreSQL and MongoDB for my use case" },
-    assert: [
-      { type: 'contains', value: 'DEEP_ANALYSIS' }
-    ]
+    vars: {
+      userMessage:
+        "Help me understand the tradeoffs between PostgreSQL and MongoDB for my use case",
+    },
+    assert: [{ type: "contains", value: "DEEP_ANALYSIS" }],
   },
 
   // Task execution
   {
     vars: { userMessage: "Create a new GitHub issue for the authentication bug" },
-    assert: [
-      { type: 'contains', value: 'TASK_EXECUTION' }
-    ]
+    assert: [{ type: "contains", value: "TASK_EXECUTION" }],
   },
   {
     vars: { userMessage: "Send an email to the team about tomorrow's meeting" },
-    assert: [
-      { type: 'contains', value: 'TASK_EXECUTION' }
-    ]
+    assert: [{ type: "contains", value: "TASK_EXECUTION" }],
   },
 
   // Creative
   {
     vars: { userMessage: "Write a haiku about debugging" },
-    assert: [
-      { type: 'contains', value: 'CREATIVE' }
-    ]
+    assert: [{ type: "contains", value: "CREATIVE" }],
   },
 
   // Emotional
   {
     vars: { userMessage: "I'm feeling overwhelmed with this project" },
-    assert: [
-      { type: 'contains', value: 'EMOTIONAL' }
-    ]
+    assert: [{ type: "contains", value: "EMOTIONAL" }],
   },
 
   // Edge cases - ambiguous requests
@@ -227,12 +225,13 @@ const testCases = [
     vars: { userMessage: "Tell me about React" },
     assert: [
       {
-        type: 'llm-rubric',
-        provider: 'openai:gpt-4o',
-        value: 'Should classify as CONVERSATION or QUICK, not DEEP_ANALYSIS (request is vague, not requesting thorough investigation)'
-      }
-    ]
-  }
+        type: "llm-rubric",
+        provider: "openai:gpt-4o",
+        value:
+          "Should classify as CONVERSATION or QUICK, not DEEP_ANALYSIS (request is vague, not requesting thorough investigation)",
+      },
+    ],
+  },
 ];
 
 export default testCases;
@@ -253,6 +252,7 @@ pnpm promptfoo:view                            # Web UI for results
 ### 2. Analyze Failures
 
 Identify patterns in failures:
+
 - Which models fail? All or specific ones?
 - What input types trigger failures?
 - Is the prompt ambiguous or the test too strict?
@@ -262,9 +262,10 @@ Identify patterns in failures:
 Common fixes:
 
 **Add explicit constraints**
+
 ```typescript
 // Before
-content: 'Classify the request'
+content: "Classify the request";
 
 // After
 content: `Classify the request.
@@ -272,20 +273,22 @@ content: `Classify the request.
 Rules:
 - Output ONLY the category name
 - No explanations or reasoning
-- Choose the single best category`
+- Choose the single best category`;
 ```
 
 **Add examples for edge cases**
+
 ```typescript
 content: `Classify the request.
 
 Examples:
 - "What's 2+2?" → QUICK
 - "Explain quantum computing" → CONVERSATION (unless they say "thoroughly" or "in depth")
-- "Research the history of..." → DEEP_ANALYSIS`
+- "Research the history of..." → DEEP_ANALYSIS`;
 ```
 
 **Use MUST/SHOULD hierarchy**
+
 ```typescript
 content: `Classify the request.
 
@@ -293,7 +296,7 @@ Rules:
 - MUST output exactly one category name
 - MUST NOT include any other text
 - SHOULD prefer simpler categories when ambiguous
-- MAY consider recent context for disambiguation`
+- MAY consider recent context for disambiguation`;
 ```
 
 ### 4. Re-run and Repeat
@@ -309,6 +312,7 @@ Track progress: Round 1 (75%) → Round 2 (85%) → Round 3 (92%) → Round 4 (1
 ### Output Constraints
 
 Be explicit about format:
+
 ```typescript
 content: `Generate a title for this conversation.
 
@@ -316,24 +320,26 @@ Rules:
 - Maximum 8 words
 - No punctuation at the end
 - Capture the main topic, not the first message
-- Output only the title, nothing else`
+- Output only the title, nothing else`;
 ```
 
 ### Context Handling
 
 Distinguish between no context and irrelevant context:
+
 ```typescript
 content: hasContext
   ? `Answer using the provided context.
 
 If context is relevant: Use it as foundation, supplement with knowledge
 If context is unrelated: State this clearly, do not answer`
-  : `Answer using your knowledge.`
+  : `Answer using your knowledge.`;
 ```
 
 ### Classification with Examples
 
 Anchor behavior with concrete examples:
+
 ```typescript
 content: `Determine the urgency level.
 
@@ -342,13 +348,13 @@ Examples:
 - "Can we add a feature?" → NORMAL
 - "Just thinking about..." → LOW
 
-Output only: URGENT, NORMAL, or LOW`
+Output only: URGENT, NORMAL, or LOW`;
 ```
 
 ## Integration Points
 
-- **Model Intelligence**: Tells us which models to test against. The rubric's recommended
-  models for each task type are the models we verify our prompts work on.
+- **Model Intelligence**: Tells us which models to test against. The rubric's
+  recommended models for each task type are the models we verify our prompts work on.
 - **Testing Infrastructure**: Prompt tests run alongside unit tests in CI.
 - **Concierge**: Classification and routing prompts are primary test targets.
 - **Memory**: Query enhancement and context selection prompts.

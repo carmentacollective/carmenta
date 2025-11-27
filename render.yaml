@@ -1,0 +1,22 @@
+# Render Infrastructure Configuration
+# https://docs.render.com/infrastructure-as-code
+#
+# Deploy: Connect your GitHub repo and Render will auto-deploy on push to main
+# Manual setup in dashboard is also supported
+
+services:
+  - type: web
+    name: carmenta
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: pnpm install && pnpm build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
+    healthCheckPath: /
+    autoDeploy: true

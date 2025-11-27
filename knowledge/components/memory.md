@@ -24,15 +24,16 @@ Memory and Conversations are distinct but related:
 - **Conversations** stores the raw message history (who said what, when)
 
 Memory is what Carmenta "knows" - distilled understanding. Conversations is what was
-"said" - the transcript. Memory might store "We decided to use Postgres over MongoDB
-for the new project" while Conversations stores the actual discussion where that
-decision was made.
+"said" - the transcript. Memory might store "We decided to use Postgres over MongoDB for
+the new project" while Conversations stores the actual discussion where that decision
+was made.
 
 ## Core Functions
 
 ### Profile
 
 Persistent understanding of who we are:
+
 - Professional context (role, company, industry, projects)
 - Communication preferences (tone, verbosity, expertise level)
 - Goals and priorities
@@ -41,6 +42,7 @@ Persistent understanding of who we are:
 ### Conversation Memory
 
 What's been discussed across all conversations:
+
 - Key decisions and their rationale
 - Commitments made
 - Topics explored
@@ -49,6 +51,7 @@ What's been discussed across all conversations:
 ### Knowledge Base
 
 Information we've explicitly shared or that Carmenta has learned:
+
 - Documents and files processed
 - Facts and preferences stated
 - Patterns observed over time
@@ -56,6 +59,7 @@ Information we've explicitly shared or that Carmenta has learned:
 ### Retrieval
 
 Make stored context available when needed:
+
 - The Concierge requests relevant context for each query
 - Semantic search across all memory types
 - Recency and relevance weighting
@@ -94,8 +98,8 @@ Make stored context available when needed:
 
 ### Product Decisions
 
-- **Memory visibility**: Can we see what Carmenta remembers? Edit it? How transparent
-  is the system?
+- **Memory visibility**: Can we see what Carmenta remembers? Edit it? How transparent is
+  the system?
 - **Memory scope**: Per-person only? Shared team memory? Organization-wide knowledge?
 - **Forgetting**: How do we make Carmenta forget things? Granular deletion? Time-based
   decay? Categories of "don't remember this"?

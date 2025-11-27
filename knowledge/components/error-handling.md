@@ -5,20 +5,20 @@ understanding what went wrong when they do, and building resilience into the sys
 
 ## Why This Exists
 
-Things break. APIs fail. Models hallucinate. Edge cases surprise you. The question
-isn't whether errors will happen - it's whether you'll know about them, understand
-them, and fix them quickly.
+Things break. APIs fail. Models hallucinate. Edge cases surprise you. The question isn't
+whether errors will happen - it's whether you'll know about them, understand them, and
+fix them quickly.
 
-Good error handling is invisible when it works. Errors get caught, logged,
-and often recovered from automatically. When errors do surface, we get helpful
-messages, not stack traces. And developers get the context they need to fix issues
-fast.
+Good error handling is invisible when it works. Errors get caught, logged, and often
+recovered from automatically. When errors do surface, we get helpful messages, not stack
+traces. And developers get the context they need to fix issues fast.
 
 ## Core Functions
 
 ### Error Capture
 
 Catch and record errors across the system:
+
 - Uncaught exceptions and crashes
 - API failures and timeouts
 - Validation errors
@@ -27,6 +27,7 @@ Catch and record errors across the system:
 ### Error Context
 
 Capture the context needed to debug:
+
 - User and session information
 - Request data and state
 - Stack traces and source maps
@@ -36,6 +37,7 @@ Capture the context needed to debug:
 ### Error Reporting
 
 Surface errors to the right people:
+
 - Real-time alerts for critical errors
 - Aggregation and deduplication
 - Trend detection (new errors, regressions)
@@ -44,6 +46,7 @@ Surface errors to the right people:
 ### Error Recovery
 
 Handle errors gracefully:
+
 - Retry logic for transient failures
 - Fallback behaviors when services are unavailable
 - Graceful degradation

@@ -6,13 +6,13 @@ AI agents test, AI PM synthesizes, AI builds, repeat.
 
 ## Why This Exists
 
-Traditional product testing requires humans. Real humans are slow, expensive, and scarce.
-You can't run a thousand humans through onboarding to find the friction points. You can't
-have humans continuously exercise every feature combination.
+Traditional product testing requires humans. Real humans are slow, expensive, and
+scarce. You can't run a thousand humans through onboarding to find the friction points.
+You can't have humans continuously exercise every feature combination.
 
-Agent Testing creates synthetic users - AI agents that interact with Carmenta the way
-we would. They generate usage signals at scale. They find edge cases humans would
-miss. They exercise the product continuously.
+Agent Testing creates synthetic users - AI agents that interact with Carmenta the way we
+would. They generate usage signals at scale. They find edge cases humans would miss.
+They exercise the product continuously.
 
 Combined with Product Intelligence, this creates the self-improvement loop: agents test,
 AI PM synthesizes feedback, developers (human or AI) improve, agents test again. The
@@ -23,6 +23,7 @@ cycle that compresses months into hours.
 ### Synthetic User Simulation
 
 AI agents that behave like target personas:
+
 - Simulate user onboarding and first-run experience
 - Exercise common workflows and use cases
 - Test edge cases and unusual request patterns
@@ -32,6 +33,7 @@ AI agents that behave like target personas:
 ### Signal Generation
 
 Produce signals that Product Intelligence can process:
+
 - Task completion success/failure
 - Friction points and confusion indicators
 - Performance and latency observations
@@ -41,6 +43,7 @@ Produce signals that Product Intelligence can process:
 ### Continuous Testing
 
 Ongoing product exercise, not just one-time:
+
 - Regular test runs across core workflows
 - Regression detection when changes introduce problems
 - Coverage of new features as they ship
@@ -49,6 +52,7 @@ Ongoing product exercise, not just one-time:
 ### Quality Benchmarking
 
 Measure and track product quality:
+
 - Response quality assessment
 - Task completion rates
 - Comparison against baselines

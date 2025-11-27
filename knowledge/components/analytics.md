@@ -1,25 +1,26 @@
 # Analytics
 
-Product analytics - understanding how we actually use Carmenta. What features get
-used, where we struggle, what drives engagement and retention. The foundation for
+Product analytics - understanding how we actually use Carmenta. What features get used,
+where we struggle, what drives engagement and retention. The foundation for
 data-informed product decisions.
 
 ## Why This Exists
 
 Building without analytics is building blind. You think you know how people behave, but
-you don't. Analytics reveals the truth: which features matter, where we drop off,
-what correlates with retention, how behavior changes over time.
+you don't. Analytics reveals the truth: which features matter, where we drop off, what
+correlates with retention, how behavior changes over time.
 
-For an AI product, analytics is especially important. Satisfaction isn't just
-about clicks - it's about whether the AI actually helped. Did we complete our task?
-Did we come back? Did we engage deeper or bounce? These signals inform both product
-decisions and the Product Intelligence component's feedback loop.
+For an AI product, analytics is especially important. Satisfaction isn't just about
+clicks - it's about whether the AI actually helped. Did we complete our task? Did we
+come back? Did we engage deeper or bounce? These signals inform both product decisions
+and the Product Intelligence component's feedback loop.
 
 ## Core Functions
 
 ### Event Tracking
 
 Capture user actions throughout the product:
+
 - Feature usage (which capabilities get used, how often)
 - Conversation patterns (length, depth, topics)
 - UI interactions (clicks, navigation, settings changes)
@@ -28,6 +29,7 @@ Capture user actions throughout the product:
 ### User Analytics
 
 Understand user segments and behavior:
+
 - Activation and onboarding completion
 - Retention and engagement over time
 - Feature adoption curves
@@ -36,6 +38,7 @@ Understand user segments and behavior:
 ### Funnel Analysis
 
 Track conversion through key flows:
+
 - Signup to activation
 - Free to paid (if applicable)
 - Feature discovery and adoption
@@ -44,6 +47,7 @@ Track conversion through key flows:
 ### Product Metrics
 
 Track the metrics that matter:
+
 - Daily/weekly/monthly active users
 - Session duration and frequency
 - Feature engagement rates

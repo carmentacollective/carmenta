@@ -113,8 +113,8 @@ permissions without full disconnect when possible.
 
 How tools appear in conversation:
 
-**Invisible when working**: If Carmenta has calendar access, it just knows your schedule.
-You don't see "invoking Google Calendar MCP server."
+**Invisible when working**: If Carmenta has calendar access, it just knows your
+schedule. You don't see "invoking Google Calendar MCP server."
 
 **Visible when relevant**: When Carmenta takes action - sends an email, creates a task,
 runs code - the action is acknowledged. "I sent that email to Sarah."
@@ -125,31 +125,37 @@ errors, not silent failure.
 ## Tool Categories
 
 ### Productivity Tools
+
 - **Document services**: Notion, Google Docs, Dropbox Paper
 - **Task management**: ClickUp, Linear, Todoist, Asana
 - **Note systems**: Obsidian vault access, Apple Notes
 
 ### Communication
+
 - **Email**: Gmail, Outlook (read, draft, send with appropriate permissions)
 - **Messaging**: Slack (read channels, send messages)
 - **Calendar**: Google Calendar, Outlook Calendar
 
 ### Development
+
 - **Repositories**: GitHub, GitLab (issues, PRs, code search)
 - **Databases**: PostgreSQL, MySQL, SQLite (query, with appropriate read/write controls)
 - **Code execution**: Sandboxed Python, JavaScript, shell
 
 ### Data & Analytics
+
 - **Spreadsheets**: Google Sheets, Airtable
 - **Analytics**: Google Analytics, Mixpanel, PostHog
 - **APIs**: Custom REST/GraphQL endpoints
 
 ### Media & Content
+
 - **Storage**: Google Drive, Dropbox, S3
 - **Images**: Upload, analyze, generate
 - **Video**: YouTube metadata and transcripts
 
 ### System & Local
+
 - **File system**: Local file access (with directory boundaries)
 - **Browser**: Web browsing and research
 - **Commands**: Shell execution (sandboxed)
@@ -179,6 +185,7 @@ filesystem restrictions, resource limits.
 ### Permission Scopes
 
 Every tool declares what it needs:
+
 - **read**: View data only
 - **write**: Create or modify data
 - **delete**: Remove data
@@ -190,6 +197,7 @@ for the task at hand.
 ### Audit Trail
 
 Every tool invocation logged:
+
 - What tool
 - What operation
 - What inputs (sanitized)
@@ -215,6 +223,7 @@ Total time: Under 60 seconds for OAuth-based tools.
 ### Ongoing Use
 
 Tools are ambient, not invoked:
+
 - "What's on my calendar tomorrow?" just works (calendar enabled)
 - "Summarize that document" just works (Google Drive enabled)
 - "Check the latest errors in Sentry" just works (Sentry enabled)
@@ -301,12 +310,14 @@ Discovery is excellent: browse by category, search by function, see ratings and 
 Installation reduces to clicking "Add" for many tools.
 
 Strengths:
+
 - Discovery-first experience - browse what's possible
 - One-click for marketplace tools
 - Visual status indicators
 - Agent-level tool assignment
 
 Weaknesses:
+
 - Still exposed as "MCP plugins" - technical framing
 - Configuration still required for many tools
 - Limited abstraction over the underlying protocol
@@ -318,12 +329,14 @@ More enterprise-focused with OAuth support for MCP servers and multi-user creden
 isolation.
 
 Strengths:
+
 - Multi-user credential isolation
 - OAuth flow for secure tool auth
 - Status indicators (connected, error, initializing)
 - Agent and non-agent endpoint support
 
 Weaknesses:
+
 - Requires external marketplace (Smithery)
 - Manual YAML editing for custom tools
 - Technical terminology throughout ("MCP servers", "stdio transport")

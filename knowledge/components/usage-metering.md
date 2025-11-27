@@ -1,11 +1,12 @@
 # Usage Metering
 
-Track token consumption and API costs per user - the foundation for understanding
-costs, identifying heavy users, and enabling usage-based billing in the future.
+Track token consumption and API costs per user - the foundation for understanding costs,
+identifying heavy users, and enabling usage-based billing in the future.
 
 ## Why This Exists
 
 Every LLM request costs money. Without metering, you have no visibility into:
+
 - Which users consume the most resources
 - What types of requests cost the most
 - Whether your pricing (if any) is sustainable
@@ -14,15 +15,16 @@ Every LLM request costs money. Without metering, you have no visibility into:
 LibreChat got this right: token counting per message, spend tracking, balance limits.
 You can't add this as an afterthought - the data model needs to support it from day one.
 
-We're not building billing today. We're building the metering infrastructure that
-makes billing possible later. Track everything, report internally, leave the door open
-for usage-based pricing when the time comes.
+We're not building billing today. We're building the metering infrastructure that makes
+billing possible later. Track everything, report internally, leave the door open for
+usage-based pricing when the time comes.
 
 ## Core Functions
 
 ### Token Counting
 
 Every LLM interaction gets metered:
+
 - Input tokens (prompt, system message, context)
 - Output tokens (model response)
 - Model used (different models, different costs)
@@ -33,6 +35,7 @@ Token counts come from the model response itself - no estimation, actual usage.
 ### Cost Attribution
 
 Map token usage to actual costs:
+
 - Per-model cost rates (GPT-4 vs Claude vs local models)
 - Per-user cost accumulation
 - Per-conversation cost tracking
@@ -41,6 +44,7 @@ Map token usage to actual costs:
 ### Usage Aggregation
 
 Roll up usage for reporting:
+
 - Daily/weekly/monthly user summaries
 - Cost trends over time
 - Heavy user identification
@@ -49,6 +53,7 @@ Roll up usage for reporting:
 ### Internal Reporting
 
 Dashboards for operators:
+
 - Total platform costs
 - Cost per active user
 - Cost distribution across users
@@ -56,13 +61,15 @@ Dashboards for operators:
 
 ## Relationship to Other Components
 
-**Observability** tracks request traces for debugging. Usage Metering tracks costs
-for business intelligence. They share data sources but serve different purposes:
+**Observability** tracks request traces for debugging. Usage Metering tracks costs for
+business intelligence. They share data sources but serve different purposes:
+
 - Observability answers "what happened in this request?"
 - Usage Metering answers "how much did this user cost us?"
 
 **Analytics** tracks user behavior and engagement. Usage Metering tracks consumption.
 Both inform product decisions but measure different things:
+
 - Analytics answers "which features are popular?"
 - Usage Metering answers "which features are expensive?"
 
@@ -72,6 +79,7 @@ Consider whether Usage Metering data flows through the same pipeline as Observab
 ## Future: Usage-Based Billing
 
 The metering foundation enables several billing models later:
+
 - **Free tier with limits**: Track consumption against thresholds
 - **Pay-per-use**: Bill based on actual token consumption
 - **Tiered plans**: Different limits for different subscription tiers
@@ -104,8 +112,8 @@ separate from billing logic.
 
 ### Architecture
 
-- **Storage**: Time-series database? Append-only log? Regular Postgres with
-  aggregation? What are the scale implications?
+- **Storage**: Time-series database? Append-only log? Regular Postgres with aggregation?
+  What are the scale implications?
 - **Pipeline**: Instrument at the Concierge layer? Tap into Observability traces?
   Separate metering middleware?
 - **Aggregation strategy**: Real-time running totals? Batch aggregation jobs?

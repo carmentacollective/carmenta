@@ -6,13 +6,13 @@ users through setup and demonstrates capabilities.
 
 ## Why This Exists
 
-First impressions matter. We have a great first five minutes and become long-term
-users. We bounce in confusion and never come back.
+First impressions matter. We have a great first five minutes and become long-term users.
+We bounce in confusion and never come back.
 
 Onboarding has to accomplish multiple goals: collect enough information to personalize
-the experience, demonstrate what Carmenta can do, set expectations, and get us to
-value quickly. This is a delicate balance - too long and we abandon, too short and
-the AI doesn't have enough context to be useful.
+the experience, demonstrate what Carmenta can do, set expectations, and get us to value
+quickly. This is a delicate balance - too long and we abandon, too short and the AI
+doesn't have enough context to be useful.
 
 The Concierge approach means onboarding is a conversation, not a form. The AI asks
 questions, responds to answers, builds understanding naturally.
@@ -22,6 +22,7 @@ questions, responds to answers, builds understanding naturally.
 ### Profile Collection
 
 Gather information to personalize the experience:
+
 - Professional context (role, industry, company, projects)
 - Goals and priorities (what they want to accomplish)
 - Communication preferences (tone, verbosity, expertise level)
@@ -30,6 +31,7 @@ Gather information to personalize the experience:
 ### Capability Demonstration
 
 Show us what Carmenta can do:
+
 - Interactive examples of key capabilities
 - Guided first tasks that deliver immediate value
 - Showcase differentiated features (memory, voice, AG-UI)
@@ -38,6 +40,7 @@ Show us what Carmenta can do:
 ### Service Connection
 
 Set up integrations during onboarding:
+
 - Prioritized OAuth flows for high-value services
 - Explain what access enables
 - Handle connection failures gracefully
@@ -46,6 +49,7 @@ Set up integrations during onboarding:
 ### AI Team Introduction
 
 Set up the relationship with the AI team:
+
 - Introduce the Digital Chief of Staff
 - Explain how the team works together
 - Set expectations for autonomy and communication
@@ -73,13 +77,14 @@ Set up the relationship with the AI team:
 
 ### Architecture
 
-- **Conversation vs. form**: How much is conversational AI vs. structured UI? What's
-  the right balance?
-- **Progressive disclosure**: Do we collect everything upfront or learn over time? What's
-  essential for first session?
-- **Skip and return**: Can we skip onboarding and come back? How do we handle
-  incomplete profiles?
-- **State management**: How do we track onboarding progress? Resume interrupted sessions?
+- **Conversation vs. form**: How much is conversational AI vs. structured UI? What's the
+  right balance?
+- **Progressive disclosure**: Do we collect everything upfront or learn over time?
+  What's essential for first session?
+- **Skip and return**: Can we skip onboarding and come back? How do we handle incomplete
+  profiles?
+- **State management**: How do we track onboarding progress? Resume interrupted
+  sessions?
 
 ### Product Decisions
 

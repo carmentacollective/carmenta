@@ -1,7 +1,7 @@
 # Interface
 
-The web application shell and AG-UI protocol implementation. This is where we
-interact with Carmenta - the visual layer that renders responses, captures input, and
+The web application shell and AG-UI protocol implementation. This is where we interact
+with Carmenta - the visual layer that renders responses, captures input, and
 orchestrates the experience across devices.
 
 ## Why This Exists
@@ -66,7 +66,8 @@ Concierge for processing.
 
 Render responses based on AG-UI events from the Concierge:
 
-- **Chat**: Standard conversational text with markdown, streamed via `TextMessage*` events
+- **Chat**: Standard conversational text with markdown, streamed via `TextMessage*`
+  events
 - **Rich cards**: Structured content via generative UI components
 - **Reports**: Long-form structured output with sections, citations, visualizations
 - **Interactive**: Forms, calendars, confirmations via frontend tools
@@ -81,6 +82,7 @@ and `StateDelta` events.
 ### Platform Progression
 
 Web application first - the foundation. Then:
+
 - PWA for notifications and offline capability
 - Electron for desktop integration
 - Mobile apps eventually
@@ -121,8 +123,8 @@ Each platform adds capabilities but web remains primary.
 - **Response type taxonomy**: What categories of generative UI do we support? Cards,
   reports, interactive forms... what's MVP vs. later?
 - **Conversation organization**: Flat list of chats? Folders? Tags? Workspaces?
-- **Customization**: Can we customize the interface? Themes? Density? Or keep it
-  simple and opinionated?
+- **Customization**: Can we customize the interface? Themes? Density? Or keep it simple
+  and opinionated?
 
 ### Technical Specifications Needed
 

@@ -15,8 +15,8 @@ that might not serve them best.
 
 Carmenta breaks this lock-in. Sync your history from ChatGPT, Claude, and other
 platforms. Your conversations become our conversations. Your memories feed our Memory
-system. You don't lose what you've built - you bring it with you. And ideally, you
-never have to think about it again because new conversations sync automatically.
+system. You don't lose what you've built - you bring it with you. And ideally, you never
+have to think about it again because new conversations sync automatically.
 
 ## The Vision vs. Current Reality
 
@@ -24,9 +24,9 @@ never have to think about it again because new conversations sync automatically.
 within minutes. Memories extracted, context updated, everything unified. Use whatever
 interface you want - Carmenta becomes your AI memory layer.
 
-**Current reality**: Neither OpenAI nor Anthropic offer APIs for conversation history
-or webhooks for new messages. We have to work with what exists today while building
-toward what should exist.
+**Current reality**: Neither OpenAI nor Anthropic offer APIs for conversation history or
+webhooks for new messages. We have to work with what exists today while building toward
+what should exist.
 
 ## Relationship to Memory and Conversations
 
@@ -45,6 +45,7 @@ We researched this extensively. Here's what the platforms actually support:
 ### What's Officially Supported
 
 **OpenAI ChatGPT:**
+
 - Manual data export via Settings → Data Controls → Export Data
 - Exports include `conversations.json` (all history with metadata) and `chat.html`
 - ZIP file delivered via email, 24-hour download window
@@ -52,6 +53,7 @@ We researched this extensively. Here's what the platforms actually support:
 - Terms explicitly prohibit automated data extraction
 
 **Anthropic Claude:**
+
 - Manual data export via Settings → Privacy → Export Data
 - Export delivered via email, 24-hour download window
 - Not available on mobile apps
@@ -61,7 +63,8 @@ We researched this extensively. Here's what the platforms actually support:
 ### What's Not Possible
 
 - **Real-time sync**: Neither platform offers webhooks or APIs for conversation events
-- **Programmatic history retrieval**: No endpoints exist to fetch historical conversations
+- **Programmatic history retrieval**: No endpoints exist to fetch historical
+  conversations
 - **Automated backups**: Not built-in; requires manual export or browser extensions
 
 ### Workarounds That Exist
@@ -77,6 +80,7 @@ We researched this extensively. Here's what the platforms actually support:
 ### Real-Time Sync (The Goal)
 
 Automatic, continuous synchronization:
+
 - Browser extension monitors ChatGPT/Claude for new conversations
 - New messages detected and synced within minutes
 - Background processing extracts memories as conversations happen
@@ -85,6 +89,7 @@ Automatic, continuous synchronization:
 ### Export File Ingestion (The Fallback)
 
 Accept manual data exports when real-time isn't possible:
+
 - ChatGPT `conversations.json` from data export
 - Claude export files
 - Standard formats from other AI interfaces
@@ -93,6 +98,7 @@ Accept manual data exports when real-time isn't possible:
 ### Processing Pipeline
 
 Transform synced data into Carmenta's native formats:
+
 - Parse conversation structure (messages, timestamps, metadata)
 - Extract memories from conversation content (facts, decisions, preferences)
 - Handle attachments and file references
@@ -102,6 +108,7 @@ Transform synced data into Carmenta's native formats:
 ### Memory Extraction
 
 Continuously extract valuable context from synced conversations:
+
 - Professional context mentioned across conversations
 - Stated preferences and communication style
 - Key decisions and their rationale
@@ -111,6 +118,7 @@ Continuously extract valuable context from synced conversations:
 ### Browser Extension
 
 The key to real-time sync given current platform limitations:
+
 - Monitors ChatGPT and Claude web interfaces for new conversations
 - Captures conversation data as it happens
 - Sends to Carmenta for processing
@@ -120,6 +128,7 @@ The key to real-time sync given current platform limitations:
 ### Sync Dashboard
 
 Visibility into what's connected and current:
+
 - Connected platforms and sync status
 - Last sync time per platform
 - Conversations synced (count, recent)
@@ -162,7 +171,8 @@ Visibility into what's connected and current:
 
 ### Product Decisions
 
-- **Extension prominence**: How hard do we push extension install? Required vs. optional?
+- **Extension prominence**: How hard do we push extension install? Required vs.
+  optional?
 - **Selective sync**: Can we sync only some conversations? Exclude certain topics?
 - **Sync transparency**: Do we show what's being synced in real-time? What level of
   visibility?
@@ -203,12 +213,14 @@ support is limited to manual data exports. Terms of service prohibit automated
 extraction via their APIs.
 
 **Decision**: Pursue a two-pronged approach:
+
 1. **Browser extension for real-time sync** - Monitor page content to capture
    conversations as they happen. This operates in the user's browser on their own data.
 2. **Export file ingestion as fallback** - Support official export files for initial
    import and for users who don't want the extension.
 
 **Rationale**:
+
 - Browser extensions reading page content for the user's benefit is established practice
   (password managers, read-later apps, accessibility tools)
 - User owns their data - GDPR/CCPA support data portability rights
@@ -217,12 +229,14 @@ extraction via their APIs.
 - Export fallback ensures we work for everyone, extension makes it seamless
 
 **Risks acknowledged**:
+
 - Extensions can break when platforms update their UI
 - Gray area in ToS interpretation (though user data portability has legal basis)
 - Extension adoption friction (users must install)
 - Maintenance burden across platforms and browsers
 
 **Future opportunities**:
+
 - If platforms add official APIs, we can enhance or replace extension approach
 - Could partner with platforms on official integrations
 - Extension could offer additional features beyond sync (quick capture, etc.)

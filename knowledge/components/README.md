@@ -5,6 +5,7 @@ listed roughly in build order - foundational pieces first, then layers that depe
 them.
 
 Each component spec includes:
+
 - **Why it exists** - the problem it solves
 - **Core functions** - what it does
 - **Integration points** - how it connects to other components
@@ -35,8 +36,8 @@ for end-to-end. Built for confidence to move fast.
 ### [Concierge](concierge.md)
 
 The intelligent layer between user input and AI processing. Classifies requests, selects
-models, determines response strategy, enhances queries. Users see a simple interface; the
-Concierge handles complexity invisibly.
+models, determines response strategy, enhances queries. Users see a simple interface;
+the Concierge handles complexity invisibly.
 
 ### [Interface](interface.md)
 
@@ -46,8 +47,8 @@ mobile.
 
 ### [Memory](memory.md)
 
-Context and memory management. Remembers who you are, what you're working on, what you've
-decided, who you know. The AI always has context without re-explanation.
+Context and memory management. Remembers who you are, what you're working on, what
+you've decided, who you know. The AI always has context without re-explanation.
 
 ### [Service Connectivity](service-connectivity.md)
 
@@ -91,8 +92,8 @@ driving, cooking, or thinking out loud. Not an afterthought - a core modality.
 
 ### [Browser Automation](browser-automation.md)
 
-Browse the web as the user with their sessions. Deep research behind authentication, task
-execution in web apps without APIs. Access what matters, not just what's public.
+Browse the web as the user with their sessions. Deep research behind authentication,
+task execution in web apps without APIs. Access what matters, not just what's public.
 
 ## Self-Building Layer
 
@@ -104,8 +105,8 @@ quarters to days.
 
 ### [Agent Testing](agent-testing.md)
 
-AI agents that use Carmenta as users would. Synthetic users at scale generate signals for
-Product Intelligence. The self-improvement loop: test, synthesize, build, repeat.
+AI agents that use Carmenta as users would. Synthetic users at scale generate signals
+for Product Intelligence. The self-improvement loop: test, synthesize, build, repeat.
 
 ## Supporting Components
 
@@ -116,8 +117,8 @@ AI team introduction. Conversational onboarding through the Concierge.
 
 ### [Conversations](conversations.md)
 
-Chat management, history, organization. The actual message history and UI state, distinct
-from Memory. Find, continue, organize, search conversation history.
+Chat management, history, organization. The actual message history and UI state,
+distinct from Memory. Find, continue, organize, search conversation history.
 
 ### [Conversation Sync](conversation-sync.md)
 
@@ -145,13 +146,13 @@ Foundation for personalization - without identity, no persistent memory or prefe
 
 ### [Observability](observability.md)
 
-LLM and agent tracing. Capture prompts, responses, costs, and multi-step agent workflows.
-Debug issues, understand behavior, track quality over time.
+LLM and agent tracing. Capture prompts, responses, costs, and multi-step agent
+workflows. Debug issues, understand behavior, track quality over time.
 
 ### [Analytics](analytics.md)
 
-Product analytics. Understand how users actually use Carmenta - feature usage, retention,
-funnels. Data-informed product decisions feeding into Product Intelligence.
+Product analytics. Understand how users actually use Carmenta - feature usage,
+retention, funnels. Data-informed product decisions feeding into Product Intelligence.
 
 ### [Usage Metering](usage-metering.md)
 

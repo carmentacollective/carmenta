@@ -111,6 +111,45 @@ component catalog.
 
 Early development. Building in public.
 
+## Development
+
+### Prerequisites
+
+- Node.js 22+
+- pnpm 10+
+
+### Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Run tests
+pnpm test
+
+# Type check
+pnpm type-check
+
+# Lint and format
+pnpm lint
+pnpm format
+```
+
+### Tech Stack
+
+- **Framework**: Next.js 16, React 19, TypeScript 5.9
+- **Styling**: Tailwind CSS 3, Radix UI, shadcn/ui patterns
+- **Testing**: Vitest (unit), Playwright (E2E)
+- **Tooling**: ESLint 9, Prettier 3, husky, lint-staged
+- **Logging**: Pino
+- **Deployment**: Render
+
+See [knowledge/tech-architecture.md](knowledge/tech-architecture.md) for detailed
+architecture decisions.
+
 ## License
 
 Source-available. See [LICENSE](LICENSE) for details.

@@ -21,6 +21,7 @@ Carmenta is AI building itself.
 ### User Feedback Processing
 
 Turn our signals into product understanding:
+
 - Collect explicit feedback (ratings, comments, requests)
 - Analyze implicit signals (usage patterns, abandonment, confusion)
 - Identify patterns - one complaint is anecdote, twenty is signal
@@ -30,6 +31,7 @@ Turn our signals into product understanding:
 ### Competitor Analysis
 
 Stay current on the competitive landscape:
+
 - Monitor competitor product changes and announcements
 - Analyze new capabilities - what did they ship, why does it matter
 - Identify threats and opportunities
@@ -39,6 +41,7 @@ Stay current on the competitive landscape:
 ### Insight Synthesis
 
 Connect dots across signals:
+
 - Multiple feedback points might indicate one underlying problem
 - Competitor move + usage pattern + bug report might reveal opportunity
 - Challenge assumptions when signals conflict with beliefs
@@ -47,6 +50,7 @@ Connect dots across signals:
 ### Product Knowledge Maintenance
 
 Keep the knowledge base true:
+
 - Update component specifications with learnings
 - Refine understanding of personas based on behavior
 - Adjust boundaries based on what we actually need
