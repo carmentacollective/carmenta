@@ -99,6 +99,19 @@ export default function LandingPage() {
                                     <span className="mt-0.5 inline-block h-2 w-2 bg-primary" />
                                     <div>
                                         <span className="font-bold text-foreground">
+                                            M0.5: First Connection
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            {" "}
+                                            — Basic connection with AI, proving the
+                                            interaction feels right
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="mt-0.5 inline-block h-2 w-2 border border-muted-foreground/50" />
+                                    <div>
+                                        <span className="font-bold text-foreground">
                                             M1: Soul Proven
                                         </span>
                                         <span className="text-muted-foreground">
