@@ -11,7 +11,9 @@ services:
     plan: starter
     region: oregon
     branch: main
-    buildCommand: pnpm install && pnpm build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+    buildCommand:
+      pnpm install && pnpm build && cp -r public .next/standalone/ && cp -r .next/static
+      .next/standalone/.next/
     startCommand: node .next/standalone/server.js
     envVars:
       - key: NODE_ENV
