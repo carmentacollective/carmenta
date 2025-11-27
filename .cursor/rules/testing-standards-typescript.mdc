@@ -340,19 +340,18 @@ afterEach(() => {
 Never pipe test commands - piping creates orphaned worker processes that consume 110%+
 CPU indefinitely when interrupted.
 
-To run a single test file, use `pnpm vitest run <file>`. File paths are positional
-arguments, not flags:
+Run specific test file:
 
 ```bash
-pnpm vitest run __tests__/unit/lib/adapters/notion.test.ts
-pnpm vitest run __tests__/unit/app/hub/page.test.tsx
+pnpm test -- path/to/file.test.ts
+pnpm test -- __tests__/unit/lib/adapters/notion.test.ts
 ```
 
-Filter by test name within a file using `-t` or `--testNamePattern`:
+Filter by test name:
 
 ```bash
-pnpm vitest run __tests__/unit/lib/adapters/notion.test.ts -t "should handle errors"
 pnpm test -- -t "pattern"
+pnpm test -- -t "should handle errors"
 ```
 
 Run all tests:
@@ -361,9 +360,9 @@ Run all tests:
 pnpm test
 ```
 
-The `--run` flag does not exist in vitest CLI. Using `pnpm test -- <file>` runs the
-entire test suite, not just that file. Config uses `pool: "threads"` to reduce orphaned
-process risk.
+File paths are positional arguments, not flags. Use `-t` or `--testNamePattern` to
+filter by test name. The `--run` flag does not exist in vitest CLI. Config uses
+`pool: "threads"` to reduce orphaned process risk.
 
 If system becomes slow, check for orphaned processes with
 `ps aux | grep vitest | grep -v grep` and kill them with `pkill -9 -f "vitest"`.

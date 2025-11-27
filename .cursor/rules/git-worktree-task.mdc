@@ -10,13 +10,26 @@ Deliver a pull request that passes all checks and merges without back-and-forth.
 </objective>
 
 <workspace-setup>
-Create git worktree in .gitworktrees/ directory:
+Create git worktree as a sibling directory to avoid pnpm/ESLint module resolution issues:
 
 ```bash
-mkdir -p .gitworktrees
-git worktree add -b feature/task-name .gitworktrees/task-name main
-cd .gitworktrees/task-name
+# Extract project name from current directory
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+
+# Create worktree as sibling directory
+git worktree add -b feature/task-name "../${PROJECT_NAME}-task-name" main
+cd "../${PROJECT_NAME}-task-name"
 ```
+
+Example: If working in `/Users/nick/src/mcp-hubby`, worktree will be created at `/Users/nick/src/mcp-hubby-task-name` (sibling directory).
+
+**Why sibling directories?**
+- Avoids pnpm symlink resolution issues with nested worktrees
+- Prevents ESLint module patching errors (@rushstack/eslint-patch)
+- Cleaner separation between main repo and feature work
+- Standard practice for monorepo tools and shared dependency trees
+
+**Note:** Do NOT use `.gitworktrees/` inside the repo - this breaks module resolution for pnpm-based projects.
 </workspace-setup>
 
 <environment-initialization>
@@ -74,9 +87,15 @@ Once CI is green, bot reviews are addressed, and all checks pass, merge the PR.
 After merge, clean up worktree:
 
 ```bash
-cd ../..  # Return to main directory
-git worktree remove .gitworktrees/task-name
+# Return to main repo directory
+cd "$(git rev-parse --show-toplevel)"
+
+# Remove the sibling worktree
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+git worktree remove "../${PROJECT_NAME}-task-name"
 ```
+
+Or use the /clean-up-worktree command if available.
 </merge-and-cleanup>
 
 <critical-success-factors>
