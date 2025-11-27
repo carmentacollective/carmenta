@@ -4,48 +4,36 @@
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
-        --primary: 262 52% 47%;
-        --primary-foreground: 210 40% 98%;
-        --secondary: 210 40% 96.1%;
-        --secondary-foreground: 222.2 47.4% 11.2%;
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215.4 16.3% 46.9%;
-        --accent: 210 40% 96.1%;
-        --accent-foreground: 222.2 47.4% 11.2%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
-        --ring: 262 52% 47%;
-        --radius: 0.5rem;
-    }
+        /* Blueprint Theme - Always Dark */
+        --background: 215 50% 10%; /* #0d1b2a */
+        --foreground: 210 20% 98%; /* #e0e1dd */
 
-    .dark {
-        --background: 222.2 84% 4.9%;
-        --foreground: 210 40% 98%;
-        --card: 222.2 84% 4.9%;
-        --card-foreground: 210 40% 98%;
-        --popover: 222.2 84% 4.9%;
-        --popover-foreground: 210 40% 98%;
-        --primary: 262 52% 60%;
-        --primary-foreground: 222.2 47.4% 11.2%;
-        --secondary: 217.2 32.6% 17.5%;
-        --secondary-foreground: 210 40% 98%;
-        --muted: 217.2 32.6% 17.5%;
-        --muted-foreground: 215 20.2% 65.1%;
-        --accent: 217.2 32.6% 17.5%;
-        --accent-foreground: 210 40% 98%;
+        --card: 215 35% 17%; /* #1b263b */
+        --card-foreground: 210 20% 98%;
+
+        --popover: 215 50% 10%;
+        --popover-foreground: 210 20% 98%;
+
+        --primary: 190 90% 50%; /* #00d4ff - Cyan for blueprint lines/highlights */
+        --primary-foreground: 215 50% 10%;
+
+        --secondary: 210 30% 25%;
+        --secondary-foreground: 210 20% 98%;
+
+        --muted: 215 25% 20%;
+        --muted-foreground: 215 20% 65%;
+
+        --accent: 215 25% 20%;
+        --accent-foreground: 210 20% 98%;
+
         --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 40% 98%;
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
-        --ring: 262 52% 60%;
+        --destructive-foreground: 210 20% 98%;
+
+        --border: 215 25% 25%;
+        --input: 215 25% 25%;
+        --ring: 190 90% 50%;
+
+        --radius: 0; /* Blueprints have sharp edges */
     }
 }
 
@@ -55,16 +43,32 @@
     }
     body {
         @apply bg-background text-foreground;
+        background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
 }
 
-/* Wireframe aesthetic - intentionally minimal */
 @layer components {
-    .wireframe-box {
-        @apply rounded-lg border border-dashed border-muted-foreground/30 p-6;
+    .blueprint-box {
+        @apply relative border border-white/20 bg-card/30 p-6 backdrop-blur-sm;
     }
 
-    .text-gradient {
-        @apply bg-gradient-to-r from-primary via-carmenta-gold to-carmenta-sage bg-clip-text text-transparent;
+    .blueprint-box::before {
+        content: "";
+        @apply absolute -left-[1px] -top-[1px] h-3 w-3 border-l border-t border-primary;
+    }
+
+    .blueprint-box::after {
+        content: "";
+        @apply absolute -bottom-[1px] -right-[1px] h-3 w-3 border-b border-r border-primary;
+    }
+
+    .blueprint-grid {
+        background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
     }
 }
