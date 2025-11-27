@@ -8,12 +8,12 @@ complexity invisibly.
 ## Why This Exists
 
 Every AI interaction involves choices: which model, what context to include, how to
-structure the query, what response strategy fits best. Most interfaces push these choices
-to us when we don't want to think about them, or make rigid default choices that work
-poorly for many cases.
+structure the query, what response strategy fits best. Most interfaces push these
+choices to us when we don't want to think about them, or make rigid default choices that
+work poorly for many cases.
 
-The Concierge makes these choices intelligently for each request. A quick question gets a
-fast model. A research task gets a thorough one. A creative request gets appropriate
+The Concierge makes these choices intelligently for each request. A quick question gets
+a fast model. A research task gets a thorough one. A creative request gets appropriate
 temperature. We get what we need without understanding the machinery.
 
 The Concierge is foundational to everything else. It determines what the Interface needs
@@ -30,8 +30,8 @@ perceive delay.
 
 ### Query Enhancement
 
-Our requests rarely arrive optimized for AI processing. The Concierge transforms them
-by adding context from Memory, structuring prompts for optimal model performance, and
+Our requests rarely arrive optimized for AI processing. The Concierge transforms them by
+adding context from Memory, structuring prompts for optimal model performance, and
 aligning response tone with our preferences.
 
 ### Model Selection
@@ -54,7 +54,8 @@ want them - likely a speed/quality tradeoff and possibly response mode preferenc
 
 ## Integration Points
 
-- **Model Intelligence**: Queries for model selection. Provides real benchmark data, not guesses.
+- **Model Intelligence**: Queries for model selection. Provides real benchmark data, not
+  guesses.
 - **Memory**: Every request triggers context retrieval.
 - **Interface**: Signals how to render responses (chat, rich media, structured reports).
 - **AI Team**: Routes complex requests to specialized agents.
@@ -112,17 +113,20 @@ concerns (logging, transformation, validation, routing) without touching core lo
 
 Currently the Concierge handles preprocessing as a monolith. A middleware pattern could
 allow:
+
 - Pluggable request transformers (add context, rewrite queries, inject instructions)
 - Pluggable response processors (format output, extract artifacts, trigger side effects)
 - User-defined pipelines for custom workflows
 - Easier testing of individual transformation steps
 
 Questions to explore:
+
 - Does Carmenta need this flexibility, or is the Concierge sufficient?
 - Would middleware add latency that hurts the "speed of thought" goal?
 - Is this solving a real problem or adding complexity prematurely?
 - Could start simple (Concierge only) and add middleware later if needed?
 
 Reference implementations to study:
+
 - Open WebUI pipeline system in ../reference/open-webui/
 - Better Chatbot workflow engine in ../reference/better-chatbot/

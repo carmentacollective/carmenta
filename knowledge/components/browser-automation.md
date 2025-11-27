@@ -19,6 +19,7 @@ subscribe to. This transforms what's possible.
 ### Authenticated Browsing
 
 Browse with our sessions:
+
 - Use existing login sessions for authorized access
 - Navigate web applications as we would
 - Access content behind authentication walls
@@ -27,6 +28,7 @@ Browse with our sessions:
 ### Research Tasks
 
 Deep web research capabilities:
+
 - Multi-page research across authenticated sources
 - Extract and synthesize information from web apps
 - Screenshot and capture dynamic content
@@ -35,6 +37,7 @@ Deep web research capabilities:
 ### Task Execution
 
 Perform actions on web applications:
+
 - Fill forms and submit data
 - Click through workflows
 - Complete multi-step processes
@@ -43,6 +46,7 @@ Perform actions on web applications:
 ### Session Management
 
 Handle the complexity of browser state:
+
 - Cookie and session management
 - Multiple account contexts
 - Session isolation and security
@@ -82,8 +86,8 @@ Handle the complexity of browser state:
 
 - **Scope of automation**: What can Carmenta do in the browser? Read only? Fill forms?
   Click buttons? Where do we draw the line?
-- **User visibility**: Do we see what Carmenta is doing? Live view? Summary
-  after? Approval before actions?
+- **User visibility**: Do we see what Carmenta is doing? Live view? Summary after?
+  Approval before actions?
 - **Site allowlist**: Do we limit which sites can be automated? User-controlled?
   Carmenta-determined?
 - **Failure behavior**: When automation fails (site changes, CAPTCHA, etc.), what's our

@@ -1,17 +1,23 @@
 # HuggingFace Chat UI
 
-**Repo**: https://github.com/huggingface/chat-ui
-**Last Active**: November 2025 (very active)
+**Repo**: https://github.com/huggingface/chat-ui **Last Active**: November 2025 (very
+active)
 
 ## What It Does
 
-HuggingFace Chat UI is a production-grade web interface for conversational AI. It powers HuggingChat on huggingface.co/chat. It's a SvelteKit application designed to work with any OpenAI-compatible LLM API, making it agnostic to the underlying model provider. The architecture emphasizes streaming, real-time updates, and extensibility through MCP (Model Context Protocol) servers for tool calling.
+HuggingFace Chat UI is a production-grade web interface for conversational AI. It powers
+HuggingChat on huggingface.co/chat. It's a SvelteKit application designed to work with
+any OpenAI-compatible LLM API, making it agnostic to the underlying model provider. The
+architecture emphasizes streaming, real-time updates, and extensibility through MCP
+(Model Context Protocol) servers for tool calling.
 
 ## Features
 
 ### Core Chat Experience
+
 - Real-time message streaming with token-by-token updates
-- Conversation history with tree-based navigation (branching conversations with alternatives)
+- Conversation history with tree-based navigation (branching conversations with
+  alternatives)
 - Message editing and regeneration (retry from any message)
 - Multi-model support with dynamic model switching during chat
 - System prompt customization per conversation
@@ -19,20 +25,28 @@ HuggingFace Chat UI is a production-grade web interface for conversational AI. I
 - Session-based persistence with MongoDB
 
 ### Content Input & Processing
+
 - File uploads (images, documents) with automatic type validation
 - Direct URL fetching for loading external content
-- Clipboard paste detection and file conversion (converts large pastes >3984 chars to files)
+- Clipboard paste detection and file conversion (converts large pastes >3984 chars to
+  files)
 - Multi-modal input support (images + text) for compatible models
 - Drag-and-drop file upload
 
 ### Advanced Generation Features
-- **Reasoning mode support**: Models that expose reasoning tokens (e.g., DeepSeek-R1) stream reasoning separately from final answer
-- **ETA estimation**: Tool calls display estimated completion time with animated progress bars
-- **Router/Model Selection**: "Omni" virtual model uses Arch router to dynamically select best model per turn based on context
+
+- **Reasoning mode support**: Models that expose reasoning tokens (e.g., DeepSeek-R1)
+  stream reasoning separately from final answer
+- **ETA estimation**: Tool calls display estimated completion time with animated
+  progress bars
+- **Router/Model Selection**: "Omni" virtual model uses Arch router to dynamically
+  select best model per turn based on context
 - **Multimodal routing**: Routes image inputs to compatible models automatically
-- **Tool routing**: Auto-selects models with tool-calling support when MCP tools are enabled
+- **Tool routing**: Auto-selects models with tool-calling support when MCP tools are
+  enabled
 
 ### MCP Integration (Model Context Protocol)
+
 - Configure trusted MCP servers (environment-based or user-added)
 - Server health checks with fallback transports (HTTP then SSE)
 - Tool discovery and display with parameter introspection
@@ -42,6 +56,7 @@ HuggingFace Chat UI is a production-grade web interface for conversational AI. I
 - Automatic MCP token forwarding to HuggingFace endpoints
 
 ### User Authentication & Session Management
+
 - OpenID Connect (OIDC) authentication with configurable providers
 - Session cookies with automatic refresh (2-week expiry)
 - Per-user conversation isolation
@@ -49,6 +64,7 @@ HuggingFace Chat UI is a production-grade web interface for conversational AI. I
 - Token-based API access for programmatic chat
 
 ### Model Management
+
 - Automatic model list fetching from OpenAI-compatible `/models` endpoint
 - Model metadata: description, logo, website, dataset info, prompt examples
 - Per-model parameter configuration (temperature, top_p, top_k, max_tokens, etc.)
@@ -57,34 +73,44 @@ HuggingFace Chat UI is a production-grade web interface for conversational AI. I
 - Model-specific system prompt support toggle
 
 ### Search & Discovery
+
 - Full-text search across conversations and messages
 - Conversation sidebar with pagination
 - Infinite scroll for long conversations
 
 ### Analytics & Metrics
+
 - Prometheus metrics export
 - Conversation statistics (message count, token usage)
 - User activity tracking
 - Generation performance monitoring
 
 ### Administration
+
 - Admin panel with user management (view, edit, delete users)
 - Conversation moderation and deletion
 - System-wide settings management
 - API token validation and management
 
 ### Sharing & Collaboration
+
 - Public conversation sharing with unique shareable links
 - Read-only mode for shared conversations
 - Conversation metadata (model used, creation date)
 
 ## AI-First SDLC
 
-No evidence of AI-assisted development instructions detected. The repository does not include `.cursorrules`, `CLAUDE.md`, or `.github/copilot` configuration files. However, the codebase shows signs of careful architectural decisions around streaming and real-time updates, suggesting thoughtful engineering rather than AI-generated scaffolding.
+No evidence of AI-assisted development instructions detected. The repository does not
+include `.cursorrules`, `CLAUDE.md`, or `.github/copilot` configuration files. However,
+the codebase shows signs of careful architectural decisions around streaming and
+real-time updates, suggesting thoughtful engineering rather than AI-generated
+scaffolding.
 
 ## Novel/Interesting
 
-**Message Update System**: The architecture uses a sophisticated type system for message updates with discriminated unions (MessageUpdateType enum):
+**Message Update System**: The architecture uses a sophisticated type system for message
+updates with discriminated unions (MessageUpdateType enum):
+
 - Status updates (started, error, finished, keep-alive)
 - Token streaming updates
 - Tool call updates with nested state (call → result/error)
@@ -92,19 +118,33 @@ No evidence of AI-assisted development instructions detected. The repository doe
 - Router metadata (route selection tracking)
 - Final answer (with interruption flag)
 
-This allows streaming different types of data on the same connection with strong type safety.
+This allows streaming different types of data on the same connection with strong type
+safety.
 
-**Streaming State Management**: Uses async generators throughout (`async function* generate()`) to yield updates as they occur, enabling progressive rendering without polling. The client consumes these updates and applies them to a tree-structured message store.
+**Streaming State Management**: Uses async generators throughout
+(`async function* generate()`) to yield updates as they occur, enabling progressive
+rendering without polling. The client consumes these updates and applies them to a
+tree-structured message store.
 
-**Browser Web Fetch API for URLs**: Instead of server-side scraping, the UI can fetch URLs directly and display HTML previews in modals, reducing server load.
+**Browser Web Fetch API for URLs**: Instead of server-side scraping, the UI can fetch
+URLs directly and display HTML previews in modals, reducing server load.
 
-**Reasoning Token Extraction**: Sophisticated handling of models that emit reasoning tokens separately (DeepSeek-R1 style). Supports regex extraction, summarization of reasoning, and token-based boundary detection for removing reasoning from final answer.
+**Reasoning Token Extraction**: Sophisticated handling of models that emit reasoning
+tokens separately (DeepSeek-R1 style). Supports regex extraction, summarization of
+reasoning, and token-based boundary detection for removing reasoning from final answer.
 
-**MCP Transport Fallback**: Attempts HTTP connection first, falls back to Server-Sent Events (SSE), with detailed error reporting. This handles providers with different protocol support.
+**MCP Transport Fallback**: Attempts HTTP connection first, falls back to Server-Sent
+Events (SSE), with detailed error reporting. This handles providers with different
+protocol support.
 
-**Tree-based Conversation Navigation**: Messages form a tree structure with `ancestors` and `children` arrays, enabling branching conversations where users can explore alternative paths. UI renders the current path and displays alternatives at branch points.
+**Tree-based Conversation Navigation**: Messages form a tree structure with `ancestors`
+and `children` arrays, enabling branching conversations where users can explore
+alternative paths. UI renders the current path and displays alternatives at branch
+points.
 
-**Omni Router**: Virtual model that calls an Arch router to classify each turn (casual_conversation, coding_help, creative_writing, etc.) and routes to the best model, with special handling for multimodal and tool-calling turns.
+**Omni Router**: Virtual model that calls an Arch router to classify each turn
+(casual_conversation, coding_help, creative_writing, etc.) and routes to the best model,
+with special handling for multimodal and tool-calling turns.
 
 ## Tech Stack
 
@@ -132,22 +172,42 @@ This allows streaming different types of data on the same connection with strong
 
 ## Steal This
 
-1. **Message Update System**: Implement typed streaming updates (status, token, tool_call, reasoning, router_metadata) with discriminated unions instead of a single blob. This enables rich, structured streaming without parsing overhead.
+1. **Message Update System**: Implement typed streaming updates (status, token,
+   tool_call, reasoning, router_metadata) with discriminated unions instead of a single
+   blob. This enables rich, structured streaming without parsing overhead.
 
-2. **Async Generators for Streaming**: Use `async function* generate()` to yield updates progressively. This is cleaner than promise-based streaming and works naturally with for-await loops on the client.
+2. **Async Generators for Streaming**: Use `async function* generate()` to yield updates
+   progressively. This is cleaner than promise-based streaming and works naturally with
+   for-await loops on the client.
 
-3. **Tree-based Conversation History**: Store messages with `ancestors` and `children` references to enable branching. Allows exploring alternatives without duplicating entire conversation trees.
+3. **Tree-based Conversation History**: Store messages with `ancestors` and `children`
+   references to enable branching. Allows exploring alternatives without duplicating
+   entire conversation trees.
 
-4. **MCP/Tool Integration Pattern**: Encapsulate tool management in stores with health checks, fallback transports, and clear state visualization. The ToolUpdate component shows exactly how to display tool progress (parameters → result/error with nested state).
+4. **MCP/Tool Integration Pattern**: Encapsulate tool management in stores with health
+   checks, fallback transports, and clear state visualization. The ToolUpdate component
+   shows exactly how to display tool progress (parameters → result/error with nested
+   state).
 
-5. **Router/Smart Model Selection**: Implement a virtual "Omni" model that uses a classification endpoint to route requests to specialized models per context. This pattern is more scalable than hard-coded model chains.
+5. **Router/Smart Model Selection**: Implement a virtual "Omni" model that uses a
+   classification endpoint to route requests to specialized models per context. This
+   pattern is more scalable than hard-coded model chains.
 
-6. **Environment-driven Configuration**: All features are toggled via environment variables (MCP_SERVERS, LLM_ROUTER_*, MODELS). Makes deployment flexible without code changes.
+6. **Environment-driven Configuration**: All features are toggled via environment
+   variables (MCP*SERVERS, LLM_ROUTER*\*, MODELS). Makes deployment flexible without
+   code changes.
 
-7. **Reasoning Token Extraction**: If building with reasoning models, implement regex-based or token-boundary-based extraction to separate reasoning from final answer, with fallback summarization support.
+7. **Reasoning Token Extraction**: If building with reasoning models, implement
+   regex-based or token-boundary-based extraction to separate reasoning from final
+   answer, with fallback summarization support.
 
-8. **Progressive Loading with Infinite Scroll**: Use Svelte's reactive statements ($derived, $derived.by) to compute derived state efficiently. The conversation path calculation shows clean reactive programming without mutation.
+8. **Progressive Loading with Infinite Scroll**: Use Svelte's reactive statements
+   ($derived, $derived.by) to compute derived state efficiently. The conversation path
+   calculation shows clean reactive programming without mutation.
 
-9. **Markdown Rendering with Safety**: Use DOMPurify and isomorphic implementations to safely render markdown with math, code highlighting, and HTML preview modals.
+9. **Markdown Rendering with Safety**: Use DOMPurify and isomorphic implementations to
+   safely render markdown with math, code highlighting, and HTML preview modals.
 
-10. **Metrics & Observability**: Use Prometheus client for real-time metrics, structured logging with Pino (context per request), and include version/commit SHA in responses for production debugging.
+10. **Metrics & Observability**: Use Prometheus client for real-time metrics, structured
+    logging with Pino (context per request), and include version/commit SHA in responses
+    for production debugging.

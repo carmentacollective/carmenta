@@ -19,6 +19,7 @@ spreadsheet gets parsed for data. The file becomes part of the conversation cont
 ### Upload Handling
 
 Accept files:
+
 - Drag-and-drop and file picker interfaces
 - Support for common file types (PDF, images, documents, spreadsheets)
 - Size limits and validation
@@ -27,6 +28,7 @@ Accept files:
 ### File Processing
 
 Transform files into usable context:
+
 - **PDFs**: Extract text, chunk for RAG, handle scanned documents with OCR
 - **Images**: Pass to vision models, extract text if present
 - **Documents**: Parse Word, Google Docs formats
@@ -36,6 +38,7 @@ Transform files into usable context:
 ### Storage
 
 Secure, accessible file storage:
+
 - Files associated with conversations and users
 - Secure upload and retrieval
 - Retention policies
@@ -44,6 +47,7 @@ Secure, accessible file storage:
 ### Context Integration
 
 Make file content available to the AI:
+
 - Inject relevant chunks into prompts
 - Reference specific sections of files
 - Track which files are relevant to current context
@@ -73,8 +77,8 @@ Make file content available to the AI:
 
 - **Processing pipeline**: Synchronous or async processing? What's the latency target
   for file availability in context?
-- **Storage location**: Cloud storage (S3, GCS)? Integrated with user's own storage?
-  CDN for retrieval?
+- **Storage location**: Cloud storage (S3, GCS)? Integrated with user's own storage? CDN
+  for retrieval?
 - **RAG approach**: Simple chunking? Semantic chunking? How do we index and retrieve
   file content?
 - **Vision model routing**: When does an image go to vision models vs. OCR vs. both?
@@ -85,8 +89,8 @@ Make file content available to the AI:
   order for adding more?
 - **Size limits**: What are reasonable file size limits? How do we communicate them?
 - **Retention**: How long do files persist? Tied to conversation retention? Separate?
-- **Multi-file handling**: Can we attach multiple files? How do we handle context
-  limits with many files?
+- **Multi-file handling**: Can we attach multiple files? How do we handle context limits
+  with many files?
 
 ### Technical Specifications Needed
 

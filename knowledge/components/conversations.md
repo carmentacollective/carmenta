@@ -19,6 +19,7 @@ organization, and their UI state.
 ### Conversation Data Model
 
 The structure of conversations:
+
 - Messages (user and assistant, including AG-UI responses)
 - Conversation metadata (title, creation time, last activity)
 - Threading and branching (if supported)
@@ -28,6 +29,7 @@ The structure of conversations:
 ### History Management
 
 Access and navigate conversation history:
+
 - List past conversations
 - Search across conversation content
 - Continue previous conversations
@@ -36,6 +38,7 @@ Access and navigate conversation history:
 ### Organization
 
 Help us manage our conversations:
+
 - Automatic titling and categorization
 - Manual organization (folders, tags, favorites)
 - Archive and delete capabilities
@@ -44,6 +47,7 @@ Help us manage our conversations:
 ### Persistence and Sync
 
 Reliable storage and access:
+
 - Conversations persist across sessions and devices
 - Real-time sync when multiple sessions active
 - Offline access when possible
@@ -71,8 +75,8 @@ Reliable storage and access:
 
 ### Architecture
 
-- **Storage model**: Where do conversations live? Database? User's storage?
-  What's the relationship to Memory storage?
+- **Storage model**: Where do conversations live? Database? User's storage? What's the
+  relationship to Memory storage?
 - **Sync architecture**: How do we handle multi-device, real-time sync? Operational
   transforms? CRDTs? Simpler?
 - **Threading model**: Linear conversations only? Or branching/forking? What complexity
@@ -84,8 +88,8 @@ Reliable storage and access:
 
 - **Organization paradigm**: Flat list with search? Folders? Tags? Workspaces? What
   matches how we think?
-- **Auto-organization**: How much does Carmenta organize automatically? Title generation?
-  Category inference? Date-based grouping?
+- **Auto-organization**: How much does Carmenta organize automatically? Title
+  generation? Category inference? Date-based grouping?
 - **Conversation boundaries**: What makes something a new conversation vs. continuing an
   old one? Our choice? Time-based? Topic-based?
 - **Sharing**: Can we share conversations? Export? Collaborate?

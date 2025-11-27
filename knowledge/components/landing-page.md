@@ -5,8 +5,8 @@ The M0 landing page. Pure vision articulation, no product functionality.
 ## Why This Exists
 
 This is the stake in the ground. Before there's a product, there's a philosophy. The
-landing page communicates what we're building and why—giving The Curious a reason to
-pay attention and follow along.
+landing page communicates what we're building and why—giving The Curious a reason to pay
+attention and follow along.
 
 If the vision resonates, people will find their way to the GitHub. If it doesn't, no
 signup form or CTA would save us.
@@ -20,12 +20,12 @@ signup form or CTA would save us.
 
 ## Target Audience
 
-The Curious (see [personas.md](../product/personas.md)): GitHub followers, newsletter subscribers, indie hackers,
-AI enthusiasts. People drowning in AI tools, skeptical of wrappers, but open to
-something with a clear philosophy.
+The Curious (see [personas.md](../product/personas.md)): GitHub followers, newsletter
+subscribers, indie hackers, AI enthusiasts. People drowning in AI tools, skeptical of
+wrappers, but open to something with a clear philosophy.
 
-They need to quickly understand why this is different. They don't need feature lists
-or pricing—they need to feel whether this resonates.
+They need to quickly understand why this is different. They don't need feature lists or
+pricing—they need to feel whether this resonates.
 
 ## Content Requirements
 
@@ -60,8 +60,8 @@ The page must communicate:
 
 ## Visual Direction
 
-Wireframe aesthetic. Intentionally minimal. The words do the work, not the design.
-This signals "early stage, clear thinking" rather than "polished but shallow."
+Wireframe aesthetic. Intentionally minimal. The words do the work, not the design. This
+signals "early stage, clear thinking" rather than "polished but shallow."
 
 No one should judge the design because it's obvious the design isn't the point yet.
 
@@ -102,5 +102,5 @@ Qualitative, not conversion-based:
 
 - **GitHub repo state**: What should be visible when people click through? README
   content, visible knowledge/ folder, commit history?
-- **Social sharing**: OG image, preview text for when people share the link? (not set
-  up yet—can defer or make part of M0 deliverables)
+- **Social sharing**: OG image, preview text for when people share the link? (not set up
+  yet—can defer or make part of M0 deliverables)

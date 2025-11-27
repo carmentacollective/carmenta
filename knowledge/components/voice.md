@@ -8,7 +8,8 @@ modality.
 
 Typing is slow. Voice is natural. The best AI interactions often happen out loud - while
 driving, cooking, walking, or just thinking through a problem. But voice AI has been
-disappointing: clunky activation, poor transcription, awkward turn-taking, robotic output.
+disappointing: clunky activation, poor transcription, awkward turn-taking, robotic
+output.
 
 The vision promises "the best voice experience available." That means voice that feels
 like conversation, not dictation. Low latency. Natural interruption. Expressive output.
@@ -19,6 +20,7 @@ Voice that you actually want to use.
 ### Speech-to-Text (STT)
 
 Convert voice input to text:
+
 - Real-time transcription as we speak
 - High accuracy across accents and environments
 - Handle background noise gracefully
@@ -27,6 +29,7 @@ Convert voice input to text:
 ### Text-to-Speech (TTS)
 
 Convert AI responses to voice:
+
 - Natural, expressive voice output
 - Appropriate pacing and emphasis
 - Voice selection and customization
@@ -35,6 +38,7 @@ Convert AI responses to voice:
 ### Voice Interaction Patterns
 
 How voice integrates with the broader experience:
+
 - **Wake word or push-to-talk**: How does voice activate?
 - **Turn-taking**: Natural conversation flow, interruption handling
 - **Multimodal**: Voice input with visual output, or vice versa
@@ -43,6 +47,7 @@ How voice integrates with the broader experience:
 ### Voice-First Experiences
 
 Some interactions work better in voice:
+
 - Quick questions while multitasking
 - Brainstorming and thinking out loud
 - Dictation and long-form input

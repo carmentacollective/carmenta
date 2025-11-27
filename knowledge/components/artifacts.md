@@ -12,9 +12,9 @@ searching through conversation history. Sharing them means copying text. Iterati
 them means starting over.
 
 Artifacts solve this. When Carmenta generates substantial content, it becomes a
-first-class entity - stored separately, persisted independently, versioned automatically.
-We can reference artifacts from any conversation, share them without sharing the
-conversation that created them, and iterate on them over time.
+first-class entity - stored separately, persisted independently, versioned
+automatically. We can reference artifacts from any conversation, share them without
+sharing the conversation that created them, and iterate on them over time.
 
 This is especially critical for AG-UI. When Carmenta responds with a purpose-built
 interface - a restaurant finder with maps and booking buttons, a research report with
@@ -36,8 +36,8 @@ Artifacts sit at the intersection of several existing components:
 - **Interface**: The Interface renders artifacts when accessed, handles AG-UI artifact
   display, and provides the editing experience for mutable artifacts.
 
-- **Data Storage**: Artifacts use the same PostgreSQL infrastructure as other components,
-  with additional considerations for content storage and versioning.
+- **Data Storage**: Artifacts use the same PostgreSQL infrastructure as other
+  components, with additional considerations for content storage and versioning.
 
 ## Core Functions
 
@@ -68,6 +68,7 @@ when output should become an artifact rather than inline chat response. Creation
 implicitly - we don't ask for an artifact, we ask for a report and it becomes one.
 
 Each artifact gets:
+
 - Unique identifier for referencing
 - Title (auto-generated, editable)
 - Type classification
@@ -78,17 +79,19 @@ Each artifact gets:
 ### Storage and Retrieval
 
 Artifacts persist in PostgreSQL with content stored appropriately for type:
+
 - Text content as text/JSON
 - Code as text with language metadata
 - AG-UI components as serialized component trees
 - Diagrams as source markup (Mermaid, etc.)
 
-Retrieval should be fast - artifacts are frequently accessed from multiple conversations.
-Indexing on ID and user ownership enables efficient lookup.
+Retrieval should be fast - artifacts are frequently accessed from multiple
+conversations. Indexing on ID and user ownership enables efficient lookup.
 
 ### Versioning
 
 Every modification creates a new version. We can:
+
 - View version history with timestamps
 - Compare versions (diff view)
 - Revert to previous versions
@@ -100,27 +103,30 @@ and provides history navigation.
 ### Referencing
 
 Artifacts can be referenced from anywhere:
+
 - In conversations: "Look at the report we created" with artifact preview inline
 - In other artifacts: A summary document that links to detailed reports
 - In Memory: Facts extracted from artifact content
 - Via direct links: Shareable URLs for specific artifacts
 
-References are bidirectional - artifacts track where they're referenced, enabling
-"where is this used?" queries.
+References are bidirectional - artifacts track where they're referenced, enabling "where
+is this used?" queries.
 
 ### Iteration and Updates
 
 We iterate on artifacts through conversation:
+
 - "Update the code to handle the edge case we discussed"
 - "Add a section about security considerations"
 - "Regenerate the chart with the new data"
 
-The Concierge routes these requests to the appropriate artifact and creates new versions.
-We can also edit artifacts directly through the Interface for minor changes.
+The Concierge routes these requests to the appropriate artifact and creates new
+versions. We can also edit artifacts directly through the Interface for minor changes.
 
 ### Sharing
 
 Artifacts can be shared independently of conversations:
+
 - Public links (read-only)
 - Collaborative access (view or edit)
 - Export in standard formats (PDF, markdown, source code, etc.)
@@ -150,7 +156,8 @@ event handling while the artifact stores the content.
 
 ## Integration Points
 
-- **Concierge**: Decides when responses become artifacts, routes artifact update requests
+- **Concierge**: Decides when responses become artifacts, routes artifact update
+  requests
 - **Interface**: Renders artifacts, provides editing UI, handles AG-UI display
 - **Conversations**: References artifacts, creates artifacts through chat
 - **Memory**: Extracts facts from artifact content, remembers artifact context
@@ -176,21 +183,21 @@ event handling while the artifact stores the content.
   JSON representation of the component hierarchy? Something more sophisticated?
 - **Content storage**: Store artifact content in the same table or separate content
   store? Large artifacts (reports, code files) may benefit from separate storage.
-- **Real-time collaboration**: If two sessions access the same artifact, do edits
-  sync in real-time? CRDTs? Operational transforms? Or simpler last-write-wins?
-- **Search indexing**: Full-text search across artifact content? Vector embeddings
-  for semantic search? Both add infrastructure complexity.
+- **Real-time collaboration**: If two sessions access the same artifact, do edits sync
+  in real-time? CRDTs? Operational transforms? Or simpler last-write-wins?
+- **Search indexing**: Full-text search across artifact content? Vector embeddings for
+  semantic search? Both add infrastructure complexity.
 
 ### Product Decisions
 
-- **Artifact boundaries**: When does content become an artifact vs. inline chat?
-  Length threshold? Explicit request? AI judgment? Some combination?
-- **Organization**: Flat list with search? Folders? Tags? Projects/workspaces?
-  How do we help people find their artifacts?
-- **Retention**: Do artifacts persist forever? User-controlled deletion only?
-  Automatic archival after inactivity?
-- **Duplication**: Can we create an artifact from existing artifact? Fork?
-  Copy? What's the mental model?
+- **Artifact boundaries**: When does content become an artifact vs. inline chat? Length
+  threshold? Explicit request? AI judgment? Some combination?
+- **Organization**: Flat list with search? Folders? Tags? Projects/workspaces? How do we
+  help people find their artifacts?
+- **Retention**: Do artifacts persist forever? User-controlled deletion only? Automatic
+  archival after inactivity?
+- **Duplication**: Can we create an artifact from existing artifact? Fork? Copy? What's
+  the mental model?
 
 ### Technical Specifications Needed
 
@@ -210,93 +217,101 @@ event handling while the artifact stores the content.
 
 ## Competitor Analysis
 
-Three approaches emerged from analyzing Open WebUI, LibreChat, and Vercel AI Chatbot. Only
-Vercel actually persists artifacts to a database. The others treat artifacts as ephemeral
-content extracted from messages.
+Three approaches emerged from analyzing Open WebUI, LibreChat, and Vercel AI Chatbot.
+Only Vercel actually persists artifacts to a database. The others treat artifacts as
+ephemeral content extracted from messages.
 
 ### Vercel AI Chatbot
 
 Database-persisted documents with real version history.
 
-Schema uses composite primary key (id, createdAt) on the Document table. Same ID with different
-timestamps creates version history. Multiple rows, same ID, ordered by createdAt. Delete versions
-after a timestamp for rollback. No separate version table needed.
+Schema uses composite primary key (id, createdAt) on the Document table. Same ID with
+different timestamps creates version history. Multiple rows, same ID, ordered by
+createdAt. Delete versions after a timestamp for rollback. No separate version table
+needed.
 
-AI tools handle creation. createDocument and updateDocument are AI-callable tools with Zod
-schemas. The AI decides when to create artifacts, not content-length heuristics.
+AI tools handle creation. createDocument and updateDocument are AI-callable tools with
+Zod schemas. The AI decides when to create artifacts, not content-length heuristics.
 
-Suggestions stored separately. Suggestion table links to documents with fields for original text,
-suggested text, description, and resolved status. Enables Google Docs-style proposed edits.
+Suggestions stored separately. Suggestion table links to documents with fields for
+original text, suggested text, description, and resolved status. Enables Google
+Docs-style proposed edits.
 
-Split-panel UI shows artifacts beside conversation, not as modal. Conversation continues while
-editing. Context maintained.
+Split-panel UI shows artifacts beside conversation, not as modal. Conversation continues
+while editing. Context maintained.
 
-Type-specific handlers. Each artifact kind (text, code, sheet) has its own server handler with
-custom creation and update logic.
+Type-specific handlers. Each artifact kind (text, code, sheet) has its own server
+handler with custom creation and update logic.
 
 ### LibreChat
 
 Artifacts embedded in message content using markdown directive syntax.
 
-Format: `:::artifact{identifier="..." type="..." title="..."}` parsed by remark-directive at
-render time. No database table. Artifacts extracted from message text when displayed.
+Format: `:::artifact{identifier="..." type="..." title="..."}` parsed by
+remark-directive at render time. No database table. Artifacts extracted from message
+text when displayed.
 
-Identifier-based updates. Same identifier in a later message updates the existing artifact.
-Version history implicit in conversation flow rather than explicit storage.
+Identifier-based updates. Same identifier in a later message updates the existing
+artifact. Version history implicit in conversation flow rather than explicit storage.
 
-Sandpack for live execution. React and HTML artifacts run in Codesandbox's Sandpack, a sandboxed
-iframe that executes real React code. Not syntax highlighting - actual execution.
+Sandpack for live execution. React and HTML artifacts run in Codesandbox's Sandpack, a
+sandboxed iframe that executes real React code. Not syntax highlighting - actual
+execution.
 
-Pre-bundled component library. All shadcn/ui components injected into Sandpack. AI generates
-imports like `import { Button } from '/components/ui/button'` and they work. Accordion, dialog,
-dropdown, tabs, tooltip, and more available out of the box.
+Pre-bundled component library. All shadcn/ui components injected into Sandpack. AI
+generates imports like `import { Button } from '/components/ui/button'` and they work.
+Accordion, dialog, dropdown, tabs, tooltip, and more available out of the box.
 
-Supported types: HTML (text/html), SVG (image/svg+xml), Markdown (text/markdown), Mermaid
-diagrams (application/vnd.mermaid), React components (application/vnd.react).
+Supported types: HTML (text/html), SVG (image/svg+xml), Markdown (text/markdown),
+Mermaid diagrams (application/vnd.mermaid), React components (application/vnd.react).
 
-In-place editing via replaceArtifactContent function that patches artifact content within the
-message itself.
+In-place editing via replaceArtifactContent function that patches artifact content
+within the message itself.
 
 ### Open WebUI
 
 Client-side extraction from code blocks with iframe rendering.
 
-Content detection parses HTML/CSS/JS from code blocks in messages. No special syntax required.
-If content looks renderable, it shows in the artifact panel.
+Content detection parses HTML/CSS/JS from code blocks in messages. No special syntax
+required. If content looks renderable, it shows in the artifact panel.
 
 Versioning through navigation. Multiple artifacts in a conversation become versions with
 prev/next buttons. "Version 1 of 3" style navigation.
 
-Configurable iframe sandbox. Base permissions allow-scripts and allow-downloads. Optional
-allow-forms and allow-same-origin based on user settings. Security vs functionality tradeoff
-exposed to user.
+Configurable iframe sandbox. Base permissions allow-scripts and allow-downloads.
+Optional allow-forms and allow-same-origin based on user settings. Security vs
+functionality tradeoff exposed to user.
 
 SVG artifacts get pan-zoom controls.
 
 Export downloads artifact as standalone HTML file.
 
-No persistence. Artifacts live in Svelte stores, lost on page refresh. Conversation history
-preserves source content but rendered state is ephemeral.
+No persistence. Artifacts live in Svelte stores, lost on page refresh. Conversation
+history preserves source content but rendered state is ephemeral.
 
 ### Insights for Carmenta
 
-Vercel's approach fits our needs. We want artifacts that persist independently, support sharing,
-and have real version history. Database storage is the right choice.
+Vercel's approach fits our needs. We want artifacts that persist independently, support
+sharing, and have real version history. Database storage is the right choice.
 
-Sandpack integration from LibreChat is worth considering. For React and HTML artifacts, actual
-execution beats syntax highlighting. Users can interact with generated UIs immediately.
+Sandpack integration from LibreChat is worth considering. For React and HTML artifacts,
+actual execution beats syntax highlighting. Users can interact with generated UIs
+immediately.
 
-Pre-bundled components matter. AI can only use what's available. Injecting a component library
-like shadcn/ui means the AI generates usable, styled interfaces without extra setup.
+Pre-bundled components matter. AI can only use what's available. Injecting a component
+library like shadcn/ui means the AI generates usable, styled interfaces without extra
+setup.
 
-AI tools for creation are cleaner than heuristics. Let the AI decide when content becomes an
-artifact through explicit tool calls rather than guessing based on content length.
+AI tools for creation are cleaner than heuristics. Let the AI decide when content
+becomes an artifact through explicit tool calls rather than guessing based on content
+length.
 
-Split-panel UI beats modal overlay. Showing artifacts beside conversation maintains context
-while editing. Users don't lose their place.
+Split-panel UI beats modal overlay. Showing artifacts beside conversation maintains
+context while editing. Users don't lose their place.
 
-Composite key versioning is elegant. (id, createdAt) as primary key eliminates the need for a
-separate version table. Query versions by ID, order by timestamp, delete by timestamp range.
+Composite key versioning is elegant. (id, createdAt) as primary key eliminates the need
+for a separate version table. Query versions by ID, order by timestamp, delete by
+timestamp range.
 
-Suggestion system enables collaboration. Storing proposed edits separately with original text,
-suggested text, and resolution status creates a foundation for review workflows.
+Suggestion system enables collaboration. Storing proposed edits separately with original
+text, suggested text, and resolution status creates a foundation for review workflows.

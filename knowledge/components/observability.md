@@ -1,8 +1,8 @@
 # Observability
 
 LLM and agent observability - tracing, debugging, and understanding what's happening
-inside AI interactions. Essential for development, debugging, and improving quality
-over time.
+inside AI interactions. Essential for development, debugging, and improving quality over
+time.
 
 ## Why This Exists
 
@@ -11,14 +11,15 @@ a slow interaction - you need to understand what happened. What prompt was sent?
 context was retrieved? How did the model respond? Why did the agent take that path?
 
 Observability makes the invisible visible. Traces capture the full journey of a request
-through the system. Developers can debug issues, identify patterns, and understand
-model behavior. This is table stakes for building reliable AI products.
+through the system. Developers can debug issues, identify patterns, and understand model
+behavior. This is table stakes for building reliable AI products.
 
 ## Core Functions
 
 ### LLM Tracing
 
 Capture every interaction with language models:
+
 - Input prompts (system, user, context)
 - Model parameters (temperature, max tokens, model ID)
 - Output responses (full text, token usage, latency)
@@ -27,6 +28,7 @@ Capture every interaction with language models:
 ### Agent Tracing
 
 For multi-step agent workflows:
+
 - Step-by-step execution traces
 - Tool calls and their results
 - Decision points and routing choices
@@ -36,6 +38,7 @@ For multi-step agent workflows:
 ### Debug Tools
 
 Make traces actionable:
+
 - Search and filter traces by user, time, model, status
 - Replay traces to understand behavior
 - Compare traces across versions
@@ -44,6 +47,7 @@ Make traces actionable:
 ### Quality Metrics
 
 Track quality signals over time:
+
 - Response latency distributions
 - Token usage patterns
 - Error rates by type

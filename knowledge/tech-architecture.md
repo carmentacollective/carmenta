@@ -72,7 +72,6 @@ Web app → PWA → Electron desktop → Capacitor mobile.
    shell.
 
 2. **Two viable patterns**:
-
    - _Single codebase_: One Next.js app, static export for all platforms. Simple but
      sacrifices SSR everywhere.
    - _Monorepo split_: Separate `apps/web` (SSR) and `apps/mobile` (static) sharing
@@ -276,10 +275,10 @@ next.config).
 
 ## Data Layer (Category B - Confirmed)
 
-| Choice          | Version | Rationale                                        |
-| --------------- | ------- | ------------------------------------------------ |
-| **Drizzle ORM** | latest  | Type-safe, lightweight, SQL-like syntax.         |
-| **postgres**    | latest  | PostgreSQL driver for Drizzle. Render-compatible.|
+| Choice          | Version | Rationale                                         |
+| --------------- | ------- | ------------------------------------------------- |
+| **Drizzle ORM** | latest  | Type-safe, lightweight, SQL-like syntax.          |
+| **postgres**    | latest  | PostgreSQL driver for Drizzle. Render-compatible. |
 
 Drizzle provides type-safe database access with minimal abstraction over SQL. Pairs with
 Render-managed PostgreSQL for production.

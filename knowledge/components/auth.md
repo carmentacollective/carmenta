@@ -1,23 +1,24 @@
 # Auth
 
-Authentication and user accounts - who we are, how we log in, and how we manage
-our identity across sessions and devices.
+Authentication and user accounts - who we are, how we log in, and how we manage our
+identity across sessions and devices.
 
 ## Why This Exists
 
-We need accounts. Memory needs to know whose memory it is. Service connections need
-to belong to someone. Conversations need to persist across devices. AI team
-configurations need to be personal.
+We need accounts. Memory needs to know whose memory it is. Service connections need to
+belong to someone. Conversations need to persist across devices. AI team configurations
+need to be personal.
 
 Auth is the foundation that makes personalization possible. Without identity, Carmenta
-is just another stateless chatbot. With identity, it becomes our AI partner that
-knows us and grows with us.
+is just another stateless chatbot. With identity, it becomes our AI partner that knows
+us and grows with us.
 
 ## Core Functions
 
 ### Authentication
 
 How we prove who we are:
+
 - Email/password (classic, reliable)
 - Social login (Google, GitHub, etc.)
 - Magic links (passwordless)
@@ -26,6 +27,7 @@ How we prove who we are:
 ### Session Management
 
 Keep us logged in appropriately:
+
 - Secure session handling
 - Multi-device support
 - Session invalidation and logout
@@ -34,6 +36,7 @@ Keep us logged in appropriately:
 ### User Management
 
 Lifecycle of user accounts:
+
 - Signup and account creation
 - Profile management
 - Password reset and recovery
@@ -42,6 +45,7 @@ Lifecycle of user accounts:
 ### Authorization
 
 What we can access:
+
 - Role-based access (if needed)
 - Resource ownership (my conversations, my memory)
 - Sharing permissions (if we support collaboration)
@@ -54,14 +58,15 @@ Auth and Service Connectivity are closely related but distinct:
 - **Service Connectivity** handles third-party OAuth - connecting our external accounts
 
 They interact at key points:
+
 - Service connections belong to authenticated users
 - OAuth tokens for services are stored per-user
 - User deletion must clean up service connections
 - Session security affects access to connected services
 
-Consider whether to use the same auth provider for both or keep them separate. A
-unified approach (e.g., Clerk handles both user auth and OAuth to services) could
-simplify the architecture.
+Consider whether to use the same auth provider for both or keep them separate. A unified
+approach (e.g., Clerk handles both user auth and OAuth to services) could simplify the
+architecture.
 
 ## Integration Points
 
@@ -90,7 +95,8 @@ simplify the architecture.
   right balance of features, cost, and control?
 - **Unified vs. separate**: Use auth provider for both user auth and service OAuth, or
   keep them separate? Tradeoffs in simplicity vs. flexibility.
-- **Session storage**: JWTs, database sessions, or hybrid? Where does session state live?
+- **Session storage**: JWTs, database sessions, or hybrid? Where does session state
+  live?
 - **Multi-tenancy**: Do we need organization/team accounts? What's the data model?
 
 ### Product Decisions

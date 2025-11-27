@@ -8,6 +8,7 @@
     "htmlWhitespaceSensitivity": "css",
     "embeddedLanguageFormatting": "auto",
     "singleAttributePerLine": false,
+    "plugins": ["prettier-plugin-tailwindcss"],
     "overrides": [
         {
             "files": ["*.md", "*.mdc"],

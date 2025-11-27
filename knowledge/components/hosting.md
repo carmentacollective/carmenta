@@ -20,22 +20,22 @@ We're using **Render** for Carmenta's hosting infrastructure.
 
 ### Why Render Over Vercel
 
-| Factor | Render | Vercel | Why It Matters |
-|--------|--------|--------|----------------|
-| **Request timeouts** | Up to 100 minutes | Strict serverless limits | LLM calls can take 30+ seconds |
-| **Cold starts** | Zero (always-on) | 8+ seconds after idle | Users shouldn't wait for first response |
-| **Cron jobs** | Unlimited, up to 12 hours | 2 on Hobby, daily only | Scheduled Agents is a core feature |
-| **Database** | Managed Postgres + Redis | None native | Unified infrastructure |
-| **Cost trajectory** | Predictable, scales well | Can spike unexpectedly | Showzone: $800 → $40 after migration |
-| **Backend support** | Full-stack native | Frontend-first | We need workers, jobs, services |
+| Factor               | Render                    | Vercel                   | Why It Matters                          |
+| -------------------- | ------------------------- | ------------------------ | --------------------------------------- |
+| **Request timeouts** | Up to 100 minutes         | Strict serverless limits | LLM calls can take 30+ seconds          |
+| **Cold starts**      | Zero (always-on)          | 8+ seconds after idle    | Users shouldn't wait for first response |
+| **Cron jobs**        | Unlimited, up to 12 hours | 2 on Hobby, daily only   | Scheduled Agents is a core feature      |
+| **Database**         | Managed Postgres + Redis  | None native              | Unified infrastructure                  |
+| **Cost trajectory**  | Predictable, scales well  | Can spike unexpectedly   | Showzone: $800 → $40 after migration    |
+| **Backend support**  | Full-stack native         | Frontend-first           | We need workers, jobs, services         |
 
 ### What We Trade Off
 
 - **Edge latency**: Vercel's edge network is faster (21ms vs 68ms US). But LLM response
   times (2-30 seconds) dwarf network latency, making this less relevant.
 - **Preview deploys**: Vercel's are slightly more polished. Render's work fine.
-- **Next.js auto-optimization**: Vercel auto-detects and optimizes. We configure manually
-  on Render, but it's straightforward.
+- **Next.js auto-optimization**: Vercel auto-detects and optimizes. We configure
+  manually on Render, but it's straightforward.
 
 ### Why Not Others
 
@@ -48,6 +48,7 @@ We're using **Render** for Carmenta's hosting infrastructure.
 ### Web Service
 
 The main Next.js application:
+
 - Standalone build output for minimal deployment size
 - Node.js 24 runtime
 - Auto-scaling based on traffic
@@ -56,6 +57,7 @@ The main Next.js application:
 ### Background Workers
 
 For long-running tasks:
+
 - Scheduled agent execution
 - Async job processing
 - Webhook handling that needs time
@@ -63,6 +65,7 @@ For long-running tasks:
 ### Cron Jobs
 
 Scheduled task execution:
+
 - Daily briefings
 - Periodic data sync
 - Maintenance tasks
@@ -71,6 +74,7 @@ Scheduled task execution:
 ### Managed Databases
 
 Co-located with application:
+
 - PostgreSQL for relational data
 - Redis for caching and real-time features
 - Automatic backups
@@ -102,6 +106,7 @@ services:
 ### Build Optimization
 
 Next.js standalone output reduces deployment size ~90%:
+
 - From ~1GB to ~100MB
 - Faster deploys
 - Lower storage costs

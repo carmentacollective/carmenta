@@ -38,9 +38,9 @@ interface TaskTypeRubric {
 
   // What matters for this task type
   priorities: {
-    quality: number;      // 0-1 weight
-    speed: number;        // 0-1 weight
-    cost: number;         // 0-1 weight
+    quality: number; // 0-1 weight
+    speed: number; // 0-1 weight
+    cost: number; // 0-1 weight
   };
 
   // Ranked model recommendations
@@ -56,14 +56,14 @@ interface TaskTypeRubric {
 
 interface ModelRecommendation {
   modelId: string;
-  tier: 'primary' | 'fallback' | 'budget';
+  tier: "primary" | "fallback" | "budget";
   scores: {
-    quality: number;      // 0-100
-    speed: number;        // 0-100 (inverse of latency)
-    cost: number;         // 0-100 (inverse of price)
-    overall: number;      // Weighted combination
+    quality: number; // 0-100
+    speed: number; // 0-100 (inverse of latency)
+    cost: number; // 0-100 (inverse of price)
+    overall: number; // Weighted combination
   };
-  notes?: string;         // Why this model for this task
+  notes?: string; // Why this model for this task
   source: IntelligenceSource[];
 }
 ```
@@ -71,36 +71,43 @@ interface ModelRecommendation {
 ### Task Types
 
 **QUICK** - Simple lookups, conversions, brief questions
+
 - Priorities: speed (0.5), cost (0.4), quality (0.1)
 - Example: "What's 15% of 340?"
 - Notes: Quality floor is low - just needs to be correct
 
 **CONVERSATION** - Discussion, exploration, back-and-forth
+
 - Priorities: quality (0.4), speed (0.4), cost (0.2)
 - Example: "Tell me about the French Revolution"
 - Notes: Balance matters - engaging but responsive
 
 **DEEP_ANALYSIS** - Research, complex reasoning, thorough investigation
+
 - Priorities: quality (0.7), speed (0.1), cost (0.2)
 - Example: "Analyze the tradeoffs between these architectures"
 - Notes: Quality dominates - worth waiting and paying for
 
 **CREATIVE** - Writing, brainstorming, ideation
+
 - Priorities: quality (0.6), speed (0.2), cost (0.2)
 - Example: "Write a product announcement"
 - Notes: Needs capability for style and originality
 
 **TASK_EXECUTION** - Actions requiring tools or external services
+
 - Priorities: quality (0.5), speed (0.3), cost (0.2)
 - Example: "Create a GitHub issue for this bug"
 - Notes: Tool use capability required, reliability critical
 
 **CODE** - Programming, debugging, technical implementation
+
 - Priorities: quality (0.6), speed (0.2), cost (0.2)
 - Example: "Write a function to parse this format"
 - Notes: Correctness non-negotiable, best practices matter
 
 **EMOTIONAL** - Support, encouragement, personal matters
+
 - Priorities: quality (0.7), speed (0.2), cost (0.1)
 - Example: "I'm feeling overwhelmed"
 - Notes: Tone and empathy critical, not a place to cut corners
@@ -112,23 +119,27 @@ We don't reinvent benchmarking. We aggregate and validate.
 ### External Benchmarks
 
 **LMSYS Chatbot Arena** (https://chat.lmsys.org/)
+
 - Human preference data from blind comparisons
 - ELO ratings across models
 - Updated continuously with real user votes
 - Best signal for conversational quality
 
 **Artificial Analysis** (https://artificialanalysis.ai/)
+
 - Speed benchmarks (TTFT, tokens/sec)
 - Price tracking across providers
 - Quality index from multiple benchmarks
 - Updated frequently, API available
 
 **Provider Benchmarks**
+
 - Anthropic, OpenAI, Google publish capability claims
 - Take with appropriate skepticism
 - Useful for capability detection (vision, tools, context length)
 
 **Independent Evaluations**
+
 - Simon Willison's LLM analysis
 - AI newsletters and researchers
 - Community benchmark runs
@@ -166,6 +177,7 @@ Indirect signal that routing might be wrong.
 ### Update Triggers
 
 **New Model Release**: Major provider announces new model
+
 1. Pull capability specs from provider
 2. Check external benchmarks within 48 hours (they're fast)
 3. Add to rubric with preliminary placement
@@ -173,17 +185,20 @@ Indirect signal that routing might be wrong.
 5. Enable for production with monitoring
 
 **Benchmark Updates**: LMSYS or Artificial Analysis shows significant ranking change
+
 1. Review the change and methodology
 2. Determine if it affects our task types
 3. Update rubric if warranted
 4. Note the source and reasoning
 
 **Production Signals**: Our monitoring shows unexpected behavior
+
 1. Investigate root cause
 2. If model issue, adjust rubric
 3. If our issue, fix integration
 
 **Price Changes**: Provider adjusts pricing
+
 1. Update cost scores in rubric
 2. Recalculate overall scores
 3. May shift recommendations for cost-sensitive task types
@@ -220,7 +235,7 @@ function selectModel(request: ClassifiedRequest, rubric: RoutingRubric): string 
   const taskRubric = rubric.taskTypes[request.taskType];
 
   // Filter by requirements
-  const candidates = taskRubric.recommendations.filter(rec => {
+  const candidates = taskRubric.recommendations.filter((rec) => {
     const model = getModelProfile(rec.modelId);
 
     // Check capabilities
@@ -243,16 +258,16 @@ function selectModel(request: ClassifiedRequest, rubric: RoutingRubric): string 
   });
 
   // Apply user mode preference
-  if (request.mode === 'swift') {
+  if (request.mode === "swift") {
     return candidates.sort((a, b) => b.scores.speed - a.scores.speed)[0].modelId;
   }
 
-  if (request.mode === 'deep') {
+  if (request.mode === "deep") {
     return candidates.sort((a, b) => b.scores.quality - a.scores.quality)[0].modelId;
   }
 
   // Default: use rubric's overall score (pre-weighted)
-  return candidates[0].modelId;  // Already sorted by overall
+  return candidates[0].modelId; // Already sorted by overall
 }
 ```
 
@@ -270,7 +285,7 @@ Alongside the rubric, we maintain profiles for operational data:
 ```typescript
 interface ModelProfile {
   id: string;
-  provider: 'anthropic' | 'openai' | 'google' | 'other';
+  provider: "anthropic" | "openai" | "google" | "other";
   displayName: string;
 
   capabilities: {
@@ -286,7 +301,7 @@ interface ModelProfile {
     cachedInputPerMillion?: number;
   };
 
-  status: 'active' | 'deprecated' | 'testing';
+  status: "active" | "deprecated" | "testing";
   addedAt: Date;
 }
 ```
@@ -337,13 +352,13 @@ optimize for quality-conscious users who still value responsiveness.
 
 ### Benchmark Source Trust
 
-How much do we trust each source? LMSYS has selection bias (tech-savvy users).
-Provider benchmarks are marketing. Should we weight sources differently?
+How much do we trust each source? LMSYS has selection bias (tech-savvy users). Provider
+benchmarks are marketing. Should we weight sources differently?
 
 ### Capability Discovery
 
-How do we detect new capabilities in models? Providers don't always announce
-everything. Should we probe systematically?
+How do we detect new capabilities in models? Providers don't always announce everything.
+Should we probe systematically?
 
 ### User-Specific Calibration
 
@@ -352,5 +367,5 @@ different defaults. Or is consistency more valuable?
 
 ### Multi-Model Strategies
 
-Should some requests use multiple models? Quick classification with Haiku, then route
-to appropriate model? Adds latency but might improve routing accuracy.
+Should some requests use multiple models? Quick classification with Haiku, then route to
+appropriate model? Adds latency but might improve routing accuracy.

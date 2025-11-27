@@ -20,6 +20,7 @@ This is the difference between an assistant you summon and a team that's always 
 ### Scheduled Execution
 
 Run agents on defined schedules:
+
 - **Time-based**: Daily at 7am, every Monday, first of the month
 - **Event-triggered**: Before calendar meetings, after specific service events
 - **Interval-based**: Every hour, every 4 hours
@@ -27,6 +28,7 @@ Run agents on defined schedules:
 ### Common Patterns
 
 Typical scheduled agent use cases:
+
 - **Daily briefing**: Morning summary of calendar, priorities, relevant news, overnight
   signals
 - **Meeting prep**: Before each meeting, prepare context on attendees, previous
@@ -39,6 +41,7 @@ Typical scheduled agent use cases:
 ### Proactive Intelligence
 
 Beyond schedules, agents can watch and act:
+
 - Detect patterns that warrant attention
 - Escalate urgent signals outside normal schedule
 - Prepare context before it's explicitly needed
@@ -46,6 +49,7 @@ Beyond schedules, agents can watch and act:
 ### Notification and Delivery
 
 How scheduled agent output reaches us:
+
 - Push notifications (PWA/mobile)
 - Email digests
 - In-app surfaces (dashboard, briefing view)

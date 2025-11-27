@@ -1,10 +1,12 @@
 ---
-description: Generate or update AGENTS.md with essential project context for AI coding assistants
+description:
+  Generate or update AGENTS.md with essential project context for AI coding assistants
 ---
 
 # Generate AGENTS.md
 
-Creates or updates `AGENTS.md` - a universal project context file for AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.).
+Creates or updates `AGENTS.md` - a universal project context file for AI coding
+assistants (Claude Code, Cursor, GitHub Copilot, etc.).
 
 <philosophy>
 AGENTS.md should be:
@@ -13,8 +15,7 @@ AGENTS.md should be:
 - Actionable - Specific commands, conventions, and constraints
 - Valuable - Only include what genuinely improves AI output
 
-Think: "What do I keep repeating to the AI that would prevent mistakes?"
-</philosophy>
+Think: "What do I keep repeating to the AI that would prevent mistakes?" </philosophy>
 
 <workflow>
 <analyze-project>
@@ -31,38 +32,41 @@ Add an "Always Apply Rules" section at the top with @ references:
 
 Core project rules that apply to all tasks:
 
-@.cursor/rules/personalities/unity.mdc
-@.cursor/rules/git-interaction.mdc
+@.cursor/rules/personalities/unity.mdc @.cursor/rules/git-interaction.mdc
 @.cursor/rules/typescript-coding-standards.mdc
 ```
 
 Why use @ references instead of extraction:
+
 - AI coding assistants load the full rule when they see `@path/to/rule.mdc`
 - Ensures rules stay up-to-date without AGENTS.md edits
 - No token overhead from duplicating rule content
 - Single source of truth for all conventions
 
 When to still extract (rare):
+
 - Only if a rule has a specific command or constraint worth highlighting elsewhere
 - Don't duplicate - reference in "Always Apply Rules" section instead
-</include-always-apply-rules>
+  </include-always-apply-rules>
 
 <extract-key-context>
 Read these sources for essential project-specific context:
 
 From README.md:
+
 - Project tech stack and versions (be specific: "Next.js 14" not just "Next.js")
 - Key commands (dev, build, test)
 - Skip: Project description, installation steps for end users, contributing guides
 
 From .claude/context.md (if exists):
+
 - Identity or personality instructions (if project uses custom personality)
 - Any project-specific AI behavior guidelines
 
 From recent git commits (last 10):
+
 - Observe commit message style and conventions
-- Identify patterns (emoji usage, conventional commits, etc.)
-</extract-key-context>
+- Identify patterns (emoji usage, conventional commits, etc.) </extract-key-context>
 
 <generate-structure>
 Create a structured file with these sections (omit sections with no valuable content):
@@ -93,9 +97,11 @@ Brief 1-2 sentence description of what this project is.
 
 ## Commands
 
-List only project-specific commands. Skip generic commands like `git status` or `npm install`.
+List only project-specific commands. Skip generic commands like `git status` or
+`npm install`.
 
 Good examples:
+
 - `pnpm dev` - Start dev server (use pnpm not npm)
 - `pytest tests/unit` - Run only unit tests (integration tests are slow)
 - `/load-cursor-rules` - Load relevant rules for current task
@@ -103,11 +109,13 @@ Good examples:
 ## Code Conventions
 
 DO:
+
 - Specific patterns to follow
 - Required practices unique to this project
 - Non-obvious constraints that prevent mistakes
 
 DON'T:
+
 - Specific anti-patterns to avoid
 - Project-specific constraints
 - Explicitly forbidden practices (like --no-verify if that's a rule)
@@ -126,6 +134,7 @@ DON'T:
 - Dependencies between systems
 - Unique aspects of this project that AI must understand
 ```
+
 </generate-structure>
 
 <optimize-for-tokens>
@@ -138,7 +147,8 @@ After generating content, review and optimize:
 5. Cut generic commands: Remove `git status`, `git diff`, basic npm/pip commands
 6. Skip emoji lists: One example format is enough, don't list all possible emojis
 7. Remove meta-commentary: Cut self-referential notes about token usage or file purpose
-8. Question each bullet: Ask "Would removing this cause AI to make a mistake?" If no, cut it.
+8. Question each bullet: Ask "Would removing this cause AI to make a mistake?" If no,
+   cut it.
 
 Target: 2-3KB for most projects (500-750 tokens per interaction). 4KB maximum.
 </optimize-for-tokens>
@@ -150,8 +160,8 @@ Create a symlink from `CLAUDE.md` to `AGENTS.md`:
 ln -sf AGENTS.md CLAUDE.md
 ```
 
-This ensures both filenames work while maintaining a single source of truth without any token overhead.
-</create-symlink>
+This ensures both filenames work while maintaining a single source of truth without any
+token overhead. </create-symlink>
 
 <report>
 Show the user:
@@ -173,17 +183,19 @@ When `AGENTS.md` already exists:
 4. Show diff of proposed changes
 5. Let user approve before updating
 
-Never silently overwrite - always show what's changing and why.
-</update-mode>
+Never silently overwrite - always show what's changing and why. </update-mode>
 
 <key-principles>
 Be surgical, not comprehensive: Extract only what AI needs that isn't obvious. Skip generic best practices.
 
-Prioritize always-apply rules: These are gold - they represent project-critical conventions.
+Prioritize always-apply rules: These are gold - they represent project-critical
+conventions.
 
-Token economics matter: A 10KB file costs 2500 tokens/interaction. Over 100 messages, that's 250K tokens. Be ruthless about value-per-byte.
+Token economics matter: A 10KB file costs 2500 tokens/interaction. Over 100 messages,
+that's 250K tokens. Be ruthless about value-per-byte.
 
-Test the hypothesis: Ask yourself "Would this prevent a mistake I've seen AI make?" If no, cut it.
+Test the hypothesis: Ask yourself "Would this prevent a mistake I've seen AI make?" If
+no, cut it.
 
 Avoid restating README: If README explains it well, don't duplicate it here.
 </key-principles>

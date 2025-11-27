@@ -19,6 +19,7 @@ avoids painful rewrites later.
 ### PostgreSQL (Primary Database)
 
 Relational data storage for structured, transactional data:
+
 - User accounts and profiles
 - Conversations and messages
 - Service connections and OAuth tokens
@@ -32,6 +33,7 @@ infrastructure complexity.
 ### Redis (Cache & Real-time)
 
 Fast in-memory storage for:
+
 - Session data and authentication tokens
 - Response caching for expensive operations
 - Rate limiting counters
@@ -43,6 +45,7 @@ Redis keeps hot paths fast and offloads read pressure from PostgreSQL.
 ### Vector Storage
 
 For Memory's semantic search:
+
 - Could use pgvector (PostgreSQL extension) for simplicity
 - Could use dedicated vector DB (Pinecone, Weaviate, Qdrant) for scale
 - Decision depends on scale expectations and retrieval performance needs
@@ -50,6 +53,7 @@ For Memory's semantic search:
 ### ORM / Database Access
 
 How we interact with the database in code:
+
 - Type-safe queries
 - Migration management
 - Connection pooling
@@ -60,6 +64,7 @@ How we interact with the database in code:
 ### PostgreSQL Hosting Options
 
 **Managed PostgreSQL services:**
+
 - **Neon** - Serverless Postgres, scales to zero, branching for dev/preview
 - **Supabase** - Postgres + extras (auth, storage, realtime), generous free tier
 - **Railway** - Simple deployment, good DX, predictable pricing
@@ -68,11 +73,13 @@ How we interact with the database in code:
 - **PlanetScale** - MySQL not Postgres, but worth noting for serverless model
 
 **Self-managed (not recommended initially):**
+
 - AWS RDS, Google Cloud SQL, Azure Database
 
 ### Redis Hosting Options
 
 **Managed Redis services:**
+
 - **Upstash** - Serverless Redis, pay-per-request, global replication
 - **Redis Cloud** - Official Redis hosting
 - **Railway** - Redis alongside Postgres
@@ -81,6 +88,7 @@ How we interact with the database in code:
 ### Recommended Stack (Initial Thinking)
 
 For a Next.js app with Vercel deployment:
+
 - **PostgreSQL**: Neon or Vercel Postgres (serverless, good Next.js integration)
 - **Redis**: Upstash (serverless, Vercel integration, global edge)
 - **ORM**: Drizzle (type-safe, lightweight, good migrations)
@@ -143,15 +151,15 @@ familiarity.
   performance? At what scale does this decision matter?
 - **Multi-region**: Do we need global database replication? Neon and Upstash support
   this, but adds complexity.
-- **Connection pooling**: Serverless functions need external pooling (PgBouncer,
-  Neon's pooler). How do we configure this?
+- **Connection pooling**: Serverless functions need external pooling (PgBouncer, Neon's
+  pooler). How do we configure this?
 - **Backup and recovery**: What's our backup strategy? Point-in-time recovery needs?
 
 ### Product Decisions
 
 - **Data residency**: Do we need to store data in specific regions for compliance?
-- **Soft vs hard delete**: Do we soft-delete data or purge? Implications for GDPR
-  "right to be forgotten"?
+- **Soft vs hard delete**: Do we soft-delete data or purge? Implications for GDPR "right
+  to be forgotten"?
 
 ### Technical Specifications Needed
 
