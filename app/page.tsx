@@ -1,4 +1,4 @@
-import { Github } from "lucide-react";
+import { Footer } from "@/components/footer";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -166,24 +166,7 @@ export default function LandingPage() {
                 </div>
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-border px-6 py-8">
-                <div className="mx-auto flex max-w-2xl items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                        Carmenta Collective
-                    </span>
-                    <Link
-                        href="https://github.com/carmentacollective/carmenta"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        aria-label="View source on GitHub"
-                    >
-                        <span className="hidden sm:inline">Building in public</span>
-                        <Github className="h-5 w-5" />
-                    </Link>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }
