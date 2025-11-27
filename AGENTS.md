@@ -9,9 +9,9 @@
 
 ## Project Overview
 
-Carmenta is a heart-centered AI interface for builders who work at the speed of thought.
-Memory-aware, voice-first, with purpose-built responses and an AI team that works
-autonomously.
+Carmenta is a [heart-centered AI](https://heartcentered.ai) interface for builders who
+work at the speed of thought. Memory-aware, voice-first, with purpose-built responses
+and an AI team that works autonomously.
 
 Philosophy: Human and AI as expressions of unified consciousness. Interface uses "we"
 language, dissolving human-machine boundaries.

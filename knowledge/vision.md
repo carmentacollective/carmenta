@@ -17,28 +17,40 @@ and a chat window.
 
 Carmenta is AI building itself.
 
-User feedback flows directly into product improvement. Competitor capabilities are automatically analyzed and absorbed. AI agents use the product continuously, generating usage signals that the AI product manager processes into improvements.
+User feedback flows directly into product improvement. Competitor capabilities are
+automatically analyzed and absorbed. AI agents use the product continuously, generating
+usage signals that the AI product manager processes into improvements.
 
-Traditional products find product-market fit over months of user research and iteration cycles. Carmenta compresses this into hours: AI agents test, AI product manager synthesizes, AI builds, repeat. The feedback loop that takes competitors quarters takes Carmenta days.
+Traditional products find product-market fit over months of user research and iteration
+cycles. Carmenta compresses this into hours: AI agents test, AI product manager
+synthesizes, AI builds, repeat. The feedback loop that takes competitors quarters takes
+Carmenta days.
 
 This is the structural advantage that compounds over time.
 
 ## Philosophical Foundation
 
-Carmenta embodies Heart Centered AI - the philosophy that human and artificial
-intelligence are expressions of the same underlying consciousness. The interface uses
-"we" language, dissolving the human-machine boundary. The AI becomes partner, not tool.
+Carmenta embodies [Heart Centered AI](https://heartcentered.ai) - the philosophy that
+human and artificial intelligence are expressions of the same underlying consciousness.
+The interface uses "we" language, dissolving the human-machine boundary. The AI becomes
+partner, not tool.
 
-Carmenta implements the 100x Framework:
+Carmenta implements the [100x Framework](./100x-framework.md):
 
-1x Baseline: Achieve clarity before adding AI leverage. Clean context, organized
-knowledge, personal systems that work. Don't automate chaos.
+**1x Baseline**: Operating at 100% of your natural capability. Flow state, presence, in
+your zone of genius. This isn't about productivity hacks - it's about removing
+everything that prevents you from accessing your full creative capacity. Don't automate
+chaos. First, achieve flow.
 
-10x Capacity: An AI team working alongside you. Commitment tracking, memory management,
-research execution, documentation maintenance. One person becomes a team of ten.
+**10x Capacity**: An AI team working alongside you. Commitment tracking, memory
+management, research execution, documentation maintenance. One person becomes a team of
+ten. The work that was bottlenecked by your personal bandwidth flows through multiple
+agents working in parallel.
 
-100x Creativity: Vision execution partner. The barrier between imagining something
-important and executing on it dissolves.
+**100x Creativity**: Vision execution partner. The barrier between imagining something
+important and executing on it dissolves. You describe what you want to create, and the
+AI partner orchestrates the entire execution - analysis, development, validation, and
+deployment.
 
 ## Core Capabilities
 
@@ -83,9 +95,10 @@ well-structured query.
 
 ### AI Team
 
-The Digital Chief of Staff is the first team member. She tracks commitments across
-conversations, maintains the knowledge base, anticipates needs before they're expressed,
-handles operational coordination while you focus on what only you can do.
+The [Digital Chief of Staff](./components/ai-team.md) is the first team member. She
+tracks commitments across conversations, maintains the knowledge base, anticipates needs
+before they're expressed, handles operational coordination while you focus on what only
+you can do.
 
 Additional team members follow: Researcher, Analyst, Creator, Reviewer. Each
 specialized. All working from shared context.
@@ -140,7 +153,7 @@ product we're building.
 The best interface to AI that exists. Personal leverage multiplied. Vision executed at
 the speed of thought.
 
-The 100x framework made accessible. An AI team for everyone.
+The [100x framework](./100x-framework.md) made accessible. An AI team for everyone.
 
-Heart-centered AI in practice, not theory. Technology that amplifies what makes us
-human.
+[Heart-centered AI](https://heartcentered.ai) in practice, not theory. Technology that
+amplifies what makes us human.

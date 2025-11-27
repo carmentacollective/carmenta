@@ -23,72 +23,16 @@ Fast, isolated tests for individual functions and components. Run in millisecond
 We test pure business logic, utility functions, React component rendering and behavior,
 data transformations, validations, and error handling paths.
 
-```typescript
-import { describe, it, expect } from "vitest";
-
-describe("validateEmail", () => {
-  it("accepts valid email format", () => {
-    expect(validateEmail("user@example.com").valid).toBe(true);
-  });
-
-  it("rejects invalid email format with helpful message", () => {
-    const result = validateEmail("not-an-email");
-    expect(result.valid).toBe(false);
-    expect(result.error).toBe("Please enter a valid email address");
-  });
-});
-```
-
 ### Integration Tests (Vitest + PGlite)
 
-Tests that verify components work together correctly. Use real database operations
-with PGlite (in-memory PostgreSQL) instead of mocking.
+Tests that verify components work together correctly. Use real database operations with
+PGlite (in-memory PostgreSQL) instead of mocking.
 
 We test API route handlers with real request/response cycles, database operations with
 actual SQL execution, multi-component workflows, and authentication flows.
 
 Key pattern: Mock the database MODULE (swap Postgres for PGlite), but use real database
 OPERATIONS. This catches missing migrations, wrong schemas, and broken relationships.
-
-```typescript
-import { db, schema } from "@/lib/db";
-import { createTestUser } from "@/__tests__/fixtures/db-fixtures";
-
-describe("User API", () => {
-  it("creates user with all required fields", async () => {
-    const user = await createTestUser({ email: "test@example.com" });
-
-    const result = await getUserByEmail("test@example.com");
-
-    expect(result.email).toBe("test@example.com");
-  });
-
-  it("returns user with their connections", async () => {
-    const [user] = await db
-      .insert(schema.users)
-      .values({
-        email: "test@example.com",
-        clerkId: "clerk_123",
-        name: "Test User",
-      })
-      .returning();
-
-    await db.insert(schema.connections).values({
-      userId: user.id,
-      service: "github",
-      status: "CONNECTED",
-    });
-
-    const result = await db.query.users.findFirst({
-      where: eq(schema.users.email, "test@example.com"),
-      with: { connections: true },
-    });
-
-    expect(result?.connections).toHaveLength(1);
-    expect(result?.connections[0].service).toBe("github");
-  });
-});
-```
 
 ### End-to-End Tests (Playwright)
 
@@ -97,29 +41,6 @@ Slower but highest confidence. Run against a real dev server.
 
 We test critical user journeys like onboarding and core workflows, page rendering and
 navigation, and authentication redirects.
-
-```typescript
-import { test, expect } from "@playwright/test";
-
-test("landing page renders with main content", async ({ page }) => {
-  await page.goto("/");
-
-  await expect(
-    page.getByRole("heading", { name: /Welcome/i })
-  ).toBeVisible();
-
-  await expect(
-    page.getByRole("link", { name: /Get Started/i })
-  ).toBeVisible();
-});
-
-test("protected pages redirect unauthenticated users", async ({ page }) => {
-  await page.goto("/dashboard");
-
-  await page.waitForURL(/sign-in/);
-  expect(page.url()).toContain("sign-in");
-});
-```
 
 ## Directory Structure
 
@@ -138,27 +59,6 @@ __tests__/
 
 Reusable factory functions that create test data. Keep tests DRY while maintaining
 explicit, type-safe data creation.
-
-```typescript
-// __tests__/fixtures/db-fixtures.ts
-export async function createTestUser(options: Partial<User> = {}) {
-  const [user] = await db
-    .insert(schema.users)
-    .values({
-      email: options.email ?? "test@example.com",
-      name: options.name ?? "Test User",
-      ...options,
-    })
-    .returning();
-  return user;
-}
-
-export async function createTestUserWithSession() {
-  const user = await createTestUser();
-  const session = await createTestSession({ userId: user.id });
-  return { user, session };
-}
-```
 
 ## Running Tests
 
@@ -189,16 +89,16 @@ user-facing features, business logic, error handling, and data transformations.
 
 ## Integration Points
 
-CI/CD runs tests on every PR, blocking merge on failure. Pre-commit hooks optionally
-run fast tests on staged files.
+CI/CD runs tests on every PR, blocking merge on failure. Pre-commit hooks optionally run
+fast tests on staged files.
 
 Agent Testing (see [agent-testing.md](./agent-testing.md)) will extend our testing
 capabilities with AI-driven synthetic users. These agents exercise the product as real
 users would, generate signals about friction points, discover edge cases we would miss,
 and provide continuous regression testing at scale.
 
-The signals from Agent Testing inform what we add to our traditional test suite. When
-an agent discovers a bug or friction point, we capture it as a regression test here.
+The signals from Agent Testing inform what we add to our traditional test suite. When an
+agent discovers a bug or friction point, we capture it as a regression test here.
 Traditional tests provide deterministic, fast, precise coverage. Agent tests provide
 exploratory, realistic discovery of unknowns.
 
@@ -228,12 +128,14 @@ Traditional tests (unit, integration, E2E) verify code behavior. Prompt tests ve
 behavior. Both are essential.
 
 Prompt Testing (see [prompt-testing.md](./prompt-testing.md)) handles:
+
 - Multi-model evaluation of prompt functions
 - LLM-as-judge assertions for semantic correctness
 - Iteration workflow for prompt optimization
 - Regression prevention for prompt changes
 
 The two systems complement each other:
+
 - Unit tests verify prompt functions return correct message structures
 - Prompt tests verify those messages produce correct AI behavior
 - Integration tests verify the full pipeline (prompt → model → response → UI)
@@ -242,8 +144,8 @@ The two systems complement each other:
 
 ### Test Organization
 
-Should we co-locate tests with source files or keep separate __tests__ directory? How
-do we handle tests that need external services like Redis or external APIs?
+Should we co-locate tests with source files or keep separate **tests** directory? How do
+we handle tests that need external services like Redis or external APIs?
 
 ### CI Performance
 

@@ -8,14 +8,17 @@ Stripe, and Linear.
 
 ## Core Philosophy
 
-We design for professionals who value their time. Our interfaces should feel fast,
-focused, and refined. Every interaction should feel intentional, never accidental. The
-best interface is one that users don't have to think about—it just works.
+We design for professionals who want to operate at 100% of their natural capability -
+flow state, presence, zone of genius
+([1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline)). Our
+interfaces preserve and amplify this baseline. Everything should feel fast, focused, and
+refined. Every interaction should feel intentional, never accidental. The best interface
+is one that maintains flow rather than fragmenting it.
 
-Consistency builds trust. When patterns repeat predictably, users develop muscle memory.
-They stop thinking about the interface and focus on their work. This means using the
-same interaction patterns everywhere, the same visual language throughout, and the same
-feedback mechanisms across all contexts.
+Consistency builds trust and preserves flow state. When patterns repeat predictably,
+users develop muscle memory. They stop thinking about the interface and stay in their
+zone of genius. This means using the same interaction patterns everywhere, the same
+visual language throughout, and the same feedback mechanisms across all contexts.
 
 ## Visual Foundation
 
@@ -150,8 +153,9 @@ languages change everything. Test with production data whenever possible.
 
 ## Performance Standards
 
-Pages should load quickly and interactions should feel responsive. Provide feedback
-within 100ms for every interaction, even if it's just a loading indicator.
+Pages should load quickly and interactions should feel responsive. Latency breaks flow
+state. Provide feedback within 100ms for every interaction, even if it's just a loading
+indicator. The goal is to match the speed of thought, not slow it down.
 
 Images should be optimized and lazy-loaded. Use SVG for icons and graphics to ensure
 crisp rendering at all screen sizes and resolutions.
@@ -184,5 +188,7 @@ supported sizes. Accessibility for keyboard and screen reader users. Performance
 realistic conditions. Error handling for all edge cases. Loading states for all async
 operations. Empty states for all data displays. Actual content, not placeholder text.
 
-Remember: Good design is invisible when it works and obvious when it doesn't. Aim for
-invisible.
+Remember: Good design is invisible when it works and obvious when it doesn't. The
+ultimate success is when users stay in flow state, fully present, operating at 100% of
+their natural capability. Design that preserves presence and protects the zone of genius
+is design that works.

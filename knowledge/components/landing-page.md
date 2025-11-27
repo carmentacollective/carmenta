@@ -20,7 +20,7 @@ signup form or CTA would save us.
 
 ## Target Audience
 
-The Curious (see personas.md): GitHub followers, newsletter subscribers, indie hackers,
+The Curious (see [personas.md](../product/personas.md)): GitHub followers, newsletter subscribers, indie hackers,
 AI enthusiasts. People drowning in AI tools, skeptical of wrappers, but open to
 something with a clear philosophy.
 

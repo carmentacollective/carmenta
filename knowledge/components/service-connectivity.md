@@ -29,6 +29,7 @@ leaving the conversation.
 ### Service Operations
 
 Execute actions across connected services:
+
 - **Read**: Fetch emails, calendar events, documents, issues
 - **Write**: Send messages, create tasks, update records
 - **Search**: Find content across connected services
@@ -36,6 +37,7 @@ Execute actions across connected services:
 ### Native Integrations
 
 Priority services based on vision.md:
+
 - **Productivity**: Notion, ClickUp, Miro, Linear
 - **Communication**: Gmail, Slack, LinkedIn, X/Twitter
 - **Storage**: Google Drive, Dropbox
@@ -48,6 +50,7 @@ Priority services based on vision.md:
 ### MCP Support
 
 For services without native integration or custom internal tools:
+
 - Connect user-provided MCP servers
 - Standard MCP protocol support
 - Tool discovery and invocation
@@ -76,8 +79,8 @@ For services without native integration or custom internal tools:
 
 - **Integration approach**: Build each integration natively? Use unified API platforms
   (Merge, Unified.to, Nango)? What's the build vs. buy tradeoff?
-- **MCP Hubby integration**: We have existing MCP infrastructure. How does native
-  connectivity relate to that? Replace, complement, or wrap it?
+- **MCP relationship**: How does native connectivity relate to MCP support? Replace,
+  complement, or wrap MCP servers?
 - **Credential management**: Where do OAuth tokens live? How do we handle refresh?
   Multi-user credential isolation?
 - **Rate limiting and quotas**: How do we handle API limits across services? Queue

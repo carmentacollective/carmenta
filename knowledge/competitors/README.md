@@ -1,6 +1,5 @@
 # AI Chat Interface Landscape
 
-**Last Updated**: November 2025
 **Analyzed**: 10 competitors/references
 
 ## Executive Summary

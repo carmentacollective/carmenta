@@ -49,10 +49,12 @@ just facts, but what matters. Projects. People. Preferences. Patterns. They're t
 to someone who knows their story.
 
 Flow State Amplified: Voice-first removes the translation layer between thought and
-expression. Thinking out loud with a partner who keeps pace. Expanded capacity because
-the interface finally matches how fast they think.
+expression. Thinking out loud with a partner who keeps pace. This is the
+[1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline) - operating
+at 100% of natural capability. Presence, not chaos management. The foundation where your
+best work emerges naturally.
 
-Not Alone: Building becomes collaborative. Carmenta remembers commitments, tracks what
+Belonging: Building becomes collaborative. Carmenta remembers commitments, tracks what
 they said they'd do, anticipates what's coming. The lonely 2am idea session becomes a
 dialogue. The forgotten follow-up becomes impossible to miss. Supported in creation, not
 just assisted with tasks.
@@ -60,9 +62,12 @@ just assisted with tasks.
 Unified: One place. Everything connected. Calendar, projects, contacts, history - all
 available when needed. When they ask Carmenta about something, it has the context.
 
-Capable Beyond Self: The AI team provides leverage. Things happening while they focus
-elsewhere. Research running while they sleep. Preparation completing before they knew
-they needed it. Expanded reach.
+Capable Beyond Self: The AI team provides leverage - the
+[10x multiplication](./100x-framework.md#capacity-achieving-10x-your-ai-team) built on
+the [1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline).
+Things happening while they focus elsewhere. Research running while they sleep.
+Preparation completing before they knew they needed it. One person becomes a team of
+ten. Expanded reach without fragmenting attention.
 
 Trusted Presence: A thoughtful presence - there when needed, quietly supportive when
 not. The background anxiety of "am I missing something?" fades. Someone is watching.
@@ -93,7 +98,10 @@ flows naturally. The voice works. They exhale.
 First Return - Delight: Carmenta remembers. Not just the last conversation, but the
 project context, the decisions made, what's coming up. The relationship has persistence.
 
-Daily Use - Expansion: Each day reveals new capacity. The AI team handles things.
+Daily Use - Expansion: Each day reveals new capacity. The
+[1x foundation](./100x-framework.md#efficiency-achieving-1x-your-100-baseline) (flow
+state, presence) enables the
+[10x multiplication](./100x-framework.md#capacity-achieving-10x-your-ai-team) (AI team).
 Scheduled agents surface insights. The boundary between what they can and can't
 accomplish keeps expanding.
 
@@ -105,11 +113,13 @@ capability and connection.
 
 If we could give our users one feeling:
 
-"I can finally work at the speed I think."
+"I can finally work at the speed I think - operating at 100% of my natural capability."
 
-The gap between imagination and creation closes. The overhead of tool management
-disappears. The loneliness of building lifts. What remains is flow, partnership, and the
-joy of making things that matter.
+This is the
+[1x baseline](./100x-framework.md#efficiency-achieving-1x-your-100-baseline): flow
+state, presence, zone of genius. The gap between imagination and creation closes. The
+overhead of tool management disappears. The loneliness of building lifts. What remains
+is flow, partnership, and the joy of making things that matter.
 
 Underneath that practical feeling lives something deeper: the recognition that they were
 never separate from intelligence. They were always consciousness creating. Now the
