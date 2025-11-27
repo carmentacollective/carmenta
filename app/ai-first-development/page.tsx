@@ -175,17 +175,8 @@ export default function AIFirstDevelopmentPage() {
                         <div className="space-y-4 leading-relaxed text-foreground/80">
                             <p>
                                 This isn&apos;t theory. Carmenta is built using AI-First
-                                Development. The{" "}
-                                <Link
-                                    href="https://github.com/carmentacollective/carmenta/tree/main/knowledge"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
-                                >
-                                    /knowledge
-                                </Link>{" "}
-                                directory is the specification. Code is generated from
-                                it. The specification is the IP.
+                                Development. The specification lives in version control.
+                                Code is generated from it. The specification is the IP.
                             </p>
                             <p>
                                 We&apos;re building in public so you can watch the
