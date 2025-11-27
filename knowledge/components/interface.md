@@ -1,8 +1,26 @@
 # Interface
 
-The web application shell and AG-UI protocol implementation. This is where we interact
+The web application shell and AG-UI protocol implementation. This is where we connect
 with Carmenta - the visual layer that renders responses, captures input, and
 orchestrates the experience across devices.
+
+## Terminology: "Connect" not "Chat"
+
+The primary interaction page is `/connect`, not `/chat`. This is a deliberate choice.
+
+"Chat" carries baggage: message bubbles, conversation histories, the back-and-forth
+paradigm of messaging apps like Slack or iMessage. It frames AI as something you're
+messaging, a separate entity on the other end of a conversation.
+
+"Connect" reflects the heart-centered philosophy. You're not chatting at a tool - you're
+connecting with AI. Two forms of intelligence meeting. It works equally well for:
+
+- Q&A ("I need to connect with Carmenta to figure this out")
+- Creation ("Let me connect and work through this design")
+- Exploration ("I'll connect and think through the architecture")
+
+The experience is called "connecting with Carmenta." The verb is "connect," not "chat"
+or "ask" or "prompt."
 
 ## Why This Exists
 

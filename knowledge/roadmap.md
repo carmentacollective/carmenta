@@ -46,6 +46,73 @@ Landing page with:
 
 ---
 
+## M0.5: First Connection
+
+**Persona:** Nick (pioneer mode) **Signal:** "We can connect. The interaction feels
+right." **Test:** Does the basic loop feel natural? What's clunky before we add
+complexity?
+
+### What This Proves
+
+The fundamental interaction works before we layer on persistence, error handling, and
+observability. We can iterate on the feel of connection without those concerns muddying
+the feedback.
+
+### Why "Connect"
+
+We deliberately avoid "chat" - it carries baggage of message bubbles, conversation
+histories, the back-and-forth paradigm of messaging apps. That's not what we're
+building.
+
+"Connect" reflects the heart-centered philosophy: you're connecting with AI, not
+chatting at a tool. It works for Q&A, creation, exploration - all modes of interaction.
+The page lives at `/connect` and the experience is called "connecting with Carmenta."
+
+### Deliverables
+
+- `/connect` page (separate from landing)
+- Text input → API → streaming response → markdown display
+- Single session (page refresh clears it)
+- Heart-centered system prompt establishing "we" tone
+
+### Components
+
+| Component     | Scope     | Notes                                               |
+| ------------- | --------- | --------------------------------------------------- |
+| **Interface** | Prototype | Basic UI, text input, streaming, markdown rendering |
+| **Concierge** | Stub      | Direct pass-through to one model, no classification |
+
+### Key Decisions to Make
+
+- **UI library**: Start with assistant-ui, CopilotKit, or raw implementation?
+- **Model**: Which single model for prototyping? (Claude Sonnet?)
+- **Styling approach**: Tailwind + shadcn? Match landing page aesthetic?
+
+### Success Criteria
+
+- Can send a message and see streaming response
+- Markdown renders correctly (code blocks, lists, emphasis)
+- "We" tone comes through in responses
+- Interaction feels responsive (not laggy)
+- You find yourself actually using it
+
+### Not Yet
+
+- No persistence (page refresh = gone)
+- No error handling beyond browser defaults
+- No observability/tracing
+- No conversation history UI
+- No mobile optimization
+
+### What We Learn
+
+- Which UI approach feels right
+- What streaming performance is achievable
+- Whether the "we" prompt engineering works
+- What interaction patterns need refinement
+
+---
+
 ## M1: Soul Proven
 
 **Persona:** Nick (see personas.md) **Signal:** "The core experience works and feels
@@ -291,6 +358,8 @@ Components and capabilities that come after initial public launch:
 
 ```
 M0: Foundation → Hosting → Testing
+         ↓
+M0.5: Interface (prototype) → Concierge (stub)
          ↓
 M1: Interface → Concierge (min) → Data Storage → Error Handling → Observability
          ↓
