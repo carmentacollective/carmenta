@@ -50,9 +50,10 @@ jobs:
         run: pnpm type-check
 
   # Job 2: Unit Tests
+  # Note: ubuntu-latest-m has 4 cores for faster parallel test execution
   test:
     name: 🧪 Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     timeout-minutes: 5
 
     steps:
@@ -79,7 +80,7 @@ jobs:
   # Job 3: Build Verification
   build:
     name: 🏗️ Production Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     timeout-minutes: 5
 
     steps:
