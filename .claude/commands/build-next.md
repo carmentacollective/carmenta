@@ -59,7 +59,11 @@ next.
 </reporting>
 
 <context>
-Product specification lives in knowledge/. Project conventions live in .cursor/rules/.
-The methodology in knowledge/ai-first-development.md describes how we work. Find what's
-relevant.
-</context>
+Before starting, read:
+- knowledge/ai-first-development.md — the methodology
+- knowledge/roadmap.md — milestones and sequencing
+- .cursor/rules/autonomous-development-workflow.mdc — how to execute well
+
+Then follow threads to whatever else is relevant: component specs, coding standards,
+design principles, tech architecture. The knowledge/ and .cursor/rules/ directories
+contain what you need. </context>
