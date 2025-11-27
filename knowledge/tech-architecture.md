@@ -235,7 +235,6 @@ Biome is faster (10-100x) but ESLint has:
 ```json
 "scripts": {
   "test": "vitest run",
-  "test:watch": "vitest --watch",
   "test:coverage": "vitest run --coverage",
   "test:e2e": "playwright test",
   "test:e2e:ui": "playwright test --ui"

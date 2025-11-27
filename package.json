@@ -1,25 +1,29 @@
 {
   "name": "carmenta",
   "version": "0.1.0",
+  "description": "A heart-centered AI interface for builders who work at the speed of thought",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/carmentacollective/carmenta"
+  },
+  "homepage": "https://carmenta.ai",
   "scripts": {
-    "dev": "next dev --turbopack",
     "build": "next build",
-    "build:render": "./scripts/render-deploy.sh",
-    "start": "next start",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
+    "dev": "next dev --turbopack",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "pre-push": "run-p type-check format:check test",
+    "prepare": "husky",
+    "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "pre-push": "run-p type-check format:check test",
-    "prepare": "husky"
+    "test:e2e:ui": "playwright test --ui",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
