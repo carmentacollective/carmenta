@@ -115,12 +115,39 @@ Each platform adds capabilities but web remains primary.
 - **Memory**: May display relevant context or memory status
 - **Service Connectivity**: Shows connection status, OAuth flows
 
+## API Protection
+
+### Rate Limiting
+
+Protect API endpoints from abuse:
+
+- **Per-user limits**: Reasonable request rates for authenticated users
+- **Global limits**: Circuit breakers to protect backend services
+- **Graceful degradation**: Queue requests during high load rather than hard-fail
+- **Feedback**: Clear messaging when limits are hit
+
+Implementation: Use Vercel's built-in rate limiting or middleware-based approach with
+Redis for distributed rate limiting across serverless functions.
+
+### Input Validation
+
+Validate all user input at API boundaries:
+
+- **Message length**: Maximum length for chat messages
+- **Content sanitization**: Prevent injection attacks
+- **File uploads**: Type and size validation for attachments
+- **Schema validation**: Zod schemas for all API request bodies
+
+Validation errors return structured responses that the UI can display helpfully. Never
+expose internal error details to users.
+
 ## Success Criteria
 
 - Responses feel appropriate to the request - chat for chat, rich for rich
 - Fast perceived performance - streaming with AG-UI events, optimistic updates
 - Works beautifully on desktop, acceptably on mobile
 - Accessible - keyboard navigation, screen reader support, contrast ratios
+- API is protected from abuse with rate limiting and input validation
 
 ---
 

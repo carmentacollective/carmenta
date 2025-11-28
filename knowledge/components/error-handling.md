@@ -52,11 +52,24 @@ Handle errors gracefully:
 - Graceful degradation
 - User-friendly error messages
 
+## Technology Choice: Sentry
+
+We use Sentry for error tracking. Decision rationale:
+
+- **Best-in-class error tracking**: Source maps, stack traces, breadcrumbs
+- **Next.js integration**: First-party SDK with automatic instrumentation
+- **Performance monitoring**: Traces and spans integrated with errors
+- **Separates concerns**: PostHog for product analytics, Sentry for errors
+
+Sentry captures exceptions with rich context. See `typescript-coding-standards.mdc` for
+usage patterns: `Sentry.captureException` with tags and extra data, breadcrumbs for
+state changes, spans for performance monitoring.
+
 ## Integration Points
 
 - **All components**: Every component should integrate error handling
-- **Observability**: Errors correlate with traces for debugging
-- **Analytics**: Error events as part of user journey
+- **Observability**: Errors correlate with Sentry traces for debugging
+- **Analytics**: Error events as part of user journey (separate from PostHog)
 - **Interface**: User-facing error states and messages
 - **Scheduled Agents**: Alert on scheduled job failures
 
@@ -74,8 +87,6 @@ Handle errors gracefully:
 
 ### Architecture
 
-- **Platform choice**: Sentry, PostHog, Bugsnag, or custom? Can we consolidate with
-  analytics (PostHog does both)?
 - **Error boundaries**: Where do we catch errors? Component-level? Route-level? Global?
 - **Retry strategies**: What's our retry policy for different failure types?
 - **Fallback behaviors**: What do we show/do when components fail?
@@ -96,7 +107,6 @@ Handle errors gracefully:
 
 ### Research Needed
 
-- Evaluate error tracking platforms (Sentry, PostHog, Bugsnag, Rollbar)
 - Study error handling patterns for AI/LLM applications
 - Research graceful degradation strategies
 - Review error message UX best practices
