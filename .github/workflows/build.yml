@@ -107,9 +107,7 @@ jobs:
 
       - name: 🏗️ Build Next.js application
         run: pnpm build
-        env:
-          # Skip env validation during CI build - secrets not needed for static analysis
-          SKIP_ENV_VALIDATION: "true"
+        # Clerk runs in unclaimed/keyless mode when keys are not set
 
       - name: ✅ Verify build output
         run: |
