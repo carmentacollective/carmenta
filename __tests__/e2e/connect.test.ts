@@ -40,7 +40,7 @@ test.describe("Connect Page - Authenticated", () => {
     // These tests require a valid Clerk session
     // Skip in environments without auth setup
     test.skip(
-        ({ browserName }) => !process.env.CLERK_TESTING_TOKEN,
+        () => !process.env.CLERK_TESTING_TOKEN,
         "Skipping authenticated tests without CLERK_TESTING_TOKEN"
     );
 

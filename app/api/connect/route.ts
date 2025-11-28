@@ -17,6 +17,26 @@ import { SYSTEM_PROMPT } from "@/lib/prompts/system";
 const MODEL_ID = "anthropic/claude-sonnet-4.5";
 
 /**
+ * Request body schema for validation
+ */
+const requestSchema = z.object({
+    messages: z.array(z.any()).min(1, "At least one message is required"),
+});
+
+/**
+ * Mock weather data ranges - in production these would come from a real API
+ */
+const MOCK_WEATHER = {
+    TEMP_MIN: 10,
+    TEMP_RANGE: 25,
+    HUMIDITY_MIN: 40,
+    HUMIDITY_RANGE: 40,
+    WIND_MIN: 5,
+    WIND_RANGE: 20,
+    CONDITIONS: ["sunny", "cloudy", "rainy", "partly cloudy"] as const,
+};
+
+/**
  * Tools available to the AI for generating purpose-built UI responses
  */
 const tools = {
@@ -28,13 +48,21 @@ const tools = {
         }),
         execute: async ({ location }) => {
             // Mock weather data for demo - in production this would call a weather API
-            const conditions = ["sunny", "cloudy", "rainy", "partly cloudy"] as const;
             return {
                 location,
-                temperature: Math.floor(Math.random() * 25) + 10,
-                condition: conditions[Math.floor(Math.random() * conditions.length)],
-                humidity: Math.floor(Math.random() * 40) + 40,
-                windSpeed: Math.floor(Math.random() * 20) + 5,
+                temperature:
+                    Math.floor(Math.random() * MOCK_WEATHER.TEMP_RANGE) +
+                    MOCK_WEATHER.TEMP_MIN,
+                condition:
+                    MOCK_WEATHER.CONDITIONS[
+                        Math.floor(Math.random() * MOCK_WEATHER.CONDITIONS.length)
+                    ],
+                humidity:
+                    Math.floor(Math.random() * MOCK_WEATHER.HUMIDITY_RANGE) +
+                    MOCK_WEATHER.HUMIDITY_MIN,
+                windSpeed:
+                    Math.floor(Math.random() * MOCK_WEATHER.WIND_RANGE) +
+                    MOCK_WEATHER.WIND_MIN,
             };
         },
     }),
@@ -84,10 +112,36 @@ export async function POST(req: Request) {
             apiKey: env.OPENROUTER_API_KEY,
         });
 
-        const { messages } = (await req.json()) as { messages: UIMessage[] };
+        // Validate request body
+        const body = await req.json();
+        const parseResult = requestSchema.safeParse(body);
+
+        if (!parseResult.success) {
+            logger.warn(
+                { userEmail, error: parseResult.error.flatten() },
+                "Invalid request body"
+            );
+            return new Response(
+                JSON.stringify({
+                    error: "Invalid request format",
+                    details: parseResult.error.flatten(),
+                }),
+                {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+        }
+
+        const { messages } = parseResult.data as { messages: UIMessage[] };
 
         logger.info(
-            { userEmail, messageCount: messages?.length ?? 0, model: MODEL_ID },
+            {
+                userEmail,
+                messageCount: messages.length,
+                model: MODEL_ID,
+                toolsAvailable: Object.keys(tools),
+            },
             "Starting connect stream"
         );
 

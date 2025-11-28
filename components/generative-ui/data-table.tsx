@@ -83,9 +83,9 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
                         </tr>
                     </thead>
                     <tbody>
-                        {result.options.map((option, idx) => (
+                        {result.options.map((option) => (
                             <tr
-                                key={idx}
+                                key={option.name}
                                 className="border-b border-border/50 last:border-0"
                             >
                                 <td className="px-4 py-2 font-medium text-foreground">
@@ -96,6 +96,7 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
                                         key={key}
                                         className="px-4 py-2 text-foreground/80"
                                     >
+                                        {/* React auto-escapes - safe from XSS */}
                                         {option.attributes[key] ?? "—"}
                                     </td>
                                 ))}
