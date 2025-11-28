@@ -7,7 +7,8 @@ import { z } from "zod";
  * All variables are optional at import time to support:
  * - Running tests without .env files
  * - Working in git worktrees without full environment setup
- * - CI/CD environments with partial/mock configuration
+ * - CI/CD environments with partial configuration
+ * - Local dev without Clerk keys (runs in unclaimed mode)
  *
  * Use assertEnv() to validate required variables at point of use.
  *
@@ -16,12 +17,6 @@ import { z } from "zod";
  * Auth uses Clerk for user authentication.
  */
 export const env = createEnv({
-    /**
-     * Skip strict client/server validation in test environment
-     * This allows tests to access server-side env vars in jsdom
-     */
-    skipValidation: process.env.NODE_ENV === "test",
-
     server: {
         NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
         OPENROUTER_API_KEY: z.string().min(1).optional(),
@@ -64,4 +59,11 @@ export function assertEnv<T>(value: T | undefined, name: string): asserts value 
     if (value === undefined || value === null || value === "") {
         throw new Error(`Missing required environment variable: ${name}`);
     }
+}
+
+// Warn if Clerk keys are missing (Clerk will run in unclaimed mode)
+if (!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    console.warn(
+        "⚠️  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY not set - Clerk running in unclaimed mode"
+    );
 }
