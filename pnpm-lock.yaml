@@ -29,6 +29,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      heart-centered-prompts:
+        specifier: ^0.4.0
+        version: 0.4.0
       lucide-react:
         specifier: ^0.554.0
         version: 0.554.0(react@19.2.0)
@@ -2088,6 +2091,10 @@ packages:
 
   headers-polyfill@4.0.3:
     resolution: {integrity: sha512-IScLbePpkvO846sIwOtOTDjutRMWdXdJmXdMvk6gCBHxFO8d+QKOQedyZSxFTTFYRSmlgSTDtXqqq4pcenBXLQ==}
+
+  heart-centered-prompts@0.4.0:
+    resolution: {integrity: sha512-KxU7vyrEGgevcswJ0+i00rxwqO8bTSdKsijn7ZhPLoqfmjAKL2oPqgrxLt5glAz3V2j5r9/9cE7Dvety2I+5wg==}
+    engines: {node: '>=18'}
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
@@ -5700,6 +5707,8 @@ snapshots:
       '@types/hast': 3.0.4
 
   headers-polyfill@4.0.3: {}
+
+  heart-centered-prompts@0.4.0: {}
 
   help-me@5.0.0: {}
 
