@@ -19,24 +19,31 @@ interface GreetingProps {
 }
 
 /**
- * Dynamic greeting that displays the user's first name and time-appropriate salutation.
- * Falls back to "there" if user is not logged in.
+ * Dynamic greeting that adapts to authentication state.
+ *
+ * Logged in: "Good morning, Nick" + custom or default subtitle
+ * Logged out: "Good morning" (no awkward "there") + landing-appropriate subtitle
  */
-export function Greeting({
-    className,
-    subtitleClassName,
-    subtitle = "What would you like to bring into focus?",
-}: GreetingProps) {
+export function Greeting({ className, subtitleClassName, subtitle }: GreetingProps) {
     const { user, isLoaded } = useUser();
-    const firstName = user?.firstName || "there";
+    const isLoggedIn = isLoaded && !!user;
+    const firstName = user?.firstName;
     const greeting = getGreeting();
+
+    // Adapt subtitle based on auth state if not explicitly provided
+    const defaultSubtitle = isLoggedIn
+        ? "What would you like to bring into focus?"
+        : "AI that remembers. Voice that works. Interfaces that fit.";
+
+    const displaySubtitle = subtitle ?? defaultSubtitle;
 
     return (
         <>
             <h1 className={className}>
-                {greeting}, {isLoaded ? firstName : "..."}
+                {greeting}
+                {isLoaded && firstName ? `, ${firstName}` : ""}
             </h1>
-            {subtitle && <p className={subtitleClassName}>{subtitle}</p>}
+            {displaySubtitle && <p className={subtitleClassName}>{displaySubtitle}</p>}
         </>
     );
 }
