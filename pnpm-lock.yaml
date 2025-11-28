@@ -48,8 +48,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       heart-centered-prompts:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.1
+        version: 0.5.1
       import-in-the-middle:
         specifier: ^2.0.0
         version: 2.0.0
@@ -3055,8 +3055,8 @@ packages:
   headers-polyfill@4.0.3:
     resolution: {integrity: sha512-IScLbePpkvO846sIwOtOTDjutRMWdXdJmXdMvk6gCBHxFO8d+QKOQedyZSxFTTFYRSmlgSTDtXqqq4pcenBXLQ==}
 
-  heart-centered-prompts@0.4.0:
-    resolution: {integrity: sha512-KxU7vyrEGgevcswJ0+i00rxwqO8bTSdKsijn7ZhPLoqfmjAKL2oPqgrxLt5glAz3V2j5r9/9cE7Dvety2I+5wg==}
+  heart-centered-prompts@0.5.1:
+    resolution: {integrity: sha512-XQyxPHGmIdfXI9T+iDI42fu0d3Pxf5him06w4P9DTNwnBZSK3StcxLCCy7zOC8zUj4gF9RSHUSlQRV3mqaV2KQ==}
     engines: {node: '>=18'}
 
   help-me@5.0.0:
@@ -8098,7 +8098,7 @@ snapshots:
 
   headers-polyfill@4.0.3: {}
 
-  heart-centered-prompts@0.4.0: {}
+  heart-centered-prompts@0.5.1: {}
 
   help-me@5.0.0: {}
 
