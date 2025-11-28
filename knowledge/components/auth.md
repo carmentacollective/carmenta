@@ -23,6 +23,7 @@ us and grows with us.
 - Google OAuth social login
 - Session management via Clerk's JWTs
 - Middleware-based route protection
+- Environment variables required (fails fast if missing)
 
 **Protected Routes**:
 
@@ -74,9 +75,20 @@ Lifecycle of user accounts:
 
 What we can access:
 
-- Resource ownership via `userId` from Clerk's `auth()` function
+- Resource ownership via `userEmail` from Clerk's `currentUser()` function
 - Role-based access (available via Clerk Organizations, not yet implemented)
 - Sharing permissions (future consideration)
+
+### User Identification
+
+We use **email address** (`userEmail`) as the primary identifier throughout the system,
+not Clerk's internal `userId`. This provides:
+
+- Human-readable identifiers in logs and debugging
+- Consistent identification across potential auth provider changes
+- Familiar identifier for users in any data exports
+
+Access via `currentUser().emailAddresses[0].emailAddress` in server components/routes.
 
 ## Relationship to Service Connectivity
 
@@ -90,12 +102,14 @@ architecture. This decision is deferred until Service Connectivity implementatio
 
 ## Integration Points
 
-- **Memory**: User identity via `userId` determines whose memory to access
-- **Conversations**: Conversations will be associated with `userId`
-- **Service Connectivity**: OAuth connections will be tied to `userId`
+- **Memory**: User identity via `userEmail` determines whose memory to access
+- **Conversations**: Conversations will be associated with `userEmail`
+- **Service Connectivity**: OAuth connections will be tied to `userEmail`
 - **Onboarding**: Account creation via Clerk during first protected route access
 - **Interface**: Sign-in/sign-up pages, UserButton in header
-- **AI Team**: Team configuration will be per `userId`
+- **AI Team**: Team configuration will be per `userEmail`
+- **Logging/Observability**: All logs and Sentry traces include `userEmail` for
+  debugging
 
 ## Success Criteria
 
@@ -130,6 +144,7 @@ architecture. This decision is deferred until Service Connectivity implementatio
 
 - ~~**User schema**~~: Clerk manages user data. Extend via Clerk metadata if needed.
 - ~~**Session management**~~: Clerk JWTs
+- ~~**User identifier**~~: `userEmail` (not Clerk userId) for human-readable tracking
 - **Integration with Service Connectivity OAuth**: Deferred
 - **Account deletion and data cleanup**: Requires Clerk webhook implementation
 - ~~**Security requirements**~~: Clerk defaults (strong passwords, secure sessions)
