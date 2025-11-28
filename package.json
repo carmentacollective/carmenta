@@ -29,6 +29,7 @@
     "@ai-sdk/react": "^2.0.104",
     "@openrouter/ai-sdk-provider": "^1.2.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@sentry/nextjs": "^10.27.0",
     "@t3-oss/env-nextjs": "^0.13.8",
     "ai": "^5.0.104",
     "class-variance-authority": "^0.7.1",
