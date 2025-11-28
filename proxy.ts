@@ -1,10 +1,13 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 /**
- * Route protection middleware using Clerk
+ * Route protection proxy using Clerk
  *
  * Public routes: Landing page, sign-in/sign-up, and static assets
  * Protected routes: /connect, /api/* (requires authentication)
+ *
+ * Note: Next.js 16 renamed middleware.ts to proxy.ts
+ * The clerkMiddleware helper name remains unchanged
  */
 const isPublicRoute = createRouteMatcher([
     "/",
@@ -17,7 +20,7 @@ const isPublicRoute = createRouteMatcher([
     "/sitemap.xml",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
     if (!isPublicRoute(req)) {
         await auth.protect();
     }
