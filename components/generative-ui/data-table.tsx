@@ -32,7 +32,7 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
         // Loading state
         if (status.type === "running") {
             return (
-                <div className="blueprint-box animate-pulse">
+                <div className="glass-card animate-pulse">
                     <div className="h-5 w-48 rounded bg-muted" />
                     <div className="mt-4 space-y-2">
                         <div className="h-8 w-full rounded bg-muted" />
@@ -49,7 +49,7 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
         // Error/incomplete state
         if (status.type === "incomplete" || !result) {
             return (
-                <div className="blueprint-box border-destructive/50 bg-destructive/10">
+                <div className="glass-card border-destructive/50 bg-destructive/10">
                     <p className="text-sm text-destructive">
                         Couldn&apos;t create comparison for &quot;{args.title}&quot;
                     </p>
@@ -64,7 +64,7 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
 
         // Success state
         return (
-            <div className="blueprint-box overflow-x-auto">
+            <div className="glass-card overflow-x-auto">
                 <h3 className="mb-4 font-bold text-foreground">{result.title}</h3>
                 <table className="w-full text-sm">
                     <thead>

@@ -46,7 +46,7 @@ export const WeatherToolUI = makeAssistantToolUI<WeatherArgs, WeatherResult>({
         // Loading state
         if (status.type === "running") {
             return (
-                <div className="blueprint-box max-w-xs animate-pulse">
+                <div className="glass-card max-w-xs animate-pulse">
                     <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded bg-muted" />
                         <div className="space-y-2">
@@ -64,7 +64,7 @@ export const WeatherToolUI = makeAssistantToolUI<WeatherArgs, WeatherResult>({
         // Error/incomplete state
         if (status.type === "incomplete" || !result) {
             return (
-                <div className="blueprint-box max-w-xs border-destructive/50 bg-destructive/10">
+                <div className="glass-card max-w-xs border-destructive/50 bg-destructive/10">
                     <p className="text-sm text-destructive">
                         Couldn&apos;t get weather for {args.location}
                     </p>
@@ -74,7 +74,7 @@ export const WeatherToolUI = makeAssistantToolUI<WeatherArgs, WeatherResult>({
 
         // Success state
         return (
-            <div className="blueprint-box max-w-xs">
+            <div className="glass-card max-w-xs">
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="font-bold text-foreground">{result.location}</h3>
