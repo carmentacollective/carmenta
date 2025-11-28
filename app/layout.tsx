@@ -1,16 +1,23 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 
 import "@assistant-ui/react-ui/styles/index.css";
 import "./globals.css";
 
-const inter = Inter({
+/**
+ * Outfit - Modern, geometric with soft curves.
+ * Captures the ethereal elegance of our holographic design.
+ */
+const outfit = Outfit({
     subsets: ["latin"],
-    variable: "--font-inter",
+    variable: "--font-outfit",
     display: "swap",
 });
 
+/**
+ * JetBrains Mono - For code blocks and technical content.
+ */
 const jetbrainsMono = JetBrains_Mono({
     subsets: ["latin"],
     variable: "--font-mono",
@@ -77,8 +84,8 @@ export default function RootLayout({
 }>) {
     return (
         <ClerkProvider afterSignOutUrl="/">
-            <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-                <body className="min-h-screen bg-background font-mono antialiased">
+            <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
+                <body className="min-h-screen bg-background font-sans antialiased">
                     {children}
                 </body>
             </html>

@@ -1,0 +1,174 @@
+"use client";
+
+import { ComponentProps, forwardRef } from "react";
+import { SendHorizontal, Paperclip, ArrowDown } from "lucide-react";
+import {
+    ComposerPrimitive,
+    MessagePrimitive,
+    ThreadPrimitive,
+} from "@assistant-ui/react";
+
+import { cn } from "@/lib/utils";
+import { Greeting } from "@/components/ui/greeting";
+
+/**
+ * HoloThread - A custom Thread built with headless primitives.
+ *
+ * Instead of overriding assistant-ui's pre-styled Thread with !important hacks,
+ * we build our own using the headless primitives and apply our holographic
+ * theme directly. This is the "composition over inheritance" approach.
+ */
+export function HoloThread() {
+    return (
+        <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
+            <ThreadPrimitive.Viewport className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
+                <ThreadPrimitive.Empty>
+                    <ThreadWelcome />
+                </ThreadPrimitive.Empty>
+
+                <ThreadPrimitive.Messages
+                    components={{
+                        UserMessage: UserMessage,
+                        AssistantMessage: AssistantMessage,
+                    }}
+                />
+
+                <div className="sticky bottom-0 mt-3 flex w-full max-w-[700px] flex-col items-center justify-end bg-transparent pb-4">
+                    <ThreadScrollToBottom />
+                    <Composer />
+                </div>
+            </ThreadPrimitive.Viewport>
+        </ThreadPrimitive.Root>
+    );
+}
+
+/**
+ * Welcome screen shown when thread is empty.
+ */
+function ThreadWelcome() {
+    return (
+        <div className="flex w-full max-w-[700px] flex-grow flex-col items-center justify-center text-center">
+            <Greeting
+                className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
+                subtitleClassName="mt-2 text-base text-foreground/60"
+            />
+        </div>
+    );
+}
+
+/**
+ * Text component for rendering message text parts.
+ */
+function TextPart({ text }: { text: string }) {
+    return <p className="whitespace-pre-wrap text-foreground/90">{text}</p>;
+}
+
+/**
+ * User message bubble with holographic gradient.
+ */
+function UserMessage() {
+    return (
+        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] justify-end">
+            <div
+                className="max-w-[80%] rounded-2xl rounded-br-md px-4 py-3"
+                style={{
+                    background:
+                        "linear-gradient(135deg, rgba(200, 160, 220, 0.3), rgba(160, 200, 220, 0.3))",
+                    backdropFilter: "blur(12px)",
+                }}
+            >
+                <MessagePrimitive.Content components={{ Text: TextPart }} />
+            </div>
+        </MessagePrimitive.Root>
+    );
+}
+
+/**
+ * Assistant message bubble with glass effect.
+ */
+function AssistantMessage() {
+    return (
+        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px]">
+            <div
+                className="max-w-[85%] rounded-2xl rounded-bl-md px-4 py-3"
+                style={{
+                    background: "rgba(255, 255, 255, 0.5)",
+                    backdropFilter: "blur(16px)",
+                }}
+            >
+                <MessagePrimitive.Content components={{ Text: TextPart }} />
+            </div>
+        </MessagePrimitive.Root>
+    );
+}
+
+/**
+ * Composer - The glassmorphism input dock.
+ */
+function Composer() {
+    return (
+        <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
+            <ComposerPrimitive.AddAttachment asChild>
+                <ComposerButton variant="ghost" aria-label="Attach file">
+                    <Paperclip className="h-5 w-5" />
+                </ComposerButton>
+            </ComposerPrimitive.AddAttachment>
+
+            <ComposerPrimitive.Input
+                placeholder="Ask anything or say what you need..."
+                className="min-h-12 flex-1 resize-none border-none bg-transparent px-2 py-3 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+                rows={1}
+                autoFocus
+            />
+
+            <ComposerPrimitive.Send asChild>
+                <ComposerButton variant="send" aria-label="Send message">
+                    <SendHorizontal className="h-5 w-5" />
+                </ComposerButton>
+            </ComposerPrimitive.Send>
+        </ComposerPrimitive.Root>
+    );
+}
+
+/**
+ * Scroll to bottom button.
+ */
+function ThreadScrollToBottom() {
+    return (
+        <ThreadPrimitive.ScrollToBottom asChild>
+            <button
+                className="absolute -top-10 rounded-full bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95 disabled:invisible"
+                aria-label="Scroll to bottom"
+            >
+                <ArrowDown className="h-4 w-4 text-foreground/70" />
+            </button>
+        </ThreadPrimitive.ScrollToBottom>
+    );
+}
+
+/**
+ * Composer button with variants.
+ */
+interface ComposerButtonProps extends ComponentProps<"button"> {
+    variant?: "ghost" | "send";
+}
+
+const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
+    ({ className, variant = "ghost", ...props }, ref) => {
+        return (
+            <button
+                ref={ref}
+                className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
+                    variant === "ghost" &&
+                        "bg-white/50 text-foreground/60 hover:scale-105 hover:bg-white/80",
+                    variant === "send" &&
+                        "bg-gradient-to-br from-[rgba(200,160,220,0.9)] via-[rgba(160,200,220,0.9)] to-[rgba(220,180,200,0.9)] text-white opacity-70 shadow-md hover:scale-105 hover:opacity-100",
+                    className
+                )}
+                {...props}
+            />
+        );
+    }
+);
+ComposerButton.displayName = "ComposerButton";

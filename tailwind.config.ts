@@ -18,7 +18,8 @@ const config: Config = {
         },
         extend: {
             fontFamily: {
-                sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+                sans: ["var(--font-outfit)", "system-ui", "sans-serif"],
+                mono: ["var(--font-mono)", "monospace"],
             },
             colors: {
                 border: "hsl(var(--border))",
@@ -54,19 +55,16 @@ const config: Config = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
-                // Carmenta brand colors
-                carmenta: {
-                    warm: "#E8D4C4",
-                    gold: "#C9A962",
-                    sage: "#8FA98F",
-                    dusk: "#6B5B7A",
-                    night: "#2D2D3A",
-                },
             },
             borderRadius: {
                 lg: "var(--radius)",
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
+                "2xl": "1rem",
+                "3xl": "1.5rem",
+            },
+            backdropBlur: {
+                glass: "var(--glass-blur)",
             },
             keyframes: {
                 "fade-in": {
@@ -77,10 +75,22 @@ const config: Config = {
                     from: { opacity: "0", transform: "translateY(10px)" },
                     to: { opacity: "1", transform: "translateY(0)" },
                 },
+                float: {
+                    "0%, 100%": { transform: "translateY(0)" },
+                    "50%": { transform: "translateY(-10px)" },
+                },
+                "pulse-glow": {
+                    "0%, 100%": {
+                        boxShadow: "0 0 20px hsl(280 40% 75% / 0.3)",
+                    },
+                    "50%": { boxShadow: "0 0 40px hsl(280 40% 75% / 0.5)" },
+                },
             },
             animation: {
                 "fade-in": "fade-in 0.5s ease-out",
                 "fade-up": "fade-up 0.5s ease-out",
+                float: "float 6s ease-in-out infinite",
+                "pulse-glow": "pulse-glow 3s ease-in-out infinite",
             },
         },
     },

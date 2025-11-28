@@ -7,12 +7,16 @@
     "docstrings",
     "frontmatter",
     "gitmoji",
+    "llms",
     "noqa",
+    "openrouter",
+    "pyproject",
     "SDLC",
     "shadcn",
     "Signup",
     "turbopack",
-    "worktree"
+    "worktree",
+    "worktrees"
   ],
   "editor.formatOnSave": true,
   "files.trimTrailingWhitespace": true,
