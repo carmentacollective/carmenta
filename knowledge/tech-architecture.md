@@ -284,11 +284,37 @@ Render-managed PostgreSQL for production.
 
 ---
 
+## AI/LLM Layer (Category B - Confirmed)
+
+| Choice                          | Version | Rationale                                             |
+| ------------------------------- | ------- | ----------------------------------------------------- |
+| **Vercel AI SDK**               | 5.x     | Streaming, hooks, transport layer. Industry standard. |
+| **@ai-sdk/react**               | latest  | React hooks for chat UI (useChat, etc.)               |
+| **@openrouter/ai-sdk-provider** | latest  | OpenRouter integration for multi-model access.        |
+
+### Why OpenRouter?
+
+OpenRouter is a unified API gateway providing access to 300+ models from all major
+providers (Anthropic, OpenAI, Google, Meta, Mistral, etc.) through a single API key.
+
+Benefits:
+
+- **Model flexibility**: Switch models without managing multiple API keys
+- **Cost optimization**: Transparent per-token pricing, compare across providers
+- **Fallback capability**: Route to alternative providers if one is unavailable
+- **New model access**: Immediate availability when providers release new models
+- **Unified billing**: One dashboard for all model usage
+
+For model selection logic, see
+[model-intelligence.md](./components/model-intelligence.md).
+
+---
+
 ## Deferred Decisions (Category D - Deep)
 
 These require deep research and are out of scope for initial homepage:
 
-- **Chat UI primitives** - assistant-ui vs custom vs CopilotKit
+- **Chat UI primitives** - assistant-ui vs custom vs CopilotKit (M0.5 uses raw SDK)
 - **Voice input** - OpenAI Realtime vs Whisper vs browser APIs
 - **State management** - Zustand (LobeChat pattern) vs React Context vs other
 - **Local-first database** - PGLite for offline support (complementing PostgreSQL)
