@@ -43,3 +43,6 @@ pnpm-debug.log*
 
 # Clerk (auto-generated)
 .clerk
+
+# clerk configuration (can include secrets)
+/.clerk/
