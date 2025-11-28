@@ -22,6 +22,7 @@ export async function POST(req: Request) {
             });
         }
 
+        // Email is guaranteed by Clerk - it's required for all auth methods we support
         userEmail = user.emailAddresses[0]?.emailAddress ?? null;
 
         assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");

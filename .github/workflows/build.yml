@@ -109,8 +109,8 @@ jobs:
         run: pnpm build
         env:
           # Dummy key for CI builds - Clerk requires a publishable key at build time for prerendering
-          # This is not a real key, just satisfies Clerk's format validation
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummy-clerk-key-for-ci-builds
+          # This is not a real key, just satisfies Clerk's format validation (base64 encoded)
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktYnVpbGQtZHVtbXkta2V5LmNhcm1lbnRhLmFp
 
       - name: ✅ Verify build output
         run: |
