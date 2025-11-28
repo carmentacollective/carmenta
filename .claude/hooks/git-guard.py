@@ -8,9 +8,14 @@ instead of fragile regex matching.
 Blocks:
 - Direct pushes to main branch
 - git push --no-verify
+- git commit --no-verify
 - gh pr merge (use GitHub web interface)
 - git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
+
+Exit codes:
+- 0: Command is allowed
+- 2: Command is blocked (violations found)
 
 Allows:
 - git commit --amend (amend contains 'a' but is not the -a flag)
@@ -38,7 +43,7 @@ def get_current_branch() -> str:
             text=True,
         )
         return result.stdout.strip() if result.returncode == 0 else ""
-    except Exception:
+    except (subprocess.SubprocessError, FileNotFoundError):
         return ""
 
 
@@ -51,6 +56,10 @@ def parse_git_command(command: str) -> tuple[str, list[str], list[str]]:
 
     Example:
         "git commit --amend -m 'msg'" -> ("commit", ["--amend", "-m"], ["msg"])
+
+    Note: This parser is optimized for the current validation needs. Flag values
+    are treated as positional args, which is acceptable since our checks don't
+    distinguish between flag values and actual positional arguments.
     """
     try:
         tokens = shlex.split(command)
@@ -73,18 +82,12 @@ def parse_git_command(command: str) -> tuple[str, list[str], list[str]]:
     flags = []
     positional = []
 
-    skip_next = False
-    for i, token in enumerate(remaining):
-        if skip_next:
-            skip_next = False
-            positional.append(token)
-            continue
-
+    # Simple classification: flags start with '-', everything else is positional
+    # Flag values (like the "msg" in -m "msg") end up in positional, which is
+    # fine for our current validation logic that doesn't need to distinguish them
+    for token in remaining:
         if token.startswith("-"):
             flags.append(token)
-            # Flags that take a value
-            if token in ["-m", "-C", "-c", "--message", "--author", "--date"]:
-                skip_next = True
         else:
             positional.append(token)
 
@@ -124,14 +127,17 @@ def check_git_push(flags: list[str], positional: list[str]) -> list[Violation]:
     pushing_to_main = False
 
     for arg in positional:
-        # Strip force push prefix (+) if present
+        # Strip force push prefix (+) if present (e.g., +main or +feature:main)
         clean_arg = arg.lstrip("+")
 
         # Check direct branch names and full ref paths
         if clean_arg in ["main", "master", "refs/heads/main", "refs/heads/master"]:
             pushing_to_main = True
             break
-        # Check refspecs (format: source:dest)
+
+        # Check refspecs (format: source:dest, e.g., "feature:main" or "HEAD:main")
+        # Refspecs allow pushing one branch to another: git push origin local:remote
+        # We only care about the destination (right side of :)
         if ":" in clean_arg:
             _, dest = clean_arg.split(":", 1)
             if dest in ["main", "master", "refs/heads/main", "refs/heads/master"]:
@@ -180,6 +186,13 @@ def check_git_add(flags: list[str], positional: list[str]) -> list[Violation]:
 def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]:
     """Check git commit for violations."""
     violations = []
+
+    # Block --no-verify
+    if has_flag(flags, "--no-verify", "-n"):
+        violations.append(Violation(
+            "git commit --no-verify is forbidden",
+            "Remove --no-verify and fix any hook failures"
+        ))
 
     # Block -a (but NOT --amend!)
     # has_flag properly handles this because --amend != -a
@@ -258,7 +271,7 @@ def main():
         for v in violations:
             print(f"  {v.message}", file=sys.stderr)
             print(f"    -> {v.suggestion}\n", file=sys.stderr)
-        print("See .cursor/rules/git-interaction.mdc for full git workflow", file=sys.stderr)
+        print("See .cursor/rules/git-interaction.mdc for git workflow rules", file=sys.stderr)
         sys.exit(2)
 
     sys.exit(0)
