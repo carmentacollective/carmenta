@@ -59,11 +59,56 @@ We use Sentry for error tracking. Decision rationale:
 - **Best-in-class error tracking**: Source maps, stack traces, breadcrumbs
 - **Next.js integration**: First-party SDK with automatic instrumentation
 - **Performance monitoring**: Traces and spans integrated with errors
+- **Unified with LLM observability**: Single platform for errors + AI tracing (see
+  observability.md)
 - **Separates concerns**: PostHog for product analytics, Sentry for errors
 
 Sentry captures exceptions with rich context. See `typescript-coding-standards.mdc` for
 usage patterns: `Sentry.captureException` with tags and extra data, breadcrumbs for
 state changes, spans for performance monitoring.
+
+## Implementation (M1)
+
+### Error Boundaries
+
+We use Next.js App Router error boundaries at two levels:
+
+- **`app/global-error.tsx`**: Catches errors in the root layout. Last line of defense.
+  Renders a full-page error UI with retry button.
+- **`app/error.tsx`**: Catches errors in route segments. Shows inline error with retry
+  and home link options.
+
+Both boundaries:
+
+- Report to Sentry with `Sentry.captureException`
+- Include error digest for correlation
+- Show user-friendly messages (no stack traces)
+- Provide retry functionality
+
+### API Error Handling
+
+API routes wrap logic in try-catch and report to Sentry:
+
+```typescript
+try {
+  // ... route logic
+} catch (error) {
+  logger.error({ error }, "Request failed");
+  Sentry.captureException(error, {
+    tags: { component: "api", route: "chat" },
+  });
+  return new Response(JSON.stringify({ error: "User-friendly message" }), {
+    status: 500,
+  });
+}
+```
+
+### Configuration
+
+- **Production**: Sentry enabled by default
+- **Development**: Disabled unless `SENTRY_ENABLED=true` in `.env.local`
+- **Sampling**: 100% in dev, 10% in production (adjustable)
+- **Session replay**: Enabled for debugging user issues
 
 ## Integration Points
 
@@ -83,30 +128,27 @@ state changes, spans for performance monitoring.
 
 ---
 
+## Decisions Made
+
+- **Error boundaries**: Route-level (`error.tsx`) + global (`global-error.tsx`). No
+  component-level boundaries yet - add as needed for complex components.
+- **User communication**: Inline error UI with retry button. No toasts yet.
+- **Error detail level**: Generic user-friendly messages. Technical details only in
+  Sentry.
+
 ## Open Questions
 
 ### Architecture
 
-- **Error boundaries**: Where do we catch errors? Component-level? Route-level? Global?
 - **Retry strategies**: What's our retry policy for different failure types?
 - **Fallback behaviors**: What do we show/do when components fail?
 
 ### Product Decisions
 
-- **User communication**: How do we communicate errors? Toast? Modal? Inline?
-- **Error detail level**: How much do we share about what went wrong?
-- **Recovery options**: What actions can we take when errors occur? Retry? Report?
+- **Recovery options**: Beyond retry, what actions can users take? Report button?
 
 ### Technical Specifications Needed
 
 - Error classification taxonomy
-- Integration approach for each component
-- Retry and fallback patterns
-- User-facing error message templates
+- Retry and fallback patterns for LLM failures
 - Alert routing and escalation rules
-
-### Research Needed
-
-- Study error handling patterns for AI/LLM applications
-- Research graceful degradation strategies
-- Review error message UX best practices

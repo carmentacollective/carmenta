@@ -14,6 +14,59 @@ Observability makes the invisible visible. Traces capture the full journey of a 
 through the system. Developers can debug issues, identify patterns, and understand model
 behavior. This is table stakes for building reliable AI products.
 
+## Technology Choice: Sentry AI Monitoring
+
+We use Sentry for LLM observability, unified with error tracking. Decision rationale:
+
+- **Unified platform**: Errors and LLM traces in one place, correlated automatically
+- **Vercel AI SDK integration**: Native support via `experimental_telemetry`
+- **Full-stack context**: LLM traces connect to frontend replays, backend spans
+- **No additional vendor**: Already using Sentry for errors (see error-handling.md)
+- **Included in plan**: LLM monitoring included with Sentry Business/Enterprise
+
+Alternatives considered:
+
+- **Langfuse**: More mature LLM-specific features (prompt versioning, evals) but adds
+  vendor sprawl. Consider if we need advanced prompt management.
+- **Helicone**: Good for cost tracking, but Sentry covers basics.
+- **Langsmith**: Tightly coupled to LangChain, we use Vercel AI SDK.
+
+## Implementation (M1)
+
+### Vercel AI SDK Telemetry
+
+LLM tracing is enabled via the `experimental_telemetry` option on `streamText`:
+
+```typescript
+const result = await streamText({
+  model: openrouter.chat(MODEL_ID),
+  system: SYSTEM_PROMPT,
+  messages: convertToModelMessages(messages),
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: "chat",
+    recordInputs: true,
+    recordOutputs: true,
+    metadata: { model: MODEL_ID },
+  },
+});
+```
+
+### What Gets Captured
+
+- Input prompts (system, user messages)
+- Model ID and parameters
+- Output responses (streamed text)
+- Token usage and latency
+- Errors with full context
+
+### Sentry Configuration
+
+- **Server**: `sentry.server.config.ts` with `vercelAIIntegration`
+- **Client**: `sentry.client.config.ts` for frontend errors
+- **Instrumentation**: `instrumentation.ts` for Next.js integration
+- **Sampling**: 100% in dev, 10% in production
+
 ## Core Functions
 
 ### LLM Tracing
@@ -71,35 +124,31 @@ Track quality signals over time:
 
 ---
 
+## Decisions Made
+
+- **Platform choice**: Sentry with Vercel AI SDK integration. Unified with error
+  tracking, no additional vendor needed.
+- **Sampling**: 100% in dev for debugging, 10% in production to manage costs.
+- **Real-time vs. batch**: Real-time streaming via Sentry's built-in transport.
+- **Input/output recording**: Enabled. Be mindful of PII in prompts/responses.
+
 ## Open Questions
 
 ### Architecture
 
-- **Platform choice**: Weave, Opik, Langfuse, Langsmith, or custom? What are the
-  tradeoffs in features, cost, and vendor lock-in?
-- **Data retention**: How long do we keep traces? What's the storage cost implication?
-- **Sampling**: Do we trace everything or sample? What's the right balance of coverage
-  vs. cost?
-- **Real-time vs. batch**: Stream traces as they happen or batch process?
+- **Data retention**: How long do we keep traces? Sentry's default retention policy?
+- **Cost tracking**: How do we aggregate token costs across conversations?
 
 ### Product Decisions
 
-- **User visibility**: Do we see any observability data? Response times? Token usage?
-- **Developer access**: Who can access traces? Privacy implications of seeing
-  conversations?
+- **User visibility**: Do users see any observability data? Response times? Token usage?
 - **Alerting**: What conditions trigger alerts? Who gets notified?
 
-### Technical Specifications Needed
+### Future Considerations
 
-- Trace schema and span definitions
-- Integration points for each component
-- Sampling strategy
-- Retention policy
-- Access control model
-
-### Research Needed
-
-- Evaluate LLM observability platforms (Weave, Opik, Langfuse, Langsmith, Helicone)
-- Study tracing patterns for multi-agent systems
-- Research privacy-preserving observability approaches
-- Benchmark performance overhead of different tracing approaches
+- **Prompt versioning**: If we need prompt A/B testing or versioning, consider adding
+  Langfuse alongside Sentry.
+- **Evaluations**: Sentry doesn't do LLM evals. May need separate tooling for quality
+  scoring.
+- **Multi-agent tracing**: Current setup traces single LLM calls. Agent orchestration
+  (M4) will need span hierarchies.
