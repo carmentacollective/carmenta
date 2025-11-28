@@ -9,6 +9,8 @@ import { logger } from "@/lib/client-logger";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 
+const MODEL_ID = "anthropic/claude-sonnet-4.5";
+
 export function Chat() {
     const [input, setInput] = useState("");
 
@@ -68,7 +70,13 @@ export function Chat() {
                         </div>
                     ) : (
                         messages.map((message) => (
-                            <ChatMessage key={message.id} message={message} />
+                            <ChatMessage
+                                key={message.id}
+                                message={message}
+                                modelId={
+                                    message.role === "assistant" ? MODEL_ID : undefined
+                                }
+                            />
                         ))
                     )}
 

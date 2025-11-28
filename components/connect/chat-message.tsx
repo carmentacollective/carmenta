@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
     message: UIMessage;
+    modelId?: string;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, modelId }: ChatMessageProps) {
     const isUser = message.role === "user";
 
     // Extract text content from message parts
@@ -17,6 +18,16 @@ export function ChatMessage({ message }: ChatMessageProps) {
         .filter((part): part is { type: "text"; text: string } => part.type === "text")
         .map((part) => part.text)
         .join("");
+
+    // Format model name for display (e.g., "anthropic/claude-sonnet-4.5" -> "Sonnet 4.5")
+    const formatModelName = (id: string) => {
+        const modelName = id.split("/").pop() || id;
+        return modelName
+            .replace("claude-", "")
+            .split("-")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    };
 
     return (
         <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
@@ -29,9 +40,16 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 {isUser ? (
                     <p className="whitespace-pre-wrap">{textContent}</p>
                 ) : (
-                    <div className="prose prose-invert prose-sm prose-headings:text-foreground prose-headings:font-bold prose-p:text-foreground/90 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-semibold prose-code:text-primary prose-code:bg-muted/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded-none prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted/30 prose-pre:border prose-pre:border-border prose-pre:rounded-none prose-ul:text-foreground/90 prose-ol:text-foreground/90 prose-li:marker:text-primary max-w-none">
-                        <Markdown>{textContent}</Markdown>
-                    </div>
+                    <>
+                        <div className="prose prose-invert prose-sm prose-headings:text-foreground prose-headings:font-bold prose-p:text-foreground/90 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-semibold prose-code:text-primary prose-code:bg-muted/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded-none prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted/30 prose-pre:border prose-pre:border-border prose-pre:rounded-none prose-ul:text-foreground/90 prose-ol:text-foreground/90 prose-li:marker:text-primary max-w-none">
+                            <Markdown>{textContent}</Markdown>
+                        </div>
+                        {modelId && (
+                            <div className="mt-2 text-right text-xs text-muted-foreground/60">
+                                {formatModelName(modelId)}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
