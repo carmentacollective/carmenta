@@ -6,11 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/protect-main-branch.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/selective-staging.sh"
+            "command": "python3 .claude/hooks/git-guard.py"
           }
         ]
       }
