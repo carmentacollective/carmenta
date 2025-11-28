@@ -107,7 +107,10 @@ jobs:
 
       - name: 🏗️ Build Next.js application
         run: pnpm build
-        # Clerk runs in unclaimed/keyless mode when keys are not set
+        env:
+          # Dummy key for CI builds - Clerk requires a publishable key at build time for prerendering
+          # This is not a real key, just satisfies Clerk's format validation
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummy-clerk-key-for-ci-builds
 
       - name: ✅ Verify build output
         run: |
