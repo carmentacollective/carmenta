@@ -4,6 +4,17 @@ import Link from "next/link";
 export default function LandingPage() {
     return (
         <div className="flex min-h-screen flex-col">
+            {/* Header */}
+            <header className="flex items-center justify-between px-6 py-4">
+                <span className="text-lg font-bold tracking-tight">CARMENTA_</span>
+                <Link
+                    href="/connect"
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    Connect
+                </Link>
+            </header>
+
             {/* Main content */}
             <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
                 <div className="mx-auto max-w-2xl space-y-12 text-center">
