@@ -27,6 +27,12 @@ const config: NextConfig = {
         ],
     },
 
+    // Include files that aren't traced by bundlers but are needed at runtime
+    // heart-centered-prompts uses fs.readFileSync to load .txt prompt files
+    outputFileTracingIncludes: {
+        "/api/connect": ["./node_modules/heart-centered-prompts/prompts/**/*"],
+    },
+
     images: {
         remotePatterns: [
             {
