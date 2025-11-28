@@ -31,6 +31,12 @@ predictable costs.
 Comprehensive testing infrastructure. Vitest for unit and integration tests, Playwright
 for end-to-end. Built for confidence to move fast.
 
+### [Vercel AI SDK](vercel-ai-sdk.md)
+
+The foundational layer for AI model interactions. Streaming, message management, and
+transport abstractions that power all chat experiences. AI SDK v5 patterns for the
+`useChat` hook, server-side streaming, and message formats.
+
 ## Core Layer
 
 ### [Concierge](concierge.md)

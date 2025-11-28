@@ -27,5 +27,7 @@ export async function POST(req: Request) {
 
     logger.debug({ messageCount: messages?.length ?? 0 }, "Chat stream initiated");
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse({
+        originalMessages: messages,
+    });
 }

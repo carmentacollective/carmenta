@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { logger } from "@/lib/client-logger";
 
@@ -13,6 +13,7 @@ const MODEL_ID = "anthropic/claude-sonnet-4.5";
 
 export function Chat() {
     const [input, setInput] = useState("");
+    const chatId = useId();
 
     const transport = useMemo(
         () =>
@@ -22,7 +23,13 @@ export function Chat() {
         []
     );
 
-    const { messages, status, error, sendMessage } = useChat({ transport });
+    const { messages, status, error, sendMessage } = useChat({
+        id: chatId,
+        transport,
+        onFinish: () => {
+            logger.debug({ chatId }, "Chat response completed");
+        },
+    });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isLoading = status === "submitted" || status === "streaming";
@@ -41,13 +48,13 @@ export function Chat() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
 
         const userInput = input;
         setInput("");
-        await sendMessage({ text: userInput });
+        sendMessage({ text: userInput });
     };
 
     return (

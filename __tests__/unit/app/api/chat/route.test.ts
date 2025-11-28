@@ -64,7 +64,7 @@ describe("POST /api/chat", () => {
         const response = await POST(request);
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("content-type")).toContain("text/plain");
+        expect(response.headers.get("content-type")).toContain("text/event-stream");
 
         // Consume the stream to verify it works
         const text = await response.text();
