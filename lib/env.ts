@@ -7,18 +7,19 @@ import { z } from "zod";
  * Variables are optional at import time to support tests and partial environments.
  * Validation happens at point of use with assertEnv().
  *
- * For M0, we have minimal environment requirements.
- * Additional variables will be added as features are built.
+ * M0.5 adds ANTHROPIC_API_KEY for Claude integration.
  */
 export const env = createEnv({
     server: {
         NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+        ANTHROPIC_API_KEY: z.string().optional(),
     },
     client: {
         // Client-side environment variables go here (prefixed with NEXT_PUBLIC_)
     },
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     },
     skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
