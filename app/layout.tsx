@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -73,10 +74,12 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-            <body className="min-h-screen bg-background font-mono antialiased">
-                {children}
-            </body>
-        </html>
+        <ClerkProvider afterSignOutUrl="/">
+            <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+                <body className="min-h-screen bg-background font-mono antialiased">
+                    {children}
+                </body>
+            </html>
+        </ClerkProvider>
     );
 }

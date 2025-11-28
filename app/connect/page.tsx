@@ -1,3 +1,4 @@
+import { UserButton } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -20,8 +21,22 @@ export default function ConnectPage() {
                 >
                     CARMENTA_
                 </Link>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                    M0.5: First Connection
+                <div className="flex items-center gap-4">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground">
+                        M0.5: First Connection
+                    </div>
+                    <UserButton
+                        appearance={{
+                            elements: {
+                                avatarBox: "h-8 w-8",
+                                userButtonPopoverCard: "bg-card border border-border",
+                                userButtonPopoverActionButton:
+                                    "text-foreground hover:bg-secondary",
+                                userButtonPopoverActionButtonText: "text-foreground",
+                                userButtonPopoverFooter: "hidden",
+                            },
+                        }}
+                    />
                 </div>
             </header>
 
