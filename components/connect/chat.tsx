@@ -1,118 +1,89 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Thread } from "@assistant-ui/react-ui";
 
+import { ConnectRuntimeProvider } from "./connect-runtime-provider";
+import { WeatherToolUI, CompareToolUI } from "@/components/generative-ui";
 import { logger } from "@/lib/client-logger";
 
-import { ChatInput } from "./chat-input";
-import { ChatMessage } from "./chat-message";
+/**
+ * Error boundary to catch rendering failures in the chat interface.
+ * Prevents tool UI crashes from taking down the entire page.
+ */
+class ChatErrorBoundary extends Component<
+    { children: ReactNode },
+    { hasError: boolean }
+> {
+    constructor(props: { children: ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
 
-const MODEL_ID = "anthropic/claude-sonnet-4.5";
+    static getDerivedStateFromError(): { hasError: boolean } {
+        return { hasError: true };
+    }
 
-export function Chat() {
-    const [input, setInput] = useState("");
-    const chatId = useId();
+    componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+        logger.error(
+            { error: error.message, componentStack: errorInfo.componentStack },
+            "Chat component error"
+        );
+    }
 
-    const transport = useMemo(
-        () =>
-            new DefaultChatTransport({
-                api: "/api/chat",
-            }),
-        []
-    );
-
-    const { messages, status, error, sendMessage } = useChat({
-        id: chatId,
-        transport,
-        onFinish: () => {
-            logger.debug({ chatId }, "Chat response completed");
-        },
-    });
-
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const isLoading = status === "submitted" || status === "streaming";
-
-    // Log errors when they occur
-    useEffect(() => {
-        if (error) {
-            logger.error(
-                { error: error.message, messageCount: messages.length },
-                "Chat request failed"
+    render(): ReactNode {
+        if (this.state.hasError) {
+            return (
+                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                    <div className="blueprint-box max-w-md border-destructive/50 bg-destructive/10">
+                        <h2 className="mb-2 font-bold text-destructive">
+                            Something went wrong
+                        </h2>
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            We encountered an error rendering the chat. Please refresh
+                            the page to try again.
+                        </p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            Refresh Page
+                        </button>
+                    </div>
+                </div>
             );
         }
-    }, [error, messages.length]);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+        return this.props.children;
+    }
+}
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
-
-        const userInput = input;
-        setInput("");
-        sendMessage({ text: userInput });
-    };
-
+/**
+ * Main Chat component for the Connect page.
+ *
+ * Uses assistant-ui Thread for rendering the conversation with support for:
+ * - Streaming text responses
+ * - Tool calls rendered as custom UI components (WeatherCard, DataTable)
+ * - Message branching and editing
+ *
+ * The ConnectRuntimeProvider handles:
+ * - Connection to /api/connect endpoint
+ * - Message state management
+ * - Tool execution flow
+ */
+export function Chat() {
     return (
-        <div className="flex h-full flex-col">
-            {/* Messages area */}
-            <div className="flex-1 overflow-y-auto px-4 py-6">
-                <div className="mx-auto max-w-3xl space-y-6">
-                    {messages.length === 0 ? (
-                        <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center">
-                            <div className="space-y-4">
-                                <h2 className="text-2xl font-bold text-foreground">
-                                    Let&apos;s connect
-                                </h2>
-                                <p className="max-w-md text-muted-foreground">
-                                    We&apos;re here to think together. Share what&apos;s
-                                    on your mind—a question, an idea, something
-                                    you&apos;re working through.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        messages.map((message) => (
-                            <ChatMessage
-                                key={message.id}
-                                message={message}
-                                modelId={
-                                    message.role === "assistant" ? MODEL_ID : undefined
-                                }
-                            />
-                        ))
-                    )}
+        <ChatErrorBoundary>
+            <ConnectRuntimeProvider>
+                {/* Register tool UIs so they render when tools are called */}
+                <WeatherToolUI />
+                <CompareToolUI />
 
-                    {error && (
-                        <div className="blueprint-box border-destructive/50 bg-destructive/10 text-sm text-destructive">
-                            Something went wrong. Please try again.
-                        </div>
-                    )}
-
-                    <div ref={messagesEndRef} />
+                {/* Full height thread with custom styling */}
+                <div className="flex h-full flex-col">
+                    <Thread />
                 </div>
-            </div>
-
-            {/* Input area */}
-            <div className="border-t border-border bg-background/80 px-4 py-4 backdrop-blur-sm">
-                <div className="mx-auto max-w-3xl">
-                    <ChatInput
-                        input={input}
-                        isLoading={isLoading}
-                        onInputChange={setInput}
-                        onSubmit={handleSubmit}
-                    />
-                    {isLoading && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                            We&apos;re thinking...
-                        </p>
-                    )}
-                </div>
-            </div>
-        </div>
+            </ConnectRuntimeProvider>
+        </ChatErrorBoundary>
     );
 }
