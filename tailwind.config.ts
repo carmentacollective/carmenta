@@ -97,7 +97,7 @@ const config: Config = {
     plugins: [
         require("tailwindcss-animate"),
         require("@assistant-ui/react-ui/tailwindcss")({
-            components: ["thread"],
+            components: ["thread", "markdown"],
             shadcn: true,
         }),
     ],

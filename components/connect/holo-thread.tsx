@@ -7,6 +7,7 @@ import {
     MessagePrimitive,
     ThreadPrimitive,
 } from "@assistant-ui/react";
+import { makeMarkdownText } from "@assistant-ui/react-ui";
 
 import { cn } from "@/lib/utils";
 import { Greeting } from "@/components/ui/greeting";
@@ -57,11 +58,13 @@ function ThreadWelcome() {
 }
 
 /**
- * Text component for rendering message text parts.
+ * Markdown-enabled text component for rendering message content.
+ * Uses assistant-ui's makeMarkdownText for proper markdown parsing.
+ * Styling is applied via the holo-markdown class in globals.css.
  */
-function TextPart({ text }: { text: string }) {
-    return <p className="whitespace-pre-wrap text-foreground/90">{text}</p>;
-}
+const MarkdownText = makeMarkdownText({
+    className: "holo-markdown",
+});
 
 /**
  * User message bubble with holographic gradient.
@@ -77,7 +80,7 @@ function UserMessage() {
                     backdropFilter: "blur(12px)",
                 }}
             >
-                <MessagePrimitive.Content components={{ Text: TextPart }} />
+                <MessagePrimitive.Content components={{ Text: MarkdownText }} />
             </div>
         </MessagePrimitive.Root>
     );
@@ -96,7 +99,7 @@ function AssistantMessage() {
                     backdropFilter: "blur(16px)",
                 }}
             >
-                <MessagePrimitive.Content components={{ Text: TextPart }} />
+                <MessagePrimitive.Content components={{ Text: MarkdownText }} />
             </div>
         </MessagePrimitive.Root>
     );
