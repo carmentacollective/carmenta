@@ -1,4 +1,11 @@
 import { SignUp } from "@clerk/nextjs";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Sign Up | Carmenta",
+    description: "Create an account to begin our partnership with Carmenta",
+    robots: { index: false, follow: false },
+};
 
 export default function SignUpPage() {
     return (

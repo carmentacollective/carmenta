@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 
-// Mock Clerk auth to return a test user
+// Mock Clerk currentUser to return a test user
 vi.mock("@clerk/nextjs/server", () => ({
-    auth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
+    currentUser: vi.fn().mockResolvedValue({
+        id: "test-user-123",
+        emailAddresses: [{ emailAddress: "test@example.com" }],
+    }),
 }));
 
 // Mock the OpenRouter provider to use our mock model
@@ -42,13 +45,16 @@ vi.mock("@/lib/env", () => ({
 import { POST } from "@/app/api/chat/route";
 
 // Import the mock to control it in tests
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 
 describe("POST /api/chat", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset to authenticated user by default
-        vi.mocked(auth).mockResolvedValue({ userId: "test-user-123" } as never);
+        vi.mocked(currentUser).mockResolvedValue({
+            id: "test-user-123",
+            emailAddresses: [{ emailAddress: "test@example.com" }],
+        } as never);
     });
 
     afterEach(() => {
@@ -56,7 +62,7 @@ describe("POST /api/chat", () => {
     });
 
     it("returns 401 when not authenticated", async () => {
-        vi.mocked(auth).mockResolvedValue({ userId: null } as never);
+        vi.mocked(currentUser).mockResolvedValue(null);
 
         const request = new Request("http://localhost/api/chat", {
             method: "POST",

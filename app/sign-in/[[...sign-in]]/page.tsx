@@ -1,4 +1,11 @@
 import { SignIn } from "@clerk/nextjs";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Sign In | Carmenta",
+    description: "Sign in to Carmenta to continue our conversation",
+    robots: { index: false, follow: false },
+};
 
 export default function SignInPage() {
     return (

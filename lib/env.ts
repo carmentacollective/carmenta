@@ -19,14 +19,14 @@ export const env = createEnv({
         SENTRY_DSN: z.string().optional(),
         // Auth token for source map uploads (CI/CD only)
         SENTRY_AUTH_TOKEN: z.string().optional(),
-        // Clerk secret key for server-side auth operations
-        CLERK_SECRET_KEY: z.string().optional(),
+        // Clerk secret key for server-side auth operations (required for auth)
+        CLERK_SECRET_KEY: z.string().min(1),
     },
     client: {
         // Client-side Sentry DSN (same value as server, exposed to browser)
         NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
-        // Clerk publishable key for client-side auth
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+        // Clerk publishable key for client-side auth (required for auth)
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
     },
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
