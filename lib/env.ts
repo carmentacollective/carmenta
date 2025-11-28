@@ -9,6 +9,7 @@ import { z } from "zod";
  *
  * M0.5 uses OpenRouter for model access - one API key for all models.
  * M1 adds Sentry for error tracking and LLM observability.
+ * Auth uses Clerk for user authentication.
  */
 export const env = createEnv({
     server: {
@@ -18,10 +19,14 @@ export const env = createEnv({
         SENTRY_DSN: z.string().optional(),
         // Auth token for source map uploads (CI/CD only)
         SENTRY_AUTH_TOKEN: z.string().optional(),
+        // Clerk secret key for server-side auth operations
+        CLERK_SECRET_KEY: z.string().optional(),
     },
     client: {
         // Client-side Sentry DSN (same value as server, exposed to browser)
         NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+        // Clerk publishable key for client-side auth
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
     },
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
@@ -29,6 +34,9 @@ export const env = createEnv({
         SENTRY_DSN: process.env.SENTRY_DSN,
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+        CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     },
     skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });

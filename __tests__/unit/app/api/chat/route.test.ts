@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 
+// Mock Clerk auth to return a test user
+vi.mock("@clerk/nextjs/server", () => ({
+    auth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
+}));
+
 // Mock the OpenRouter provider to use our mock model
 const mockModel = new MockLanguageModelV2({
     doStream: async () => ({
@@ -36,13 +41,34 @@ vi.mock("@/lib/env", () => ({
 // Import after mocks are set up
 import { POST } from "@/app/api/chat/route";
 
+// Import the mock to control it in tests
+import { auth } from "@clerk/nextjs/server";
+
 describe("POST /api/chat", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Reset to authenticated user by default
+        vi.mocked(auth).mockResolvedValue({ userId: "test-user-123" } as never);
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it("returns 401 when not authenticated", async () => {
+        vi.mocked(auth).mockResolvedValue({ userId: null } as never);
+
+        const request = new Request("http://localhost/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: [] }),
+        });
+
+        const response = await POST(request);
+        expect(response.status).toBe(401);
+
+        const body = await response.json();
+        expect(body.error).toBe("Unauthorized");
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {

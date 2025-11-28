@@ -13,112 +13,130 @@ Auth is the foundation that makes personalization possible. Without identity, Ca
 is just another stateless chatbot. With identity, it becomes our AI partner that knows
 us and grows with us.
 
+## Implementation Status
+
+**Platform**: Clerk (https://clerk.com)
+
+**Current Configuration**:
+
+- Email/password authentication
+- Google OAuth social login
+- Session management via Clerk's JWTs
+- Middleware-based route protection
+
+**Protected Routes**:
+
+- `/connect` - requires authentication
+- `/api/*` - all API routes require authentication
+
+**Public Routes**:
+
+- `/` - landing page
+- `/sign-in` - Clerk sign-in component
+- `/sign-up` - Clerk sign-up component
+- `/ai-first-development` - informational page
+
+**UI Approach**: Using Clerk's React components (`<SignIn/>`, `<SignUp/>`,
+`<UserButton/>`) with Tailwind CSS customization via the `appearance` prop. Can be
+migrated to fully custom UI using Clerk hooks (`useSignIn`, `useSignUp`) when design
+requirements solidify.
+
 ## Core Functions
 
 ### Authentication
 
 How we prove who we are:
 
-- Email/password (classic, reliable)
-- Social login (Google, GitHub, etc.)
-- Magic links (passwordless)
-- SSO for enterprise (SAML, OIDC)
+- Email/password (enabled)
+- Social login: Google (enabled)
+- Magic links (available via Clerk, not yet enabled)
+- SSO for enterprise (available via Clerk, future consideration)
 
 ### Session Management
 
-Keep us logged in appropriately:
+Handled by Clerk:
 
-- Secure session handling
-- Multi-device support
-- Session invalidation and logout
-- Remember me / persistent sessions
+- JWT-based sessions with automatic refresh
+- Multi-device support built-in
+- Session invalidation via UserButton or programmatic logout
+- Persistent sessions by default
 
 ### User Management
 
 Lifecycle of user accounts:
 
-- Signup and account creation
-- Profile management
-- Password reset and recovery
-- Account deletion (with data cleanup)
+- Signup via `/sign-up` page
+- Profile management via Clerk's UserButton component
+- Password reset via Clerk's built-in flow
+- Account deletion (available in Clerk dashboard, self-service not yet exposed)
 
 ### Authorization
 
 What we can access:
 
-- Role-based access (if needed)
-- Resource ownership (my conversations, my memory)
-- Sharing permissions (if we support collaboration)
+- Resource ownership via `userId` from Clerk's `auth()` function
+- Role-based access (available via Clerk Organizations, not yet implemented)
+- Sharing permissions (future consideration)
 
 ## Relationship to Service Connectivity
 
-Auth and Service Connectivity are closely related but distinct:
+Auth and Service Connectivity remain distinct:
 
-- **Auth** handles Carmenta user identity - who we are to Carmenta
-- **Service Connectivity** handles third-party OAuth - connecting our external accounts
+- **Auth** handles Carmenta user identity via Clerk
+- **Service Connectivity** will handle third-party OAuth for external services
 
-They interact at key points:
-
-- Service connections belong to authenticated users
-- OAuth tokens for services are stored per-user
-- User deletion must clean up service connections
-- Session security affects access to connected services
-
-Consider whether to use the same auth provider for both or keep them separate. A unified
-approach (e.g., Clerk handles both user auth and OAuth to services) could simplify the
-architecture.
+Clerk can potentially handle OAuth for third-party services, which would simplify the
+architecture. This decision is deferred until Service Connectivity implementation.
 
 ## Integration Points
 
-- **Memory**: User identity determines whose memory to access
-- **Conversations**: Conversations belong to users
-- **Service Connectivity**: OAuth connections tied to user accounts
-- **Onboarding**: Account creation during first run
-- **Interface**: Login/logout UI, profile settings
-- **AI Team**: Team configuration per user
+- **Memory**: User identity via `userId` determines whose memory to access
+- **Conversations**: Conversations will be associated with `userId`
+- **Service Connectivity**: OAuth connections will be tied to `userId`
+- **Onboarding**: Account creation via Clerk during first protected route access
+- **Interface**: Sign-in/sign-up pages, UserButton in header
+- **AI Team**: Team configuration will be per `userId`
 
 ## Success Criteria
 
 - We can sign up and log in without friction
 - Sessions persist appropriately across devices
-- Security best practices followed (no password breaches, secure tokens)
-- Account deletion fully cleans up user data
+- Security best practices followed (Clerk handles this)
+- Account deletion fully cleans up user data (requires webhook implementation)
 - Auth doesn't add noticeable latency to requests
 
 ---
 
 ## Open Questions
 
-### Architecture
+### Architecture (Resolved)
 
-- **Platform choice**: Clerk, Auth.js (NextAuth), Supabase Auth, or custom? What's the
-  right balance of features, cost, and control?
-- **Unified vs. separate**: Use auth provider for both user auth and service OAuth, or
-  keep them separate? Tradeoffs in simplicity vs. flexibility.
-- **Session storage**: JWTs, database sessions, or hybrid? Where does session state
-  live?
-- **Multi-tenancy**: Do we need organization/team accounts? What's the data model?
+- ~~**Platform choice**~~: **Clerk** chosen for fast implementation, good DX, and
+  built-in security. Can migrate if needed.
+- **Unified vs. separate**: Deferred. Will evaluate when implementing Service
+  Connectivity.
+- ~~**Session storage**~~: **JWTs** managed by Clerk.
+- **Multi-tenancy**: Deferred. Clerk Organizations available when needed.
 
-### Product Decisions
+### Product Decisions (Partially Resolved)
 
-- **Auth methods**: Which login methods do we support at launch? What's the priority
-  order?
-- **Required vs. optional**: Can we try Carmenta before creating an account? Anonymous
-  mode?
-- **Data portability**: How do we export our data? What format?
-- **Account linking**: Can we link multiple auth methods to one account?
+- ~~**Auth methods**~~: Email + Google at launch.
+- ~~**Required vs. optional**~~: Auth required for `/connect` and API. Landing page
+  public.
+- **Data portability**: To be implemented (GDPR consideration)
+- **Account linking**: Handled by Clerk (users can add multiple auth methods)
 
-### Technical Specifications Needed
+### Technical Specifications (Partially Resolved)
 
-- User schema and profile fields
-- Session management approach
-- Integration with Service Connectivity OAuth
-- Account deletion and data cleanup process
-- Security requirements (password policy, 2FA, etc.)
+- ~~**User schema**~~: Clerk manages user data. Extend via Clerk metadata if needed.
+- ~~**Session management**~~: Clerk JWTs
+- **Integration with Service Connectivity OAuth**: Deferred
+- **Account deletion and data cleanup**: Requires Clerk webhook implementation
+- ~~**Security requirements**~~: Clerk defaults (strong passwords, secure sessions)
 
 ### Research Needed
 
-- Evaluate auth platforms (Clerk, Auth.js, Supabase Auth, Stytch)
-- Study auth UX patterns for AI products
+- ~~Evaluate auth platforms~~: Clerk selected
+- Study auth UX patterns for AI products (ongoing)
 - Research data portability requirements (GDPR right to export)
-- Review security best practices for auth
+- Clerk webhook setup for account deletion cleanup

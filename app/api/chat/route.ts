@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
@@ -10,6 +11,15 @@ const MODEL_ID = "anthropic/claude-sonnet-4.5";
 
 export async function POST(req: Request) {
     try {
+        // Require authentication for chat API
+        const { userId } = await auth();
+        if (!userId) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+
         assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
 
         const openrouter = createOpenRouter({
@@ -19,7 +29,7 @@ export async function POST(req: Request) {
         const { messages } = (await req.json()) as { messages: UIMessage[] };
 
         logger.info(
-            { messageCount: messages?.length ?? 0, model: MODEL_ID },
+            { userId, messageCount: messages?.length ?? 0, model: MODEL_ID },
             "Starting chat stream"
         );
 
@@ -29,6 +39,7 @@ export async function POST(req: Request) {
             message: "Starting LLM request",
             level: "info",
             data: {
+                userId,
                 model: MODEL_ID,
                 messageCount: messages?.length ?? 0,
             },
@@ -46,6 +57,7 @@ export async function POST(req: Request) {
                 recordInputs: true,
                 recordOutputs: true,
                 metadata: {
+                    userId,
                     model: MODEL_ID,
                 },
             },
