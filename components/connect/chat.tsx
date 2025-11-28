@@ -4,6 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { logger } from "@/lib/client-logger";
+
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 
@@ -22,6 +24,16 @@ export function Chat() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isLoading = status === "submitted" || status === "streaming";
+
+    // Log errors when they occur
+    useEffect(() => {
+        if (error) {
+            logger.error(
+                { error: error.message, messageCount: messages.length },
+                "Chat request failed"
+            );
+        }
+    }, [error, messages.length]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
