@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     let userEmail: string | null = null;
 
     try {
-        // Require authentication for chat API
+        // Require authentication for connect API
         const user = await currentUser();
         if (!user) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -35,12 +35,12 @@ export async function POST(req: Request) {
 
         logger.info(
             { userEmail, messageCount: messages?.length ?? 0, model: MODEL_ID },
-            "Starting chat stream"
+            "Starting connection stream"
         );
 
         // Add breadcrumb for Sentry tracing
         Sentry.addBreadcrumb({
-            category: "ai.chat",
+            category: "ai.connect",
             message: "Starting LLM request",
             level: "info",
             data: {
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
             experimental_telemetry: {
                 isEnabled: true,
-                functionId: "chat",
+                functionId: "connect",
                 // Record inputs/outputs for debugging (be mindful of PII)
                 recordInputs: true,
                 recordOutputs: true,
@@ -68,18 +68,21 @@ export async function POST(req: Request) {
             },
         });
 
-        logger.debug({ messageCount: messages?.length ?? 0 }, "Chat stream initiated");
+        logger.debug(
+            { messageCount: messages?.length ?? 0 },
+            "Connection stream initiated"
+        );
 
         return result.toUIMessageStreamResponse({
             originalMessages: messages,
         });
     } catch (error) {
         // Log and report error with user context when available
-        logger.error({ error, userEmail }, "Chat request failed");
+        logger.error({ error, userEmail }, "Connection request failed");
         Sentry.captureException(error, {
             tags: {
                 component: "api",
-                route: "chat",
+                route: "connect",
             },
             extra: {
                 userEmail,
@@ -89,7 +92,7 @@ export async function POST(req: Request) {
         // Return user-friendly error response
         return new Response(
             JSON.stringify({
-                error: "Failed to process chat request. Please try again.",
+                error: "Failed to process request. Please try again.",
             }),
             {
                 status: 500,

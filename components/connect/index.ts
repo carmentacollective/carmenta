@@ -1,3 +1,3 @@
-export { Chat } from "./chat";
-export { ChatInput } from "./chat-input";
-export { ChatMessage } from "./chat-message";
+export { Connect } from "./connect";
+export { MessageInput } from "./message-input";
+export { Message } from "./message";

@@ -66,11 +66,25 @@ AG-UI provides building blocks we'll use:
 ### Integration Approach
 
 AG-UI has first-party integrations with LangGraph, CrewAI, Mastra, Pydantic AI, and
-others. CopilotKit provides a reference React client implementation. We can either:
+others. CopilotKit provides a reference React client implementation.
 
-1. Use CopilotKit directly as our frontend client
-2. Build our own client using AG-UI primitives
-3. Extend CopilotKit with our custom components
+**Decision: CopilotKit with Custom Components**
+
+We use CopilotKit's headless hooks (`useCopilotChat`, `useCopilotAction`) for
+infrastructure while maintaining full control over visual design. This gives us:
+
+- Streaming, state sync, tool rendering solved out of the box
+- Headless approach means our visual design stays intact
+- `useCopilotAction` for registering frontend render functions
+- Action handlers on backend, render functions on frontend
+
+**Implementation:**
+
+- `CopilotKitProvider` wraps the `/connect` page
+- `useCopilotChat` provides messages, loading state, send function
+- `useCopilotAction` registers UI components for tool results
+- Backend actions defined in `lib/copilotkit/actions.ts`
+- Generative UI components in `components/generative-ui/`
 
 ## Core Functions
 

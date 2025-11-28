@@ -42,12 +42,12 @@ vi.mock("@/lib/env", () => ({
 }));
 
 // Import after mocks are set up
-import { POST } from "@/app/api/chat/route";
+import { POST } from "@/app/api/connect/route";
 
 // Import the mock to control it in tests
 import { currentUser } from "@clerk/nextjs/server";
 
-describe("POST /api/chat", () => {
+describe("POST /api/connect", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset to authenticated user by default
@@ -64,7 +64,7 @@ describe("POST /api/chat", () => {
     it("returns 401 when not authenticated", async () => {
         vi.mocked(currentUser).mockResolvedValue(null);
 
-        const request = new Request("http://localhost/api/chat", {
+        const request = new Request("http://localhost/api/connect", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: [] }),
@@ -87,7 +87,7 @@ describe("POST /api/chat", () => {
             },
         ];
 
-        const request = new Request("http://localhost/api/chat", {
+        const request = new Request("http://localhost/api/connect", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: uiMessages }),
@@ -122,7 +122,7 @@ describe("POST /api/chat", () => {
             },
         ];
 
-        const request = new Request("http://localhost/api/chat", {
+        const request = new Request("http://localhost/api/connect", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: uiMessages }),

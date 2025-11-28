@@ -5,12 +5,12 @@ import Markdown from "react-markdown";
 
 import { cn } from "@/lib/utils";
 
-interface ChatMessageProps {
+interface MessageProps {
     message: UIMessage;
     modelId?: string;
 }
 
-export function ChatMessage({ message, modelId }: ChatMessageProps) {
+export function Message({ message, modelId }: MessageProps) {
     const isUser = message.role === "user";
 
     // Extract text content from message parts

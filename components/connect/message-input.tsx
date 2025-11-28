@@ -6,19 +6,19 @@ import type { FormEvent, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface ChatInputProps {
+interface MessageInputProps {
     input: string;
     isLoading: boolean;
     onInputChange: (value: string) => void;
     onSubmit: (e: FormEvent<HTMLFormElement>) => void;
 }
 
-export function ChatInput({
+export function MessageInput({
     input,
     isLoading,
     onInputChange,
     onSubmit,
-}: ChatInputProps) {
+}: MessageInputProps) {
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
