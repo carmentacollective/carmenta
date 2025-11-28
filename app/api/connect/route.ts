@@ -123,7 +123,7 @@ export async function POST(req: Request) {
             );
             return new Response(
                 JSON.stringify({
-                    error: "Invalid request format",
+                    error: "We couldn't understand that request. Mind trying again?",
                     details: parseResult.error.flatten(),
                 }),
                 {
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
         // Return error response with details (safe for client)
         return new Response(
             JSON.stringify({
-                error: "Failed to process connect request. Please try again.",
+                error: "We hit a snag processing that. Let's try again.",
                 // Include error type for debugging (not the full message which might contain sensitive info)
                 errorType: errorName,
             }),

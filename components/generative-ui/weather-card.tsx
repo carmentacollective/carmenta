@@ -55,7 +55,7 @@ export const WeatherToolUI = makeAssistantToolUI<WeatherArgs, WeatherResult>({
                         </div>
                     </div>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        Getting weather for {args.location}...
+                        Checking the weather in {args.location}...
                     </p>
                 </div>
             );
@@ -66,7 +66,8 @@ export const WeatherToolUI = makeAssistantToolUI<WeatherArgs, WeatherResult>({
             return (
                 <div className="glass-card max-w-xs border-destructive/50 bg-destructive/10">
                     <p className="text-sm text-destructive">
-                        Couldn&apos;t get weather for {args.location}
+                        Weather for {args.location} didn&apos;t come through. Try asking
+                        again?
                     </p>
                 </div>
             );

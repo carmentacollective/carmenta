@@ -36,10 +36,11 @@ class ChatErrorBoundary extends Component<
                 <div className="flex h-full flex-col items-center justify-center p-8 text-center">
                     <div className="glass-card max-w-md">
                         <h2 className="mb-2 text-lg font-semibold text-foreground/90">
-                            Something went wrong
+                            We hit a snag
                         </h2>
                         <p className="mb-4 text-sm text-foreground/60">
-                            We encountered an error. Please refresh to try again.
+                            Something went sideways. A quick refresh should get us back
+                            on track.
                         </p>
                         <button
                             onClick={() => window.location.reload()}

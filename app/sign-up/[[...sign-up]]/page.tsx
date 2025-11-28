@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Sign Up | Carmenta",
-    description: "Create an account to begin our partnership with Carmenta",
+    description: "Start building together. Create your account.",
     robots: { index: false, follow: false },
 };
 
@@ -13,7 +13,7 @@ export default function SignUpPage() {
             <div className="mb-8 text-center">
                 <h1 className="text-2xl font-bold tracking-tight">CARMENTA_</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    Create an account to begin our partnership
+                    Start building together
                 </p>
             </div>
             <SignUp

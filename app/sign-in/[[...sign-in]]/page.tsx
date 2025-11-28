@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Sign In | Carmenta",
-    description: "Sign in to Carmenta to continue our conversation",
+    description: "Welcome back. Pick up where we left off.",
     robots: { index: false, follow: false },
 };
 
@@ -13,7 +13,7 @@ export default function SignInPage() {
             <div className="mb-8 text-center">
                 <h1 className="text-2xl font-bold tracking-tight">CARMENTA_</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    Sign in to continue our conversation
+                    Welcome back. Pick up where we left off.
                 </p>
             </div>
             <SignIn

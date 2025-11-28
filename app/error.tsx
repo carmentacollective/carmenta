@@ -35,11 +35,11 @@ export default function Error({
         <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
             <div className="max-w-md text-center">
                 <h2 className="mb-4 text-xl font-bold text-foreground">
-                    Something went wrong
+                    We hit a snag
                 </h2>
                 <p className="mb-6 text-muted-foreground">
-                    We hit an unexpected error. Don&apos;t worry, we&apos;ve been
-                    notified.
+                    Something unexpected happened. We&apos;ve already been notified and
+                    are looking into it.
                 </p>
                 <div className="flex justify-center gap-4">
                     <button

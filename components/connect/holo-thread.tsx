@@ -115,7 +115,7 @@ function Composer() {
             </ComposerPrimitive.AddAttachment>
 
             <ComposerPrimitive.Input
-                placeholder="Ask anything or say what you need..."
+                placeholder="What's on your mind?"
                 className="min-h-12 flex-1 resize-none border-none bg-transparent px-2 py-3 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
                 rows={1}
                 autoFocus

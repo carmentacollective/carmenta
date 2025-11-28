@@ -40,7 +40,7 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
                         <div className="h-8 w-full rounded bg-muted" />
                     </div>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        Creating comparison...
+                        Building your comparison...
                     </p>
                 </div>
             );
@@ -51,7 +51,8 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
             return (
                 <div className="glass-card border-destructive/50 bg-destructive/10">
                     <p className="text-sm text-destructive">
-                        Couldn&apos;t create comparison for &quot;{args.title}&quot;
+                        The comparison for &quot;{args.title}&quot; didn&apos;t come
+                        together. Try asking again?
                     </p>
                 </div>
             );

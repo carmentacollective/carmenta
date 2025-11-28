@@ -25,33 +25,33 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Carmenta - The Best Interface to AI",
+    title: "Carmenta - One Interface, All AI, Complete Memory",
     description:
-        "The unified front door to artificial intelligence for people who build at the speed of thought. Memory-aware, voice-first, with purpose-built responses.",
+        "Memory-aware AI that remembers your projects, decisions, and context. Voice-first interface with purpose-built responses, not chat bubbles.",
 
     openGraph: {
         type: "website",
         locale: "en_US",
         url: "https://carmenta.ai",
         siteName: "Carmenta",
-        title: "Carmenta - The Best Interface to AI",
+        title: "Carmenta - One Interface, All AI, Complete Memory",
         description:
-            "The unified front door to artificial intelligence for people who build at the speed of thought.",
+            "Memory-aware AI that remembers your projects, decisions, and context. Voice-first with purpose-built responses.",
         images: [
             {
                 url: "https://carmenta.ai/og-image.png",
                 width: 1200,
                 height: 630,
-                alt: "Carmenta - The Best Interface to AI",
+                alt: "Carmenta - One Interface, All AI, Complete Memory",
             },
         ],
     },
 
     twitter: {
         card: "summary_large_image",
-        title: "Carmenta - The Best Interface to AI",
+        title: "Carmenta - One Interface, All AI, Complete Memory",
         description:
-            "The unified front door to artificial intelligence for people who build at the speed of thought.",
+            "Memory-aware AI that remembers your projects, decisions, and context. Voice-first with purpose-built responses.",
         images: ["https://carmenta.ai/og-image.png"],
     },
 

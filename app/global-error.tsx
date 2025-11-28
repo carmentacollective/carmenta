@@ -36,11 +36,11 @@ export default function GlobalError({
                 <div className="flex min-h-screen flex-col items-center justify-center px-4">
                     <div className="max-w-md text-center">
                         <h1 className="mb-4 text-2xl font-bold text-foreground">
-                            Something went wrong
+                            We hit a snag
                         </h1>
                         <p className="mb-6 text-muted-foreground">
-                            We encountered an unexpected error. Our team has been
-                            notified and we&apos;re working to fix it.
+                            Something unexpected happened. We&apos;ve already been
+                            notified and are looking into it.
                         </p>
                         <button
                             onClick={reset}
