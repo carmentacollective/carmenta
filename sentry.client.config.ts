@@ -16,9 +16,8 @@ Sentry.init({
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
 
-    // Only send errors in production, or if explicitly enabled
-    enabled:
-        process.env.NODE_ENV === "production" || process.env.SENTRY_ENABLED === "true",
+    // Only send errors in production
+    enabled: process.env.NODE_ENV === "production",
 
     // Set environment
     environment: process.env.NODE_ENV,

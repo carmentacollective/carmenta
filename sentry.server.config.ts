@@ -12,9 +12,8 @@ Sentry.init({
     // Performance monitoring - capture 100% of transactions in dev, 10% in prod
     tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
-    // Only send errors in production, or if explicitly enabled
-    enabled:
-        process.env.NODE_ENV === "production" || process.env.SENTRY_ENABLED === "true",
+    // Only send errors in production
+    enabled: process.env.NODE_ENV === "production",
 
     // Set environment
     environment: process.env.NODE_ENV,

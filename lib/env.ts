@@ -18,8 +18,6 @@ export const env = createEnv({
         SENTRY_DSN: z.string().optional(),
         // Auth token for source map uploads (CI/CD only)
         SENTRY_AUTH_TOKEN: z.string().optional(),
-        // Enable Sentry in development (default: production only)
-        SENTRY_ENABLED: z.string().optional(),
     },
     client: {
         // Client-side Sentry DSN (same value as server, exposed to browser)
@@ -30,7 +28,6 @@ export const env = createEnv({
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
         SENTRY_DSN: process.env.SENTRY_DSN,
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
-        SENTRY_ENABLED: process.env.SENTRY_ENABLED,
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     },
     skipValidation: process.env.SKIP_ENV_VALIDATION === "true",

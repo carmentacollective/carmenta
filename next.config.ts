@@ -119,7 +119,7 @@ const sentryConfig = {
     disableLogger: true,
 
     // Tunnel Sentry requests through our own domain to avoid ad blockers
-    // tunnelRoute: "/monitoring",
+    tunnelRoute: "/monitoring",
 
     // Disable Sentry during development unless explicitly enabled
     hideSourceMaps: process.env.NODE_ENV === "development",
