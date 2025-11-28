@@ -76,9 +76,9 @@ test.describe("Connect Page - Authenticated", () => {
 
         // Wait for the weather card to appear
         // The WeatherToolUI renders with these elements
-        await expect(
-            page.locator(".blueprint-box").filter({ hasText: /°C/ })
-        ).toBeVisible({ timeout: 30000 });
+        await expect(page.locator(".glass-card").filter({ hasText: /°C/ })).toBeVisible(
+            { timeout: 30000 }
+        );
     });
 
     test("renders comparison table when comparing options", async ({ page }) => {
@@ -97,7 +97,7 @@ test.describe("Connect Page - Authenticated", () => {
         await expect(
             page
                 .locator("table")
-                .or(page.locator(".blueprint-box").filter({ hasText: /Option/ }))
+                .or(page.locator(".glass-card").filter({ hasText: /Option/ }))
         ).toBeVisible({ timeout: 30000 });
     });
 });

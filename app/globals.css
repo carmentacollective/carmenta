@@ -2,38 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Holographic Dream Theme
+ *
+ * Design tokens and utility classes for Carmenta's visual language.
+ * No !important hacks - we use headless primitives instead of fighting
+ * pre-styled components.
+ */
+
 @layer base {
     :root {
-        /* Blueprint Theme - Always Dark */
-        --background: 215 50% 10%; /* #0d1b2a */
-        --foreground: 210 20% 98%; /* #e0e1dd */
+        /* Background & Surface */
+        --background: 320 20% 97%; /* #F8F4F8 */
+        --foreground: 285 25% 31%;
 
-        --card: 215 35% 17%; /* #1b263b */
-        --card-foreground: 210 20% 98%;
+        --card: 0 0% 100%;
+        --card-foreground: 285 25% 31%;
 
-        --popover: 215 50% 10%;
-        --popover-foreground: 210 20% 98%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 285 25% 31%;
 
-        --primary: 190 90% 50%; /* #00d4ff - Cyan for blueprint lines/highlights */
-        --primary-foreground: 215 50% 10%;
+        /* Primary - Holographic accent */
+        --primary: 280 40% 75%;
+        --primary-foreground: 0 0% 100%;
 
-        --secondary: 210 30% 25%;
-        --secondary-foreground: 210 20% 98%;
+        /* Secondary */
+        --secondary: 280 20% 95%;
+        --secondary-foreground: 285 25% 31%;
 
-        --muted: 215 25% 20%;
-        --muted-foreground: 215 20% 65%;
+        /* Muted */
+        --muted: 280 20% 92%;
+        --muted-foreground: 285 20% 50%;
 
-        --accent: 215 25% 20%;
-        --accent-foreground: 210 20% 98%;
+        /* Accent */
+        --accent: 280 30% 88%;
+        --accent-foreground: 285 25% 31%;
 
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 20% 98%;
+        /* Destructive */
+        --destructive: 0 60% 70%;
+        --destructive-foreground: 0 0% 100%;
 
-        --border: 215 25% 25%;
-        --input: 215 25% 25%;
-        --ring: 190 90% 50%;
+        /* Borders & Inputs */
+        --border: 280 20% 85%;
+        --input: 280 20% 90%;
+        --ring: 280 40% 75%;
 
-        --radius: 0; /* Blueprints have sharp edges */
+        /* Border radius */
+        --radius: 0.75rem;
+
+        /* Glassmorphism */
+        --glass-blur: 24px;
+    }
+
+    .dark {
+        --background: 280 30% 8%;
+        --foreground: 280 20% 90%;
+
+        --card: 280 30% 12%;
+        --card-foreground: 280 20% 90%;
+
+        --popover: 280 30% 10%;
+        --popover-foreground: 280 20% 90%;
+
+        --primary: 280 50% 65%;
+        --primary-foreground: 280 30% 8%;
+
+        --secondary: 280 20% 20%;
+        --secondary-foreground: 280 20% 90%;
+
+        --muted: 280 20% 18%;
+        --muted-foreground: 280 15% 60%;
+
+        --accent: 280 25% 20%;
+        --accent-foreground: 280 20% 90%;
+
+        --destructive: 0 50% 50%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 280 20% 25%;
+        --input: 280 20% 20%;
+        --ring: 280 50% 65%;
     }
 }
 
@@ -41,34 +89,92 @@
     * {
         @apply border-border;
     }
+
     body {
         @apply bg-background text-foreground;
-        background-image:
-            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-        background-size: 40px 40px;
+        font-feature-settings:
+            "rlig" 1,
+            "calt" 1;
     }
 }
 
 @layer components {
-    .blueprint-box {
-        @apply relative border border-white/20 bg-card/30 p-6 backdrop-blur-sm;
+    /* Glassmorphism card */
+    .glass-card {
+        @apply rounded-2xl p-6;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow:
+            0 8px 32px rgba(180, 140, 200, 0.2),
+            0 0 0 1px rgba(255, 255, 255, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    .blueprint-box::before {
-        content: "";
-        @apply absolute -left-[1px] -top-[1px] h-3 w-3 border-l border-t border-primary;
+    /* Glassmorphism input dock */
+    .glass-input-dock {
+        @apply rounded-[28px] p-2;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow:
+            0 8px 32px rgba(180, 140, 200, 0.2),
+            0 0 0 1px rgba(255, 255, 255, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    .blueprint-box::after {
-        content: "";
-        @apply absolute -bottom-[1px] -right-[1px] h-3 w-3 border-b border-r border-primary;
+    /* Holographic gradient button */
+    .btn-holo {
+        @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-all;
+        background: linear-gradient(
+            135deg,
+            rgba(200, 160, 220, 0.9) 0%,
+            rgba(160, 200, 220, 0.9) 50%,
+            rgba(220, 180, 200, 0.9) 100%
+        );
+        box-shadow: 0 4px 16px rgba(180, 140, 200, 0.3);
     }
 
-    .blueprint-grid {
-        background-image:
-            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-        background-size: 20px 20px;
+    .btn-holo:hover {
+        @apply scale-105;
+        box-shadow: 0 8px 24px rgba(180, 140, 200, 0.4);
+    }
+
+    /* Greeting text styles */
+    .greeting-title {
+        @apply text-4xl font-light tracking-tight md:text-5xl;
+        color: rgba(90, 60, 100, 0.85);
+        letter-spacing: -1.5px;
+        text-shadow: 0 2px 20px rgba(255, 255, 255, 0.5);
+    }
+
+    .greeting-subtitle {
+        @apply text-base;
+        color: rgba(120, 90, 130, 0.8);
+    }
+}
+
+@layer utilities {
+    /* Custom scrollbar */
+    .scrollbar-holo {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
+    }
+
+    .scrollbar-holo::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scrollbar-holo::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-holo::-webkit-scrollbar-thumb {
+        background: rgba(180, 140, 200, 0.3);
+        border-radius: 4px;
+    }
+
+    .scrollbar-holo::-webkit-scrollbar-thumb:hover {
+        background: rgba(180, 140, 200, 0.5);
     }
 }

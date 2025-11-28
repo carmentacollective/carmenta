@@ -186,22 +186,42 @@ export async function POST(req: Request) {
             originalMessages: messages,
         });
     } catch (error) {
-        // Log and report error with user context when available
-        logger.error({ error, userEmail }, "Connect request failed");
+        // Extract detailed error info
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorName = error instanceof Error ? error.name : "Unknown";
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
+        // Log detailed error for debugging
+        logger.error(
+            {
+                error: errorMessage,
+                errorName,
+                errorStack,
+                userEmail,
+                model: MODEL_ID,
+            },
+            "❌ Connect request failed"
+        );
+
         Sentry.captureException(error, {
             tags: {
                 component: "api",
                 route: "connect",
+                errorName,
             },
             extra: {
                 userEmail,
+                model: MODEL_ID,
+                errorMessage,
             },
         });
 
-        // Return user-friendly error response
+        // Return error response with details (safe for client)
         return new Response(
             JSON.stringify({
                 error: "Failed to process connect request. Please try again.",
+                // Include error type for debugging (not the full message which might contain sensitive info)
+                errorType: errorName,
             }),
             {
                 status: 500,

@@ -40,3 +40,6 @@ pnpm-debug.log*
 
 # Created prompts (local prompt drafts)
 .created-prompts
+
+# Clerk (auto-generated)
+.clerk

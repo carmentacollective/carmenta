@@ -1,15 +1,14 @@
 "use client";
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Thread } from "@assistant-ui/react-ui";
 
 import { ConnectRuntimeProvider } from "./connect-runtime-provider";
+import { HoloThread } from "./holo-thread";
 import { WeatherToolUI, CompareToolUI } from "@/components/generative-ui";
 import { logger } from "@/lib/client-logger";
 
 /**
  * Error boundary to catch rendering failures in the chat interface.
- * Prevents tool UI crashes from taking down the entire page.
  */
 class ChatErrorBoundary extends Component<
     { children: ReactNode },
@@ -35,17 +34,16 @@ class ChatErrorBoundary extends Component<
         if (this.state.hasError) {
             return (
                 <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-                    <div className="blueprint-box max-w-md border-destructive/50 bg-destructive/10">
-                        <h2 className="mb-2 font-bold text-destructive">
+                    <div className="glass-card max-w-md">
+                        <h2 className="mb-2 text-lg font-semibold text-foreground/90">
                             Something went wrong
                         </h2>
-                        <p className="mb-4 text-sm text-muted-foreground">
-                            We encountered an error rendering the chat. Please refresh
-                            the page to try again.
+                        <p className="mb-4 text-sm text-foreground/60">
+                            We encountered an error. Please refresh to try again.
                         </p>
                         <button
                             onClick={() => window.location.reload()}
-                            className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="btn-holo"
                         >
                             Refresh Page
                         </button>
@@ -61,27 +59,18 @@ class ChatErrorBoundary extends Component<
 /**
  * Main Chat component for the Connect page.
  *
- * Uses assistant-ui Thread for rendering the conversation with support for:
- * - Streaming text responses
- * - Tool calls rendered as custom UI components (WeatherCard, DataTable)
- * - Message branching and editing
- *
- * The ConnectRuntimeProvider handles:
- * - Connection to /api/connect endpoint
- * - Message state management
- * - Tool execution flow
+ * Uses our custom HoloThread built with headless primitives.
+ * No fighting with pre-styled components - just clean composition.
  */
 export function Chat() {
     return (
         <ChatErrorBoundary>
             <ConnectRuntimeProvider>
-                {/* Register tool UIs so they render when tools are called */}
                 <WeatherToolUI />
                 <CompareToolUI />
 
-                {/* Full height thread with custom styling */}
-                <div className="flex h-full flex-col">
-                    <Thread />
+                <div className="scrollbar-holo h-full">
+                    <HoloThread />
                 </div>
             </ConnectRuntimeProvider>
         </ChatErrorBoundary>

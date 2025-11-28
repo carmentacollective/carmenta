@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Chat } from "@/components/connect";
+import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
     title: "Connect | Carmenta",
@@ -12,38 +13,42 @@ export const metadata: Metadata = {
 
 export default function ConnectPage() {
     return (
-        <div className="flex h-screen flex-col">
-            {/* Header */}
-            <header className="flex items-center justify-between border-b border-border px-6 py-4">
-                <Link
-                    href="/"
-                    className="text-lg font-bold tracking-tight transition-colors hover:text-primary"
-                >
-                    CARMENTA_
-                </Link>
-                <div className="flex items-center gap-4">
-                    <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                        M0.5: First Connection
-                    </div>
-                    <UserButton
-                        appearance={{
-                            elements: {
-                                avatarBox: "h-8 w-8",
-                                userButtonPopoverCard: "bg-card border border-border",
-                                userButtonPopoverActionButton:
-                                    "text-foreground hover:bg-secondary",
-                                userButtonPopoverActionButtonText: "text-foreground",
-                                userButtonPopoverFooter: "hidden",
-                            },
-                        }}
-                    />
-                </div>
-            </header>
+        <div className="relative h-screen overflow-hidden">
+            <HolographicBackground />
 
-            {/* Chat */}
-            <main className="flex-1 overflow-hidden">
-                <Chat />
-            </main>
+            <div className="relative z-10 flex h-full flex-col">
+                <header className="flex items-center justify-between px-6 py-4">
+                    <Link
+                        href="/"
+                        className="text-lg font-semibold tracking-tight text-foreground/80 transition-colors hover:text-foreground"
+                    >
+                        CARMENTA
+                    </Link>
+                    <div className="flex items-center gap-4">
+                        <div className="rounded-full bg-white/40 px-3 py-1 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
+                            M0.5: First Connection
+                        </div>
+                        <UserButton
+                            appearance={{
+                                elements: {
+                                    avatarBox: "h-8 w-8",
+                                    userButtonPopoverCard:
+                                        "bg-white/80 backdrop-blur-xl border border-white/60 shadow-lg",
+                                    userButtonPopoverActionButton:
+                                        "text-foreground hover:bg-white/50",
+                                    userButtonPopoverActionButtonText:
+                                        "text-foreground",
+                                    userButtonPopoverFooter: "hidden",
+                                },
+                            }}
+                        />
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-hidden">
+                    <Chat />
+                </main>
+            </div>
         </div>
     );
 }
