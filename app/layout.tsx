@@ -1,6 +1,8 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+
+import "@assistant-ui/react-ui/styles/index.css";
 import "./globals.css";
 
 const inter = Inter({
