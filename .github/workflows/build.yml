@@ -107,6 +107,9 @@ jobs:
 
       - name: 🏗️ Build Next.js application
         run: pnpm build
+        env:
+          # Skip env validation during CI build - secrets not needed for static analysis
+          SKIP_ENV_VALIDATION: "true"
 
       - name: ✅ Verify build output
         run: |
