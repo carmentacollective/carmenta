@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { streamText } from "ai";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         apiKey: env.OPENROUTER_API_KEY,
     });
 
-    const { messages } = await req.json();
+    const { messages } = (await req.json()) as { messages: UIMessage[] };
 
     logger.info(
         { messageCount: messages?.length ?? 0, model: "anthropic/claude-sonnet-4.5" },
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const result = await streamText({
         model: openrouter.chat("anthropic/claude-sonnet-4.5"),
         system: SYSTEM_PROMPT,
-        messages,
+        messages: convertToModelMessages(messages),
     });
 
     logger.debug({ messageCount: messages?.length ?? 0 }, "Chat stream initiated");
