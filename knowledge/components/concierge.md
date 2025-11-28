@@ -52,6 +52,22 @@ clarification when the request is too ambiguous.
 While the Concierge handles complexity automatically, we get simple overrides when we
 want them - likely a speed/quality tradeoff and possibly response mode preferences.
 
+## Model Provider
+
+We use **OpenRouter** as the model gateway. One API key provides access to 300+ models
+from all major providers (Anthropic, OpenAI, Google, Meta, Mistral, etc.) with unified
+billing and transparent per-token pricing.
+
+Why OpenRouter over direct provider APIs:
+
+- **Model flexibility**: Switch models without managing multiple API keys
+- **Cost optimization**: Compare pricing across providers, use cheapest option for task
+- **Fallback capability**: If one provider is down, route to another
+- **New model access**: Immediate availability when providers release new models
+- **Usage tracking**: Unified dashboard across all model usage
+
+Implementation: `@openrouter/ai-sdk-provider` with Vercel AI SDK 5.0.
+
 ## Integration Points
 
 - **Model Intelligence**: Queries for model selection. Provides real benchmark data, not
@@ -60,6 +76,7 @@ want them - likely a speed/quality tradeoff and possibly response mode preferenc
 - **Interface**: Signals how to render responses (chat, rich media, structured reports).
 - **AI Team**: Routes complex requests to specialized agents.
 - **Service Connectivity**: Orchestrates access to external services when needed.
+- **OpenRouter**: Model gateway for all LLM requests.
 
 ## Success Criteria
 
