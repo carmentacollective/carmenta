@@ -177,24 +177,26 @@ export function HolographicBackground() {
             return;
         }
 
-        // Initialize canvases
-        const resize = () => {
+        // Simple resize handler - just update canvas dimensions
+        // The wrapping logic in the animation loop handles any out-of-bounds blobs
+        const handleResize = () => {
             holoCanvas.width = window.innerWidth;
             holoCanvas.height = window.innerHeight;
             shimmerCanvas.width = window.innerWidth;
             shimmerCanvas.height = window.innerHeight;
-
-            // Reinitialize blobs and particles on resize
-            blobsRef.current = Array.from({ length: BLOB_COUNT }, (_, i) =>
-                createBlob(i, holoCanvas.width, holoCanvas.height)
-            );
-            particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () =>
-                createParticle(shimmerCanvas.width, shimmerCanvas.height)
-            );
         };
 
-        resize();
-        window.addEventListener("resize", resize);
+        // Initial canvas setup
+        handleResize();
+        window.addEventListener("resize", handleResize);
+
+        // Create blobs and particles once on mount
+        blobsRef.current = Array.from({ length: BLOB_COUNT }, (_, i) =>
+            createBlob(i, holoCanvas.width, holoCanvas.height)
+        );
+        particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () =>
+            createParticle(shimmerCanvas.width, shimmerCanvas.height)
+        );
 
         // Track mouse position
         const handleMouseMove = (e: MouseEvent) => {
@@ -338,7 +340,7 @@ export function HolographicBackground() {
         animate();
 
         return () => {
-            window.removeEventListener("resize", resize);
+            window.removeEventListener("resize", handleResize);
             document.removeEventListener("mousemove", handleMouseMove);
             if (animationFrameRef.current !== null) {
                 cancelAnimationFrame(animationFrameRef.current);
