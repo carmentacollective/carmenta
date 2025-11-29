@@ -37,9 +37,34 @@ aligning response tone with our preferences.
 ### Model Selection
 
 Different requests need different models. Quick questions get fast, cheap models. Deep
-analysis gets powerful, expensive ones. The Concierge queries Model Intelligence (see
-[model-intelligence.md](./model-intelligence.md)) to select optimally based on current
-benchmark data - not static mappings.
+analysis gets powerful, expensive ones.
+
+There are two paths for model selection:
+
+**Path 1: Concierge Chooses (Default)**
+
+Most users never think about models. The Concierge:
+
+1. Classifies the request into a task type (CODE, REASONING, CONVERSATION, etc.)
+2. Checks the user's speed mode (Swift, Balanced, Deep)
+3. Reads the [model rubric](../model-rubric.md) for recommendations
+4. Filters by capabilities (needs vision? needs tools? context length?)
+5. Selects the optimal model and configures it (temperature, etc.)
+6. Explains its reasoning in response metadata
+
+**Path 2: User Chooses Explicitly**
+
+Power users can override model selection:
+
+- Available via settings or a picker in the input area
+- Shows human-friendly names ("Claude Sonnet 4" not "anthropic/claude-sonnet...")
+- Can lock preference for session or use one-time
+- Concierge still enhances the query, just skips routing
+
+The Concierge queries the [model rubric](../model-rubric.md) for current
+recommendations. The rubric is updated via the `/update-model-rubric` command when the
+model landscape changes. See [model-intelligence.md](./model-intelligence.md) for how
+the system works.
 
 ### Response Strategy
 
@@ -49,8 +74,36 @@ clarification when the request is too ambiguous.
 
 ## Controls
 
-While the Concierge handles complexity automatically, we get simple overrides when we
-want them - likely a speed/quality tradeoff and possibly response mode preferences.
+While the Concierge handles complexity automatically, we get simple overrides:
+
+### Speed Modes
+
+- **Swift**: Prioritize speed. Use fastest capable model (typically Claude 3.5 Haiku or
+  Gemini 2.0 Flash). For users who want quick answers and conversational flow.
+- **Balanced**: Use the rubric's recommended model for the task type. Default mode.
+  Optimizes for quality within reasonable latency.
+- **Deep**: Prioritize quality. Use most capable model (typically Claude Opus 4). For
+  research, analysis, important decisions. Worth the wait.
+
+### Model Override
+
+Power users can explicitly select a model, bypassing Concierge routing. The Concierge
+still enhances the query but routes to the specified model.
+
+### Explainability
+
+When the Concierge selects a model, it should be able to explain why:
+
+- "Your request was classified as CODE"
+- "You're in Balanced mode"
+- "For CODE + Balanced, our rubric recommends Claude Sonnet 4"
+- "Source: rubric v1.0, based on SWE-bench performance"
+
+This explanation can be:
+
+- Available on request ("Why this model?")
+- Included in response metadata for debugging
+- Logged for analytics and rubric validation
 
 ## Model Provider
 
