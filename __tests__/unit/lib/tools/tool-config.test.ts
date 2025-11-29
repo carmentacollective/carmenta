@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
     TOOL_CONFIG,
     DEFAULT_TOOL_CONFIG,
@@ -22,7 +22,7 @@ describe("tool-config", () => {
         });
 
         it("each tool has required fields", () => {
-            for (const [toolName, config] of Object.entries(TOOL_CONFIG)) {
+            for (const [_toolName, config] of Object.entries(TOOL_CONFIG)) {
                 expect(config.displayName).toBeTruthy();
                 expect(config.icon).toBeDefined();
                 expect(config.messages.pending).toBeTruthy();
