@@ -103,18 +103,12 @@ const tools = {
             query: z
                 .string()
                 .describe("The search query. Be specific and include key terms."),
-            freshness: z
-                .enum(["day", "week", "month", "any"])
-                .optional()
-                .describe(
-                    'How recent results should be. Use "day" for breaking news, "week" for recent updates, "any" for evergreen content.'
-                ),
             maxResults: z
                 .number()
                 .min(1)
                 .max(20)
                 .optional()
-                .describe("Maximum number of results to return."),
+                .describe("Maximum number of results to return (default: 5)."),
         }),
         execute: async ({ query, maxResults }) => {
             const provider = getWebIntelligenceProvider();

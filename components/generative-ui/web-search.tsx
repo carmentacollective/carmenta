@@ -5,7 +5,6 @@ import { Search, ExternalLink, AlertCircle } from "lucide-react";
 
 interface WebSearchArgs {
     query: string;
-    freshness?: "day" | "week" | "month" | "any";
     maxResults?: number;
 }
 

@@ -335,16 +335,34 @@ export class ParallelProvider implements WebIntelligenceProvider {
         const maxWaitMs = depth === "deep" ? 120000 : 60000;
         const pollIntervalMs = 2000;
         let elapsed = 0;
+        let consecutiveFailures = 0;
 
         while (elapsed < maxWaitMs) {
-            await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-            elapsed += pollIntervalMs;
-
             const statusResponse = await this.getTaskStatus(runId);
 
             if (!statusResponse) {
+                consecutiveFailures++;
+                logger.warn(
+                    { runId, consecutiveFailures, elapsed },
+                    "Failed to get task status, will retry"
+                );
+
+                // If we've failed too many times in a row, give up
+                if (consecutiveFailures >= 5) {
+                    logger.error(
+                        { runId, objective, consecutiveFailures },
+                        "Too many consecutive status check failures"
+                    );
+                    return null;
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+                elapsed += pollIntervalMs;
                 continue;
             }
+
+            // Reset failure counter on success
+            consecutiveFailures = 0;
 
             if (statusResponse.status === "completed" && statusResponse.output) {
                 const latencyMs = Date.now() - startTime;
@@ -413,6 +431,10 @@ export class ParallelProvider implements WebIntelligenceProvider {
                 logger.error({ runId, objective }, "Research task failed");
                 return null;
             }
+
+            // Still processing - wait before next poll
+            await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+            elapsed += pollIntervalMs;
         }
 
         logger.warn({ runId, objective, elapsed }, "Research task timed out");
@@ -431,6 +453,10 @@ export class ParallelProvider implements WebIntelligenceProvider {
             });
 
             if (!response.ok) {
+                logger.warn(
+                    { runId, status: response.status },
+                    "Task status check returned non-OK response"
+                );
                 return null;
             }
 
@@ -446,7 +472,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
             }
 
             return parsed.data;
-        } catch {
+        } catch (error) {
+            logger.warn({ runId, error }, "Task status check failed");
             return null;
         }
     }
