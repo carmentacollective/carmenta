@@ -139,10 +139,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
                 )}
             >
-                <div
-                    className="rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm"
-                    style={{ maxHeight: "200px", overflowY: "auto" }}
-                >
+                <div className="max-h-[200px] overflow-y-auto rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm">
                     {/* Render as plain text - could enhance with markdown later */}
                     <pre className="whitespace-pre-wrap font-sans">{content}</pre>
                 </div>
