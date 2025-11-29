@@ -65,46 +65,48 @@ export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
 
         // Success state
         return (
-            <div className="glass-card overflow-x-auto">
+            <div className="glass-card max-w-full">
                 <h3 className="mb-4 font-bold text-foreground">{result.title}</h3>
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b border-border">
-                            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-                                Option
-                            </th>
-                            {attributeKeys.map((key) => (
-                                <th
-                                    key={key}
-                                    className="px-4 py-2 text-left font-medium capitalize text-muted-foreground"
-                                >
-                                    {key}
+                <div className="scrollbar-holo -mx-6 overflow-x-auto px-6">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-border">
+                                <th className="min-w-[100px] whitespace-nowrap px-3 py-3 text-left font-medium text-muted-foreground">
+                                    Option
                                 </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {result.options.map((option) => (
-                            <tr
-                                key={option.name}
-                                className="border-b border-border/50 last:border-0"
-                            >
-                                <td className="px-4 py-2 font-medium text-foreground">
-                                    {option.name}
-                                </td>
                                 {attributeKeys.map((key) => (
-                                    <td
+                                    <th
                                         key={key}
-                                        className="px-4 py-2 text-foreground/80"
+                                        className="min-w-[120px] whitespace-nowrap px-3 py-3 text-left font-medium capitalize text-muted-foreground"
                                     >
-                                        {/* React auto-escapes - safe from XSS */}
-                                        {option.attributes[key] ?? "—"}
-                                    </td>
+                                        {key}
+                                    </th>
                                 ))}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {result.options.map((option) => (
+                                <tr
+                                    key={option.name}
+                                    className="border-b border-border/50 last:border-0"
+                                >
+                                    <td className="whitespace-nowrap px-3 py-3 font-medium text-foreground">
+                                        {option.name}
+                                    </td>
+                                    {attributeKeys.map((key) => (
+                                        <td
+                                            key={key}
+                                            className="max-w-[200px] px-3 py-3 text-foreground/80"
+                                        >
+                                            {/* React auto-escapes - safe from XSS */}
+                                            {option.attributes[key] ?? "—"}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         );
     },
