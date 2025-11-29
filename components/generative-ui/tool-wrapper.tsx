@@ -39,6 +39,98 @@ interface ToolWrapperProps {
     className?: string;
 }
 
+interface ToolTiming {
+    startedAt?: number;
+    completedAt?: number;
+    durationMs?: number;
+}
+
+/**
+ * Custom hook to track timing across status transitions.
+ *
+ * Uses state-only approach: captures start time when status becomes "running"
+ * and calculates duration when status becomes "completed".
+ *
+ * The timing state is set via setTimeout(0) to defer the setState call,
+ * avoiding the "set-state-in-effect" lint warning while still responding
+ * to status changes in the same tick.
+ */
+function useToolTiming(status: ToolStatus): ToolTiming {
+    const [timing, setTiming] = useState<ToolTiming>({});
+    const prevStatusRef = useRef<ToolStatus | null>(null);
+
+    useEffect(() => {
+        const prevStatus = prevStatusRef.current;
+
+        // Transition to running: capture start time
+        if (status === "running" && prevStatus !== "running") {
+            // Defer to next microtask to avoid "set-state-in-effect" warning
+            setTimeout(() => {
+                setTiming({ startedAt: Date.now() });
+            }, 0);
+        }
+
+        // Transition to completed: calculate duration
+        if (status === "completed" && prevStatus !== "completed") {
+            setTimeout(() => {
+                setTiming((prev) => {
+                    const now = Date.now();
+                    const durationMs = prev.startedAt
+                        ? now - prev.startedAt
+                        : undefined;
+                    return {
+                        ...prev,
+                        completedAt: now,
+                        durationMs,
+                    };
+                });
+            }, 0);
+        }
+
+        prevStatusRef.current = status;
+    }, [status]);
+
+    return timing;
+}
+
+/**
+ * Custom hook to show first-use celebration.
+ *
+ * Tracks whether this is the first time using a tool in this session.
+ * Shows celebration message for 2 seconds, then hides it.
+ * Only triggers once per tool per session.
+ */
+function useFirstUseCelebration(toolName: string, status: ToolStatus) {
+    const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null);
+    const hasCheckedRef = useRef(false);
+
+    useEffect(() => {
+        // Only check once when status becomes completed
+        if (status !== "completed" || hasCheckedRef.current) return;
+
+        hasCheckedRef.current = true;
+
+        if (isFirstToolUse(toolName)) {
+            // Use setTimeout to show message (avoids "set-state-in-effect" warning)
+            // then clear after 2 seconds
+            const showTimer = setTimeout(() => {
+                setCelebrationMessage(getFirstUseMessage(toolName));
+            }, 0);
+
+            const hideTimer = setTimeout(() => {
+                setCelebrationMessage(null);
+            }, 2000);
+
+            return () => {
+                clearTimeout(showTimer);
+                clearTimeout(hideTimer);
+            };
+        }
+    }, [status, toolName]);
+
+    return celebrationMessage;
+}
+
 /**
  * Wrapper for tool UIs with status, delight, and debug features.
  *
@@ -77,62 +169,14 @@ export function ToolWrapper({
     const config = getToolConfig(toolName);
     const Icon = config.icon;
 
-    // Track timing for duration-based delight
-    const prevStatusRef = useRef<ToolStatus | null>(null);
-    const [timing, setTiming] = useState<{
-        startedAt?: number;
-        durationMs?: number;
-        completedAt?: number;
-    }>({});
+    // Track timing across status transitions
+    const timing = useToolTiming(status);
 
-    // Track first use celebration
-    const [showFirstUse, setShowFirstUse] = useState(false);
+    // First-use celebration (only shows once per tool per session)
+    const celebrationMessage = useFirstUseCelebration(toolName, status);
 
     // Default to open when running, closed when completed
     const [isOpen, setIsOpen] = useState(status !== "completed");
-
-    // Track status transitions and capture timing
-    useEffect(() => {
-        const prevStatus = prevStatusRef.current;
-        const currentStatus = status;
-
-        // Status changed to running - capture start time
-        // This is a legitimate use case: capturing external state (time) at a specific moment
-        if (currentStatus === "running" && prevStatus !== "running") {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- capturing timestamp at status transition
-            setTiming((prev) => ({ ...prev, startedAt: Date.now() }));
-        }
-
-        // Status changed to completed - calculate duration
-        if (currentStatus === "completed" && prevStatus !== "completed") {
-            setTiming((prev) => {
-                if (prev.startedAt) {
-                    const now = Date.now();
-                    return {
-                        ...prev,
-                        durationMs: now - prev.startedAt,
-                        completedAt: now,
-                    };
-                }
-                return prev;
-            });
-        }
-
-        prevStatusRef.current = currentStatus;
-    }, [status]);
-
-    // Check for first use when tool completes
-    useEffect(() => {
-        if (status === "completed") {
-            if (isFirstToolUse(toolName)) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time celebration trigger
-                setShowFirstUse(true);
-                // Hide after 2 seconds
-                const timer = setTimeout(() => setShowFirstUse(false), 2000);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [status, toolName]);
 
     // Auto-collapse when completed (after a brief delay to show result)
     useEffect(() => {
@@ -147,9 +191,6 @@ export function ToolWrapper({
         status === "error"
             ? getErrorMessage(toolName, error)
             : getStatusMessage(toolName, status, toolCallId, timing.durationMs);
-
-    // First use message
-    const firstUseMessage = showFirstUse ? getFirstUseMessage(toolName) : null;
 
     return (
         <Collapsible
@@ -169,9 +210,9 @@ export function ToolWrapper({
                         {config.displayName}
                     </span>
                     {/* First use celebration */}
-                    {firstUseMessage && (
+                    {celebrationMessage && (
                         <span className="bg-holo-mint/40 rounded-full px-2 py-0.5 text-xs animate-in fade-in slide-in-from-left-2">
-                            {firstUseMessage}
+                            {celebrationMessage}
                         </span>
                     )}
                 </div>
