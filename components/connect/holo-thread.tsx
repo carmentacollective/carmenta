@@ -72,14 +72,7 @@ const MarkdownText = makeMarkdownText({
 function UserMessage() {
     return (
         <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] justify-end">
-            <div
-                className="max-w-[80%] rounded-2xl rounded-br-md px-4 py-3"
-                style={{
-                    background:
-                        "linear-gradient(135deg, rgba(200, 160, 220, 0.3), rgba(160, 200, 220, 0.3))",
-                    backdropFilter: "blur(12px)",
-                }}
-            >
+            <div className="user-message-bubble max-w-[80%] rounded-2xl rounded-br-md px-4 py-4">
                 <MessagePrimitive.Content components={{ Text: MarkdownText }} />
             </div>
         </MessagePrimitive.Root>
@@ -93,27 +86,17 @@ function UserMessage() {
 function AssistantMessage() {
     return (
         <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] flex-col gap-2">
-            <div
-                className="max-w-[85%] rounded-2xl rounded-bl-md px-4 py-3"
-                style={{
-                    background: "rgba(255, 255, 255, 0.5)",
-                    backdropFilter: "blur(16px)",
-                }}
-            >
+            <div className="assistant-message-bubble max-w-[85%] rounded-2xl rounded-bl-md px-4 py-4">
                 <MessagePrimitive.Content components={{ Text: MarkdownText }} />
             </div>
 
             <MessagePrimitive.Error>
                 <div
-                    className="flex max-w-[85%] items-center gap-2 rounded-xl px-4 py-3"
-                    style={{
-                        background: "rgba(220, 38, 38, 0.1)",
-                        backdropFilter: "blur(12px)",
-                    }}
+                    className="error-message-bubble flex max-w-[85%] items-center gap-2 rounded-xl px-4 py-4"
                     role="alert"
                 >
                     <AlertCircle className="h-4 w-4 shrink-0 text-red-500/80" />
-                    <span className="text-sm text-red-600/90">
+                    <span className="text-base text-red-600/90">
                         We hit a snag. Please try again in a moment.
                     </span>
                 </div>

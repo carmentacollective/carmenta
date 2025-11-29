@@ -111,6 +111,55 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
+    .dark .glass-card {
+        background: rgba(40, 30, 50, 0.6);
+        box-shadow:
+            0 8px 32px rgba(100, 80, 120, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* User message bubble with holographic gradient */
+    .user-message-bubble {
+        background: linear-gradient(
+            135deg,
+            rgba(200, 160, 220, 0.3),
+            rgba(160, 200, 220, 0.3)
+        );
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .dark .user-message-bubble {
+        background: linear-gradient(
+            135deg,
+            rgba(160, 120, 180, 0.4),
+            rgba(120, 160, 180, 0.4)
+        );
+    }
+
+    /* Assistant message bubble with glass effect */
+    .assistant-message-bubble {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    .dark .assistant-message-bubble {
+        background: rgba(60, 50, 70, 0.6);
+    }
+
+    /* Error message bubble */
+    .error-message-bubble {
+        background: rgba(220, 38, 38, 0.1);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .dark .error-message-bubble {
+        background: rgba(180, 30, 30, 0.2);
+    }
+
     /* Glassmorphism input dock */
     .glass-input-dock {
         @apply rounded-[28px] p-2;
