@@ -176,3 +176,229 @@ familiarity.
 - Compare Drizzle vs Prisma for our use cases
 - Research Upstash vs Redis Cloud pricing at scale
 - Study connection pooling patterns for serverless
+
+---
+
+## Vercel ai-chatbot Gap Analysis
+
+The Vercel ai-chatbot template (18.9k stars) provides a production-ready foundation.
+This analysis compares what it offers against Carmenta's specific requirements.
+
+### What Vercel Provides
+
+Schema from `vercel/ai-chatbot/lib/db/schema.ts`:
+
+```typescript
+// Core tables
+User: {
+  (id, email, password);
+}
+Chat: {
+  (id, createdAt, title, userId, visibility, lastContext);
+}
+Message_v2: {
+  (id, chatId, role, parts(json), attachments(json), createdAt);
+}
+
+// Artifacts
+Document: {
+  (id, createdAt, title, content, kind, userId);
+}
+// Note: (id, createdAt) composite key enables versioning without separate table
+
+// Feedback & collaboration
+Vote_v2: {
+  (chatId, messageId, isUpvoted);
+}
+Suggestion: {
+  (id,
+    documentId,
+    documentCreatedAt,
+    originalText,
+    suggestedText,
+    description,
+    isResolved,
+    userId,
+    createdAt);
+}
+
+// Streaming
+Stream: {
+  (id, chatId, createdAt);
+}
+```
+
+Features included:
+
+- Basic user/chat/message structure with Drizzle + PostgreSQL
+- Artifact storage with composite key versioning
+- Suggestion system for proposed edits (Google Docs-style)
+- Vote system for feedback collection
+- JSON parts for flexible message content
+- Auth.js integration with guest/registered user split
+- Resumable streams via Redis
+
+### Gaps for Carmenta
+
+The template lacks several Carmenta-specific requirements:
+
+Memory System (from memory.md):
+
+- Memory table with embeddings and confidence scores
+- Profile table for persistent user context (injected at START of context)
+- Tiered storage (immediate, recent, historical)
+- Fact extraction with categories (personal, project, preference, decision, knowledge)
+- Implicit feedback signal tracking
+
+Concierge Pipeline (from concierge.md):
+
+- PreprocessingResult storage (intent, emotion, routing signals, memory_query, clarity)
+- PostprocessingResult storage (memory_extraction, quality_assessment, follow_ups,
+  display_hints)
+- Model selection logging for explainability
+- contentForLLM vs content separation for context compression
+
+Background Operations:
+
+- Background query tracking (status, result, summaryForLLM)
+- Async updates that can be reconstructed when user revisits
+
+AG-UI Specifics (from artifacts.md):
+
+- Component tree serialization for AG-UI interfaces
+- Data binding configuration for live data artifacts
+- State persistence for interactive components
+- Broader artifact kinds (mermaid, ag-ui components beyond text/code/sheet)
+
+Organization:
+
+- Folders/tags/workspaces for conversations and artifacts
+- Bidirectional artifact references
+
+### Extension Strategy
+
+Rather than fork and heavily modify, extract patterns:
+
+1. Adopt Vercel's patterns:
+   - Composite key versioning for artifacts (elegant, no version table needed)
+   - JSON parts for message content (flexible, proven)
+   - Drizzle ORM with TypeScript-first schema
+   - Suggestion system architecture
+
+2. Add Carmenta-specific tables:
+
+```typescript
+// Memory system
+memory: {
+  id: uuid,
+  userId: uuid,
+  type: "profile" | "fact" | "preference" | "decision",
+  content: text,
+  embedding: vector(1536),  // pgvector
+  confidence: real,
+  sourceQuote: text,
+  category: varchar,
+  createdAt: timestamp,
+  lastAccessedAt: timestamp
+}
+
+// Concierge signals (optional, could be ephemeral)
+preprocessingLog: {
+  id: uuid,
+  messageId: uuid,
+  intent: jsonb,
+  emotion: jsonb,
+  routing: jsonb,
+  memoryQuery: jsonb,
+  clarity: jsonb,
+  responseHints: jsonb,
+  modelSelected: varchar,
+  createdAt: timestamp
+}
+
+// Background queries
+backgroundQuery: {
+  id: uuid,
+  conversationId: uuid,
+  type: varchar,
+  status: "pending" | "running" | "completed" | "failed",
+  input: jsonb,
+  result: jsonb,
+  summaryForLLM: text,  // Compressed version for context
+  createdAt: timestamp,
+  completedAt: timestamp
+}
+
+// Message extension
+message: {
+  // ... Vercel's fields ...
+  contentForLLM: text,  // Compressed version for context window
+  preprocessingLogId: uuid,  // Optional link to signals
+}
+
+// Artifact extension
+artifact: {
+  // ... Vercel's Document fields ...
+  kind: "text" | "code" | "sheet" | "mermaid" | "ag-ui",
+  componentTree: jsonb,  // For AG-UI
+  dataBindings: jsonb,   // For live data
+  uiState: jsonb,        // For interactive state
+  summaryForLLM: text,   // Compressed for context
+}
+```
+
+3. Context assembly logic:
+
+```typescript
+async function assembleContextForLLM(conversationId: string): Promise<CoreMessage[]> {
+  const result: CoreMessage[] = [];
+
+  // 1. Profile at START (highest attention)
+  const profile = await db.memory.findFirst({
+    where: { userId, type: "profile" },
+  });
+  if (profile) {
+    result.push({ role: "system", content: profile.content });
+  }
+
+  // 2. Recent messages (full fidelity for last N, compressed for older)
+  const messages = await db.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: "desc" },
+    limit: 50,
+  });
+
+  for (const [i, msg] of messages.reverse().entries()) {
+    const isRecent = i >= messages.length - 10;
+    result.push({
+      role: msg.role,
+      content: isRecent ? msg.parts : msg.contentForLLM,
+    });
+  }
+
+  // 3. Retrieved memories at END (before current query)
+  const memories = await retrieveRelevantMemories(conversationId);
+  if (memories.length) {
+    result.push({
+      role: "system",
+      content: formatMemoriesForContext(memories),
+    });
+  }
+
+  return result;
+}
+```
+
+### Decision: Build Custom, Borrow Patterns
+
+Recommendation: Don't fork ai-chatbot directly. Instead:
+
+1. Use ai-chatbot as reference implementation for proven patterns
+2. Build custom schema that includes Carmenta-specific tables from the start
+3. Adopt their tooling choices (Drizzle, Neon/Vercel Postgres, Auth.js)
+4. Copy their artifact versioning approach (composite key)
+5. Extend message schema for preprocessing/postprocessing signals
+
+This gives us the benefit of their battle-tested patterns without inheriting code that
+doesn't fit our architecture. The Concierge preprocessing/postprocessing layer and
+Memory system are core differentiators that require purpose-built schemas

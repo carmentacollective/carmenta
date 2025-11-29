@@ -121,6 +121,87 @@ Why OpenRouter over direct provider APIs:
 
 Implementation: `@openrouter/ai-sdk-provider` with Vercel AI SDK 5.0.
 
+## Vercel AI SDK Integration
+
+The Concierge pipeline maps naturally to Vercel AI SDK 5.0's `prepareStep` and
+`onFinish` callbacks. This avoids fighting the framework while enabling dynamic model
+selection and context management.
+
+### prepareStep for Preprocessing
+
+`prepareStep` runs before each step in an agentic loop, enabling dynamic model selection
+and context injection:
+
+```typescript
+import { streamText } from "ai";
+import { openrouter } from "@openrouter/ai-sdk-provider";
+
+const result = await streamText({
+  model: openrouter("anthropic/claude-3-haiku"), // Default fast model
+  messages: conversationHistory,
+
+  prepareStep: async ({ stepNumber, messages }) => {
+    // Only preprocess on first step (not tool call iterations)
+    if (stepNumber === 0) {
+      // Run preprocessing with fast model
+      const signals = await preprocess(messages);
+
+      return {
+        // Dynamic model selection based on signals
+        model: openrouter(selectModelFromRubric(signals)),
+
+        // Inject emotion-aware system prompt
+        system: buildSystemPrompt(signals),
+
+        // Add memories at end of context (per "lost in the middle" research)
+        messages: await injectMemories(messages, signals.memoryQuery),
+      };
+    }
+    // Return nothing for subsequent steps - use previous configuration
+  },
+
+  onFinish: async ({ text, usage }) => {
+    // Postprocessing runs after streaming completes
+    const extracted = await postprocess(text);
+
+    // Store extracted memories
+    await storeMemories(extracted.memory_extraction);
+
+    // Log for analytics
+    await logUsage({ usage, extracted });
+  },
+});
+```
+
+### Why prepareStep Over Middleware
+
+Middleware (`wrapLanguageModel`) transforms model behavior but can't switch models -
+model selection happens BEFORE calling `streamText`. `prepareStep` runs at the right
+moment: after messages are assembled but before the LLM call, with the ability to change
+the model dynamically.
+
+For context management within steps (compression, filtering), middleware complements
+prepareStep:
+
+```typescript
+const modelWithCompression = wrapLanguageModel({
+  model: baseModel,
+  middleware: {
+    transformParams: async ({ params }) => ({
+      ...params,
+      // Compress old messages, keep recent at full fidelity
+      messages: compressOldMessages(params.messages),
+    }),
+  },
+});
+```
+
+### Streaming Architecture
+
+The Concierge uses AG-UI protocol for streaming responses back to the Interface. The
+`onFinish` callback handles postprocessing without blocking the stream - users see
+responses immediately while memory extraction happens in the background
+
 ## Integration Points
 
 - **Model Intelligence**: Queries for model selection. Provides real benchmark data, not
