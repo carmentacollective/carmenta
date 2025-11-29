@@ -131,13 +131,36 @@ discover effective patterns.
 
 ### Model Selection
 
-The Concierge queries Model Intelligence for the routing rubric, then selects based on:
+Different requests need different models. Quick questions get fast, cheap models. Deep
+analysis gets powerful, expensive ones.
 
-1. Task type priorities (quality/speed/cost weights)
-2. Request-specific requirements (vision, tools, context length)
-3. User tier (pro users get better models across the board)
-4. User mode override (swift/balanced/deep)
-5. Detected emotion (emotional queries bias toward quality)
+There are two paths for model selection:
+
+**Path 1: Concierge Chooses (Default)**
+
+Most users never think about models. The Concierge:
+
+1. Classifies the request into a task type (CODE, REASONING, CONVERSATION, etc.)
+2. Checks the user's speed mode (Swift, Balanced, Deep)
+3. Reads the [model rubric](../model-rubric.md) for recommendations
+4. Filters by capabilities (needs vision? needs tools? context length?)
+5. Factors in detected emotion (emotional queries bias toward quality)
+6. Selects the optimal model and configures it (temperature, etc.)
+7. Explains its reasoning in response metadata
+
+**Path 2: User Chooses Explicitly**
+
+Power users can override model selection:
+
+- Available via settings or a picker in the input area
+- Shows human-friendly names ("Claude Sonnet 4" not "anthropic/claude-sonnet...")
+- Can lock preference for session or use one-time
+- Concierge still enhances the query, just skips routing
+
+The Concierge queries the [model rubric](../model-rubric.md) for current
+recommendations. The rubric is updated via the `/update-model-rubric` command when the
+model landscape changes. See [model-intelligence.md](./model-intelligence.md) for how
+the system works.
 
 **Implementation**: Start with RouteLLM as open-source baseline - achieves 85% cost
 reduction while maintaining 95% of GPT-4 performance. Train custom routers as we collect
@@ -184,14 +207,42 @@ returning generic cached responses to personalized queries.
 
 ## Controls
 
-While the Concierge handles complexity automatically, we get simple overrides:
+While the Concierge handles complexity automatically, we get simple overrides. Keep
+controls minimal - most users should never need them.
 
-- **Swift/Balanced/Deep mode**: Fastest capable model vs. rubric recommendation vs.
-  highest quality
-- **Manual model selection**: Power users can pick specific models
-- **Response format hint**: Suggest chat vs. rich UI
+### Speed Modes
 
-Keep controls minimal. Most users should never need them.
+- **Swift**: Prioritize speed. Use fastest capable model (typically Claude 3.5 Haiku or
+  Gemini 2.0 Flash). For users who want quick answers and conversational flow.
+- **Balanced**: Use the rubric's recommended model for the task type. Default mode.
+  Optimizes for quality within reasonable latency.
+- **Deep**: Prioritize quality. Use most capable model (typically Claude Opus 4). For
+  research, analysis, important decisions. Worth the wait.
+
+### Model Override
+
+Power users can explicitly select a model, bypassing Concierge routing. The Concierge
+still enhances the query but routes to the specified model.
+
+### Response Format Hint
+
+Users can suggest chat vs. rich UI preference. Concierge considers this alongside its
+own assessment of the content.
+
+### Explainability
+
+When the Concierge selects a model, it should be able to explain why:
+
+- "Your request was classified as CODE"
+- "You're in Balanced mode"
+- "For CODE + Balanced, our rubric recommends Claude Sonnet 4"
+- "Source: rubric v1.0, based on SWE-bench performance"
+
+This explanation can be:
+
+- Available on request ("Why this model?")
+- Included in response metadata for debugging
+- Logged for analytics and rubric validation
 
 ## Model Provider
 

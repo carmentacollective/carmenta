@@ -26,6 +26,8 @@ export const env = createEnv({
         SENTRY_AUTH_TOKEN: z.string().optional(),
         // Clerk secret key for server-side auth operations
         CLERK_SECRET_KEY: z.string().min(1).optional(),
+        // Parallel Web Systems API key for web intelligence
+        PARALLEL_API_KEY: z.string().min(1).optional(),
     },
     client: {
         // Client-side Sentry DSN (same value as server, exposed to browser)
@@ -42,6 +44,7 @@ export const env = createEnv({
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+        PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
     },
 
     /**
