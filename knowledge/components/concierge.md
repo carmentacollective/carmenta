@@ -22,112 +22,92 @@ other components can be designed around known output types rather than retrofitt
 
 ## Processing Pipeline
 
-When a message arrives, the Concierge runs a multi-stage pipeline. Each stage runs in
-parallel where possible to meet latency targets.
+When a message arrives, the Concierge runs a multi-stage pipeline. A fast LLM (Haiku or
+equivalent) handles classification and preprocessing.
 
 ```
 User Input
     |
-[Stage 1: Fast Classification] (~10ms, parallel)
-├── Intent classification (Semantic Router)
+[Stage 1: Fast Classification]
+├── Request classification (fast LLM)
 ├── Emotion detection
-├── Ambiguity scoring
-└── Multi-intent detection
+└── Ambiguity scoring
     |
-[Stage 2: Cache Check] (~5ms, parallel with Stage 1)
-└── Semantic cache lookup
-    |
-    |-- (cache hit) --> Return cached response
-    |
-[Stage 3: Query Transformation] (~15ms)
+[Stage 2: Query Transformation]
 ├── Query rewriting (if retrieval needed)
-├── Multi-intent decomposition (if detected)
 └── Context compression (for long histories)
     |
-[Stage 4: Context Assembly] (~15ms, parallel)
+[Stage 3: Context Assembly]
 ├── Memory retrieval
 ├── User profile injection (at START of context)
 └── Relevant history selection (at END of context)
     |
-[Stage 5: Routing Decision]
-├── Model selection (RouteLLM + our rubric)
-├── Response format selection
-└── Confidence threshold check
+[Stage 4: Routing Decision]
+├── Model selection (rubric-based)
+└── Response format selection
     |
 [LLM Generation] (streaming)
     |
-[Output Processing] (streaming, parallel)
-├── Format transformation
-└── Cache store (async)
+[Output Processing] (streaming)
+└── Format transformation
     |
 User Output (via AG-UI protocol)
 ```
-
-**Total preprocessing target: <50ms** - below human perception threshold.
 
 ## Core Functions
 
 ### Request Analysis
 
 When a message arrives, the Concierge classifies what kind of request it is and
-determines how to handle it.
+determines how to handle it. Use a fast LLM (Claude Haiku, GPT-4o-mini) for
+classification - fast enough to not add perceptible latency, smart enough to understand
+nuance.
 
-**Intent Classification**: Use Semantic Router (embedding-based, not LLM) for fast
-routing in ~10ms. Define routes for each task type with representative utterances. Fall
-back to LLM classification for edge cases where confidence is low.
+**Request Classification**: The fast LLM assesses the request and outputs signals that
+inform routing: complexity level, domain (code, creative, analytical, emotional),
+whether tools are needed, urgency indicators. These signals feed into the model rubric
+for selection.
 
-**Emotion Detection**: Run emotion classifier in parallel with intent. Detected emotion
-influences both routing (emotional queries get more capable models) and response style
-(empathetic framing). Critical for our heart-centered philosophy and especially for
-voice input where prosody carries emotional nuance.
+**Emotion Detection**: Run in parallel with classification. Detected emotion influences
+both routing (emotional queries get more capable models) and response style (empathetic
+framing). Critical for our heart-centered philosophy and especially for voice input
+where prosody carries emotional nuance.
 
-**Multi-Intent Detection**: Detect when a single request contains multiple distinct
-intents ("What are the pricing options AND what's your refund policy?"). Decompose into
-separate processing streams that recombine in the response.
+**Ambiguity Scoring**: Score how ambiguous the request is. High confidence proceeds.
+Ambiguous requests trigger clarification. User history influences threshold -
+speed-focused users get lower bars.
 
-**Ambiguity Scoring**: Score how ambiguous the request is. High confidence (>0.95)
-proceeds. Multiple competing intents triggers clarification. Domain-critical decisions
-always clarify. User history influences threshold - speed-focused users get lower bars.
+### Request Signals
 
-### Task Types
+Rather than rigid task type enums, the classifier outputs signals that the rubric
+interprets:
 
-Our classification taxonomy, validated against research on production systems:
+| Signal                  | Range                                                          | What it captures                             |
+| ----------------------- | -------------------------------------------------------------- | -------------------------------------------- |
+| **complexity**          | low / medium / high                                            | How much reasoning is needed                 |
+| **domain**              | code, creative, analytical, conversational, emotional, factual | What kind of task                            |
+| **tools_needed**        | boolean                                                        | Whether external tools/services are required |
+| **quality_sensitivity** | low / medium / high                                            | How much quality matters vs. speed           |
+| **formality**           | casual / professional                                          | Tone expectation                             |
 
-| Type               | Priorities (quality/speed/cost) | Example                                         | Notes                                        |
-| ------------------ | ------------------------------- | ----------------------------------------------- | -------------------------------------------- |
-| **QUICK**          | 0.1 / 0.5 / 0.4                 | "What's 15% of 340?"                            | Quality floor low, just needs to be correct  |
-| **CONVERSATION**   | 0.4 / 0.4 / 0.2                 | "Tell me about the French Revolution"           | Balance matters - engaging but responsive    |
-| **DEEP_ANALYSIS**  | 0.7 / 0.1 / 0.2                 | "Analyze tradeoffs between these architectures" | Quality dominates - worth waiting and paying |
-| **CREATIVE**       | 0.6 / 0.2 / 0.2                 | "Write a product announcement"                  | Needs style and originality                  |
-| **TASK_EXECUTION** | 0.5 / 0.3 / 0.2                 | "Create a GitHub issue for this bug"            | Tool use required, reliability critical      |
-| **CODE**           | 0.6 / 0.2 / 0.2                 | "Write a function to parse this format"         | Correctness non-negotiable                   |
-| **EMOTIONAL**      | 0.7 / 0.2 / 0.1                 | "I'm feeling overwhelmed"                       | Tone and empathy critical, never cut corners |
-
-This taxonomy is sufficient for MVP. Can refine based on production data - e.g., CODE
-could split into "write new" vs. "debug existing" if data shows different optimal
-routing.
+The rubric maps these signals to model recommendations. This is more flexible than
+hardcoded task types - the rubric can evolve without changing classification logic.
 
 ### Query Enhancement
 
 Our requests rarely arrive optimized for AI processing. The Concierge transforms them.
 
-**Query Rewriting**: For retrieval-heavy requests, generate 3-5 variant queries, execute
-in parallel, combine results via reciprocal rank fusion. For ambiguous queries, use
-decomposition to break into clearer sub-queries.
+**Query Rewriting**: For retrieval-heavy requests, generate variant queries to improve
+memory search. For ambiguous queries, the fast LLM can restructure for clarity.
 
 **Context Compression**: For users with extensive conversation history, apply
-compression (LLMLingua achieves 10-20x compression). Balance compression ratio against
-context fidelity based on query importance - don't compress context for emotional
-queries.
+compression (LLMLingua or similar). Balance compression ratio against context fidelity
+based on query importance - don't compress context for emotional queries.
 
 **Context Placement**: Research shows LLMs struggle with information in the middle of
 long contexts. Place user profile at START of context (highest attention), place
 retrieved memories at END before current query. Less critical context goes in the
 middle.
-
-**Prompt Enhancement**: Use DSPy for automatic prompt optimization as we collect
-production data. Define declarative signatures for each task type, let optimizers
-discover effective patterns.
 
 ### Model Selection
 
@@ -140,7 +120,7 @@ There are two paths for model selection:
 
 Most users never think about models. The Concierge:
 
-1. Classifies the request into a task type (CODE, REASONING, CONVERSATION, etc.)
+1. Classifies the request and extracts signals
 2. Checks the user's speed mode (Swift, Balanced, Deep)
 3. Reads the [model rubric](../model-rubric.md) for recommendations
 4. Filters by capabilities (needs vision? needs tools? context length?)
@@ -161,17 +141,6 @@ The Concierge queries the [model rubric](../model-rubric.md) for current
 recommendations. The rubric is updated via the `/update-model-rubric` command when the
 model landscape changes. See [model-intelligence.md](./model-intelligence.md) for how
 the system works.
-
-**Implementation**: Start with RouteLLM as open-source baseline - achieves 85% cost
-reduction while maintaining 95% of GPT-4 performance. Train custom routers as we collect
-production evaluation data.
-
-**Fallback Strategy**:
-
-- Automatic retries with exponential backoff (up to 5 retries)
-- Circuit breaker: monitor error thresholds, remove unhealthy providers
-- Load balancing across API keys to counter rate limits
-- Context window fallbacks: switch to larger-context models when needed
 
 ### Response Strategy
 
@@ -195,16 +164,6 @@ Beyond model selection, the Concierge determines how to respond:
 For heart-centered philosophy: default to conversational text for emotional queries
 regardless of content length or structure.
 
-### Semantic Caching
-
-Cache LLM responses indexed by query embeddings. Similar (not exact) queries return
-cached results. 2-10x speedup for repeated patterns.
-
-**Cache key strategy**: `hash(query + user_preferences + session_context)` to avoid
-returning generic cached responses to personalized queries.
-
-**Cache invalidation**: Time-based decay, explicit memory updates, user profile changes.
-
 ## Controls
 
 While the Concierge handles complexity automatically, we get simple overrides. Keep
@@ -224,18 +183,13 @@ controls minimal - most users should never need them.
 Power users can explicitly select a model, bypassing Concierge routing. The Concierge
 still enhances the query but routes to the specified model.
 
-### Response Format Hint
-
-Users can suggest chat vs. rich UI preference. Concierge considers this alongside its
-own assessment of the content.
-
 ### Explainability
 
 When the Concierge selects a model, it should be able to explain why:
 
-- "Your request was classified as CODE"
+- "Your request was classified as high-complexity analytical"
 - "You're in Balanced mode"
-- "For CODE + Balanced, our rubric recommends Claude Sonnet 4"
+- "For this profile, our rubric recommends Claude Sonnet 4"
 - "Source: rubric v1.0, based on SWE-bench performance"
 
 This explanation can be:
@@ -257,8 +211,6 @@ Why OpenRouter over direct provider APIs:
 - **Fallback capability**: If one provider is down, route to another
 - **New model access**: Immediate availability when providers release new models
 - **Usage tracking**: Unified dashboard across all model usage
-- **Not Diamond integration**: OpenRouter's auto-router uses Not Diamond, which makes
-  routing decisions in ~60ms
 
 Implementation: `@openrouter/ai-sdk-provider` with Vercel AI SDK 5.0.
 
@@ -277,57 +229,30 @@ Implementation: `@openrouter/ai-sdk-provider` with Vercel AI SDK 5.0.
 ## Success Criteria
 
 - We don't think about the Concierge - we just get good responses
-- Quick questions feel quick (<300ms to first token), deep analysis feels thorough
-- Total preprocessing latency <50ms (imperceptible)
-- Cost efficiency improves over static routing (target: 85% reduction from RouteLLM)
+- Quick questions feel quick, deep analysis feels thorough
 - Respects our explicit preferences when provided
 - Emotional queries feel warm and appropriate
-
-## Latency Budget
-
-Human perception thresholds define our targets:
-
-| Threshold | Experience                                |
-| --------- | ----------------------------------------- |
-| <20ms     | Imperceptible - "thinking with" the user  |
-| 50-100ms  | Safe preprocessing window                 |
-| 100-200ms | Users notice delay but flow uninterrupted |
-| >300ms    | Kills collaborative flow                  |
-| >1 second | User's thought interrupted                |
-
-**Critical insight**: Time-to-first-token matters more than time-to-last-token.
-Streaming output masks processing delays.
-
-**Budget allocation**:
-
-- Cache check: 2-5ms
-- Classification: 10-20ms (parallel)
-- Context retrieval: 15ms (parallel with classification)
-- Query transformation: 10-15ms
-- Validation: 10-20ms (parallel)
-- **Total: <50ms**
 
 ---
 
 ## Decisions Made
 
-### Semantic Router for Classification (not LLM-based)
+### Fast LLM for Classification
 
-Use embedding-based Semantic Router for initial classification, achieving ~10ms vs.
-~5000ms for LLM-based routing. LLM fallback only for edge cases. This answers the open
-question about "dedicated fast model vs. self-routing" - neither. Embeddings.
+Use a fast, cheap LLM (Haiku, GPT-4o-mini) for request classification and preprocessing.
+Smart enough to understand nuance, fast enough to stay within latency budget. Simpler
+than embedding-based routers and more flexible.
 
-### RouteLLM as Starting Point for Model Routing
+### Signal-Based Classification Over Rigid Task Types
 
-Open-source, trained on human preference data, 85% cost reduction while maintaining
-quality. Can train custom routers as we collect production data. This gives us
-intelligent routing without building from scratch.
+Output signals (complexity, domain, tools_needed, quality_sensitivity) rather than
+hardcoded enums. The rubric interprets signals into model recommendations. This lets the
+rubric evolve without changing classification logic.
 
 ### Emotion Detection as First-Class Routing Signal
 
-Don't just treat EMOTIONAL as a task type - detect emotion across ALL requests and use
-it to influence routing and response style. This is how we operationalize heart-centered
-AI in the preprocessing layer.
+Detect emotion across ALL requests and use it to influence routing and response style.
+This is how we operationalize heart-centered AI in the preprocessing layer.
 
 ### Context Placement Matters
 
@@ -340,23 +265,17 @@ The research validated middleware patterns (Open WebUI inlet/outlet, NeMo Guardr
 but we don't need that flexibility yet. Start with explicit pipeline stages that are
 easier to reason about. Can add extensibility later if users need custom pipelines.
 
-### Parallel Processing is Non-Negotiable
-
-Run classification, cache check, and retrieval concurrently. Sequential processing would
-blow the latency budget. Async-first architecture from day one.
-
 ---
 
 ## Open Questions
 
 ### Implementation Choices
 
-- **Classification model for fallback**: When Semantic Router confidence is low, which
-  small/fast LLM handles edge cases? Haiku? GPT-4o-mini?
-- **Emotion detection model**: Fine-tuned DistilBERT? Off-the-shelf classifier? What
-  emotion taxonomy (basic emotions vs. nuanced)?
-- **Cache implementation**: GPTCache? GenerativeCache? Build custom with vector DB we
-  already use for memory?
+- **Classification prompt**: What's the optimal prompt for the fast LLM classifier?
+  Needs to be concise (latency) but capture enough signal.
+- **Emotion detection**: Part of classification prompt or separate? What taxonomy?
+- **Routing implementation**: Evaluate options (RouteLLM, custom rubric logic, hybrid).
+  Need to understand tradeoffs before committing.
 
 ### Product Decisions
 
@@ -364,8 +283,6 @@ blow the latency budget. Async-first architecture from day one.
   options? Inline suggestions? Modal? Quick-select buttons?
 - **Confidence visibility**: Should users see routing confidence? Or keep the magic
   invisible?
-- **Multi-intent handling**: When a query has multiple intents, do we respond to all in
-  one response, or ask to focus?
 
 ### Future Enhancements
 
@@ -373,8 +290,8 @@ blow the latency budget. Async-first architecture from day one.
   Post-M3 territory, but worth noting for Scheduled Agents design.
 - **Voice-aware context**: For voice input, prosody carries emotional nuance that text
   classification misses. Consider voice-specific emotion detection.
-- **Personalized routing**: Research shows GNN-based routers can learn user preferences.
-  Track which models users respond well to (implicit signals) and calibrate over time.
+- **Personalized routing**: Track which models users respond well to (implicit signals)
+  and calibrate routing per user over time.
 
 ---
 
@@ -382,11 +299,7 @@ blow the latency budget. Async-first architecture from day one.
 
 Key sources that informed these decisions:
 
-- **Semantic Router**: Aurelio Labs, sub-10ms classification via embeddings
-- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router
 - **LLMLingua**: Microsoft, 10-20x prompt compression
-- **DSPy**: Stanford, automatic prompt optimization
 - **"Lost in the middle"**: Research on attention patterns in long contexts
-- **Martian/Not Diamond**: Commercial routers powering OpenRouter
-- **GPTCache/GenerativeCache**: Semantic caching implementations
-- **CLAM framework**: Stanford, ambiguity detection via log probabilities
+- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router (to evaluate)
+- **Martian/Not Diamond**: Commercial routers (to evaluate)

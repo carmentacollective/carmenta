@@ -318,110 +318,31 @@ interface ModelProfile {
 
 Profiles are factual (capabilities, pricing). The rubric is judgmental (which is best).
 
-## Trained Routers
+## Routing Options to Evaluate
 
-Beyond static rubrics, trained routers use ML to predict optimal model selection
-per-query. Research shows these can achieve significant cost reduction while maintaining
-quality.
+Beyond static rubrics, there are trained routers and commercial options worth evaluating
+for model selection.
 
 ### RouteLLM (LMSYS, ICLR 2025)
 
-Open-source framework for training routers using human preference data. Routes between
-"strong" (expensive) and "weak" (cheap) models.
+Open-source framework for training routers using human preference data. Claims 85% cost
+reduction while maintaining 95% of GPT-4 performance. Worth evaluating against simpler
+approaches.
 
-**Results**:
+### Commercial Routers
 
-- 85% cost reduction on MT Bench
-- 45% cost reduction on MMLU
-- 95% of GPT-4 performance maintained
+**Not Diamond**: Powers OpenRouter's auto-router. Since we're using OpenRouter, this is
+available automatically.
 
-**Router architectures available**:
+**Martian**: Used by Amazon, Zapier. Claims up to 98% cost reduction.
 
-- Matrix factorization (best default)
-- BERT classifier
-- Weighted Elo calculation
-- LLM-based classifier
+### Simple Approach: Fast LLM Classification
 
-**Recommendation**: Start with RouteLLM as baseline. Train custom routers as we collect
-production evaluation data. The matrix factorization router is fastest and works well
-for most cases.
+Use a fast LLM (Haiku, GPT-4o-mini) to classify requests and output signals. The rubric
+interprets signals into model recommendations. Simpler, more transparent, and may be
+good enough.
 
-### Commercial Alternatives
-
-**Martian** (used by Amazon, Zapier): Uses interpretability techniques to predict model
-performance without running inference. Claims up to 98% cost reduction. Query-by-query
-routing with automatic rerouting on failures.
-
-**Not Diamond**: Powers OpenRouter's auto-router. Makes routing decisions in ~60ms (less
-than streaming a single token). Supports custom router training with your evaluation
-data.
-
-Since we're using OpenRouter, Not Diamond's routing is available automatically. We can
-layer RouteLLM on top for task-type-specific optimization.
-
-### Cascading Strategies
-
-**FrugalGPT** (Stanford, 2023): Sequentially query models from cheapest to most
-expensive until a reliable response is found. Self-verification determines adequacy.
-Results: matches GPT-4 performance with up to 98% cost reduction, or improves accuracy
-by 4% at same cost.
-
-**Application**: Use cascading for DEEP_ANALYSIS tasks where cost tolerance is higher
-and quality is paramount. Skip cascading for QUICK tasks where latency matters more.
-
-### User-Tier Routing
-
-Route based on subscription tier:
-
-```typescript
-function getModelTier(user: User, taskType: TaskType): ModelTier {
-  if (user.plan === "pro") {
-    // Pro users get premium models for all task types
-    return "premium";
-  }
-
-  // Basic users get premium only for complex tasks
-  if (taskType === "DEEP_ANALYSIS" || taskType === "CODE") {
-    return "premium";
-  }
-
-  return "standard";
-}
-```
-
-This creates differentiated value for paid tiers while ensuring all users get quality
-responses for complex requests.
-
-## Fallback and Reliability
-
-### Retry Strategy
-
-- Automatic retries with exponential backoff (up to 5 retries)
-- Different retry delays per provider based on their rate limit patterns
-- Jitter to prevent thundering herd
-
-### Circuit Breaker
-
-Monitor error rates per model/provider. When threshold exceeded:
-
-1. Mark provider as unhealthy
-2. Route to fallback automatically
-3. Probe periodically to detect recovery
-4. Restore when healthy
-
-### Load Balancing
-
-- Distribute requests across API keys to avoid rate limits
-- Weight distribution by key capacity
-- Track per-key usage in real-time
-
-### Context Window Fallbacks
-
-When request exceeds model's context window:
-
-1. Try compression (LLMLingua)
-2. If still too large, route to larger-context model
-3. If no capable model, inform user and suggest truncation
+Need to evaluate these options before committing to an approach.
 
 ## Integration Points
 
@@ -451,17 +372,12 @@ The routing logic is a simple rubric lookup, not a complex ML model. Rubrics are
 explainable, debuggable, and manually adjustable. When something goes wrong, we can see
 exactly why and fix it.
 
-### Task Type Granularity
+### Signal-Based Classification Over Rigid Task Types
 
-Seven task types balance usefulness with maintainability. Could be more granular (CODE
-could split into "write new" vs "debug existing") but complexity cost isn't worth it
-yet. Can refine based on production data.
-
-### Weighted Priorities Over Rankings
-
-Each task type has explicit priority weights (quality, speed, cost). This makes the
-tradeoffs visible and adjustable. Different products might weight differently - we
-optimize for quality-conscious users who still value responsiveness.
+Rather than hardcoded task type enums (QUICK, CODE, CREATIVE, etc.), the classifier
+outputs signals (complexity, domain, tools_needed, quality_sensitivity). The rubric
+interprets these signals into model recommendations. This is more flexible - the rubric
+can evolve without changing classification logic.
 
 ## Values Alignment
 
@@ -524,36 +440,18 @@ updates.
 
 ---
 
-## Decisions Made
-
-### RouteLLM as Starting Implementation
-
-Use RouteLLM's matrix factorization router as baseline. Open-source, trained on human
-preference data, 85% cost reduction documented. We can train custom routers as we
-collect production data.
-
-### Layered Routing: Not Diamond + RouteLLM + Rubric
-
-1. OpenRouter's Not Diamond handles base routing (~60ms)
-2. Our RouteLLM layer optimizes for task types
-3. Rubric provides explainable overrides and debugging
-
-This gives us intelligent routing without building everything from scratch.
-
-### Multi-Model Cascading for Deep Analysis Only
-
-Research validated cascading (FrugalGPT) but latency cost is high. Use only for
-DEEP_ANALYSIS tasks where users expect longer processing. QUICK tasks go straight to
-fast models.
-
-### User-Tier Differentiation
-
-Pro users get premium models for all task types. Basic users get premium for complex
-tasks only. This creates clear value for paid tiers without degrading basic experience.
-
----
-
 ## Open Questions
+
+### Routing Implementation
+
+Which approach for model selection? Options to evaluate:
+
+- Fast LLM classification (Haiku/GPT-4o-mini) with rubric lookup
+- RouteLLM trained router
+- OpenRouter's built-in Not Diamond routing
+- Hybrid approach
+
+Need to prototype and compare before committing.
 
 ### Benchmark Source Trust
 
@@ -567,9 +465,8 @@ Should we probe systematically?
 
 ### Personalized Routing Over Time
 
-Research shows GNN-based routers can learn user preferences. Should we track which
-models users respond well to (via implicit signals) and calibrate routing per user over
-time? Or is consistency more valuable?
+Should we track which models users respond well to (via implicit signals) and calibrate
+routing per user over time? Or is consistency more valuable?
 
 ### Nightly Updates
 
@@ -586,10 +483,8 @@ This requires building confidence in the research quality first.
 
 ## Research References
 
-Key sources that informed these decisions:
+Key sources for routing research:
 
-- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router, 85% cost reduction
-- **FrugalGPT**: Stanford 2023, cascading strategies, up to 98% cost reduction
+- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router (to evaluate)
+- **Not Diamond**: Powers OpenRouter's auto-router
 - **Martian**: Commercial router used by Amazon, Zapier
-- **Not Diamond**: Powers OpenRouter's auto-router, ~60ms routing decisions
-- **Portkey**: AI gateway patterns for reliability (retries, circuit breaker)
