@@ -190,29 +190,40 @@ describe("ParallelProvider", () => {
                 }),
             });
 
-            // Second call: check status - still processing
+            // Second call: check status - still running
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
                     run_id: "task-123",
-                    status: "processing",
+                    status: "running",
                 }),
             });
 
-            // Third call: completed
+            // Third call: check status - completed
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
                     run_id: "task-123",
                     status: "completed",
+                }),
+            });
+
+            // Fourth call: fetch result from /result endpoint
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    run: {
+                        run_id: "task-123",
+                        status: "completed",
+                    },
                     output: {
-                        content: JSON.stringify({
+                        content: {
                             summary: "Research findings summary",
                             key_findings: [
                                 { insight: "Key insight 1", confidence: "high" },
                                 { insight: "Key insight 2", confidence: "medium" },
                             ],
-                        }),
+                        },
                         basis: [
                             {
                                 field: "summary",
@@ -237,6 +248,7 @@ describe("ParallelProvider", () => {
         });
 
         it("uses correct processor for depth option", async () => {
+            // Create task
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
@@ -245,13 +257,22 @@ describe("ParallelProvider", () => {
                 }),
             });
 
+            // Status check - completed
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
                     run_id: "task-123",
                     status: "completed",
+                }),
+            });
+
+            // Fetch result
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    run: { run_id: "task-123", status: "completed" },
                     output: {
-                        content: JSON.stringify({ summary: "Done", key_findings: [] }),
+                        content: { summary: "Done", key_findings: [] },
                         basis: [],
                         type: "json",
                     },

@@ -71,29 +71,58 @@ const ParallelExtractResponseSchema = z.object({
     usage: z.array(z.object({ name: z.string(), count: z.number() })),
 });
 
-const ParallelTaskResponseSchema = z.object({
-    run_id: z.string(),
-    status: z.enum(["queued", "processing", "completed", "failed"]),
-    output: z
-        .object({
-            content: z.string(),
-            basis: z.array(
+// Task status response (from GET /v1/tasks/runs/{run_id})
+// Use passthrough to allow additional fields from the API
+const ParallelTaskStatusSchema = z
+    .object({
+        run_id: z.string(),
+        status: z.enum(["queued", "running", "completed", "failed"]),
+        is_active: z.boolean().optional(),
+    })
+    .passthrough();
+
+// Task result response (from GET /v1/tasks/runs/{run_id}/result)
+// The response has { run: {...}, output: {...} } structure
+// Keep schema loose - we validate the fields we need and ignore extras
+const ParallelTaskResultSchema = z.object({
+    run: z.object({
+        run_id: z.string(),
+        status: z.string(),
+    }),
+    output: z.object({
+        // content can be a string OR an object - we'll handle it in code
+        content: z.unknown(),
+        basis: z
+            .array(
                 z.object({
                     field: z.string(),
                     citations: z.array(
-                        z.object({ url: z.string(), title: z.string() })
+                        z.object({
+                            url: z.string(),
+                            title: z.string(),
+                        })
                     ),
                     confidence: z.enum(["high", "medium", "low"]),
                 })
-            ),
-            type: z.string(),
-        })
-        .optional(),
+            )
+            .optional(),
+        type: z.string().optional(),
+    }),
 });
+
+// Schema for task create response - use passthrough to allow additional fields
+const ParallelTaskResponseSchema = z
+    .object({
+        run_id: z.string(),
+        status: z.enum(["queued", "running", "completed", "failed"]),
+    })
+    .passthrough();
 
 type ParallelSearchResponse = z.infer<typeof ParallelSearchResponseSchema>;
 type ParallelExtractResponse = z.infer<typeof ParallelExtractResponseSchema>;
 type ParallelTaskResponse = z.infer<typeof ParallelTaskResponseSchema>;
+type ParallelTaskStatus = z.infer<typeof ParallelTaskStatusSchema>;
+type ParallelTaskResult = z.infer<typeof ParallelTaskResultSchema>;
 
 export class ParallelProvider implements WebIntelligenceProvider {
     readonly name = "parallel";
@@ -277,29 +306,33 @@ export class ParallelProvider implements WebIntelligenceProvider {
         );
 
         // Build the output schema for structured research output
+        // Parallel API requires: { type: "json", json_schema: { ... } }
         const outputSchema = {
-            type: "object",
-            properties: {
-                summary: {
-                    type: "string",
-                    description: "A comprehensive summary of the research findings",
-                },
-                key_findings: {
-                    type: "array",
-                    items: {
-                        type: "object",
-                        properties: {
-                            insight: { type: "string" },
-                            confidence: {
-                                type: "string",
-                                enum: ["high", "medium", "low"],
+            type: "json",
+            json_schema: {
+                type: "object",
+                properties: {
+                    summary: {
+                        type: "string",
+                        description: "A comprehensive summary of the research findings",
+                    },
+                    key_findings: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                insight: { type: "string" },
+                                confidence: {
+                                    type: "string",
+                                    enum: ["high", "medium", "low"],
+                                },
                             },
                         },
+                        description: "Key insights discovered during research",
                     },
-                    description: "Key insights discovered during research",
                 },
+                required: ["summary", "key_findings"],
             },
-            required: ["summary", "key_findings"],
         };
 
         const taskInput = focusAreas
@@ -364,31 +397,38 @@ export class ParallelProvider implements WebIntelligenceProvider {
             // Reset failure counter on success
             consecutiveFailures = 0;
 
-            if (statusResponse.status === "completed" && statusResponse.output) {
+            if (statusResponse.status === "completed") {
+                // Fetch the actual result from the /result endpoint
+                const resultResponse = await this.getTaskResult(runId);
+
+                if (!resultResponse) {
+                    logger.error({ runId, objective }, "Failed to fetch task result");
+                    return null;
+                }
+
                 const latencyMs = Date.now() - startTime;
 
-                // Parse the output
+                // Parse the output content
                 let parsedOutput: {
                     summary?: string;
                     key_findings?: Array<{ insight: string; confidence: string }>;
                 };
 
-                try {
-                    parsedOutput =
-                        typeof statusResponse.output.content === "string"
-                            ? JSON.parse(statusResponse.output.content)
-                            : statusResponse.output.content;
-                } catch {
-                    // If parsing fails, treat the content as the summary
-                    parsedOutput = {
-                        summary: String(statusResponse.output.content),
-                        key_findings: [],
-                    };
+                const content = resultResponse.output.content;
+                if (typeof content === "string") {
+                    try {
+                        parsedOutput = JSON.parse(content);
+                    } catch {
+                        parsedOutput = { summary: content, key_findings: [] };
+                    }
+                } else {
+                    // Content is already an object
+                    parsedOutput = content as typeof parsedOutput;
                 }
 
                 // Extract sources from basis
                 const sources =
-                    statusResponse.output.basis?.flatMap((b) =>
+                    resultResponse.output.basis?.flatMap((b) =>
                         b.citations.map((c) => ({
                             url: c.url,
                             title: c.title,
@@ -441,7 +481,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
         return null;
     }
 
-    private async getTaskStatus(runId: string): Promise<ParallelTaskResponse | null> {
+    private async getTaskStatus(runId: string): Promise<ParallelTaskStatus | null> {
         const url = `${PARALLEL_BASE_URL}/v1/tasks/runs/${runId}`;
 
         try {
@@ -461,7 +501,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
             }
 
             const rawResponse = await response.json();
-            const parsed = ParallelTaskResponseSchema.safeParse(rawResponse);
+            const parsed = ParallelTaskStatusSchema.safeParse(rawResponse);
 
             if (!parsed.success) {
                 logger.error(
@@ -474,6 +514,48 @@ export class ParallelProvider implements WebIntelligenceProvider {
             return parsed.data;
         } catch (error) {
             logger.warn({ runId, error }, "Task status check failed");
+            return null;
+        }
+    }
+
+    private async getTaskResult(runId: string): Promise<ParallelTaskResult | null> {
+        const url = `${PARALLEL_BASE_URL}/v1/tasks/runs/${runId}/result`;
+
+        try {
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "x-api-key": this.apiKey,
+                },
+            });
+
+            if (!response.ok) {
+                logger.error(
+                    { runId, status: response.status },
+                    "Task result fetch returned non-OK response"
+                );
+                return null;
+            }
+
+            const rawResponse = await response.json();
+            const parsed = ParallelTaskResultSchema.safeParse(rawResponse);
+
+            if (!parsed.success) {
+                logger.error(
+                    { runId, error: parsed.error.flatten(), rawResponse },
+                    "Task result response validation failed"
+                );
+                return null;
+            }
+
+            return parsed.data;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : undefined;
+            logger.error(
+                { runId, errorMessage, errorStack, errorType: typeof error },
+                "Task result fetch failed"
+            );
             return null;
         }
     }
