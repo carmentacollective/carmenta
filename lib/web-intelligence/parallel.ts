@@ -196,7 +196,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
         options: SearchOptions = {}
     ): Promise<SearchResponse | null> {
         const startTime = Date.now();
-        const { maxResults = 5 } = options;
+        const maxResults = options.maxResults ?? 5;
 
         logger.info({ query, maxResults, provider: this.name }, "Starting web search");
 
@@ -242,7 +242,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
         options: ExtractOptions = {}
     ): Promise<ExtractResponse | null> {
         const startTime = Date.now();
-        const { maxLength = 50000 } = options;
+        const maxLength = options.maxLength ?? 50000;
 
         logger.info(
             { url, maxLength, provider: this.name },
@@ -297,7 +297,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
         options: ResearchOptions = {}
     ): Promise<ResearchResponse | null> {
         const startTime = Date.now();
-        const { depth = "standard", focusAreas } = options;
+        const depth = options.depth ?? "standard";
+        const focusAreas = options.focusAreas;
         const processor = DEPTH_TO_PROCESSOR[depth];
 
         logger.info(
@@ -409,13 +410,16 @@ export class ParallelProvider implements WebIntelligenceProvider {
                 const latencyMs = Date.now() - startTime;
 
                 // Parse the output content
+                // Handle null, string, or object - typeof null === "object" in JS
                 let parsedOutput: {
                     summary?: string;
                     key_findings?: Array<{ insight: string; confidence: string }>;
                 };
 
                 const content = resultResponse.output.content;
-                if (typeof content === "string") {
+                if (content === null || content === undefined) {
+                    parsedOutput = { summary: "", key_findings: [] };
+                } else if (typeof content === "string") {
                     try {
                         parsedOutput = JSON.parse(content);
                     } catch {

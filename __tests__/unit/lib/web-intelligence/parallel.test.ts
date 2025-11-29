@@ -297,5 +297,44 @@ describe("ParallelProvider", () => {
 
             expect(result).toBeNull();
         });
+
+        it("handles null content in task result gracefully", async () => {
+            // Create task
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    run_id: "task-123",
+                    status: "queued",
+                }),
+            });
+
+            // Status check - completed
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    run_id: "task-123",
+                    status: "completed",
+                }),
+            });
+
+            // Fetch result with null content
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    run: { run_id: "task-123", status: "completed" },
+                    output: {
+                        content: null,
+                        basis: [],
+                        type: "json",
+                    },
+                }),
+            });
+
+            const result = await provider.research("Topic with null content");
+
+            expect(result).not.toBeNull();
+            expect(result!.summary).toBe("");
+            expect(result!.findings).toHaveLength(0);
+        });
     });
 });
