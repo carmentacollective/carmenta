@@ -1,8 +1,18 @@
 # Model Intelligence
 
-The routing rubric that tells Carmenta which model to use for which request. Built from
-external benchmarks, our own validation, and production signals. The Concierge consults
-this rubric for every request.
+The system that tells Carmenta which model to use for which request. This document
+describes HOW model selection works. For the actual recommendations (WHICH model for
+WHAT task), see [`model-rubric.md`](../model-rubric.md).
+
+## Document Separation
+
+- **This document** (`model-intelligence.md`): The system architecture - how routing
+  works, what factors matter, how updates happen
+- **The rubric** (`model-rubric.md`): The actual data - current model recommendations,
+  profiles, fallback chains. Updated via `/update-model-rubric` command.
+
+The Concierge reads the rubric at runtime. Developers read this document to understand
+the system.
 
 ## Why This Exists
 
@@ -348,6 +358,65 @@ Each task type has explicit priority weights (quality, speed, cost). This makes 
 tradeoffs visible and adjustable. Different products might weight differently - we
 optimize for quality-conscious users who still value responsiveness.
 
+## Values Alignment
+
+Carmenta has an explicit bias toward Anthropic models. When capabilities are close, we
+prefer Claude.
+
+Why? Anthropic builds AI with Constitutional AI principles and genuine care for safety
+and human flourishing. They're heart-centered in how they run their company. We vote
+with our API calls.
+
+This isn't blind loyalty - if another provider significantly outperforms Claude for a
+task type, we route there. But when models are functionally equivalent, Anthropic wins.
+
+## Future: Ensemble Mode
+
+Design consideration for future implementation.
+
+**Ensemble Mode** broadcasts the same query to multiple models in parallel, then either:
+
+- Presents results side-by-side for user selection
+- Synthesizes results into a combined response
+- Uses voting/consensus for factual questions
+
+Use cases:
+
+- High-stakes decisions wanting multiple perspectives
+- Creative work wanting variety
+- Fact-checking critical information
+- User curiosity ("show me how different models answer")
+
+Architecture considerations:
+
+- Cost multiplier (2-4x depending on models used)
+- Latency determined by slowest model (or timeout)
+- Synthesis could require another model call
+- UI needs to present multiple responses cleanly
+- OpenRouter supports this via multiple model requests
+
+This is future work. The rubric and Concierge should be designed to support it, but
+implementation is deferred.
+
+## Keeping the Rubric Current
+
+The `/update-model-rubric` command researches the current model landscape and proposes
+updates. It gathers intelligence from:
+
+- LMSYS Chatbot Arena rankings
+- Artificial Analysis benchmarks
+- Provider official documentation
+- OpenRouter availability and pricing
+
+Run this command:
+
+- When a major new model releases
+- Monthly as maintenance
+- When users report quality issues that might indicate stale routing
+
+The command always proposes changes for human review - it never auto-commits rubric
+updates.
+
 ## Open Questions
 
 ### Benchmark Source Trust
@@ -365,7 +434,13 @@ Should we probe systematically?
 Should the rubric adapt per user? Someone who always picks "deep" mode might get
 different defaults. Or is consistency more valuable?
 
-### Multi-Model Strategies
+### Nightly Updates
 
-Should some requests use multiple models? Quick classification with Haiku, then route to
-appropriate model? Adds latency but might improve routing accuracy.
+The rubric update command is designed to eventually run nightly. When automated:
+
+1. Run at low-traffic time
+2. Compare against current rubric
+3. If changes detected, create draft PR
+4. Human reviews and merges
+
+This requires building confidence in the research quality first.
