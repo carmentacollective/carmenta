@@ -4,7 +4,13 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { ConnectRuntimeProvider } from "./connect-runtime-provider";
 import { HoloThread } from "./holo-thread";
-import { WeatherToolUI, CompareToolUI } from "@/components/generative-ui";
+import {
+    WeatherToolUI,
+    CompareToolUI,
+    WebSearchToolUI,
+    FetchPageToolUI,
+    DeepResearchToolUI,
+} from "@/components/generative-ui";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -69,6 +75,9 @@ export function Chat() {
             <ConnectRuntimeProvider>
                 <WeatherToolUI />
                 <CompareToolUI />
+                <WebSearchToolUI />
+                <FetchPageToolUI />
+                <DeepResearchToolUI />
 
                 <div className="scrollbar-holo h-full">
                     <HoloThread />

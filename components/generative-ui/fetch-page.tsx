@@ -1,0 +1,112 @@
+"use client";
+
+import { makeAssistantToolUI } from "@assistant-ui/react";
+import { FileText, ExternalLink, AlertCircle } from "lucide-react";
+
+interface FetchPageArgs {
+    url: string;
+    maxLength?: number;
+}
+
+interface FetchPageResult {
+    error: boolean;
+    message?: string;
+    title: string;
+    content: string;
+    url: string;
+}
+
+/**
+ * Tool UI for displaying fetched page content.
+ *
+ * Renders when the AI calls the fetchPage tool, showing:
+ * - Page title with link
+ * - Content preview (collapsed by default for long content)
+ */
+export const FetchPageToolUI = makeAssistantToolUI<FetchPageArgs, FetchPageResult>({
+    toolName: "fetchPage",
+    render: ({ args, result, status }) => {
+        // Loading state
+        if (status.type === "running") {
+            return (
+                <div className="glass-card max-w-2xl animate-pulse">
+                    <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                            Reading page...
+                        </span>
+                    </div>
+                    <div className="mt-2 truncate text-xs text-muted-foreground/70">
+                        {args.url}
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        <div className="h-3 w-full rounded bg-muted" />
+                        <div className="h-3 w-full rounded bg-muted" />
+                        <div className="h-3 w-3/4 rounded bg-muted" />
+                    </div>
+                </div>
+            );
+        }
+
+        // Error/incomplete state
+        if (status.type === "incomplete" || !result || result.error) {
+            return (
+                <div className="glass-card max-w-2xl border-destructive/50 bg-destructive/10">
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                        <p className="text-sm text-destructive">
+                            {result?.message || "Failed to fetch page content."}
+                        </p>
+                    </div>
+                    <p className="mt-2 truncate text-xs text-muted-foreground">
+                        {args.url}
+                    </p>
+                </div>
+            );
+        }
+
+        // Success state - show compact confirmation
+        // The LLM will summarize/discuss the content in its response
+        const contentPreview =
+            result.content.length > 500
+                ? result.content.slice(0, 500) + "..."
+                : result.content;
+
+        return (
+            <div className="glass-card max-w-2xl">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">
+                            {result.title || "Page Content"}
+                        </span>
+                    </div>
+                    <a
+                        href={result.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                    >
+                        <span className="hidden sm:inline">Open</span>
+                        <ExternalLink className="h-3 w-3" />
+                    </a>
+                </div>
+
+                <p className="mt-1 truncate text-xs text-muted-foreground/70">
+                    {result.url}
+                </p>
+
+                <details className="mt-3">
+                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                        Preview content ({result.content.length.toLocaleString()} chars)
+                    </summary>
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded bg-muted/50 p-3 text-xs text-foreground/80">
+                        <pre className="whitespace-pre-wrap font-sans">
+                            {contentPreview}
+                        </pre>
+                    </div>
+                </details>
+            </div>
+        );
+    },
+});
