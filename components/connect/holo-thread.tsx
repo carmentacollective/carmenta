@@ -6,11 +6,15 @@ import {
     ComposerPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
+    useMessage,
 } from "@assistant-ui/react";
+import type { ReasoningMessagePartProps } from "@assistant-ui/react";
 import { makeMarkdownText } from "@assistant-ui/react-ui";
 
 import { cn } from "@/lib/utils";
 import { Greeting } from "@/components/ui/greeting";
+import { ThinkingIndicator } from "./thinking-indicator";
+import { ReasoningDisplay } from "./reasoning-display";
 
 /**
  * HoloThread - A custom Thread built with headless primitives.
@@ -87,12 +91,36 @@ function UserMessage() {
 }
 
 /**
- * Assistant message bubble with glass effect.
- * Includes error handling to show user-friendly messages when requests fail.
+ * Reasoning content component for assistant-ui's content type.
+ * Wraps our ReasoningDisplay to work with MessagePrimitive.Content.
  */
-function AssistantMessage() {
+function ReasoningContent(props: ReasoningMessagePartProps) {
+    const isStreaming = props.status.type === "running";
     return (
-        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] flex-col gap-2">
+        <ReasoningDisplay
+            content={props.text}
+            isStreaming={isStreaming}
+            className="mb-3"
+        />
+    );
+}
+
+/**
+ * Assistant message bubble content.
+ * This inner component uses the useMessage hook to check status.
+ */
+function AssistantMessageContent() {
+    const isRunning = useMessage((state) => state.status?.type === "running");
+    const hasContent = useMessage((state) => state.content && state.content.length > 0);
+
+    // Show thinking indicator only when running AND no content yet
+    const showThinking = isRunning && !hasContent;
+
+    return (
+        <>
+            {/* Thinking indicator - shown while waiting for first content */}
+            {showThinking && <ThinkingIndicator className="mb-2" />}
+
             <div
                 className="max-w-[85%] rounded-2xl rounded-bl-md px-4 py-3"
                 style={{
@@ -100,7 +128,12 @@ function AssistantMessage() {
                     backdropFilter: "blur(16px)",
                 }}
             >
-                <MessagePrimitive.Content components={{ Text: MarkdownText }} />
+                <MessagePrimitive.Content
+                    components={{
+                        Text: MarkdownText,
+                        Reasoning: ReasoningContent,
+                    }}
+                />
             </div>
 
             <MessagePrimitive.Error>
@@ -118,6 +151,21 @@ function AssistantMessage() {
                     </span>
                 </div>
             </MessagePrimitive.Error>
+        </>
+    );
+}
+
+/**
+ * Assistant message bubble with glass effect.
+ * Includes:
+ * - Thinking indicator while waiting for response
+ * - Reasoning display for extended thinking content
+ * - Error handling with user-friendly messages
+ */
+function AssistantMessage() {
+    return (
+        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] flex-col gap-2">
+            <AssistantMessageContent />
         </MessagePrimitive.Root>
     );
 }
