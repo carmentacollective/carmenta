@@ -61,7 +61,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.0.14",
     "autoprefixer": "^10.4.22",
     "baseline-browser-mapping": "^2.8.32",
     "eslint": "^9.39.1",
@@ -78,7 +78,7 @@
     "tailwindcss": "^3.4.18",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.14"
   },
   "engines": {
     "node": ">=24.0.0",
