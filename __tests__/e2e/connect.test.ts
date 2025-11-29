@@ -1,15 +1,30 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Connect Page", () => {
+test.describe("Connect Page - Unauthenticated", () => {
+    test("redirects to sign-in when not authenticated", async ({ page }) => {
+        await page.goto("/connect");
+
+        // Clerk protects /connect, so unauthenticated users get redirected
+        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        expect(page.url()).toContain("sign-in");
+    });
+});
+
+test.describe("Connect Page - Authenticated", () => {
+    // These tests require a valid Clerk session
+    // Skip in environments without auth setup
+    test.skip(
+        () => !process.env.CLERK_TESTING_TOKEN,
+        "Skipping authenticated tests without CLERK_TESTING_TOKEN"
+    );
+
     test.beforeEach(async ({ page }) => {
-        // Note: This test requires authentication. In CI, we'd use
-        // Clerk testing tokens or mock authentication.
         await page.goto("/connect");
     });
 
     test("displays the connect page header", async ({ page }) => {
         // Look for the Carmenta branding
-        await expect(page.getByText("CARMENTA_")).toBeVisible();
+        await expect(page.getByText("CARMENTA")).toBeVisible();
 
         // Look for milestone indicator
         await expect(page.getByText("M0.5: First Connection")).toBeVisible();
@@ -26,27 +41,10 @@ test.describe("Connect Page", () => {
             .locator('[data-testid="composer"]')
             .or(page.getByRole("textbox"));
 
-        // Wait for either the composer or a sign-in redirect
-        // (since the page requires auth)
-        const hasComposer = await composer.isVisible().catch(() => false);
-        const isSignInPage = page.url().includes("sign-in");
-
-        // Either we see the chat interface OR we got redirected to sign-in
-        expect(hasComposer || isSignInPage).toBeTruthy();
+        await expect(composer).toBeVisible({ timeout: 10000 });
     });
-});
-
-test.describe("Connect Page - Authenticated", () => {
-    // These tests require a valid Clerk session
-    // Skip in environments without auth setup
-    test.skip(
-        () => !process.env.CLERK_TESTING_TOKEN,
-        "Skipping authenticated tests without CLERK_TESTING_TOKEN"
-    );
 
     test("can send a message", async ({ page }) => {
-        await page.goto("/connect");
-
         // Find the composer input
         const input = page.getByRole("textbox");
         await expect(input).toBeVisible({ timeout: 10000 });
@@ -63,8 +61,6 @@ test.describe("Connect Page - Authenticated", () => {
     });
 
     test("renders weather card when asking about weather", async ({ page }) => {
-        await page.goto("/connect");
-
         const input = page.getByRole("textbox");
         await expect(input).toBeVisible({ timeout: 10000 });
 
@@ -82,8 +78,6 @@ test.describe("Connect Page - Authenticated", () => {
     });
 
     test("renders comparison table when comparing options", async ({ page }) => {
-        await page.goto("/connect");
-
         const input = page.getByRole("textbox");
         await expect(input).toBeVisible({ timeout: 10000 });
 
