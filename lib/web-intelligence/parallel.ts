@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { z } from "zod";
 
 import { logger } from "@/lib/logger";
 
@@ -36,49 +37,63 @@ const DEPTH_TO_PROCESSOR: Record<ResearchDepth, string> = {
     deep: "core",
 };
 
-interface ParallelSearchResult {
-    url: string;
-    title: string;
-    publish_date: string | null;
-    excerpts: string[];
-}
+/**
+ * Zod schemas for Parallel API response validation
+ * These provide runtime type safety for beta API responses
+ */
+const ParallelSearchResultSchema = z.object({
+    url: z.string(),
+    title: z.string(),
+    publish_date: z.string().nullable(),
+    excerpts: z.array(z.string()),
+});
 
-interface ParallelSearchResponse {
-    search_id: string;
-    results: ParallelSearchResult[];
-    warnings: string | null;
-    usage: Array<{ name: string; count: number }>;
-}
+const ParallelSearchResponseSchema = z.object({
+    search_id: z.string(),
+    results: z.array(ParallelSearchResultSchema),
+    warnings: z.string().nullable(),
+    usage: z.array(z.object({ name: z.string(), count: z.number() })),
+});
 
-interface ParallelExtractResult {
-    url: string;
-    title: string;
-    publish_date: string | null;
-    excerpts: string[] | null;
-    full_content: string | null;
-}
+const ParallelExtractResultSchema = z.object({
+    url: z.string(),
+    title: z.string(),
+    publish_date: z.string().nullable(),
+    excerpts: z.array(z.string()).nullable(),
+    full_content: z.string().nullable(),
+});
 
-interface ParallelExtractResponse {
-    extract_id: string;
-    results: ParallelExtractResult[];
-    errors: Array<{ url: string; error: string }>;
-    warnings: string | null;
-    usage: Array<{ name: string; count: number }>;
-}
+const ParallelExtractResponseSchema = z.object({
+    extract_id: z.string(),
+    results: z.array(ParallelExtractResultSchema),
+    errors: z.array(z.object({ url: z.string(), error: z.string() })),
+    warnings: z.string().nullable(),
+    usage: z.array(z.object({ name: z.string(), count: z.number() })),
+});
 
-interface ParallelTaskResponse {
-    run_id: string;
-    status: "queued" | "processing" | "completed" | "failed";
-    output?: {
-        content: string;
-        basis: Array<{
-            field: string;
-            citations: Array<{ url: string; title: string }>;
-            confidence: "high" | "medium" | "low";
-        }>;
-        type: string;
-    };
-}
+const ParallelTaskResponseSchema = z.object({
+    run_id: z.string(),
+    status: z.enum(["queued", "processing", "completed", "failed"]),
+    output: z
+        .object({
+            content: z.string(),
+            basis: z.array(
+                z.object({
+                    field: z.string(),
+                    citations: z.array(
+                        z.object({ url: z.string(), title: z.string() })
+                    ),
+                    confidence: z.enum(["high", "medium", "low"]),
+                })
+            ),
+            type: z.string(),
+        })
+        .optional(),
+});
+
+type ParallelSearchResponse = z.infer<typeof ParallelSearchResponseSchema>;
+type ParallelExtractResponse = z.infer<typeof ParallelExtractResponseSchema>;
+type ParallelTaskResponse = z.infer<typeof ParallelTaskResponseSchema>;
 
 export class ParallelProvider implements WebIntelligenceProvider {
     readonly name = "parallel";
@@ -91,6 +106,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
     private async request<T>(
         endpoint: string,
         body: Record<string, unknown>,
+        schema: z.ZodType<T>,
         useBetaHeader = true
     ): Promise<T | null> {
         const url = `${PARALLEL_BASE_URL}${endpoint}`;
@@ -119,7 +135,23 @@ export class ParallelProvider implements WebIntelligenceProvider {
                 return null;
             }
 
-            return (await response.json()) as T;
+            const rawResponse = await response.json();
+            const parsed = schema.safeParse(rawResponse);
+
+            if (!parsed.success) {
+                logger.error(
+                    { endpoint, error: parsed.error.flatten() },
+                    "Parallel API response validation failed"
+                );
+                Sentry.captureMessage("Parallel API schema mismatch", {
+                    level: "warning",
+                    tags: { component: "web-intelligence", provider: "parallel" },
+                    extra: { endpoint, validationError: parsed.error.flatten() },
+                });
+                return null;
+            }
+
+            return parsed.data;
         } catch (error) {
             logger.error({ endpoint, error }, "Parallel API request error");
             Sentry.captureException(error, {
@@ -139,13 +171,17 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
         logger.info({ query, maxResults, provider: this.name }, "Starting web search");
 
-        const response = await this.request<ParallelSearchResponse>("/v1beta/search", {
-            objective: query,
-            max_results: maxResults,
-            excerpts: {
-                max_chars_per_result: 2000,
+        const response = await this.request(
+            "/v1beta/search",
+            {
+                objective: query,
+                max_results: maxResults,
+                excerpts: {
+                    max_chars_per_result: 2000,
+                },
             },
-        });
+            ParallelSearchResponseSchema
+        );
 
         if (!response || !response.results) {
             logger.warn({ query }, "No search results returned");
@@ -184,13 +220,14 @@ export class ParallelProvider implements WebIntelligenceProvider {
             "Starting page extraction"
         );
 
-        const response = await this.request<ParallelExtractResponse>(
+        const response = await this.request(
             "/v1beta/extract",
             {
                 urls: [url],
                 full_content: true,
                 excerpts: false,
-            }
+            },
+            ParallelExtractResponseSchema
         );
 
         if (!response || !response.results || response.results.length === 0) {
@@ -270,7 +307,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
             : objective;
 
         // Create the task
-        const createResponse = await this.request<ParallelTaskResponse>(
+        const createResponse = await this.request(
             "/v1/tasks/runs",
             {
                 input: taskInput,
@@ -279,6 +316,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
                     output_schema: outputSchema,
                 },
             },
+            ParallelTaskResponseSchema,
             false // Task API doesn't use beta header
         );
 
@@ -396,7 +434,18 @@ export class ParallelProvider implements WebIntelligenceProvider {
                 return null;
             }
 
-            return (await response.json()) as ParallelTaskResponse;
+            const rawResponse = await response.json();
+            const parsed = ParallelTaskResponseSchema.safeParse(rawResponse);
+
+            if (!parsed.success) {
+                logger.error(
+                    { runId, error: parsed.error.flatten() },
+                    "Task status response validation failed"
+                );
+                return null;
+            }
+
+            return parsed.data;
         } catch {
             return null;
         }

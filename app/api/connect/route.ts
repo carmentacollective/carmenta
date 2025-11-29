@@ -15,6 +15,12 @@ import { logger } from "@/lib/logger";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 
+/**
+ * Route segment config for Vercel
+ * Deep research can take up to 120 seconds - requires Vercel Pro or higher
+ */
+export const maxDuration = 120;
+
 const MODEL_ID = "anthropic/claude-sonnet-4.5";
 
 /**
