@@ -1,7 +1,7 @@
 "use client";
 
 import { ComponentProps, forwardRef } from "react";
-import { SendHorizontal, Paperclip, ArrowDown, AlertCircle } from "lucide-react";
+import { SendHorizontal, ArrowDown, AlertCircle } from "lucide-react";
 import {
     ComposerPrimitive,
     MessagePrimitive,
@@ -159,12 +159,6 @@ function AssistantMessage() {
 function Composer() {
     return (
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
-            <ComposerPrimitive.AddAttachment asChild>
-                <ComposerButton variant="ghost" aria-label="Attach file">
-                    <Paperclip className="h-5 w-5" />
-                </ComposerButton>
-            </ComposerPrimitive.AddAttachment>
-
             <ComposerPrimitive.Input
                 placeholder="What's on your mind?"
                 className="min-h-12 flex-1 resize-none border-none bg-transparent px-2 py-3 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
