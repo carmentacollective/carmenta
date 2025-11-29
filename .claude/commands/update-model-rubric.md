@@ -3,6 +3,22 @@
 Research the current LLM landscape and update Carmenta's model routing rubric. This is a
 deep research task that should take several minutes to run thoroughly.
 
+## Critical: Avoid Hallucination
+
+**READ THIS FIRST**: @.cursor/rules/trust-and-decision-making.mdc
+
+Model names, versions, and capabilities are EXACTLY the kind of specifics where LLMs
+hallucinate. Your parametric knowledge is almost certainly out of date. You MUST:
+
+1. **Never trust your training data** for model names, versions, or capabilities
+2. **Verify every model name** against current provider documentation
+3. **Get exact model IDs** from OpenRouter's actual model list
+4. **Cite your source** for every claim - "I believe" is not acceptable
+5. **When uncertain, say so** - don't pattern-match to plausible-sounding names
+
+If you cannot verify a model exists from a primary source, do not include it in the
+rubric. A smaller accurate rubric beats a comprehensive hallucinated one.
+
 ## Your Mission
 
 You are updating `knowledge/model-rubric.md` - the source of truth that Carmenta's
@@ -10,6 +26,7 @@ Concierge reads when deciding which model to route requests to. This rubric must
 
 - **Current**: Reflect the latest models and their actual capabilities
 - **Accurate**: Based on real benchmark data, not assumptions
+- **Verified**: Every model name confirmed against primary sources
 - **Practical**: Guide routing decisions that users will feel as "just works"
 - **Values-aligned**: Bias toward Anthropic for their heart-centered approach
 
@@ -60,13 +77,37 @@ For each major provider, find their current model lineup:
 - Grok models
 - Capabilities and positioning
 
-### Tier 3: Ecosystem Intelligence
+### Tier 3: Ecosystem Intelligence (PRIMARY SOURCE FOR MODEL IDs)
 
-**OpenRouter** (https://openrouter.ai)
+**OpenRouter API** (https://openrouter.ai/api/v1/models)
 
-- What models are available
-- What's popular (usage trends)
-- Unified pricing
+THIS IS YOUR PRIMARY SOURCE FOR MODEL IDENTIFIERS. The API returns a large JSON file.
+Use Bash to download and parse it:
+
+```bash
+# Download and save the models list
+curl -s https://openrouter.ai/api/v1/models > /tmp/openrouter-models.json
+
+# Extract Anthropic models with their IDs, pricing, and context
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("anthropic/")) | {id, context_length, pricing}'
+
+# Extract OpenAI models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("openai/")) | {id, context_length, pricing}'
+
+# Extract Google models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("google/")) | {id, context_length, pricing}'
+
+# Extract xAI models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("x-ai/")) | {id, context_length, pricing}'
+```
+
+The model IDs in the rubric MUST match OpenRouter's API exactly since that's what
+Carmenta uses to route requests. Do not guess or pattern-match model names.
+
+**OpenRouter Website** (https://openrouter.ai/models)
+
+- Popularity/usage trends
+- Provider information
 - Fallback compatibility
 
 **Hugging Face Open LLM Leaderboard** (for context on open models)
