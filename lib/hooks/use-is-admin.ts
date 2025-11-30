@@ -1,7 +1,8 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useState, useCallback, useSyncExternalStore } from "react";
+
+import { useUserContext } from "@/lib/auth/user-context";
 
 const DEBUG_WELCOMED_KEY = "carmenta-debug-welcomed";
 
@@ -38,7 +39,7 @@ function getServerUrlDebugSnapshot(): boolean {
  * - URL has ?debug param
  */
 export function useIsAdmin(): boolean {
-    const { user } = useUser();
+    const { user } = useUserContext();
     const urlDebug = useSyncExternalStore(
         subscribeToUrl,
         getUrlDebugSnapshot,

@@ -63,10 +63,3 @@ export function assertEnv<T>(value: T | undefined, name: string): asserts value 
         throw new Error(`Missing required environment variable: ${name}`);
     }
 }
-
-// Warn if Clerk keys are missing (Clerk will run in unclaimed mode)
-if (!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    console.warn(
-        "⚠️  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY not set - Clerk running in unclaimed mode"
-    );
-}
