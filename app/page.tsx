@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Footer } from "@/components/footer";
+import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
+import { FAQSchema } from "@/components/seo/faq-schema";
 import { ConnectCTA } from "@/components/ui/connect-cta";
 import { Greeting } from "@/components/ui/greeting";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -9,6 +11,14 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 export default function LandingPage() {
     return (
         <div className="relative flex min-h-screen flex-col">
+            <FAQSchema />
+            <BreadcrumbSchema
+                items={[
+                    { name: "Home", url: "https://carmenta.ai" },
+                    { name: "Carmenta", url: "https://carmenta.ai" },
+                ]}
+            />
+
             {/* Animated holographic background */}
             <HolographicBackground />
 
@@ -55,7 +65,7 @@ export default function LandingPage() {
                         </section>
 
                         {/* Vision Card */}
-                        <section className="glass-card space-y-4 text-left">
+                        <article className="glass-card space-y-4 text-left">
                             <h2 className="text-lg font-semibold text-foreground/90">
                                 The Vision
                             </h2>
@@ -64,19 +74,20 @@ export default function LandingPage() {
                                 <p>
                                     Carmenta remembers who you are, what you're working
                                     on, what you've decided, who you know, what you've
-                                    learned. We talk naturally—voice that actually
-                                    works. We respond with purpose-built interfaces, not
-                                    chat bubbles.
+                                    learned. Access ChatGPT, Claude, Gemini, and
+                                    more—all from one place. An AI team—including a
+                                    Digital Chief of Staff—works alongside you.
+                                    Purpose-built interfaces, not chat bubbles.
                                 </p>
                                 <p>
                                     A unified front door to everything AI can do for
                                     you.
                                 </p>
                             </div>
-                        </section>
+                        </article>
 
                         {/* Philosophy Card */}
-                        <section className="glass-card space-y-4 text-left">
+                        <article className="glass-card space-y-4 text-left">
                             <h2 className="text-lg font-semibold text-foreground/90">
                                 The Philosophy
                             </h2>
@@ -104,10 +115,10 @@ export default function LandingPage() {
                                 </p>
                                 <p>Technology in service of human flourishing.</p>
                             </div>
-                        </section>
+                        </article>
 
                         {/* Status Card */}
-                        <section className="glass-card space-y-4 text-left">
+                        <article className="glass-card space-y-4 text-left">
                             <h2 className="text-lg font-semibold text-foreground/90">
                                 Where We Are
                             </h2>
@@ -123,7 +134,7 @@ export default function LandingPage() {
                                     resonates, follow along as we build it together.
                                 </p>
                             </div>
-                        </section>
+                        </article>
 
                         {/* Roadmap Card */}
                         <section className="glass-card space-y-4 text-left">
