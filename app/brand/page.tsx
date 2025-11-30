@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
+import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
@@ -22,29 +22,10 @@ export default function BrandPage() {
 
             {/* Content layer */}
             <div className="relative z-10">
-                {/* Header */}
-                <header className="border-b border-foreground/10 bg-white/80 backdrop-blur-sm">
-                    <div className="mx-auto max-w-6xl px-6 py-4">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-3 transition-opacity hover:opacity-80"
-                        >
-                            <Image
-                                src="/logos/icon-transparent.png"
-                                alt="Carmenta"
-                                width={48}
-                                height={48}
-                                className="h-12 w-12"
-                            />
-                            <span className="text-xl font-semibold tracking-tight text-foreground/90">
-                                Carmenta
-                            </span>
-                        </Link>
-                    </div>
-                </header>
+                <SiteHeader bordered />
 
                 <main className="py-12">
-                    <div className="mx-auto max-w-6xl space-y-16 px-6">
+                    <div className="mx-auto max-w-6xl space-y-12 px-6">
                         {/* Intro */}
                         <section className="space-y-4">
                             <h1 className="text-4xl font-light tracking-tight text-foreground">
@@ -58,7 +39,7 @@ export default function BrandPage() {
 
                         {/* Logos */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Logos
                             </h2>
 
@@ -115,7 +96,7 @@ export default function BrandPage() {
                     {/* Social Previews - FULL WIDTH, outside container */}
                     <section className="space-y-6 py-16">
                         <div className="mx-auto max-w-6xl px-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Social Media Preview
                             </h2>
                             <p className="mt-2 text-foreground/70">
@@ -178,10 +159,10 @@ export default function BrandPage() {
                         </p>
                     </section>
 
-                    <div className="mx-auto max-w-6xl space-y-16 px-6">
+                    <div className="mx-auto max-w-6xl space-y-12 px-6">
                         {/* Colors */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Color Palette
                             </h2>
 
@@ -227,7 +208,7 @@ export default function BrandPage() {
 
                         {/* Typography */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Typography
                             </h2>
 
@@ -304,7 +285,7 @@ export default function BrandPage() {
 
                         {/* Brand Story */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Brand Story
                             </h2>
 
@@ -339,7 +320,7 @@ export default function BrandPage() {
 
                         {/* Voice & Messaging */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Voice & Messaging
                             </h2>
 
@@ -409,7 +390,7 @@ export default function BrandPage() {
 
                         {/* Design Principles */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Design Principles
                             </h2>
 
@@ -484,7 +465,7 @@ export default function BrandPage() {
 
                         {/* Usage Guidelines */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Usage Guidelines
                             </h2>
 
@@ -542,7 +523,7 @@ export default function BrandPage() {
 
                         {/* Favicon & App Icons */}
                         <section className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-foreground">
+                            <h2 className="text-lg font-semibold text-foreground/90">
                                 Favicon & App Icons
                             </h2>
 
