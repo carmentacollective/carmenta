@@ -3,6 +3,13 @@ import type { Organization, WebSite, WithContext } from "schema-dts";
 /**
  * Structured data (JSON-LD) for Carmenta.
  * Implements Schema.org markup for better search engine understanding.
+ *
+ * Following Next.js 16 best practices:
+ * @see https://nextjs.org/docs/app/guides/json-ld
+ *
+ * - Renders as <script type="application/ld+json"> in body
+ * - Uses .replace(/</g, '\\u003c') for XSS protection
+ * - Type-safe with schema-dts package
  */
 
 const organizationSchema: WithContext<Organization> = {
@@ -48,13 +55,13 @@ export function StructuredData() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(organizationSchema),
+                    __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c"),
                 }}
             />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(websiteSchema),
+                    __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c"),
                 }}
             />
         </>

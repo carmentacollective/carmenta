@@ -3,6 +3,9 @@ import type { FAQPage, WithContext } from "schema-dts";
 /**
  * FAQ schema for Carmenta landing page.
  * Provides structured answers to common questions for rich snippets.
+ *
+ * Following Next.js 16 best practices:
+ * @see https://nextjs.org/docs/app/guides/json-ld
  */
 
 const faqSchema: WithContext<FAQPage> = {
@@ -57,7 +60,7 @@ export function FAQSchema() {
         <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-                __html: JSON.stringify(faqSchema),
+                __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c"),
             }}
         />
     );
