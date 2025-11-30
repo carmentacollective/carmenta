@@ -7,6 +7,11 @@ import { AlertCircle, RefreshCw, X } from "lucide-react";
 
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
+import {
+    ConciergeProvider,
+    useConcierge,
+    parseConciergeHeaders,
+} from "@/lib/concierge/context";
 
 interface ConnectRuntimeProviderProps {
     children: React.ReactNode;
@@ -78,89 +83,101 @@ function RuntimeErrorBanner({
 }
 
 /**
- * Custom fetch wrapper with detailed error logging.
+ * Inner provider that has access to concierge context and error handling.
  */
-async function fetchWithLogging(
-    input: RequestInfo | URL,
-    init?: RequestInit
-): Promise<Response> {
-    const url = typeof input === "string" ? input : input.toString();
-    const method = init?.method || "GET";
-
-    logger.debug({ url, method }, "🌐 API request starting");
-
-    try {
-        const response = await fetch(input, init);
-
-        if (!response.ok) {
-            // Try to get error details from response body
-            let errorDetails: unknown = null;
-            try {
-                errorDetails = await response.clone().json();
-            } catch {
-                // Response wasn't JSON
-                try {
-                    errorDetails = await response.clone().text();
-                } catch {
-                    errorDetails = "Could not read response body";
-                }
-            }
-
-            logger.error(
-                {
-                    url,
-                    method,
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorDetails,
-                },
-                "❌ API request failed"
-            );
-        } else {
-            logger.debug(
-                { url, method, status: response.status },
-                "✅ API request successful"
-            );
-        }
-
-        return response;
-    } catch (error) {
-        logger.error(
-            {
-                url,
-                method,
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            },
-            "❌ API request threw exception"
-        );
-        throw error;
-    }
-}
-
-/**
- * Provides the assistant-ui runtime configured for our /api/connect endpoint.
- *
- * This wraps the app with AssistantRuntimeProvider which enables:
- * - Message state management
- * - Tool UI rendering
- * - Streaming response handling
- * - Runtime error display with retry capability
- *
- * Uses AssistantChatTransport to automatically forward system messages
- * and frontend tools to the backend.
- */
-export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
+function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
+    const { setConcierge } = useConcierge();
     const [error, setError] = useState<Error | null>(null);
+
+    /**
+     * Custom fetch wrapper that captures concierge headers and logs errors.
+     */
+    const fetchWithConcierge = useCallback(
+        async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+            const url = typeof input === "string" ? input : input.toString();
+            const method = init?.method || "GET";
+
+            logger.debug({ url, method }, "API request starting");
+
+            // Clear stale concierge data when new request starts
+            // This prevents showing previous message's model selection during loading
+            setConcierge(null);
+
+            try {
+                const response = await fetch(input, init);
+
+                if (!response.ok) {
+                    // Try to get error details from response body
+                    let errorDetails: unknown = null;
+                    try {
+                        errorDetails = await response.clone().json();
+                    } catch {
+                        try {
+                            errorDetails = await response.clone().text();
+                        } catch {
+                            errorDetails = "Could not read response body";
+                        }
+                    }
+
+                    logger.error(
+                        {
+                            url,
+                            method,
+                            status: response.status,
+                            statusText: response.statusText,
+                            errorDetails,
+                        },
+                        "API request failed"
+                    );
+
+                    // Clear concierge on error
+                    setConcierge(null);
+                } else {
+                    logger.debug(
+                        { url, method, status: response.status },
+                        "API request successful"
+                    );
+
+                    // Parse and set concierge data from headers
+                    const conciergeData = parseConciergeHeaders(response);
+                    if (conciergeData) {
+                        logger.debug(
+                            {
+                                modelId: conciergeData.modelId,
+                                temperature: conciergeData.temperature,
+                            },
+                            "Concierge data received"
+                        );
+                        setConcierge(conciergeData);
+                    }
+                }
+
+                return response;
+            } catch (error) {
+                logger.error(
+                    {
+                        url,
+                        method,
+                        error: error instanceof Error ? error.message : String(error),
+                        stack: error instanceof Error ? error.stack : undefined,
+                    },
+                    "API request threw exception"
+                );
+                setConcierge(null);
+                throw error;
+            }
+        },
+        [setConcierge]
+    );
 
     // Memoize transport to prevent recreation on every render
     const transport = useMemo(
         () =>
             new AssistantChatTransport({
                 api: "/api/connect",
-                fetch: fetchWithLogging,
+                fetch: fetchWithConcierge,
             }),
-        []
+        [fetchWithConcierge]
     );
 
     const handleError = useCallback((err: Error) => {
@@ -170,7 +187,7 @@ export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps
                 stack: err.stack,
                 name: err.name,
             },
-            "❌ Chat runtime error"
+            "Chat runtime error"
         );
         setError(err);
     }, []);
@@ -212,5 +229,24 @@ export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps
                 )}
             </AssistantRuntimeProvider>
         </ChatErrorContext.Provider>
+    );
+}
+
+/**
+ * Provides the assistant-ui runtime configured for our /api/connect endpoint.
+ *
+ * This wraps the app with:
+ * - ConciergeProvider for concierge data
+ * - AssistantRuntimeProvider for message state, tool UI, and streaming
+ * - Runtime error display with retry capability
+ *
+ * Captures concierge headers from responses and makes them available
+ * to child components via useConcierge().
+ */
+export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
+    return (
+        <ConciergeProvider>
+            <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
+        </ConciergeProvider>
     );
 }
