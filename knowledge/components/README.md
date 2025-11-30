@@ -39,11 +39,17 @@ transport abstractions that power all chat experiences. AI SDK v5 patterns for t
 
 ## Core Layer
 
+### [Carmenta Presence](carmenta-presence.md)
+
+The presence behind the interface. Three phases: pre-query (understand needs, assemble
+context, route), post-response (format output, add enhancements), self-improvement
+(evaluate quality, detect patterns).
+
 ### [Concierge](concierge.md)
 
-The intelligent layer between user input and AI processing. Classifies requests, selects
-models, determines response strategy, enhances queries. Users see a simple interface;
-the Concierge handles complexity invisibly.
+Operates before and after every model call. Pre-query: infers complexity, assembles
+context, selects model. Post-response: formats output, adds follow-ups. Users see a
+simple interface while Concierge handles complexity.
 
 ### [Interface](interface.md)
 
@@ -102,6 +108,11 @@ Browse the web as the user with their sessions. Deep research behind authenticat
 task execution in web apps without APIs. Access what matters, not just what's public.
 
 ## Self-Building Layer
+
+### [Concierge Improvement Loop](concierge-improvement-loop.md)
+
+Watches every live query and response. Evaluates quality, detects patterns, drives
+improvement. Progresses through autonomy levels from observation to autonomous fixes.
 
 ### [Product Intelligence](product-intelligence.md)
 
