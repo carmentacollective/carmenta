@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 
+import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
 import "@assistant-ui/react-ui/styles/index.css";
 import "./globals.css";
@@ -99,6 +100,7 @@ export default function RootLayout({
         <ClerkProvider afterSignOutUrl="/">
             <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
                 <body className="min-h-screen bg-background font-sans antialiased">
+                    <PWARegistration />
                     <StructuredData />
                     {children}
                 </body>

@@ -101,14 +101,18 @@ and `StateDelta` events.
 
 Web application first - the foundation. Then:
 
-- PWA for notifications and offline capability
-- Electron for desktop integration
-- Mobile apps eventually
+- **PWA for notifications and offline capability** - [Implemented](./pwa.md). Carmenta
+  is now installable on iOS, Android, and desktop. Push notifications enable the Digital
+  Chief of Staff and scheduled agents to surface intelligence proactively.
+- Electron for desktop integration (planned)
+- Mobile apps eventually (planned)
 
 Each platform adds capabilities but web remains primary.
 
 ## Integration Points
 
+- **PWA**: Service worker provides offline support, caching, and push notifications. See
+  [pwa.md](./pwa.md)
 - **Concierge**: Receives AG-UI events that signal how to render responses
 - **Voice**: Integrates STT for input, TTS for output
 - **Conversations**: Manages chat history and thread state
