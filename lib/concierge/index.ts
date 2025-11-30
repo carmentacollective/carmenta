@@ -17,13 +17,24 @@ import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 import { buildConciergePrompt } from "./prompt";
-import { CONCIERGE_DEFAULTS, CONCIERGE_MODEL, type ConciergeResult } from "./types";
+import {
+    ALLOWED_MODELS,
+    CONCIERGE_DEFAULTS,
+    CONCIERGE_MODEL,
+    MAX_REASONING_LENGTH,
+    type ConciergeResult,
+} from "./types";
 
 export type { ConciergeResult } from "./types";
 export { CONCIERGE_DEFAULTS } from "./types";
 
 // Re-export internal functions for testing
-export { parseConciergeResponse, extractMessageText, formatQueryForConcierge };
+export {
+    parseConciergeResponse,
+    extractMessageText,
+    formatQueryForConcierge,
+    detectAttachments,
+};
 
 /** Cache for the rubric content to avoid repeated file reads */
 let rubricCache: string | null = null;
@@ -66,22 +77,71 @@ function extractMessageText(msg: UIMessage): string {
 }
 
 /**
+ * Detects attachment types in a message.
+ * Returns an array of attachment type strings (e.g., ["image", "pdf"]).
+ */
+function detectAttachments(msg: UIMessage): string[] {
+    const attachments: string[] = [];
+
+    if (!msg.parts || !Array.isArray(msg.parts)) {
+        return attachments;
+    }
+
+    for (const part of msg.parts) {
+        // Check for file parts with mimeType
+        if ("mimeType" in part && typeof part.mimeType === "string") {
+            const mimeType = part.mimeType.toLowerCase();
+            if (mimeType.startsWith("image/")) {
+                if (!attachments.includes("image")) attachments.push("image");
+            } else if (mimeType === "application/pdf") {
+                if (!attachments.includes("pdf")) attachments.push("pdf");
+            } else if (mimeType.startsWith("audio/")) {
+                if (!attachments.includes("audio")) attachments.push("audio");
+            } else if (mimeType.startsWith("video/")) {
+                if (!attachments.includes("video")) attachments.push("video");
+            }
+        }
+        // Check for file parts with specific mime types
+        if (part.type === "file" && "mimeType" in part) {
+            const mimeType = String(part.mimeType).toLowerCase();
+            if (mimeType.startsWith("audio/")) {
+                if (!attachments.includes("audio")) attachments.push("audio");
+            } else if (mimeType.startsWith("video/")) {
+                if (!attachments.includes("video")) attachments.push("video");
+            }
+        }
+    }
+
+    return attachments;
+}
+
+interface FormattedQuery {
+    text: string;
+    attachments: string[];
+}
+
+/**
  * Formats the user's query for the concierge prompt.
  * Takes the last user message as the primary input.
+ * Also detects any attachments to inform model routing.
  */
-function formatQueryForConcierge(messages: UIMessage[]): string {
+function formatQueryForConcierge(messages: UIMessage[]): FormattedQuery {
     // Find the last user message
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
 
     if (!lastUserMessage) {
-        return "";
+        return { text: "", attachments: [] };
     }
 
-    return extractMessageText(lastUserMessage);
+    return {
+        text: extractMessageText(lastUserMessage),
+        attachments: detectAttachments(lastUserMessage),
+    };
 }
 
 /**
  * Parses the JSON response from the concierge LLM.
+ * Validates model against whitelist and limits reasoning length.
  */
 function parseConciergeResponse(responseText: string): ConciergeResult {
     // Clean up the response - remove markdown code blocks if present
@@ -97,20 +157,38 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
     }
     cleanedText = cleanedText.trim();
 
-    const parsed = JSON.parse(cleanedText);
+    let parsed: Record<string, unknown>;
+    try {
+        parsed = JSON.parse(cleanedText);
+    } catch (error) {
+        throw new Error(
+            `Failed to parse concierge JSON: ${error instanceof Error ? error.message : String(error)}`
+        );
+    }
 
-    // Validate required fields
-    if (!parsed.modelId || parsed.temperature === undefined || !parsed.reasoning) {
+    // Validate required fields - use == null to catch both undefined and null
+    if (!parsed.modelId || parsed.temperature == null || !parsed.reasoning) {
         throw new Error("Missing required fields in concierge response");
+    }
+
+    const modelId = String(parsed.modelId);
+
+    // Validate model against whitelist
+    if (!ALLOWED_MODELS.includes(modelId as (typeof ALLOWED_MODELS)[number])) {
+        logger.warn({ modelId }, "Concierge selected disallowed model, using default");
+        return CONCIERGE_DEFAULTS;
     }
 
     // Clamp temperature to valid range
     const temperature = Math.max(0, Math.min(1, Number(parsed.temperature)));
 
+    // Limit reasoning length for security
+    const reasoning = String(parsed.reasoning).slice(0, MAX_REASONING_LENGTH);
+
     return {
-        modelId: String(parsed.modelId),
+        modelId,
         temperature,
-        reasoning: String(parsed.reasoning),
+        reasoning,
     };
 }
 
@@ -137,20 +215,31 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 // Build the prompt
                 const systemPrompt = buildConciergePrompt(rubricContent);
 
-                // Format the user's query
-                const userQuery = formatQueryForConcierge(messages);
+                // Format the user's query and detect attachments
+                const { text: userQuery, attachments } =
+                    formatQueryForConcierge(messages);
 
                 if (!userQuery) {
                     logger.warn({}, "No user query found, using defaults");
                     return CONCIERGE_DEFAULTS;
                 }
 
+                // Build the prompt with attachment context
+                let prompt = userQuery;
+                if (attachments.length > 0) {
+                    prompt = `[Attachments: ${attachments.join(", ")}]\n\n${userQuery}`;
+                }
+
                 span.setAttribute("concierge_model", CONCIERGE_MODEL);
+                if (attachments.length > 0) {
+                    span.setAttribute("attachments", attachments.join(","));
+                }
 
                 logger.debug(
                     {
                         conciergeModel: CONCIERGE_MODEL,
                         queryLength: userQuery.length,
+                        attachments: attachments.length > 0 ? attachments : undefined,
                     },
                     "Running concierge"
                 );
@@ -159,7 +248,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 const result = await generateText({
                     model: openrouter.chat(CONCIERGE_MODEL),
                     system: systemPrompt,
-                    prompt: userQuery,
+                    prompt,
                     temperature: 0.1, // Low temperature for consistent routing
                     maxOutputTokens: 200, // Short responses only
                     experimental_telemetry: {

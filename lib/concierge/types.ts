@@ -33,3 +33,21 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
  * Haiku 4.5 is fast and capable enough for routing decisions.
  */
 export const CONCIERGE_MODEL = "anthropic/claude-haiku-4.5";
+
+/**
+ * Whitelist of allowed models the concierge can select.
+ * Prevents routing to unexpected or expensive models.
+ */
+export const ALLOWED_MODELS = [
+    "anthropic/claude-opus-4.5",
+    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-haiku-4.5",
+    "google/gemini-3-pro-preview",
+    "x-ai/grok-4-fast",
+] as const;
+
+/**
+ * Maximum length for reasoning text.
+ * Prevents excessive header sizes and potential injection.
+ */
+export const MAX_REASONING_LENGTH = 500;

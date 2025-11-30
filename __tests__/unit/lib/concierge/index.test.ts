@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import type { UIMessage } from "ai";
 
 import { CONCIERGE_DEFAULTS } from "@/lib/concierge/types";
@@ -7,7 +7,9 @@ import {
     parseConciergeResponse,
     extractMessageText,
     formatQueryForConcierge,
+    detectAttachments,
 } from "@/lib/concierge";
+import { ALLOWED_MODELS, MAX_REASONING_LENGTH } from "@/lib/concierge/types";
 
 describe("Concierge", () => {
     describe("buildConciergePrompt", () => {
@@ -146,8 +148,58 @@ describe("Concierge", () => {
             );
         });
 
-        it("throws on invalid JSON", () => {
-            expect(() => parseConciergeResponse("not json")).toThrow();
+        it("throws on invalid JSON with descriptive error", () => {
+            expect(() => parseConciergeResponse("not json")).toThrow(
+                /Failed to parse concierge JSON/
+            );
+        });
+
+        it("returns defaults for disallowed model", () => {
+            const response = JSON.stringify({
+                modelId: "unknown-provider/expensive-model",
+                temperature: 0.5,
+                reasoning: "Test",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result).toEqual(CONCIERGE_DEFAULTS);
+        });
+
+        it("accepts all whitelisted models", () => {
+            for (const modelId of ALLOWED_MODELS) {
+                const response = JSON.stringify({
+                    modelId,
+                    temperature: 0.5,
+                    reasoning: "Test",
+                });
+
+                const result = parseConciergeResponse(response);
+                expect(result.modelId).toBe(modelId);
+            }
+        });
+
+        it("truncates reasoning to MAX_REASONING_LENGTH", () => {
+            const longReasoning = "x".repeat(MAX_REASONING_LENGTH + 100);
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                reasoning: longReasoning,
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.reasoning.length).toBe(MAX_REASONING_LENGTH);
+        });
+
+        it("handles null temperature by throwing", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: null,
+                reasoning: "Test",
+            });
+
+            expect(() => parseConciergeResponse(response)).toThrow(
+                "Missing required fields"
+            );
         });
     });
 
@@ -215,8 +267,94 @@ describe("Concierge", () => {
         });
     });
 
+    describe("detectAttachments", () => {
+        it("returns empty array for text-only message", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [{ type: "text", text: "Hello" }],
+            };
+
+            expect(detectAttachments(message)).toEqual([]);
+        });
+
+        it("detects image attachments from mimeType", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [
+                    { type: "text", text: "Look at this" },
+                    { type: "file", mimeType: "image/png", data: "..." } as any,
+                ],
+            };
+
+            expect(detectAttachments(message)).toContain("image");
+        });
+
+        it("detects multiple image formats", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [{ type: "file", mimeType: "image/jpeg", data: "..." } as any],
+            };
+
+            expect(detectAttachments(message)).toContain("image");
+        });
+
+        it("detects PDF attachments", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [
+                    { type: "file", mimeType: "application/pdf", data: "..." } as any,
+                ],
+            };
+
+            expect(detectAttachments(message)).toContain("pdf");
+        });
+
+        it("detects audio attachments", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [{ type: "file", mimeType: "audio/mp3", data: "..." } as any],
+            };
+
+            expect(detectAttachments(message)).toContain("audio");
+        });
+
+        it("detects video attachments", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [{ type: "file", mimeType: "video/mp4", data: "..." } as any],
+            };
+
+            expect(detectAttachments(message)).toContain("video");
+        });
+
+        it("deduplicates multiple images", () => {
+            const message: UIMessage = {
+                id: "1",
+                role: "user",
+                parts: [
+                    { type: "file", mimeType: "image/png", data: "..." } as any,
+                    { type: "file", mimeType: "image/jpeg", data: "..." } as any,
+                ],
+            };
+
+            const attachments = detectAttachments(message);
+            expect(attachments.filter((a) => a === "image").length).toBe(1);
+        });
+
+        it("returns empty array for undefined parts", () => {
+            const message = { id: "1", role: "user" } as UIMessage;
+            expect(detectAttachments(message)).toEqual([]);
+        });
+    });
+
     describe("formatQueryForConcierge", () => {
-        it("returns last user message text", () => {
+        it("returns last user message text with empty attachments", () => {
             const messages: UIMessage[] = [
                 {
                     id: "1",
@@ -235,10 +373,12 @@ describe("Concierge", () => {
                 },
             ];
 
-            expect(formatQueryForConcierge(messages)).toBe("Follow-up question");
+            const result = formatQueryForConcierge(messages);
+            expect(result.text).toBe("Follow-up question");
+            expect(result.attachments).toEqual([]);
         });
 
-        it("returns empty string when no user messages", () => {
+        it("returns empty result when no user messages", () => {
             const messages: UIMessage[] = [
                 {
                     id: "1",
@@ -247,11 +387,15 @@ describe("Concierge", () => {
                 },
             ];
 
-            expect(formatQueryForConcierge(messages)).toBe("");
+            const result = formatQueryForConcierge(messages);
+            expect(result.text).toBe("");
+            expect(result.attachments).toEqual([]);
         });
 
-        it("returns empty string for empty messages array", () => {
-            expect(formatQueryForConcierge([])).toBe("");
+        it("returns empty result for empty messages array", () => {
+            const result = formatQueryForConcierge([]);
+            expect(result.text).toBe("");
+            expect(result.attachments).toEqual([]);
         });
 
         it("handles single user message", () => {
@@ -263,7 +407,7 @@ describe("Concierge", () => {
                 },
             ];
 
-            expect(formatQueryForConcierge(messages)).toBe("Only message");
+            expect(formatQueryForConcierge(messages).text).toBe("Only message");
         });
     });
 });
