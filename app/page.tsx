@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { Footer } from "@/components/footer";
@@ -15,9 +16,22 @@ export default function LandingPage() {
             <div className="relative z-10 flex min-h-screen flex-col">
                 {/* Header */}
                 <header className="flex items-center justify-between px-6 py-4">
-                    <span className="text-lg font-semibold tracking-tight text-foreground/80">
-                        CARMENTA
-                    </span>
+                    <Link
+                        href="/"
+                        className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                    >
+                        <Image
+                            src="/logos/icon-transparent.png"
+                            alt="Carmenta"
+                            width={48}
+                            height={48}
+                            className="h-12 w-12"
+                            priority
+                        />
+                        <span className="text-xl font-semibold tracking-tight text-foreground/90">
+                            Carmenta
+                        </span>
+                    </Link>
                     <Link
                         href="/connect"
                         className="rounded-full bg-white/50 px-4 py-2 text-sm font-medium text-foreground/70 backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground"

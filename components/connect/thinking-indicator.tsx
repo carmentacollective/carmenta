@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useId } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { getThinkingMessage } from "@/lib/tools/tool-config";
@@ -46,10 +47,17 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
             transition={{ duration: 0.2 }}
             className={cn("flex items-center gap-3", className)}
         >
-            {/* Shimmer dot */}
+            {/* Rotating logo */}
             <div className="relative flex h-8 w-8 items-center justify-center">
-                <div className="absolute h-full w-full animate-ping rounded-full bg-primary/20" />
-                <div className="h-2 w-2 rounded-full bg-primary/60" />
+                <div className="animate-spin-slow">
+                    <Image
+                        src="/logos/icon-transparent.png"
+                        alt="Thinking"
+                        width={32}
+                        height={32}
+                        className="opacity-70"
+                    />
+                </div>
             </div>
 
             {/* Message */}
