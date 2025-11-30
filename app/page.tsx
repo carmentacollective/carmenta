@@ -120,75 +120,87 @@ export default function LandingPage() {
                             </div>
                         </article>
 
-                        {/* Roadmap Card */}
-                        <section className="glass-card space-y-4 text-left">
-                            <h2 className="text-lg font-semibold text-foreground/90">
-                                What's Next
-                            </h2>
-                            <div className="space-y-3 text-foreground/70">
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-primary/50" />
-                                    <div>
-                                        <span className="font-medium text-foreground/60 line-through decoration-foreground/30">
-                                            M0.5: First Connection
-                                        </span>
-                                        <span className="text-foreground/50">
-                                            {" "}
-                                            — Complete
-                                        </span>
-                                    </div>
+                        {/* Journey Section */}
+                        <section className="glass-card space-y-5 text-left">
+                            <div className="space-y-3">
+                                <h2 className="text-lg font-semibold text-foreground/90">
+                                    The Journey
+                                </h2>
+                                {/* Progress bar */}
+                                <div className="flex gap-1">
+                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-primary/30" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-primary" />
-                                    <div>
-                                        <span className="font-medium text-foreground/90">
-                                            M1: Soul Proven
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {" "}
-                                            — Persistence, so conversations build over
-                                            time
-                                        </span>
-                                    </div>
+                            </div>
+
+                            {/* Completed milestones */}
+                            <div className="space-y-1 text-sm">
+                                <div className="flex items-center gap-2 text-foreground/50">
+                                    <span className="text-primary">✓</span>
+                                    <span>
+                                        M0: Stake in the Ground — Vision articulated,
+                                        building in public
+                                    </span>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full border border-foreground/30" />
-                                    <div>
-                                        <span className="font-medium text-foreground/90">
-                                            M2: Relationship Grows
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {" "}
-                                            — Memory that builds over time, a
-                                            relationship that deepens
-                                        </span>
-                                    </div>
+                                <div className="flex items-center gap-2 text-foreground/50">
+                                    <span className="text-primary">✓</span>
+                                    <span>
+                                        M0.5: First Connection — Streaming responses,
+                                        web intelligence, heart-centered tone
+                                    </span>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full border border-foreground/30" />
-                                    <div>
-                                        <span className="font-medium text-foreground/90">
-                                            M3: Flow State
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {" "}
-                                            — Voice-first, polished, your primary AI
-                                            interface
-                                        </span>
-                                    </div>
+                            </div>
+
+                            {/* Current milestone */}
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                <div className="mb-2 flex items-center gap-2">
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+                                    <span className="font-semibold text-foreground/90">
+                                        M1: Soul Proven
+                                    </span>
+                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs uppercase tracking-wider text-primary">
+                                        Now
+                                    </span>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full border border-foreground/30" />
-                                    <div>
-                                        <span className="font-medium text-foreground/90">
-                                            M4: Ready for Everyone
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {" "}
-                                            — AI team, service integrations, the full
-                                            vision
-                                        </span>
-                                    </div>
+                                <p className="text-sm text-foreground/70">
+                                    Conversations that persist. Errors handled
+                                    gracefully. The experience that makes you want to
+                                    come back.
+                                </p>
+                            </div>
+
+                            {/* Future milestones */}
+                            <div className="space-y-3 text-sm">
+                                <div>
+                                    <span className="font-medium text-foreground/70">
+                                        M2: Relationship Grows
+                                    </span>
+                                    <p className="mt-0.5 text-foreground/50">
+                                        Carmenta remembers you—your preferences, your
+                                        projects, your people.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-medium text-foreground/70">
+                                        M3: Flow State
+                                    </span>
+                                    <p className="mt-0.5 text-foreground/50">
+                                        Voice-first interaction. Smart model selection.
+                                        Work at the speed you think.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-medium text-foreground/70">
+                                        M4: Ready for Everyone
+                                    </span>
+                                    <p className="mt-0.5 text-foreground/50">
+                                        Your AI team. Service integrations. The full
+                                        vision realized.
+                                    </p>
                                 </div>
                             </div>
                         </section>
