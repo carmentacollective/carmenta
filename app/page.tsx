@@ -34,7 +34,7 @@ export default function LandingPage() {
                         {/* Hero */}
                         <section className="space-y-4">
                             <div className="inline-block rounded-full bg-white/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
-                                M0: Stake in the Ground
+                                M0.5: First Connection
                             </div>
                             <Greeting
                                 className="greeting-title"
@@ -102,14 +102,20 @@ export default function LandingPage() {
                             </h2>
                             <div className="space-y-4 leading-relaxed text-foreground/70">
                                 <p>
-                                    You're looking at the beginning. This page{" "}
-                                    <em>is</em> the product right now—a stake in the
-                                    ground, a declaration of intent.
+                                    You can{" "}
+                                    <Link
+                                        href="/connect"
+                                        className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
+                                    >
+                                        connect with Carmenta
+                                    </Link>{" "}
+                                    right now. The conversation feels different—we think
+                                    together, research together, build together.
                                 </p>
                                 <p>
                                     We're building in public. The specification, the
-                                    decisions, the code—all open. If this vision
-                                    resonates, follow along as we build it together.
+                                    decisions, the code—all open. Next: conversations
+                                    that persist, so the relationship builds over time.
                                 </p>
                             </div>
                         </article>
@@ -121,28 +127,27 @@ export default function LandingPage() {
                             </h2>
                             <div className="space-y-3 text-foreground/70">
                                 <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-primary" />
+                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-primary/50" />
                                     <div>
-                                        <span className="font-medium text-foreground/90">
+                                        <span className="font-medium text-foreground/60 line-through decoration-foreground/30">
                                             M0.5: First Connection
                                         </span>
-                                        <span className="text-foreground/60">
+                                        <span className="text-foreground/50">
                                             {" "}
-                                            — Basic connection with AI, proving the
-                                            interaction feels right
+                                            — Complete
                                         </span>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
-                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full border border-foreground/30" />
+                                    <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-primary" />
                                     <div>
                                         <span className="font-medium text-foreground/90">
                                             M1: Soul Proven
                                         </span>
                                         <span className="text-foreground/60">
                                             {" "}
-                                            — The heart-centered experience that feels
-                                            meaningfully different
+                                            — Persistence, so conversations build over
+                                            time
                                         </span>
                                     </div>
                                 </div>
