@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useOptionalUser } from "@/lib/hooks/use-optional-user";
+import { useUserContext } from "@/lib/auth/user-context";
 
 /**
  * Adaptive CTA that changes based on auth state.
@@ -11,7 +11,7 @@ import { useOptionalUser } from "@/lib/hooks/use-optional-user";
  * Logged out: "Start Connecting" - inviting first-time users
  */
 export function ConnectCTA() {
-    const { user, isLoaded } = useOptionalUser();
+    const { user, isLoaded } = useUserContext();
     const isLoggedIn = isLoaded && !!user;
 
     const label = isLoggedIn ? "Continue" : "Start Connecting";

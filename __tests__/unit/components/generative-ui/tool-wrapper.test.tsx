@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
+import type { ReactNode } from "react";
+
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 
-// Mock Clerk's useUser hook - this is an external dependency we should mock
-vi.mock("@clerk/nextjs", () => ({
-    useUser: vi.fn(() => ({ user: null })),
+// Mock the user context instead of Clerk directly
+vi.mock("@/lib/auth/user-context", () => ({
+    useUserContext: vi.fn(() => ({ user: null, isLoaded: true })),
+    UserProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 describe("ToolWrapper", () => {

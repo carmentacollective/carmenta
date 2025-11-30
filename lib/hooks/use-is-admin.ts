@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useSyncExternalStore } from "react";
 
-import { useOptionalUser } from "@/lib/hooks/use-optional-user";
+import { useUserContext } from "@/lib/auth/user-context";
 
 const DEBUG_WELCOMED_KEY = "carmenta-debug-welcomed";
 
@@ -39,7 +39,7 @@ function getServerUrlDebugSnapshot(): boolean {
  * - URL has ?debug param
  */
 export function useIsAdmin(): boolean {
-    const { user } = useOptionalUser();
+    const { user } = useUserContext();
     const urlDebug = useSyncExternalStore(
         subscribeToUrl,
         getUrlDebugSnapshot,
