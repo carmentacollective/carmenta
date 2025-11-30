@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
-import { HideClerkBanner } from "@/components/brand/hide-clerk-banner";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
@@ -18,9 +17,6 @@ export const metadata: Metadata = {
 export default function BrandPage() {
     return (
         <div className="relative min-h-screen bg-background">
-            {/* Hide Clerk dev banner for clean screenshots */}
-            <HideClerkBanner />
-
             {/* Holographic background */}
             <HolographicBackground />
 
@@ -151,23 +147,14 @@ export default function BrandPage() {
                                                     height={160}
                                                     className="h-[160px] w-[160px]"
                                                 />
-                                                <h1
-                                                    className="text-6xl font-light tracking-tight"
-                                                    style={{ color: "#5A3C64" }}
-                                                >
+                                                <h1 className="text-6xl font-light tracking-tight text-foreground">
                                                     Carmenta
                                                 </h1>
                                             </div>
                                             {/* Right side - Message */}
                                             <div className="flex w-1/2 flex-col justify-center space-y-8 px-16">
                                                 <div className="space-y-4">
-                                                    <p
-                                                        className="text-3xl font-normal"
-                                                        style={{
-                                                            color: "#5A3C64",
-                                                            lineHeight: "1.3",
-                                                        }}
-                                                    >
+                                                    <p className="text-3xl font-normal leading-tight text-foreground">
                                                         One Interface.
                                                         <br />
                                                         All AI Models.
@@ -175,13 +162,7 @@ export default function BrandPage() {
                                                         Complete Memory.
                                                     </p>
                                                 </div>
-                                                <p
-                                                    className="text-xl"
-                                                    style={{
-                                                        color: "#8A7A9C",
-                                                        lineHeight: "1.5",
-                                                    }}
-                                                >
+                                                <p className="text-xl leading-normal text-muted-foreground">
                                                     Heart-centered AI for builders who
                                                     work at the speed of thought
                                                 </p>

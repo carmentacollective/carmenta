@@ -16,9 +16,14 @@ export function ColorSwatch({
     const [copied, setCopied] = useState<string | null>(null);
 
     const handleCopy = async (text: string) => {
-        await navigator.clipboard.writeText(text);
-        setCopied(text);
-        setTimeout(() => setCopied(null), 1500);
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(text);
+            setTimeout(() => setCopied(null), 1500);
+        } catch (error) {
+            // Clipboard API can fail due to permissions or browser support
+            console.error("Failed to copy to clipboard:", error);
+        }
     };
 
     return (
