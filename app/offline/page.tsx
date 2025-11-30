@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { OfflineRetryButton } from "@/components/offline-retry-button";
+
 export const metadata: Metadata = {
     title: "Offline - Carmenta",
     description:
@@ -55,12 +57,7 @@ export default function OfflinePage() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    >
-                        Try Again
-                    </button>
+                    <OfflineRetryButton />
                     <Link
                         href="/"
                         className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-6 py-3 font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
