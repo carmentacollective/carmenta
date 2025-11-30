@@ -7,8 +7,11 @@
  * @see knowledge/components/pwa.md for architecture decisions
  */
 
-const CACHE_NAME = "carmenta-v1";
-const RUNTIME_CACHE = "carmenta-runtime";
+// Cache versioning: Update BUILD_VERSION when deploying new releases
+// This ensures old caches are automatically cleaned up
+const BUILD_VERSION = "2025-11-30-001";
+const CACHE_NAME = `carmenta-${BUILD_VERSION}`;
+const RUNTIME_CACHE = `carmenta-runtime-${BUILD_VERSION}`;
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -77,9 +80,14 @@ self.addEventListener("fetch", (event) => {
                 // Clone the response since it can only be consumed once
                 const responseToCache = response.clone();
 
-                caches.open(RUNTIME_CACHE).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
+                // Cache the response (non-blocking, errors are silently ignored)
+                caches
+                    .open(RUNTIME_CACHE)
+                    .then((cache) => cache.put(event.request, responseToCache))
+                    .catch(() => {
+                        // Silently fail - caching is an enhancement, not critical
+                        // Errors might occur due to quota exceeded or other storage issues
+                    });
 
                 return response;
             })

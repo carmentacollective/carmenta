@@ -14,6 +14,18 @@ import { logger } from "@/lib/client-logger";
 export function PWARegistration() {
     useEffect(() => {
         if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+            let updateInterval: NodeJS.Timeout | null = null;
+
+            // Handle service worker messages
+            const handleMessage = (event: MessageEvent) => {
+                logger.debug({ data: event.data }, "📨 Message from service worker");
+            };
+
+            // Handle service worker controller change
+            const handleControllerChange = () => {
+                logger.info({}, "🔄 Service worker controller changed");
+            };
+
             // Register service worker
             navigator.serviceWorker
                 .register("/sw.js", {
@@ -26,7 +38,7 @@ export function PWARegistration() {
                     );
 
                     // Check for updates periodically
-                    setInterval(
+                    updateInterval = setInterval(
                         () => {
                             registration.update();
                         },
@@ -53,15 +65,26 @@ export function PWARegistration() {
                     logger.error({ error }, "❌ Service worker registration failed");
                 });
 
-            // Handle service worker messages
-            navigator.serviceWorker.addEventListener("message", (event) => {
-                logger.debug({ data: event.data }, "📨 Message from service worker");
-            });
+            navigator.serviceWorker.addEventListener("message", handleMessage);
+            navigator.serviceWorker.addEventListener(
+                "controllerchange",
+                handleControllerChange
+            );
 
-            // Handle service worker controller change
-            navigator.serviceWorker.addEventListener("controllerchange", () => {
-                logger.info({}, "🔄 Service worker controller changed");
-            });
+            // Cleanup function
+            return () => {
+                // Clear update interval
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                }
+
+                // Remove event listeners
+                navigator.serviceWorker.removeEventListener("message", handleMessage);
+                navigator.serviceWorker.removeEventListener(
+                    "controllerchange",
+                    handleControllerChange
+                );
+            };
         }
     }, []);
 
