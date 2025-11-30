@@ -28,6 +28,34 @@ Memory is what Carmenta "knows" - distilled understanding. Conversations is what
 the new project" while Conversations stores the actual discussion where that decision
 was made.
 
+## Memory Architecture
+
+### Tiered Memory Model
+
+Research shows effective AI memory requires multiple tiers with different retention and
+retrieval characteristics:
+
+| Tier           | Scope              | Retention                       | Purpose                |
+| -------------- | ------------------ | ------------------------------- | ---------------------- |
+| **Immediate**  | Last 5-10 messages | Full conversation               | Current context        |
+| **Recent**     | Last session       | Consolidated summaries          | Session continuity     |
+| **Historical** | All sessions       | Distilled facts and preferences | Long-term relationship |
+
+Each tier uses different compression strategies. Immediate context is uncompressed.
+Recent context uses recursive summarization. Historical memory stores only extracted
+facts and patterns.
+
+### Context Placement
+
+Research on LLM attention patterns ("lost in the middle" problem) shows information
+placement matters:
+
+- **Profile**: Place at START of context (highest attention)
+- **Retrieved memories**: Place at END, just before current query
+- **Less critical context**: Middle of context window
+
+This is a small implementation detail with measurable impact on response quality.
+
 ## Core Functions
 
 ### Profile
@@ -39,6 +67,8 @@ Persistent understanding of who we are:
 - Goals and priorities
 - Relationships and contacts
 
+Profile is injected at the START of every context window.
+
 ### Conversation Memory
 
 What's been discussed across all conversations:
@@ -47,6 +77,9 @@ What's been discussed across all conversations:
 - Commitments made
 - Topics explored
 - Questions asked and answered
+
+Uses two-phase pipeline: extraction (identify memorable content) then update (merge with
+existing memories, handle conflicts).
 
 ### Knowledge Base
 
@@ -63,11 +96,92 @@ Make stored context available when needed:
 - The Concierge requests relevant context for each query
 - Semantic search across all memory types
 - Recency and relevance weighting
-- Efficient retrieval that doesn't slow down responses
+- Target latency: <15ms for retrieval (part of Concierge's 50ms budget)
+
+## Memory Service Options
+
+Research evaluated three production-ready memory services:
+
+### Mem0
+
+**Best for**: Quick deployment, general use cases
+
+- Easiest integration (3 lines of code)
+- Two-phase pipeline: extraction → update
+- Automatic conflict detection and confidence scoring
+- Benchmarks: 26% higher accuracy than OpenAI Memory, 91% lower P95 latency, 90% token
+  savings
+
+**Tradeoff**: Less control over memory structure
+
+### Letta (formerly MemGPT)
+
+**Best for**: Self-improving assistants, agents that manage their own memory
+
+- OS-inspired approach with self-editing memory
+- Agent autonomously decides what to remember via tool calls (`memory_replace`,
+  `memory_insert`, `archival_memory_search`)
+- Benchmarks: 93.4% accuracy on Deep Memory Retrieval
+
+**Tradeoff**: Agent overhead for memory management, more complex integration
+
+### Zep
+
+**Best for**: Temporal reasoning, relationship queries
+
+- Temporal knowledge graphs via Graphiti engine
+- Bi-temporal model: tracks both event timeline and ingestion timeline
+- Enables queries like "When did user change preference from X to Y?"
+- Benchmarks: 94.8% on DMR (highest among memory systems)
+
+**Tradeoff**: Graph maintenance complexity, more infrastructure
+
+### Recommendation
+
+**Start with Mem0** for rapid deployment. Reassess as we understand our specific needs
+better. Consider Letta if the "AI as partner" philosophy benefits from self-editing
+memory. Add Zep's temporal layer if users need to query how preferences evolved over
+time.
+
+## Context Compression
+
+For users with extensive conversation history, context compression becomes essential.
+
+**LLMLingua** (Microsoft): Achieves 10-20x compression using a small language model to
+identify unimportant tokens. Results show 20-30% reduction in response generation
+latency. GPT-4 can recover compressed prompts to near-original quality.
+
+**Application**: Apply compression to historical memory tier. Never compress:
+
+- Profile information
+- Recent conversation context
+- Context for emotional queries (fidelity matters for empathy)
+
+**Hierarchical compression strategy**:
+
+- Immediate (last 5-10 messages): No compression
+- Recent (last session): Light summarization
+- Historical (all sessions): Aggressive compression to key facts
+
+## Implicit Feedback Signals
+
+Memory should learn from behavior, not just explicit statements:
+
+| Signal                   | Meaning                       | Weight |
+| ------------------------ | ----------------------------- | ------ |
+| Regeneration request     | Dissatisfaction with response | High   |
+| Conversation abandonment | Frustration or irrelevance    | Medium |
+| Copy/paste of response   | Satisfaction, useful output   | Medium |
+| Session duration         | Engagement level              | Low    |
+| User edits to AI output  | Quality signal, preferences   | High   |
+
+Research shows explicit feedback has ~0.6% participation rate while implicit signals
+provide 8-13x more data volume. Combine both, weighting explicit higher.
 
 ## Integration Points
 
-- **Concierge**: Primary consumer - retrieves context for every request
+- **Concierge**: Primary consumer - retrieves context for every request. Profile at
+  START, memories at END.
 - **AI Team**: Agents read from and write to memory
 - **Onboarding**: Initial memory population during setup
 - **Conversations**: Each conversation may update memory
@@ -77,9 +191,34 @@ Make stored context available when needed:
 
 - Responses feel contextually aware without us prompting
 - We never have to re-explain established context
-- Memory retrieval doesn't noticeably slow responses
+- Memory retrieval completes in <15ms (doesn't blow Concierge latency budget)
 - We can see and manage what Carmenta remembers
 - Privacy controls let us delete or exclude information
+- Memory improves noticeably over time as we interact more
+
+---
+
+## Decisions Made
+
+### Tiered Memory Over Flat Storage
+
+Different memory needs require different treatment. Immediate context needs full
+fidelity. Historical context needs compression. Flat storage can't optimize for both.
+
+### Context Placement is Intentional
+
+Profile at START, memories at END. This isn't arbitrary - it's based on research showing
+LLMs lose information in the middle of long contexts.
+
+### Mem0 as Starting Point
+
+Easiest path to production memory. We can swap or layer additional systems as we learn
+what our users actually need.
+
+### Implicit Signals Feed Back to Memory
+
+Don't wait for explicit "remember this" - learn from behavior. Regeneration requests
+indicate preferences. Session patterns indicate engagement.
 
 ---
 
@@ -87,14 +226,12 @@ Make stored context available when needed:
 
 ### Architecture
 
-- **Storage approach**: Vector database (Pinecone, Weaviate)? Hybrid with relational?
-  Graph database for relationships? What's the right combination?
-- **Memory service**: Build custom or use existing (Zep, MemGPT, Mem0)? What are the
-  tradeoffs in control vs. development speed?
-- **Retrieval strategy**: Pure semantic search? Hybrid with keyword? How do we balance
-  relevance, recency, and retrieval speed?
-- **Memory updates**: When does a conversation update memory? Real-time? Batch
-  processing? AI-determined significance?
+- **Embedding model**: Which embedding model for semantic search? Balance quality vs.
+  speed vs. cost.
+- **Chunking strategy**: How do we chunk memories for retrieval? Sentence-level?
+  Paragraph? Semantic boundaries?
+- **Memory updates**: Real-time extraction or batch processing? What triggers a memory
+  update?
 
 ### Product Decisions
 
@@ -110,14 +247,18 @@ Make stored context available when needed:
 
 - Memory schema definitions (profile, facts, relationships, etc.)
 - Retrieval API contract
-- Embedding model selection and chunking strategy
 - Memory update triggers and processing pipeline
-- Storage and retrieval latency requirements
+- Storage and retrieval latency requirements (<15ms target)
 
-### Research Needed
+---
 
-- Evaluate memory-as-a-service options (Zep, MemGPT, Mem0, Langchain memory)
-- Study how personal AI products handle long-term memory (Character.ai, Pi, etc.)
-- Benchmark vector database options for our scale expectations
-- Research privacy patterns for AI memory systems
-- Study GDPR/privacy requirements for AI memory (data deletion, export, retention)
+## Research References
+
+Key sources that informed these decisions:
+
+- **Mem0**: $24M Series A (October 2025), production-ready memory service
+- **Letta/MemGPT**: UC Berkeley, self-editing memory via tool calls
+- **Zep/Graphiti**: Temporal knowledge graphs for relationship queries
+- **LLMLingua**: Microsoft, 10-20x prompt compression
+- **"Lost in the middle"**: Research on LLM attention patterns in long contexts
+- **Implicit feedback research**: 8-13x more signal volume than explicit feedback

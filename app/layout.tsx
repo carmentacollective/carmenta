@@ -98,10 +98,8 @@ export default function RootLayout({
     return (
         <ClerkProvider afterSignOutUrl="/">
             <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
-                <head>
-                    <StructuredData />
-                </head>
                 <body className="min-h-screen bg-background font-sans antialiased">
+                    <StructuredData />
                     {children}
                 </body>
             </html>

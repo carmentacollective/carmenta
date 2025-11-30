@@ -182,16 +182,16 @@ export default function AIFirstDevelopmentPage() {
                             </h2>
                             <div className="space-y-4 leading-relaxed text-foreground/80">
                                 <p>
-                                    This isn&apos;t theory. Carmenta is built using
-                                    AI-First Development. The specification lives in
-                                    version control. Code is generated from it. The
-                                    specification is the IP.
+                                    This isn&apos;t theory—we practice what we teach.
+                                    Carmenta is built using AI-First Development. The
+                                    specification lives in version control. Code is
+                                    generated from it. The specification is the IP.
                                 </p>
                                 <p>
                                     We&apos;re building in public so you can watch the
                                     methodology in action. The flywheel—agents test, AI
-                                    PM synthesizes, AI builds—is how Carmenta improves
-                                    itself.
+                                    PM synthesizes, AI builds—is how we improve Carmenta
+                                    together.
                                 </p>
                                 <p>
                                     The methodology and the product are the same thing.
@@ -209,13 +209,13 @@ export default function AIFirstDevelopmentPage() {
                                     href="https://github.com/carmentacollective/carmenta"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-md border border-primary bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+                                    className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-3 text-sm font-medium text-primary transition-all hover:scale-105 hover:bg-primary/20"
                                 >
                                     View the Source
                                 </Link>
                                 <Link
                                     href="/"
-                                    className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                                    className="inline-flex items-center gap-2 rounded-full border border-border bg-white/50 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/80"
                                 >
                                     Back to Carmenta
                                 </Link>

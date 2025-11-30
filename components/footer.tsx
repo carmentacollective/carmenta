@@ -3,10 +3,10 @@ import Link from "next/link";
 
 export function Footer() {
     return (
-        <footer className="px-6 py-8">
+        <footer className="px-6 py-6">
             <div className="mx-auto flex max-w-2xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 {/* Links */}
-                <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/60">
+                <nav className="flex flex-wrap items-center gap-6 text-sm text-foreground/60">
                     <Link
                         href="/ai-first-development"
                         className="flex items-center gap-1.5 transition-colors hover:text-foreground/90"
