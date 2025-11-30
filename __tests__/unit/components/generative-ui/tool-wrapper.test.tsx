@@ -6,7 +6,7 @@ import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 
 // Mock the user context instead of Clerk directly
 vi.mock("@/lib/auth/user-context", () => ({
-    useUserContext: vi.fn(() => ({ user: null, isLoaded: true })),
+    useUserContext: vi.fn(() => ({ user: null, isLoaded: true, isSignedIn: false })),
     UserProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 

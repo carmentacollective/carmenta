@@ -8,14 +8,14 @@ import { env } from "@/lib/env";
 
 /**
  * User context type - matches Clerk's useUser return type
+ *
+ * Infers the user type from Clerk's useUser hook for full API compatibility.
+ * Includes isSignedIn for convenient auth checks.
  */
 interface UserContextValue {
-    user: {
-        firstName?: string | null;
-        emailAddresses?: Array<{ emailAddress: string }>;
-        publicMetadata?: Record<string, unknown>;
-    } | null;
+    user: ReturnType<typeof useUser>["user"];
     isLoaded: boolean;
+    isSignedIn: boolean;
 }
 
 const UserContext = createContext<UserContextValue | null>(null);
@@ -27,8 +27,9 @@ function ClerkUserProvider({ children }: { children: ReactNode }) {
     const clerkUser = useUser(); // Always called - no conditional hooks
 
     const value: UserContextValue = {
-        user: clerkUser.user ?? null,
+        user: clerkUser.user,
         isLoaded: clerkUser.isLoaded,
+        isSignedIn: clerkUser.isSignedIn ?? false,
     };
 
     return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
@@ -41,6 +42,7 @@ function MockUserProvider({ children }: { children: ReactNode }) {
     const value: UserContextValue = {
         user: null,
         isLoaded: true,
+        isSignedIn: false,
     };
 
     return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
