@@ -85,15 +85,31 @@ How we interact with the database in code:
 - **Railway** - Redis alongside Postgres
 - **Render** - Redis as part of infrastructure
 
-### Recommended Stack (Initial Thinking)
+### Architecture Decision (2024-11-29) ✅
 
-For a Next.js app with Vercel deployment:
+**Database**: Supabase Postgres with Drizzle ORM
 
-- **PostgreSQL**: Neon or Vercel Postgres (serverless, good Next.js integration)
-- **Redis**: Upstash (serverless, Vercel integration, global edge)
-- **ORM**: Drizzle (type-safe, lightweight, good migrations)
+**Why Supabase**:
 
-This gives us serverless scaling, minimal ops burden, and excellent TypeScript DX.
+- Supabase Studio provides Django admin-like experience (visual table editor, SQL
+  runner)
+- ltree extension ready for knowledge base (from knowledge-base-storage-architecture.md)
+- pgvector ready for Phase 2 memory embeddings
+- Includes file storage (one vendor, simplified architecture)
+- Free tier to start, scales to $25/mo
+
+**Why Drizzle**:
+
+- Type-safe SQL-like syntax
+- Excellent TypeScript inference
+- Lightweight runtime
+- Good migration tooling
+
+**File Storage**: Supabase Storage (CDN + image transformations)
+
+**Caching/Redis**: Deferred until proven necessary (Supabase handles most needs)
+
+See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 
 ## ORM Comparison
 
@@ -169,13 +185,17 @@ familiarity.
 - Caching strategy (what to cache, TTLs, invalidation)
 - Backup and disaster recovery plan
 
-### Research Needed
+### Research Complete ✅
 
-- Benchmark Neon vs Supabase vs Vercel Postgres for our expected workload
-- Evaluate pgvector vs dedicated vector DB performance
-- Compare Drizzle vs Prisma for our use cases
-- Research Upstash vs Redis Cloud pricing at scale
-- Study connection pooling patterns for serverless
+Decision made 2024-11-29. Selected Supabase Postgres + Drizzle.
+
+Key findings:
+
+- Supabase Studio admin experience better than alternatives
+- pgvector sufficient for Phase 2 (no dedicated vector DB needed)
+- Drizzle provides type safety without Prisma's bundle size
+- Redis deferred until proven necessary
+- Supabase handles connection pooling in serverless environments
 
 ---
 

@@ -75,16 +75,54 @@ For services without native integration or custom internal tools:
 
 ## Open Questions
 
-### Architecture
+### Architecture Decision (2024-11-29) ✅
 
-- **Integration approach**: Build each integration natively? Use unified API platforms
-  (Merge, Unified.to, Nango)? What's the build vs. buy tradeoff?
-- **MCP relationship**: How does native connectivity relate to MCP support? Replace,
-  complement, or wrap MCP servers?
-- **Credential management**: Where do OAuth tokens live? How do we handle refresh?
-  Multi-user credential isolation?
-- **Rate limiting and quotas**: How do we handle API limits across services? Queue
-  management? User feedback when limited?
+**Service OAuth Platform**: Nango
+
+**Why Nango**:
+
+- Built for service integrations (200+ pre-configured: Gmail, Notion, Slack, GitHub,
+  etc)
+- Handles OAuth flows automatically (we don't build them)
+- Token refresh automatic and invisible
+- API proxying with unified interface
+- Multi-account support built-in (work + personal Gmail)
+- Proven by mcp-hubby production implementation
+- Free up to 1K users, $250/mo after
+
+**Integration Pattern** (from mcp-hubby):
+
+```typescript
+// OAuth flow
+const authUrl = await nango.auth({
+  providerConfigKey: "google-mail",
+  connectionId: `${userEmail}-gmail`,
+});
+
+// API calls (Nango handles tokens)
+const emails = await nango.proxy({
+  providerConfigKey: "google-mail",
+  connectionId: connectionId,
+  endpoint: "/gmail/v1/users/me/messages",
+});
+```
+
+**Credential Storage**: Nango stores and refreshes tokens. We store connection metadata
+in Supabase:
+
+- connectionId (Nango identifier)
+- accountId (user@gmail.com)
+- status (CONNECTED, EXPIRED, ERROR)
+- isDefault (for multi-account)
+
+**MCP Relationship**: Native integrations via Nango for common services (Gmail, Notion,
+etc). MCP servers for custom/internal tools or services Nango doesn't support.
+Complementary, not replacement.
+
+**Rate Limiting**: Nango handles retries and backoff. We surface errors to users when
+limits exceeded.
+
+See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 
 ### Product Decisions
 
@@ -105,10 +143,17 @@ For services without native integration or custom internal tools:
 - MCP server registration and management
 - Error handling and retry patterns per service
 
-### Research Needed
+### Research Complete ✅
 
-- Evaluate unified API platforms (Merge, Unified.to, Nango, Paragon)
-- Audit OAuth scopes needed for each priority service
-- Study how Zapier/Make handle multi-service authentication
-- Research MCP adoption and ecosystem maturity
-- Security review of credential storage patterns
+Decision made 2024-11-29. Selected Nango for service OAuth.
+
+Key findings:
+
+- Nango best fit for breadth of integrations (200+ services)
+- WorkOS/Merge too focused on specific verticals (B2B, CRM)
+- Building OAuth flows custom would take months per service
+- mcp-hubby production implementation validates Nango architecture
+- Token refresh and multi-account support critical (Nango handles both)
+
+MCP ecosystem adopted as complementary for custom integrations, not replacement for
+standard services.

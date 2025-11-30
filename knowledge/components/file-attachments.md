@@ -134,17 +134,54 @@ overflow context. First N chunks miss relevant content later in the document.
 **Insight**: Smart retrieval considers query relevance, recency, and token budget.
 Dynamic selection beats static rules.
 
-### From Cora's Implementation
+### Architecture Decision (2024-11-29) ✅
 
-Simple, clean architecture:
+**File Storage**: Supabase Storage
 
-- External service (Uploadcare) handles storage, CDN, transformations
-- Metadata in fast data store (Redis) with sorted sets for chronological access
-- Server-side operations ensure security and cleanup
-- Type definitions are minimal and extensible
+**Why Supabase Storage**:
 
-**Insight**: Don't build file storage infrastructure. Use a service. Focus on the
-intelligence layer.
+- Already using Supabase for database (one vendor, one bill)
+- **Real-time image transformations** via URL params (resize, crop, format, quality)
+- **Global CDN** (Cloudflare edge network)
+- Direct browser uploads (bypasses server)
+- Signed URLs for temporary private access
+- Free tier: 1GB storage, 2GB bandwidth/month
+- Scales to $25/mo (100GB storage, 200GB bandwidth)
+
+**Image Transformation Capabilities**:
+
+```typescript
+// On-the-fly transformations via URL
+const thumbnail = `${publicUrl}?width=150&height=150&resize=cover`;
+const optimized = `${publicUrl}?width=800&quality=85&format=webp`;
+const smart = `${publicUrl}?width=600&resize=cover&gravity=auto`;
+
+// Supported operations:
+// - Resize (width, height, both)
+// - Crop modes (contain, cover, fill)
+// - Format conversion (WebP, AVIF, JPEG, PNG)
+// - Quality control (1-100)
+// - Smart cropping (gravity=auto)
+// - PDF thumbnails (page=1)
+```
+
+**Storage Strategy**:
+
+- File bytes: Supabase Storage (CDN, transformations)
+- Metadata: Supabase Postgres (relationships, status, permissions)
+- Processed artifacts: Same buckets (extracted text, thumbnails)
+
+**vs. Alternatives**:
+
+- **Cloudflare R2**: Cheaper at scale ($0 egress), but no transformations, separate
+  vendor
+- **Uploadcare** (Cora uses this): More features, more expensive, separate vendor
+- **Migration path**: If bandwidth exceeds 200GB/month, consider R2
+
+**Insight from Cora**: Don't build file storage infrastructure. Use a service. Focus on
+the intelligence layer.
+
+See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 
 ## Architecture Principles
 
@@ -394,12 +431,12 @@ What's the mental model for shared vs personal files?
 - Job queue priority system?
 - Retry strategy for failures?
 
-**Storage Costs**:
+**Storage Costs** (Resolved):
 
-- Which external file storage service?
-- Vector store: PostgreSQL extension or dedicated service?
-- Caching strategy for frequently accessed files?
-- Cleanup strategy for old/deleted files?
+- External storage: Supabase Storage (decided 2024-11-29)
+- Vector store: pgvector in Supabase Postgres (Phase 2, when needed)
+- Caching: Cloudflare CDN handles this (built into Supabase)
+- Cleanup: Soft delete with configurable retention
 
 ### Product Direction
 
