@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { cn } from "@/lib/utils";
+
 interface SiteHeaderProps {
     /**
      * Right-side content (e.g., Connect button, User button, version badge)
@@ -17,13 +19,12 @@ interface SiteHeaderProps {
  * Maintains pixel-perfect alignment and spacing.
  */
 export function SiteHeader({ rightContent, bordered = false }: SiteHeaderProps) {
-    const headerClasses = bordered
-        ? "border-b border-foreground/10 bg-white/80 backdrop-blur-sm"
-        : "";
-
     return (
         <header
-            className={`flex items-center justify-between px-6 py-4 ${headerClasses}`}
+            className={cn(
+                "flex items-center justify-between px-6 py-4",
+                bordered && "border-b border-foreground/10 bg-white/80 backdrop-blur-sm"
+            )}
         >
             <Link
                 href="/"
