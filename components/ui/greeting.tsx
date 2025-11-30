@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useOptionalUser } from "@/lib/hooks/use-optional-user";
 
 /**
  * Get time-appropriate greeting.
@@ -25,7 +25,7 @@ interface GreetingProps {
  * Logged out: "Good morning" (no awkward "there") + landing-appropriate subtitle
  */
 export function Greeting({ className, subtitleClassName, subtitle }: GreetingProps) {
-    const { user, isLoaded } = useUser();
+    const { user, isLoaded } = useOptionalUser();
     const isLoggedIn = isLoaded && !!user;
     const firstName = user?.firstName;
     const greeting = getGreeting();

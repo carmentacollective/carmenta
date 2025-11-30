@@ -1,7 +1,7 @@
-import { UserButton } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 import { Chat } from "@/components/connect";
+import { OptionalUserButton } from "@/components/connect/optional-user-button";
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
@@ -23,20 +23,7 @@ export default function ConnectPage() {
                             <div className="rounded-full bg-white/40 px-3 py-1 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
                                 M0.5: First Connection
                             </div>
-                            <UserButton
-                                appearance={{
-                                    elements: {
-                                        avatarBox: "h-8 w-8",
-                                        userButtonPopoverCard:
-                                            "bg-white/80 backdrop-blur-xl border border-white/60 shadow-lg",
-                                        userButtonPopoverActionButton:
-                                            "text-foreground hover:bg-white/50",
-                                        userButtonPopoverActionButtonText:
-                                            "text-foreground",
-                                        userButtonPopoverFooter: "hidden",
-                                    },
-                                }}
-                            />
+                            <OptionalUserButton />
                         </>
                     }
                 />

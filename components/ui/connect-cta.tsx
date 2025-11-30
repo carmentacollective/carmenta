@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+
+import { useOptionalUser } from "@/lib/hooks/use-optional-user";
 
 /**
  * Adaptive CTA that changes based on auth state.
@@ -10,7 +11,7 @@ import { useUser } from "@clerk/nextjs";
  * Logged out: "Start Connecting" - inviting first-time users
  */
 export function ConnectCTA() {
-    const { user, isLoaded } = useUser();
+    const { user, isLoaded } = useOptionalUser();
     const isLoggedIn = isLoaded && !!user;
 
     const label = isLoggedIn ? "Continue" : "Start Connecting";
