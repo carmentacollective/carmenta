@@ -90,6 +90,25 @@
         @apply border-border;
     }
 
+    html {
+        /* Smooth scrolling for in-page navigation */
+        scroll-behavior: smooth;
+
+        /* Prevent text size adjustment on orientation change */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+
+        /* Better tap behavior on iOS */
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Respect user motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+    }
+
     body {
         @apply bg-background text-foreground;
         font-feature-settings:

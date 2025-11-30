@@ -26,10 +26,34 @@ const jetbrainsMono = JetBrains_Mono({
     display: "swap",
 });
 
+export const viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: "cover",
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#F8F4F8" },
+        { media: "(prefers-color-scheme: dark)", color: "#1A0F20" },
+    ],
+};
+
 export const metadata: Metadata = {
     title: "Carmenta - One Interface, All AI, Complete Memory",
     description:
         "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders working at the speed of thought.",
+
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "black-translucent",
+        title: "Carmenta",
+    },
+
+    formatDetection: {
+        telephone: false,
+        email: false,
+        address: false,
+    },
 
     openGraph: {
         type: "website",
