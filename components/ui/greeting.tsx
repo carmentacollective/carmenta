@@ -33,7 +33,7 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
     // Adapt subtitle based on auth state if not explicitly provided
     const defaultSubtitle = isLoggedIn
         ? "What shall we bring into focus?"
-        : "AI that remembers. Voice that works. Interfaces that fit.";
+        : "AI that remembers. Multi-model access. Your AI team ready to help.";
 
     const displaySubtitle = subtitle ?? defaultSubtitle;
 

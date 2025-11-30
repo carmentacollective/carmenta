@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 
+import { StructuredData } from "@/components/seo/structured-data";
 import "@assistant-ui/react-ui/styles/index.css";
 import "./globals.css";
 
@@ -27,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
     title: "Carmenta - One Interface, All AI, Complete Memory",
     description:
-        "Memory-aware AI that remembers your projects, decisions, and context. Voice-first interface with purpose-built responses, not chat bubbles.",
+        "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders working at the speed of thought.",
 
     openGraph: {
         type: "website",
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
         siteName: "Carmenta",
         title: "Carmenta - One Interface, All AI, Complete Memory",
         description:
-            "Memory-aware AI that remembers your projects, decisions, and context. Voice-first with purpose-built responses.",
+            "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders.",
         images: [
             {
                 url: "https://carmenta.ai/og-image.png",
@@ -51,17 +52,21 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Carmenta - One Interface, All AI, Complete Memory",
         description:
-            "Memory-aware AI that remembers your projects, decisions, and context. Voice-first with purpose-built responses.",
+            "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders.",
         images: ["https://carmenta.ai/og-image.png"],
     },
 
     keywords: [
-        "AI interface",
-        "AI assistant",
-        "voice AI",
-        "AI memory",
+        "Carmenta",
+        "Carmenta AI",
+        "unified AI interface",
+        "AI with memory",
         "AI team",
+        "multi-model AI",
         "heart-centered AI",
+        "AI interface with memory",
+        "purpose-built AI responses",
+        "AI digital chief of staff",
     ],
 
     authors: [{ name: "Carmenta Collective" }],
@@ -94,6 +99,7 @@ export default function RootLayout({
         <ClerkProvider afterSignOutUrl="/">
             <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
                 <body className="min-h-screen bg-background font-sans antialiased">
+                    <StructuredData />
                     {children}
                 </body>
             </html>

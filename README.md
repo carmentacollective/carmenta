@@ -1,6 +1,7 @@
 # Carmenta
 
-A heart centered interface to AI for people who build at the speed of thought.
+A heart-centered AI interface with complete memory, multi-model access, AI team, and
+purpose-built responses for builders who work at the speed of thought.
 
 ## Why Carmenta
 
