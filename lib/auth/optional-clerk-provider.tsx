@@ -2,6 +2,7 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 
 import { env } from "@/lib/env";
 import { logger } from "@/lib/client-logger";
@@ -33,16 +34,18 @@ import { logger } from "@/lib/client-logger";
 export function OptionalClerkProvider({ children }: { children: ReactNode }) {
     const hasClerkKeys = !!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-    // No Clerk keys configured - run without authentication
-    if (!hasClerkKeys) {
-        // Log once in development for visibility
-        if (env.NODE_ENV === "development") {
+    // Log once on mount in development when running without Clerk
+    useEffect(() => {
+        if (!hasClerkKeys && env.NODE_ENV === "development") {
             logger.info(
                 {},
                 "Running without Clerk authentication - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY not set"
             );
         }
+    }, [hasClerkKeys]);
 
+    // No Clerk keys configured - run without authentication
+    if (!hasClerkKeys) {
         return <>{children}</>;
     }
 
