@@ -26,8 +26,13 @@ export const env = createEnv({
         SENTRY_AUTH_TOKEN: z.string().optional(),
         // Clerk secret key for server-side auth operations
         CLERK_SECRET_KEY: z.string().min(1).optional(),
+        // Clerk webhook signing secret for verifying webhook payloads
+        CLERK_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
+        // PostgreSQL connection string
+        // Defaults to Mac Homebrew PostgreSQL localhost
+        DATABASE_URL: z.string().url().default("postgresql://localhost:5432/carmenta"),
     },
     client: {
         // Client-side Sentry DSN (same value as server, exposed to browser)
@@ -42,9 +47,11 @@ export const env = createEnv({
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+        CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
+        DATABASE_URL: process.env.DATABASE_URL,
     },
 
     /**
