@@ -27,10 +27,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: "monthly",
             priority: 0.6,
         },
-        {
-            url: `${baseUrl}/brand`,
-            changeFrequency: "monthly",
-            priority: 0.5,
-        },
     ];
 }
