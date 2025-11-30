@@ -7,10 +7,11 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
     title: "Brand Guidelines | Carmenta",
-    description: "Carmenta brand assets, colors, typography, and guidelines",
+    description:
+        "Carmenta brand identity: heart-centered AI philosophy, visual assets, color palette, typography, and design principles for unified AI interface.",
     robots: {
-        index: false,
-        follow: false,
+        index: true,
+        follow: true,
     },
 };
 
