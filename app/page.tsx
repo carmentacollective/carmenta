@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { Footer } from "@/components/footer";
+import { SiteHeader } from "@/components/site-header";
 import { ConnectCTA } from "@/components/ui/connect-cta";
 import { Greeting } from "@/components/ui/greeting";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -14,31 +14,16 @@ export default function LandingPage() {
 
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
-                {/* Header */}
-                <header className="flex items-center justify-between px-6 py-4">
-                    <Link
-                        href="/"
-                        className="flex items-center gap-3 transition-opacity hover:opacity-80"
-                    >
-                        <Image
-                            src="/logos/icon-transparent.png"
-                            alt="Carmenta"
-                            width={48}
-                            height={48}
-                            className="h-12 w-12"
-                            priority
-                        />
-                        <span className="text-xl font-semibold tracking-tight text-foreground/90">
-                            Carmenta
-                        </span>
-                    </Link>
-                    <Link
-                        href="/connect"
-                        className="rounded-full bg-white/50 px-4 py-2 text-sm font-medium text-foreground/70 backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground"
-                    >
-                        Connect
-                    </Link>
-                </header>
+                <SiteHeader
+                    rightContent={
+                        <Link
+                            href="/connect"
+                            className="rounded-full bg-white/50 px-4 py-2 text-sm font-medium text-foreground/70 backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground"
+                        >
+                            Connect
+                        </Link>
+                    }
+                />
 
                 {/* Main content */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
