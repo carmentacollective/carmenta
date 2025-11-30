@@ -318,6 +318,32 @@ interface ModelProfile {
 
 Profiles are factual (capabilities, pricing). The rubric is judgmental (which is best).
 
+## Routing Options to Evaluate
+
+Beyond static rubrics, there are trained routers and commercial options worth evaluating
+for model selection.
+
+### RouteLLM (LMSYS, ICLR 2025)
+
+Open-source framework for training routers using human preference data. Claims 85% cost
+reduction while maintaining 95% of GPT-4 performance. Worth evaluating against simpler
+approaches.
+
+### Commercial Routers
+
+**Not Diamond**: Powers OpenRouter's auto-router. Since we're using OpenRouter, this is
+available automatically.
+
+**Martian**: Used by Amazon, Zapier. Claims up to 98% cost reduction.
+
+### Simple Approach: Fast LLM Classification
+
+Use a fast LLM (Haiku, GPT-4o-mini) to classify requests and output signals. The rubric
+interprets signals into model recommendations. Simpler, more transparent, and may be
+good enough.
+
+Need to evaluate these options before committing to an approach.
+
 ## Integration Points
 
 - **Concierge**: Queries rubric for every model selection decision
@@ -346,17 +372,12 @@ The routing logic is a simple rubric lookup, not a complex ML model. Rubrics are
 explainable, debuggable, and manually adjustable. When something goes wrong, we can see
 exactly why and fix it.
 
-### Task Type Granularity
+### Signal-Based Classification Over Rigid Task Types
 
-Seven task types balance usefulness with maintainability. Could be more granular (CODE
-could split into "write new" vs "debug existing") but complexity cost isn't worth it
-yet. Can refine based on production data.
-
-### Weighted Priorities Over Rankings
-
-Each task type has explicit priority weights (quality, speed, cost). This makes the
-tradeoffs visible and adjustable. Different products might weight differently - we
-optimize for quality-conscious users who still value responsiveness.
+Rather than hardcoded task type enums (QUICK, CODE, CREATIVE, etc.), the classifier
+outputs signals (complexity, domain, tools_needed, quality_sensitivity). The rubric
+interprets these signals into model recommendations. This is more flexible - the rubric
+can evolve without changing classification logic.
 
 ## Values Alignment
 
@@ -417,7 +438,20 @@ Run this command:
 The command always proposes changes for human review - it never auto-commits rubric
 updates.
 
+---
+
 ## Open Questions
+
+### Routing Implementation
+
+Which approach for model selection? Options to evaluate:
+
+- Fast LLM classification (Haiku/GPT-4o-mini) with rubric lookup
+- RouteLLM trained router
+- OpenRouter's built-in Not Diamond routing
+- Hybrid approach
+
+Need to prototype and compare before committing.
 
 ### Benchmark Source Trust
 
@@ -429,10 +463,10 @@ benchmarks are marketing. Should we weight sources differently?
 How do we detect new capabilities in models? Providers don't always announce everything.
 Should we probe systematically?
 
-### User-Specific Calibration
+### Personalized Routing Over Time
 
-Should the rubric adapt per user? Someone who always picks "deep" mode might get
-different defaults. Or is consistency more valuable?
+Should we track which models users respond well to (via implicit signals) and calibrate
+routing per user over time? Or is consistency more valuable?
 
 ### Nightly Updates
 
@@ -444,3 +478,13 @@ The rubric update command is designed to eventually run nightly. When automated:
 4. Human reviews and merges
 
 This requires building confidence in the research quality first.
+
+---
+
+## Research References
+
+Key sources for routing research:
+
+- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router (to evaluate)
+- **Not Diamond**: Powers OpenRouter's auto-router
+- **Martian**: Commercial router used by Amazon, Zapier

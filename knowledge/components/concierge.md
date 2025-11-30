@@ -20,19 +20,94 @@ The Concierge is foundational to everything else. It determines what the Interfa
 to display, what Memory to retrieve, which agents to invoke. Building it first means
 other components can be designed around known output types rather than retrofitting.
 
+## Processing Pipeline
+
+When a message arrives, the Concierge runs a multi-stage pipeline. A fast LLM (Haiku or
+equivalent) handles classification and preprocessing.
+
+```
+User Input
+    |
+[Stage 1: Fast Classification]
+├── Request classification (fast LLM)
+├── Emotion detection
+└── Ambiguity scoring
+    |
+[Stage 2: Query Transformation]
+├── Query rewriting (if retrieval needed)
+└── Context compression (for long histories)
+    |
+[Stage 3: Context Assembly]
+├── Memory retrieval
+├── User profile injection (at START of context)
+└── Relevant history selection (at END of context)
+    |
+[Stage 4: Routing Decision]
+├── Model selection (rubric-based)
+└── Response format selection
+    |
+[LLM Generation] (streaming)
+    |
+[Output Processing] (streaming)
+└── Format transformation
+    |
+User Output (via AG-UI protocol)
+```
+
 ## Core Functions
 
 ### Request Analysis
 
 When a message arrives, the Concierge classifies what kind of request it is and
-determines how to handle it. Classification should happen fast enough that we don't
-perceive delay.
+determines how to handle it. Use a fast LLM (Claude Haiku, GPT-4o-mini) for
+classification - fast enough to not add perceptible latency, smart enough to understand
+nuance.
+
+**Request Classification**: The fast LLM assesses the request and outputs signals that
+inform routing: complexity level, domain (code, creative, analytical, emotional),
+whether tools are needed, urgency indicators. These signals feed into the model rubric
+for selection.
+
+**Emotion Detection**: Run in parallel with classification. Detected emotion influences
+both routing (emotional queries get more capable models) and response style (empathetic
+framing). Critical for our heart-centered philosophy and especially for voice input
+where prosody carries emotional nuance.
+
+**Ambiguity Scoring**: Score how ambiguous the request is. High confidence proceeds.
+Ambiguous requests trigger clarification. User history influences threshold -
+speed-focused users get lower bars.
+
+### Request Signals
+
+Rather than rigid task type enums, the classifier outputs signals that the rubric
+interprets:
+
+| Signal                  | Range                                                          | What it captures                             |
+| ----------------------- | -------------------------------------------------------------- | -------------------------------------------- |
+| **complexity**          | low / medium / high                                            | How much reasoning is needed                 |
+| **domain**              | code, creative, analytical, conversational, emotional, factual | What kind of task                            |
+| **tools_needed**        | boolean                                                        | Whether external tools/services are required |
+| **quality_sensitivity** | low / medium / high                                            | How much quality matters vs. speed           |
+| **formality**           | casual / professional                                          | Tone expectation                             |
+
+The rubric maps these signals to model recommendations. This is more flexible than
+hardcoded task types - the rubric can evolve without changing classification logic.
 
 ### Query Enhancement
 
-Our requests rarely arrive optimized for AI processing. The Concierge transforms them by
-adding context from Memory, structuring prompts for optimal model performance, and
-aligning response tone with our preferences.
+Our requests rarely arrive optimized for AI processing. The Concierge transforms them.
+
+**Query Rewriting**: For retrieval-heavy requests, generate variant queries to improve
+memory search. For ambiguous queries, the fast LLM can restructure for clarity.
+
+**Context Compression**: For users with extensive conversation history, apply
+compression (LLMLingua or similar). Balance compression ratio against context fidelity
+based on query importance - don't compress context for emotional queries.
+
+**Context Placement**: Research shows LLMs struggle with information in the middle of
+long contexts. Place user profile at START of context (highest attention), place
+retrieved memories at END before current query. Less critical context goes in the
+middle.
 
 ### Model Selection
 
@@ -45,12 +120,13 @@ There are two paths for model selection:
 
 Most users never think about models. The Concierge:
 
-1. Classifies the request into a task type (CODE, REASONING, CONVERSATION, etc.)
+1. Classifies the request and extracts signals
 2. Checks the user's speed mode (Swift, Balanced, Deep)
 3. Reads the [model rubric](../model-rubric.md) for recommendations
 4. Filters by capabilities (needs vision? needs tools? context length?)
-5. Selects the optimal model and configures it (temperature, etc.)
-6. Explains its reasoning in response metadata
+5. Factors in detected emotion (emotional queries bias toward quality)
+6. Selects the optimal model and configures it (temperature, etc.)
+7. Explains its reasoning in response metadata
 
 **Path 2: User Chooses Explicitly**
 
@@ -68,13 +144,30 @@ the system works.
 
 ### Response Strategy
 
-Beyond model selection, the Concierge determines how to respond: direct chat completion,
-purpose-built AG-UI interface, tool routing, multi-agent dispatch, or asking for
-clarification when the request is too ambiguous.
+Beyond model selection, the Concierge determines how to respond:
+
+**Use rich UI (AG-UI) when**:
+
+- Displaying structured data (tables, charts, forms)
+- User needs to make selections from options
+- Content exceeds 15 lines and is self-contained
+- Iterative editing is expected
+- Data visualization aids comprehension
+
+**Use conversational text when**:
+
+- Quick, conversational exchanges
+- Explaining concepts without data structure
+- Emotional/supportive interactions
+- Creative content generation
+
+For heart-centered philosophy: default to conversational text for emotional queries
+regardless of content length or structure.
 
 ## Controls
 
-While the Concierge handles complexity automatically, we get simple overrides:
+While the Concierge handles complexity automatically, we get simple overrides. Keep
+controls minimal - most users should never need them.
 
 ### Speed Modes
 
@@ -94,9 +187,9 @@ still enhances the query but routes to the specified model.
 
 When the Concierge selects a model, it should be able to explain why:
 
-- "Your request was classified as CODE"
+- "Your request was classified as high-complexity analytical"
 - "You're in Balanced mode"
-- "For CODE + Balanced, our rubric recommends Claude Sonnet 4"
+- "For this profile, our rubric recommends Claude Sonnet 4"
 - "Source: rubric v1.0, based on SWE-bench performance"
 
 This explanation can be:
@@ -206,8 +299,10 @@ responses immediately while memory extraction happens in the background
 
 - **Model Intelligence**: Queries for model selection. Provides real benchmark data, not
   guesses.
-- **Memory**: Every request triggers context retrieval.
-- **Interface**: Signals how to render responses (chat, rich media, structured reports).
+- **Memory**: Every request triggers context retrieval. Profile at START, memories at
+  END.
+- **Interface**: Signals how to render responses (chat, rich media, structured reports)
+  via AG-UI events.
 - **AI Team**: Routes complex requests to specialized agents.
 - **Service Connectivity**: Orchestrates access to external services when needed.
 - **OpenRouter**: Model gateway for all LLM requests.
@@ -216,68 +311,76 @@ responses immediately while memory extraction happens in the background
 
 - We don't think about the Concierge - we just get good responses
 - Quick questions feel quick, deep analysis feels thorough
-- Cost efficiency without our involvement
 - Respects our explicit preferences when provided
+- Emotional queries feel warm and appropriate
+
+---
+
+## Decisions Made
+
+### Fast LLM for Classification
+
+Use a fast, cheap LLM (Haiku, GPT-4o-mini) for request classification and preprocessing.
+Smart enough to understand nuance, fast enough to stay within latency budget. Simpler
+than embedding-based routers and more flexible.
+
+### Signal-Based Classification Over Rigid Task Types
+
+Output signals (complexity, domain, tools_needed, quality_sensitivity) rather than
+hardcoded enums. The rubric interprets signals into model recommendations. This lets the
+rubric evolve without changing classification logic.
+
+### Emotion Detection as First-Class Routing Signal
+
+Detect emotion across ALL requests and use it to influence routing and response style.
+This is how we operationalize heart-centered AI in the preprocessing layer.
+
+### Context Placement Matters
+
+Profile at START, memories at END. Research shows LLMs lose information in the middle of
+long contexts. This is a small change with measurable impact.
+
+### Pipeline Architecture Over Middleware (for now)
+
+The research validated middleware patterns (Open WebUI inlet/outlet, NeMo Guardrails),
+but we don't need that flexibility yet. Start with explicit pipeline stages that are
+easier to reason about. Can add extensibility later if users need custom pipelines.
 
 ---
 
 ## Open Questions
 
-### Architecture
+### Implementation Choices
 
-- **Classification approach**: Dedicated fast model for routing vs. letting the main
-  model self-route? Fast model adds latency but saves cost on simple requests.
-- **Latency budget**: What's acceptable end-to-end? How does that break down across
-  classification, context retrieval, and model inference?
-- **Error handling**: What happens when classification fails or the selected model is
-  unavailable?
+- **Classification prompt**: What's the optimal prompt for the fast LLM classifier?
+  Needs to be concise (latency) but capture enough signal.
+- **Emotion detection**: Part of classification prompt or separate? What taxonomy?
+- **Routing implementation**: Evaluate options (RouteLLM, custom rubric logic, hybrid).
+  Need to understand tradeoffs before committing.
 
 ### Product Decisions
 
-- **Request type taxonomy**: What categories of requests do we recognize? Initial
-  thinking: quick lookup, conversation, deep analysis, creative generation, task
-  execution, emotional support. Is this complete? Too granular?
-- **Controls**: What knobs do we get? Speed/quality slider? Response mode selection?
-  Persona preferences? Or keep it fully automatic?
-- **AG-UI triggering**: When does a response become a purpose-built interface vs. chat?
-  Our choice, Concierge choice, or both?
+- **Clarification UX**: When ambiguity triggers clarification, how does the UI present
+  options? Inline suggestions? Modal? Quick-select buttons?
+- **Confidence visibility**: Should users see routing confidence? Or keep the magic
+  invisible?
 
-### Technical Specifications Needed
+### Future Enhancements
 
-- Classification result schema and request type enum
-- API contract: input/output types for the Concierge
-- Prompt templates for classification and enhancement
-- Model selection decision tree with specific model mappings
-- Protocol for signaling response type to Interface
+- **Proactive suggestions**: Research shows ChatGPT Pulse prepares overnight briefs.
+  Post-M3 territory, but worth noting for Scheduled Agents design.
+- **Voice-aware context**: For voice input, prosody carries emotional nuance that text
+  classification misses. Consider voice-specific emotion detection.
+- **Personalized routing**: Track which models users respond well to (implicit signals)
+  and calibrate routing per user over time.
 
-### Research Needed
+---
 
-- Benchmark different classification approaches (dedicated model vs. self-routing)
-- Analyze latency/cost tradeoffs across model tiers
-- Study how other products handle automatic model selection (if any do it well)
+## Research References
 
-### To Investigate: Middleware/Pipeline Architecture
+Key sources that informed these decisions:
 
-Open WebUI uses inlet/outlet filters that intercept requests and responses. Better
-Chatbot has visual workflows that transform data between steps. Both allow cross-cutting
-concerns (logging, transformation, validation, routing) without touching core logic.
-
-Currently the Concierge handles preprocessing as a monolith. A middleware pattern could
-allow:
-
-- Pluggable request transformers (add context, rewrite queries, inject instructions)
-- Pluggable response processors (format output, extract artifacts, trigger side effects)
-- User-defined pipelines for custom workflows
-- Easier testing of individual transformation steps
-
-Questions to explore:
-
-- Does Carmenta need this flexibility, or is the Concierge sufficient?
-- Would middleware add latency that hurts the "speed of thought" goal?
-- Is this solving a real problem or adding complexity prematurely?
-- Could start simple (Concierge only) and add middleware later if needed?
-
-Reference implementations to study:
-
-- Open WebUI pipeline system in ../reference/open-webui/
-- Better Chatbot workflow engine in ../reference/better-chatbot/
+- **LLMLingua**: Microsoft, 10-20x prompt compression
+- **"Lost in the middle"**: Research on attention patterns in long contexts
+- **RouteLLM**: LMSYS/ICLR 2025, open-source trained router (to evaluate)
+- **Martian/Not Diamond**: Commercial routers (to evaluate)
