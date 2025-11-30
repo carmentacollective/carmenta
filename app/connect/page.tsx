@@ -1,5 +1,6 @@
 import { UserButton } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Chat } from "@/components/connect";
@@ -20,9 +21,19 @@ export default function ConnectPage() {
                 <header className="flex items-center justify-between px-6 py-4">
                     <Link
                         href="/"
-                        className="text-lg font-semibold tracking-tight text-foreground/80 transition-colors hover:text-foreground"
+                        className="flex items-center gap-3 transition-opacity hover:opacity-80"
                     >
-                        CARMENTA
+                        <Image
+                            src="/logos/icon-transparent.png"
+                            alt="Carmenta"
+                            width={48}
+                            height={48}
+                            className="h-12 w-12"
+                            priority
+                        />
+                        <span className="text-xl font-semibold tracking-tight text-foreground/90">
+                            Carmenta
+                        </span>
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="rounded-full bg-white/40 px-3 py-1 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">

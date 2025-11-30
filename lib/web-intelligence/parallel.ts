@@ -118,9 +118,9 @@ const ParallelTaskResponseSchema = z
     })
     .passthrough();
 
-type ParallelSearchResponse = z.infer<typeof ParallelSearchResponseSchema>;
-type ParallelExtractResponse = z.infer<typeof ParallelExtractResponseSchema>;
-type ParallelTaskResponse = z.infer<typeof ParallelTaskResponseSchema>;
+type _ParallelSearchResponse = z.infer<typeof ParallelSearchResponseSchema>;
+type _ParallelExtractResponse = z.infer<typeof ParallelExtractResponseSchema>;
+type _ParallelTaskResponse = z.infer<typeof ParallelTaskResponseSchema>;
 type ParallelTaskStatus = z.infer<typeof ParallelTaskStatusSchema>;
 type ParallelTaskResult = z.infer<typeof ParallelTaskResultSchema>;
 

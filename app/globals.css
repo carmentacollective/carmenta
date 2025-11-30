@@ -334,4 +334,18 @@
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
         background: rgba(180, 140, 200, 0.5);
     }
+
+    /* Gentle rotating animation for loading spinner */
+    @keyframes spin-slow {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin-slow {
+        animation: spin-slow 2s linear infinite;
+    }
 }

@@ -68,11 +68,11 @@ describe("ThinkingIndicator", () => {
         expect(container.firstChild).toHaveClass("custom-class");
     });
 
-    it("renders ping animation elements", () => {
+    it("renders rotating logo animation", () => {
         render(<ThinkingIndicator />);
 
-        // Check for animation container with ping
-        const pingElement = document.querySelector(".animate-ping");
-        expect(pingElement).toBeInTheDocument();
+        // Check for rotating animation
+        const rotatingElement = document.querySelector(".animate-spin-slow");
+        expect(rotatingElement).toBeInTheDocument();
     });
 });
