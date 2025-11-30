@@ -123,7 +123,7 @@ export default function RootLayout({
     return (
         <ClerkProvider afterSignOutUrl="/">
             <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
-                <body className="min-h-screen touch-pan-y bg-background font-sans antialiased">
+                <body className="min-h-screen bg-background font-sans antialiased">
                     <PWARegistration />
                     <StructuredData />
                     {children}

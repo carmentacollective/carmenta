@@ -147,10 +147,10 @@ test.describe("Accessibility", () => {
 });
 
 test.describe("Font Loading", () => {
-    test("should use font-display: swap for web fonts", async ({ page }) => {
+    test("should have font CSS variables defined", async ({ page }) => {
         await page.goto("/");
 
-        const fontDisplay = await page.evaluate(() => {
+        const fontVars = await page.evaluate(() => {
             const html = document.documentElement;
             const styles = window.getComputedStyle(html);
             return {
@@ -159,7 +159,7 @@ test.describe("Font Loading", () => {
             };
         });
 
-        expect(fontDisplay.hasOutfit).toBe(true);
-        expect(fontDisplay.hasMono).toBe(true);
+        expect(fontVars.hasOutfit).toBe(true);
+        expect(fontVars.hasMono).toBe(true);
     });
 });
