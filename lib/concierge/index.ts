@@ -22,6 +22,9 @@ import { CONCIERGE_DEFAULTS, CONCIERGE_MODEL, type ConciergeResult } from "./typ
 export type { ConciergeResult } from "./types";
 export { CONCIERGE_DEFAULTS } from "./types";
 
+// Re-export internal functions for testing
+export { parseConciergeResponse, extractMessageText, formatQueryForConcierge };
+
 /** Cache for the rubric content to avoid repeated file reads */
 let rubricCache: string | null = null;
 
