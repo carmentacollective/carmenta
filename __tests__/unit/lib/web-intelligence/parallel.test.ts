@@ -107,6 +107,12 @@ describe("ParallelProvider", () => {
 
     describe("extract", () => {
         it("returns extracted content on successful API call", async () => {
+            // Content must be > 100 chars to avoid triggering the short content warning
+            const pageContent =
+                "# Heading\n\nThis is the extracted content from the page. " +
+                "It contains enough text to be considered a meaningful extraction. " +
+                "The content includes multiple sentences and paragraphs.";
+
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
@@ -116,8 +122,7 @@ describe("ParallelProvider", () => {
                             url: "https://example.com/page",
                             title: "Page Title",
                             publish_date: "2025-01-15",
-                            full_content:
-                                "# Heading\n\nThis is the extracted content...",
+                            full_content: pageContent,
                             excerpts: null,
                         },
                     ],
@@ -134,6 +139,7 @@ describe("ParallelProvider", () => {
             expect(result!.content).toContain("# Heading");
             expect(result!.url).toBe("https://example.com/page");
             expect(result!.provider).toBe("parallel");
+            expect(result!.warning).toBeUndefined();
         });
 
         it("truncates content when exceeding maxLength", async () => {
@@ -176,6 +182,65 @@ describe("ParallelProvider", () => {
             const result = await provider.extract("https://example.com/missing");
 
             expect(result).toBeNull();
+        });
+
+        it("returns warning when content is suspiciously short", async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    extract_id: "extract-123",
+                    results: [
+                        {
+                            url: "https://example.com/blocked",
+                            title: "Blocked Page",
+                            publish_date: null,
+                            full_content: "Not found", // Only 9 chars - suspiciously short
+                            excerpts: null,
+                        },
+                    ],
+                    errors: [],
+                    warnings: null,
+                    usage: [],
+                }),
+            });
+
+            const result = await provider.extract("https://example.com/blocked");
+
+            expect(result).not.toBeNull();
+            expect(result!.warning).toBeDefined();
+            expect(result!.warning).toContain("minimal content");
+            expect(result!.content).toBe("Not found");
+        });
+
+        it("does not return warning for content over threshold", async () => {
+            const meaningfulContent =
+                "This is a meaningful page with enough content to be considered a successful extraction. " +
+                "It contains multiple sentences and provides real information to the user.";
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    extract_id: "extract-123",
+                    results: [
+                        {
+                            url: "https://example.com/good-page",
+                            title: "Good Page",
+                            publish_date: null,
+                            full_content: meaningfulContent,
+                            excerpts: null,
+                        },
+                    ],
+                    errors: [],
+                    warnings: null,
+                    usage: [],
+                }),
+            });
+
+            const result = await provider.extract("https://example.com/good-page");
+
+            expect(result).not.toBeNull();
+            expect(result!.warning).toBeUndefined();
+            expect(result!.content).toBe(meaningfulContent);
         });
     });
 

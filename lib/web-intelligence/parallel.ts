@@ -29,6 +29,13 @@ const PARALLEL_BASE_URL = "https://api.parallel.ai";
 const PARALLEL_BETA_HEADER = "search-extract-2025-10-10";
 
 /**
+ * Minimum content length (in characters) to consider an extraction successful.
+ * Anything shorter likely indicates a failed extraction, blocked page, or
+ * JavaScript-heavy site that didn't render properly.
+ */
+const MIN_MEANINGFUL_CONTENT_LENGTH = 100;
+
+/**
  * Maps our depth options to Parallel processor tiers
  */
 const DEPTH_TO_PROCESSOR: Record<ResearchDepth, string> = {
@@ -278,10 +285,22 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
         const latencyMs = Date.now() - startTime;
 
-        logger.info(
-            { url, contentLength: content.length, latencyMs },
-            "Page extraction completed"
-        );
+        // Detect suspiciously short content that indicates extraction failed
+        let warning: string | undefined;
+        if (content.length < MIN_MEANINGFUL_CONTENT_LENGTH) {
+            warning =
+                "Page extraction returned minimal content. " +
+                "The page may be JavaScript-heavy, blocked, or require authentication.";
+            logger.warn(
+                { url, contentLength: content.length, latencyMs },
+                "Page extraction returned minimal content"
+            );
+        } else {
+            logger.info(
+                { url, contentLength: content.length, latencyMs },
+                "Page extraction completed"
+            );
+        }
 
         return {
             title: result.title,
@@ -289,6 +308,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
             url: result.url,
             provider: this.name,
             latencyMs,
+            warning,
         };
     }
 
