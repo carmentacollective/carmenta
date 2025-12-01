@@ -288,11 +288,12 @@ export async function POST(req: Request) {
         // ========================================================================
 
         // Ensure user exists in database
-        const dbUser = await getOrCreateUser(user.id, userEmail!, {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            displayName: user.fullName,
-            imageUrl: user.imageUrl,
+        // In development without auth, we use a dev user ID
+        const dbUser = await getOrCreateUser(user?.id ?? "dev-user-id", userEmail!, {
+            firstName: user?.firstName ?? null,
+            lastName: user?.lastName ?? null,
+            displayName: user?.fullName ?? null,
+            imageUrl: user?.imageUrl ?? null,
         });
 
         // Get or create conversation
