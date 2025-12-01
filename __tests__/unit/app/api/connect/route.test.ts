@@ -61,13 +61,22 @@ describe("POST /api/connect", () => {
         vi.restoreAllMocks();
     });
 
-    it("returns 401 when not authenticated", async () => {
+    it("returns 401 when not authenticated in production", async () => {
         vi.mocked(currentUser).mockResolvedValue(null);
+        vi.stubEnv("NODE_ENV", "production");
 
         const request = new Request("http://localhost/api/connect", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: [] }),
+            body: JSON.stringify({
+                messages: [
+                    {
+                        id: "msg-1",
+                        role: "user",
+                        parts: [{ type: "text", text: "Hello" }],
+                    },
+                ],
+            }),
         });
 
         const response = await POST(request);
@@ -75,6 +84,8 @@ describe("POST /api/connect", () => {
 
         const body = await response.json();
         expect(body.error).toBe("Unauthorized");
+
+        vi.unstubAllEnvs();
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {

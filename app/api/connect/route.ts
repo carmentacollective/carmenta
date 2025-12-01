@@ -226,17 +226,18 @@ export async function POST(req: Request) {
     let userEmail: string | null = null;
 
     try {
-        // Require authentication for connect API
+        // Authentication: required in production, optional in development
+        // This allows git worktrees, forks, and local dev without Clerk setup
         const user = await currentUser();
-        if (!user) {
+        if (!user && process.env.NODE_ENV === "production") {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
                 status: 401,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        // Email is guaranteed by Clerk - it's required for all auth methods we support
-        userEmail = user.emailAddresses[0]?.emailAddress ?? null;
+        // Use actual email if authenticated, fallback for development
+        userEmail = user?.emailAddresses[0]?.emailAddress ?? "dev-user@local";
 
         assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
 
