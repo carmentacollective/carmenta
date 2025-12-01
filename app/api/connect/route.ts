@@ -10,6 +10,7 @@ import {
 } from "ai";
 import { z } from "zod";
 
+import { runConcierge, CONCIERGE_DEFAULTS } from "@/lib/concierge";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
@@ -20,8 +21,6 @@ import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
  * Deep research can take up to 120 seconds - requires Vercel Pro or higher
  */
 export const maxDuration = 120;
-
-const MODEL_ID = "anthropic/claude-sonnet-4.5";
 
 /**
  * Request body schema for validation
@@ -268,11 +267,16 @@ export async function POST(req: Request) {
 
         const { messages } = parseResult.data as { messages: UIMessage[] };
 
+        // Run the Concierge to select model and temperature
+        const concierge = await runConcierge(messages);
+
         logger.info(
             {
                 userEmail,
                 messageCount: messages.length,
-                model: MODEL_ID,
+                model: concierge.modelId,
+                temperature: concierge.temperature,
+                reasoning: concierge.reasoning,
                 toolsAvailable: Object.keys(tools),
             },
             "Starting connect stream"
@@ -285,16 +289,18 @@ export async function POST(req: Request) {
             level: "info",
             data: {
                 userEmail,
-                model: MODEL_ID,
+                model: concierge.modelId,
+                temperature: concierge.temperature,
                 messageCount: messages?.length ?? 0,
             },
         });
 
         const result = await streamText({
-            model: openrouter.chat(MODEL_ID),
+            model: openrouter.chat(concierge.modelId),
             system: SYSTEM_PROMPT,
             messages: convertToModelMessages(messages),
             tools,
+            temperature: concierge.temperature,
             stopWhen: stepCountIs(5), // Allow up to 5 steps for multi-step tool usage
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
             experimental_telemetry: {
@@ -305,7 +311,8 @@ export async function POST(req: Request) {
                 recordOutputs: true,
                 metadata: {
                     userEmail,
-                    model: MODEL_ID,
+                    model: concierge.modelId,
+                    temperature: concierge.temperature,
                 },
             },
         });
@@ -315,8 +322,22 @@ export async function POST(req: Request) {
             "Connect stream initiated"
         );
 
-        return result.toUIMessageStreamResponse({
+        // Get the stream response and add concierge headers
+        const response = result.toUIMessageStreamResponse({
             originalMessages: messages,
+        });
+
+        // Clone headers and add concierge data
+        const headers = new Headers(response.headers);
+        headers.set("X-Concierge-Model-Id", concierge.modelId);
+        headers.set("X-Concierge-Temperature", String(concierge.temperature));
+        headers.set("X-Concierge-Reasoning", encodeURIComponent(concierge.reasoning));
+
+        // Return response with concierge headers
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
         });
     } catch (error) {
         // Extract detailed error info
@@ -331,9 +352,9 @@ export async function POST(req: Request) {
                 errorName,
                 errorStack,
                 userEmail,
-                model: MODEL_ID,
+                model: CONCIERGE_DEFAULTS.modelId,
             },
-            "❌ Connect request failed"
+            "Connect request failed"
         );
 
         Sentry.captureException(error, {
@@ -344,7 +365,7 @@ export async function POST(req: Request) {
             },
             extra: {
                 userEmail,
-                model: MODEL_ID,
+                model: CONCIERGE_DEFAULTS.modelId,
                 errorMessage,
             },
         });

@@ -12,9 +12,11 @@ import type { ReasoningMessagePartProps } from "@assistant-ui/react";
 import { makeMarkdownText } from "@assistant-ui/react-ui";
 
 import { cn } from "@/lib/utils";
+import { useConcierge } from "@/lib/concierge/context";
 import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
+import { ConciergeDisplay } from "./concierge-display";
 
 /**
  * HoloThread - A custom Thread built with headless primitives.
@@ -105,12 +107,23 @@ function ReasoningContent(props: ReasoningMessagePartProps) {
 function AssistantMessageContent() {
     const isRunning = useMessage((state) => state.status?.type === "running");
     const hasContent = useMessage((state) => state.content && state.content.length > 0);
+    const { concierge } = useConcierge();
 
     // Show thinking indicator only when running AND no content yet
     const showThinking = isRunning && !hasContent;
 
     return (
         <>
+            {/* Concierge display - shown before response content */}
+            {concierge && (
+                <ConciergeDisplay
+                    modelId={concierge.modelId}
+                    temperature={concierge.temperature}
+                    reasoning={concierge.reasoning}
+                    className="mb-2"
+                />
+            )}
+
             {/* Thinking indicator - shown while waiting for first content */}
             {showThinking && <ThinkingIndicator className="mb-2" />}
 
@@ -141,6 +154,7 @@ function AssistantMessageContent() {
 /**
  * Assistant message bubble with glass effect.
  * Includes:
+ * - Concierge display showing model selection reasoning
  * - Thinking indicator while waiting for response
  * - Reasoning display for extended thinking content
  * - Error handling with user-friendly messages
