@@ -8,6 +8,7 @@ import {
     stepCountIs,
     type UIMessage,
 } from "ai";
+import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import { runConcierge, CONCIERGE_DEFAULTS } from "@/lib/concierge";
@@ -394,14 +395,22 @@ export async function POST(req: Request) {
                         });
                     }
 
-                    // Get message ID from response if available
+                    // Get message ID from response if available, fallback to nanoid
                     const assistantMessage = response.messages.find(
                         (m) => m.role === "assistant"
                     );
-                    const messageId = assistantMessage
-                        ? ((assistantMessage as { id?: string }).id ??
-                          crypto.randomUUID())
-                        : crypto.randomUUID();
+                    const existingId = assistantMessage
+                        ? (assistantMessage as { id?: string }).id
+                        : undefined;
+
+                    if (!existingId) {
+                        logger.debug(
+                            { conversationId: currentConversationId },
+                            "AI SDK did not provide message ID, generating with nanoid"
+                        );
+                    }
+
+                    const messageId = existingId ?? nanoid();
 
                     // Save assistant message
                     const uiMessage: UIMessageLike = {
@@ -427,6 +436,18 @@ export async function POST(req: Request) {
                         { error, conversationId: currentConversationId },
                         "Failed to persist conversation"
                     );
+
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "persistence",
+                            action: "onFinish",
+                        },
+                        extra: {
+                            conversationId: currentConversationId,
+                            userEmail,
+                        },
+                    });
+
                     await updateStreamingStatus(currentConversationId!, "failed").catch(
                         () => {}
                     );

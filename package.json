@@ -49,6 +49,7 @@
     "heart-centered-prompts": "^0.5.1",
     "import-in-the-middle": "^2.0.0",
     "lucide-react": "^0.554.0",
+    "nanoid": "^5.1.6",
     "next": "^16.0.5",
     "pino": "^10.1.0",
     "postgres": "^3.4.7",
