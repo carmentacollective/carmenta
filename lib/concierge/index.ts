@@ -101,10 +101,14 @@ function detectAttachments(msg: UIMessage): string[] {
                 if (!attachments.includes("video")) attachments.push("video");
             }
         }
-        // Check for file parts with specific mime types
+        // Check for file parts with non-string mimeType (defensive fallback)
         if (part.type === "file" && "mimeType" in part) {
             const mimeType = String(part.mimeType).toLowerCase();
-            if (mimeType.startsWith("audio/")) {
+            if (mimeType.startsWith("image/")) {
+                if (!attachments.includes("image")) attachments.push("image");
+            } else if (mimeType === "application/pdf") {
+                if (!attachments.includes("pdf")) attachments.push("pdf");
+            } else if (mimeType.startsWith("audio/")) {
                 if (!attachments.includes("audio")) attachments.push("audio");
             } else if (mimeType.startsWith("video/")) {
                 if (!attachments.includes("video")) attachments.push("video");
