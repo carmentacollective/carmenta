@@ -106,44 +106,35 @@ vi.mock("./lib/db/index", async () => {
     const getOrCreateUser = async (
         clerkId: string,
         email: string,
-        displayName?: string | null,
-        imageUrl?: string | null
-    ) => {
-        const existingUser = await findUserByClerkId(clerkId);
-        if (existingUser) {
-            const [updatedUser] = await db
-                .update(schema.users)
-                .set({
-                    lastSignedInAt: new Date(),
-                    updatedAt: new Date(),
-                })
-                .where(eq(schema.users.clerkId, clerkId))
-                .returning();
-            return updatedUser;
+        profile?: {
+            firstName?: string | null;
+            lastName?: string | null;
+            displayName?: string | null;
+            imageUrl?: string | null;
         }
-
-        const [newUser] = await db
+    ) => {
+        // Pure upsert: single atomic operation eliminates race conditions
+        const [user] = await db
             .insert(schema.users)
             .values({
                 clerkId,
                 email,
-                displayName,
-                imageUrl,
+                firstName: profile?.firstName,
+                lastName: profile?.lastName,
+                displayName: profile?.displayName,
+                imageUrl: profile?.imageUrl,
                 lastSignedInAt: new Date(),
             })
             .onConflictDoUpdate({
                 target: schema.users.clerkId,
                 set: {
-                    email,
-                    displayName,
-                    imageUrl,
                     lastSignedInAt: new Date(),
                     updatedAt: new Date(),
                 },
             })
             .returning();
 
-        return newUser;
+        return user;
     };
 
     const updateUserPreferences = async (
@@ -216,6 +207,8 @@ beforeEach(async () => {
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             clerk_id VARCHAR(255) NOT NULL UNIQUE,
             email VARCHAR(255) NOT NULL UNIQUE,
+            first_name VARCHAR(255),
+            last_name VARCHAR(255),
             display_name VARCHAR(255),
             image_url VARCHAR(2048),
             preferences JSONB DEFAULT '{}',

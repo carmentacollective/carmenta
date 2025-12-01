@@ -64,7 +64,13 @@ export const users = pgTable(
          */
         email: varchar("email", { length: 255 }).notNull().unique(),
 
-        /** User's display name from Clerk profile */
+        /** User's first name from Clerk profile */
+        firstName: varchar("first_name", { length: 255 }),
+
+        /** User's last name from Clerk profile */
+        lastName: varchar("last_name", { length: 255 }),
+
+        /** User's display name (computed from first + last, or custom) */
         displayName: varchar("display_name", { length: 255 }),
 
         /** Profile image URL from Clerk or OAuth provider */

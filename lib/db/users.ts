@@ -33,6 +33,14 @@ export async function findUserByClerkId(clerkId: string): Promise<User | null> {
     return user ?? null;
 }
 
+/** User profile data for getOrCreateUser */
+interface UserProfileData {
+    firstName?: string | null;
+    lastName?: string | null;
+    displayName?: string | null;
+    imageUrl?: string | null;
+}
+
 /**
  * Get or create a user by Clerk ID
  *
@@ -40,55 +48,40 @@ export async function findUserByClerkId(clerkId: string): Promise<User | null> {
  * This is a defensive pattern for cases where the Clerk webhook
  * hasn't fired yet or was missed.
  *
+ * Uses a pure upsert pattern to eliminate race conditions - a single
+ * atomic operation handles both create and update cases.
+ *
  * @param clerkId - Clerk's internal user ID
  * @param email - User's email address
- * @param displayName - Optional display name
- * @param imageUrl - Optional profile image URL
+ * @param profile - Optional profile data (firstName, lastName, displayName, imageUrl)
  */
 export async function getOrCreateUser(
     clerkId: string,
     email: string,
-    displayName?: string | null,
-    imageUrl?: string | null
+    profile?: UserProfileData
 ): Promise<User> {
-    // Try to find existing user first
-    const existingUser = await findUserByClerkId(clerkId);
-    if (existingUser) {
-        // Update last sign in time
-        const [updatedUser] = await db
-            .update(schema.users)
-            .set({
-                lastSignedInAt: new Date(),
-                updatedAt: new Date(),
-            })
-            .where(eq(schema.users.clerkId, clerkId))
-            .returning();
-        return updatedUser;
-    }
-
-    // Create new user
-    const [newUser] = await db
+    // Pure upsert: single atomic operation eliminates race conditions
+    const [user] = await db
         .insert(schema.users)
         .values({
             clerkId,
             email,
-            displayName,
-            imageUrl,
+            firstName: profile?.firstName,
+            lastName: profile?.lastName,
+            displayName: profile?.displayName,
+            imageUrl: profile?.imageUrl,
             lastSignedInAt: new Date(),
         })
         .onConflictDoUpdate({
             target: schema.users.clerkId,
             set: {
-                email,
-                displayName,
-                imageUrl,
                 lastSignedInAt: new Date(),
                 updatedAt: new Date(),
             },
         })
         .returning();
 
-    return newUser;
+    return user;
 }
 
 /**

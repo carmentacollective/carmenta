@@ -92,6 +92,8 @@ async function handleUserCreated(user: ClerkUserData): Promise<void> {
         .values({
             clerkId: user.id,
             email,
+            firstName: user.first_name,
+            lastName: user.last_name,
             displayName,
             imageUrl: user.image_url,
             lastSignedInAt: new Date(),
@@ -100,6 +102,8 @@ async function handleUserCreated(user: ClerkUserData): Promise<void> {
             target: schema.users.clerkId,
             set: {
                 email,
+                firstName: user.first_name,
+                lastName: user.last_name,
                 displayName,
                 imageUrl: user.image_url,
                 updatedAt: new Date(),
@@ -127,6 +131,8 @@ async function handleUserUpdated(user: ClerkUserData): Promise<void> {
         .update(schema.users)
         .set({
             email,
+            firstName: user.first_name,
+            lastName: user.last_name,
             displayName,
             imageUrl: user.image_url,
             updatedAt: new Date(),

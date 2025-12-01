@@ -66,17 +66,19 @@ describe("User Database Operations", () => {
     describe("getOrCreateUser", () => {
         it("creates new user when not exists", async () => {
             // Act
-            const user = await getOrCreateUser(
-                "clerk_new",
-                "new@example.com",
-                "New User",
-                "https://example.com/image.png"
-            );
+            const user = await getOrCreateUser("clerk_new", "new@example.com", {
+                firstName: "New",
+                lastName: "User",
+                displayName: "New User",
+                imageUrl: "https://example.com/image.png",
+            });
 
             // Assert
             expect(user).toBeDefined();
             expect(user.clerkId).toBe("clerk_new");
             expect(user.email).toBe("new@example.com");
+            expect(user.firstName).toBe("New");
+            expect(user.lastName).toBe("User");
             expect(user.displayName).toBe("New User");
             expect(user.imageUrl).toBe("https://example.com/image.png");
             expect(user.lastSignedInAt).not.toBeNull();
