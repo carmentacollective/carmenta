@@ -246,6 +246,59 @@ minutes."
 **Tool removed**: "I no longer have access to Notion. Let me know if you want to
 reconnect."
 
+## Future: Visual Tool Interfaces (MCP Apps)
+
+MCP Apps (SEP-1865) is an emerging extension to the Model Context Protocol that enables
+interactive user interfaces for MCP tools. Currently in draft specification, co-authored
+by Anthropic and OpenAI core teams.
+
+### What MCP Apps Enables
+
+**Visual tool experiences**: Instead of tools returning text or JSON that Carmenta must
+interpret, tools can deliver purpose-built interactive interfaces. A data visualization
+tool provides an interactive chart component. A form-builder tool renders the actual
+form. A calendar tool shows visual availability.
+
+**Technical approach**: HTML-based UIs in sandboxed iframes, communicating via JSON-RPC
+(same protocol as base MCP). Pre-declared UI resources using `ui://` URI scheme allow
+host prefetch and security review before execution.
+
+**Security model aligns with our philosophy**: Iframe sandboxing, pre-declared templates
+for review, auditable messages, user consent for UI-initiated actions. Defense-in-depth
+matches our transparency approach.
+
+### Strategic Implications
+
+**Differentiation opportunity**: Competitors (LobeChat, LibreChat) support MCP but only
+text-based tool interactions. Visual, interactive tool experiences would be
+differentiated capability.
+
+**Complements AG-UI**: AG-UI handles response rendering (restaurant query → rich card).
+MCP Apps handles tool interfaces (data analysis tool → interactive visualization). Two
+complementary layers of the interface.
+
+**Aligns with positioning**: "The best interface to AI" includes the best interface to
+AI tools. Visual tool experiences strengthen this positioning.
+
+### Implementation Considerations
+
+**Timing**: Specification is draft but backed by major players (Anthropic, OpenAI) with
+existing implementations (Postman, Shopify, HuggingFace, ElevenLabs). Early adopter
+advantage possible, but spec finalization risk exists.
+
+**Architecture**: Requires iframe sandbox implementation, integration with AG-UI
+response rendering, security review of communication patterns. Desktop vs web
+considerations for iframe capabilities.
+
+**Product decision needed**: MVP capability or post-launch enhancement? Does this change
+external tools roadmap sequencing? Featured tools showcase visual experiences as key
+differentiator?
+
+**Reference**: SEP-1865 pull request at
+https://github.com/modelcontextprotocol/modelcontextprotocol/pull/1865
+
+---
+
 ## Success Criteria
 
 - Enable any featured tool in under 60 seconds
@@ -298,6 +351,9 @@ reconnect."
 - Research LibreChat's multi-user MCP isolation approach
 - Security audit of MCP protocol and common server implementations
 - Performance analysis of MCP overhead per request
+- **MCP Apps (SEP-1865) evaluation**: Review draft specification, assess iframe sandbox
+  security, evaluate integration patterns with AG-UI, analyze reference implementations
+  from Postman/Shopify/HuggingFace, determine timing for adoption (early vs post-MVP)
 
 ---
 
@@ -350,6 +406,11 @@ pre-configured options.
 Carmenta's opportunity: Complete abstraction for featured tools. You don't know MCP
 exists unless you want to. Natural language discovery ("what can you connect to?"). Tool
 suggestions in context of failed requests. Human-first framing throughout.
+
+**Visual tool experiences**: With MCP Apps support, Carmenta could deliver interactive
+tool UIs while competitors remain text-only. Data visualizations render as interactive
+charts, not JSON dumps. Form-based tools show actual forms, not text-based prompts. This
+strengthens "best interface to AI" positioning.
 
 For technical users: Full MCP access remains available. Custom servers, advanced config,
 direct protocol access. But the default experience assumes no technical knowledge.
