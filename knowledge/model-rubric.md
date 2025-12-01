@@ -3,7 +3,7 @@
 The source of truth for Carmenta's model routing decisions. The Concierge reads this
 document when deciding which model to use for each request.
 
-Last updated: 2025-11-30 Version: 2.0.0
+Last updated: 2025-12-01 Version: 2.1.0
 
 Data source: OpenRouter API (https://openrouter.ai/api/v1/models)
 
@@ -35,6 +35,7 @@ Our default. The workhorse.
 - **Cost**: $3/$15 per million tokens
 - **Attachments**: Images, PDFs (excellent document understanding)
 - **Tools**: Yes, highly reliable
+- **Reasoning**: Extended thinking with token budget (1K-32K tokens)
 
 **Choose when**:
 
@@ -59,6 +60,7 @@ Frontier capability. For when depth matters.
 - **Cost**: $5/$25 per million tokens
 - **Attachments**: Images, PDFs
 - **Tools**: Yes, reliable
+- **Reasoning**: Extended thinking with token budget (1K-32K tokens)
 
 **Choose when**:
 
@@ -81,6 +83,7 @@ Fast and capable. For quick interactions.
 - **Cost**: $1/$5 per million tokens
 - **Attachments**: Images, PDFs
 - **Tools**: Yes
+- **Reasoning**: Extended thinking with token budget (1K-32K tokens)
 
 **Choose when**:
 
@@ -105,6 +108,7 @@ Full multimodal including video and audio.
 - **Cost**: $2/$12 per million tokens
 - **Attachments**: Text, images, video, audio, PDF
 - **Tools**: Yes
+- **Reasoning**: Not supported (standard response model)
 
 **Choose when**:
 
@@ -124,6 +128,7 @@ Massive context window.
 - **Context**: 2M tokens (largest available)
 - **Cost**: $0.20/$0.50 per million tokens
 - **Attachments**: Multimodal
+- **Reasoning**: Effort-based (high/medium/low/minimal/none)
 
 **Choose when**:
 
@@ -132,6 +137,88 @@ Massive context window.
 - Context length is the primary constraint
 
 **Temperature guidance**: 0.4-0.6
+
+---
+
+## Reasoning Support
+
+Some models support extended reasoning/thinking, where they generate internal reasoning
+tokens before producing the final response. This makes the AI's thought process
+transparent and improves quality for complex tasks.
+
+### When to Enable Reasoning
+
+**Use high reasoning effort (or large token budget) when:**
+
+- Complex multi-step problems requiring careful analysis
+- Mathematical or logical reasoning
+- Research requiring deep synthesis across multiple sources
+- Analysis with many variables or edge cases
+- User explicitly requests thorough thinking
+- Quality matters more than speed or cost
+
+**Use medium reasoning effort when:**
+
+- Moderate complexity tasks
+- Balanced quality and speed requirements
+- Standard explanation or analysis requests
+- Default for reasoning-capable models on non-trivial queries
+
+**Use low/minimal reasoning effort when:**
+
+- Simpler questions on reasoning-capable models
+- User signals speed preference ("quick answer", "briefly")
+- Cost sensitivity is a factor
+- The task doesn't require deep analysis
+
+**Don't use reasoning (use standard models) when:**
+
+- Quick lookups, simple questions, basic facts
+- Creative writing (reasoning can reduce creativity)
+- Casual conversational exchanges
+- Speed or cost is the clear priority
+- The query is straightforward
+
+### Cost Implications
+
+Reasoning tokens are charged as output tokens (the most expensive). For Claude Sonnet
+4.5 at $15/million output tokens:
+
+- 2,000 reasoning tokens = $0.03 per request
+- 8,000 reasoning tokens = $0.12 per request
+- 32,000 reasoning tokens = $0.48 per request
+
+Use reasoning judiciously. The quality improvement must justify the cost.
+
+### Model-Specific Behavior
+
+**Anthropic (Claude 4.5 series):**
+
+- Configure via `reasoning: { maxTokens: 1024-32000 }`
+- Returns reasoning tokens in response
+- Token budget directly controls depth of reasoning
+
+**x-ai (Grok):**
+
+- Configure via `reasoning: { effort: "high" | "medium" | "low" | "minimal" | "none" }`
+- Returns reasoning tokens in response
+- Effort level controls percentage of tokens allocated
+
+**OpenAI (o-series):**
+
+- Support reasoning but DON'T return reasoning tokens
+- They reason internally but don't expose thinking
+- Still configure effort level for internal reasoning depth
+
+**Gemini Flash Thinking:**
+
+- Support reasoning but DON'T return reasoning tokens
+- Similar to OpenAI: internal reasoning only
+
+**Standard models (Gemini 3 Pro, older Claude models):**
+
+- No extended reasoning capability
+- Respond immediately without separate reasoning phase
 
 ---
 
@@ -214,6 +301,16 @@ This is a safe default that handles most requests well.
 ---
 
 ## Update Log
+
+### v2.1.0 (2025-12-01)
+
+**Added reasoning token support**
+
+- Added reasoning capability tracking for each model
+- Documented when to use reasoning (high/medium/low/none)
+- Added cost implications for reasoning tokens
+- Explained model-specific reasoning behavior (token-budget vs effort-based)
+- Guidance for concierge on reasoning level determination
 
 ### v2.0.0 (2025-11-30)
 
