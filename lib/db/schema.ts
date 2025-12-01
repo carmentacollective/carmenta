@@ -2,7 +2,7 @@
  * Database Schema
  *
  * Carmenta uses PostgreSQL with Drizzle ORM. This schema defines the core
- * tables for user management and serves as the foundation for future tables.
+ * tables for user management and conversation persistence.
  *
  * Naming conventions:
  * - Tables: plural nouns (users, conversations, messages)
@@ -11,104 +11,367 @@
  * - Foreign keys: referenced_table_singular_id (user_id, conversation_id)
  */
 
-import { pgTable, uuid, varchar, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import {
+    pgTable,
+    uuid,
+    varchar,
+    timestamp,
+    jsonb,
+    index,
+    text,
+    integer,
+    pgEnum,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+/**
+ * Conversation status for tab-style access
+ * - active: Currently open/recent (like a browser tab)
+ * - background: Long-running task, window closed but still processing
+ * - archived: User explicitly archived (hidden from recent, searchable)
+ */
+export const conversationStatusEnum = pgEnum("conversation_status", [
+    "active",
+    "background",
+    "archived",
+]);
+
+/**
+ * Streaming status for background save
+ * - idle: No streaming in progress
+ * - streaming: Currently receiving chunks
+ * - completed: Stream finished successfully
+ * - failed: Stream failed (partial data may exist)
+ */
+export const streamingStatusEnum = pgEnum("streaming_status", [
+    "idle",
+    "streaming",
+    "completed",
+    "failed",
+]);
+
+/**
+ * Message role
+ */
+export const messageRoleEnum = pgEnum("message_role", ["user", "assistant", "system"]);
+
+/**
+ * Message part types - discriminated union at DB level
+ * - text: Plain text content
+ * - reasoning: Model's reasoning/thinking (e.g., Claude's extended thinking)
+ * - tool_call: Tool invocation with state tracking
+ * - file: Attached file reference
+ * - data: Generative UI data (weather cards, comparison tables, etc.)
+ * - step_start: Step boundary marker
+ */
+export const partTypeEnum = pgEnum("part_type", [
+    "text",
+    "reasoning",
+    "tool_call",
+    "file",
+    "data",
+    "step_start",
+]);
+
+/**
+ * Tool call states - full lifecycle tracking
+ */
+export const toolStateEnum = pgEnum("tool_state", [
+    "input_streaming",
+    "input_available",
+    "output_available",
+    "output_error",
+]);
+
+// ============================================================================
+// USERS TABLE (existing)
+// ============================================================================
 
 /**
  * User Preferences Type
- *
- * Stored as JSONB for flexibility. Add new preferences without migrations.
- * The structure should remain backward compatible - always use optional fields.
  */
 export interface UserPreferences {
-    /** Preferred AI model for conversations */
     defaultModel?: string;
-    /** Theme preference */
     theme?: "light" | "dark" | "system";
-    /** Whether to show keyboard shortcuts hints */
     showKeyboardHints?: boolean;
-    /** Custom system prompt additions */
     customSystemPrompt?: string;
-    /** Notification preferences */
     notifications?: {
         email?: boolean;
         push?: boolean;
     };
 }
 
-/**
- * Users Table
- *
- * Core user identity table. Synced from Clerk via webhooks.
- *
- * Design decisions:
- * - `email` is the primary identifier for resource ownership (per auth.md)
- * - `clerk_id` stored for Clerk API operations and webhook handling
- * - `preferences` as JSONB allows flexible, schema-less user settings
- * - `last_signed_in_at` tracked for analytics and session management
- *
- * The `id` column is a UUID for internal database relationships.
- * External APIs and logs use `email` as the human-readable identifier.
- */
 export const users = pgTable(
     "users",
     {
-        /** Internal database identifier */
         id: uuid("id").primaryKey().defaultRandom(),
-
-        /** Clerk's internal user ID - used for webhook handling */
         clerkId: varchar("clerk_id", { length: 255 }).notNull().unique(),
-
-        /**
-         * Primary identifier for resource ownership.
-         * All user resources (conversations, memory, connections) reference this.
-         */
         email: varchar("email", { length: 255 }).notNull().unique(),
-
-        /** User's first name from Clerk profile */
         firstName: varchar("first_name", { length: 255 }),
-
-        /** User's last name from Clerk profile */
         lastName: varchar("last_name", { length: 255 }),
-
-        /** User's display name (computed from first + last, or custom) */
         displayName: varchar("display_name", { length: 255 }),
-
-        /** Profile image URL from Clerk or OAuth provider */
         imageUrl: varchar("image_url", { length: 2048 }),
-
-        /**
-         * User preferences stored as JSONB.
-         * Allows flexible, schema-less settings without migrations.
-         */
         preferences: jsonb("preferences").$type<UserPreferences>().default({}),
-
-        /**
-         * Last sign-in timestamp.
-         * Updated on each successful authentication via Clerk webhook.
-         */
         lastSignedInAt: timestamp("last_signed_in_at", { withTimezone: true }),
-
-        /** When this user record was created */
         createdAt: timestamp("created_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
-
-        /** When this user record was last modified */
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
     },
     (table) => [
-        /** Index for looking up users by email (most common query pattern) */
         index("users_email_idx").on(table.email),
-
-        /** Index for Clerk webhook handling */
         index("users_clerk_id_idx").on(table.clerkId),
     ]
 );
 
+// ============================================================================
+// CONVERSATIONS TABLE
+// ============================================================================
+
 /**
- * Type inference helpers for Drizzle
+ * Conversation metadata - tab-style access with background save support
+ *
+ * Design decisions:
+ * - `status` enables tab-style UI (active = recent tabs, background = running tasks)
+ * - `streamingStatus` tracks long-running operations for recovery
+ * - `lastActivityAt` is the primary sort key for recency
+ * - `modelId` records which model was used (useful for cost tracking)
+ * - No sidebar archive - users access via recency or search
  */
+export const conversations = pgTable(
+    "conversations",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** Owner of this conversation */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /**
+         * Auto-generated from first user message or AI summary.
+         * Can be manually overridden.
+         */
+        title: varchar("title", { length: 500 }),
+
+        /** Tab-style status for UI presentation */
+        status: conversationStatusEnum("status").notNull().default("active"),
+
+        /** Streaming status for background save and recovery */
+        streamingStatus: streamingStatusEnum("streaming_status")
+            .notNull()
+            .default("idle"),
+
+        /** Model used for this conversation (e.g., "anthropic/claude-sonnet-4") */
+        modelId: varchar("model_id", { length: 255 }),
+
+        /** Last activity for recency sorting (updated on every message) */
+        lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Primary query: recent conversations for a user */
+        index("conversations_user_last_activity_idx").on(
+            table.userId,
+            table.lastActivityAt
+        ),
+        /** Filter by status */
+        index("conversations_user_status_idx").on(table.userId, table.status),
+        /** Find background tasks that may need recovery */
+        index("conversations_streaming_status_idx").on(table.streamingStatus),
+    ]
+);
+
+// ============================================================================
+// MESSAGES TABLE
+// ============================================================================
+
+/**
+ * Individual messages in a conversation
+ *
+ * Messages contain one or more parts (text, tool calls, etc.)
+ * The actual content is in the message_parts table for normalized storage.
+ */
+export const messages = pgTable(
+    "messages",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        conversationId: uuid("conversation_id")
+            .references(() => conversations.id, { onDelete: "cascade" })
+            .notNull(),
+
+        role: messageRoleEnum("role").notNull(),
+
+        /** Immutable creation time - never updated */
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("messages_conversation_idx").on(table.conversationId),
+        /** For ordered retrieval of conversation history */
+        index("messages_conversation_created_idx").on(
+            table.conversationId,
+            table.createdAt
+        ),
+    ]
+);
+
+// ============================================================================
+// MESSAGE PARTS TABLE
+// ============================================================================
+
+/**
+ * Tool call input/output types - generic JSONB storage
+ *
+ * Using generic JSONB instead of tool-specific columns allows adding
+ * new tools without schema migrations. TypeScript handles type safety.
+ */
+export interface ToolCallData {
+    toolName: string;
+    toolCallId: string;
+    state: "input_streaming" | "input_available" | "output_available" | "output_error";
+    input?: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    error?: string;
+}
+
+/**
+ * Generative UI data - weather cards, comparison tables, etc.
+ */
+export interface DataPartContent {
+    /** Data type discriminator (e.g., "weather", "comparison", "research") */
+    type: string;
+    /** Component-specific data */
+    data: Record<string, unknown>;
+    /** Whether data is still loading */
+    loading?: boolean;
+}
+
+/**
+ * Provider-specific metadata (reasoning tokens, etc.)
+ */
+export type ProviderMetadata = Record<string, Record<string, unknown>>;
+
+/**
+ * Message parts - polymorphic content storage
+ *
+ * Design decisions:
+ * - Generic JSONB for tool data (flexibility over strict typing)
+ * - Order field preserves multi-part message structure
+ * - Cascade delete ensures cleanup when message is deleted
+ * - No CHECK constraints on JSONB (TypeScript validation instead)
+ */
+export const messageParts = pgTable(
+    "message_parts",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        messageId: uuid("message_id")
+            .references(() => messages.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Part type discriminator */
+        type: partTypeEnum("type").notNull(),
+
+        /** Order within the message for reconstruction */
+        order: integer("order").notNull().default(0),
+
+        // ---- Text content ----
+        /** Plain text content */
+        textContent: text("text_content"),
+
+        // ---- Reasoning content ----
+        /** Model's reasoning/thinking */
+        reasoningContent: text("reasoning_content"),
+
+        // ---- Tool call content ----
+        /** Full tool call data as JSONB (name, state, input, output, error) */
+        toolCall: jsonb("tool_call").$type<ToolCallData>(),
+
+        // ---- File content ----
+        fileMediaType: varchar("file_media_type", { length: 255 }),
+        fileName: varchar("file_name", { length: 1024 }),
+        fileUrl: varchar("file_url", { length: 4096 }),
+
+        // ---- Generative UI data ----
+        /** Component data for weather cards, comparisons, research results, etc. */
+        dataContent: jsonb("data_content").$type<DataPartContent>(),
+
+        // ---- Metadata ----
+        /** Provider-specific metadata (reasoning tokens, etc.) */
+        providerMetadata: jsonb("provider_metadata").$type<ProviderMetadata>(),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("message_parts_message_idx").on(table.messageId),
+        /** For ordered retrieval of parts within a message */
+        index("message_parts_message_order_idx").on(table.messageId, table.order),
+    ]
+);
+
+// ============================================================================
+// RELATIONS
+// ============================================================================
+
+export const usersRelations = relations(users, ({ many }) => ({
+    conversations: many(conversations),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+    user: one(users, {
+        fields: [conversations.userId],
+        references: [users.id],
+    }),
+    messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+    conversation: one(conversations, {
+        fields: [messages.conversationId],
+        references: [conversations.id],
+    }),
+    parts: many(messageParts),
+}));
+
+export const messagePartsRelations = relations(messageParts, ({ one }) => ({
+    message: one(messages, {
+        fields: [messageParts.messageId],
+        references: [messages.id],
+    }),
+}));
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
+
+export type MessagePart = typeof messageParts.$inferSelect;
+export type NewMessagePart = typeof messageParts.$inferInsert;

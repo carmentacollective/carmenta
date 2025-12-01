@@ -201,6 +201,43 @@ beforeEach(async () => {
     const { db } = await getTestDb();
     const { sql } = await import("drizzle-orm");
 
+    // Create enum types
+    await db.execute(sql`
+        DO $$ BEGIN
+            CREATE TYPE conversation_status AS ENUM ('active', 'background', 'archived');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+    await db.execute(sql`
+        DO $$ BEGIN
+            CREATE TYPE streaming_status AS ENUM ('idle', 'streaming', 'completed', 'failed');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+    await db.execute(sql`
+        DO $$ BEGIN
+            CREATE TYPE message_role AS ENUM ('user', 'assistant', 'system');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+    await db.execute(sql`
+        DO $$ BEGIN
+            CREATE TYPE part_type AS ENUM ('text', 'reasoning', 'tool_call', 'file', 'data', 'step_start');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+    await db.execute(sql`
+        DO $$ BEGIN
+            CREATE TYPE tool_state AS ENUM ('input_streaming', 'input_available', 'output_available', 'output_error');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+
     // Create users table
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS users (
@@ -218,12 +255,83 @@ beforeEach(async () => {
         )
     `);
 
-    // Create indexes
+    // Create indexes for users
     await db.execute(sql`
         CREATE INDEX IF NOT EXISTS users_email_idx ON users(email)
     `);
     await db.execute(sql`
         CREATE INDEX IF NOT EXISTS users_clerk_id_idx ON users(clerk_id)
+    `);
+
+    // Create conversations table
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS conversations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title VARCHAR(500),
+            status conversation_status NOT NULL DEFAULT 'active',
+            streaming_status streaming_status NOT NULL DEFAULT 'idle',
+            model_id VARCHAR(255),
+            last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    // Create indexes for conversations
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS conversations_user_last_activity_idx ON conversations(user_id, last_activity_at)
+    `);
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS conversations_user_status_idx ON conversations(user_id, status)
+    `);
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS conversations_streaming_status_idx ON conversations(streaming_status)
+    `);
+
+    // Create messages table
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS messages (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+            role message_role NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    // Create indexes for messages
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS messages_conversation_idx ON messages(conversation_id)
+    `);
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS messages_conversation_created_idx ON messages(conversation_id, created_at)
+    `);
+
+    // Create message_parts table
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS message_parts (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            type part_type NOT NULL,
+            "order" INTEGER NOT NULL DEFAULT 0,
+            text_content TEXT,
+            reasoning_content TEXT,
+            tool_call JSONB,
+            file_media_type VARCHAR(255),
+            file_name VARCHAR(1024),
+            file_url VARCHAR(4096),
+            data_content JSONB,
+            provider_metadata JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    // Create indexes for message_parts
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS message_parts_message_idx ON message_parts(message_id)
+    `);
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS message_parts_message_order_idx ON message_parts(message_id, "order")
     `);
 });
 

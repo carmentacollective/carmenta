@@ -41,6 +41,24 @@ vi.mock("@/lib/env", () => ({
     assertEnv: vi.fn(),
 }));
 
+// Mock database functions for persistence
+vi.mock("@/lib/db", () => ({
+    getOrCreateUser: vi.fn().mockResolvedValue({
+        id: "db-user-123",
+        clerkId: "test-user-123",
+        email: "test@example.com",
+    }),
+    createConversation: vi.fn().mockResolvedValue({
+        id: "conv-123",
+        userId: "db-user-123",
+        status: "active",
+        streamingStatus: "idle",
+    }),
+    upsertMessage: vi.fn().mockResolvedValue(undefined),
+    updateStreamingStatus: vi.fn().mockResolvedValue(undefined),
+    generateTitleFromFirstMessage: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Import after mocks are set up
 import { POST } from "@/app/api/connect/route";
 

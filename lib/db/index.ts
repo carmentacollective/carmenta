@@ -58,7 +58,20 @@ export const db = drizzle(client, { schema });
 export { schema };
 
 // Re-export types
-export type { User, NewUser, UserPreferences } from "./schema";
+export type {
+    User,
+    NewUser,
+    UserPreferences,
+    Conversation,
+    NewConversation,
+    Message,
+    NewMessage,
+    MessagePart,
+    NewMessagePart,
+    ToolCallData,
+    DataPartContent,
+    ProviderMetadata,
+} from "./schema";
 
 // Re-export user operations
 export {
@@ -68,3 +81,25 @@ export {
     updateUserPreferences,
     updateLastSignedIn,
 } from "./users";
+
+// Re-export conversation operations
+export {
+    createConversation,
+    getConversationWithMessages,
+    getRecentConversations,
+    updateConversation,
+    archiveConversation,
+    deleteConversation,
+    saveMessage,
+    updateMessage,
+    upsertMessage,
+    loadMessages,
+    updateStreamingStatus,
+    markAsBackground,
+    findInterruptedConversations,
+    generateTitleFromFirstMessage,
+    type ConversationWithMessages,
+    type MessageWithParts,
+    type UIMessageLike,
+    type UIMessagePartLike,
+} from "./conversations";
