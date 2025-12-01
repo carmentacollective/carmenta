@@ -11,6 +11,14 @@ import {
 import { z } from "zod";
 
 import { runConcierge, CONCIERGE_DEFAULTS } from "@/lib/concierge";
+import {
+    getOrCreateUser,
+    createConversation,
+    upsertMessage,
+    updateStreamingStatus,
+    generateTitleFromFirstMessage,
+    type UIMessageLike,
+} from "@/lib/db";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
@@ -27,6 +35,7 @@ export const maxDuration = 120;
  */
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
+    conversationId: z.string().uuid().optional(),
 });
 
 /**
@@ -224,6 +233,7 @@ const tools = {
 
 export async function POST(req: Request) {
     let userEmail: string | null = null;
+    let conversationId: string | null = null;
 
     try {
         // Require authentication for connect API
@@ -265,7 +275,46 @@ export async function POST(req: Request) {
             );
         }
 
-        const { messages } = parseResult.data as { messages: UIMessage[] };
+        const { messages, conversationId: existingConversationId } =
+            parseResult.data as {
+                messages: UIMessage[];
+                conversationId?: string;
+            };
+
+        // ========================================================================
+        // PERSISTENCE: Get or create user and conversation
+        // ========================================================================
+
+        // Ensure user exists in database
+        const dbUser = await getOrCreateUser(user.id, userEmail!, {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            displayName: user.fullName,
+            imageUrl: user.imageUrl,
+        });
+
+        // Get or create conversation
+        if (existingConversationId) {
+            conversationId = existingConversationId;
+        } else {
+            // New conversation - create it
+            const conversation = await createConversation(dbUser.id);
+            conversationId = conversation.id;
+            logger.info(
+                { conversationId, userId: dbUser.id },
+                "Created new conversation"
+            );
+        }
+
+        // Save the latest user message before streaming
+        // (messages array may contain history, we only need to save new messages)
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.role === "user") {
+            await upsertMessage(conversationId, lastMessage as UIMessageLike);
+        }
+
+        // Mark conversation as streaming
+        await updateStreamingStatus(conversationId, "streaming");
 
         // Run the Concierge to select model and temperature
         const concierge = await runConcierge(messages);
@@ -295,6 +344,9 @@ export async function POST(req: Request) {
             },
         });
 
+        // Capture conversationId for onFinish closure
+        const currentConversationId = conversationId;
+
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
             system: SYSTEM_PROMPT,
@@ -315,6 +367,71 @@ export async function POST(req: Request) {
                     temperature: concierge.temperature,
                 },
             },
+            // ================================================================
+            // PERSISTENCE: Save assistant response when streaming completes
+            // ================================================================
+            onFinish: async ({ text, toolCalls, toolResults, response }) => {
+                try {
+                    // Build UI message parts from the step result
+                    const parts: UIMessageLike["parts"] = [];
+
+                    // Add text part if present
+                    if (text) {
+                        parts.push({ type: "text", text });
+                    }
+
+                    // Add tool calls with their results
+                    for (const tc of toolCalls) {
+                        const toolResult = toolResults.find(
+                            (tr) => tr.toolCallId === tc.toolCallId
+                        );
+                        parts.push({
+                            type: `tool-${tc.toolName}`,
+                            toolCallId: tc.toolCallId,
+                            state: toolResult ? "output-available" : "input-available",
+                            input: tc.input,
+                            ...(toolResult && { output: toolResult.output }),
+                        });
+                    }
+
+                    // Get message ID from response if available
+                    const assistantMessage = response.messages.find(
+                        (m) => m.role === "assistant"
+                    );
+                    const messageId = assistantMessage
+                        ? ((assistantMessage as { id?: string }).id ??
+                          crypto.randomUUID())
+                        : crypto.randomUUID();
+
+                    // Save assistant message
+                    const uiMessage: UIMessageLike = {
+                        id: messageId,
+                        role: "assistant",
+                        parts,
+                    };
+                    await upsertMessage(currentConversationId!, uiMessage);
+
+                    // Mark streaming complete
+                    await updateStreamingStatus(currentConversationId!, "completed");
+
+                    // Generate title from first user message if needed
+                    await generateTitleFromFirstMessage(currentConversationId!);
+
+                    logger.debug(
+                        { conversationId: currentConversationId },
+                        "Conversation persisted successfully"
+                    );
+                } catch (error) {
+                    // Don't fail the response if persistence fails - log and mark as failed
+                    logger.error(
+                        { error, conversationId: currentConversationId },
+                        "Failed to persist conversation"
+                    );
+                    await updateStreamingStatus(currentConversationId!, "failed").catch(
+                        () => {}
+                    );
+                }
+            },
         });
 
         logger.debug(
@@ -327,11 +444,12 @@ export async function POST(req: Request) {
             originalMessages: messages,
         });
 
-        // Clone headers and add concierge data
+        // Clone headers and add concierge + conversation data
         const headers = new Headers(response.headers);
         headers.set("X-Concierge-Model-Id", concierge.modelId);
         headers.set("X-Concierge-Temperature", String(concierge.temperature));
         headers.set("X-Concierge-Reasoning", encodeURIComponent(concierge.reasoning));
+        headers.set("X-Conversation-Id", conversationId!);
 
         // Return response with concierge headers
         return new Response(response.body, {
@@ -345,6 +463,11 @@ export async function POST(req: Request) {
         const errorName = error instanceof Error ? error.name : "Unknown";
         const errorStack = error instanceof Error ? error.stack : undefined;
 
+        // Mark conversation as failed if one was created
+        if (conversationId) {
+            await updateStreamingStatus(conversationId, "failed").catch(() => {});
+        }
+
         // Log detailed error for debugging
         logger.error(
             {
@@ -352,6 +475,7 @@ export async function POST(req: Request) {
                 errorName,
                 errorStack,
                 userEmail,
+                conversationId,
                 model: CONCIERGE_DEFAULTS.modelId,
             },
             "Connect request failed"
@@ -365,6 +489,7 @@ export async function POST(req: Request) {
             },
             extra: {
                 userEmail,
+                conversationId,
                 model: CONCIERGE_DEFAULTS.modelId,
                 errorMessage,
             },
