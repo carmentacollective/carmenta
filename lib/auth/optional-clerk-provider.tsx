@@ -36,7 +36,7 @@ export function OptionalClerkProvider({ children }: { children: ReactNode }) {
 
     // Log once on mount in development when running without Clerk
     useEffect(() => {
-        if (!hasClerkKeys && env.NODE_ENV === "development") {
+        if (!hasClerkKeys && process.env.NODE_ENV === "development") {
             logger.info(
                 {},
                 "Running without Clerk authentication - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY not set"
