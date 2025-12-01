@@ -132,7 +132,7 @@ const tools = {
 
     fetchPage: tool({
         description:
-            "Fetch and extract the main content from a web page. Returns clean, readable text without ads or navigation. Use when you have a specific URL to read.",
+            "Fetch and extract the main content from a web page. Returns clean, readable text without ads or navigation. Use when you have a specific URL to read. If warning is present, the extraction was partial - inform the user and work with other sources.",
         inputSchema: z.object({
             url: z.string().url().describe("The URL to fetch content from."),
             maxLength: z
@@ -154,6 +154,18 @@ const tools = {
                     title: "",
                     content: "",
                     url,
+                };
+            }
+
+            // Surface warnings about partial/problematic extractions
+            // so the AI can respond appropriately to the user
+            if (result.warning) {
+                return {
+                    error: false,
+                    warning: result.warning,
+                    title: result.title,
+                    content: result.content,
+                    url: result.url,
                 };
             }
 

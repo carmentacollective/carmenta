@@ -38,6 +38,11 @@ export interface ExtractResponse {
     url: string;
     provider: string;
     latencyMs: number;
+    /**
+     * Optional warning when extraction completed but with issues.
+     * Examples: content too short, page blocked, JavaScript-heavy site.
+     */
+    warning?: string;
 }
 
 // Research types
