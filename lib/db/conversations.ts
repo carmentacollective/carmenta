@@ -23,6 +23,7 @@ import {
     type UIMessageLike,
 } from "./message-mapping";
 import { logger } from "../logger";
+import { generateTitle } from "./title-generator";
 
 // ============================================================================
 // CONVERSATION OPERATIONS
@@ -375,10 +376,10 @@ export async function findInterruptedConversations(
 // ============================================================================
 
 /**
- * Generates a title from the first user message
+ * Generates a title from the first user message using LLM.
  *
- * Simple approach: takes first ~50 chars of first user message.
- * Could be enhanced with AI summarization later.
+ * Uses Haiku for fast, cheap title generation with optional emoji prefixes.
+ * Falls back to simple truncation if LLM fails.
  *
  * @param conversationId - ID of the conversation
  */
@@ -405,11 +406,8 @@ export async function generateTitleFromFirstMessage(
         return;
     }
 
-    // Truncate to reasonable title length
-    const title =
-        firstTextPart.textContent.length > 50
-            ? firstTextPart.textContent.slice(0, 47) + "..."
-            : firstTextPart.textContent;
+    // Generate title with LLM (falls back to truncation on failure)
+    const title = await generateTitle(firstTextPart.textContent);
 
     await updateConversation(conversationId, { title });
 

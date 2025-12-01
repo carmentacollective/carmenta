@@ -1,6 +1,7 @@
 #!/bin/bash
 # Render.com deployment script for Carmenta
 # This script orchestrates the full deployment process
+# Database: Supabase Postgres (external, not Render)
 
 set -e  # Exit on error
 
@@ -9,6 +10,10 @@ echo "🚀 Starting Carmenta deployment..."
 # Install dependencies with optimizations
 echo "📦 Installing dependencies..."
 pnpm install --frozen-lockfile --prefer-offline
+
+# Run database migrations (Supabase Postgres)
+echo "🗄️  Running database migrations..."
+pnpm drizzle-kit migrate
 
 # Build the application
 echo "🏗️  Building application..."

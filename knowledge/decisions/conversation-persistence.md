@@ -66,20 +66,32 @@ the AI SDK doesn't provide one.
 
 **Implementation**: Fallback to nanoid when `response.messages[].id` is undefined.
 
-### 5. Simple Title Generation
+### 5. LLM-Powered Title Generation
 
-**Decision**: Truncate first user message to 50 characters for conversation title.
+**Decision**: Use Haiku 4.5 to generate conversation titles with optional emoji prefixes
+(inspired by gitmoji).
 
 **Rationale**:
 
-- Simple and predictable
-- No additional LLM costs
-- Immediate generation without async delay
-- Good enough for tab-style access where title is secondary to recency
+- Better user experience with meaningful, concise titles
+- Emoji usage (when appropriate) makes titles scannable and delightful
+- Haiku is fast (~200ms) and cheap ($1/$5 per million tokens)
+- Falls back to simple truncation if LLM fails
 
-**Future enhancement**: Could add LLM-based summarization as optional feature.
+**Emoji guidance** (gitmoji-inspired):
 
-**Implementation**: `generateTitleFromFirstMessage()` in conversations.ts.
+- 🔧 Fixing/debugging
+- ✨ New features
+- 📝 Documentation
+- 🚀 Deployment
+- 🐛 Bug hunting
+- 🎨 Design/UI
+- 🔍 Research
+- 💡 Ideation
+
+Not every title gets an emoji - only when it genuinely captures the intent.
+
+**Implementation**: `generateTitle()` in `lib/db/title-generator.ts`.
 
 ### 6. Background Save Pattern
 

@@ -10,7 +10,18 @@
  * - Window close / recovery simulation
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock the title generator to avoid LLM calls in tests
+vi.mock("@/lib/db/title-generator", () => ({
+    generateTitle: vi.fn((message: string) => {
+        // Simulate LLM-style title generation with truncation
+        if (message.length > 50) {
+            return Promise.resolve(message.slice(0, 47) + "...");
+        }
+        return Promise.resolve(message);
+    }),
+}));
 
 // Use native crypto.randomUUID() instead of uuid package
 const uuid = () => crypto.randomUUID();
@@ -959,7 +970,7 @@ describe("Title Generation", () => {
         expect(conv!.title).toBe("How do I cook pasta?");
     });
 
-    it("truncates long messages", async () => {
+    it("truncates long messages via LLM fallback", async () => {
         const conversation = await createConversation(testUser.id);
         const longMessage = "A".repeat(100);
         await saveMessage(
@@ -970,6 +981,7 @@ describe("Title Generation", () => {
         await generateTitleFromFirstMessage(conversation.id);
 
         const conv = await getConversationWithMessages(conversation.id);
+        // Mock returns 47 chars + "..." = 50 total
         expect(conv!.title).toHaveLength(50);
         expect(conv!.title!.endsWith("...")).toBe(true);
     });

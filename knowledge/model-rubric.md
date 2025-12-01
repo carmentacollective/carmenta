@@ -179,6 +179,29 @@ storytelling, open-ended questions
 
 ---
 
+## Internal System Tasks
+
+Some Carmenta features use LLMs for fast, cheap internal operations. These run
+automatically without user awareness and prioritize speed and cost efficiency.
+
+### Current internal uses:
+
+| Task                 | Model                        | Purpose                         |
+| -------------------- | ---------------------------- | ------------------------------- |
+| **Concierge**        | `anthropic/claude-haiku-4.5` | Route requests to optimal model |
+| **Title Generation** | `anthropic/claude-haiku-4.5` | Generate conversation titles    |
+
+### Future considerations:
+
+- **Summarization**: Condensing long conversations for context management
+- **Classification**: Categorizing conversations for organization
+- **Embedding generation**: For semantic search (may use dedicated embedding model)
+
+**Note**: Haiku 4.5 is our go-to for these tasks. Fast (~200ms), cheap ($1/$5), and
+capable enough for structured output and simple inference.
+
+---
+
 ## Fallback Behavior
 
 If the Concierge fails to select a model, default to:
