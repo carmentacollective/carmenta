@@ -179,8 +179,9 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
         return CONCIERGE_DEFAULTS;
     }
 
-    // Clamp temperature to valid range
-    const temperature = Math.max(0, Math.min(1, Number(parsed.temperature)));
+    // Clamp temperature to valid range, default to 0.5 if NaN
+    const rawTemp = Number(parsed.temperature);
+    const temperature = Number.isNaN(rawTemp) ? 0.5 : Math.max(0, Math.min(1, rawTemp));
 
     // Limit reasoning length for security
     const reasoning = String(parsed.reasoning).slice(0, MAX_REASONING_LENGTH);

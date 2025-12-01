@@ -9,6 +9,7 @@ import {
     formatQueryForConcierge,
     detectAttachments,
 } from "@/lib/concierge";
+import { parseConciergeHeaders } from "@/lib/concierge/context";
 import { ALLOWED_MODELS, MAX_REASONING_LENGTH } from "@/lib/concierge/types";
 
 describe("Concierge", () => {
@@ -113,6 +114,17 @@ describe("Concierge", () => {
             const result = parseConciergeResponse(response);
             expect(result.temperature).toBe(0.8);
             expect(typeof result.temperature).toBe("number");
+        });
+
+        it("defaults NaN temperature to 0.5", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: "not-a-number",
+                reasoning: "Test",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.temperature).toBe(0.5);
         });
 
         it("throws on missing modelId", () => {
@@ -481,5 +493,62 @@ describe("ConciergeDisplay component helpers", () => {
             expect(getTemperatureLabel(0.9)).toBe("expressive");
             expect(getTemperatureLabel(1.0)).toBe("expressive");
         });
+    });
+});
+
+describe("parseConciergeHeaders", () => {
+    const createMockResponse = (headers: Record<string, string>): Response => {
+        return {
+            headers: new Headers(headers),
+        } as Response;
+    };
+
+    it("parses valid concierge headers", () => {
+        const response = createMockResponse({
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Temperature": "0.7",
+            "X-Concierge-Reasoning": encodeURIComponent("Standard coding task."),
+        });
+
+        const result = parseConciergeHeaders(response);
+
+        expect(result).not.toBeNull();
+        expect(result?.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result?.temperature).toBe(0.7);
+        expect(result?.reasoning).toBe("Standard coding task.");
+    });
+
+    it("returns null when headers are missing", () => {
+        const response = createMockResponse({
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+        });
+
+        expect(parseConciergeHeaders(response)).toBeNull();
+    });
+
+    it("decodes URI-encoded reasoning", () => {
+        const response = createMockResponse({
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Temperature": "0.5",
+            "X-Concierge-Reasoning": encodeURIComponent(
+                "Complex task with special chars: 100% done!"
+            ),
+        });
+
+        const result = parseConciergeHeaders(response);
+
+        expect(result?.reasoning).toBe("Complex task with special chars: 100% done!");
+    });
+
+    it("defaults NaN temperature to 0.5", () => {
+        const response = createMockResponse({
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Temperature": "invalid",
+            "X-Concierge-Reasoning": encodeURIComponent("Test"),
+        });
+
+        const result = parseConciergeHeaders(response);
+
+        expect(result?.temperature).toBe(0.5);
     });
 });

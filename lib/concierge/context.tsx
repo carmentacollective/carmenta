@@ -26,6 +26,10 @@ interface ConciergeProviderProps {
 /**
  * Provides concierge data to the component tree.
  * Updated by ConnectRuntimeProvider when response headers arrive.
+ *
+ * Note: This is global state for the current response only.
+ * Historical messages don't retain their original concierge data.
+ * For V2, consider associating concierge data with message IDs.
  */
 export function ConciergeProvider({ children }: ConciergeProviderProps) {
     const [concierge, setConciergeState] = useState<ConciergeResult | null>(null);
@@ -64,9 +68,10 @@ export function parseConciergeHeaders(response: Response): ConciergeResult | nul
         return null;
     }
 
+    const parsedTemp = parseFloat(temperature);
     return {
         modelId,
-        temperature: parseFloat(temperature),
+        temperature: Number.isNaN(parsedTemp) ? 0.5 : parsedTemp,
         reasoning: decodeURIComponent(reasoning),
     };
 }
