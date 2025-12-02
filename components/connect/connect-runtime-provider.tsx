@@ -32,6 +32,31 @@ export function useChatError() {
 }
 
 /**
+ * Parses an error message that might be raw JSON and extracts the user-friendly message.
+ * The API returns JSON like {"error": "friendly message", "errorType": "Error"}
+ * but the AI SDK may pass this as the raw error message.
+ */
+function parseErrorMessage(message: string | undefined): string {
+    if (!message) return "We couldn't complete that request.";
+
+    // Check if it looks like JSON
+    const trimmed = message.trim();
+    if (trimmed.startsWith("{")) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            // If it has an 'error' field, use that (our API format)
+            if (typeof parsed.error === "string") {
+                return parsed.error;
+            }
+        } catch {
+            // Not valid JSON, return as-is
+        }
+    }
+
+    return message;
+}
+
+/**
  * Error banner displayed when a runtime error occurs.
  * Provides a way to dismiss the error and retry.
  */
@@ -44,6 +69,9 @@ function RuntimeErrorBanner({
     onDismiss: () => void;
     onRetry: () => void;
 }) {
+    // Parse the error message in case it's raw JSON from the API
+    const displayMessage = parseErrorMessage(error.message);
+
     return (
         <div
             className={cn(
@@ -58,9 +86,7 @@ function RuntimeErrorBanner({
             <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
             <div className="flex-1">
                 <p className="text-sm font-medium text-red-800">Something went wrong</p>
-                <p className="text-xs text-red-600/80">
-                    {error.message || "We couldn't complete that request."}
-                </p>
+                <p className="text-xs text-red-600/80">{displayMessage}</p>
             </div>
             <div className="flex items-center gap-1">
                 <button

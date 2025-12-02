@@ -290,9 +290,10 @@ beforeEach(async () => {
     `);
 
     // Create messages table
+    // Note: id is TEXT (not UUID) to accept nanoid-style IDs from AI SDK
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS messages (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id TEXT PRIMARY KEY,
             conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
             role message_role NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -308,10 +309,11 @@ beforeEach(async () => {
     `);
 
     // Create message_parts table
+    // Note: message_id is TEXT to match messages.id
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS message_parts (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
             type part_type NOT NULL,
             "order" INTEGER NOT NULL DEFAULT 0,
             text_content TEXT,
