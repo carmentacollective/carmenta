@@ -18,7 +18,7 @@ env:
   NODE_VERSION: "24"
 
 jobs:
-  # Job 1: Code Quality Checks (Lint, Format, Type Check)
+  # Code Quality Checks (Lint, Format, Type Check)
   quality:
     name: 🔍 Code Quality
     runs-on: ubuntu-latest
@@ -49,7 +49,7 @@ jobs:
       - name: 🔧 TypeScript type checking
         run: pnpm type-check
 
-  # Job 2: Database Migration Tests
+  # Database Migration Tests
   # Tests migrations against real PostgreSQL to catch ordering/constraint issues
   migrations:
     name: 🗄️ Migrations
@@ -97,8 +97,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d carmenta_test -c "\dt" | grep -E "users|conversations|messages|message_parts"
           echo "✅ All expected tables exist"
 
-  # Job 3: Unit Tests
-  # Note: ubuntu-latest-m has 4 cores for faster parallel test execution
+  # Unit Tests (ubuntu-latest-m has 4 cores for faster parallel execution)
   test:
     name: 🧪 Tests
     runs-on: ubuntu-latest-m
@@ -125,7 +124,7 @@ jobs:
         env:
           NODE_ENV: test
 
-  # Job 4: Build Verification
+  # Build Verification
   build:
     name: 🏗️ Production Build
     runs-on: ubuntu-latest-m
