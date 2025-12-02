@@ -210,7 +210,13 @@ export const conversations = pgTable(
 export const messages = pgTable(
     "messages",
     {
-        id: uuid("id").primaryKey().defaultRandom(),
+        /**
+         * Message ID - accepts any string format
+         *
+         * The AI SDK (Vercel) generates nanoid-style IDs (e.g., "QgGEVohpfiFhLcW3")
+         * not UUIDs. Using text type for compatibility.
+         */
+        id: text("id").primaryKey(),
 
         conversationId: uuid("conversation_id")
             .references(() => conversations.id, { onDelete: "cascade" })
@@ -283,7 +289,8 @@ export const messageParts = pgTable(
     {
         id: uuid("id").primaryKey().defaultRandom(),
 
-        messageId: uuid("message_id")
+        /** References message.id which is a text field (nanoid-style IDs) */
+        messageId: text("message_id")
             .references(() => messages.id, { onDelete: "cascade" })
             .notNull(),
 
