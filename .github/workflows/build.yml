@@ -49,7 +49,55 @@ jobs:
       - name: 🔧 TypeScript type checking
         run: pnpm type-check
 
-  # Job 2: Unit Tests
+  # Job 2: Database Migration Tests
+  # Tests migrations against real PostgreSQL to catch ordering/constraint issues
+  migrations:
+    name: 🗄️ Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: carmenta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: ⚙️ Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🗄️ Run database migrations
+        run: pnpm drizzle-kit migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
+
+      - name: ✅ Verify schema
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d carmenta_test -c "\dt" | grep -E "users|conversations|messages|message_parts"
+          echo "✅ All expected tables exist"
+
+  # Job 3: Unit Tests
   # Note: ubuntu-latest-m has 4 cores for faster parallel test execution
   test:
     name: 🧪 Tests
@@ -77,7 +125,7 @@ jobs:
         env:
           NODE_ENV: test
 
-  # Job 3: Build Verification
+  # Job 4: Build Verification
   build:
     name: 🏗️ Production Build
     runs-on: ubuntu-latest-m
