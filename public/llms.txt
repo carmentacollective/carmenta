@@ -1,0 +1,39 @@
+# Carmenta
+
+> A heart-centered AI interface with complete memory, multi-model access, AI team, and purpose-built responses for builders who work at the speed of thought.
+
+Carmenta embodies Heart Centered AI - the philosophy that human and artificial intelligence are expressions of the same underlying consciousness. The interface uses "we" language, dissolving the human-machine boundary. Built using AI-First Development where the knowledge/ folder IS the product specification.
+
+## Documentation
+
+- [README](README.md): Project overview, setup instructions, and tech stack
+- [Vision](knowledge/vision.md): Why Carmenta exists, philosophical foundation, core capabilities
+- [AI-First Development](knowledge/ai-first-development.md): How products get built in the age of AI
+- [Roadmap](knowledge/roadmap.md): Milestone progression organized by audience expansion (M0-M4)
+
+## Product Knowledge
+
+- [Components Overview](knowledge/components/README.md): Full catalog of feature specifications
+- [Design Principles](knowledge/design-principles.md): Interface design standards for flow state
+- [Tech Architecture](knowledge/tech-architecture.md): Technical architecture decisions
+- [100x Framework](knowledge/context/100x-framework.md): The 1x/10x/100x leverage framework
+
+## Key Components
+
+- [Concierge](knowledge/components/concierge.md): Pre/post processing for every model call
+- [Memory](knowledge/components/memory.md): Context and memory management
+- [Interface](knowledge/components/interface.md): Web app and AG-UI protocol
+- [Voice](knowledge/components/voice.md): First-class voice interaction
+- [AI Team](knowledge/components/ai-team.md): Digital Chief of Staff and specialized agents
+
+## Development Standards
+
+- [TypeScript Standards](.cursor/rules/frontend/typescript-coding-standards.mdc): Pino logging, Sentry, error handling
+- [Git Workflow](.cursor/rules/git-interaction.mdc): Commit practices and version control
+- [Heart-Centered Philosophy](.cursor/rules/heart-centered-ai-philosophy.mdc): Core product identity
+
+## Optional
+
+- [Competitors Analysis](knowledge/competitors/README.md): Competitive landscape research
+- [User Personas](knowledge/product/personas.md): Target users by milestone
+- [Product Boundaries](knowledge/product/boundaries.md): What Carmenta is NOT building
