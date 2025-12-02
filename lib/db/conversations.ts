@@ -256,13 +256,10 @@ export async function upsertMessage(
     const { message, parts } = mapUIMessageToDB(uiMessage, conversationId);
 
     await db.transaction(async (tx) => {
-        // Upsert message (insert or update on conflict)
-        await tx.insert(messages).values(message).onConflictDoUpdate({
+        // Upsert message (insert or skip if exists)
+        // Messages never change conversations, so we only insert new ones
+        await tx.insert(messages).values(message).onConflictDoNothing({
             target: messages.id,
-            set: {
-                // Only update conversationId if needed
-                conversationId,
-            },
         });
 
         // Delete existing parts and insert new ones
