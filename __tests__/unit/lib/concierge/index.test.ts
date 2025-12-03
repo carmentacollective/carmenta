@@ -8,9 +8,10 @@ import {
     extractMessageText,
     formatQueryForConcierge,
     detectAttachments,
+    buildReasoningConfig,
 } from "@/lib/concierge";
 import { parseConciergeHeaders } from "@/lib/concierge/context";
-import { ALLOWED_MODELS, MAX_REASONING_LENGTH } from "@/lib/concierge/types";
+import { ALLOWED_MODELS, MAX_EXPLANATION_LENGTH } from "@/lib/concierge/types";
 
 describe("Concierge", () => {
     describe("buildConciergePrompt", () => {
@@ -27,6 +28,7 @@ describe("Concierge", () => {
 
             expect(prompt).toContain("modelId");
             expect(prompt).toContain("temperature");
+            expect(prompt).toContain("explanation");
             expect(prompt).toContain("reasoning");
             expect(prompt).toContain("JSON");
         });
@@ -36,25 +38,44 @@ describe("Concierge", () => {
         it("has sensible default values", () => {
             expect(CONCIERGE_DEFAULTS.modelId).toBe("anthropic/claude-sonnet-4.5");
             expect(CONCIERGE_DEFAULTS.temperature).toBe(0.5);
-            expect(CONCIERGE_DEFAULTS.reasoning).toBeTruthy();
+            expect(CONCIERGE_DEFAULTS.explanation).toBeTruthy();
+            expect(CONCIERGE_DEFAULTS.reasoning).toEqual({ enabled: false });
         });
     });
 
     describe("parseConciergeResponse", () => {
-        it("parses valid JSON response", () => {
+        it("parses valid JSON response with reasoning enabled", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-opus-4.5",
                 temperature: 0.7,
-                reasoning: "Complex analysis requires deeper reasoning.",
+                explanation: "Complex analysis requires deeper reasoning.",
+                reasoning: { enabled: true, effort: "high" },
             });
 
             const result = parseConciergeResponse(response);
 
             expect(result.modelId).toBe("anthropic/claude-opus-4.5");
             expect(result.temperature).toBe(0.7);
-            expect(result.reasoning).toBe(
+            expect(result.explanation).toBe(
                 "Complex analysis requires deeper reasoning."
             );
+            expect(result.reasoning.enabled).toBe(true);
+            expect(result.reasoning.effort).toBe("high");
+            expect(result.reasoning.maxTokens).toBe(16000); // high effort = 16K tokens
+        });
+
+        it("parses response with reasoning disabled", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-haiku-4.5",
+                temperature: 0.3,
+                explanation: "Quick fact lookup.",
+                reasoning: { enabled: false },
+            });
+
+            const result = parseConciergeResponse(response);
+
+            expect(result.reasoning.enabled).toBe(false);
+            expect(result.reasoning.effort).toBeUndefined();
         });
 
         it("handles JSON wrapped in markdown code blocks", () => {
@@ -62,7 +83,8 @@ describe("Concierge", () => {
 {
     "modelId": "anthropic/claude-sonnet-4.5",
     "temperature": 0.5,
-    "reasoning": "Standard coding task."
+    "explanation": "Standard coding task.",
+    "reasoning": { "enabled": true, "effort": "medium" }
 }
 \`\`\``;
 
@@ -70,11 +92,12 @@ describe("Concierge", () => {
 
             expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
             expect(result.temperature).toBe(0.5);
+            expect(result.reasoning.enabled).toBe(true);
         });
 
         it("handles JSON wrapped in plain code blocks", () => {
             const response = `\`\`\`
-{"modelId": "google/gemini-3-pro-preview", "temperature": 0.6, "reasoning": "Video content."}
+{"modelId": "google/gemini-3-pro-preview", "temperature": 0.6, "explanation": "Video content.", "reasoning": {"enabled": false}}
 \`\`\``;
 
             const result = parseConciergeResponse(response);
@@ -86,7 +109,8 @@ describe("Concierge", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 1.5,
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
@@ -97,7 +121,8 @@ describe("Concierge", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: -0.5,
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
@@ -108,7 +133,8 @@ describe("Concierge", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: "0.8",
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
@@ -120,7 +146,8 @@ describe("Concierge", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: "not-a-number",
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
@@ -130,7 +157,8 @@ describe("Concierge", () => {
         it("throws on missing modelId", () => {
             const response = JSON.stringify({
                 temperature: 0.5,
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             expect(() => parseConciergeResponse(response)).toThrow(
@@ -141,7 +169,8 @@ describe("Concierge", () => {
         it("throws on missing temperature", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             expect(() => parseConciergeResponse(response)).toThrow(
@@ -149,10 +178,11 @@ describe("Concierge", () => {
             );
         });
 
-        it("throws on missing reasoning", () => {
+        it("throws on missing explanation", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
+                reasoning: { enabled: false },
             });
 
             expect(() => parseConciergeResponse(response)).toThrow(
@@ -170,7 +200,8 @@ describe("Concierge", () => {
             const response = JSON.stringify({
                 modelId: "unknown-provider/expensive-model",
                 temperature: 0.5,
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
@@ -182,7 +213,8 @@ describe("Concierge", () => {
                 const response = JSON.stringify({
                     modelId,
                     temperature: 0.5,
-                    reasoning: "Test",
+                    explanation: "Test",
+                    reasoning: { enabled: false },
                 });
 
                 const result = parseConciergeResponse(response);
@@ -190,28 +222,83 @@ describe("Concierge", () => {
             }
         });
 
-        it("truncates reasoning to MAX_REASONING_LENGTH", () => {
-            const longReasoning = "x".repeat(MAX_REASONING_LENGTH + 100);
+        it("truncates explanation to MAX_EXPLANATION_LENGTH", () => {
+            const longExplanation = "x".repeat(MAX_EXPLANATION_LENGTH + 100);
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
-                reasoning: longReasoning,
+                explanation: longExplanation,
+                reasoning: { enabled: false },
             });
 
             const result = parseConciergeResponse(response);
-            expect(result.reasoning.length).toBe(MAX_REASONING_LENGTH);
+            expect(result.explanation.length).toBe(MAX_EXPLANATION_LENGTH);
         });
 
         it("handles null temperature by throwing", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: null,
-                reasoning: "Test",
+                explanation: "Test",
+                reasoning: { enabled: false },
             });
 
             expect(() => parseConciergeResponse(response)).toThrow(
                 "Missing required fields"
             );
+        });
+    });
+
+    describe("buildReasoningConfig", () => {
+        it("returns disabled config when enabled is false", () => {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+                enabled: false,
+            });
+            expect(result).toEqual({ enabled: false });
+        });
+
+        it("converts effort to maxTokens for Anthropic models", () => {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+                enabled: true,
+                effort: "high",
+            });
+            expect(result.enabled).toBe(true);
+            expect(result.effort).toBe("high");
+            expect(result.maxTokens).toBe(16000);
+        });
+
+        it("uses medium effort tokens by default", () => {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+                enabled: true,
+                effort: "medium",
+            });
+            expect(result.maxTokens).toBe(8000);
+        });
+
+        it("uses low effort tokens", () => {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+                enabled: true,
+                effort: "low",
+            });
+            expect(result.maxTokens).toBe(4000);
+        });
+
+        it("keeps effort-only for Grok models", () => {
+            const result = buildReasoningConfig("x-ai/grok-4-fast", {
+                enabled: true,
+                effort: "high",
+            });
+            expect(result.enabled).toBe(true);
+            expect(result.effort).toBe("high");
+            expect(result.maxTokens).toBeUndefined();
+        });
+
+        it("defaults to medium effort for invalid effort value", () => {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+                enabled: true,
+                effort: "invalid" as any,
+            });
+            expect(result.effort).toBe("medium");
         });
     });
 
@@ -503,11 +590,14 @@ describe("parseConciergeHeaders", () => {
         } as Response;
     };
 
-    it("parses valid concierge headers", () => {
+    it("parses valid concierge headers with reasoning config", () => {
         const response = createMockResponse({
             "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
             "X-Concierge-Temperature": "0.7",
-            "X-Concierge-Reasoning": encodeURIComponent("Standard coding task."),
+            "X-Concierge-Explanation": encodeURIComponent("Standard coding task."),
+            "X-Concierge-Reasoning": encodeURIComponent(
+                JSON.stringify({ enabled: true, effort: "medium", maxTokens: 8000 })
+            ),
         });
 
         const result = parseConciergeHeaders(response);
@@ -515,7 +605,10 @@ describe("parseConciergeHeaders", () => {
         expect(result).not.toBeNull();
         expect(result?.modelId).toBe("anthropic/claude-sonnet-4.5");
         expect(result?.temperature).toBe(0.7);
-        expect(result?.reasoning).toBe("Standard coding task.");
+        expect(result?.explanation).toBe("Standard coding task.");
+        expect(result?.reasoning.enabled).toBe(true);
+        expect(result?.reasoning.effort).toBe("medium");
+        expect(result?.reasoning.maxTokens).toBe(8000);
     });
 
     it("returns null when headers are missing", () => {
@@ -526,29 +619,47 @@ describe("parseConciergeHeaders", () => {
         expect(parseConciergeHeaders(response)).toBeNull();
     });
 
-    it("decodes URI-encoded reasoning", () => {
+    it("decodes URI-encoded explanation", () => {
         const response = createMockResponse({
             "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
             "X-Concierge-Temperature": "0.5",
-            "X-Concierge-Reasoning": encodeURIComponent(
+            "X-Concierge-Explanation": encodeURIComponent(
                 "Complex task with special chars: 100% done!"
+            ),
+            "X-Concierge-Reasoning": encodeURIComponent(
+                JSON.stringify({ enabled: false })
             ),
         });
 
         const result = parseConciergeHeaders(response);
 
-        expect(result?.reasoning).toBe("Complex task with special chars: 100% done!");
+        expect(result?.explanation).toBe("Complex task with special chars: 100% done!");
     });
 
     it("defaults NaN temperature to 0.5", () => {
         const response = createMockResponse({
             "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
             "X-Concierge-Temperature": "invalid",
-            "X-Concierge-Reasoning": encodeURIComponent("Test"),
+            "X-Concierge-Explanation": encodeURIComponent("Test"),
+            "X-Concierge-Reasoning": encodeURIComponent(
+                JSON.stringify({ enabled: false })
+            ),
         });
 
         const result = parseConciergeHeaders(response);
 
         expect(result?.temperature).toBe(0.5);
+    });
+
+    it("handles missing reasoning header gracefully", () => {
+        const response = createMockResponse({
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Temperature": "0.5",
+            "X-Concierge-Explanation": encodeURIComponent("Test"),
+        });
+
+        const result = parseConciergeHeaders(response);
+
+        expect(result?.reasoning.enabled).toBe(false);
     });
 });

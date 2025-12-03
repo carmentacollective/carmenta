@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { Sparkles, ChevronDown } from "lucide-react";
+import { Sparkles, ChevronDown, Brain } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import type { ReasoningConfig } from "@/lib/concierge/types";
 
 /**
  * Maps model IDs to friendly display names.
@@ -35,13 +36,32 @@ function getTemperatureLabel(temperature: number): string {
     return "expressive";
 }
 
+/**
+ * Formats reasoning config for display.
+ */
+function getReasoningLabel(reasoning: ReasoningConfig): string | null {
+    if (!reasoning.enabled) return null;
+
+    const effort = reasoning.effort ?? "medium";
+    const labels: Record<string, string> = {
+        high: "deep thinking",
+        medium: "thoughtful",
+        low: "light thinking",
+        none: "quick",
+    };
+
+    return labels[effort] ?? "thinking";
+}
+
 interface ConciergeDisplayProps {
     /** The selected model ID */
     modelId: string;
     /** Temperature setting (0.0 to 1.0) */
     temperature: number;
     /** One sentence explaining the choice */
-    reasoning: string;
+    explanation: string;
+    /** Reasoning configuration */
+    reasoning?: ReasoningConfig;
     /** Additional CSS classes */
     className?: string;
 }
@@ -49,12 +69,13 @@ interface ConciergeDisplayProps {
 /**
  * Displays the Concierge's model selection decision.
  *
- * Collapsed (default): Model name + reasoning sentence
- * Expanded: Full details including model ID and temperature
+ * Collapsed (default): Model name + explanation sentence
+ * Expanded: Full details including model ID, temperature, and reasoning config
  */
 export const ConciergeDisplay = memo(function ConciergeDisplay({
     modelId,
     temperature,
+    explanation,
     reasoning,
     className,
 }: ConciergeDisplayProps) {
@@ -62,6 +83,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
 
     const displayName = getModelDisplayName(modelId);
     const tempLabel = getTemperatureLabel(temperature);
+    const reasoningLabel = reasoning ? getReasoningLabel(reasoning) : null;
 
     return (
         <Collapsible
@@ -75,8 +97,17 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                     <span className="font-medium text-foreground/70">
                         {displayName}
                     </span>
+                    {reasoningLabel && (
+                        <>
+                            <span className="mx-1.5 text-foreground/30">·</span>
+                            <span className="inline-flex items-center gap-1 text-foreground/50">
+                                <Brain className="h-3 w-3" />
+                                {reasoningLabel}
+                            </span>
+                        </>
+                    )}
                     <span className="mx-1.5 text-foreground/30">·</span>
-                    <span className="text-foreground/50">{reasoning}</span>
+                    <span className="text-foreground/50">{explanation}</span>
                 </div>
                 <ChevronDown
                     className={cn(
@@ -105,6 +136,26 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                             <span className="text-foreground/40">({tempLabel})</span>
                         </span>
                     </div>
+                    {reasoning && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-foreground/40">Reasoning</span>
+                            <span className="text-foreground/60">
+                                {reasoning.enabled ? (
+                                    <>
+                                        {reasoning.effort ?? "medium"}
+                                        {reasoning.maxTokens && (
+                                            <span className="ml-1 text-foreground/40">
+                                                ({reasoning.maxTokens.toLocaleString()}{" "}
+                                                tokens)
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-foreground/40">disabled</span>
+                                )}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </CollapsibleContent>
         </Collapsible>

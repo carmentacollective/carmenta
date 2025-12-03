@@ -119,6 +119,7 @@ function AssistantMessageContent() {
                 <ConciergeDisplay
                     modelId={concierge.modelId}
                     temperature={concierge.temperature}
+                    explanation={concierge.explanation}
                     reasoning={concierge.reasoning}
                     className="mb-2"
                 />

@@ -113,6 +113,28 @@ Format preference: "Give me a table" or "just explain it."
 
 Most users never touch these.
 
+## Implementation Details
+
+The Concierge returns a ConciergeResult with four fields:
+
+- modelId: OpenRouter model identifier (e.g., "anthropic/claude-sonnet-4.5")
+- temperature: Float 0.0-1.0 for response variability
+- explanation: One warm sentence explaining the routing decision (shown to users)
+- reasoning: Configuration object with { enabled, effort, maxTokens }
+
+Reasoning configuration:
+
+For Anthropic models: Uses maxTokens (1K-32K) to set budget directly.
+
+For effort-based models (Grok): Uses effort level (high/medium/low/none).
+
+OpenRouter accepts either effort OR max_tokens, not both. The Concierge determines
+effort level and we convert to max_tokens for Anthropic models using these defaults:
+
+- high: 16,000 tokens
+- medium: 8,000 tokens
+- low: 4,000 tokens
+
 ## Integration Points
 
 Knowledge Base: Pre-query searches for context. Memory: Preferences inform all
