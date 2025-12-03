@@ -11,7 +11,7 @@
  * Uses Variant 5 detailed list for models, Variant 2 stepped sliders for controls.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles, X, RotateCcw } from "lucide-react";
 
 import {
@@ -110,6 +110,20 @@ export function ModelSelectorPopover({
     conciergeModel,
 }: ModelSelectorPopoverProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
+    // Handle Escape key to close popover
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setIsOpen(false);
+                triggerRef.current?.focus();
+            }
+        };
+        document.addEventListener("keydown", handleEscape);
+        return () => document.removeEventListener("keydown", handleEscape);
+    }, [isOpen]);
 
     // Determine which icon to show
     const manualModel = overrides.modelId
@@ -125,23 +139,32 @@ export function ModelSelectorPopover({
         overrides.temperature !== null ||
         overrides.reasoning !== null;
 
-    // Find current index for creativity slider
+    // Find current index for creativity slider (fallback to Balanced if not found)
     const creativityIndex =
         overrides.temperature !== null
-            ? TEMPERATURE_PRESETS.findIndex((p) => p.value === overrides.temperature)
+            ? Math.max(
+                  0,
+                  TEMPERATURE_PRESETS.findIndex(
+                      (p) => p.value === overrides.temperature
+                  )
+              )
             : 2; // Default to "Balanced" (index 2)
 
-    // Find current index for reasoning slider
+    // Find current index for reasoning slider (fallback to None if not found)
     const reasoningPresets = REASONING_PRESETS.filter((p) => p.id !== "auto");
     const reasoningIndex =
         overrides.reasoning !== null
-            ? reasoningPresets.findIndex((p) => p.id === overrides.reasoning)
+            ? Math.max(
+                  0,
+                  reasoningPresets.findIndex((p) => p.id === overrides.reasoning)
+              )
             : 0; // Default to "None" (index 0)
 
     return (
         <div className={cn("relative", className)}>
             {/* Composer Button - sits next to send */}
             <button
+                ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={cn(
