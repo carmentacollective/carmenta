@@ -71,20 +71,16 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: ⚙️ Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: 📚 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: 🗄️ Run database migrations
-        run: pnpm drizzle-kit migrate
+        run: bun run db:migrate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
 
