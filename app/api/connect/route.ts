@@ -46,9 +46,7 @@ const requestSchema = z.object({
     /** User override for temperature (0-1) - bypasses concierge selection */
     temperatureOverride: z.number().min(0).max(1).optional(),
     /** User override for reasoning level - bypasses concierge selection */
-    reasoningOverride: z
-        .enum(["none", "quick", "balanced", "thorough", "maximum"])
-        .optional(),
+    reasoningOverride: z.enum(["none", "low", "medium", "high"]).optional(),
 });
 
 /**
@@ -300,7 +298,7 @@ export async function POST(req: Request) {
             conversationId?: string;
             modelOverride?: string;
             temperatureOverride?: number;
-            reasoningOverride?: "none" | "quick" | "balanced" | "thorough" | "maximum";
+            reasoningOverride?: "none" | "low" | "medium" | "high";
         };
 
         // ========================================================================
@@ -348,16 +346,15 @@ export async function POST(req: Request) {
 
         // Map reasoning override to concierge format
         // Type matches the Zod enum from requestSchema.reasoningOverride
-        type ReasoningLevel = "none" | "quick" | "balanced" | "thorough" | "maximum";
+        type ReasoningLevel = "none" | "low" | "medium" | "high";
         const reasoningPresetMap: Record<
             ReasoningLevel,
             { enabled: boolean; maxTokens?: number; effort?: OpenRouterEffort }
         > = {
             none: { enabled: false },
-            quick: { enabled: true, maxTokens: 2048, effort: "low" },
-            balanced: { enabled: true, maxTokens: 8000, effort: "medium" },
-            thorough: { enabled: true, maxTokens: 16000, effort: "high" },
-            maximum: { enabled: true, maxTokens: 32000, effort: "high" },
+            low: { enabled: true, maxTokens: 2048, effort: "low" },
+            medium: { enabled: true, maxTokens: 8000, effort: "medium" },
+            high: { enabled: true, maxTokens: 16000, effort: "high" },
         };
 
         const concierge = {

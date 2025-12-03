@@ -255,14 +255,13 @@ export const PROVIDERS: Record<
 
 /**
  * Temperature (Creativity) presets for UI.
- * 5 levels from precise to expressive.
+ * 4 levels from precise to expressive.
  */
 export const TEMPERATURE_PRESETS = [
     { value: 0.1, label: "Precise", description: "Factual, deterministic" },
-    { value: 0.3, label: "Focused", description: "Clear and direct" },
-    { value: 0.5, label: "Balanced", description: "Default, versatile" },
+    { value: 0.4, label: "Balanced", description: "Default, versatile" },
     { value: 0.7, label: "Creative", description: "More variety" },
-    { value: 0.9, label: "Expressive", description: "Maximum creativity" },
+    { value: 1.0, label: "Expressive", description: "Maximum creativity" },
 ] as const;
 
 /**
@@ -270,7 +269,7 @@ export const TEMPERATURE_PRESETS = [
  *
  * Reasoning is an OPTIONAL enhancement - the default is "none" (no extra reasoning).
  * Higher levels give the AI more time to deliberate, trading speed for quality.
- * 5 levels from none to maximum.
+ * 4 levels matching OpenRouter's effort parameter: none, low, medium, high.
  */
 export const REASONING_PRESETS = [
     {
@@ -283,36 +282,29 @@ export const REASONING_PRESETS = [
     {
         id: "none",
         label: "None",
-        description: "Fast, direct response - no extra reasoning",
+        description: "Fast, direct response",
         tokenBudget: 0,
         effort: "none",
     },
     {
-        id: "quick",
+        id: "low",
         label: "Quick",
         description: "A moment's thought",
         tokenBudget: 2048,
         effort: "low",
     },
     {
-        id: "balanced",
+        id: "medium",
         label: "Balanced",
-        description: "Considered response, moderate wait",
+        description: "Considered response",
         tokenBudget: 8000,
         effort: "medium",
     },
     {
-        id: "thorough",
-        label: "Thorough",
-        description: "Deep analysis, takes time",
+        id: "high",
+        label: "Deep",
+        description: "Full deliberation, slower",
         tokenBudget: 16000,
-        effort: "high",
-    },
-    {
-        id: "maximum",
-        label: "Maximum",
-        description: "Full deliberation, slowest",
-        tokenBudget: 32000,
         effort: "high",
     },
 ] as const;

@@ -252,7 +252,7 @@ describe("ModelSelectorPopover", () => {
                     overrides={{
                         modelId: "anthropic/claude-opus-4.5",
                         temperature: 0.7,
-                        reasoning: "thorough",
+                        reasoning: "high",
                     }}
                 />
             );
@@ -322,7 +322,7 @@ describe("ModelSelectorPopover", () => {
                     overrides={{
                         modelId: "anthropic/claude-opus-4.5",
                         temperature: 0.7,
-                        reasoning: "thorough",
+                        reasoning: "high",
                     }}
                 />
             );

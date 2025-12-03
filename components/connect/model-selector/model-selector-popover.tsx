@@ -57,22 +57,20 @@ const TAG_EMOJI: Record<ModelTag, string> = {
     Tools: "🔧",
 };
 
-/** Creativity presets with emojis for the slider */
+/** Creativity presets with emojis for the slider (4 levels) */
 const CREATIVITY_SLIDER_PRESETS = TEMPERATURE_PRESETS.map((p) => ({
     label: p.label,
     emoji:
         p.label === "Precise"
             ? "🎯"
-            : p.label === "Focused"
-              ? "🔍"
-              : p.label === "Balanced"
-                ? "⚖️"
-                : p.label === "Creative"
-                  ? "🎨"
-                  : "✨",
+            : p.label === "Balanced"
+              ? "⚖️"
+              : p.label === "Creative"
+                ? "🎨"
+                : "✨", // Expressive
 }));
 
-/** Reasoning presets with emojis for the slider (excluding "auto") */
+/** Reasoning presets with emojis for the slider (4 levels, excluding "auto") */
 const REASONING_SLIDER_PRESETS = REASONING_PRESETS.filter((p) => p.id !== "auto").map(
     (p) => ({
         label: p.label,
@@ -83,9 +81,7 @@ const REASONING_SLIDER_PRESETS = REASONING_PRESETS.filter((p) => p.id !== "auto"
                   ? "🏃"
                   : p.label === "Balanced"
                     ? "⚖️"
-                    : p.label === "Thorough"
-                      ? "🔬"
-                      : "🧠",
+                    : "🧠", // Deep
     })
 );
 
@@ -148,7 +144,7 @@ export function ModelSelectorPopover({
                       (p) => p.value === overrides.temperature
                   )
               )
-            : 2; // Default to "Balanced" (index 2)
+            : 1; // Default to "Balanced" (index 1 in 4-level array)
 
     // Find current index for reasoning slider (fallback to None if not found)
     const reasoningPresets = REASONING_PRESETS.filter((p) => p.id !== "auto");
