@@ -235,7 +235,7 @@ export function ModelSelectorPopover({
                                     </button>
                                 )}
                             </div>
-                            <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-lg border border-foreground/10 bg-gradient-to-b from-foreground/[0.02] to-foreground/[0.04] p-1.5">
+                            <div className="max-h-44 space-y-1.5 overflow-y-scroll rounded-lg border border-foreground/10 bg-gradient-to-b from-foreground/[0.02] to-foreground/[0.04] p-1.5">
                                 {/* Auto option */}
                                 <button
                                     onClick={() =>

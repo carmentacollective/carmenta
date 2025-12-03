@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, forwardRef, useState } from "react";
+import { ComponentProps, forwardRef } from "react";
 import { SendHorizontal, ArrowDown, AlertCircle } from "lucide-react";
 import {
     ComposerPrimitive,
@@ -13,15 +13,13 @@ import { makeMarkdownText } from "@assistant-ui/react-ui";
 
 import { cn } from "@/lib/utils";
 import { useConcierge } from "@/lib/concierge/context";
+import { getModel } from "@/lib/models";
 import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
-import {
-    ModelSelectorPopover,
-    DEFAULT_OVERRIDES,
-    type ModelOverrides,
-} from "./model-selector";
+import { useModelOverrides } from "./connect-runtime-provider";
+import { ModelSelectorPopover } from "./model-selector";
 
 /**
  * HoloThread - A custom Thread built with headless primitives.
@@ -177,7 +175,11 @@ function AssistantMessage() {
  * Composer - The glassmorphism input dock with model selector.
  */
 function Composer() {
-    const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
+    const { overrides, setOverrides } = useModelOverrides();
+    const { concierge } = useConcierge();
+
+    // Get the model config for concierge-selected model (for icon display)
+    const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     return (
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
@@ -195,7 +197,11 @@ function Composer() {
                     </ComposerButton>
                 </ComposerPrimitive.Send>
 
-                <ModelSelectorPopover overrides={overrides} onChange={setOverrides} />
+                <ModelSelectorPopover
+                    overrides={overrides}
+                    onChange={setOverrides}
+                    conciergeModel={conciergeModel}
+                />
             </div>
         </ComposerPrimitive.Root>
     );

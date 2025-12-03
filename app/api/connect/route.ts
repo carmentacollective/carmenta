@@ -41,6 +41,14 @@ export const maxDuration = 120;
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
     conversationId: z.string().uuid().optional(),
+    /** User override for model - bypasses concierge selection */
+    modelOverride: z.string().optional(),
+    /** User override for temperature (0-1) - bypasses concierge selection */
+    temperatureOverride: z.number().min(0).max(1).optional(),
+    /** User override for reasoning level - bypasses concierge selection */
+    reasoningOverride: z
+        .enum(["none", "quick", "balanced", "thorough", "maximum"])
+        .optional(),
 });
 
 /**
@@ -281,11 +289,19 @@ export async function POST(req: Request) {
             );
         }
 
-        const { messages, conversationId: existingConversationId } =
-            parseResult.data as {
-                messages: UIMessage[];
-                conversationId?: string;
-            };
+        const {
+            messages,
+            conversationId: existingConversationId,
+            modelOverride,
+            temperatureOverride,
+            reasoningOverride,
+        } = parseResult.data as {
+            messages: UIMessage[];
+            conversationId?: string;
+            modelOverride?: string;
+            temperatureOverride?: number;
+            reasoningOverride?: "none" | "quick" | "balanced" | "thorough" | "maximum";
+        };
 
         // ========================================================================
         // PERSISTENCE: Get or create user and conversation
@@ -324,7 +340,34 @@ export async function POST(req: Request) {
         await updateStreamingStatus(conversationId, "streaming");
 
         // Run the Concierge to select model, temperature, and reasoning config
-        const concierge = await runConcierge(messages);
+        const conciergeResult = await runConcierge(messages);
+
+        // Apply user overrides if provided (these take precedence over concierge)
+        const hasOverrides =
+            modelOverride || temperatureOverride !== undefined || reasoningOverride;
+
+        // Map reasoning override to concierge format
+        const reasoningPresetMap: Record<
+            string,
+            { enabled: boolean; maxTokens?: number; effort?: OpenRouterEffort }
+        > = {
+            none: { enabled: false },
+            quick: { enabled: true, maxTokens: 2048, effort: "low" },
+            balanced: { enabled: true, maxTokens: 8000, effort: "medium" },
+            thorough: { enabled: true, maxTokens: 16000, effort: "high" },
+            maximum: { enabled: true, maxTokens: 32000, effort: "high" },
+        };
+
+        const concierge = {
+            modelId: modelOverride ?? conciergeResult.modelId,
+            temperature: temperatureOverride ?? conciergeResult.temperature,
+            explanation: hasOverrides
+                ? `User override applied${modelOverride ? ` (model: ${modelOverride})` : ""}${temperatureOverride !== undefined ? ` (temp: ${temperatureOverride})` : ""}${reasoningOverride ? ` (reasoning: ${reasoningOverride})` : ""}`
+                : conciergeResult.explanation,
+            reasoning: reasoningOverride
+                ? reasoningPresetMap[reasoningOverride]
+                : conciergeResult.reasoning,
+        };
 
         logger.info(
             {
