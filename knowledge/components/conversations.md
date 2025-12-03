@@ -71,6 +71,47 @@ Reliable storage and access:
 
 ---
 
+## Connection Switching UI
+
+**Decision (Dec 2024)**: We call these "connections" in the UI, consistent with the
+Connect page philosophy.
+
+### Architecture Pattern
+
+The `ConnectionContext` (React Context) manages shared state between the header and
+chat:
+
+```
+ConnectionProvider
+├── ConnectHeader (uses context to display title, handle switching)
+└── Chat (uses context to know which connection is active)
+```
+
+Context provides:
+
+- `activeConnection`: Currently selected connection
+- `setActiveConnection(id)`: Switch to a different connection
+- `createNewConnection()`: Create a new connection
+- `runningCount`: Number of connections with active AI processing
+
+This pattern enables the header and chat to share state without prop drilling, and
+provides hooks for future database integration.
+
+### UI Pattern
+
+Search-first with recents (no folders/tags):
+
+- Dropdown appears below header dock
+- Shows 6 most recent connections by default
+- Search/autocomplete filters as you type
+- Matches on title, preview text
+- Running connections show spinner indicator
+- Pinned connections show pin icon
+
+See [interface.md](./interface.md#header-design-dock-pattern) for header design details.
+
+---
+
 ## Open Questions
 
 ### Architecture
@@ -86,8 +127,9 @@ Reliable storage and access:
 
 ### Product Decisions
 
-- **Organization paradigm**: Flat list with search? Folders? Tags? Workspaces? What
-  matches how we think?
+- ~~**Organization paradigm**: Flat list with search? Folders? Tags? Workspaces?~~
+  **Resolved**: Search-first with recents. No folders or tags - the dropdown shows
+  recent connections with search/autocomplete. Simple and fast.
 - **Auto-organization**: How much does Carmenta organize automatically? Title
   generation? Category inference? Date-based grouping?
 - **Conversation boundaries**: What makes something a new conversation vs. continuing an
