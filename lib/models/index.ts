@@ -23,6 +23,18 @@ export interface ReasoningConfig {
     };
 }
 
+/** Speed vs quality positioning */
+export type SpeedQuality = "fast" | "balanced" | "deep" | "specialized";
+
+/** Capability tags shown in UI */
+export type ModelTag =
+    | "Deep thinking"
+    | "Long docs"
+    | "Live web"
+    | "Video"
+    | "Audio"
+    | "Tools";
+
 export interface ModelConfig {
     /** OpenRouter model ID (e.g., "anthropic/claude-sonnet-4.5") */
     id: string;
@@ -30,13 +42,17 @@ export interface ModelConfig {
     displayName: string;
     /** Provider identifier */
     provider: ModelProvider;
-    /** Short description of the model's strengths */
+    /** User-facing description - what this model is good at */
     description: string;
+    /** Speed vs quality positioning for UI */
+    speedQuality: SpeedQuality;
+    /** Capability tags shown in UI */
+    tags: readonly ModelTag[];
     /** Maximum context window in tokens */
     contextWindow: number;
-    /** Cost per million input tokens (USD) */
+    /** Cost per million input tokens (USD) - internal use */
     inputCostPerMillion: number;
-    /** Cost per million output tokens (USD) */
+    /** Cost per million output tokens (USD) - internal use */
     outputCostPerMillion: number;
     /** Supported attachment types */
     attachments: readonly string[];
@@ -44,8 +60,6 @@ export interface ModelConfig {
     supportsTools: boolean;
     /** Reasoning/thinking capability */
     reasoning: ReasoningConfig;
-    /** Primary use cases - when to choose this model */
-    bestFor: readonly string[];
     /** Suggested temperature range [min, max] */
     temperatureRange: readonly [number, number];
 }
@@ -59,7 +73,9 @@ export const MODELS: readonly ModelConfig[] = [
         id: "anthropic/claude-sonnet-4.5",
         displayName: "Claude Sonnet",
         provider: "anthropic",
-        description: "Our balanced default. Fast, capable, cost-effective.",
+        description: "Everyday powerhouse for code, writing, and analysis.",
+        speedQuality: "balanced",
+        tags: ["Deep thinking", "Long docs"],
         contextWindow: 1_000_000,
         inputCostPerMillion: 3,
         outputCostPerMillion: 15,
@@ -69,20 +85,15 @@ export const MODELS: readonly ModelConfig[] = [
             type: "token-budget",
             options: { minTokens: 1024, maxTokens: 32000 },
         },
-        bestFor: [
-            "Most requests",
-            "Code writing and debugging",
-            "Conversation",
-            "Creative writing",
-            "Document processing",
-        ],
         temperatureRange: [0.3, 0.9],
     },
     {
         id: "anthropic/claude-opus-4.5",
         displayName: "Claude Opus",
         provider: "anthropic",
-        description: "Frontier capability. For when depth matters.",
+        description: "Maximum depth for complex research and nuanced problems.",
+        speedQuality: "deep",
+        tags: ["Deep thinking"],
         contextWindow: 200_000,
         inputCostPerMillion: 5,
         outputCostPerMillion: 25,
@@ -92,19 +103,15 @@ export const MODELS: readonly ModelConfig[] = [
             type: "token-budget",
             options: { minTokens: 1024, maxTokens: 32000 },
         },
-        bestFor: [
-            "Complex multi-step reasoning",
-            "Deep research synthesis",
-            "Difficult math/logic",
-            "Nuanced emotional support",
-        ],
         temperatureRange: [0.4, 0.7],
     },
     {
         id: "anthropic/claude-haiku-4.5",
         displayName: "Claude Haiku",
         provider: "anthropic",
-        description: "Fast and capable. For quick interactions.",
+        description: "Snappy responses for simple questions and quick tasks.",
+        speedQuality: "fast",
+        tags: ["Deep thinking"],
         contextWindow: 200_000,
         inputCostPerMillion: 1,
         outputCostPerMillion: 5,
@@ -114,33 +121,30 @@ export const MODELS: readonly ModelConfig[] = [
             type: "token-budget",
             options: { minTokens: 1024, maxTokens: 32000 },
         },
-        bestFor: [
-            "Simple factual questions",
-            "Quick lookups",
-            "Short clarifications",
-            "High-volume scenarios",
-        ],
         temperatureRange: [0.2, 0.5],
     },
     {
         id: "google/gemini-3-pro-preview",
         displayName: "Gemini Pro",
         provider: "google",
-        description: "Full multimodal including video and audio.",
+        description: "Understands video, audio, and images natively.",
+        speedQuality: "balanced",
+        tags: ["Video", "Audio", "Long docs"],
         contextWindow: 1_000_000,
         inputCostPerMillion: 2,
         outputCostPerMillion: 12,
         attachments: ["image", "pdf", "audio", "video"],
         supportsTools: true,
         reasoning: { type: "none" },
-        bestFor: ["Audio processing", "Video analysis", "Mixed media understanding"],
         temperatureRange: [0.5, 0.7],
     },
     {
         id: "x-ai/grok-4-fast",
         displayName: "Grok",
         provider: "x-ai",
-        description: "Massive 2M token context window.",
+        description: "Reads entire codebases and very long documents at once.",
+        speedQuality: "fast",
+        tags: ["Deep thinking", "Long docs"],
         contextWindow: 2_000_000,
         inputCostPerMillion: 0.2,
         outputCostPerMillion: 0.5,
@@ -150,49 +154,36 @@ export const MODELS: readonly ModelConfig[] = [
             type: "effort-based",
             options: { efforts: ["high", "medium", "low", "minimal", "none"] },
         },
-        bestFor: [
-            "Very long documents",
-            "Context exceeds 200K tokens",
-            "Budget-conscious scenarios",
-        ],
         temperatureRange: [0.4, 0.6],
     },
     {
         id: "openai/gpt-5.1",
         displayName: "ChatGPT",
         provider: "openai",
-        description: "OpenAI's latest flagship model with strong reasoning.",
+        description: "Reliable all-rounder for conversation and creative work.",
+        speedQuality: "balanced",
+        tags: [],
         contextWindow: 200_000,
         inputCostPerMillion: 5,
         outputCostPerMillion: 15,
         attachments: ["image", "pdf"],
         supportsTools: true,
         reasoning: { type: "none" },
-        bestFor: [
-            "General conversation",
-            "Code generation",
-            "Creative writing",
-            "Analysis",
-        ],
         temperatureRange: [0.3, 0.9],
     },
     {
         id: "perplexity/sonar-pro",
         displayName: "Perplexity",
         provider: "perplexity",
-        description: "Search-augmented AI with real-time web access.",
+        description: "Searches the web in real-time with cited sources.",
+        speedQuality: "specialized",
+        tags: ["Live web"],
         contextWindow: 128_000,
         inputCostPerMillion: 3,
         outputCostPerMillion: 15,
         attachments: ["image"],
         supportsTools: false,
         reasoning: { type: "none" },
-        bestFor: [
-            "Real-time information",
-            "Research with citations",
-            "Current events",
-            "Fact-checking",
-        ],
         temperatureRange: [0.2, 0.5],
     },
 ] as const;

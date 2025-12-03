@@ -4,11 +4,11 @@
  * ModelSelectorPopover - Advanced model selection UI
  *
  * A composer button that opens a popover for:
- * - Model selection (Auto or specific models)
+ * - Model selection (Auto or specific models) - scrollable list with details
  * - Creativity control (5 levels: Precise -> Expressive)
  * - Reasoning control (5 levels: None -> Maximum)
  *
- * Uses Variant 2 stepped slider design with segment-based tracks.
+ * Uses Variant 5 detailed list for models, Variant 2 stepped sliders for controls.
  */
 
 import { useState } from "react";
@@ -16,15 +16,46 @@ import { Sparkles, X, RotateCcw } from "lucide-react";
 
 import {
     MODELS,
+    PROVIDERS,
     TEMPERATURE_PRESETS,
     REASONING_PRESETS,
     type ModelConfig,
+    type SpeedQuality,
+    type ModelTag,
 } from "@/lib/models";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { cn } from "@/lib/utils";
 import { SteppedSlider } from "./stepped-slider";
 
 import type { ModelOverrides, ReasoningOverride } from "./types";
+
+/** Extract version from model ID (e.g., "anthropic/claude-sonnet-4.5" -> "4.5") */
+function getVersion(model: ModelConfig): string {
+    const parts = model.id.split("/")[1]?.split("-") ?? [];
+    const version = parts.find((p) => /^\d/.test(p));
+    return version ?? "";
+}
+
+/** Speed/quality display config */
+const SPEED_QUALITY_DISPLAY: Record<
+    SpeedQuality,
+    { label: string; emoji: string; color: string }
+> = {
+    fast: { label: "Fast", emoji: "⚡", color: "text-amber-500" },
+    balanced: { label: "Balanced", emoji: "⚖️", color: "text-blue-500" },
+    deep: { label: "Deep", emoji: "🔬", color: "text-purple-500" },
+    specialized: { label: "Specialized", emoji: "✨", color: "text-green-500" },
+};
+
+/** Tag emoji mapping */
+const TAG_EMOJI: Record<ModelTag, string> = {
+    "Deep thinking": "🧠",
+    "Long docs": "📚",
+    "Live web": "🌐",
+    Video: "🎬",
+    Audio: "🎵",
+    Tools: "🔧",
+};
 
 /** Creativity presets with emojis for the slider */
 const CREATIVITY_SLIDER_PRESETS = TEMPERATURE_PRESETS.map((p) => ({
@@ -141,28 +172,28 @@ export function ModelSelectorPopover({
                 )}
             </button>
 
-            {/* Popover */}
+            {/* Popover - uses fixed positioning to escape stacking context */}
             {isOpen && (
                 <>
                     <div
-                        className="fixed inset-0 z-40"
+                        className="fixed inset-0 z-[100]"
                         onClick={() => setIsOpen(false)}
                     />
 
                     <div
                         className={cn(
-                            "absolute bottom-12 right-0 z-50 w-80",
-                            "max-h-[calc(100vh-8rem)] overflow-y-auto",
-                            "rounded-2xl bg-white/95 backdrop-blur-xl",
-                            "shadow-2xl ring-1 ring-black/5",
+                            "fixed bottom-24 right-4 z-[101] w-80",
+                            "max-h-[calc(100vh-8rem)]",
+                            "rounded-2xl bg-white backdrop-blur-xl",
+                            "shadow-2xl ring-1 ring-black/10",
                             "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2",
-                            "p-3"
+                            "flex flex-col overflow-hidden"
                         )}
                     >
-                        {/* Model Selection - horizontal scroll for scalability */}
-                        <div className="mb-4">
+                        {/* Model Selection - scrollable list with details */}
+                        <div className="bg-white p-3 pb-2">
                             <div className="mb-2 flex items-center justify-between">
-                                <label className="text-xs font-medium text-foreground/60">
+                                <label className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
                                     Model
                                 </label>
                                 {hasOverrides && (
@@ -181,113 +212,170 @@ export function ModelSelectorPopover({
                                     </button>
                                 )}
                             </div>
-                            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                            <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-lg border border-foreground/10 bg-gradient-to-b from-foreground/[0.02] to-foreground/[0.04] p-1.5">
                                 {/* Auto option */}
                                 <button
                                     onClick={() =>
                                         onChange({ ...overrides, modelId: null })
                                     }
                                     className={cn(
-                                        "flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 transition-all",
+                                        "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
                                         overrides.modelId === null
-                                            ? "bg-primary/10 ring-1 ring-primary/30"
-                                            : "bg-foreground/5 hover:bg-foreground/10"
+                                            ? "bg-white shadow-sm ring-1 ring-primary/20"
+                                            : "hover:bg-white/50"
                                     )}
                                 >
-                                    <Sparkles
-                                        className={cn(
-                                            "h-4 w-4",
-                                            overrides.modelId === null
-                                                ? "text-primary"
-                                                : "text-foreground/40"
-                                        )}
-                                    />
-                                    <span className="text-[9px] font-medium">Auto</span>
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles
+                                            className={cn(
+                                                "h-4 w-4",
+                                                overrides.modelId === null
+                                                    ? "text-primary"
+                                                    : "text-foreground/40"
+                                            )}
+                                        />
+                                        <span className="text-sm font-medium">
+                                            Auto
+                                        </span>
+                                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                                            Recommended
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-foreground/50">
+                                        Carmenta analyzes your request and picks the
+                                        best model
+                                    </p>
                                 </button>
 
-                                {/* Model options - show short names */}
-                                {MODELS.map((model) => (
-                                    <button
-                                        key={model.id}
-                                        onClick={() =>
-                                            onChange({
-                                                ...overrides,
-                                                modelId: model.id,
-                                            })
-                                        }
-                                        className={cn(
-                                            "flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 transition-all",
-                                            overrides.modelId === model.id
-                                                ? "bg-primary/10 ring-1 ring-primary/30"
-                                                : "bg-foreground/5 hover:bg-foreground/10"
-                                        )}
-                                        title={model.description}
-                                    >
-                                        <ProviderIcon
-                                            provider={model.provider}
-                                            className="h-4 w-4"
-                                        />
-                                        <span className="text-[9px] font-medium">
-                                            {model.displayName.split(" ").pop()}
-                                        </span>
-                                    </button>
-                                ))}
+                                {/* Model options - detailed cards */}
+                                {MODELS.map((model) => {
+                                    const version = getVersion(model);
+                                    const speedQuality =
+                                        SPEED_QUALITY_DISPLAY[model.speedQuality];
+
+                                    return (
+                                        <button
+                                            key={model.id}
+                                            onClick={() =>
+                                                onChange({
+                                                    ...overrides,
+                                                    modelId: model.id,
+                                                })
+                                            }
+                                            className={cn(
+                                                "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
+                                                overrides.modelId === model.id
+                                                    ? "bg-white shadow-sm ring-1 ring-primary/20"
+                                                    : "hover:bg-white/50"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <ProviderIcon
+                                                    provider={model.provider}
+                                                    className="h-4 w-4"
+                                                />
+                                                <span className="text-sm font-medium">
+                                                    {
+                                                        PROVIDERS[model.provider]
+                                                            .displayName
+                                                    }
+                                                </span>
+                                                <span className="text-sm text-foreground/60">
+                                                    {model.displayName.split(" ").pop()}
+                                                </span>
+                                                {version && (
+                                                    <span className="text-xs text-foreground/30">
+                                                        {version}
+                                                    </span>
+                                                )}
+                                                <span
+                                                    className={cn(
+                                                        "ml-auto text-xs",
+                                                        speedQuality.color
+                                                    )}
+                                                >
+                                                    {speedQuality.emoji}{" "}
+                                                    {speedQuality.label}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-foreground/50">
+                                                {model.description}
+                                            </p>
+                                            {model.tags.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {model.tags.map((tag) => (
+                                                        <span
+                                                            key={tag}
+                                                            className="rounded-full bg-foreground/5 px-1.5 py-0.5 text-[10px] text-foreground/60"
+                                                        >
+                                                            {TAG_EMOJI[tag]} {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Creativity Slider - position mode (no fill between) */}
-                        <div className="mb-5">
-                            <SteppedSlider
-                                label="Creativity"
-                                value={creativityIndex >= 0 ? creativityIndex : 2}
-                                onChange={(index) =>
-                                    onChange({
-                                        ...overrides,
-                                        temperature: TEMPERATURE_PRESETS[index].value,
-                                    })
-                                }
-                                presets={CREATIVITY_SLIDER_PRESETS}
-                                theme="primary"
-                                disabled={disabled}
-                                progressMode={false}
-                            />
-                        </div>
+                        {/* Response Tuning Section - visually distinct */}
+                        <div className="border-t-2 border-foreground/10 bg-gradient-to-b from-slate-50/80 to-slate-100/60">
+                            {/* Creativity Slider */}
+                            <div className="px-3 pb-2 pt-3">
+                                <SteppedSlider
+                                    label="Creativity"
+                                    value={creativityIndex >= 0 ? creativityIndex : 2}
+                                    onChange={(index) =>
+                                        onChange({
+                                            ...overrides,
+                                            temperature:
+                                                TEMPERATURE_PRESETS[index].value,
+                                        })
+                                    }
+                                    presets={CREATIVITY_SLIDER_PRESETS}
+                                    theme="primary"
+                                    disabled={disabled}
+                                    progressMode={false}
+                                />
+                            </div>
 
-                        {/* Reasoning Slider - progress mode (fills/builds) */}
-                        <div className="mb-4">
-                            <SteppedSlider
-                                label="Reasoning"
-                                value={reasoningIndex >= 0 ? reasoningIndex : 0}
-                                onChange={(index) =>
-                                    onChange({
-                                        ...overrides,
-                                        reasoning: reasoningPresets[index]
-                                            .id as ReasoningOverride,
-                                    })
-                                }
-                                presets={REASONING_SLIDER_PRESETS}
-                                theme="cyan"
-                                disabled={disabled}
-                                progressMode={true}
-                            />
-                        </div>
+                            {/* Reasoning Slider */}
+                            <div className="px-3 py-2">
+                                <SteppedSlider
+                                    label="Reasoning"
+                                    value={reasoningIndex >= 0 ? reasoningIndex : 0}
+                                    onChange={(index) =>
+                                        onChange({
+                                            ...overrides,
+                                            reasoning: reasoningPresets[index]
+                                                .id as ReasoningOverride,
+                                        })
+                                    }
+                                    presets={REASONING_SLIDER_PRESETS}
+                                    theme="cyan"
+                                    disabled={disabled}
+                                    progressMode={true}
+                                />
+                            </div>
 
-                        {/* AI Concierge button */}
-                        <div className="flex justify-center border-t border-foreground/5 pt-2">
-                            <button
-                                onClick={() => {
-                                    onChange({
-                                        modelId: null,
-                                        temperature: null,
-                                        reasoning: null,
-                                    });
-                                    setIsOpen(false);
-                                }}
-                                className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-foreground/5 hover:text-foreground/70"
-                            >
-                                <Sparkles className="h-3 w-3" />
-                                Carmenta AI Concierge decides automagically
-                            </button>
+                            {/* AI Concierge button */}
+                            <div className="flex justify-center border-t border-foreground/10 p-2">
+                                <button
+                                    onClick={() => {
+                                        onChange({
+                                            modelId: null,
+                                            temperature: null,
+                                            reasoning: null,
+                                        });
+                                        setIsOpen(false);
+                                    }}
+                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-white hover:text-foreground/70"
+                                >
+                                    <Sparkles className="h-3 w-3" />
+                                    Carmenta AI Concierge decides automagically
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </>
