@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, forwardRef } from "react";
+import { ComponentProps, forwardRef, useState } from "react";
 import { SendHorizontal, ArrowDown, AlertCircle } from "lucide-react";
 import {
     ComposerPrimitive,
@@ -17,6 +17,11 @@ import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
+import {
+    ModelSelectorPopover,
+    DEFAULT_OVERRIDES,
+    type ModelOverrides,
+} from "./model-selector";
 
 /**
  * HoloThread - A custom Thread built with headless primitives.
@@ -169,9 +174,11 @@ function AssistantMessage() {
 }
 
 /**
- * Composer - The glassmorphism input dock.
+ * Composer - The glassmorphism input dock with model selector.
  */
 function Composer() {
+    const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
+
     return (
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
             <ComposerPrimitive.Input
@@ -181,11 +188,15 @@ function Composer() {
                 autoFocus
             />
 
-            <ComposerPrimitive.Send asChild>
-                <ComposerButton variant="send" aria-label="Send message">
-                    <SendHorizontal className="h-5 w-5" />
-                </ComposerButton>
-            </ComposerPrimitive.Send>
+            <div className="flex items-center gap-2 pr-1">
+                <ComposerPrimitive.Send asChild>
+                    <ComposerButton variant="send" aria-label="Send message">
+                        <SendHorizontal className="h-5 w-5" />
+                    </ComposerButton>
+                </ComposerPrimitive.Send>
+
+                <ModelSelectorPopover overrides={overrides} onChange={setOverrides} />
+            </div>
         </ComposerPrimitive.Root>
     );
 }
