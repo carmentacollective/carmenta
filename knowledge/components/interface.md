@@ -97,6 +97,32 @@ Conversation history, switching between threads, accessing settings, managing th
 team. The shell that holds everything together. State synchronized via `StateSnapshot`
 and `StateDelta` events.
 
+### Header Design: Dock Pattern
+
+**Decision (Dec 2024)**: The header uses a "dock" style that mirrors the chat input at
+the bottom. Same glass styling, same rounded corners, same shadow treatment. This
+creates visual symmetry between top and bottom of the interface.
+
+UX philosophy: Harmony through reflection. The header and footer speak the same visual
+language. Users feel the coherence without thinking about it.
+
+The centered dock contains:
+
+- **Search button** (left): Opens connection switcher dropdown
+- **Connection title** (center): Also opens connection switcher when clicked
+- **New connection button** (right): Gradient button matching the send button style
+
+The connection switcher dropdown appears positioned directly below the dock (not as a
+centered modal), showing recent connections with search/autocomplete. Close via X button
+or clicking outside.
+
+This pattern was chosen over alternatives explored:
+
+- Sidebar navigation (too heavy, breaks flow)
+- Tab bar (doesn't scale, clutters interface)
+- Modal switcher (disconnected from nav context)
+- Hover dropdowns (too fiddly, accessibility concerns)
+
 ### Platform Progression
 
 Web application first - the foundation. Then:
@@ -171,7 +197,10 @@ expose internal error details to users.
 
 - **Response type taxonomy**: What categories of generative UI do we support? Cards,
   reports, interactive forms... what's MVP vs. later?
-- **Conversation organization**: Flat list of chats? Folders? Tags? Workspaces?
+- ~~**Conversation organization**: Flat list of chats? Folders? Tags? Workspaces?~~
+  **Resolved**: Search-first with recents. No folders or tags - just a dropdown showing
+  recent connections with search/autocomplete to find older ones. Simple, fast, matches
+  how we actually find things.
 - **Customization**: Can we customize the interface? Themes? Density? Or keep it simple
   and opinionated?
 
