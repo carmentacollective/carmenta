@@ -347,8 +347,10 @@ export async function POST(req: Request) {
             modelOverride || temperatureOverride !== undefined || reasoningOverride;
 
         // Map reasoning override to concierge format
+        // Type matches the Zod enum from requestSchema.reasoningOverride
+        type ReasoningLevel = "none" | "quick" | "balanced" | "thorough" | "maximum";
         const reasoningPresetMap: Record<
-            string,
+            ReasoningLevel,
             { enabled: boolean; maxTokens?: number; effort?: OpenRouterEffort }
         > = {
             none: { enabled: false },
