@@ -2,5 +2,6 @@
 #
 # Configuration:
 # - Build Command: ./scripts/render-deploy.sh
-# - Start Command: node .next/standalone/server.js
-# - Node Version: 24 (auto-detected from .nvmrc)
+# - Start Command: bun .next/standalone/server.js
+# - Runtime: Bun (auto-detected from bun.lock and .bun-version)
+# - BUN_VERSION env var: 1.3.3
