@@ -1,9 +1,9 @@
 /**
  * Concierge - Intelligent model routing for Carmenta.
  *
- * The Concierge analyzes incoming requests and selects the optimal model
- * and temperature settings. It uses Haiku 4.5 for fast inference, reading
- * the model rubric to make informed decisions.
+ * The Concierge analyzes incoming requests and selects the optimal model,
+ * temperature, and reasoning configuration. It uses Haiku 4.5 for fast
+ * inference, reading the model rubric to make informed decisions.
  */
 
 import { readFile } from "fs/promises";
@@ -21,12 +21,16 @@ import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
     CONCIERGE_MODEL,
-    MAX_REASONING_LENGTH,
+    MAX_EXPLANATION_LENGTH,
+    REASONING_TOKEN_BUDGETS,
+    TOKEN_BUDGET_MODELS,
     type ConciergeResult,
+    type ReasoningConfig,
+    type ReasoningEffort,
 } from "./types";
 
-export type { ConciergeResult } from "./types";
-export { CONCIERGE_DEFAULTS } from "./types";
+export type { ConciergeResult, ReasoningConfig, ReasoningEffort } from "./types";
+export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
 
 // Re-export internal functions for testing
 export {
@@ -34,6 +38,7 @@ export {
     extractMessageText,
     formatQueryForConcierge,
     detectAttachments,
+    buildReasoningConfig,
 };
 
 /** Cache for the rubric content to avoid repeated file reads */
@@ -140,8 +145,58 @@ function formatQueryForConcierge(messages: UIMessage[]): FormattedQuery {
 }
 
 /**
+ * Builds the final reasoning config based on model type.
+ *
+ * Token-budget models (Anthropic) get maxTokens.
+ * Effort-based models (Grok) get effort level.
+ */
+function buildReasoningConfig(
+    modelId: string,
+    rawConfig: { enabled?: boolean; effort?: string }
+): ReasoningConfig {
+    // If not enabled or missing, return disabled config
+    if (!rawConfig.enabled) {
+        return { enabled: false };
+    }
+
+    // Parse and validate effort level
+    const effort = parseEffortLevel(rawConfig.effort);
+
+    // For token-budget models, convert effort to maxTokens
+    if (TOKEN_BUDGET_MODELS.includes(modelId as (typeof TOKEN_BUDGET_MODELS)[number])) {
+        return {
+            enabled: true,
+            effort,
+            maxTokens: REASONING_TOKEN_BUDGETS[effort],
+        };
+    }
+
+    // For effort-based models, just use effort
+    return {
+        enabled: true,
+        effort,
+    };
+}
+
+/**
+ * Parses and validates effort level from LLM response.
+ */
+function parseEffortLevel(effort: unknown): ReasoningEffort {
+    if (
+        effort === "high" ||
+        effort === "medium" ||
+        effort === "low" ||
+        effort === "none"
+    ) {
+        return effort;
+    }
+    // Default to medium for invalid values
+    return "medium";
+}
+
+/**
  * Parses the JSON response from the concierge LLM.
- * Validates model against whitelist and limits reasoning length.
+ * Validates model against whitelist and builds reasoning config.
  */
 function parseConciergeResponse(responseText: string): ConciergeResult {
     // Clean up the response - remove markdown code blocks if present
@@ -166,8 +221,8 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
         );
     }
 
-    // Validate required fields - use == null to catch both undefined and null
-    if (!parsed.modelId || parsed.temperature == null || !parsed.reasoning) {
+    // Validate required fields
+    if (!parsed.modelId || parsed.temperature == null || !parsed.explanation) {
         throw new Error("Missing required fields in concierge response");
     }
 
@@ -183,21 +238,29 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
     const rawTemp = Number(parsed.temperature);
     const temperature = Number.isNaN(rawTemp) ? 0.5 : Math.max(0, Math.min(1, rawTemp));
 
-    // Limit reasoning length for security
-    const reasoning = String(parsed.reasoning).slice(0, MAX_REASONING_LENGTH);
+    // Limit explanation length for security
+    const explanation = String(parsed.explanation).slice(0, MAX_EXPLANATION_LENGTH);
+
+    // Parse reasoning config
+    const rawReasoning = (parsed.reasoning ?? {}) as {
+        enabled?: boolean;
+        effort?: string;
+    };
+    const reasoning = buildReasoningConfig(modelId, rawReasoning);
 
     return {
         modelId,
         temperature,
+        explanation,
         reasoning,
     };
 }
 
 /**
- * Runs the Concierge to select the optimal model and temperature.
+ * Runs the Concierge to select the optimal model, temperature, and reasoning config.
  *
  * Uses Haiku 4.5 for fast inference (~200ms). If the concierge fails,
- * returns sensible defaults (Sonnet 4.5 with temperature 0.5).
+ * returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
  */
 export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResult> {
     return Sentry.startSpan(
@@ -251,7 +314,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
-                    maxOutputTokens: 200, // Short responses only
+                    maxOutputTokens: 250, // Slightly more for reasoning config
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",
@@ -263,11 +326,22 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
 
                 span.setAttribute("selected_model", conciergeResult.modelId);
                 span.setAttribute("temperature", conciergeResult.temperature);
+                span.setAttribute(
+                    "reasoning_enabled",
+                    conciergeResult.reasoning.enabled
+                );
+                if (conciergeResult.reasoning.effort) {
+                    span.setAttribute(
+                        "reasoning_effort",
+                        conciergeResult.reasoning.effort
+                    );
+                }
 
                 logger.info(
                     {
                         modelId: conciergeResult.modelId,
                         temperature: conciergeResult.temperature,
+                        explanation: conciergeResult.explanation,
                         reasoning: conciergeResult.reasoning,
                     },
                     "Concierge selection complete"

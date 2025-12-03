@@ -14,21 +14,41 @@ describe("ReasoningDisplay", () => {
     it("renders with streaming state", () => {
         render(<ReasoningDisplay content="Thinking about..." isStreaming />);
 
-        expect(screen.getByText(/Reasoning/)).toBeInTheDocument();
+        // With short content (< 20 chars), shows default streaming message
+        expect(screen.getByText(/Thinking through this/)).toBeInTheDocument();
     });
 
-    it("shows context when streaming with content", () => {
-        render(
+    it("shows extracted summary when streaming with content", () => {
+        const { container } = render(
             <ReasoningDisplay
-                content="The database schema needs careful consideration"
+                content="I need to analyze the database schema carefully to understand the relationships"
                 isStreaming
             />
         );
 
-        // Should extract context from content
-        expect(
-            screen.getByText(/reasoning about the database schema/i)
-        ).toBeInTheDocument();
+        // Should extract and display context from content using pattern matching
+        // The extractReasoningSummary function looks for "I need to..." patterns
+        // Check the status span in the trigger button (not the pre content)
+        const statusSpan = container.querySelector(
+            "button[data-state] > span.max-w-\\[400px\\]"
+        );
+        expect(statusSpan).toHaveTextContent(/analyze the database schema/i);
+    });
+
+    it("shows reasoning_summary tag content when present", () => {
+        const { container } = render(
+            <ReasoningDisplay
+                content="Let me think about this... <reasoning_summary>Evaluating authentication options</reasoning_summary> ...more thinking"
+                isStreaming
+            />
+        );
+
+        // Should prioritize explicit summary tags
+        // Check the status span in the trigger button (not the pre content)
+        const statusSpan = container.querySelector(
+            "button[data-state] > span.max-w-\\[400px\\]"
+        );
+        expect(statusSpan).toHaveTextContent(/Evaluating authentication options/i);
     });
 
     it("auto-closes after streaming ends", async () => {

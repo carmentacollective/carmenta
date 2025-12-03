@@ -8,7 +8,7 @@ import {
     type ReactNode,
 } from "react";
 
-import type { ConciergeResult } from "./types";
+import type { ConciergeResult, ReasoningConfig } from "./types";
 
 interface ConciergeContextValue {
     /** Current concierge result for the active response */
@@ -57,14 +57,36 @@ export function useConcierge(): ConciergeContextValue {
 }
 
 /**
+ * Parses reasoning config from header JSON.
+ */
+function parseReasoningConfig(reasoningHeader: string | null): ReasoningConfig {
+    if (!reasoningHeader) {
+        return { enabled: false };
+    }
+
+    try {
+        const decoded = decodeURIComponent(reasoningHeader);
+        const parsed = JSON.parse(decoded);
+        return {
+            enabled: Boolean(parsed.enabled),
+            effort: parsed.effort,
+            maxTokens: parsed.maxTokens,
+        };
+    } catch {
+        return { enabled: false };
+    }
+}
+
+/**
  * Parses concierge headers from a Response object.
  */
 export function parseConciergeHeaders(response: Response): ConciergeResult | null {
     const modelId = response.headers.get("X-Concierge-Model-Id");
     const temperature = response.headers.get("X-Concierge-Temperature");
-    const reasoning = response.headers.get("X-Concierge-Reasoning");
+    const explanation = response.headers.get("X-Concierge-Explanation");
+    const reasoningHeader = response.headers.get("X-Concierge-Reasoning");
 
-    if (!modelId || !temperature || !reasoning) {
+    if (!modelId || !temperature || !explanation) {
         return null;
     }
 
@@ -72,6 +94,7 @@ export function parseConciergeHeaders(response: Response): ConciergeResult | nul
     return {
         modelId,
         temperature: Number.isNaN(parsedTemp) ? 0.5 : parsedTemp,
-        reasoning: decodeURIComponent(reasoning),
+        explanation: decodeURIComponent(explanation),
+        reasoning: parseReasoningConfig(reasoningHeader),
     };
 }

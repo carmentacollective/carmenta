@@ -77,12 +77,13 @@ describe("runConcierge integration", () => {
         parts: [{ type: "text", text }],
     });
 
-    it("returns parsed model selection from LLM response", async () => {
+    it("returns parsed model selection from LLM response with reasoning config", async () => {
         vi.mocked(generateText).mockResolvedValueOnce({
             text: JSON.stringify({
                 modelId: "anthropic/claude-opus-4.5",
                 temperature: 0.6,
-                reasoning: "Complex analysis needs deeper reasoning.",
+                explanation: "Complex analysis needs deeper reasoning.",
+                reasoning: { enabled: true, effort: "high" },
             }),
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -94,7 +95,10 @@ describe("runConcierge integration", () => {
 
         expect(result.modelId).toBe("anthropic/claude-opus-4.5");
         expect(result.temperature).toBe(0.6);
-        expect(result.reasoning).toBe("Complex analysis needs deeper reasoning.");
+        expect(result.explanation).toBe("Complex analysis needs deeper reasoning.");
+        expect(result.reasoning.enabled).toBe(true);
+        expect(result.reasoning.effort).toBe("high");
+        expect(result.reasoning.maxTokens).toBe(16000); // high = 16K tokens
     });
 
     it("selects Sonnet for typical coding tasks", async () => {
@@ -102,7 +106,8 @@ describe("runConcierge integration", () => {
             text: JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.4,
-                reasoning: "Code review is well-suited for our balanced default.",
+                explanation: "Code review is well-suited for our balanced default.",
+                reasoning: { enabled: true, effort: "medium" },
             }),
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -114,12 +119,13 @@ describe("runConcierge integration", () => {
         expect(result.temperature).toBeLessThanOrEqual(0.5);
     });
 
-    it("selects Haiku for quick questions", async () => {
+    it("selects Haiku for quick questions with reasoning disabled", async () => {
         vi.mocked(generateText).mockResolvedValueOnce({
             text: JSON.stringify({
                 modelId: "anthropic/claude-haiku-4.5",
                 temperature: 0.3,
-                reasoning: "Simple factual lookup needs speed over depth.",
+                explanation: "Simple factual lookup needs speed over depth.",
+                reasoning: { enabled: false },
             }),
             usage: { promptTokens: 50, completionTokens: 30 },
             finishReason: "stop",
@@ -128,6 +134,7 @@ describe("runConcierge integration", () => {
         const result = await runConcierge([createUserMessage("What is TypeScript?")]);
 
         expect(result.modelId).toBe("anthropic/claude-haiku-4.5");
+        expect(result.reasoning.enabled).toBe(false);
     });
 
     it("handles LLM response with markdown code blocks", async () => {
@@ -136,7 +143,8 @@ describe("runConcierge integration", () => {
 {
     "modelId": "anthropic/claude-sonnet-4.5",
     "temperature": 0.5,
-    "reasoning": "Standard task."
+    "explanation": "Standard task.",
+    "reasoning": { "enabled": false }
 }
 \`\`\``,
             usage: { promptTokens: 100, completionTokens: 50 },
@@ -185,7 +193,7 @@ describe("runConcierge integration", () => {
 
     it("returns defaults when LLM response missing required fields", async () => {
         vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({ modelId: "test" }), // missing temperature and reasoning
+            text: JSON.stringify({ modelId: "test" }), // missing temperature, explanation, reasoning
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -200,7 +208,8 @@ describe("runConcierge integration", () => {
             text: JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.7,
-                reasoning: "Creative writing benefits from higher temperature.",
+                explanation: "Creative writing benefits from higher temperature.",
+                reasoning: { enabled: false },
             }),
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -233,7 +242,8 @@ describe("runConcierge integration", () => {
             text: JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
-                reasoning: "Default choice.",
+                explanation: "Default choice.",
+                reasoning: { enabled: false },
             }),
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -244,7 +254,7 @@ describe("runConcierge integration", () => {
         expect(generateText).toHaveBeenCalledWith(
             expect.objectContaining({
                 temperature: 0.1, // Low temperature for consistent routing
-                maxOutputTokens: 200, // Short responses only
+                maxOutputTokens: 250, // Slightly more for reasoning config
             })
         );
     });

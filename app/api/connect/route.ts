@@ -319,7 +319,7 @@ export async function POST(req: Request) {
         // Mark conversation as streaming
         await updateStreamingStatus(conversationId, "streaming");
 
-        // Run the Concierge to select model and temperature
+        // Run the Concierge to select model, temperature, and reasoning config
         const concierge = await runConcierge(messages);
 
         logger.info(
@@ -328,6 +328,7 @@ export async function POST(req: Request) {
                 messageCount: messages.length,
                 model: concierge.modelId,
                 temperature: concierge.temperature,
+                explanation: concierge.explanation,
                 reasoning: concierge.reasoning,
                 toolsAvailable: Object.keys(tools),
             },
@@ -343,12 +344,28 @@ export async function POST(req: Request) {
                 userEmail,
                 model: concierge.modelId,
                 temperature: concierge.temperature,
+                reasoningEnabled: concierge.reasoning.enabled,
                 messageCount: messages?.length ?? 0,
             },
         });
 
         // Capture conversationId for onFinish closure
         const currentConversationId = conversationId;
+
+        // Build provider extra params for reasoning if enabled
+        // OpenRouter accepts: { reasoning: { effort?, max_tokens?, exclude?, enabled? } }
+        // Use effort OR max_tokens, not both
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const providerOptions: Record<string, any> | undefined = concierge.reasoning
+            .enabled
+            ? {
+                  openrouter: {
+                      reasoning: concierge.reasoning.maxTokens
+                          ? { max_tokens: concierge.reasoning.maxTokens }
+                          : { effort: concierge.reasoning.effort ?? "medium" },
+                  },
+              }
+            : undefined;
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
@@ -357,6 +374,8 @@ export async function POST(req: Request) {
             tools,
             temperature: concierge.temperature,
             stopWhen: stepCountIs(5), // Allow up to 5 steps for multi-step tool usage
+            // Pass provider-specific reasoning configuration
+            providerOptions,
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
             experimental_telemetry: {
                 isEnabled: true,
@@ -368,15 +387,22 @@ export async function POST(req: Request) {
                     userEmail,
                     model: concierge.modelId,
                     temperature: concierge.temperature,
+                    reasoningEnabled: concierge.reasoning.enabled,
+                    reasoningEffort: concierge.reasoning.effort ?? "none",
                 },
             },
             // ================================================================
             // PERSISTENCE: Save assistant response when streaming completes
             // ================================================================
-            onFinish: async ({ text, toolCalls, toolResults, response }) => {
+            onFinish: async ({ text, toolCalls, toolResults, response, reasoning }) => {
                 try {
                     // Build UI message parts from the step result
                     const parts: UIMessageLike["parts"] = [];
+
+                    // Add reasoning part if present
+                    if (reasoning) {
+                        parts.push({ type: "reasoning", text: reasoning });
+                    }
 
                     // Add text part if present
                     if (text) {
@@ -429,7 +455,10 @@ export async function POST(req: Request) {
                     await generateTitleFromFirstMessage(currentConversationId!);
 
                     logger.debug(
-                        { conversationId: currentConversationId },
+                        {
+                            conversationId: currentConversationId,
+                            hasReasoning: !!reasoning,
+                        },
                         "Conversation persisted successfully"
                     );
                 } catch (error) {
@@ -463,15 +492,24 @@ export async function POST(req: Request) {
         );
 
         // Get the stream response and add concierge headers
+        // sendReasoning: true streams reasoning tokens to client when available
         const response = result.toUIMessageStreamResponse({
             originalMessages: messages,
+            sendReasoning: concierge.reasoning.enabled,
         });
 
         // Clone headers and add concierge + conversation data
         const headers = new Headers(response.headers);
         headers.set("X-Concierge-Model-Id", concierge.modelId);
         headers.set("X-Concierge-Temperature", String(concierge.temperature));
-        headers.set("X-Concierge-Reasoning", encodeURIComponent(concierge.reasoning));
+        headers.set(
+            "X-Concierge-Explanation",
+            encodeURIComponent(concierge.explanation)
+        );
+        headers.set(
+            "X-Concierge-Reasoning",
+            encodeURIComponent(JSON.stringify(concierge.reasoning))
+        );
         headers.set("X-Conversation-Id", conversationId!);
 
         // Return response with concierge headers

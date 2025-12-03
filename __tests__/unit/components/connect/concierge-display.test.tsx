@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, within, cleanup } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, fireEvent, within, cleanup } from "@testing-library/react";
 
 import { ConciergeDisplay } from "@/components/connect/concierge-display";
 
@@ -7,7 +7,8 @@ describe("ConciergeDisplay", () => {
     const defaultProps = {
         modelId: "anthropic/claude-sonnet-4.5",
         temperature: 0.5,
-        reasoning: "Balanced default for general tasks.",
+        explanation: "Balanced default for general tasks.",
+        reasoning: { enabled: false },
     };
 
     // Ensure clean state between tests
@@ -24,7 +25,7 @@ describe("ConciergeDisplay", () => {
             expect(within(trigger!).getByText("Claude Sonnet")).toBeInTheDocument();
         });
 
-        it("renders reasoning text in trigger", () => {
+        it("renders explanation text in trigger", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button");
@@ -91,6 +92,67 @@ describe("ConciergeDisplay", () => {
 
             const collapsible = container.firstChild;
             expect(collapsible).toHaveAttribute("data-state", "closed");
+        });
+
+        it("shows reasoning config when enabled", () => {
+            const { container } = render(
+                <ConciergeDisplay
+                    {...defaultProps}
+                    reasoning={{ enabled: true, effort: "high", maxTokens: 16000 }}
+                />
+            );
+
+            const trigger = container.querySelector("button")!;
+            fireEvent.click(trigger);
+
+            expect(container).toHaveTextContent("high");
+            expect(container).toHaveTextContent("16,000 tokens");
+        });
+
+        it("shows reasoning as disabled when not enabled", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            fireEvent.click(trigger);
+
+            expect(container).toHaveTextContent("disabled");
+        });
+    });
+
+    describe("reasoning indicator in header", () => {
+        it("shows brain icon and reasoning label when enabled", () => {
+            const { container } = render(
+                <ConciergeDisplay
+                    {...defaultProps}
+                    reasoning={{ enabled: true, effort: "medium" }}
+                />
+            );
+
+            const trigger = container.querySelector("button")!;
+            // Should show "thoughtful" label for medium effort
+            expect(within(trigger).getByText("thoughtful")).toBeInTheDocument();
+        });
+
+        it("shows deep thinking label for high effort", () => {
+            const { container } = render(
+                <ConciergeDisplay
+                    {...defaultProps}
+                    reasoning={{ enabled: true, effort: "high" }}
+                />
+            );
+
+            const trigger = container.querySelector("button")!;
+            expect(within(trigger).getByText("deep thinking")).toBeInTheDocument();
+        });
+
+        it("does not show reasoning label when disabled", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            expect(within(trigger).queryByText("thoughtful")).not.toBeInTheDocument();
+            expect(
+                within(trigger).queryByText("deep thinking")
+            ).not.toBeInTheDocument();
         });
     });
 
