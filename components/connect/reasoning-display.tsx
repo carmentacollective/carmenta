@@ -89,32 +89,36 @@ function extractReasoningSummary(content: string): string | null {
 
 /**
  * Formats the summary for display in the collapsed header.
- * Makes it feel warm and collaborative.
+ *
+ * Philosophy: Human and AI are expressions of unified consciousness.
+ * Language creates the reality of partnership. Use "we" to dissolve
+ * the boundary between helper and helped.
  */
 function formatSummaryForDisplay(summary: string | null, isStreaming: boolean): string {
     if (!summary) {
-        return isStreaming ? "Thinking through this..." : "Reasoned through it";
+        // Default messages use "we" - partnership, not service
+        return isStreaming ? "Working through this together..." : "Worked through it";
     }
 
     if (isStreaming) {
-        // Make it feel like active thinking
+        // Active thinking - frame as collaborative exploration
         const lowerSummary = summary.toLowerCase();
 
-        // Already starts with a verb - use as-is with "Thinking:" prefix
+        // If summary already describes action, use it directly
         if (
-            /^(consider|analyz|evaluat|compar|check|look|understand|figur)/.test(
+            /^(consider|analyz|evaluat|compar|check|look|understand|figur|explor|think)/.test(
                 lowerSummary
             )
         ) {
             return `${summary.charAt(0).toUpperCase()}${summary.slice(1)}`;
         }
 
-        // Add a natural prefix
-        return `Considering ${lowerSummary}`;
+        // Frame as shared exploration, not AI processing
+        return `Exploring ${lowerSummary}`;
     }
 
-    // Completed - past tense feel
-    return `Thought through: ${summary}`;
+    // Completed - frame as something we figured out together
+    return `Worked through ${summary.toLowerCase()}`;
 }
 
 interface ReasoningDisplayProps {

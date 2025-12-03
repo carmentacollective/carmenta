@@ -20,6 +20,7 @@ import { buildConciergePrompt } from "./prompt";
 import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
+    CONCIERGE_MAX_OUTPUT_TOKENS,
     CONCIERGE_MODEL,
     MAX_EXPLANATION_LENGTH,
     REASONING_TOKEN_BUDGETS,
@@ -29,8 +30,17 @@ import {
     type ReasoningEffort,
 } from "./types";
 
-export type { ConciergeResult, ReasoningConfig, ReasoningEffort } from "./types";
-export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
+export type {
+    ConciergeResult,
+    ReasoningConfig,
+    ReasoningEffort,
+    OpenRouterEffort,
+} from "./types";
+export {
+    CONCIERGE_DEFAULTS,
+    REASONING_TOKEN_BUDGETS,
+    CONCIERGE_MAX_OUTPUT_TOKENS,
+} from "./types";
 
 // Re-export internal functions for testing
 export {
@@ -314,7 +324,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
-                    maxOutputTokens: 250, // Slightly more for reasoning config
+                    maxOutputTokens: CONCIERGE_MAX_OUTPUT_TOKENS,
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",

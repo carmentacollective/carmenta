@@ -15,7 +15,8 @@ describe("ReasoningDisplay", () => {
         render(<ReasoningDisplay content="Thinking about..." isStreaming />);
 
         // With short content (< 20 chars), shows default streaming message
-        expect(screen.getByText(/Thinking through this/)).toBeInTheDocument();
+        // Uses "we" language for partnership feeling
+        expect(screen.getByText(/Working through this together/)).toBeInTheDocument();
     });
 
     it("shows extracted summary when streaming with content", () => {

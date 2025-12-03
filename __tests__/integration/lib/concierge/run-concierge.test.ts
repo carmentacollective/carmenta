@@ -59,7 +59,12 @@ vi.mock("@/lib/env", () => ({
 }));
 
 import { generateText } from "ai";
-import { runConcierge, clearRubricCache, CONCIERGE_DEFAULTS } from "@/lib/concierge";
+import {
+    runConcierge,
+    clearRubricCache,
+    CONCIERGE_DEFAULTS,
+    CONCIERGE_MAX_OUTPUT_TOKENS,
+} from "@/lib/concierge";
 
 describe("runConcierge integration", () => {
     beforeEach(() => {
@@ -254,7 +259,7 @@ describe("runConcierge integration", () => {
         expect(generateText).toHaveBeenCalledWith(
             expect.objectContaining({
                 temperature: 0.1, // Low temperature for consistent routing
-                maxOutputTokens: 250, // Slightly more for reasoning config
+                maxOutputTokens: CONCIERGE_MAX_OUTPUT_TOKENS,
             })
         );
     });

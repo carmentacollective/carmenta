@@ -11,7 +11,11 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
-import { runConcierge, CONCIERGE_DEFAULTS } from "@/lib/concierge";
+import {
+    runConcierge,
+    CONCIERGE_DEFAULTS,
+    type OpenRouterEffort,
+} from "@/lib/concierge";
 import {
     getOrCreateUser,
     createConversation,
@@ -352,20 +356,41 @@ export async function POST(req: Request) {
         // Capture conversationId for onFinish closure
         const currentConversationId = conversationId;
 
-        // Build provider extra params for reasoning if enabled
-        // OpenRouter accepts: { reasoning: { effort?, max_tokens?, exclude?, enabled? } }
-        // Use effort OR max_tokens, not both
+        // Build provider options for reasoning when enabled.
+        // OpenRouter reasoning config accepts either:
+        //   - max_tokens: number (for Anthropic token-budget models)
+        //   - effort: 'high' | 'medium' | 'low' (for effort-based models like Grok)
+        // These are mutually exclusive - use only one per request.
+        //
+        // Note: We build this as a plain object and cast to satisfy the AI SDK's strict
+        // SharedV2ProviderOptions type (Record<string, Record<string, JSONValue>>).
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const providerOptions: Record<string, any> | undefined = concierge.reasoning
-            .enabled
-            ? {
-                  openrouter: {
-                      reasoning: concierge.reasoning.maxTokens
-                          ? { max_tokens: concierge.reasoning.maxTokens }
-                          : { effort: concierge.reasoning.effort ?? "medium" },
-                  },
-              }
-            : undefined;
+        let providerOptions: any;
+
+        if (concierge.reasoning.enabled) {
+            // Validate reasoning config - must have either maxTokens or effort when enabled
+            if (!concierge.reasoning.maxTokens && !concierge.reasoning.effort) {
+                logger.warn(
+                    { reasoning: concierge.reasoning },
+                    "Reasoning enabled but no config provided, defaulting to medium effort"
+                );
+            }
+
+            // Determine effort for OpenRouter - "none" means reasoning is disabled (shouldn't happen here)
+            // but we handle it by defaulting to medium
+            const effort: OpenRouterEffort =
+                concierge.reasoning.effort && concierge.reasoning.effort !== "none"
+                    ? concierge.reasoning.effort
+                    : "medium";
+
+            providerOptions = {
+                openrouter: {
+                    reasoning: concierge.reasoning.maxTokens
+                        ? { max_tokens: concierge.reasoning.maxTokens }
+                        : { effort },
+                },
+            };
+        }
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
