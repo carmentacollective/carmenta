@@ -1,28 +1,7 @@
-# Render Blueprint - Infrastructure as Code
-# To use: Dashboard > Blueprints > New Blueprint Instance > Connect this repo
-# Docs: https://docs.render.com/infrastructure-as-code
-
-services:
-  - type: web
-    name: carmenta
-    runtime: node # Bun auto-detected from bun.lock + .bun-version
-    region: oregon
-    plan: standard
-    buildCommand: ./scripts/render-deploy.sh
-    startCommand: bun .next/standalone/server.js
-    healthCheckPath: /
-    envVars:
-      - key: BUN_VERSION
-        value: "1.3.3"
-      - key: NODE_ENV
-        value: production
-      # Secrets should be set in dashboard or synced from existing service
-      - key: DATABASE_URL
-        sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-        sync: false
-    pullRequestPreviewsEnabled: true
-    previews:
-      generation: automatic
+# This file is NOT used - service is configured manually in Render dashboard
+#
+# Configuration:
+# - Build Command: ./scripts/render-deploy.sh
+# - Start Command: bun .next/standalone/server.js
+# - Runtime: Bun (auto-detected from bun.lock and .bun-version)
+# - BUN_VERSION env var: 1.3.3
