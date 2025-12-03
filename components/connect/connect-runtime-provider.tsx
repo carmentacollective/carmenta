@@ -12,6 +12,7 @@ import {
     useConcierge,
     parseConciergeHeaders,
 } from "@/lib/concierge/context";
+import type { ModelOverrides } from "./model-selector/types";
 
 interface ConnectRuntimeProviderProps {
     children: React.ReactNode;
@@ -29,6 +30,24 @@ const ChatErrorContext = createContext<ChatErrorContextType>({
 
 export function useChatError() {
     return useContext(ChatErrorContext);
+}
+
+/**
+ * Context for model overrides - allows Composer to pass overrides to fetch wrapper.
+ */
+interface ModelOverridesContextType {
+    overrides: ModelOverrides;
+    setOverrides: (overrides: ModelOverrides) => void;
+}
+
+const ModelOverridesContext = createContext<ModelOverridesContextType | null>(null);
+
+export function useModelOverrides() {
+    const context = useContext(ModelOverridesContext);
+    if (!context) {
+        throw new Error("useModelOverrides must be used within ConnectRuntimeProvider");
+    }
+    return context;
 }
 
 /**
@@ -109,14 +128,25 @@ function RuntimeErrorBanner({
 }
 
 /**
+ * Default overrides - all null means "let Carmenta choose".
+ */
+const DEFAULT_OVERRIDES: ModelOverrides = {
+    modelId: null,
+    temperature: null,
+    reasoning: null,
+};
+
+/**
  * Inner provider that has access to concierge context and error handling.
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
     const [error, setError] = useState<Error | null>(null);
+    const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
 
     /**
-     * Custom fetch wrapper that captures concierge headers and logs errors.
+     * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
+     * Note: We include `overrides` in deps so the callback updates when overrides change.
      */
     const fetchWithConcierge = useCallback(
         async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -129,8 +159,47 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             // This prevents showing previous message's model selection during loading
             setConcierge(null);
 
+            // Inject model overrides into POST request body
+            let modifiedInit = init;
+            if (method === "POST" && init?.body) {
+                try {
+                    const body = JSON.parse(init.body as string);
+
+                    // Only add overrides that are non-null
+                    if (overrides.modelId) {
+                        body.modelOverride = overrides.modelId;
+                    }
+                    if (overrides.temperature !== null) {
+                        body.temperatureOverride = overrides.temperature;
+                    }
+                    if (overrides.reasoning) {
+                        body.reasoningOverride = overrides.reasoning;
+                    }
+
+                    modifiedInit = {
+                        ...init,
+                        body: JSON.stringify(body),
+                    };
+
+                    logger.debug(
+                        {
+                            modelOverride: overrides.modelId,
+                            temperatureOverride: overrides.temperature,
+                            reasoningOverride: overrides.reasoning,
+                        },
+                        "Applied model overrides to request"
+                    );
+                } catch {
+                    // If body parsing fails, proceed without modification
+                    logger.warn(
+                        {},
+                        "Failed to parse request body for override injection"
+                    );
+                }
+            }
+
             try {
-                const response = await fetch(input, init);
+                const response = await fetch(input, modifiedInit);
 
                 if (!response.ok) {
                     // Try to get error details from response body
@@ -193,7 +262,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 throw error;
             }
         },
-        [setConcierge]
+        [setConcierge, overrides]
     );
 
     // Memoize transport to prevent recreation on every render
@@ -242,19 +311,26 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         [error, clearError]
     );
 
+    const overridesContextValue = useMemo(
+        () => ({ overrides, setOverrides }),
+        [overrides]
+    );
+
     return (
-        <ChatErrorContext.Provider value={errorContextValue}>
-            <AssistantRuntimeProvider runtime={runtime}>
-                {children}
-                {error && (
-                    <RuntimeErrorBanner
-                        error={error}
-                        onDismiss={clearError}
-                        onRetry={handleRetry}
-                    />
-                )}
-            </AssistantRuntimeProvider>
-        </ChatErrorContext.Provider>
+        <ModelOverridesContext.Provider value={overridesContextValue}>
+            <ChatErrorContext.Provider value={errorContextValue}>
+                <AssistantRuntimeProvider runtime={runtime}>
+                    {children}
+                    {error && (
+                        <RuntimeErrorBanner
+                            error={error}
+                            onDismiss={clearError}
+                            onRetry={handleRetry}
+                        />
+                    )}
+                </AssistantRuntimeProvider>
+            </ChatErrorContext.Provider>
+        </ModelOverridesContext.Provider>
     );
 }
 
