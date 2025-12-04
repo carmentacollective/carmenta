@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
-import { ThinkingIndicator } from "@/components/connect/thinking-indicator";
+import { ThinkingIndicator } from "@/components/connection/thinking-indicator";
 
 describe("ThinkingIndicator", () => {
     beforeEach(() => {

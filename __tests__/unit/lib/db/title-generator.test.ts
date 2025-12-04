@@ -152,17 +152,17 @@ describe("generateTitle", () => {
         expect(title).toBe("Help me with something specific");
     });
 
-    it("returns 'New conversation' for empty message", async () => {
+    it("returns 'New connection' for empty message", async () => {
         const title = await generateTitle("");
 
-        expect(title).toBe("New conversation");
+        expect(title).toBe("New connection");
         expect(generateText).not.toHaveBeenCalled();
     });
 
-    it("returns 'New conversation' for whitespace-only message", async () => {
+    it("returns 'New connection' for whitespace-only message", async () => {
         const title = await generateTitle("   \n\t  ");
 
-        expect(title).toBe("New conversation");
+        expect(title).toBe("New connection");
         expect(generateText).not.toHaveBeenCalled();
     });
 

@@ -204,7 +204,7 @@ beforeEach(async () => {
     // Create enum types
     await db.execute(sql`
         DO $$ BEGIN
-            CREATE TYPE conversation_status AS ENUM ('active', 'background', 'archived');
+            CREATE TYPE connection_status AS ENUM ('active', 'background', 'archived');
         EXCEPTION
             WHEN duplicate_object THEN null;
         END $$;
@@ -263,13 +263,13 @@ beforeEach(async () => {
         CREATE INDEX IF NOT EXISTS users_clerk_id_idx ON users(clerk_id)
     `);
 
-    // Create conversations table
+    // Create connections table
     await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS conversations (
+        CREATE TABLE IF NOT EXISTS connections (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             title VARCHAR(500),
-            status conversation_status NOT NULL DEFAULT 'active',
+            status connection_status NOT NULL DEFAULT 'active',
             streaming_status streaming_status NOT NULL DEFAULT 'idle',
             model_id VARCHAR(255),
             last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -278,15 +278,15 @@ beforeEach(async () => {
         )
     `);
 
-    // Create indexes for conversations
+    // Create indexes for connections
     await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS conversations_user_last_activity_idx ON conversations(user_id, last_activity_at)
+        CREATE INDEX IF NOT EXISTS connections_user_last_activity_idx ON connections(user_id, last_activity_at)
     `);
     await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS conversations_user_status_idx ON conversations(user_id, status)
+        CREATE INDEX IF NOT EXISTS connections_user_status_idx ON connections(user_id, status)
     `);
     await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS conversations_streaming_status_idx ON conversations(streaming_status)
+        CREATE INDEX IF NOT EXISTS connections_streaming_status_idx ON connections(streaming_status)
     `);
 
     // Create messages table
@@ -294,7 +294,7 @@ beforeEach(async () => {
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS messages (
             id TEXT PRIMARY KEY,
-            conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+            connection_id UUID NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
             role message_role NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
@@ -302,10 +302,10 @@ beforeEach(async () => {
 
     // Create indexes for messages
     await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS messages_conversation_idx ON messages(conversation_id)
+        CREATE INDEX IF NOT EXISTS messages_connection_idx ON messages(connection_id)
     `);
     await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS messages_conversation_created_idx ON messages(conversation_id, created_at)
+        CREATE INDEX IF NOT EXISTS messages_connection_created_idx ON messages(connection_id, created_at)
     `);
 
     // Create message_parts table

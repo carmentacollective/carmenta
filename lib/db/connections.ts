@@ -1,7 +1,7 @@
 /**
- * Conversation Persistence
+ * Connection Persistence
  *
- * CRUD operations for conversations and messages with atomic transactions.
+ * CRUD operations for connections and messages with atomic transactions.
  * Supports background saving and never-lose-data patterns.
  */
 
@@ -9,16 +9,16 @@ import { eq, desc, and } from "drizzle-orm";
 
 import { db } from "./index";
 import {
-    conversations,
+    connections,
     messages,
     messageParts,
-    type Conversation,
-    type NewConversation,
+    type Connection,
+    type NewConnection,
 } from "./schema";
 import {
     mapUIMessageToDB,
-    mapConversationMessagesToUI,
-    type ConversationWithMessages,
+    mapConnectionMessagesToUI,
+    type ConnectionWithMessages,
     type MessageWithParts,
     type UIMessageLike,
 } from "./message-mapping";
@@ -26,24 +26,24 @@ import { logger } from "../logger";
 import { generateTitle } from "./title-generator";
 
 // ============================================================================
-// CONVERSATION OPERATIONS
+// CONNECTION OPERATIONS
 // ============================================================================
 
 /**
- * Creates a new conversation
+ * Creates a new connection
  *
- * @param userId - Owner of the conversation
+ * @param userId - Owner of the connection
  * @param title - Optional title (auto-generated later if not provided)
- * @param modelId - Model used for this conversation
- * @returns The created conversation
+ * @param modelId - Model used for this connection
+ * @returns The created connection
  */
-export async function createConversation(
+export async function createConnection(
     userId: string,
     title?: string,
     modelId?: string
-): Promise<Conversation> {
-    const [conversation] = await db
-        .insert(conversations)
+): Promise<Connection> {
+    const [connection] = await db
+        .insert(connections)
         .values({
             userId,
             title: title ?? null,
@@ -53,25 +53,22 @@ export async function createConversation(
         })
         .returning();
 
-    logger.info(
-        { conversationId: conversation.id, userId },
-        "Created new conversation"
-    );
+    logger.info({ connectionId: connection.id, userId }, "Created new connection");
 
-    return conversation;
+    return connection;
 }
 
 /**
- * Gets a conversation by ID with all messages and parts
+ * Gets a connection by ID with all messages and parts
  *
- * @param conversationId - ID of the conversation
- * @returns Conversation with messages, or null if not found
+ * @param connectionId - ID of the connection
+ * @returns Connection with messages, or null if not found
  */
-export async function getConversationWithMessages(
-    conversationId: string
-): Promise<ConversationWithMessages | null> {
-    const conversation = await db.query.conversations.findFirst({
-        where: eq(conversations.id, conversationId),
+export async function getConnectionWithMessages(
+    connectionId: string
+): Promise<ConnectionWithMessages | null> {
+    const connection = await db.query.connections.findFirst({
+        where: eq(connections.id, connectionId),
         with: {
             messages: {
                 orderBy: (messages, { asc }) => [asc(messages.createdAt)],
@@ -84,79 +81,79 @@ export async function getConversationWithMessages(
         },
     });
 
-    if (!conversation) {
+    if (!connection) {
         return null;
     }
 
-    return conversation as ConversationWithMessages;
+    return connection as ConnectionWithMessages;
 }
 
 /**
- * Gets recent conversations for a user (tab-style access)
+ * Gets recent connections for a user (tab-style access)
  *
  * @param userId - User ID
- * @param limit - Max conversations to return (default 20)
+ * @param limit - Max connections to return (default 20)
  * @param status - Optional status filter (default "active")
- * @returns List of conversations ordered by last activity
+ * @returns List of connections ordered by last activity
  */
-export async function getRecentConversations(
+export async function getRecentConnections(
     userId: string,
     limit: number = 20,
     status?: "active" | "background" | "archived"
-): Promise<Conversation[]> {
-    const conditions = [eq(conversations.userId, userId)];
+): Promise<Connection[]> {
+    const conditions = [eq(connections.userId, userId)];
 
     if (status) {
-        conditions.push(eq(conversations.status, status));
+        conditions.push(eq(connections.status, status));
     }
 
-    return db.query.conversations.findMany({
+    return db.query.connections.findMany({
         where: and(...conditions),
-        orderBy: [desc(conversations.lastActivityAt)],
+        orderBy: [desc(connections.lastActivityAt)],
         limit,
     });
 }
 
 /**
- * Updates conversation metadata
+ * Updates connection metadata
  */
-export async function updateConversation(
-    conversationId: string,
-    updates: Partial<Pick<NewConversation, "title" | "status" | "modelId">>
-): Promise<Conversation | null> {
+export async function updateConnection(
+    connectionId: string,
+    updates: Partial<Pick<NewConnection, "title" | "status" | "modelId">>
+): Promise<Connection | null> {
     const [updated] = await db
-        .update(conversations)
+        .update(connections)
         .set({
             ...updates,
             updatedAt: new Date(),
         })
-        .where(eq(conversations.id, conversationId))
+        .where(eq(connections.id, connectionId))
         .returning();
 
     return updated ?? null;
 }
 
 /**
- * Archives a conversation (hides from recent, still searchable)
+ * Archives a connection (hides from recent, still searchable)
  */
-export async function archiveConversation(conversationId: string): Promise<void> {
+export async function archiveConnection(connectionId: string): Promise<void> {
     await db
-        .update(conversations)
+        .update(connections)
         .set({
             status: "archived",
             updatedAt: new Date(),
         })
-        .where(eq(conversations.id, conversationId));
+        .where(eq(connections.id, connectionId));
 
-    logger.info({ conversationId }, "Archived conversation");
+    logger.info({ connectionId }, "Archived connection");
 }
 
 /**
- * Deletes a conversation and all its messages (cascade)
+ * Deletes a connection and all its messages (cascade)
  */
-export async function deleteConversation(conversationId: string): Promise<void> {
-    await db.delete(conversations).where(eq(conversations.id, conversationId));
-    logger.info({ conversationId }, "Deleted conversation");
+export async function deleteConnection(connectionId: string): Promise<void> {
+    await db.delete(connections).where(eq(connections.id, connectionId));
+    logger.info({ connectionId }, "Deleted connection");
 }
 
 // ============================================================================
@@ -164,20 +161,20 @@ export async function deleteConversation(conversationId: string): Promise<void> 
 // ============================================================================
 
 /**
- * Saves a message to a conversation with all its parts
+ * Saves a message to a connection with all its parts
  *
  * Uses atomic transaction to ensure message + parts are saved together.
- * Updates conversation's lastActivityAt for recency sorting.
+ * Updates connection's lastActivityAt for recency sorting.
  *
- * @param conversationId - ID of the conversation
+ * @param connectionId - ID of the connection
  * @param uiMessage - UI message to save
  * @returns The saved message ID
  */
 export async function saveMessage(
-    conversationId: string,
+    connectionId: string,
     uiMessage: UIMessageLike
 ): Promise<string> {
-    const { message, parts } = mapUIMessageToDB(uiMessage, conversationId);
+    const { message, parts } = mapUIMessageToDB(uiMessage, connectionId);
 
     await db.transaction(async (tx) => {
         // Insert message
@@ -188,18 +185,18 @@ export async function saveMessage(
             await tx.insert(messageParts).values(parts);
         }
 
-        // Update conversation's last activity
+        // Update connection's last activity
         await tx
-            .update(conversations)
+            .update(connections)
             .set({
                 lastActivityAt: new Date(),
                 updatedAt: new Date(),
             })
-            .where(eq(conversations.id, conversationId));
+            .where(eq(connections.id, connectionId));
     });
 
     logger.debug(
-        { messageId: message.id, conversationId, partCount: parts.length },
+        { messageId: message.id, connectionId, partCount: parts.length },
         "Saved message"
     );
 
@@ -219,7 +216,7 @@ export async function updateMessage(
     messageId: string,
     uiMessage: UIMessageLike
 ): Promise<void> {
-    const { parts } = mapUIMessageToDB(uiMessage, ""); // conversationId not needed for parts
+    const { parts } = mapUIMessageToDB(uiMessage, ""); // connectionId not needed for parts
 
     // Fix: set correct messageId on parts
     const partsWithMessageId = parts.map((p) => ({ ...p, messageId }));
@@ -246,18 +243,18 @@ export async function updateMessage(
  * The primary save operation. Creates message if it doesn't exist,
  * updates parts if it does.
  *
- * @param conversationId - ID of the conversation
+ * @param connectionId - ID of the connection
  * @param uiMessage - UI message to save
  */
 export async function upsertMessage(
-    conversationId: string,
+    connectionId: string,
     uiMessage: UIMessageLike
 ): Promise<void> {
-    const { message, parts } = mapUIMessageToDB(uiMessage, conversationId);
+    const { message, parts } = mapUIMessageToDB(uiMessage, connectionId);
 
     await db.transaction(async (tx) => {
         // Upsert message (insert or skip if exists)
-        // Messages never change conversations, so we only insert new ones
+        // Messages never change connections, so we only insert new ones
         await tx.insert(messages).values(message).onConflictDoNothing({
             target: messages.id,
         });
@@ -269,31 +266,31 @@ export async function upsertMessage(
             await tx.insert(messageParts).values(parts);
         }
 
-        // Update conversation's last activity
+        // Update connection's last activity
         await tx
-            .update(conversations)
+            .update(connections)
             .set({
                 lastActivityAt: new Date(),
                 updatedAt: new Date(),
             })
-            .where(eq(conversations.id, conversationId));
+            .where(eq(connections.id, connectionId));
     });
 }
 
 /**
- * Loads all messages for a conversation as UI messages
+ * Loads all messages for a connection as UI messages
  *
- * @param conversationId - ID of the conversation
+ * @param connectionId - ID of the connection
  * @returns Array of UI messages ordered by creation time
  */
-export async function loadMessages(conversationId: string): Promise<UIMessageLike[]> {
-    const conversation = await getConversationWithMessages(conversationId);
+export async function loadMessages(connectionId: string): Promise<UIMessageLike[]> {
+    const connection = await getConnectionWithMessages(connectionId);
 
-    if (!conversation) {
+    if (!connection) {
         return [];
     }
 
-    return mapConversationMessagesToUI(conversation);
+    return mapConnectionMessagesToUI(connection);
 }
 
 // ============================================================================
@@ -301,70 +298,67 @@ export async function loadMessages(conversationId: string): Promise<UIMessageLik
 // ============================================================================
 
 /**
- * Updates the streaming status of a conversation
+ * Updates the streaming status of a connection
  *
  * Used for background save tracking:
  * - "streaming" when response starts
  * - "completed" when response finishes
  * - "failed" if streaming fails
  *
- * @param conversationId - ID of the conversation
+ * @param connectionId - ID of the connection
  * @param status - New streaming status
  */
 export async function updateStreamingStatus(
-    conversationId: string,
+    connectionId: string,
     status: "idle" | "streaming" | "completed" | "failed"
 ): Promise<void> {
     await db
-        .update(conversations)
+        .update(connections)
         .set({
             streamingStatus: status,
             updatedAt: new Date(),
         })
-        .where(eq(conversations.id, conversationId));
+        .where(eq(connections.id, connectionId));
 
-    logger.debug(
-        { conversationId, streamingStatus: status },
-        "Updated streaming status"
-    );
+    logger.debug({ connectionId, streamingStatus: status }, "Updated streaming status");
 }
 
 /**
- * Marks a conversation as running in background
+ * Marks a connection as running in background
  *
  * Call this when the user closes the window but streaming is in progress.
- * The conversation will appear in "background" status and can be recovered.
+ * The connection will appear in "background" status and can be recovered.
  */
-export async function markAsBackground(conversationId: string): Promise<void> {
+export async function markAsBackground(connectionId: string): Promise<void> {
     await db
-        .update(conversations)
+        .update(connections)
         .set({
             status: "background",
             updatedAt: new Date(),
         })
-        .where(eq(conversations.id, conversationId));
+        .where(eq(connections.id, connectionId));
 
-    logger.info({ conversationId }, "Marked conversation as background");
+    logger.info({ connectionId }, "Marked connection as background");
 }
 
 /**
- * Finds conversations that were interrupted mid-stream
+ * Finds connections that were interrupted mid-stream
  *
- * Used for recovery on reconnect. Returns conversations that have
+ * Used for recovery on reconnect. Returns connections that have
  * streamingStatus = "streaming" (indicating they didn't complete).
  *
  * @param userId - User ID to search for
- * @returns Conversations that may need recovery
+ * @returns Connections that may need recovery
  */
-export async function findInterruptedConversations(
+export async function findInterruptedConnections(
     userId: string
-): Promise<Conversation[]> {
-    return db.query.conversations.findMany({
+): Promise<Connection[]> {
+    return db.query.connections.findMany({
         where: and(
-            eq(conversations.userId, userId),
-            eq(conversations.streamingStatus, "streaming")
+            eq(connections.userId, userId),
+            eq(connections.streamingStatus, "streaming")
         ),
-        orderBy: [desc(conversations.lastActivityAt)],
+        orderBy: [desc(connections.lastActivityAt)],
     });
 }
 
@@ -378,19 +372,19 @@ export async function findInterruptedConversations(
  * Uses Haiku for fast, cheap title generation with optional emoji prefixes.
  * Falls back to simple truncation if LLM fails.
  *
- * @param conversationId - ID of the conversation
+ * @param connectionId - ID of the connection
  */
 export async function generateTitleFromFirstMessage(
-    conversationId: string
+    connectionId: string
 ): Promise<void> {
-    const conversation = await getConversationWithMessages(conversationId);
+    const connection = await getConnectionWithMessages(connectionId);
 
-    if (!conversation || conversation.title) {
+    if (!connection || connection.title) {
         return; // Already has title or doesn't exist
     }
 
     // Find first user message
-    const firstUserMessage = conversation.messages.find((m) => m.role === "user");
+    const firstUserMessage = connection.messages.find((m) => m.role === "user");
 
     if (!firstUserMessage || firstUserMessage.parts.length === 0) {
         return;
@@ -406,9 +400,9 @@ export async function generateTitleFromFirstMessage(
     // Generate title with LLM (falls back to truncation on failure)
     const title = await generateTitle(firstTextPart.textContent);
 
-    await updateConversation(conversationId, { title });
+    await updateConnection(connectionId, { title });
 
-    logger.debug({ conversationId, title }, "Generated conversation title");
+    logger.debug({ connectionId, title }, "Generated connection title");
 }
 
 // ============================================================================
@@ -418,8 +412,8 @@ export async function generateTitleFromFirstMessage(
 export {
     mapUIMessageToDB,
     mapDBMessageToUI,
-    mapConversationMessagesToUI,
-    type ConversationWithMessages,
+    mapConnectionMessagesToUI,
+    type ConnectionWithMessages,
     type MessageWithParts,
     type UIMessageLike,
     type UIMessagePartLike,
