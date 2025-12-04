@@ -33,12 +33,21 @@ import { ModelSelectorPopover } from "./model-selector";
  * fades to transparent starting at 65%, creating a smooth visual transition while
  * maintaining readability. The input is positioned absolutely outside the masked
  * scroll area.
+ *
+ * Accessibility: Tab order follows DOM order (Viewport → Input), ensuring proper
+ * keyboard navigation. Screen readers announce elements in logical sequence.
+ *
+ * Mobile: Responsive bottom padding adjusts for smaller viewports. Virtual keyboard
+ * appearance on mobile triggers viewport resize, which the absolute positioning handles
+ * gracefully without layout shift.
  */
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="relative flex h-full flex-col bg-transparent">
-            {/* Viewport with fade mask - this is what scrolls */}
-            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-32 pt-8">
+            {/* Viewport with fade mask - this is what scrolls
+                Responsive padding: pb-24 (96px) on mobile, pb-32 (128px) on desktop
+                Provides clearance for input (~70px) plus breathing room */}
+            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32">
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
                 </ThreadPrimitive.Empty>
@@ -51,7 +60,9 @@ export function HoloThread() {
                 />
             </ThreadPrimitive.Viewport>
 
-            {/* Input positioned absolutely at bottom - outside masked area */}
+            {/* Input positioned absolutely at bottom - outside masked area
+                Maintains natural tab order for keyboard navigation
+                Mobile: Virtual keyboard resize handled by absolute positioning */}
             <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-transparent px-4 pb-4">
                 <div className="relative flex w-full max-w-[700px] flex-col items-center">
                     <ThreadScrollToBottom />
