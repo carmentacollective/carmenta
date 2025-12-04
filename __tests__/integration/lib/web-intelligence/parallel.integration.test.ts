@@ -12,6 +12,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
 import { ParallelProvider } from "@/lib/web-intelligence/parallel";
+import { logger } from "@/lib/logger";
 
 const PARALLEL_API_KEY = process.env.PARALLEL_API_KEY;
 
@@ -34,7 +35,15 @@ describeIfApiKey("ParallelProvider Integration Tests", () => {
                 maxResults: 3,
             });
 
-            console.log("Search result:", JSON.stringify(result, null, 2));
+            logger.debug(
+                {
+                    resultsCount: result?.results?.length,
+                    maxResults: 3,
+                    provider: result?.provider,
+                    latencyMs: result?.latencyMs,
+                },
+                "Search integration test completed"
+            );
 
             expect(result).not.toBeNull();
             expect(result!.results).toBeInstanceOf(Array);
@@ -65,16 +74,16 @@ describeIfApiKey("ParallelProvider Integration Tests", () => {
                 { maxLength: 5000 }
             );
 
-            console.log(
-                "Extract result:",
-                JSON.stringify(
-                    {
-                        ...result,
-                        content: result?.content?.slice(0, 500) + "...",
-                    },
-                    null,
-                    2
-                )
+            logger.debug(
+                {
+                    title: result?.title,
+                    url: result?.url,
+                    contentLength: result?.content?.length,
+                    contentPreview: result?.content?.slice(0, 100),
+                    provider: result?.provider,
+                    latencyMs: result?.latencyMs,
+                },
+                "Extract integration test completed"
             );
 
             expect(result).not.toBeNull();
@@ -94,7 +103,10 @@ describeIfApiKey("ParallelProvider Integration Tests", () => {
                 "https://this-domain-definitely-does-not-exist-12345.com/page"
             );
 
-            console.log("Extract non-existent result:", result);
+            logger.debug(
+                { result, testCase: "non-existent-url" },
+                "Extract non-existent URL test completed"
+            );
 
             // Should return null or empty result, not throw
             // The exact behavior depends on Parallel's API
@@ -105,17 +117,22 @@ describeIfApiKey("ParallelProvider Integration Tests", () => {
     describe("research", () => {
         it("conducts quick research and returns structured results", async () => {
             // Use "quick" depth to minimize API costs and time
-            console.log("Starting research test...");
+            logger.debug({}, "Starting research integration test");
 
             const result = await provider.research(
                 "What are the main benefits of TypeScript over JavaScript?",
                 { depth: "quick" }
             );
 
-            console.log("Research result:", result);
-            console.log(
-                "Research result (stringified):",
-                JSON.stringify(result, null, 2)
+            logger.debug(
+                {
+                    summaryLength: result?.summary?.length,
+                    findingsCount: result?.findings?.length,
+                    sourcesCount: result?.sources?.length,
+                    provider: result?.provider,
+                    latencyMs: result?.latencyMs,
+                },
+                "Research integration test completed"
             );
 
             expect(result).not.toBeNull();
