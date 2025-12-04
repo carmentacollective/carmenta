@@ -46,6 +46,8 @@ interface ConnectionContextValue {
     isLoaded: boolean;
     /** Whether a transition (create/delete) is in progress */
     isPending: boolean;
+    /** Current error from a failed operation, if any */
+    error: Error | null;
     /** Initial messages for the active connection */
     initialMessages: UIMessageLike[];
     /** Switch to a different connection (navigates to URL) */
@@ -56,6 +58,8 @@ interface ConnectionContextValue {
     archiveActiveConnection: () => void;
     /** Delete a connection */
     deleteConnection: (id: string) => void;
+    /** Clear the current error */
+    clearError: () => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
@@ -83,6 +87,11 @@ export function ConnectionProvider({
     // Local state for connections list (optimistic updates)
     const [connections, setConnections] = useState<Connection[]>(initialConnections);
 
+    // Error state - surfaces operation failures to the UI
+    const [error, setError] = useState<Error | null>(null);
+
+    const clearError = useCallback(() => setError(null), []);
+
     // Derive active connection ID from the prop
     const activeConnectionId = activeConnection?.id ?? null;
 
@@ -107,8 +116,10 @@ export function ConnectionProvider({
                 const connectionId = await createNewConnection();
                 logger.debug({ connectionId }, "Created new connection");
                 router.push(`/connection/${connectionId}`);
-            } catch (error) {
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error(String(err));
                 logger.error({ error }, "Failed to create connection");
+                setError(error);
             }
         });
     }, [router]);
@@ -124,11 +135,13 @@ export function ConnectionProvider({
                     "Archived connection"
                 );
                 router.push("/connection");
-            } catch (error) {
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error(String(err));
                 logger.error(
                     { error, connectionId: activeConnectionId },
                     "Failed to archive connection"
                 );
+                setError(error);
             }
         });
     }, [activeConnectionId, router]);
@@ -145,11 +158,13 @@ export function ConnectionProvider({
                     if (id === activeConnectionId) {
                         router.push("/connection");
                     }
-                } catch (error) {
+                } catch (err) {
+                    const error = err instanceof Error ? err : new Error(String(err));
                     logger.error(
                         { error, connectionId: id },
                         "Failed to delete connection"
                     );
+                    setError(error);
                 }
             });
         },
@@ -164,11 +179,13 @@ export function ConnectionProvider({
             runningCount,
             isLoaded,
             isPending,
+            error,
             initialMessages,
             setActiveConnection,
             createNewConnection: handleCreateNewConnection,
             archiveActiveConnection,
             deleteConnection: handleDeleteConnection,
+            clearError,
         }),
         [
             connections,
@@ -177,11 +194,13 @@ export function ConnectionProvider({
             runningCount,
             isLoaded,
             isPending,
+            error,
             initialMessages,
             setActiveConnection,
             handleCreateNewConnection,
             archiveActiveConnection,
             handleDeleteConnection,
+            clearError,
         ]
     );
 
