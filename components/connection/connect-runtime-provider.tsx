@@ -234,7 +234,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const { activeConnectionId, initialMessages } = useConnection();
     const [error, setError] = useState<Error | null>(null);
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
-    const lastConnectionIdRef = useRef<string | null>(null);
+    // Track last imported state to handle late-arriving messages
+    const lastImportedRef = useRef<{
+        connectionId: string | null;
+        messageCount: number;
+    }>({ connectionId: null, messageCount: 0 });
 
     /**
      * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
@@ -407,40 +411,59 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     /**
      * Initialize thread with messages when connection changes.
      * This ensures existing messages are displayed when navigating to a connection.
+     *
+     * We track both connectionId and messageCount to handle:
+     * 1. Connection changes (clear and reload)
+     * 2. Late-arriving messages (messages that load after the connection ID is set)
      */
     useEffect(() => {
-        // Only reset when we have a new connection with messages
         if (!activeConnectionId) return;
 
-        // Avoid resetting on every render - only when connection actually changes
-        if (lastConnectionIdRef.current === activeConnectionId) return;
-        lastConnectionIdRef.current = activeConnectionId;
+        const currentMessageCount = initialMessages?.length ?? 0;
+        const lastImported = lastImportedRef.current;
 
-        // Reset the thread with initial messages from the database
-        // This populates the UI with existing conversation history
-        if (initialMessages && initialMessages.length > 0) {
-            logger.debug(
-                {
-                    connectionId: activeConnectionId,
-                    messageCount: initialMessages.length,
-                },
-                "Initializing thread with existing messages"
-            );
+        // Skip if we've already imported these exact messages for this connection
+        const isSameConnection = lastImported.connectionId === activeConnectionId;
+        const isSameMessageCount = lastImported.messageCount === currentMessageCount;
+        if (isSameConnection && isSameMessageCount) return;
 
-            // Convert UIMessageLike to ThreadMessageLike format for assistant-ui
-            const threadMessages = initialMessages.map(toThreadMessageLike);
-            // fromArray creates parent-child relationships based on message order
-            // Type assertion needed because our JSON types are looser than assistant-ui expects
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const repository = ExportedMessageRepository.fromArray(
-                threadMessages as any
-            );
-            runtime.thread.import(repository);
-        } else {
-            // New connection - start fresh
-            logger.debug(
-                { connectionId: activeConnectionId },
-                "New connection - starting fresh thread"
+        // Update tracking ref
+        lastImportedRef.current = {
+            connectionId: activeConnectionId,
+            messageCount: currentMessageCount,
+        };
+
+        try {
+            if (initialMessages && initialMessages.length > 0) {
+                logger.debug(
+                    {
+                        connectionId: activeConnectionId,
+                        messageCount: initialMessages.length,
+                    },
+                    "Initializing thread with existing messages"
+                );
+
+                // Convert UIMessageLike to ThreadMessageLike format for assistant-ui
+                const threadMessages = initialMessages.map(toThreadMessageLike);
+                // fromArray creates parent-child relationships based on message order
+                // Type assertion needed because our JSON types are looser than assistant-ui expects
+
+                const repository = ExportedMessageRepository.fromArray(
+                    threadMessages as any
+                );
+                runtime.thread.import(repository);
+            } else {
+                // New/empty connection - clear any existing messages
+                logger.debug(
+                    { connectionId: activeConnectionId },
+                    "New connection - clearing thread"
+                );
+                runtime.thread.import(ExportedMessageRepository.fromArray([]));
+            }
+        } catch (err) {
+            logger.error(
+                { error: err, connectionId: activeConnectionId },
+                "Failed to import messages into thread"
             );
         }
     }, [activeConnectionId, initialMessages, runtime]);
