@@ -18,7 +18,7 @@ import {
 } from "@/lib/concierge";
 import {
     getOrCreateUser,
-    createConversation,
+    createConnection,
     upsertMessage,
     updateStreamingStatus,
     generateTitleFromFirstMessage,
@@ -40,7 +40,7 @@ export const maxDuration = 120;
  */
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
-    conversationId: z.string().uuid().optional(),
+    connectionId: z.string().uuid().optional(),
     /** User override for model - bypasses concierge selection */
     modelOverride: z.string().optional(),
     /** User override for temperature (0-1) - bypasses concierge selection */
@@ -244,7 +244,7 @@ const tools = {
 
 export async function POST(req: Request) {
     let userEmail: string | null = null;
-    let conversationId: string | null = null;
+    let connectionId: string | null = null;
 
     try {
         // Authentication: required in production, optional in development
@@ -289,20 +289,20 @@ export async function POST(req: Request) {
 
         const {
             messages,
-            conversationId: existingConversationId,
+            connectionId: existingConnectionId,
             modelOverride,
             temperatureOverride,
             reasoningOverride,
         } = parseResult.data as {
             messages: UIMessage[];
-            conversationId?: string;
+            connectionId?: string;
             modelOverride?: string;
             temperatureOverride?: number;
             reasoningOverride?: "none" | "low" | "medium" | "high";
         };
 
         // ========================================================================
-        // PERSISTENCE: Get or create user and conversation
+        // PERSISTENCE: Get or create user and connection
         // ========================================================================
 
         // Ensure user exists in database
@@ -314,28 +314,25 @@ export async function POST(req: Request) {
             imageUrl: user?.imageUrl ?? null,
         });
 
-        // Get or create conversation
-        if (existingConversationId) {
-            conversationId = existingConversationId;
+        // Get or create connection
+        if (existingConnectionId) {
+            connectionId = existingConnectionId;
         } else {
-            // New conversation - create it
-            const conversation = await createConversation(dbUser.id);
-            conversationId = conversation.id;
-            logger.info(
-                { conversationId, userId: dbUser.id },
-                "Created new conversation"
-            );
+            // New connection - create it
+            const connection = await createConnection(dbUser.id);
+            connectionId = connection.id;
+            logger.info({ connectionId, userId: dbUser.id }, "Created new connection");
         }
 
         // Save the latest user message before streaming
         // (messages array may contain history, we only need to save new messages)
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role === "user") {
-            await upsertMessage(conversationId, lastMessage as UIMessageLike);
+            await upsertMessage(connectionId, lastMessage as UIMessageLike);
         }
 
-        // Mark conversation as streaming
-        await updateStreamingStatus(conversationId, "streaming");
+        // Mark connection as streaming
+        await updateStreamingStatus(connectionId, "streaming");
 
         // Run the Concierge to select model, temperature, and reasoning config
         const conciergeResult = await runConcierge(messages);
@@ -395,8 +392,8 @@ export async function POST(req: Request) {
             },
         });
 
-        // Capture conversationId for onFinish closure
-        const currentConversationId = conversationId;
+        // Capture connectionId for onFinish closure
+        const currentConnectionId = connectionId;
 
         // Build provider options for reasoning when enabled.
         // OpenRouter reasoning config accepts either:
@@ -500,7 +497,7 @@ export async function POST(req: Request) {
 
                     if (!existingId) {
                         logger.debug(
-                            { conversationId: currentConversationId },
+                            { connectionId: currentConnectionId },
                             "AI SDK did not provide message ID, generating with nanoid"
                         );
                     }
@@ -513,26 +510,26 @@ export async function POST(req: Request) {
                         role: "assistant",
                         parts,
                     };
-                    await upsertMessage(currentConversationId!, uiMessage);
+                    await upsertMessage(currentConnectionId!, uiMessage);
 
                     // Mark streaming complete
-                    await updateStreamingStatus(currentConversationId!, "completed");
+                    await updateStreamingStatus(currentConnectionId!, "completed");
 
                     // Generate title from first user message if needed
-                    await generateTitleFromFirstMessage(currentConversationId!);
+                    await generateTitleFromFirstMessage(currentConnectionId!);
 
                     logger.debug(
                         {
-                            conversationId: currentConversationId,
+                            connectionId: currentConnectionId,
                             hasReasoning: !!reasoning,
                         },
-                        "Conversation persisted successfully"
+                        "Connection persisted successfully"
                     );
                 } catch (error) {
                     // Don't fail the response if persistence fails - log and mark as failed
                     logger.error(
-                        { error, conversationId: currentConversationId },
-                        "Failed to persist conversation"
+                        { error, connectionId: currentConnectionId },
+                        "Failed to persist connection"
                     );
 
                     Sentry.captureException(error, {
@@ -541,12 +538,12 @@ export async function POST(req: Request) {
                             action: "onFinish",
                         },
                         extra: {
-                            conversationId: currentConversationId,
+                            connectionId: currentConnectionId,
                             userEmail,
                         },
                     });
 
-                    await updateStreamingStatus(currentConversationId!, "failed").catch(
+                    await updateStreamingStatus(currentConnectionId!, "failed").catch(
                         () => {}
                     );
                 }
@@ -577,7 +574,7 @@ export async function POST(req: Request) {
             "X-Concierge-Reasoning",
             encodeURIComponent(JSON.stringify(concierge.reasoning))
         );
-        headers.set("X-Conversation-Id", conversationId!);
+        headers.set("X-Conversation-Id", connectionId!);
 
         // Return response with concierge headers
         return new Response(response.body, {
@@ -592,8 +589,8 @@ export async function POST(req: Request) {
         const errorStack = error instanceof Error ? error.stack : undefined;
 
         // Mark conversation as failed if one was created
-        if (conversationId) {
-            await updateStreamingStatus(conversationId, "failed").catch(() => {});
+        if (connectionId) {
+            await updateStreamingStatus(connectionId, "failed").catch(() => {});
         }
 
         // Log detailed error for debugging
@@ -603,7 +600,7 @@ export async function POST(req: Request) {
                 errorName,
                 errorStack,
                 userEmail,
-                conversationId,
+                connectionId,
                 model: CONCIERGE_DEFAULTS.modelId,
             },
             "Connect request failed"
@@ -617,7 +614,7 @@ export async function POST(req: Request) {
             },
             extra: {
                 userEmail,
-                conversationId,
+                connectionId,
                 model: CONCIERGE_DEFAULTS.modelId,
                 errorMessage,
             },

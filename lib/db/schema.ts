@@ -2,13 +2,13 @@
  * Database Schema
  *
  * Carmenta uses PostgreSQL with Drizzle ORM. This schema defines the core
- * tables for user management and conversation persistence.
+ * tables for user management and connection persistence.
  *
  * Naming conventions:
- * - Tables: plural nouns (users, conversations, messages)
+ * - Tables: plural nouns (users, connections, messages)
  * - Columns: snake_case, descriptive, avoid abbreviations
  * - Timestamps: use _at suffix (created_at, updated_at)
- * - Foreign keys: referenced_table_singular_id (user_id, conversation_id)
+ * - Foreign keys: referenced_table_singular_id (user_id, connection_id)
  */
 
 import {
@@ -29,12 +29,12 @@ import { relations } from "drizzle-orm";
 // ============================================================================
 
 /**
- * Conversation status for tab-style access
+ * Connection status for tab-style access
  * - active: Currently open/recent (like a browser tab)
  * - background: Long-running task, window closed but still processing
  * - archived: User explicitly archived (hidden from recent, searchable)
  */
-export const conversationStatusEnum = pgEnum("conversation_status", [
+export const connectionStatusEnum = pgEnum("connection_status", [
     "active",
     "background",
     "archived",
@@ -131,11 +131,11 @@ export const users = pgTable(
 );
 
 // ============================================================================
-// CONVERSATIONS TABLE
+// CONNECTIONS TABLE
 // ============================================================================
 
 /**
- * Conversation metadata - tab-style access with background save support
+ * Connection metadata - tab-style access with background save support
  *
  * Design decisions:
  * - `status` enables tab-style UI (active = recent tabs, background = running tasks)
@@ -144,12 +144,12 @@ export const users = pgTable(
  * - `modelId` records which model was used (useful for cost tracking)
  * - No sidebar archive - users access via recency or search
  */
-export const conversations = pgTable(
-    "conversations",
+export const connections = pgTable(
+    "connections",
     {
         id: uuid("id").primaryKey().defaultRandom(),
 
-        /** Owner of this conversation */
+        /** Owner of this connection */
         userId: uuid("user_id")
             .references(() => users.id, { onDelete: "cascade" })
             .notNull(),
@@ -161,14 +161,14 @@ export const conversations = pgTable(
         title: varchar("title", { length: 500 }),
 
         /** Tab-style status for UI presentation */
-        status: conversationStatusEnum("status").notNull().default("active"),
+        status: connectionStatusEnum("status").notNull().default("active"),
 
         /** Streaming status for background save and recovery */
         streamingStatus: streamingStatusEnum("streaming_status")
             .notNull()
             .default("idle"),
 
-        /** Model used for this conversation (e.g., "anthropic/claude-sonnet-4") */
+        /** Model used for this connection (e.g., "anthropic/claude-sonnet-4") */
         modelId: varchar("model_id", { length: 255 }),
 
         /** Last activity for recency sorting (updated on every message) */
@@ -185,15 +185,15 @@ export const conversations = pgTable(
             .defaultNow(),
     },
     (table) => [
-        /** Primary query: recent conversations for a user */
-        index("conversations_user_last_activity_idx").on(
+        /** Primary query: recent connections for a user */
+        index("connections_user_last_activity_idx").on(
             table.userId,
             table.lastActivityAt
         ),
         /** Filter by status */
-        index("conversations_user_status_idx").on(table.userId, table.status),
+        index("connections_user_status_idx").on(table.userId, table.status),
         /** Find background tasks that may need recovery */
-        index("conversations_streaming_status_idx").on(table.streamingStatus),
+        index("connections_streaming_status_idx").on(table.streamingStatus),
     ]
 );
 
@@ -202,7 +202,7 @@ export const conversations = pgTable(
 // ============================================================================
 
 /**
- * Individual messages in a conversation
+ * Individual messages in a connection
  *
  * Messages contain one or more parts (text, tool calls, etc.)
  * The actual content is in the message_parts table for normalized storage.
@@ -218,8 +218,8 @@ export const messages = pgTable(
          */
         id: text("id").primaryKey(),
 
-        conversationId: uuid("conversation_id")
-            .references(() => conversations.id, { onDelete: "cascade" })
+        connectionId: uuid("connection_id")
+            .references(() => connections.id, { onDelete: "cascade" })
             .notNull(),
 
         role: messageRoleEnum("role").notNull(),
@@ -230,10 +230,10 @@ export const messages = pgTable(
             .defaultNow(),
     },
     (table) => [
-        index("messages_conversation_idx").on(table.conversationId),
-        /** For ordered retrieval of conversation history */
-        index("messages_conversation_created_idx").on(
-            table.conversationId,
+        index("messages_connection_idx").on(table.connectionId),
+        /** For ordered retrieval of connection history */
+        index("messages_connection_created_idx").on(
+            table.connectionId,
             table.createdAt
         ),
     ]
@@ -341,21 +341,21 @@ export const messageParts = pgTable(
 // ============================================================================
 
 export const usersRelations = relations(users, ({ many }) => ({
-    conversations: many(conversations),
+    connections: many(connections),
 }));
 
-export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+export const connectionsRelations = relations(connections, ({ one, many }) => ({
     user: one(users, {
-        fields: [conversations.userId],
+        fields: [connections.userId],
         references: [users.id],
     }),
     messages: many(messages),
 }));
 
 export const messagesRelations = relations(messages, ({ one, many }) => ({
-    conversation: one(conversations, {
-        fields: [messages.conversationId],
-        references: [conversations.id],
+    connection: one(connections, {
+        fields: [messages.connectionId],
+        references: [connections.id],
     }),
     parts: many(messageParts),
 }));
@@ -374,8 +374,8 @@ export const messagePartsRelations = relations(messageParts, ({ one }) => ({
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
-export type Conversation = typeof conversations.$inferSelect;
-export type NewConversation = typeof conversations.$inferInsert;
+export type Connection = typeof connections.$inferSelect;
+export type NewConnection = typeof connections.$inferInsert;
 
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;

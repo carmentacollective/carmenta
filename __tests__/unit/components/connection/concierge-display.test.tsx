@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, fireEvent, within, cleanup } from "@testing-library/react";
 
-import { ConciergeDisplay } from "@/components/connect/concierge-display";
+import { ConciergeDisplay } from "@/components/connection/concierge-display";
 
 describe("ConciergeDisplay", () => {
     const defaultProps = {

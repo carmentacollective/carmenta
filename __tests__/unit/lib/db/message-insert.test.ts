@@ -11,15 +11,15 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
     upsertMessage,
-    createConversation,
-    deleteConversation,
-} from "@/lib/db/conversations";
-import { users, conversations, messages, messageParts } from "@/lib/db/schema";
+    createConnection,
+    deleteConnection,
+} from "@/lib/db/connections";
+import { users, connections, messages, messageParts } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 describe("Message Insert Error Handling", () => {
     let testUserId: string;
-    let testConversationId: string;
+    let testConnectionId: string;
 
     beforeEach(async () => {
         // Create test user
@@ -32,15 +32,15 @@ describe("Message Insert Error Handling", () => {
             .returning();
         testUserId = user.id;
 
-        // Create test conversation
-        const conversation = await createConversation(testUserId);
-        testConversationId = conversation.id;
+        // Create test connection
+        const connection = await createConnection(testUserId);
+        testConnectionId = connection.id;
     });
 
     afterEach(async () => {
         // Clean up test data
-        if (testConversationId) {
-            await deleteConversation(testConversationId).catch(() => {});
+        if (testConnectionId) {
+            await deleteConnection(testConnectionId).catch(() => {});
         }
         if (testUserId) {
             await db
@@ -60,7 +60,7 @@ describe("Message Insert Error Handling", () => {
 
             // Should not throw
             await expect(
-                upsertMessage(testConversationId, uiMessage)
+                upsertMessage(testConnectionId, uiMessage)
             ).resolves.not.toThrow();
 
             // Verify message was inserted
@@ -79,11 +79,11 @@ describe("Message Insert Error Handling", () => {
             };
 
             // First insert
-            await upsertMessage(testConversationId, uiMessage);
+            await upsertMessage(testConnectionId, uiMessage);
 
             // Second insert should NOT throw (this was the bug)
             await expect(
-                upsertMessage(testConversationId, uiMessage)
+                upsertMessage(testConnectionId, uiMessage)
             ).resolves.not.toThrow();
         });
 
@@ -91,14 +91,14 @@ describe("Message Insert Error Handling", () => {
             const messageId = `msg_test_${Date.now()}`;
 
             // First insert with "Hello"
-            await upsertMessage(testConversationId, {
+            await upsertMessage(testConnectionId, {
                 id: messageId,
                 role: "user",
                 parts: [{ type: "text", text: "Hello" }],
             });
 
             // Re-upsert with updated content
-            await upsertMessage(testConversationId, {
+            await upsertMessage(testConnectionId, {
                 id: messageId,
                 role: "user",
                 parts: [{ type: "text", text: "Hello world updated" }],
@@ -112,18 +112,18 @@ describe("Message Insert Error Handling", () => {
             expect(parts[0].textContent).toBe("Hello world updated");
         });
 
-        it("should fail gracefully with invalid conversation ID", async () => {
+        it("should fail gracefully with invalid connection ID", async () => {
             const uiMessage: UIMessageLike = {
                 id: `msg_test_${Date.now()}`,
                 role: "user",
                 parts: [{ type: "text", text: "Hello world" }],
             };
 
-            // Using a non-existent conversation ID should throw a meaningful error
-            const invalidConversationId = "00000000-0000-0000-0000-000000000000";
+            // Using a non-existent connection ID should throw a meaningful error
+            const invalidConnectionId = "00000000-0000-0000-0000-000000000000";
 
             await expect(
-                upsertMessage(invalidConversationId, uiMessage)
+                upsertMessage(invalidConnectionId, uiMessage)
             ).rejects.toThrow();
         });
 
@@ -140,7 +140,7 @@ describe("Message Insert Error Handling", () => {
 
             // This should NOT throw - the schema should accept string IDs
             await expect(
-                upsertMessage(testConversationId, uiMessage)
+                upsertMessage(testConnectionId, uiMessage)
             ).resolves.not.toThrow();
         });
     });

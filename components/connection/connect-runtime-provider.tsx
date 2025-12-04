@@ -269,7 +269,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const transport = useMemo(
         () =>
             new AssistantChatTransport({
-                api: "/api/connect",
+                api: "/api/connection",
                 fetch: fetchWithConcierge,
             }),
         [fetchWithConcierge]
@@ -335,7 +335,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 }
 
 /**
- * Provides the assistant-ui runtime configured for our /api/connect endpoint.
+ * Provides the assistant-ui runtime configured for our /api/connection endpoint.
  *
  * This wraps the app with:
  * - ConciergeProvider for concierge data
