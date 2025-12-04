@@ -27,7 +27,7 @@ test.describe("Connect Page - Authenticated", () => {
         await expect(page.getByText("CARMENTA")).toBeVisible();
 
         // Look for milestone indicator
-        await expect(page.getByText("M0.5: First Connection")).toBeVisible();
+        await expect(page.getByText("M1: Soul Proven")).toBeVisible();
     });
 
     test("displays the page title", async ({ page }) => {

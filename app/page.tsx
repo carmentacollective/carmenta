@@ -34,7 +34,7 @@ export default function LandingPage() {
                         {/* Hero */}
                         <section className="space-y-4">
                             <div className="inline-block rounded-full bg-white/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
-                                M0.5: First Connection
+                                M1: Soul Proven
                             </div>
                             <Greeting
                                 className="greeting-title"
@@ -52,15 +52,12 @@ export default function LandingPage() {
                                 <p>
                                     Carmenta remembers who you are, what you're working
                                     on, what you've decided, who you know, what you've
-                                    learned. Access ChatGPT, Claude, Gemini, and
-                                    more—all from one place. An AI team—including a
-                                    Digital Chief of Staff—works alongside you.
-                                    Purpose-built interfaces, not chat bubbles.
+                                    learned. The right model for each moment, chosen
+                                    automatically. An AI team—including a Digital Chief
+                                    of Staff—works alongside you. Purpose-built
+                                    responses, not chat bubbles.
                                 </p>
-                                <p>
-                                    A unified front door to everything AI can do for
-                                    you.
-                                </p>
+                                <p>The best interface to AI that exists.</p>
                             </div>
                         </article>
 
@@ -109,13 +106,14 @@ export default function LandingPage() {
                                     >
                                         connect with Carmenta
                                     </Link>{" "}
-                                    right now. The conversation feels different—we think
-                                    together, research together, build together.
+                                    right now. Conversations persist. Create an account,
+                                    and we pick up where we left off—context intact,
+                                    relationship growing.
                                 </p>
                                 <p>
                                     We're building in public. The specification, the
-                                    decisions, the code—all open. Next: conversations
-                                    that persist, so the relationship builds over time.
+                                    decisions, the code—all open. Next: memory that
+                                    spans conversations, so Carmenta truly knows you.
                                 </p>
                             </div>
                         </article>
@@ -130,8 +128,8 @@ export default function LandingPage() {
                                 <div className="flex gap-1">
                                     <div className="h-1.5 flex-1 rounded-full bg-primary" />
                                     <div className="h-1.5 flex-1 rounded-full bg-primary" />
+                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
                                     <div className="h-1.5 flex-1 rounded-full bg-primary/30" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
                                     <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
                                     <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
                                 </div>
@@ -153,6 +151,14 @@ export default function LandingPage() {
                                         web intelligence, heart-centered tone
                                     </span>
                                 </div>
+                                <div className="flex items-center gap-2 text-foreground/50">
+                                    <span className="text-primary">✓</span>
+                                    <span>
+                                        M1: Soul Proven — Persistent conversations,
+                                        graceful errors, an experience worth returning
+                                        to
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Current milestone */}
@@ -160,30 +166,21 @@ export default function LandingPage() {
                                 <div className="mb-2 flex items-center gap-2">
                                     <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
                                     <span className="font-semibold text-foreground/90">
-                                        M1: Soul Proven
+                                        M2: Relationship Grows
                                     </span>
                                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs uppercase tracking-wider text-primary">
                                         Now
                                     </span>
                                 </div>
                                 <p className="text-sm text-foreground/70">
-                                    Conversations that persist. Errors handled
-                                    gracefully. The experience that makes you want to
-                                    come back.
+                                    Carmenta remembers you—your preferences, your
+                                    projects, your people. The relationship builds over
+                                    time.
                                 </p>
                             </div>
 
                             {/* Future milestones */}
                             <div className="space-y-3 text-sm">
-                                <div>
-                                    <span className="font-medium text-foreground/70">
-                                        M2: Relationship Grows
-                                    </span>
-                                    <p className="mt-0.5 text-foreground/50">
-                                        Carmenta remembers you—your preferences, your
-                                        projects, your people.
-                                    </p>
-                                </div>
                                 <div>
                                     <span className="font-medium text-foreground/70">
                                         M3: Flow State
