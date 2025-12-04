@@ -31,22 +31,24 @@ import { ModelSelectorPopover } from "./model-selector";
  * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the viewport
  * to prevent content from showing under the glass input dock. Content gradually
  * fades to transparent starting at 65%, creating a smooth visual transition while
- * maintaining readability. The input is positioned absolutely outside the masked
- * scroll area.
+ * maintaining readability.
+ *
+ * Layout: Uses flexbox where the Viewport takes flex-1 (grows) and the input
+ * container takes flex-none (natural height). This prevents the input from
+ * overlapping viewport content, even on short screens.
  *
  * Accessibility: Tab order follows DOM order (Viewport → Input), ensuring proper
  * keyboard navigation. Screen readers announce elements in logical sequence.
  *
  * Mobile: Responsive bottom padding adjusts for smaller viewports. Virtual keyboard
- * appearance on mobile triggers viewport resize, which the absolute positioning handles
- * gracefully without layout shift.
+ * appearance on mobile triggers viewport resize, which flexbox handles gracefully.
  */
 export function HoloThread() {
     return (
-        <ThreadPrimitive.Root className="relative flex h-full flex-col bg-transparent">
-            {/* Viewport with fade mask - this is what scrolls
+        <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
+            {/* Viewport with fade mask - grows to fill available space
                 Responsive padding: pb-24 (96px) on mobile, pb-32 (128px) on desktop
-                Provides clearance for input (~70px) plus breathing room */}
+                Fade ensures content transitions smoothly before viewport edge */}
             <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32">
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
@@ -60,10 +62,10 @@ export function HoloThread() {
                 />
             </ThreadPrimitive.Viewport>
 
-            {/* Input positioned absolutely at bottom - outside masked area
-                Maintains natural tab order for keyboard navigation
-                Mobile: Virtual keyboard resize handled by absolute positioning */}
-            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-transparent px-4 pb-4">
+            {/* Input container - takes natural height, sits below viewport
+                flex-none prevents it from shrinking, naturally reserves space
+                No overlap with viewport content, even on short screens */}
+            <div className="flex flex-none items-center justify-center bg-transparent px-4 pb-4 pt-3">
                 <div className="relative flex w-full max-w-[700px] flex-col items-center">
                     <ThreadScrollToBottom />
                     <Composer />
