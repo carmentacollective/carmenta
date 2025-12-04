@@ -28,26 +28,30 @@ import { ModelSelectorPopover } from "./model-selector";
  * we build our own using the headless primitives and apply our holographic
  * theme directly. This is the "composition over inheritance" approach.
  *
- * The viewport uses the iOS Messages-style fade pattern (.chat-viewport-fade)
- * to prevent content from showing under the glass input dock. Content gradually
- * fades to transparent starting at 65%, creating a smooth visual transition
- * while maintaining readability.
+ * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the messages
+ * container to prevent content from showing under the glass input dock. Content
+ * gradually fades to transparent starting at 65%, creating a smooth visual
+ * transition while maintaining readability.
  */
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
-                <ThreadPrimitive.Empty>
-                    <ThreadWelcome />
-                </ThreadPrimitive.Empty>
+            <ThreadPrimitive.Viewport className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
+                {/* Messages container with fade mask */}
+                <div className="chat-viewport-fade flex w-full flex-1 flex-col items-center">
+                    <ThreadPrimitive.Empty>
+                        <ThreadWelcome />
+                    </ThreadPrimitive.Empty>
 
-                <ThreadPrimitive.Messages
-                    components={{
-                        UserMessage: UserMessage,
-                        AssistantMessage: AssistantMessage,
-                    }}
-                />
+                    <ThreadPrimitive.Messages
+                        components={{
+                            UserMessage: UserMessage,
+                            AssistantMessage: AssistantMessage,
+                        }}
+                    />
+                </div>
 
+                {/* Input stays outside the masked area */}
                 <div className="sticky bottom-0 mt-3 flex w-full max-w-[700px] flex-col items-center justify-end bg-transparent pb-4">
                     <ThreadScrollToBottom />
                     <Composer />
