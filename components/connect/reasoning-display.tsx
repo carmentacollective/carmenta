@@ -216,9 +216,17 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
             onOpenChange={setIsOpen}
             className={cn("not-prose", className)}
         >
-            <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
-                <Brain className={cn("h-4 w-4", isStreaming && "animate-pulse")} />
-                <span className="max-w-[400px] truncate">{statusMessage}</span>
+            <CollapsibleTrigger
+                className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                data-testid="reasoning-trigger"
+            >
+                <Brain
+                    className={cn("h-4 w-4", isStreaming && "animate-pulse")}
+                    data-testid="reasoning-icon"
+                />
+                <span className="max-w-[400px] truncate" data-testid="reasoning-status">
+                    {statusMessage}
+                </span>
                 <ChevronDown
                     className={cn(
                         "h-3 w-3 shrink-0 transition-transform duration-200",
@@ -233,6 +241,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                     "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2",
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
                 )}
+                data-testid="reasoning-content"
             >
                 <div className="max-h-[200px] overflow-y-auto rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm">
                     <pre className="whitespace-pre-wrap font-sans leading-relaxed">
