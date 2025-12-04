@@ -203,7 +203,7 @@ Avoid restating README: If README explains it well, don't duplicate it here.
 
 <exclusion-list>
 What does NOT belong in AGENTS.md:
-- Commands (LLMs know how to run pnpm, npm, pytest, drizzle-kit, etc.)
+- Generic commands (LLMs know how to run npm install, git status, pytest, etc.)
 - Project descriptions and marketing copy (that's for README)
 - Installation instructions
 - Generic best practices AI already knows
@@ -212,7 +212,11 @@ What does NOT belong in AGENTS.md:
 - Emoji reference lists
 - Meta-commentary about the AGENTS.md file itself
 - Anything an LLM would figure out from reading the code
-</exclusion-list>
+
+Exception: Project-specific tooling choices that prevent mistakes DO belong:
+
+- "Use pnpm not npm" (prevents lockfile conflicts)
+- "Use bun drizzle-kit not npx drizzle-kit" (project convention) </exclusion-list>
 
 <subdirectory-agents>
 This section only runs if the user approves subdirectory review after root AGENTS.md is

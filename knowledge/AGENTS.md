@@ -52,4 +52,4 @@ When new information arrives (user feedback, competitive intel, learnings), thin
 PM: Does this change what we should build? Does this reveal something we didn't know?
 Update the relevant file. Most signals update understanding; some demand action.
 
-@.cursor/commands/knowledge.md @.cursor/rules/prompt-engineering.mdc
+@.cursor/rules/prompt-engineering.mdc
