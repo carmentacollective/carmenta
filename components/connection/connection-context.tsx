@@ -6,13 +6,11 @@
  * Manages the active connection state shared between
  * the header navigation and the chat interface.
  *
- * Architecture decision: Using React Context here because:
- * 1. State is needed by sibling components (header and chat)
- * 2. State changes infrequently (only on connection switch)
- * 3. Keeps the page component clean - just wraps with provider
- *
- * TODO: When we add connection persistence, this context will
- * interface with the database layer to load/save connections.
+ * Architecture:
+ * - Receives initial data from server component (SSR)
+ * - Uses server actions for mutations (create, archive, delete)
+ * - Maintains local state for fast UI updates
+ * - Supports both URL-based routing (/connection/[id]) and context-based switching
  */
 
 import {
@@ -20,59 +18,163 @@ import {
     useContext,
     useState,
     useCallback,
+    useTransition,
+    useMemo,
     type ReactNode,
 } from "react";
-import { MOCK_CONNECTIONS, type Connection } from "./mock-connections";
+import { useRouter, usePathname } from "next/navigation";
+
+import {
+    createNewConnection,
+    archiveConnection,
+    deleteConnection as deleteConnectionAction,
+} from "@/lib/actions/connections";
+import type { Connection } from "@/lib/db/schema";
+import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 interface ConnectionContextValue {
-    /** All available connections */
+    /** All available connections (recent) */
     connections: Connection[];
-    /** Currently active connection */
-    activeConnection: Connection | undefined;
+    /** Currently active connection (from DB) */
+    activeConnection: Connection | null;
     /** ID of the currently active connection */
-    activeConnectionId: string;
-    /** Number of connections currently running */
+    activeConnectionId: string | null;
+    /** Number of connections with background streaming */
     runningCount: number;
-    /** Switch to a different connection */
+    /** Whether the context has been initialized with data */
+    isLoaded: boolean;
+    /** Whether a transition (create/delete) is in progress */
+    isPending: boolean;
+    /** Initial messages for the active connection */
+    initialMessages: UIMessageLike[];
+    /** Switch to a different connection (navigates to URL) */
     setActiveConnection: (id: string) => void;
-    /** Create a new connection (placeholder for now) */
+    /** Create a new connection and navigate to it */
     createNewConnection: () => void;
+    /** Archive the active connection */
+    archiveActiveConnection: () => void;
+    /** Delete a connection */
+    deleteConnection: (id: string) => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
 
-export function ConnectionProvider({ children }: { children: ReactNode }) {
-    const [connections] = useState<Connection[]>(MOCK_CONNECTIONS);
-    const [activeConnectionId, setActiveConnectionId] = useState<string>(
-        MOCK_CONNECTIONS[0].id
+interface ConnectionProviderProps {
+    children: ReactNode;
+    /** Initial connections from server (recent list) */
+    initialConnections?: Connection[];
+    /** The currently active connection (from [id] param) */
+    activeConnection?: Connection | null;
+    /** Initial messages for the active connection */
+    initialMessages?: UIMessageLike[];
+}
+
+export function ConnectionProvider({
+    children,
+    initialConnections = [],
+    activeConnection = null,
+    initialMessages = [],
+}: ConnectionProviderProps) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const [isPending, startTransition] = useTransition();
+
+    // Local state for connections list (optimistic updates)
+    const [connections, setConnections] = useState<Connection[]>(initialConnections);
+
+    // Derive active connection ID from the prop
+    const activeConnectionId = activeConnection?.id ?? null;
+
+    // Count connections with streaming status (running in background)
+    const runningCount = useMemo(
+        () => connections.filter((c) => c.streamingStatus === "streaming").length,
+        [connections]
     );
 
-    const activeConnection = connections.find((c) => c.id === activeConnectionId);
-    const runningCount = connections.filter((c) => c.isRunning).length;
+    const isLoaded = initialConnections.length > 0 || activeConnection !== null;
 
-    const setActiveConnection = useCallback((id: string) => {
-        setActiveConnectionId(id);
-        // TODO: Trigger chat content reload when we have persistence
-    }, []);
+    const setActiveConnection = useCallback(
+        (id: string) => {
+            router.push(`/connection/${id}`);
+        },
+        [router]
+    );
 
-    const createNewConnection = useCallback(() => {
-        // TODO: Create new connection in database, add to list, switch to it
-        // For now, just log
+    const handleCreateNewConnection = useCallback(() => {
+        startTransition(async () => {
+            try {
+                const connectionId = await createNewConnection();
+                router.push(`/connection/${connectionId}`);
+            } catch (error) {
+                console.error("Failed to create connection:", error);
+            }
+        });
+    }, [router]);
 
-        console.log("Creating new connection...");
-    }, []);
+    const archiveActiveConnection = useCallback(() => {
+        if (!activeConnectionId) return;
+
+        startTransition(async () => {
+            try {
+                await archiveConnection(activeConnectionId);
+                // Navigate to connection list or most recent
+                router.push("/connection");
+            } catch (error) {
+                console.error("Failed to archive connection:", error);
+            }
+        });
+    }, [activeConnectionId, router]);
+
+    const handleDeleteConnection = useCallback(
+        (id: string) => {
+            startTransition(async () => {
+                try {
+                    await deleteConnectionAction(id);
+                    // Optimistically remove from list
+                    setConnections((prev) => prev.filter((c) => c.id !== id));
+                    // Navigate away if deleted the active one
+                    if (id === activeConnectionId) {
+                        router.push("/connection");
+                    }
+                } catch (error) {
+                    console.error("Failed to delete connection:", error);
+                }
+            });
+        },
+        [activeConnectionId, router]
+    );
+
+    const value = useMemo<ConnectionContextValue>(
+        () => ({
+            connections,
+            activeConnection,
+            activeConnectionId,
+            runningCount,
+            isLoaded,
+            isPending,
+            initialMessages,
+            setActiveConnection,
+            createNewConnection: handleCreateNewConnection,
+            archiveActiveConnection,
+            deleteConnection: handleDeleteConnection,
+        }),
+        [
+            connections,
+            activeConnection,
+            activeConnectionId,
+            runningCount,
+            isLoaded,
+            isPending,
+            initialMessages,
+            setActiveConnection,
+            handleCreateNewConnection,
+            archiveActiveConnection,
+            handleDeleteConnection,
+        ]
+    );
 
     return (
-        <ConnectionContext.Provider
-            value={{
-                connections,
-                activeConnection,
-                activeConnectionId,
-                runningCount,
-                setActiveConnection,
-                createNewConnection,
-            }}
-        >
+        <ConnectionContext.Provider value={value}>
             {children}
         </ConnectionContext.Provider>
     );

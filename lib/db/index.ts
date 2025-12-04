@@ -98,6 +98,7 @@ export {
     markAsBackground,
     findInterruptedConnections,
     generateTitleFromFirstMessage,
+    mapConnectionMessagesToUI,
     type ConnectionWithMessages,
     type MessageWithParts,
     type UIMessageLike,

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { Chat, ConnectLayout } from "@/components/connection";
 import { HolographicBackground } from "@/components/ui/holographic-background";
+import { getRecentConnections, createNewConnection } from "@/lib/actions/connections";
 
 export const metadata: Metadata = {
     title: "Connect | Carmenta",
@@ -9,16 +11,17 @@ export const metadata: Metadata = {
         "Connect with Carmenta - a heart-centered AI interface for thinking together.",
 };
 
-export default function ConnectPage() {
-    return (
-        <div className="relative h-screen overflow-hidden">
-            <HolographicBackground />
+export default async function ConnectionsPage() {
+    // Load recent connections
+    const recentConnections = await getRecentConnections(10);
 
-            <div className="relative z-10 flex h-full flex-col">
-                <ConnectLayout>
-                    <Chat />
-                </ConnectLayout>
-            </div>
-        </div>
-    );
+    // If there are recent connections, redirect to the most recent one
+    // Otherwise, create a new connection
+    if (recentConnections.length > 0) {
+        redirect(`/connection/${recentConnections[0].id}`);
+    }
+
+    // No connections exist - create one and redirect
+    const connectionId = await createNewConnection();
+    redirect(`/connection/${connectionId}`);
 }

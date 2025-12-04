@@ -11,15 +11,33 @@
  * the same visual language. Users feel the coherence without thinking about it.
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Search, X, Clock, Loader2, Sparkles, Pin } from "lucide-react";
+import { Plus, Search, X, Clock, Loader2, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { OptionalUserButton } from "@/components/connection/optional-user-button";
 import { useConnection } from "./connection-context";
-import { SEARCH_HISTORY, getRelativeTime } from "./mock-connections";
+
+/** Formats a date as relative time (e.g., "2h ago", "Yesterday") */
+function getRelativeTime(date: Date | null): string {
+    if (!date) return "";
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 /** Animated indicator for running connections */
 function RunningIndicator() {
@@ -34,8 +52,14 @@ function RunningIndicator() {
 }
 
 export function ConnectHeader() {
-    const { activeConnection, runningCount, setActiveConnection, createNewConnection } =
-        useConnection();
+    const {
+        connections,
+        activeConnection,
+        runningCount,
+        setActiveConnection,
+        createNewConnection,
+        isPending,
+    } = useConnection();
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [query, setQuery] = useState("");
@@ -74,14 +98,22 @@ export function ConnectHeader() {
         return () => window.removeEventListener("keydown", handleEscape);
     }, [isSearchOpen, closeSearch]);
 
-    const filtered = query.trim()
-        ? SEARCH_HISTORY.filter(
-              (c) =>
-                  c.title.toLowerCase().includes(query.toLowerCase()) ||
-                  c.shortTitle.toLowerCase().includes(query.toLowerCase()) ||
-                  c.preview?.toLowerCase().includes(query.toLowerCase())
-          )
-        : SEARCH_HISTORY.slice(0, 6);
+    // Filter connections based on search query
+    const filtered = useMemo(() => {
+        if (!query.trim()) {
+            return connections.slice(0, 6);
+        }
+
+        const lowerQuery = query.toLowerCase();
+        return connections.filter(
+            (c) =>
+                c.title?.toLowerCase().includes(lowerQuery) ||
+                c.id.toLowerCase().includes(lowerQuery)
+        );
+    }, [connections, query]);
+
+    // Display title or placeholder
+    const displayTitle = activeConnection?.title || "New connection";
 
     return (
         <header className="flex items-center justify-between px-4 py-3 sm:px-6">
@@ -114,7 +146,7 @@ export function ConnectHeader() {
                             "text-foreground/40 hover:bg-white/40 hover:text-foreground/60",
                             "transition-all"
                         )}
-                        title="Search conversations"
+                        title="Search connections"
                     >
                         <Search className="h-4 w-4" />
                     </button>
@@ -126,21 +158,27 @@ export function ConnectHeader() {
                     >
                         {runningCount > 0 && <RunningIndicator />}
                         <span className="truncate text-sm text-foreground/70">
-                            {activeConnection?.title}
+                            {displayTitle}
                         </span>
                     </button>
 
                     {/* New chat button - like send button */}
                     <button
                         onClick={createNewConnection}
+                        disabled={isPending}
                         className={cn(
                             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all",
                             "bg-gradient-to-br from-[rgba(200,160,220,0.8)] via-[rgba(160,200,220,0.8)] to-[rgba(220,180,200,0.8)]",
-                            "text-white/90 hover:scale-105 hover:shadow-md"
+                            "text-white/90 hover:scale-105 hover:shadow-md",
+                            "disabled:opacity-50 disabled:hover:scale-100"
                         )}
-                        title="New conversation"
+                        title="New connection"
                     >
-                        <Plus className="h-4 w-4" />
+                        {isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Plus className="h-4 w-4" />
+                        )}
                     </button>
                 </div>
 
@@ -186,10 +224,16 @@ export function ConnectHeader() {
                                                     onClick={() =>
                                                         handleSelect(conn.id)
                                                     }
-                                                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-foreground/5"
+                                                    className={cn(
+                                                        "flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-foreground/5",
+                                                        conn.id ===
+                                                            activeConnection?.id &&
+                                                            "bg-primary/5"
+                                                    )}
                                                 >
                                                     <div className="mt-0.5">
-                                                        {conn.isRunning ? (
+                                                        {conn.streamingStatus ===
+                                                        "streaming" ? (
                                                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                                         ) : (
                                                             <Sparkles className="h-4 w-4 text-foreground/40" />
@@ -198,19 +242,14 @@ export function ConnectHeader() {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2">
                                                             <span className="truncate text-sm font-medium text-foreground/80">
-                                                                {conn.title}
+                                                                {conn.title ||
+                                                                    "New connection"}
                                                             </span>
-                                                            {conn.isPinned && (
-                                                                <Pin className="h-3 w-3 shrink-0 text-foreground/30" />
-                                                            )}
                                                         </div>
                                                         <div className="mt-0.5 flex items-center gap-2">
-                                                            <span className="truncate text-xs text-foreground/50">
-                                                                {conn.preview}
-                                                            </span>
                                                             <span className="shrink-0 text-xs text-foreground/30">
                                                                 {getRelativeTime(
-                                                                    conn.lastActive
+                                                                    conn.lastActivityAt
                                                                 )}
                                                             </span>
                                                         </div>
@@ -220,7 +259,9 @@ export function ConnectHeader() {
                                         </div>
                                     ) : (
                                         <div className="py-8 text-center text-sm text-foreground/50">
-                                            No connections found
+                                            {connections.length === 0
+                                                ? "No connections yet"
+                                                : "No connections found"}
                                         </div>
                                     )}
                                 </div>
