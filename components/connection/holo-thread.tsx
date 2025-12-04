@@ -27,19 +27,16 @@ import { ModelSelectorPopover } from "./model-selector";
  * Instead of overriding assistant-ui's pre-styled Thread with !important hacks,
  * we build our own using the headless primitives and apply our holographic
  * theme directly. This is the "composition over inheritance" approach.
+ *
+ * The viewport uses the iOS Messages-style fade pattern (.chat-viewport-fade)
+ * to prevent content from showing under the glass input dock. Content gradually
+ * fades to transparent starting at 65%, creating a smooth visual transition
+ * while maintaining readability.
  */
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            <ThreadPrimitive.Viewport
-                className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8"
-                style={{
-                    maskImage:
-                        "linear-gradient(to bottom, black 65%, transparent 100%)",
-                    WebkitMaskImage:
-                        "linear-gradient(to bottom, black 65%, transparent 100%)",
-                }}
-            >
+            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
                 </ThreadPrimitive.Empty>

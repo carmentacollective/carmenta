@@ -52,6 +52,9 @@
 
         /* Glassmorphism */
         --glass-blur: 24px;
+
+        /* Chat viewport fade (iOS Messages pattern) */
+        --chat-fade-start: 65%;
     }
 
     .dark {
@@ -352,6 +355,24 @@
 
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
         background: rgba(180, 140, 200, 0.5);
+    }
+
+    /*
+     * Chat viewport fade (iOS Messages pattern)
+     * Prevents content from showing under the glass input dock.
+     * Content gradually fades to transparent starting at var(--chat-fade-start).
+     */
+    .chat-viewport-fade {
+        mask-image: linear-gradient(
+            to bottom,
+            black var(--chat-fade-start),
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            black var(--chat-fade-start),
+            transparent 100%
+        );
     }
 
     /* Gentle rotating animation for loading spinner */
