@@ -1,7 +1,18 @@
 "use client";
 
-import { useMemo, useCallback, useState, createContext, useContext } from "react";
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
+import {
+    useMemo,
+    useCallback,
+    useState,
+    useEffect,
+    useRef,
+    createContext,
+    useContext,
+} from "react";
+import {
+    AssistantRuntimeProvider,
+    ExportedMessageRepository,
+} from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
 
@@ -12,7 +23,86 @@ import {
     useConcierge,
     parseConciergeHeaders,
 } from "@/lib/concierge/context";
+import { useConnection } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
+import type { UIMessageLike } from "@/lib/db/message-mapping";
+
+/**
+ * Convert UIMessageLike (our DB format) to ThreadMessageLike (assistant-ui format)
+ * Main difference: UIMessageLike uses "parts", ThreadMessageLike uses "content"
+ *
+ * ThreadMessageLike content supports: text, reasoning, tool-call, file, source, image, data
+ * Our UIMessageLike parts use: text, reasoning, tool-*, data-*, file, step-start
+ */
+type ThreadMessageContent =
+    | { type: "text"; text: string }
+    | { type: "reasoning"; text: string }
+    | {
+          type: "tool-call";
+          toolCallId: string;
+          toolName: string;
+          args?: Record<string, unknown>;
+          result?: unknown;
+      };
+
+function toThreadMessageLike(msg: UIMessageLike): {
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: ThreadMessageContent[];
+    createdAt?: Date;
+} {
+    // Map our parts to assistant-ui content format
+    const content: ThreadMessageContent[] = [];
+
+    for (const part of msg.parts) {
+        // Text parts
+        if (part.type === "text") {
+            content.push({ type: "text", text: part.text as string });
+            continue;
+        }
+
+        // Reasoning parts
+        if (part.type === "reasoning") {
+            content.push({ type: "reasoning", text: part.text as string });
+            continue;
+        }
+
+        // Tool parts: "tool-getWeather" → type: "tool-call"
+        if (part.type.startsWith("tool-")) {
+            const toolName = part.type.replace("tool-", "");
+            content.push({
+                type: "tool-call",
+                toolCallId: (part.toolCallId as string) ?? "",
+                toolName,
+                args: part.input as Record<string, unknown>,
+                result: part.output,
+            });
+            continue;
+        }
+
+        // Data parts and step-start - convert to text representation for now
+        // (assistant-ui data parts have different structure)
+        if (part.type.startsWith("data-") || part.type === "step-start") {
+            // Skip these as they're UI-only parts
+            continue;
+        }
+
+        // Fallback: unknown parts become text placeholders
+        content.push({ type: "text", text: `[${part.type}]` });
+    }
+
+    // Ensure we have at least one content item
+    if (content.length === 0) {
+        content.push({ type: "text", text: "" });
+    }
+
+    return {
+        id: msg.id,
+        role: msg.role,
+        content,
+        createdAt: msg.createdAt,
+    };
+}
 
 interface ConnectRuntimeProviderProps {
     children: React.ReactNode;
@@ -141,8 +231,10 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
+    const { activeConnectionId, initialMessages } = useConnection();
     const [error, setError] = useState<Error | null>(null);
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
+    const lastConnectionIdRef = useRef<string | null>(null);
 
     /**
      * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
@@ -159,11 +251,16 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             // This prevents showing previous message's model selection during loading
             setConcierge(null);
 
-            // Inject model overrides into POST request body
+            // Inject connectionId and model overrides into POST request body
             let modifiedInit = init;
             if (method === "POST" && init?.body) {
                 try {
                     const body = JSON.parse(init.body as string);
+
+                    // Include connectionId for message persistence
+                    if (activeConnectionId) {
+                        body.connectionId = activeConnectionId;
+                    }
 
                     // Only add overrides that are non-null
                     if (overrides.modelId) {
@@ -183,11 +280,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
                     logger.debug(
                         {
+                            connectionId: activeConnectionId,
                             modelOverride: overrides.modelId,
                             temperatureOverride: overrides.temperature,
                             reasoningOverride: overrides.reasoning,
                         },
-                        "Applied model overrides to request"
+                        "Applied connectionId and model overrides to request"
                     );
                 } catch {
                     // If body parsing fails, proceed without modification
@@ -262,7 +360,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 throw error;
             }
         },
-        [setConcierge, overrides]
+        [setConcierge, overrides, activeConnectionId]
     );
 
     // Memoize transport to prevent recreation on every render
@@ -305,6 +403,47 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         transport,
         onError: handleError,
     });
+
+    /**
+     * Initialize thread with messages when connection changes.
+     * This ensures existing messages are displayed when navigating to a connection.
+     */
+    useEffect(() => {
+        // Only reset when we have a new connection with messages
+        if (!activeConnectionId) return;
+
+        // Avoid resetting on every render - only when connection actually changes
+        if (lastConnectionIdRef.current === activeConnectionId) return;
+        lastConnectionIdRef.current = activeConnectionId;
+
+        // Reset the thread with initial messages from the database
+        // This populates the UI with existing conversation history
+        if (initialMessages && initialMessages.length > 0) {
+            logger.debug(
+                {
+                    connectionId: activeConnectionId,
+                    messageCount: initialMessages.length,
+                },
+                "Initializing thread with existing messages"
+            );
+
+            // Convert UIMessageLike to ThreadMessageLike format for assistant-ui
+            const threadMessages = initialMessages.map(toThreadMessageLike);
+            // fromArray creates parent-child relationships based on message order
+            // Type assertion needed because our JSON types are looser than assistant-ui expects
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const repository = ExportedMessageRepository.fromArray(
+                threadMessages as any
+            );
+            runtime.thread.import(repository);
+        } else {
+            // New connection - start fresh
+            logger.debug(
+                { connectionId: activeConnectionId },
+                "New connection - starting fresh thread"
+            );
+        }
+    }, [activeConnectionId, initialMessages, runtime]);
 
     const errorContextValue = useMemo(
         () => ({ error, clearError }),
