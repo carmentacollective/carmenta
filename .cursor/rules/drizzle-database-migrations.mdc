@@ -1,0 +1,96 @@
+---
+description: Drizzle ORM migration workflow - ALWAYS use drizzle-kit generate, never write migrations manually
+globs: ["**/drizzle/**", "**/lib/db/schema.ts", "**/drizzle.config.ts"]
+---
+
+# Database Migrations with Drizzle
+
+This project uses Drizzle ORM with PostgreSQL. Migrations are critical infrastructure
+that affect production data. Handle them carefully.
+
+## Critical Rule: Always Use drizzle-kit
+
+NEVER manually create or edit migration files. Drizzle tracks migrations through a
+journal system (`drizzle/migrations/meta/_journal.json`) and snapshot files. Manually
+created migrations will not be tracked and will silently fail to run in production.
+
+When you need a schema change:
+
+1. Edit the schema definition in `lib/db/schema.ts`
+2. Run `bun drizzle-kit generate` to create the migration
+3. Review the generated SQL in `drizzle/migrations/`
+4. Test locally with `bun drizzle-kit migrate`
+
+The tool automatically:
+- Creates the migration SQL file
+- Updates the journal to track it
+- Creates a snapshot for the new schema state
+
+## Why This Matters
+
+LLM-generated migrations fail silently because:
+- The journal doesn't get updated
+- Production deployment runs migrations from journal entries only
+- Files exist but never execute
+- Hours of debugging to find a "missing" migration
+
+## Schema Changes
+
+Define all tables, columns, indexes, and constraints in `lib/db/schema.ts`. This is the
+source of truth. Drizzle generates migrations by comparing the schema to the latest
+snapshot.
+
+Example schema definition:
+
+```typescript
+export const connections = pgTable(
+    "connections",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+        title: varchar("title", { length: 500 }),
+        status: connectionStatusEnum("status").notNull().default("active"),
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("connections_user_idx").on(table.userId),
+    ]
+);
+```
+
+## Migration Workflow
+
+1. Make schema changes in `lib/db/schema.ts`
+2. Generate migration: `bun drizzle-kit generate`
+3. Review the generated SQL carefully
+4. Test locally: `bun drizzle-kit migrate`
+5. Commit both the schema changes AND the migration files
+6. Deploy - Render automatically runs migrations on deploy
+
+## Dangerous Operations
+
+Some migrations require extra care:
+
+- **Renaming tables/columns**: Use explicit `ALTER TABLE RENAME` - drizzle may generate
+  DROP + CREATE instead. Review carefully.
+- **Dropping columns**: Data loss is permanent. Consider if data needs to be preserved.
+- **Adding NOT NULL columns**: Requires a default value or migration in steps.
+
+For risky migrations, consider running manually in production first with a read-only
+check, then deploying.
+
+## Troubleshooting
+
+If migrations seem stuck or not running:
+
+1. Check `drizzle/migrations/meta/_journal.json` - is your migration listed?
+2. Check production logs for migration output during deploy
+3. Query `__drizzle_migrations` table to see what's been applied
+
+If a migration file exists but isn't in the journal, it was created incorrectly. Add the
+entry to the journal manually and create the corresponding snapshot, or regenerate using
+drizzle-kit.
