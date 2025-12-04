@@ -67,12 +67,12 @@ describe("ReasoningDisplay", () => {
         expect(collapsibleContent).toHaveAttribute("data-state", "closed");
     });
 
-    it("calculates and shows duration after streaming", async () => {
-        const { rerender } = render(
+    it("shows completion message after streaming ends", async () => {
+        const { rerender, container } = render(
             <ReasoningDisplay content="Reasoning content" isStreaming />
         );
 
-        // Simulate 3 seconds of streaming
+        // Simulate streaming
         await act(async () => {
             vi.advanceTimersByTime(3000);
         });
@@ -80,37 +80,11 @@ describe("ReasoningDisplay", () => {
         // Stop streaming
         rerender(<ReasoningDisplay content="Reasoning content" isStreaming={false} />);
 
-        // Should show duration message (various possible formats)
-        const durationPatterns = [
-            /3\.0s/,
-            /reasoned for/i,
-            /worked through/i,
-            /pondered/i,
-            /figured/i,
-        ];
-
-        const foundDuration = durationPatterns.some(
-            (pattern) => screen.queryByText(pattern) !== null
-        );
-
-        // Or it might show a delight message instead
-        const delightMessages = [
-            "Deep dive complete",
-            "Worked through it",
-            "Got there in the end",
-            "Figured it out",
-            "All sorted",
-            "Mind made up",
-            "Clarity achieved",
-            "Mulled it over",
-            "Sorted the thoughts",
-        ];
-
-        const foundDelight = delightMessages.some(
-            (msg) => screen.queryByText(msg) !== null
-        );
-
-        expect(foundDuration || foundDelight).toBe(true);
+        // Contract: streaming ends → non-empty completion message appears
+        // (we don't test exact text, just that there IS a message)
+        const statusElement = within(container).getByTestId("reasoning-status");
+        expect(statusElement.textContent).toBeTruthy();
+        expect(statusElement.textContent!.length).toBeGreaterThan(0);
     });
 
     it("allows manual toggle even when auto-closing", async () => {

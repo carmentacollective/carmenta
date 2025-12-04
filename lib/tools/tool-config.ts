@@ -36,7 +36,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Preparing...",
             running: "Checking the weather...",
             completed: "Weather retrieved",
-            error: "Weather check didn't come through",
+            error: "Weather didn't load",
         },
         delightMessages: {
             completed: ["Got the forecast", "Here's the weather", "Weather's in"],
@@ -50,7 +50,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Preparing...",
             running: "Building comparison...",
             completed: "Comparison ready",
-            error: "Comparison didn't come together",
+            error: "Comparison didn't work",
         },
         delightMessages: {
             completed: ["All lined up", "Side by side", "Here's the breakdown"],
@@ -64,10 +64,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Preparing...",
             running: "Searching the web...",
             completed: "Search complete",
-            error: "Search didn't go through",
+            error: "Search didn't work",
         },
         delightMessages: {
-            completed: ["Found some results", "Here's what I found", "Search done"],
+            completed: ["Found some results", "Here's what we found", "Search done"],
             fast: ["Quick find!", "Speedy search"],
         },
     },
@@ -83,7 +83,7 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
         pending: "Preparing...",
         running: "Working...",
         completed: "Done",
-        error: "Something went wrong",
+        error: "That didn't work",
     },
     delightMessages: {
         completed: ["Got it", "Here you go", "All done"],
@@ -182,22 +182,22 @@ export function getStatusMessage(
 // ============================================================================
 
 const THINKING_MESSAGES = [
-    "Reaching out...",
-    "Gathering thoughts...",
-    "Working on it...",
+    "Thinking...",
+    "Working through this...",
     "One moment...",
+    "Connecting...",
 ];
 
 const THINKING_DELIGHT_MESSAGES = [
-    "Let me think on that...",
     "Good question...",
-    "Hmm, interesting...",
+    "Interesting...",
+    "Thinking on that...",
 ];
 
 const LONG_WAIT_MESSAGES = [
-    "Thanks for waiting...",
+    "Still here...",
     "Almost there...",
-    "Still working on it...",
+    "Taking a bit longer...",
 ];
 
 /**
@@ -232,28 +232,24 @@ export function getThinkingMessage(messageId: string, elapsedMs: number): string
  * Instead, we use warm verbs that acknowledge the thinking happened.
  */
 const REASONING_COMPLETE_MESSAGES = [
-    "Considered carefully",
     "Thought it through",
-    "Explored thoroughly",
     "Worked through it",
-    "Pondered this one",
     "Figured it out",
     "Got there",
-    "Deep thinking complete",
     "All sorted",
-    "Mind made up",
-    "Clarity achieved",
+    "Clarity",
+    "Considered carefully",
+    "Explored this",
 ];
 
 /**
  * Delight variants with emojis (15% chance).
  */
 const REASONING_COMPLETE_DELIGHT = [
-    "Considered carefully 🤔",
     "Thought that through ✨",
-    "Deep dive complete 🧠",
-    "Pondered thoroughly 💭",
     "Figured it out 💡",
+    "Got there 🧠",
+    "All sorted 💭",
 ];
 
 /**
@@ -290,10 +286,10 @@ export function getErrorMessage(toolName: string, errorText?: string): string {
 
     // If we have specific error text, wrap it warmly
     if (errorText) {
-        return `We hit a snag: ${errorText}. Want to try again?`;
+        return `We hit a snag: ${errorText}`;
     }
 
-    return `${config.messages.error}. Want to try again?`;
+    return config.messages.error;
 }
 
 // ============================================================================

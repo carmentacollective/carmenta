@@ -25,11 +25,91 @@ or "potentially." If it saves time, say how much.
 Be specific. Concrete details matter. "Handles codebases up to 1M lines" beats "Scales
 well."
 
+## Carmenta Vocabulary
+
+The core metaphor is **connection**. Users aren't chatting, searching, or prompting—
+they're connecting. Presence meeting presence.
+
+| Use | Don't use |
+|-----|-----------|
+| message | query, prompt, input, request |
+| connection | chat, conversation, thread, session |
+| connecting | chatting, prompting |
+| find | search (as a verb in UI) |
+| thought | (for warmth, sparingly) |
+
+**"Message"** is what users type. "Query" is database energy. "Prompt" is AI tooling
+jargon. Use "message" in most contexts; use "thought" when extra warmth serves.
+
+**"Connection"** is the ongoing dialogue. Each conversation is a connection—something
+alive, not a transcript.
+
 ## Language Patterns
 
-Use "we" for the team: "We built this to solve the N machines problem." Use "you" for
-users: "You configure it once, then it runs automatically." Use imperatives for
-instructions: "Install the package. Set your API key."
+Use "we" throughout—Carmenta and user are consciousness collaborating. Never "I'll help
+you" or "you should." This isn't style; it's the mechanism that dissolves separation.
+
+Use imperatives for instructions: "Install the package. Set your API key."
+
+## Errors and Recovery
+
+### Never Say "Try Again"
+
+"Try again" assumes the user did something wrong. They usually didn't. It also assumes
+retrying will help. It often won't.
+
+When something fails, be honest about what's happening:
+
+| Situation | Write | Don't write |
+|-----------|-------|-------------|
+| Transient error | "Give it a moment" | "Please try again" |
+| Network issue | "Check your connection" | "Try again later" |
+| Our bug | "We're on it" | "Please try again" |
+| Their message was unclear | "Could you rephrase that?" | "Try again with..." |
+
+### Never Ask Fake Questions
+
+"Want to try again?" isn't a real question—it's a nervous tic. Users will retry if they
+want to. Don't ask.
+
+```
+✗ That didn't work. Want to try again?
+✓ That didn't work.
+```
+
+### Remove "Please"
+
+We're equals, not service providers. "Please" in error contexts feels supplicating.
+
+```
+✗ Please try again in a moment.
+✓ Give it a moment.
+```
+
+### Be Direct About What Broke
+
+```
+✗ Something went wrong
+✓ That didn't work
+
+✗ An error occurred
+✓ We hit a snag
+
+✗ Weather check didn't come through
+✓ Weather didn't load
+```
+
+### Error Pattern
+
+The standard error structure:
+
+```
+We hit a snag
+
+[One sentence about what happened or that we're handling it]
+
+[Action button: Refresh, Go Home, Check Connection—honest about what it does]
+```
 
 ## What Not to Write
 
@@ -44,9 +124,26 @@ use it.
 ✗ "If 2024 was the year of X, 2025 will be..."
 ✗ "Imagine a world where..."
 ✗ "Let's dive in..."
+✗ "automagically"
 
 ✓ "A code editor with integrated debugging and deployment"
 ✓ "Processes 10,000 records in 2 seconds instead of 5 minutes"
+```
+
+### Precious Language
+
+Warmth is presence, not exclamation points. Avoid language that tries too hard.
+
+```
+✗ "Pondered this one"
+✗ "Let me think on that..."
+✗ "Hmm, interesting..."
+✗ "Thanks for waiting..."
+
+✓ "Thought it through"
+✓ "Thinking..."
+✓ "Interesting..."
+✓ "Still here..."
 ```
 
 ### CRITICAL Means Something Dies
@@ -57,15 +154,13 @@ without it.
 ```
 ✗ "CRITICAL: Read this section"
 ✗ "CRITICAL: Follow these best practices"
-✗ "CRITICAL: Understand the architecture"
 
-✓ "CRITICAL: Set ANTHROPIC_API_KEY or Claude Code won't start"
+✓ "CRITICAL: Set ANTHROPIC_API_KEY or Carmenta won't start"
 ✓ "CRITICAL: Back up data before running - this operation is destructive"
 ```
 
 CRITICAL means the system fails, data is lost, or security is compromised. Don't use it
-for recommendations, best practices, or things that are merely helpful. Most things
-aren't critical.
+for recommendations, best practices, or things that are merely helpful.
 
 ## Format
 
@@ -80,59 +175,48 @@ Write in paragraphs by default. Lists sacrifice readability for brevity.
   - Secure by default
 
 ✓ The tool delivers fast performance, taking under 100ms for most operations.
-  It's designed for ease of use - most developers are productive within minutes.
+  It's designed for ease of use—most developers are productive within minutes.
   Security is built in from the start.
 ```
 
-Use lists for steps in procedures, options to choose from, or reference items. Don't use
-lists to avoid writing prose.
+Use lists for steps in procedures, options to choose from, or reference items.
 
 ### Bold Sparingly
 
 Bold is for emphasis. If everything is bold, nothing is.
 
-```
-✗ **Cursor** is an **AI-powered** editor with **inline suggestions** and
-  **chat interface** for **consistent behavior**.
-
-✓ Cursor is an AI-powered code editor. It provides inline suggestions as you
-  type, a chat interface for larger changes, and a rules system to keep AI
-  behavior consistent.
-```
-
 Use bold for key terms on first mention, UI elements ("Click **Save**"), or data loss
-warnings. Never bold emphasis words themselves (important, critical, key). Never bold
-every other phrase.
+warnings. Never bold emphasis words themselves (important, critical, key).
 
 ### Structure with Paragraphs
 
-The first paragraph of each section states the key point. Following paragraphs add
-details. Headings let readers scan and find what they need.
+First paragraph states the key point. Following paragraphs add details. Headings let
+readers scan and find what they need.
 
-Use diagrams when spatial relationships or visual structure helps understanding. ASCII
-art and Mermaid work well for showing how things connect or flow.
+## Loading and Thinking States
 
-## Examples
-
-**Feature description**:
+Keep thinking messages brief and warm. Rotate through a small set for variety without
+being precious.
 
 ```
-✗ Our revolutionary platform leverages cutting-edge technology to transform
-  your workflow. It's not just about automation—it's about unlocking your
-  full potential.
+✓ Thinking...
+✓ Working through this...
+✓ One moment...
+✓ Connecting...
 
-✓ Automates data entry, validation, and export. You go from 4 hours of manual
-  work to 10 minutes of review.
+✗ Reaching out...
+✗ Gathering thoughts...
+✗ Let me think on that...
 ```
 
-**Technical capability**:
+For long waits (5+ seconds), acknowledge without apologizing:
 
 ```
-✗ The system utilizes advanced algorithms to process your data and generate
-  intelligent insights.
+✓ Still here...
+✓ Taking a bit longer...
 
-✓ Uses PostgreSQL full-text search to find relevant records in under 100ms,
-  even across millions of rows.
+✗ Thanks for waiting...
+✗ Sorry, this is taking a while...
 ```
 
 ## The North Star

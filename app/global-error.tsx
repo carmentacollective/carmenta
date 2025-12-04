@@ -39,14 +39,14 @@ export default function GlobalError({
                             We hit a snag
                         </h1>
                         <p className="mb-6 text-muted-foreground">
-                            Something unexpected happened. We&apos;ve already been
-                            notified and are looking into it.
+                            Something unexpected happened. We&apos;ve been notified and
+                            we&apos;re on it.
                         </p>
                         <button
                             onClick={reset}
                             className="rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
                         >
-                            Try again
+                            Refresh
                         </button>
                     </div>
                 </div>

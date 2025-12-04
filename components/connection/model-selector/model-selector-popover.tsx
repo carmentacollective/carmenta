@@ -263,8 +263,7 @@ export function ModelSelectorPopover({
                                         </span>
                                     </div>
                                     <p className="text-xs text-foreground/50">
-                                        Carmenta analyzes your request and picks the
-                                        best model
+                                        Carmenta picks the best model for your message
                                     </p>
                                 </button>
 
@@ -394,7 +393,7 @@ export function ModelSelectorPopover({
                                     className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-white hover:text-foreground/70"
                                 >
                                     <Sparkles className="h-3 w-3" />
-                                    Carmenta AI Concierge decides automagically
+                                    Let Carmenta choose
                                 </button>
                             </div>
                         </div>

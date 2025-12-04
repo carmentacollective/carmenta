@@ -258,7 +258,7 @@ export function ConnectHeader() {
                                         type="text"
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
-                                        placeholder="Search connections..."
+                                        placeholder="Find a connection..."
                                         className="flex-1 bg-transparent text-base text-foreground/90 outline-none placeholder:text-foreground/40"
                                     />
                                     <button
@@ -329,8 +329,8 @@ export function ConnectHeader() {
                                     ) : (
                                         <div className="py-8 text-center text-sm text-foreground/50">
                                             {connections.length === 0
-                                                ? "We haven't started any connections yet"
-                                                : "We couldn't find any matching connections"}
+                                                ? "No connections yet"
+                                                : "No matching connections"}
                                         </div>
                                     )}
                                 </div>
