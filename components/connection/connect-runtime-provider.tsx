@@ -12,6 +12,7 @@ import {
 import {
     AssistantRuntimeProvider,
     ExportedMessageRepository,
+    useThread,
 } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
@@ -225,6 +226,21 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
     temperature: null,
     reasoning: null,
 };
+
+/**
+ * Syncs the assistant-ui thread streaming state with the connection context.
+ * Must be rendered inside AssistantRuntimeProvider.
+ */
+function StreamingStateSync() {
+    const { setIsStreaming } = useConnection();
+    const isRunning = useThread((t) => t.isRunning);
+
+    useEffect(() => {
+        setIsStreaming(isRunning);
+    }, [isRunning, setIsStreaming]);
+
+    return null;
+}
 
 /**
  * Inner provider that has access to concierge context and error handling.
@@ -514,6 +530,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         <ModelOverridesContext.Provider value={overridesContextValue}>
             <ChatErrorContext.Provider value={errorContextValue}>
                 <AssistantRuntimeProvider runtime={runtime}>
+                    <StreamingStateSync />
                     {children}
                     {error && (
                         <RuntimeErrorBanner

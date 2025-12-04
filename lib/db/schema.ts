@@ -148,8 +148,8 @@ export const connections = pgTable(
     "connections",
     {
         /**
-         * NanoID - 12 character lowercase alphanumeric.
-         * Generated at insert time, not by database.
+         * NanoID primary key for URL-safe, non-sequential IDs.
+         * 8 lowercase alphanumeric characters (e.g., "a1b2c3d4").
          */
         id: text("id").primaryKey(),
 

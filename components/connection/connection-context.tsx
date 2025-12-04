@@ -46,6 +46,8 @@ interface ConnectionContextValue {
     freshConnectionIds: Set<string>;
     /** Number of connections with background streaming */
     runningCount: number;
+    /** Whether the AI is currently generating a response */
+    isStreaming: boolean;
     /** Whether the context has been initialized with data */
     isLoaded: boolean;
     /** Whether a transition (create/delete) is in progress */
@@ -70,6 +72,8 @@ interface ConnectionContextValue {
     addNewConnection: (
         connection: Partial<Connection> & { id: string; slug: string }
     ) => void;
+    /** Update streaming state (called from runtime provider) */
+    setIsStreaming: (streaming: boolean) => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
@@ -97,18 +101,32 @@ export function ConnectionProvider({
     // Local state for connections list (optimistic updates)
     const [connections, setConnections] = useState<Connection[]>(initialConnections);
 
+    // Local state for active connection - allows updating when new connection is created
+    // Initialized from server prop, updated on navigation or new connection
+    const [localActiveConnection, setLocalActiveConnection] =
+        useState<Connection | null>(activeConnection);
+
+    // Sync with prop when it changes (e.g., navigation to different connection)
+    useEffect(() => {
+        setLocalActiveConnection(activeConnection);
+    }, [activeConnection]);
+
     // Track recently created connections for animation (cleared after 3s)
     const [freshConnectionIds, setFreshConnectionIds] = useState<Set<string>>(
         new Set()
     );
+
+    // Streaming state - tracks whether AI is generating a response
+    // Updated by the runtime provider, read by the header for the pulsing indicator
+    const [isStreaming, setIsStreaming] = useState(false);
 
     // Error state - surfaces operation failures to the UI
     const [error, setError] = useState<Error | null>(null);
 
     const clearError = useCallback(() => setError(null), []);
 
-    // Derive active connection ID from the prop
-    const activeConnectionId = activeConnection?.id ?? null;
+    // Derive active connection ID from local state
+    const activeConnectionId = localActiveConnection?.id ?? null;
 
     // Count connections with streaming status (running in background)
     const runningCount = useMemo(
@@ -116,7 +134,7 @@ export function ConnectionProvider({
         [connections]
     );
 
-    const isLoaded = initialConnections.length > 0 || activeConnection !== null;
+    const isLoaded = initialConnections.length > 0 || localActiveConnection !== null;
 
     /**
      * Navigate to a connection using its slug.
@@ -267,9 +285,9 @@ export function ConnectionProvider({
     }, [activeConnectionId, activeConnection?.title, refreshConnectionMetadata]);
 
     /**
-     * Add a newly created connection to the list.
+     * Add a newly created connection to the list and set it as active.
      * Called from runtime provider when a new connection is created via API.
-     * Triggers a delightful animation in the connection chooser.
+     * Triggers a delightful animation in the connection chooser and updates the header title.
      */
     const addNewConnection = useCallback(
         (partialConnection: Partial<Connection> & { id: string; slug: string }) => {
@@ -281,11 +299,14 @@ export function ConnectionProvider({
                 title: partialConnection.title ?? null,
                 modelId: partialConnection.modelId ?? null,
                 status: "active",
-                streamingStatus: "streaming", // New connections start streaming
+                streamingStatus: "idle", // Runtime tracks actual streaming state
                 createdAt: now,
                 updatedAt: now,
                 lastActivityAt: now,
             };
+
+            // Set as active connection - this updates the header title
+            setLocalActiveConnection(newConnection);
 
             // Add to front of list (most recent)
             setConnections((prev) => {
@@ -310,7 +331,7 @@ export function ConnectionProvider({
 
             logger.debug(
                 { connectionId: newConnection.id, title: newConnection.title },
-                "Added new connection to list"
+                "Added new connection to list and set as active"
             );
         },
         []
@@ -319,10 +340,11 @@ export function ConnectionProvider({
     const value = useMemo<ConnectionContextValue>(
         () => ({
             connections,
-            activeConnection,
+            activeConnection: localActiveConnection,
             activeConnectionId,
             freshConnectionIds,
             runningCount,
+            isStreaming,
             isLoaded,
             isPending,
             error,
@@ -334,13 +356,15 @@ export function ConnectionProvider({
             clearError,
             refreshConnectionMetadata,
             addNewConnection,
+            setIsStreaming,
         }),
         [
             connections,
-            activeConnection,
+            localActiveConnection,
             activeConnectionId,
             freshConnectionIds,
             runningCount,
+            isStreaming,
             isLoaded,
             isPending,
             error,
