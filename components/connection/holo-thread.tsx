@@ -28,35 +28,36 @@ import { ModelSelectorPopover } from "./model-selector";
  * we build our own using the headless primitives and apply our holographic
  * theme directly. This is the "composition over inheritance" approach.
  *
- * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the messages
- * container to prevent content from showing under the glass input dock. Content
- * gradually fades to transparent starting at 65%, creating a smooth visual
- * transition while maintaining readability.
+ * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the viewport
+ * to prevent content from showing under the glass input dock. Content gradually
+ * fades to transparent starting at 65%, creating a smooth visual transition while
+ * maintaining readability. The input is positioned absolutely outside the masked
+ * scroll area.
  */
 export function HoloThread() {
     return (
-        <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            <ThreadPrimitive.Viewport className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
-                {/* Messages container with fade mask */}
-                <div className="chat-viewport-fade flex w-full flex-1 flex-col items-center">
-                    <ThreadPrimitive.Empty>
-                        <ThreadWelcome />
-                    </ThreadPrimitive.Empty>
+        <ThreadPrimitive.Root className="relative flex h-full flex-col bg-transparent">
+            {/* Viewport with fade mask - this is what scrolls */}
+            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-32 pt-8">
+                <ThreadPrimitive.Empty>
+                    <ThreadWelcome />
+                </ThreadPrimitive.Empty>
 
-                    <ThreadPrimitive.Messages
-                        components={{
-                            UserMessage: UserMessage,
-                            AssistantMessage: AssistantMessage,
-                        }}
-                    />
-                </div>
+                <ThreadPrimitive.Messages
+                    components={{
+                        UserMessage: UserMessage,
+                        AssistantMessage: AssistantMessage,
+                    }}
+                />
+            </ThreadPrimitive.Viewport>
 
-                {/* Input stays outside the masked area */}
-                <div className="sticky bottom-0 mt-3 flex w-full max-w-[700px] flex-col items-center justify-end bg-transparent pb-4">
+            {/* Input positioned absolutely at bottom - outside masked area */}
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-transparent px-4 pb-4">
+                <div className="relative flex w-full max-w-[700px] flex-col items-center">
                     <ThreadScrollToBottom />
                     <Composer />
                 </div>
-            </ThreadPrimitive.Viewport>
+            </div>
         </ThreadPrimitive.Root>
     );
 }
