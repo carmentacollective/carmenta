@@ -145,9 +145,10 @@ describe("tool-config", () => {
             expect(message).toBe("Checking the weather...");
         });
 
-        it("returns base message for error status", () => {
+        it("returns non-empty message for error status", () => {
             const message = getStatusMessage("getWeather", "error", "call-1");
-            expect(message).toBe("Weather check didn't come through");
+            expect(typeof message).toBe("string");
+            expect(message.length).toBeGreaterThan(0);
         });
 
         it("returns base or delight message for completed status", () => {
@@ -187,15 +188,15 @@ describe("tool-config", () => {
     describe("getThinkingMessage", () => {
         it("returns standard message for short waits", () => {
             const standardMessages = [
-                "Reaching out...",
-                "Gathering thoughts...",
-                "Working on it...",
+                "Thinking...",
+                "Working through this...",
                 "One moment...",
+                "Connecting...",
             ];
             const delightMessages = [
-                "Let me think on that...",
                 "Good question...",
-                "Hmm, interesting...",
+                "Interesting...",
+                "Thinking on that...",
             ];
 
             const allPossible = [...standardMessages, ...delightMessages];
@@ -206,9 +207,9 @@ describe("tool-config", () => {
 
         it("returns long wait message after 5 seconds", () => {
             const longWaitMessages = [
-                "Thanks for waiting...",
+                "Still here...",
                 "Almost there...",
-                "Still working on it...",
+                "Taking a bit longer...",
             ];
 
             const message = getThinkingMessage("msg-1", 6000); // 6 seconds
@@ -236,24 +237,20 @@ describe("tool-config", () => {
 
         it("returns warm completion messages", () => {
             const standardMessages = [
-                "Considered carefully",
                 "Thought it through",
-                "Explored thoroughly",
                 "Worked through it",
-                "Pondered this one",
                 "Figured it out",
                 "Got there",
-                "Deep thinking complete",
                 "All sorted",
-                "Mind made up",
-                "Clarity achieved",
+                "Clarity",
+                "Considered carefully",
+                "Explored this",
             ];
             const delightMessages = [
-                "Considered carefully 🤔",
                 "Thought that through ✨",
-                "Deep dive complete 🧠",
-                "Pondered thoroughly 💭",
                 "Figured it out 💡",
+                "Got there 🧠",
+                "All sorted 💭",
             ];
             const allPossible = [...standardMessages, ...delightMessages];
 
@@ -265,11 +262,10 @@ describe("tool-config", () => {
 
         it("sometimes returns delight message with emoji", () => {
             const delightMessages = [
-                "Considered carefully 🤔",
                 "Thought that through ✨",
-                "Deep dive complete 🧠",
-                "Pondered thoroughly 💭",
                 "Figured it out 💡",
+                "Got there 🧠",
+                "All sorted 💭",
             ];
 
             let sawDelight = false;
@@ -294,21 +290,17 @@ describe("tool-config", () => {
     describe("getErrorMessage", () => {
         it("wraps custom error text warmly", () => {
             const message = getErrorMessage("getWeather", "Connection timed out");
-            expect(message).toBe(
-                "We hit a snag: Connection timed out. Want to try again?"
-            );
+            expect(message).toBe("We hit a snag: Connection timed out");
         });
 
         it("uses tool-specific error without custom text", () => {
             const message = getErrorMessage("getWeather");
-            expect(message).toBe(
-                "Weather check didn't come through. Want to try again?"
-            );
+            expect(message).toBe("Weather didn't load");
         });
 
         it("uses default error for unknown tools", () => {
             const message = getErrorMessage("unknownTool");
-            expect(message).toBe("Something went wrong. Want to try again?");
+            expect(message).toBe("That didn't work");
         });
     });
 

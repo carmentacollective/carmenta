@@ -36,8 +36,8 @@ export default function NotFound() {
 
                 {/* Description */}
                 <p className="text-lg text-muted-foreground">
-                    We couldn't find what you were looking for. The page may have moved,
-                    or the link might be outdated.
+                    This page doesn&apos;t exist—it may have moved or the link is
+                    outdated.
                 </p>
 
                 {/* Actions */}

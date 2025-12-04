@@ -51,8 +51,8 @@ export default function OfflinePage() {
 
                 {/* Description */}
                 <p className="text-lg text-muted-foreground">
-                    Carmenta needs an internet connection to connect with AI. We'll
-                    automatically reconnect when your network is available.
+                    Carmenta needs an internet connection. We&apos;ll reconnect
+                    automatically when your network returns.
                 </p>
 
                 {/* Actions */}

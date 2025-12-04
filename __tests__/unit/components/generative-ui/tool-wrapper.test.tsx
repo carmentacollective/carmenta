@@ -93,9 +93,7 @@ describe("ToolWrapper", () => {
             </ToolWrapper>
         );
 
-        expect(
-            screen.getByText(/we hit a snag.*want to try again/i)
-        ).toBeInTheDocument();
+        expect(screen.getByText(/we hit a snag/i)).toBeInTheDocument();
     });
 
     it("is open by default when not completed", () => {

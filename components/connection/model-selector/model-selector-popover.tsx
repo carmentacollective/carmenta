@@ -263,8 +263,7 @@ export function ModelSelectorPopover({
                                         </span>
                                     </div>
                                     <p className="text-xs text-foreground/50">
-                                        Carmenta analyzes your request and picks the
-                                        best model
+                                        Carmenta picks the best model for your message
                                     </p>
                                 </button>
 

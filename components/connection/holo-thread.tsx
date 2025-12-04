@@ -170,7 +170,7 @@ function AssistantMessageContent() {
                 >
                     <AlertCircle className="h-4 w-4 shrink-0 text-red-500/80" />
                     <span className="text-base text-red-600/90">
-                        We hit a snag. Please try again in a moment.
+                        We hit a snag. Give it a moment.
                     </span>
                 </div>
             </MessagePrimitive.Error>

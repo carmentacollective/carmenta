@@ -16,13 +16,13 @@ describe("ThinkingIndicator", () => {
 
         // Should show one of the thinking messages
         const thinkingMessages = [
-            "Reaching out...",
-            "Gathering thoughts...",
-            "Working on it...",
+            "Thinking...",
+            "Working through this...",
             "One moment...",
-            "Let me think on that...",
+            "Connecting...",
             "Good question...",
-            "Hmm, interesting...",
+            "Interesting...",
+            "Thinking on that...",
         ];
 
         const foundMessage = thinkingMessages.some((msg) => screen.queryByText(msg));
