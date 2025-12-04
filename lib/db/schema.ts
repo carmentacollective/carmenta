@@ -147,7 +147,11 @@ export const users = pgTable(
 export const connections = pgTable(
     "connections",
     {
-        id: uuid("id").primaryKey().defaultRandom(),
+        /**
+         * NanoID - 12 character lowercase alphanumeric.
+         * Generated at insert time, not by database.
+         */
+        id: text("id").primaryKey(),
 
         /** Owner of this connection */
         userId: uuid("user_id")
@@ -159,6 +163,12 @@ export const connections = pgTable(
          * Can be manually overridden.
          */
         title: varchar("title", { length: 500 }),
+
+        /**
+         * URL-friendly slug: "title-slug-id"
+         * Auto-generated from title + id. Updated when title changes.
+         */
+        slug: varchar("slug", { length: 255 }).notNull(),
 
         /** Tab-style status for UI presentation */
         status: connectionStatusEnum("status").notNull().default("active"),
@@ -194,6 +204,8 @@ export const connections = pgTable(
         index("connections_user_status_idx").on(table.userId, table.status),
         /** Find background tasks that may need recovery */
         index("connections_streaming_status_idx").on(table.streamingStatus),
+        /** Slug lookup - unique per connection */
+        index("connections_slug_idx").on(table.slug),
     ]
 );
 
@@ -218,7 +230,10 @@ export const messages = pgTable(
          */
         id: text("id").primaryKey(),
 
-        connectionId: uuid("connection_id")
+        /**
+         * Connection ID - references connections.id (NanoID text)
+         */
+        connectionId: text("connection_id")
             .references(() => connections.id, { onDelete: "cascade" })
             .notNull(),
 

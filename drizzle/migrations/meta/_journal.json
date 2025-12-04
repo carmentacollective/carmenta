@@ -22,6 +22,13 @@
       "when": 1764878400000,
       "tag": "0002_rename_conversations_to_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1764864718309,
+      "tag": "0003_large_wolverine",
+      "breakpoints": true
     }
   ]
 }

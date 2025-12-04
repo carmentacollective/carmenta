@@ -40,7 +40,8 @@ export const maxDuration = 120;
  */
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
-    connectionId: z.string().uuid().optional(),
+    /** Connection ID - 12 character NanoID */
+    connectionId: z.string().min(12).max(12).optional(),
     /** User override for model - bypasses concierge selection */
     modelOverride: z.string().optional(),
     /** User override for temperature (0-1) - bypasses concierge selection */
@@ -574,7 +575,9 @@ export async function POST(req: Request) {
             "X-Concierge-Reasoning",
             encodeURIComponent(JSON.stringify(concierge.reasoning))
         );
-        headers.set("X-Conversation-Id", connectionId!);
+        headers.set("X-Connection-Id", connectionId!);
+        // Slug is updated after title generation - client should refetch connection for latest slug
+        headers.set("X-Connection-Slug-Pending", "true");
 
         // Return response with concierge headers
         return new Response(response.body, {

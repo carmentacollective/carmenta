@@ -24,6 +24,7 @@ import {
 } from "./message-mapping";
 import { logger } from "../logger";
 import { generateTitle } from "./title-generator";
+import { generateConnectionId, generateSlug } from "../nanoid";
 
 // ============================================================================
 // CONNECTION OPERATIONS
@@ -42,18 +43,26 @@ export async function createConnection(
     title?: string,
     modelId?: string
 ): Promise<Connection> {
+    const id = generateConnectionId();
+    const slug = generateSlug(title, id);
+
     const [connection] = await db
         .insert(connections)
         .values({
+            id,
             userId,
             title: title ?? null,
+            slug,
             modelId: modelId ?? null,
             status: "active",
             streamingStatus: "idle",
         })
         .returning();
 
-    logger.info({ connectionId: connection.id, userId }, "Created new connection");
+    logger.info(
+        { connectionId: connection.id, slug: connection.slug, userId },
+        "Created new connection"
+    );
 
     return connection;
 }
@@ -116,17 +125,26 @@ export async function getRecentConnections(
 
 /**
  * Updates connection metadata
+ *
+ * If title is updated, the slug is automatically regenerated.
  */
 export async function updateConnection(
     connectionId: string,
     updates: Partial<Pick<NewConnection, "title" | "status" | "modelId">>
 ): Promise<Connection | null> {
+    // If title is being updated, regenerate the slug
+    const updateData: Record<string, unknown> = {
+        ...updates,
+        updatedAt: new Date(),
+    };
+
+    if (updates.title !== undefined) {
+        updateData.slug = generateSlug(updates.title, connectionId);
+    }
+
     const [updated] = await db
         .update(connections)
-        .set({
-            ...updates,
-            updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(connections.id, connectionId))
         .returning();
 
