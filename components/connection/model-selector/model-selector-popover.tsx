@@ -168,10 +168,11 @@ export function ModelSelectorPopover({
                     "bg-white/50 backdrop-blur-sm",
                     "hover:scale-105 hover:bg-white/70",
                     "active:scale-95",
+                    "relative",
                     hasOverrides && !isAuto
                         ? "ring-2 ring-primary/40"
                         : "ring-1 ring-white/40",
-                    isOpen && "bg-white/70 ring-2 ring-primary/50",
+                    isOpen && "z-[102] bg-white/70 ring-2 ring-primary/50",
                     disabled && "cursor-not-allowed opacity-50"
                 )}
                 aria-label="Model settings"
@@ -195,13 +196,14 @@ export function ModelSelectorPopover({
             {isOpen && (
                 <>
                     <div
-                        className="fixed inset-0 z-[100]"
+                        className="fixed inset-0 z-[100] cursor-pointer"
                         onClick={() => setIsOpen(false)}
+                        aria-hidden="true"
                     />
 
                     <div
                         className={cn(
-                            "fixed bottom-24 right-4 z-[101] w-80",
+                            "pointer-events-auto fixed bottom-24 right-4 z-[101] w-80",
                             "max-h-[calc(100vh-8rem)]",
                             "rounded-2xl bg-white backdrop-blur-xl",
                             "shadow-2xl ring-1 ring-black/10",
