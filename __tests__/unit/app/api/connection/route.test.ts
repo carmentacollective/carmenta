@@ -48,8 +48,8 @@ vi.mock("@/lib/db", () => ({
         clerkId: "test-user-123",
         email: "test@example.com",
     }),
-    createConversation: vi.fn().mockResolvedValue({
-        id: "conv-123",
+    createConnection: vi.fn().mockResolvedValue({
+        id: "conn-123",
         userId: "db-user-123",
         status: "active",
         streamingStatus: "idle",
@@ -60,12 +60,12 @@ vi.mock("@/lib/db", () => ({
 }));
 
 // Import after mocks are set up
-import { POST } from "@/app/api/connect/route";
+import { POST } from "@/app/api/connection/route";
 
 // Import the mock to control it in tests
 import { currentUser } from "@clerk/nextjs/server";
 
-describe("POST /api/connect", () => {
+describe("POST /api/connection", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset to authenticated user by default
@@ -83,7 +83,7 @@ describe("POST /api/connect", () => {
         vi.mocked(currentUser).mockResolvedValue(null);
         vi.stubEnv("NODE_ENV", "production");
 
-        const request = new Request("http://localhost/api/connect", {
+        const request = new Request("http://localhost/api/connection", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -116,7 +116,7 @@ describe("POST /api/connect", () => {
             },
         ];
 
-        const request = new Request("http://localhost/api/connect", {
+        const request = new Request("http://localhost/api/connection", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: uiMessages }),
@@ -132,7 +132,7 @@ describe("POST /api/connect", () => {
         expect(text).toContain("Hello");
     });
 
-    it("handles multi-turn conversation with UIMessage format", async () => {
+    it("handles multi-turn connection with UIMessage format", async () => {
         const uiMessages = [
             {
                 id: "msg-1",
@@ -151,7 +151,7 @@ describe("POST /api/connect", () => {
             },
         ];
 
-        const request = new Request("http://localhost/api/connect", {
+        const request = new Request("http://localhost/api/connection", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: uiMessages }),

@@ -49,9 +49,9 @@ export interface MessageWithParts extends Message {
 }
 
 /**
- * Conversation with all messages and parts loaded
+ * Connection with all messages and parts loaded
  */
-export interface ConversationWithMessages {
+export interface ConnectionWithMessages {
     id: string;
     userId: string;
     title: string | null;
@@ -195,11 +195,11 @@ function mapDataPartToDBPart(
  */
 export function mapUIMessageToDB(
     uiMessage: UIMessageLike,
-    conversationId: string
+    connectionId: string
 ): { message: NewMessage; parts: NewMessagePart[] } {
     const message: NewMessage = {
         id: uiMessage.id,
-        conversationId,
+        connectionId,
         role: uiMessage.role,
     };
 
@@ -358,13 +358,13 @@ export function mapDBMessageToUI(messageWithParts: MessageWithParts): UIMessageL
 }
 
 /**
- * Maps all messages from a conversation to UI format
+ * Maps all messages from a connection to UI format
  */
-export function mapConversationMessagesToUI(
-    conversation: ConversationWithMessages
+export function mapConnectionMessagesToUI(
+    connection: ConnectionWithMessages
 ): UIMessageLike[] {
     // Sort messages by creation time
-    const sortedMessages = [...conversation.messages].sort(
+    const sortedMessages = [...connection.messages].sort(
         (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
     );
 

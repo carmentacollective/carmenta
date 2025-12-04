@@ -3,7 +3,7 @@
 /**
  * Connection Context
  *
- * Manages the active connection (conversation) state shared between
+ * Manages the active connection state shared between
  * the header navigation and the chat interface.
  *
  * Architecture decision: Using React Context here because:
@@ -11,7 +11,7 @@
  * 2. State changes infrequently (only on connection switch)
  * 3. Keeps the page component clean - just wraps with provider
  *
- * TODO: When we add conversation persistence, this context will
+ * TODO: When we add connection persistence, this context will
  * interface with the database layer to load/save connections.
  */
 

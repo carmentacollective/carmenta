@@ -1,9 +1,9 @@
 /**
- * Conversation Persistence Tests
+ * Connection Persistence Tests
  *
- * Comprehensive tests for conversation storage with 90%+ coverage.
+ * Comprehensive tests for connection storage with 90%+ coverage.
  * Tests cover:
- * - Conversation CRUD operations
+ * - Connection CRUD operations
  * - Message save/load with parts
  * - Tool call and generative UI persistence
  * - Streaming status for background save
@@ -28,21 +28,21 @@ const uuid = () => crypto.randomUUID();
 
 import { db, schema } from "@/lib/db";
 import {
-    createConversation,
-    getConversationWithMessages,
-    getRecentConversations,
-    updateConversation,
-    archiveConversation,
-    deleteConversation,
+    createConnection,
+    getConnectionWithMessages,
+    getRecentConnections,
+    updateConnection,
+    archiveConnection,
+    deleteConnection,
     saveMessage,
     updateMessage,
     upsertMessage,
     loadMessages,
     updateStreamingStatus,
     markAsBackground,
-    findInterruptedConversations,
+    findInterruptedConnections,
     generateTitleFromFirstMessage,
-} from "@/lib/db/conversations";
+} from "@/lib/db/connections";
 import {
     mapUIPartToDBPart,
     mapDBPartToUIPart,
@@ -124,50 +124,50 @@ function createDataMessage(
 // CONVERSATION CRUD TESTS
 // ============================================================================
 
-describe("Conversation CRUD Operations", () => {
+describe("Connection CRUD Operations", () => {
     let testUser: Awaited<ReturnType<typeof createTestUser>>;
 
     beforeEach(async () => {
         testUser = await createTestUser();
     });
 
-    describe("createConversation", () => {
-        it("creates conversation with defaults", async () => {
-            const conversation = await createConversation(testUser.id);
+    describe("createConnection", () => {
+        it("creates connection with defaults", async () => {
+            const connection = await createConnection(testUser.id);
 
-            expect(conversation.id).toBeDefined();
-            expect(conversation.userId).toBe(testUser.id);
-            expect(conversation.status).toBe("active");
-            expect(conversation.streamingStatus).toBe("idle");
-            expect(conversation.title).toBeNull();
+            expect(connection.id).toBeDefined();
+            expect(connection.userId).toBe(testUser.id);
+            expect(connection.status).toBe("active");
+            expect(connection.streamingStatus).toBe("idle");
+            expect(connection.title).toBeNull();
         });
 
-        it("creates conversation with title and model", async () => {
-            const conversation = await createConversation(
+        it("creates connection with title and model", async () => {
+            const connection = await createConnection(
                 testUser.id,
                 "Test Chat",
                 "anthropic/claude-sonnet-4"
             );
 
-            expect(conversation.title).toBe("Test Chat");
-            expect(conversation.modelId).toBe("anthropic/claude-sonnet-4");
+            expect(connection.title).toBe("Test Chat");
+            expect(connection.modelId).toBe("anthropic/claude-sonnet-4");
         });
     });
 
-    describe("getConversationWithMessages", () => {
-        it("returns conversation with messages and parts", async () => {
-            const conversation = await createConversation(testUser.id, "Test Chat");
+    describe("getConnectionWithMessages", () => {
+        it("returns connection with messages and parts", async () => {
+            const connection = await createConnection(testUser.id, "Test Chat");
 
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(uuid(), "user", "Hello")
             );
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(uuid(), "assistant", "Hi there!")
             );
 
-            const result = await getConversationWithMessages(conversation.id);
+            const result = await getConnectionWithMessages(connection.id);
 
             expect(result).not.toBeNull();
             expect(result!.messages).toHaveLength(2);
@@ -175,50 +175,50 @@ describe("Conversation CRUD Operations", () => {
             expect(result!.messages[1].parts).toHaveLength(1);
         });
 
-        it("returns null for non-existent conversation", async () => {
-            const result = await getConversationWithMessages(uuid());
+        it("returns null for non-existent connection", async () => {
+            const result = await getConnectionWithMessages(uuid());
             expect(result).toBeNull();
         });
     });
 
-    describe("getRecentConversations", () => {
-        it("returns conversations ordered by last activity", async () => {
-            const conv1 = await createConversation(testUser.id, "First");
-            const conv2 = await createConversation(testUser.id, "Second");
+    describe("getRecentConnections", () => {
+        it("returns connections ordered by last activity", async () => {
+            const conv1 = await createConnection(testUser.id, "First");
+            const conv2 = await createConnection(testUser.id, "Second");
 
             // Add message to conv1 to make it more recent
             await saveMessage(conv1.id, createTextMessage(uuid(), "user", "test"));
 
-            const recent = await getRecentConversations(testUser.id, 10);
+            const recent = await getRecentConnections(testUser.id, 10);
 
             expect(recent).toHaveLength(2);
             expect(recent[0].id).toBe(conv1.id); // Most recent first
         });
 
         it("respects limit parameter", async () => {
-            await createConversation(testUser.id, "One");
-            await createConversation(testUser.id, "Two");
-            await createConversation(testUser.id, "Three");
+            await createConnection(testUser.id, "One");
+            await createConnection(testUser.id, "Two");
+            await createConnection(testUser.id, "Three");
 
-            const recent = await getRecentConversations(testUser.id, 2);
+            const recent = await getRecentConnections(testUser.id, 2);
             expect(recent).toHaveLength(2);
         });
 
         it("filters by status", async () => {
-            const active = await createConversation(testUser.id, "Active");
-            const toArchive = await createConversation(testUser.id, "Will Archive");
-            await archiveConversation(toArchive.id);
+            const active = await createConnection(testUser.id, "Active");
+            const toArchive = await createConnection(testUser.id, "Will Archive");
+            await archiveConnection(toArchive.id);
 
-            const activeOnly = await getRecentConversations(testUser.id, 10, "active");
+            const activeOnly = await getRecentConnections(testUser.id, 10, "active");
             expect(activeOnly).toHaveLength(1);
             expect(activeOnly[0].id).toBe(active.id);
         });
     });
 
-    describe("updateConversation", () => {
+    describe("updateConnection", () => {
         it("updates title", async () => {
-            const conversation = await createConversation(testUser.id);
-            const updated = await updateConversation(conversation.id, {
+            const connection = await createConnection(testUser.id);
+            const updated = await updateConnection(connection.id, {
                 title: "New Title",
             });
 
@@ -226,41 +226,38 @@ describe("Conversation CRUD Operations", () => {
         });
 
         it("updates status", async () => {
-            const conversation = await createConversation(testUser.id);
-            const updated = await updateConversation(conversation.id, {
+            const connection = await createConnection(testUser.id);
+            const updated = await updateConnection(connection.id, {
                 status: "background",
             });
 
             expect(updated!.status).toBe("background");
         });
 
-        it("returns null for non-existent conversation", async () => {
-            const result = await updateConversation(uuid(), { title: "Test" });
+        it("returns null for non-existent connection", async () => {
+            const result = await updateConnection(uuid(), { title: "Test" });
             expect(result).toBeNull();
         });
     });
 
-    describe("archiveConversation", () => {
+    describe("archiveConnection", () => {
         it("sets status to archived", async () => {
-            const conversation = await createConversation(testUser.id);
-            await archiveConversation(conversation.id);
+            const connection = await createConnection(testUser.id);
+            await archiveConnection(connection.id);
 
-            const result = await getConversationWithMessages(conversation.id);
+            const result = await getConnectionWithMessages(connection.id);
             expect(result!.status).toBe("archived");
         });
     });
 
-    describe("deleteConversation", () => {
-        it("removes conversation and messages (cascade)", async () => {
-            const conversation = await createConversation(testUser.id);
-            await saveMessage(
-                conversation.id,
-                createTextMessage(uuid(), "user", "test")
-            );
+    describe("deleteConnection", () => {
+        it("removes connection and messages (cascade)", async () => {
+            const connection = await createConnection(testUser.id);
+            await saveMessage(connection.id, createTextMessage(uuid(), "user", "test"));
 
-            await deleteConversation(conversation.id);
+            await deleteConnection(connection.id);
 
-            const result = await getConversationWithMessages(conversation.id);
+            const result = await getConnectionWithMessages(connection.id);
             expect(result).toBeNull();
         });
     });
@@ -272,22 +269,22 @@ describe("Conversation CRUD Operations", () => {
 
 describe("Message Persistence", () => {
     let testUser: Awaited<ReturnType<typeof createTestUser>>;
-    let conversation: Awaited<ReturnType<typeof createConversation>>;
+    let connection: Awaited<ReturnType<typeof createConnection>>;
 
     beforeEach(async () => {
         testUser = await createTestUser();
-        conversation = await createConversation(testUser.id, "Test Chat");
+        connection = await createConnection(testUser.id, "Test Chat");
     });
 
     describe("saveMessage", () => {
         it("saves text message with parts", async () => {
             const messageId = uuid();
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(messageId, "user", "Hello world")
             );
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
             expect(messages).toHaveLength(1);
             expect(messages[0].id).toBe(messageId);
             expect(messages[0].role).toBe("user");
@@ -313,9 +310,9 @@ describe("Message Persistence", () => {
                 ],
             };
 
-            await saveMessage(conversation.id, message);
+            await saveMessage(connection.id, message);
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
             expect(messages).toHaveLength(1);
             expect(messages[0].parts).toHaveLength(3);
             expect(messages[0].parts[0].type).toBe("text");
@@ -323,16 +320,13 @@ describe("Message Persistence", () => {
             expect(messages[0].parts[2].type).toBe("text");
         });
 
-        it("updates conversation lastActivityAt", async () => {
+        it("updates connection lastActivityAt", async () => {
             const before = new Date();
             await new Promise((r) => setTimeout(r, 10)); // Small delay
 
-            await saveMessage(
-                conversation.id,
-                createTextMessage(uuid(), "user", "test")
-            );
+            await saveMessage(connection.id, createTextMessage(uuid(), "user", "test"));
 
-            const conv = await getConversationWithMessages(conversation.id);
+            const conv = await getConnectionWithMessages(connection.id);
             expect(conv!.lastActivityAt.getTime()).toBeGreaterThan(before.getTime());
         });
     });
@@ -341,7 +335,7 @@ describe("Message Persistence", () => {
         it("replaces all parts atomically", async () => {
             const messageId = uuid();
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createToolCallMessage(messageId, "webSearch", "input-available", {
                     query: "test",
                 })
@@ -359,7 +353,7 @@ describe("Message Persistence", () => {
                 )
             );
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
             expect(messages[0].parts[0]).toMatchObject({
                 type: "tool-webSearch",
                 state: "output-available",
@@ -372,26 +366,26 @@ describe("Message Persistence", () => {
         it("creates message if not exists", async () => {
             const messageId = uuid();
             await upsertMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(messageId, "user", "Hello")
             );
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
             expect(messages).toHaveLength(1);
         });
 
         it("updates message if exists", async () => {
             const messageId = uuid();
             await upsertMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(messageId, "user", "First")
             );
             await upsertMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(messageId, "user", "Updated")
             );
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
             expect(messages).toHaveLength(1);
             expect(messages[0].parts[0]).toMatchObject({
                 type: "text",
@@ -403,19 +397,19 @@ describe("Message Persistence", () => {
     describe("loadMessages", () => {
         it("returns messages in creation order", async () => {
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(uuid(), "user", "First")
             );
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(uuid(), "assistant", "Second")
             );
             await saveMessage(
-                conversation.id,
+                connection.id,
                 createTextMessage(uuid(), "user", "Third")
             );
 
-            const messages = await loadMessages(conversation.id);
+            const messages = await loadMessages(connection.id);
 
             expect(messages).toHaveLength(3);
             expect(messages[0].parts[0]).toMatchObject({ text: "First" });
@@ -423,7 +417,7 @@ describe("Message Persistence", () => {
             expect(messages[2].parts[0]).toMatchObject({ text: "Third" });
         });
 
-        it("returns empty array for non-existent conversation", async () => {
+        it("returns empty array for non-existent connection", async () => {
             const messages = await loadMessages(uuid());
             expect(messages).toEqual([]);
         });
@@ -436,11 +430,11 @@ describe("Message Persistence", () => {
 
 describe("Tool Call Persistence", () => {
     let testUser: Awaited<ReturnType<typeof createTestUser>>;
-    let conversation: Awaited<ReturnType<typeof createConversation>>;
+    let connection: Awaited<ReturnType<typeof createConnection>>;
 
     beforeEach(async () => {
         testUser = await createTestUser();
-        conversation = await createConversation(testUser.id);
+        connection = await createConnection(testUser.id);
     });
 
     it("persists tool call with input-available state", async () => {
@@ -448,8 +442,8 @@ describe("Tool Call Persistence", () => {
             location: "San Francisco",
         });
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "tool-getWeather",
@@ -467,8 +461,8 @@ describe("Tool Call Persistence", () => {
             { temperature: 68, conditions: "Sunny" }
         );
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "tool-getWeather",
@@ -493,8 +487,8 @@ describe("Tool Call Persistence", () => {
             ],
         };
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "tool-webSearch",
@@ -527,8 +521,8 @@ describe("Tool Call Persistence", () => {
             ],
         };
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts).toHaveLength(4);
         expect(messages[0].parts[1]).toMatchObject({ input: { location: "NYC" } });
@@ -542,11 +536,11 @@ describe("Tool Call Persistence", () => {
 
 describe("Generative UI Data Persistence", () => {
     let testUser: Awaited<ReturnType<typeof createTestUser>>;
-    let conversation: Awaited<ReturnType<typeof createConversation>>;
+    let connection: Awaited<ReturnType<typeof createConnection>>;
 
     beforeEach(async () => {
         testUser = await createTestUser();
-        conversation = await createConversation(testUser.id);
+        connection = await createConnection(testUser.id);
     });
 
     it("persists weather card data", async () => {
@@ -556,8 +550,8 @@ describe("Generative UI Data Persistence", () => {
             conditions: "Sunny",
         });
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "data-weather",
@@ -579,8 +573,8 @@ describe("Generative UI Data Persistence", () => {
             criteria: ["price", "features"],
         });
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "data-comparison",
@@ -603,8 +597,8 @@ describe("Generative UI Data Persistence", () => {
             ],
         });
 
-        await saveMessage(conversation.id, message);
-        const messages = await loadMessages(conversation.id);
+        await saveMessage(connection.id, message);
+        const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
             type: "data-searchResults",
@@ -624,66 +618,66 @@ describe("Generative UI Data Persistence", () => {
 
 describe("Streaming Status Management", () => {
     let testUser: Awaited<ReturnType<typeof createTestUser>>;
-    let conversation: Awaited<ReturnType<typeof createConversation>>;
+    let connection: Awaited<ReturnType<typeof createConnection>>;
 
     beforeEach(async () => {
         testUser = await createTestUser();
-        conversation = await createConversation(testUser.id);
+        connection = await createConnection(testUser.id);
     });
 
     describe("updateStreamingStatus", () => {
         it("updates status to streaming", async () => {
-            await updateStreamingStatus(conversation.id, "streaming");
+            await updateStreamingStatus(connection.id, "streaming");
 
-            const conv = await getConversationWithMessages(conversation.id);
+            const conv = await getConnectionWithMessages(connection.id);
             expect(conv!.streamingStatus).toBe("streaming");
         });
 
         it("updates status to completed", async () => {
-            await updateStreamingStatus(conversation.id, "streaming");
-            await updateStreamingStatus(conversation.id, "completed");
+            await updateStreamingStatus(connection.id, "streaming");
+            await updateStreamingStatus(connection.id, "completed");
 
-            const conv = await getConversationWithMessages(conversation.id);
+            const conv = await getConnectionWithMessages(connection.id);
             expect(conv!.streamingStatus).toBe("completed");
         });
 
         it("updates status to failed", async () => {
-            await updateStreamingStatus(conversation.id, "streaming");
-            await updateStreamingStatus(conversation.id, "failed");
+            await updateStreamingStatus(connection.id, "streaming");
+            await updateStreamingStatus(connection.id, "failed");
 
-            const conv = await getConversationWithMessages(conversation.id);
+            const conv = await getConnectionWithMessages(connection.id);
             expect(conv!.streamingStatus).toBe("failed");
         });
     });
 
     describe("markAsBackground", () => {
-        it("changes conversation status to background", async () => {
-            await markAsBackground(conversation.id);
+        it("changes connection status to background", async () => {
+            await markAsBackground(connection.id);
 
-            const conv = await getConversationWithMessages(conversation.id);
+            const conv = await getConnectionWithMessages(connection.id);
             expect(conv!.status).toBe("background");
         });
     });
 
-    describe("findInterruptedConversations", () => {
-        it("finds conversations with streaming status", async () => {
-            const conv1 = await createConversation(testUser.id, "Streaming");
-            const conv2 = await createConversation(testUser.id, "Completed");
+    describe("findInterruptedConnections", () => {
+        it("finds connections with streaming status", async () => {
+            const conv1 = await createConnection(testUser.id, "Streaming");
+            const conv2 = await createConnection(testUser.id, "Completed");
 
             await updateStreamingStatus(conv1.id, "streaming");
             await updateStreamingStatus(conv2.id, "completed");
 
-            const interrupted = await findInterruptedConversations(testUser.id);
+            const interrupted = await findInterruptedConnections(testUser.id);
 
             expect(interrupted).toHaveLength(1);
             expect(interrupted[0].id).toBe(conv1.id);
         });
 
-        it("returns empty array if no interrupted conversations", async () => {
-            const conv = await createConversation(testUser.id);
+        it("returns empty array if no interrupted connections", async () => {
+            const conv = await createConnection(testUser.id);
             await updateStreamingStatus(conv.id, "completed");
 
-            const interrupted = await findInterruptedConversations(testUser.id);
+            const interrupted = await findInterruptedConnections(testUser.id);
             expect(interrupted).toEqual([]);
         });
     });
@@ -702,18 +696,18 @@ describe("Background Save - Window Close Simulation", () => {
 
     it("preserves partial response when window closes mid-stream", async () => {
         // Simulate: User sends message, streaming starts
-        const conversation = await createConversation(testUser.id, "Deep Research");
-        await updateStreamingStatus(conversation.id, "streaming");
+        const connection = await createConnection(testUser.id, "Deep Research");
+        await updateStreamingStatus(connection.id, "streaming");
 
         // User message saved immediately
         await saveMessage(
-            conversation.id,
+            connection.id,
             createTextMessage(uuid(), "user", "Research quantum computing")
         );
 
         // Partial assistant response saved during streaming
         const assistantId = uuid();
-        await saveMessage(conversation.id, {
+        await saveMessage(connection.id, {
             id: assistantId,
             role: "assistant",
             parts: [
@@ -731,10 +725,10 @@ describe("Background Save - Window Close Simulation", () => {
         });
 
         // WINDOW CLOSES HERE - streaming interrupted
-        await markAsBackground(conversation.id);
+        await markAsBackground(connection.id);
 
         // Simulate: User returns later
-        const recovered = await getConversationWithMessages(conversation.id);
+        const recovered = await getConnectionWithMessages(connection.id);
 
         expect(recovered!.status).toBe("background");
         expect(recovered!.streamingStatus).toBe("streaming");
@@ -753,21 +747,21 @@ describe("Background Save - Window Close Simulation", () => {
         });
     });
 
-    it("can resume and complete interrupted conversation", async () => {
-        // Setup: Create interrupted conversation
-        const conversation = await createConversation(testUser.id, "Interrupted");
-        await updateStreamingStatus(conversation.id, "streaming");
+    it("can resume and complete interrupted connection", async () => {
+        // Setup: Create interrupted connection
+        const connection = await createConnection(testUser.id, "Interrupted");
+        await updateStreamingStatus(connection.id, "streaming");
         const assistantId = uuid();
-        await saveMessage(conversation.id, createTextMessage(uuid(), "user", "Hello"));
-        await saveMessage(conversation.id, {
+        await saveMessage(connection.id, createTextMessage(uuid(), "user", "Hello"));
+        await saveMessage(connection.id, {
             id: assistantId,
             role: "assistant",
             parts: [{ type: "text", text: "Hi! Let me help with..." }],
         });
-        await markAsBackground(conversation.id);
+        await markAsBackground(connection.id);
 
-        // Find interrupted conversations
-        const interrupted = await findInterruptedConversations(testUser.id);
+        // Find interrupted connections
+        const interrupted = await findInterruptedConnections(testUser.id);
         expect(interrupted).toHaveLength(1);
 
         // Resume: Update the assistant message with completed response
@@ -781,11 +775,11 @@ describe("Background Save - Window Close Simulation", () => {
                 },
             ],
         });
-        await updateStreamingStatus(conversation.id, "completed");
-        await updateConversation(conversation.id, { status: "active" });
+        await updateStreamingStatus(connection.id, "completed");
+        await updateConnection(connection.id, { status: "active" });
 
         // Verify completion
-        const completed = await getConversationWithMessages(conversation.id);
+        const completed = await getConnectionWithMessages(connection.id);
         expect(completed!.status).toBe("active");
         expect(completed!.streamingStatus).toBe("completed");
         // DB format uses textContent, not text
@@ -794,15 +788,15 @@ describe("Background Save - Window Close Simulation", () => {
         });
     });
 
-    it("handles multiple interrupted conversations", async () => {
-        // Create several interrupted conversations
+    it("handles multiple interrupted connections", async () => {
+        // Create several interrupted connections
         for (let i = 0; i < 3; i++) {
-            const conv = await createConversation(testUser.id, `Interrupted ${i}`);
+            const conv = await createConnection(testUser.id, `Interrupted ${i}`);
             await updateStreamingStatus(conv.id, "streaming");
             await saveMessage(conv.id, createTextMessage(uuid(), "user", `Query ${i}`));
         }
 
-        const interrupted = await findInterruptedConversations(testUser.id);
+        const interrupted = await findInterruptedConnections(testUser.id);
         expect(interrupted).toHaveLength(3);
     });
 });
@@ -932,11 +926,11 @@ describe("Message Mapping", () => {
                 ],
             };
 
-            const { message: dbMsg, parts } = mapUIMessageToDB(message, "conv-1");
+            const { message: dbMsg, parts } = mapUIMessageToDB(message, "conn-1");
 
             expect(dbMsg).toMatchObject({
                 id: "msg-1",
-                conversationId: "conv-1",
+                connectionId: "conn-1",
                 role: "assistant",
             });
             expect(parts).toHaveLength(2);
@@ -958,55 +952,55 @@ describe("Title Generation", () => {
     });
 
     it("generates title from first user message", async () => {
-        const conversation = await createConversation(testUser.id);
+        const connection = await createConnection(testUser.id);
         await saveMessage(
-            conversation.id,
+            connection.id,
             createTextMessage(uuid(), "user", "How do I cook pasta?")
         );
 
-        await generateTitleFromFirstMessage(conversation.id);
+        await generateTitleFromFirstMessage(connection.id);
 
-        const conv = await getConversationWithMessages(conversation.id);
+        const conv = await getConnectionWithMessages(connection.id);
         expect(conv!.title).toBe("How do I cook pasta?");
     });
 
     it("truncates long messages via LLM fallback", async () => {
-        const conversation = await createConversation(testUser.id);
+        const connection = await createConnection(testUser.id);
         const longMessage = "A".repeat(100);
         await saveMessage(
-            conversation.id,
+            connection.id,
             createTextMessage(uuid(), "user", longMessage)
         );
 
-        await generateTitleFromFirstMessage(conversation.id);
+        await generateTitleFromFirstMessage(connection.id);
 
-        const conv = await getConversationWithMessages(conversation.id);
+        const conv = await getConnectionWithMessages(connection.id);
         // Mock returns 47 chars + "..." = 50 total
         expect(conv!.title).toHaveLength(50);
         expect(conv!.title!.endsWith("...")).toBe(true);
     });
 
     it("does not overwrite existing title", async () => {
-        const conversation = await createConversation(testUser.id, "Existing Title");
-        await saveMessage(conversation.id, createTextMessage(uuid(), "user", "Hello"));
+        const connection = await createConnection(testUser.id, "Existing Title");
+        await saveMessage(connection.id, createTextMessage(uuid(), "user", "Hello"));
 
-        await generateTitleFromFirstMessage(conversation.id);
+        await generateTitleFromFirstMessage(connection.id);
 
-        const conv = await getConversationWithMessages(conversation.id);
+        const conv = await getConnectionWithMessages(connection.id);
         expect(conv!.title).toBe("Existing Title");
     });
 
-    it("handles conversation with no user messages", async () => {
-        const conversation = await createConversation(testUser.id);
+    it("handles connection with no user messages", async () => {
+        const connection = await createConnection(testUser.id);
         // Only assistant messages, no user messages - title should not be generated
         await saveMessage(
-            conversation.id,
+            connection.id,
             createTextMessage(uuid(), "assistant", "Hello, how can I help?")
         );
 
-        await generateTitleFromFirstMessage(conversation.id);
+        await generateTitleFromFirstMessage(connection.id);
 
-        const conv = await getConversationWithMessages(conversation.id);
+        const conv = await getConnectionWithMessages(connection.id);
         expect(conv!.title).toBeNull();
     });
 });

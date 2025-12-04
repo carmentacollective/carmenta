@@ -17,7 +17,7 @@ import Link from "next/link";
 import { Plus, Search, X, Clock, Loader2, Sparkles, Pin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { OptionalUserButton } from "@/components/connect/optional-user-button";
+import { OptionalUserButton } from "@/components/connection/optional-user-button";
 import { useConnection } from "./connection-context";
 import { SEARCH_HISTORY, getRelativeTime } from "./mock-connections";
 

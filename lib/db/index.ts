@@ -62,8 +62,8 @@ export type {
     User,
     NewUser,
     UserPreferences,
-    Conversation,
-    NewConversation,
+    Connection,
+    NewConnection,
     Message,
     NewMessage,
     MessagePart,
@@ -82,24 +82,24 @@ export {
     updateLastSignedIn,
 } from "./users";
 
-// Re-export conversation operations
+// Re-export connection operations
 export {
-    createConversation,
-    getConversationWithMessages,
-    getRecentConversations,
-    updateConversation,
-    archiveConversation,
-    deleteConversation,
+    createConnection,
+    getConnectionWithMessages,
+    getRecentConnections,
+    updateConnection,
+    archiveConnection,
+    deleteConnection,
     saveMessage,
     updateMessage,
     upsertMessage,
     loadMessages,
     updateStreamingStatus,
     markAsBackground,
-    findInterruptedConversations,
+    findInterruptedConnections,
     generateTitleFromFirstMessage,
-    type ConversationWithMessages,
+    type ConnectionWithMessages,
     type MessageWithParts,
     type UIMessageLike,
     type UIMessagePartLike,
-} from "./conversations";
+} from "./connections";

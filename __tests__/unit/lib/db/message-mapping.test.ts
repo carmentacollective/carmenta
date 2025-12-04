@@ -12,11 +12,11 @@ import {
     mapDBPartToUIPart,
     mapUIMessageToDB,
     mapDBMessageToUI,
-    mapConversationMessagesToUI,
+    mapConnectionMessagesToUI,
     type UIMessagePartLike,
     type UIMessageLike,
     type MessageWithParts,
-    type ConversationWithMessages,
+    type ConnectionWithMessages,
 } from "@/lib/db/message-mapping";
 import type { MessagePart } from "@/lib/db/schema";
 
@@ -550,7 +550,7 @@ describe("mapUIMessageToDB", () => {
 
         expect(result.message).toMatchObject({
             id: "msg-123",
-            conversationId: "conv-456",
+            connectionId: "conv-456",
             role: "assistant",
         });
         expect(result.parts).toHaveLength(2);
@@ -563,7 +563,7 @@ describe("mapDBMessageToUI", () => {
     it("sorts parts by order", () => {
         const messageWithParts: MessageWithParts = {
             id: "msg-123",
-            conversationId: "conv-456",
+            connectionId: "conv-456",
             role: "assistant",
             createdAt: new Date(),
             parts: [
@@ -607,9 +607,9 @@ describe("mapDBMessageToUI", () => {
     });
 });
 
-describe("mapConversationMessagesToUI", () => {
+describe("mapConnectionMessagesToUI", () => {
     it("sorts messages by creation time", () => {
-        const conversation: ConversationWithMessages = {
+        const connection: ConnectionWithMessages = {
             id: "conv-123",
             userId: "user-456",
             title: "Test Conversation",
@@ -622,7 +622,7 @@ describe("mapConversationMessagesToUI", () => {
             messages: [
                 {
                     id: "msg-2",
-                    conversationId: "conv-123",
+                    connectionId: "conv-123",
                     role: "assistant",
                     createdAt: new Date("2024-01-01T12:00:01Z"),
                     parts: [
@@ -645,7 +645,7 @@ describe("mapConversationMessagesToUI", () => {
                 },
                 {
                     id: "msg-1",
-                    conversationId: "conv-123",
+                    connectionId: "conv-123",
                     role: "user",
                     createdAt: new Date("2024-01-01T12:00:00Z"),
                     parts: [
@@ -669,7 +669,7 @@ describe("mapConversationMessagesToUI", () => {
             ],
         };
 
-        const result = mapConversationMessagesToUI(conversation);
+        const result = mapConnectionMessagesToUI(connection);
 
         expect(result).toHaveLength(2);
         expect(result[0].id).toBe("msg-1"); // Earlier message first

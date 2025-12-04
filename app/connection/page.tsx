@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Chat, ConnectLayout } from "@/components/connect";
+import { Chat, ConnectLayout } from "@/components/connection";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {

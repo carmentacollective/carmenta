@@ -1,5 +1,5 @@
 /**
- * LLM-powered conversation title generator.
+ * LLM-powered connection title generator.
  *
  * Uses Haiku for fast, cheap title generation with optional emoji prefixes
  * inspired by gitmoji conventions.
@@ -27,7 +27,7 @@ const MAX_TITLE_LENGTH = 60;
  * System prompt for title generation.
  * Guides Haiku to create concise, meaningful titles with selective emoji use.
  */
-const TITLE_SYSTEM_PROMPT = `You generate short conversation titles.
+const TITLE_SYSTEM_PROMPT = `You generate short connection titles.
 
 Rules:
 - Output ONLY the title, nothing else
@@ -52,13 +52,13 @@ Emoji usage (inspired by gitmoji):
 
 Skip emoji for:
 - Simple questions or lookups
-- Generic conversations
+- Generic connections
 - When no emoji feels right
 
 Be concise. Be helpful. Nail the intent.`;
 
 /**
- * Generates a conversation title using Haiku.
+ * Generates a connection title using Haiku.
  *
  * Falls back to simple truncation if LLM fails.
  *
@@ -68,7 +68,7 @@ Be concise. Be helpful. Nail the intent.`;
 export async function generateTitle(firstMessage: string): Promise<string> {
     // Early return for empty messages
     if (!firstMessage.trim()) {
-        return "New conversation";
+        return "New connection";
     }
 
     try {

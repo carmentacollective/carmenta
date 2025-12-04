@@ -1,10 +1,10 @@
 /**
- * Mock data for connections (conversations/contexts)
+ * Mock data for connections
  *
  * IMPORTANT: Titles are realistic lengths - AI chat summaries tend to be
  * descriptive, not short. Design must handle 30-50 character titles gracefully.
  *
- * TODO: Replace with real data from database once conversation persistence is implemented.
+ * TODO: Replace with real data from database once connection persistence is implemented.
  */
 
 export interface Connection {
@@ -21,8 +21,8 @@ export interface Connection {
 export const MOCK_CONNECTIONS: Connection[] = [
     {
         id: "conn-1",
-        title: "Designing a tab system for multi-conversation UI",
-        shortTitle: "Designing a tab system for multi-conver...",
+        title: "Designing a tab system for multi-connection UI",
+        shortTitle: "Designing a tab system for multi-connec...",
         lastActive: new Date(),
         isPinned: true,
         isRunning: true,
