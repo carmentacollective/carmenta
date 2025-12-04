@@ -201,7 +201,7 @@ Misaligned elements, inconsistent styles, typos, mixed tone
 2. **Start the app**: Check if dev server is running at localhost:3000. If not:
 
    ```
-   cd /Users/nick/src/carmenta-concierge && pnpm dev
+   cd /Users/nick/src/carmenta-concierge && bun dev
    ```
 
    Wait for "Ready" message.

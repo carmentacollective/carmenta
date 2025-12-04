@@ -201,7 +201,7 @@ Over-prescriptive agent prompt:
 2. Then, look at each dependency
 3. For each dependency, check if there's a newer version
 4. If there is, update it
-5. Then run npm install
+5. Then run bun install
 6. Then run the tests
 7. If tests fail, revert the change
 </instructions>
