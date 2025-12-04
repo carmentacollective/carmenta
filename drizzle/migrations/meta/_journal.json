@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1764599056631,
-      "tag": "0000_futuristic_clint_barton",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1764705590102,
-      "tag": "0001_message_id_text",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1764878400000,
-      "tag": "0002_rename_conversations_to_connections",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1764864718309,
-      "tag": "0003_large_wolverine",
+      "when": 1764870123852,
+      "tag": "0000_tired_cobalt_man",
       "breakpoints": true
     }
   ]
