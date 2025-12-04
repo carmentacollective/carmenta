@@ -24,7 +24,7 @@ import {
 } from "./message-mapping";
 import { logger } from "../logger";
 import { generateTitle } from "./title-generator";
-import { generateConnectionId, generateSlug } from "../nanoid";
+import { generateConnectionId, generateSlug } from "../sqids";
 
 // ============================================================================
 // CONNECTION OPERATIONS

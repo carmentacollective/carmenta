@@ -148,8 +148,8 @@ export const connections = pgTable(
     "connections",
     {
         /**
-         * NanoID primary key for URL-safe, non-sequential IDs.
-         * 8 lowercase alphanumeric characters (e.g., "a1b2c3d4").
+         * Sqid primary key for URL-safe, non-sequential IDs.
+         * 8+ lowercase alphanumeric characters (e.g., "k6wm9zdx").
          */
         id: text("id").primaryKey(),
 
@@ -231,7 +231,7 @@ export const messages = pgTable(
         id: text("id").primaryKey(),
 
         /**
-         * Connection ID - references connections.id (NanoID text)
+         * Connection ID - references connections.id (Sqid text)
          */
         connectionId: text("connection_id")
             .references(() => connections.id, { onDelete: "cascade" })

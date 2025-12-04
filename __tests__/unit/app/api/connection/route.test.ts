@@ -91,7 +91,7 @@ describe("POST /api/connection", () => {
         });
 
         mocks.mockCreateConnection.mockImplementation((userId, title) => ({
-            id: "abc12345", // 8-character nanoid
+            id: "abc12345", // 8+ character Sqid
             userId,
             title: title ?? null,
             slug: title ? "fix-authentication-bug-abc12345" : "connection-abc12345",
@@ -378,7 +378,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "abc12345", // Valid 8-char nanoid
+                    connectionId: "abc12345", // Valid 8+ char Sqid
                 }),
             });
 
@@ -449,7 +449,7 @@ describe("POST /api/connection", () => {
             expect(response.status).toBe(400);
         });
 
-        it("rejects old 12-character UUID-style connection IDs", async () => {
+        it("accepts longer Sqid connection IDs (variable length)", async () => {
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -461,12 +461,12 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "a1b2c3d4e5f6", // Old 12-char format
+                    connectionId: "a1b2c3d4e5f6", // 12-char Sqid is valid
                 }),
             });
 
             const response = await POST(request);
-            expect(response.status).toBe(400);
+            expect(response.status).toBe(200);
         });
     });
 });

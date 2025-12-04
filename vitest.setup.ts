@@ -264,7 +264,7 @@ beforeEach(async () => {
     `);
 
     // Create connections table
-    // Note: id is TEXT (NanoID) not UUID
+    // Note: id is TEXT (Sqid) not UUID
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS connections (
             id TEXT PRIMARY KEY,
@@ -296,7 +296,7 @@ beforeEach(async () => {
 
     // Create messages table
     // Note: id is TEXT (not UUID) to accept nanoid-style IDs from AI SDK
-    // Note: connection_id is TEXT (NanoID) not UUID
+    // Note: connection_id is TEXT (Sqid) not UUID
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS messages (
             id TEXT PRIMARY KEY,

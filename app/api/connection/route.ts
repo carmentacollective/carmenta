@@ -40,10 +40,10 @@ export const maxDuration = 120;
  */
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
-    /** Connection ID - 8 character NanoID (lowercase alphanumeric only) */
+    /** Connection ID - 8+ character Sqid (lowercase alphanumeric only) */
     connectionId: z
         .string()
-        .regex(/^[0-9a-z]{8}$/, "Invalid connection ID format")
+        .regex(/^[0-9a-z]{8,}$/, "Invalid connection ID format")
         .optional(),
     /** User override for model - bypasses concierge selection */
     modelOverride: z.string().optional(),

@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Chat, ConnectLayout } from "@/components/connection";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { loadConnection, getRecentConnections } from "@/lib/actions/connections";
-import { extractIdFromSlug } from "@/lib/nanoid";
+import { extractIdFromSlug } from "@/lib/sqids";
 
 interface ConnectionPageProps {
     params: Promise<{ slug: string }>;
