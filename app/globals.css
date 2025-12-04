@@ -182,13 +182,13 @@
     /* Glassmorphism input dock */
     .glass-input-dock {
         @apply rounded-[28px] p-2;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         box-shadow:
-            0 8px 32px rgba(180, 140, 200, 0.2),
-            0 0 0 1px rgba(255, 255, 255, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            0 8px 32px rgba(180, 140, 200, 0.25),
+            0 0 0 1px rgba(255, 255, 255, 0.7),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
     /* Holographic gradient button */

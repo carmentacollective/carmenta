@@ -31,7 +31,15 @@ import { ModelSelectorPopover } from "./model-selector";
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            <ThreadPrimitive.Viewport className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
+            <ThreadPrimitive.Viewport
+                className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8"
+                style={{
+                    maskImage:
+                        "linear-gradient(to bottom, black 65%, transparent 100%)",
+                    WebkitMaskImage:
+                        "linear-gradient(to bottom, black 65%, transparent 100%)",
+                }}
+            >
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
                 </ThreadPrimitive.Empty>
