@@ -18,17 +18,17 @@ interface ConnectionPageProps {
 export default async function ConnectionPage({ params }: ConnectionPageProps) {
     const { id } = await params;
 
-    // Load the connection and its messages
-    const result = await loadConnection(id);
+    // Load connection and recent connections in parallel for better performance
+    const [result, recentConnections] = await Promise.all([
+        loadConnection(id),
+        getRecentConnections(10),
+    ]);
 
     if (!result) {
         notFound();
     }
 
     const { connection, messages } = result;
-
-    // Also load recent connections for the header dropdown
-    const recentConnections = await getRecentConnections(10);
 
     return (
         <div className="relative h-screen overflow-hidden">

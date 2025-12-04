@@ -95,11 +95,23 @@ export function ConnectHeader() {
     // Header should be visible when we have an active connection
     const shouldShowHeader = isLoaded && activeConnection !== null;
 
+    // Ref to track current shouldShowHeader value for use in timeout
+    const shouldShowHeaderRef = useRef(shouldShowHeader);
+
+    // Sync ref with current value (in effect to satisfy React rules)
+    useEffect(() => {
+        shouldShowHeaderRef.current = shouldShowHeader;
+    }, [shouldShowHeader]);
+
     // Track header visibility for entrance animation
     useEffect(() => {
         if (shouldShowHeader && !hasShownHeader) {
             // Small delay to ensure CSS transition works
-            const timer = setTimeout(() => setHasShownHeader(true), 50);
+            // Re-check condition via ref to avoid race condition if shouldShowHeader
+            // becomes false before timeout completes
+            const timer = setTimeout(() => {
+                if (shouldShowHeaderRef.current) setHasShownHeader(true);
+            }, 50);
             return () => clearTimeout(timer);
         }
     }, [shouldShowHeader, hasShownHeader]);
