@@ -145,7 +145,7 @@ interface ReasoningDisplayProps {
  * - Collapsible section with brain icon
  * - Auto-opens when streaming starts
  * - Auto-closes 500ms after streaming ends
- * - Shows duration with warmth: "Thought through that for 3.2s"
+ * - Warm completion messages (no duration - it doesn't communicate value)
  * - User can toggle open/closed anytime
  */
 export const ReasoningDisplay = memo(function ReasoningDisplay({

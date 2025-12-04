@@ -224,30 +224,52 @@ describe("tool-config", () => {
     });
 
     describe("getReasoningCompleteMessage", () => {
-        it("returns message with duration", () => {
-            // Run multiple times to see the default pattern
-            let sawDuration = false;
+        it("never includes duration in message", () => {
+            // Duration is intentionally not shown - it doesn't communicate value
             for (let i = 0; i < 100; i++) {
                 const message = getReasoningCompleteMessage(`reason-${i}`, 3.2);
-                if (message.includes("3.2s")) {
-                    sawDuration = true;
-                    break;
-                }
+                expect(message).not.toContain("3.2s");
+                expect(message).not.toContain("3.2");
+                expect(message).not.toMatch(/\d+\.\d+s/);
             }
-            expect(sawDuration).toBe(true);
         });
 
-        it("sometimes returns delight message without duration", () => {
-            const delightMessages = [
-                "Deep dive complete",
+        it("returns warm completion messages", () => {
+            const standardMessages = [
+                "Considered carefully",
+                "Thought it through",
+                "Explored thoroughly",
                 "Worked through it",
-                "Got there in the end",
+                "Pondered this one",
                 "Figured it out",
+                "Got there",
+                "Deep thinking complete",
                 "All sorted",
                 "Mind made up",
                 "Clarity achieved",
-                "Mulled it over",
-                "Sorted the thoughts",
+            ];
+            const delightMessages = [
+                "Considered carefully 🤔",
+                "Thought that through ✨",
+                "Deep dive complete 🧠",
+                "Pondered thoroughly 💭",
+                "Figured it out 💡",
+            ];
+            const allPossible = [...standardMessages, ...delightMessages];
+
+            for (let i = 0; i < 100; i++) {
+                const message = getReasoningCompleteMessage(`warm-${i}`, 2.5);
+                expect(allPossible).toContain(message);
+            }
+        });
+
+        it("sometimes returns delight message with emoji", () => {
+            const delightMessages = [
+                "Considered carefully 🤔",
+                "Thought that through ✨",
+                "Deep dive complete 🧠",
+                "Pondered thoroughly 💭",
+                "Figured it out 💡",
             ];
 
             let sawDelight = false;
