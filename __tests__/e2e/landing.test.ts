@@ -48,7 +48,7 @@ test.describe("Landing Page", () => {
         await page.goto("/");
         const connectLink = page.getByRole("link", { name: /connect/i });
         await expect(connectLink).toBeVisible();
-        await expect(connectLink).toHaveAttribute("href", "/connect");
+        await expect(connectLink).toHaveAttribute("href", "/connection");
     });
 
     test("shows milestone indicator", async ({ page }) => {

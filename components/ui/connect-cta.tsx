@@ -17,7 +17,7 @@ export function ConnectCTA() {
     const label = isLoggedIn ? "Continue" : "Start Connecting";
 
     return (
-        <Link href="/connect" className="btn-holo inline-flex items-center gap-2">
+        <Link href="/connection" className="btn-holo inline-flex items-center gap-2">
             <span>{isLoaded ? label : "..."}</span>
             <svg
                 className="h-4 w-4"
