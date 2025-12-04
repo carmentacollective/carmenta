@@ -7,9 +7,9 @@ import {
 } from "@/lib/sqids";
 
 describe("generateConnectionId", () => {
-    it("generates 8+ character alphanumeric ID", () => {
+    it("generates 6+ character alphanumeric ID", () => {
         const id = generateConnectionId();
-        expect(id.length).toBeGreaterThanOrEqual(8);
+        expect(id.length).toBeGreaterThanOrEqual(6);
         expect(id).toMatch(/^[0-9a-z]+$/);
     });
 
@@ -21,91 +21,92 @@ describe("generateConnectionId", () => {
     it("generates IDs that can be decoded", () => {
         const id = generateConnectionId();
         const decoded = decodeSqid(id);
-        expect(decoded).toHaveLength(2); // We encode two random numbers
-        expect(decoded.every((n) => typeof n === "number")).toBe(true);
+        expect(decoded).toHaveLength(1); // We encode one 24-bit number
+        expect(decoded[0]).toBeGreaterThanOrEqual(0);
+        expect(decoded[0]).toBeLessThan(16777216); // 2^24
     });
 });
 
 describe("generateSlug", () => {
     it("generates slug from title and ID", () => {
-        const slug = generateSlug("Fix authentication bug", "k6wm9zdx");
-        expect(slug).toBe("fix-authentication-bug-k6wm9zdx");
+        const slug = generateSlug("Fix authentication bug", "2ot9ib");
+        expect(slug).toBe("fix-authentication-bug-2ot9ib");
     });
 
     it("handles null title", () => {
-        const slug = generateSlug(null, "k6wm9zdx");
-        expect(slug).toBe("connection-k6wm9zdx");
+        const slug = generateSlug(null, "2ot9ib");
+        expect(slug).toBe("connection-2ot9ib");
     });
 
     it("handles undefined title", () => {
-        const slug = generateSlug(undefined, "k6wm9zdx");
-        expect(slug).toBe("connection-k6wm9zdx");
+        const slug = generateSlug(undefined, "2ot9ib");
+        expect(slug).toBe("connection-2ot9ib");
     });
 
     it("handles empty string title", () => {
-        const slug = generateSlug("", "k6wm9zdx");
-        expect(slug).toBe("connection-k6wm9zdx");
+        const slug = generateSlug("", "2ot9ib");
+        expect(slug).toBe("connection-2ot9ib");
     });
 
     it("handles emoji-only title with fallback", () => {
-        const slug = generateSlug("✨🎉🔥", "xyz789ab");
-        expect(slug).toBe("connection-xyz789ab");
+        const slug = generateSlug("✨🎉🔥", "xyz789");
+        expect(slug).toBe("connection-xyz789");
     });
 
     it("strips emojis but keeps text", () => {
-        const slug = generateSlug("✨ Add dark mode", "xyz789ab");
-        expect(slug).toBe("add-dark-mode-xyz789ab");
+        const slug = generateSlug("✨ Add dark mode", "xyz789");
+        expect(slug).toBe("add-dark-mode-xyz789");
     });
 
     it("converts to lowercase", () => {
-        const slug = generateSlug("FIX Auth BUG", "k6wm9zdx");
-        expect(slug).toBe("fix-auth-bug-k6wm9zdx");
+        const slug = generateSlug("FIX Auth BUG", "2ot9ib");
+        expect(slug).toBe("fix-auth-bug-2ot9ib");
     });
 
     it("replaces spaces with hyphens", () => {
-        const slug = generateSlug("multiple   spaces   here", "k6wm9zdx");
-        expect(slug).toBe("multiple-spaces-here-k6wm9zdx");
+        const slug = generateSlug("multiple   spaces   here", "2ot9ib");
+        expect(slug).toBe("multiple-spaces-here-2ot9ib");
     });
 
     it("removes special characters", () => {
-        const slug = generateSlug("What's the bug? Fix it!", "k6wm9zdx");
-        expect(slug).toBe("whats-the-bug-fix-it-k6wm9zdx");
+        const slug = generateSlug("What's the bug? Fix it!", "2ot9ib");
+        expect(slug).toBe("whats-the-bug-fix-it-2ot9ib");
     });
 
     it("truncates very long titles", () => {
         const longTitle = "a".repeat(100);
-        const slug = generateSlug(longTitle, "k6wm9zdx");
-        // 60 char max for title + hyphen + 8 char ID = 69 chars
-        expect(slug.length).toBeLessThanOrEqual(69);
-        expect(slug.endsWith("-k6wm9zdx")).toBe(true);
+        const slug = generateSlug(longTitle, "2ot9ib");
+        // 60 char max for title + hyphen + 6+ char ID
+        expect(slug.length).toBeLessThanOrEqual(67);
+        expect(slug.endsWith("-2ot9ib")).toBe(true);
     });
 
     it("handles title with only special characters", () => {
-        const slug = generateSlug("!@#$%^&*()", "k6wm9zdx");
-        expect(slug).toBe("connection-k6wm9zdx");
+        const slug = generateSlug("!@#$%^&*()", "2ot9ib");
+        expect(slug).toBe("connection-2ot9ib");
     });
 });
 
 describe("extractIdFromSlug", () => {
     it("extracts ID from slug with title", () => {
-        const id = extractIdFromSlug("fix-auth-bug-k6wm9zdx");
-        expect(id).toBe("k6wm9zdx");
+        const id = extractIdFromSlug("fix-auth-bug-2ot9ib");
+        expect(id).toBe("2ot9ib");
     });
 
     it("extracts ID from slug without title", () => {
-        const id = extractIdFromSlug("connection-k6wm9zdx");
-        expect(id).toBe("k6wm9zdx");
+        const id = extractIdFromSlug("connection-2ot9ib");
+        expect(id).toBe("2ot9ib");
     });
 
     it("extracts ID from ID-only slug", () => {
-        const id = extractIdFromSlug("k6wm9zdx");
-        expect(id).toBe("k6wm9zdx");
+        const id = extractIdFromSlug("2ot9ib");
+        expect(id).toBe("2ot9ib");
     });
 
     it("extracts longer Sqids (variable length)", () => {
         // Sqids can generate IDs longer than minLength
-        const id = extractIdFromSlug("fix-bug-k6wm9zdx12ab");
-        expect(id).toBe("k6wm9zdx12ab");
+        const id = extractIdFromSlug("fix-bug-2ot9ib12ab");
+        expect(id).toBe("2ot9ib12ab");
     });
 
     it("throws on slug that is too short", () => {
@@ -117,19 +118,19 @@ describe("extractIdFromSlug", () => {
     });
 
     it("throws on slug with invalid ID characters", () => {
-        expect(() => extractIdFromSlug("title-ABCDEFGH")).toThrow(
+        expect(() => extractIdFromSlug("title-ABCDEF")).toThrow(
             "lowercase alphanumeric"
         );
     });
 
     it("throws on slug with uppercase ID", () => {
-        expect(() => extractIdFromSlug("title-A1B2C3D4")).toThrow(
+        expect(() => extractIdFromSlug("title-A1B2C3")).toThrow(
             "lowercase alphanumeric"
         );
     });
 
     it("throws on slug with special characters in ID", () => {
-        expect(() => extractIdFromSlug("title-a1b2c3d!")).toThrow(
+        expect(() => extractIdFromSlug("title-a1b2c!")).toThrow(
             "lowercase alphanumeric"
         );
     });
@@ -140,6 +141,6 @@ describe("decodeSqid", () => {
         const id = generateConnectionId();
         const decoded = decodeSqid(id);
         expect(Array.isArray(decoded)).toBe(true);
-        expect(decoded.length).toBe(2);
+        expect(decoded.length).toBe(1);
     });
 });

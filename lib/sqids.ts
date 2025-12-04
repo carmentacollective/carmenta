@@ -13,15 +13,15 @@ import Sqids from "sqids";
 /**
  * URL-safe alphabet: lowercase letters and numbers only.
  * No special characters, no uppercase - clean URLs that work everywhere.
- * Shuffled to prevent sequential patterns in generated IDs.
+ * Cryptographically shuffled to prevent sequential patterns in generated IDs.
  */
-const URL_SAFE_ALPHABET = "k6wm9zdx0yc8rnvuqeltsaghj4fo2ip5b713";
+const URL_SAFE_ALPHABET = "2ot9ib15snuxw4vfdjc37l0gmk68ezypharq";
 
 /**
- * Minimum ID length: 8 characters provides sufficient entropy for uniqueness.
- * Shorter URLs are cleaner and more shareable.
+ * Minimum ID length: 6 characters for compact, shareable URLs.
+ * Combined with two 32-bit random numbers, provides sufficient entropy.
  */
-const MIN_LENGTH = 8;
+const MIN_LENGTH = 6;
 
 /**
  * Sqids instance configured for URL-safe connection IDs.
@@ -37,16 +37,20 @@ const sqids = new Sqids({
  * Uses crypto.getRandomValues for secure random number generation,
  * then encodes via Sqids for a clean, URL-safe ID.
  *
- * @returns 8+ character lowercase alphanumeric ID
- * @example "k6wm9zdx"
+ * 24 bits of entropy = 16.7 million unique IDs, consistently 6 characters.
+ *
+ * @returns 6-character lowercase alphanumeric ID
+ * @example "vbp96w"
  */
 export function generateConnectionId(): string {
-    // Generate two 32-bit random numbers for high entropy
-    const randomBytes = new Uint32Array(2);
+    // Generate 24-bit random number (3 bytes) for compact 6-char IDs
+    const randomBytes = new Uint8Array(3);
     crypto.getRandomValues(randomBytes);
 
-    // Encode both numbers for maximum entropy in the output
-    return sqids.encode([randomBytes[0], randomBytes[1]]);
+    // Combine bytes into single 24-bit number
+    const num = (randomBytes[0] << 16) | (randomBytes[1] << 8) | randomBytes[2];
+
+    return sqids.encode([num]);
 }
 
 /**
@@ -62,17 +66,17 @@ const DEFAULT_SLUG_PREFIX = "connection";
  * @returns SEO-friendly slug: "title-slug-id" or "connection-id"
  *
  * @example
- * generateSlug("Fix authentication bug", "k6wm9zdx")
- * // => "fix-authentication-bug-k6wm9zdx"
+ * generateSlug("Fix authentication bug", "2ot9ib")
+ * // => "fix-authentication-bug-2ot9ib"
  *
- * generateSlug(null, "k6wm9zdx")
- * // => "connection-k6wm9zdx"
+ * generateSlug(null, "2ot9ib")
+ * // => "connection-2ot9ib"
  *
- * generateSlug("✨ Add dark mode", "xyz789ab")
- * // => "add-dark-mode-xyz789ab"
+ * generateSlug("✨ Add dark mode", "xyz789")
+ * // => "add-dark-mode-xyz789"
  *
- * generateSlug("✨🎉🔥", "xyz789ab")
- * // => "connection-xyz789ab" (fallback for emoji-only titles)
+ * generateSlug("✨🎉🔥", "xyz789")
+ * // => "connection-xyz789" (fallback for emoji-only titles)
  */
 export function generateSlug(title: string | null | undefined, id: string): string {
     const baseSlug = slugify(title ?? "");
@@ -86,24 +90,24 @@ export function generateSlug(title: string | null | undefined, id: string): stri
 }
 
 /**
- * Valid Sqid pattern: 8+ lowercase alphanumeric characters from our alphabet.
+ * Valid Sqid pattern: 6+ lowercase alphanumeric characters from our alphabet.
  * Sqids may generate IDs longer than minLength depending on the input numbers.
  */
-const SQID_PATTERN = /^[0-9a-z]{8,}$/;
+const SQID_PATTERN = /^[0-9a-z]{6,}$/;
 
 /**
  * Extract the connection ID from a slug.
  *
- * Sqids can vary in length (8+ characters), so we find the ID by looking
+ * Sqids can vary in length (6+ characters), so we find the ID by looking
  * for the last segment after a hyphen that matches our pattern.
  *
  * @param slug - The full slug from URL
- * @returns The connection ID (8+ characters)
+ * @returns The connection ID (6+ characters)
  * @throws Error if slug is malformed
  *
  * @example
- * extractIdFromSlug("fix-auth-bug-k6wm9zdx")
- * // => "k6wm9zdx"
+ * extractIdFromSlug("fix-auth-bug-2ot9ib")
+ * // => "2ot9ib"
  */
 export function extractIdFromSlug(slug: string): string {
     // Slug must be at least MIN_LENGTH characters (ID only, no title)
@@ -178,7 +182,7 @@ function slugify(text: string): string {
             .replace(/-+/g, "-")
             // Trim hyphens from start and end
             .replace(/^-|-$/g, "")
-            // Limit length (60 chars for slug + 1 hyphen + 8+ for ID)
+            // Limit length (60 chars for slug + 1 hyphen + 6+ for ID)
             .slice(0, 60)
             // Trim trailing hyphen if we cut mid-word
             .replace(/-$/, "")

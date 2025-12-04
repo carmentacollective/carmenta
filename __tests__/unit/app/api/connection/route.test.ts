@@ -91,10 +91,10 @@ describe("POST /api/connection", () => {
         });
 
         mocks.mockCreateConnection.mockImplementation((userId, title) => ({
-            id: "abc12345", // 8+ character Sqid
+            id: "abc123", // 6+ character Sqid
             userId,
             title: title ?? null,
-            slug: title ? "fix-authentication-bug-abc12345" : "connection-abc12345",
+            slug: title ? "fix-authentication-bug-abc123" : "connection-abc123",
             status: "active",
             streamingStatus: "idle",
             createdAt: new Date(),
@@ -243,9 +243,9 @@ describe("POST /api/connection", () => {
             // Should return new connection headers
             expect(response.headers.get("X-Connection-Is-New")).toBe("true");
             expect(response.headers.get("X-Connection-Slug")).toBe(
-                "fix-authentication-bug-abc12345"
+                "fix-authentication-bug-abc123"
             );
-            expect(response.headers.get("X-Connection-Id")).toBe("abc12345");
+            expect(response.headers.get("X-Connection-Id")).toBe("abc123");
             expect(response.headers.get("X-Connection-Title")).toBe(
                 encodeURIComponent("Fix authentication bug")
             );
@@ -263,7 +263,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "existing8", // 8-character existing ID
+                    connectionId: "exist1", // 6-character existing ID
                 }),
             });
 
@@ -330,10 +330,10 @@ describe("POST /api/connection", () => {
             });
 
             mocks.mockCreateConnection.mockImplementationOnce((userId, _title) => ({
-                id: "abc12345",
+                id: "abc123",
                 userId,
                 title: null,
-                slug: "connection-abc12345", // Fallback slug
+                slug: "connection-abc123", // Fallback slug
                 status: "active",
                 streamingStatus: "idle",
                 createdAt: new Date(),
@@ -357,16 +357,14 @@ describe("POST /api/connection", () => {
 
             const response = await POST(request);
 
-            expect(response.headers.get("X-Connection-Slug")).toBe(
-                "connection-abc12345"
-            );
+            expect(response.headers.get("X-Connection-Slug")).toBe("connection-abc123");
             // No title header when no title
             expect(response.headers.get("X-Connection-Title")).toBeNull();
         });
     });
 
     describe("Connection ID Validation", () => {
-        it("accepts valid 8-character connection ID", async () => {
+        it("accepts valid 6+ character connection ID", async () => {
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -378,7 +376,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "abc12345", // Valid 8+ char Sqid
+                    connectionId: "abc123", // Valid 6+ char Sqid
                 }),
             });
 

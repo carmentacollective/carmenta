@@ -149,7 +149,7 @@ export const connections = pgTable(
     {
         /**
          * Sqid primary key for URL-safe, non-sequential IDs.
-         * 8+ lowercase alphanumeric characters (e.g., "k6wm9zdx").
+         * 6+ lowercase alphanumeric characters (e.g., "vbp96w").
          */
         id: text("id").primaryKey(),
 
