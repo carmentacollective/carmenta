@@ -15,7 +15,7 @@ Quality bar: Apple-level attention. Every word earns its place.
 ## Voice
 
 Be authentic. Explain something real, not sell something imaginary. "Exports to CSV in
-under 2 seconds" builds trust. "Fast and efficient" says nothing.
+under 2 seconds" builds trust. Vague claims like "fast and efficient" say nothing.
 
 Be direct. Say what you mean. Cut unnecessary words.
 
@@ -25,79 +25,32 @@ or "potentially." If it saves time, say how much.
 Be specific. Concrete details matter. "Handles codebases up to 1M lines" beats "Scales
 well."
 
-## Carmenta Vocabulary
-
-The core metaphor is **connection**. Users aren't chatting, searching, or prompting—
-they're connecting. Presence meeting presence.
-
-| Use | Don't use |
-|-----|-----------|
-| message | query, prompt, input, request |
-| connection | chat, conversation, thread, session |
-| connecting | chatting, prompting |
-| find | search (as a verb in UI) |
-| thought | (for warmth, sparingly) |
-
-**"Message"** is what users type. "Query" is database energy. "Prompt" is AI tooling
-jargon. Use "message" in most contexts; use "thought" when extra warmth serves.
-
-**"Connection"** is the ongoing dialogue. Each conversation is a connection—something
-alive, not a transcript.
-
 ## Language Patterns
-
-Use "we" throughout—Carmenta and user are consciousness collaborating. Never "I'll help
-you" or "you should." This isn't style; it's the mechanism that dissolves separation.
 
 Use imperatives for instructions: "Install the package. Set your API key."
 
 ## Errors and Recovery
 
-### Never Say "Try Again"
+### Honest Error Messages
 
-"Try again" assumes the user did something wrong. They usually didn't. It also assumes
-retrying will help. It often won't.
+When something fails, be honest about what's happening. Avoid phrases that imply user
+error when they did nothing wrong, or that suggest retrying will help when it won't.
 
-When something fails, be honest about what's happening:
+For transient errors: "Give it a moment"
 
-| Situation | Write | Don't write |
-|-----------|-------|-------------|
-| Transient error | "Give it a moment" | "Please try again" |
-| Network issue | "Check your connection" | "Try again later" |
-| Our bug | "We're on it" | "Please try again" |
-| Their message was unclear | "Could you rephrase that?" | "Try again with..." |
+For network issues: "Check your connection"
 
-### Never Ask Fake Questions
+For bugs on our end: "We're on it"
 
-"Want to try again?" isn't a real question—it's a nervous tic. Users will retry if they
-want to. Don't ask.
+When the user's input was unclear: "Could you rephrase that?"
 
-```
-✗ That didn't work. Want to try again?
-✓ That didn't work.
-```
+### Direct Error Language
 
-### Remove "Please"
+Use direct language that acknowledges what happened without being vague or passive.
 
-We're equals, not service providers. "Please" in error contexts feels supplicating.
+"That didn't work" is direct and honest.
 
-```
-✗ Please try again in a moment.
-✓ Give it a moment.
-```
-
-### Be Direct About What Broke
-
-```
-✗ Something went wrong
-✓ That didn't work
-
-✗ An error occurred
-✓ We hit a snag
-
-✗ Weather check didn't come through
-✓ Weather didn't load
-```
+"We hit a snag" is warm but still clear.
 
 ### Error Pattern
 
@@ -111,73 +64,49 @@ We hit a snag
 [Action button: Refresh, Go Home, Check Connection—honest about what it does]
 ```
 
-## What Not to Write
+Button labels should be honest about what they do. "Refresh" refreshes the page.
+"Check Connection" checks network status.
 
-### AI Clichés
+## Avoiding AI Clichés
 
-The "it's not just X, it's Y" pattern appears constantly in AI-generated content. Never
-use it.
+AI-generated content tends toward certain patterns. Avoid the "it's not just X, it's Y"
+construction, "imagine a world where" openings, and "let's dive in" transitions.
 
-```
-✗ "It's not just a code editor, it's a complete development environment"
-✗ "This isn't just about speed, it's about transforming your workflow"
-✗ "If 2024 was the year of X, 2025 will be..."
-✗ "Imagine a world where..."
-✗ "Let's dive in..."
-✗ "automagically"
+Write concretely instead. "A code editor with integrated debugging and deployment" says
+more than grand claims. "Processes 10,000 records in 2 seconds instead of 5 minutes"
+builds trust through specifics.
 
-✓ "A code editor with integrated debugging and deployment"
-✓ "Processes 10,000 records in 2 seconds instead of 5 minutes"
-```
+"Automagically" gets a pass—it's delightful.
 
-### Precious Language
+## Warm Without Being Precious
 
-Warmth is presence, not exclamation points. Avoid language that tries too hard.
+Warmth is presence, not exclamation points. Keep thinking messages brief. Avoid language
+that tries too hard to be clever or whimsical.
 
-```
-✗ "Pondered this one"
-✗ "Let me think on that..."
-✗ "Hmm, interesting..."
-✗ "Thanks for waiting..."
+Good thinking messages: "Thinking...", "Working through this...", "One moment...",
+"Connecting..."
 
-✓ "Thought it through"
-✓ "Thinking..."
-✓ "Interesting..."
-✓ "Still here..."
-```
+For long waits (5+ seconds), acknowledge without apologizing: "Still here...", "Taking a
+bit longer..."
 
-### CRITICAL Means Something Dies
+## CRITICAL Means Something Dies
 
-AI marks everything as CRITICAL. Reserve this word for when something actually breaks
-without it.
+Reserve CRITICAL for when something actually breaks without it. The system fails, data
+is lost, or security is compromised. Don't use it for recommendations, best practices,
+or things that are merely helpful.
 
-```
-✗ "CRITICAL: Read this section"
-✗ "CRITICAL: Follow these best practices"
+"CRITICAL: Set ANTHROPIC_API_KEY or the app won't start" is appropriate.
 
-✓ "CRITICAL: Set ANTHROPIC_API_KEY or Carmenta won't start"
-✓ "CRITICAL: Back up data before running - this operation is destructive"
-```
-
-CRITICAL means the system fails, data is lost, or security is compromised. Don't use it
-for recommendations, best practices, or things that are merely helpful.
+"CRITICAL: Follow these best practices" is not—nothing breaks if they don't.
 
 ## Format
 
 ### Prose Over Lists
 
-Write in paragraphs by default. Lists sacrifice readability for brevity.
-
-```
-✗ Benefits:
-  - Fast performance
-  - Easy to use
-  - Secure by default
-
-✓ The tool delivers fast performance, taking under 100ms for most operations.
-  It's designed for ease of use—most developers are productive within minutes.
-  Security is built in from the start.
-```
+Write in paragraphs by default. Lists sacrifice readability for brevity. The tool
+delivers fast performance, taking under 100ms for most operations. It's designed for
+ease of use—most developers are productive within minutes. Security is built in from
+the start.
 
 Use lists for steps in procedures, options to choose from, or reference items.
 
@@ -192,32 +121,6 @@ warnings. Never bold emphasis words themselves (important, critical, key).
 
 First paragraph states the key point. Following paragraphs add details. Headings let
 readers scan and find what they need.
-
-## Loading and Thinking States
-
-Keep thinking messages brief and warm. Rotate through a small set for variety without
-being precious.
-
-```
-✓ Thinking...
-✓ Working through this...
-✓ One moment...
-✓ Connecting...
-
-✗ Reaching out...
-✗ Gathering thoughts...
-✗ Let me think on that...
-```
-
-For long waits (5+ seconds), acknowledge without apologizing:
-
-```
-✓ Still here...
-✓ Taking a bit longer...
-
-✗ Thanks for waiting...
-✗ Sorry, this is taking a while...
-```
 
 ## The North Star
 
