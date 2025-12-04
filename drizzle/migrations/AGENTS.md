@@ -1,16 +1,11 @@
-# STOP - Do Not Edit Migration Files Directly
+# Database Migrations
 
 **NEVER manually create or edit files in this directory.**
 
 Drizzle tracks migrations through `meta/_journal.json`. Files created manually will
-exist but never run - they fail silently.
+exist but never run—they fail silently.
 
-## To Create a Migration
+To create a migration: Edit schema in `lib/db/schema.ts`, then run
+`drizzle-kit generate`.
 
-1. Edit the schema (usually `lib/db/schema.ts` or `src/db/schema.ts`)
-2. Run `drizzle-kit generate` (or `bun drizzle-kit generate`,
-   `pnpm drizzle-kit generate`)
-3. Review the generated SQL
-4. Test with `drizzle-kit migrate`
-
-The tool handles the journal and snapshots automatically.
+@.cursor/rules/drizzle-database-migrations.mdc

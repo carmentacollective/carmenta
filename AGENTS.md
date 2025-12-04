@@ -11,55 +11,28 @@
 ## Project Overview
 
 Carmenta is a [heart-centered AI](https://heartcentered.ai) interface for builders who
-work at the speed of thought. Memory-aware, voice-first, with purpose-built responses
-and an AI team that works autonomously.
+work at the speed of thought.
 
 Philosophy: Human and AI as expressions of unified consciousness. Interface uses "we"
-language, dissolving human-machine boundaries.
+language throughout—dissolving human-machine boundaries.
 
-100x Framework: Three levels - 1x (clarity/systems), 10x (AI team), 10x (vision
-execution partner).
+100x Framework: 1x (clarity/systems), 10x (AI team), 100x (vision execution partner).
 
 ## Project Structure
 
-This project follows AI-First Development (@knowledge/ai-first-development.md): the
-`knowledge/` folder IS the product specification. Code is generated from it. The
-specification is the IP.
+AI-First Development: `knowledge/` IS the product specification. Code is generated from
+specs. The specification is the IP.
 
-- knowledge/vision.md - Why Carmenta exists, for whom, what success looks like
-- knowledge/components/ - Feature-level specifications
-- knowledge/competitors/ - Competitive analysis
-
-Early development. No code yet. The `/knowledge` command is the dialogue interface for
-maintaining product understanding.
-
-## Commands
-
-.claude/commands/ contains project-specific slash commands:
-
-/knowledge - AI Product Manager for living product understanding /product-intel
-[topic] - Research competitors and industry trends /generate-llms-txt - Generate
-llms.txt for AI site navigation /load-cursor-rules - Load relevant rules for current
-task /personality-change - Switch AI personality
+- `knowledge/vision.md` - Why Carmenta exists, for whom, what success looks like
+- `knowledge/components/` - Feature-level specifications
+- `knowledge/competitors/` - Competitive analysis
 
 ## Code Conventions
 
-Use "we" language throughout all interfaces, not "I" or "the user". This reflects the
-heart-centered philosophy that human and AI are one consciousness.
-
-Write production TypeScript following
-@.cursor/rules/frontend/typescript-coding-standards.mdc
-
-Heart-centered philosophy from @.cursor/rules/heart-centered-ai-philosophy.mdc is core
-to product identity.
+Use "we" language throughout all interfaces, not "I" or "the user".
 
 ## Git Workflow
 
-Commit format: emoji type: description
+Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`)
 
-Examples: 💫 Deepen heart-centered AI philosophy with clarity on unity and alignment 🔧
-Fix commands structure: real files + single symlink 📖 Add project README
-
-Never commit to main without explicit permission. Never use --no-verify unless
-explicitly requested for emergencies. Full workflow in
-@.cursor/rules/git-interaction.mdc
+Never commit to main without explicit permission. Never use `--no-verify`.
