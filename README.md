@@ -116,27 +116,27 @@ Early development. Building in public.
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm 10+
+- Node.js 24+
+- bun 1.x+
 
 ### Setup
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start development server
-pnpm dev
+bun dev
 
 # Run tests
-pnpm test
+bun test
 
 # Type check
-pnpm type-check
+bun type-check
 
 # Lint and format
-pnpm lint
-pnpm format
+bun lint
+bun format
 ```
 
 ### Tech Stack

@@ -64,22 +64,22 @@ explicit, type-safe data creation.
 
 ```bash
 # Run all unit/integration tests
-pnpm test
+bun test
 
 # Run specific test file
-pnpm vitest run __tests__/unit/lib/utils.test.ts
+bun vitest run __tests__/unit/lib/utils.test.ts
 
 # Run tests matching pattern
-pnpm vitest run -t "validates email"
+bun vitest run -t "validates email"
 
 # Run with coverage
-pnpm test:coverage
+bun test:coverage
 
 # Run E2E tests
-pnpm test:e2e
+bun test:e2e
 
 # Run E2E in headed mode
-pnpm playwright test --headed
+bun playwright test --headed
 ```
 
 ## Coverage Goals
