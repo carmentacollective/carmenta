@@ -248,7 +248,8 @@ continue.
 - **Auto-opens** when reasoning starts - inviting them into the thinking process
 - **Auto-closes** 500ms after completion - respecting their attention
 - **User can toggle** anytime - control without requirement
-- **Shows duration** with warmth: "Thought through that for 3.2s"
+- **Warm completion messages** that acknowledge thinking happened without duration
+  metrics
 - **Collapsible** to honor that attention is precious
 - **Brain icon** with gentle pulse during streaming - alive, not mechanical
 
@@ -264,21 +265,64 @@ continue.
 
 ### Language & Tone
 
-The reasoning content itself should feel collaborative:
+The reasoning content itself should feel collaborative - as if thinking together, not as
+if an AI is analyzing a user from outside.
 
-- Use "we" language where natural: "We need to consider...", "Let's think through..."
+**Critical: Never break the fourth wall in reasoning tokens.**
+
+The reasoning should never refer to "the user" as if observing someone separate. This
+breaks the partnership illusion and makes the thinking feel like surveillance notes
+rather than shared contemplation.
+
+❌ **Avoid:**
+
+- "The user wants to..."
+- "The user is asking about..."
+- "I should help the user..."
+
+✅ **Instead:**
+
+- "We're exploring..." / "Let's think through..."
+- "This question invites us to consider..."
+- "What matters here is..."
+- Simply engage with the problem directly without meta-commentary
+
+The system prompt explicitly instructs models to maintain "we" framing even in extended
+reasoning. Someone reading our thinking should feel included in the process, not
+observed from outside.
+
+**Additional tone guidance:**
+
+- Use "we" language naturally: "We need to consider...", "Let's think through..."
 - Warm, human phrasing: "Hmm, this is interesting..." not "Processing input..."
 - Show the actual thinking: questions, considerations, alternatives
 - Feel like a thinking partner, not a report generator
 
-### Delight Moments
+### Completion Messages
 
-Occasional warmth that acknowledges the partnership (15% chance):
+Time/duration is intentionally not shown - it doesn't communicate value. "Reasoned for
+3.8s" says nothing useful about the quality or depth of thinking.
 
-- "Pondered that together for 3.2s 🤔"
-- "Thought it through carefully - 5.1s 💭"
-- "Reasoned through the options - 4.7s ✨"
-- "Took our time with that one - 8.3s 🧠"
+Instead, we cycle through warm verbs that acknowledge thinking happened:
+
+**Standard messages:**
+
+- "Considered carefully"
+- "Thought it through"
+- "Explored thoroughly"
+- "Worked through it"
+- "Pondered this one"
+- "Figured it out"
+
+**Delight variants** (15% chance, with emoji):
+
+- "Considered carefully 🤔"
+- "Thought that through ✨"
+- "Deep dive complete 🧠"
+- "Pondered thoroughly 💭"
+- "Figured it out 💡"
+
+### Streaming Status
 
 Context-aware status while streaming:
 

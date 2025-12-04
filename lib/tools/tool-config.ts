@@ -225,49 +225,57 @@ export function getThinkingMessage(messageId: string, elapsedMs: number): string
 // Reasoning display messages (Claude Code-style variations)
 // ============================================================================
 
-const REASONING_COMPLETE_DELIGHT = [
-    "Deep dive complete",
+/**
+ * Reasoning completion messages - warm, human, no time.
+ *
+ * Time doesn't communicate value. "Reasoned for 3.8s" says nothing useful.
+ * Instead, we use warm verbs that acknowledge the thinking happened.
+ */
+const REASONING_COMPLETE_MESSAGES = [
+    "Considered carefully",
+    "Thought it through",
+    "Explored thoroughly",
     "Worked through it",
-    "Got there in the end",
+    "Pondered this one",
     "Figured it out",
+    "Got there",
+    "Deep thinking complete",
     "All sorted",
     "Mind made up",
     "Clarity achieved",
-    "Mulled it over",
-    "Sorted the thoughts",
 ];
 
-const REASONING_DURATION_TEMPLATES = [
-    "Reasoned for {time}",
-    "Worked through for {time}",
-    "Pondered for {time}",
-    "Figured this out in {time}",
+/**
+ * Delight variants with emojis (15% chance).
+ */
+const REASONING_COMPLETE_DELIGHT = [
+    "Considered carefully 🤔",
+    "Thought that through ✨",
+    "Deep dive complete 🧠",
+    "Pondered thoroughly 💭",
+    "Figured it out 💡",
 ];
 
 /**
  * Get reasoning completion message.
  *
+ * Cycles through warm verbs that acknowledge thinking happened.
+ * Duration is intentionally not shown - it doesn't communicate value.
+ *
  * @param reasoningId - Unique ID for consistent selection
- * @param durationSeconds - How long the reasoning took
+ * @param _durationSeconds - Unused, kept for API compatibility
  */
 export function getReasoningCompleteMessage(
     reasoningId: string,
-    durationSeconds: number
+    _durationSeconds: number
 ): string {
-    const timeStr = `${durationSeconds.toFixed(1)}s`;
-
-    // 20% chance of delight (no time shown)
-    if (shouldDelight(reasoningId, 0.2)) {
+    // 15% chance of delight with emoji
+    if (shouldDelight(reasoningId, 0.15)) {
         return selectMessage(reasoningId, REASONING_COMPLETE_DELIGHT);
     }
 
-    // 30% chance of varied duration template
-    if (shouldDelight(reasoningId + "-template", 0.3)) {
-        const template = selectMessage(reasoningId, REASONING_DURATION_TEMPLATES);
-        return template.replace("{time}", timeStr);
-    }
-
-    return `Reasoned for ${timeStr}`;
+    // Standard rotation through warm messages
+    return selectMessage(reasoningId, REASONING_COMPLETE_MESSAGES);
 }
 
 // ============================================================================
