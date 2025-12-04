@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 
-import { OptionalClerkProvider } from "@/lib/auth/optional-clerk-provider";
+import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
@@ -122,7 +122,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <OptionalClerkProvider>
+        <ClerkProvider afterSignOutUrl="/">
             <UserProvider>
                 <html
                     lang="en"
@@ -135,6 +135,6 @@ export default function RootLayout({
                     </body>
                 </html>
             </UserProvider>
-        </OptionalClerkProvider>
+        </ClerkProvider>
     );
 }
