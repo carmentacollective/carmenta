@@ -63,7 +63,7 @@ interface ConnectionContextValue {
     /** Clear the current error */
     clearError: () => void;
     /** Refresh connection metadata (call after streaming to sync URL/title) */
-    refreshConnectionMetadata: () => Promise<boolean | undefined>;
+    refreshConnectionMetadata: () => Promise<boolean>;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
@@ -183,13 +183,15 @@ export function ConnectionProvider({
      * Refresh connection metadata from the server.
      * Call this after streaming completes to sync URL and page title
      * if the connection title was generated.
+     *
+     * @returns true if title was updated, false otherwise
      */
-    const refreshConnectionMetadata = useCallback(async () => {
-        if (!activeConnectionId) return;
+    const refreshConnectionMetadata = useCallback(async (): Promise<boolean> => {
+        if (!activeConnectionId) return false;
 
         try {
             const metadata = await getConnectionMetadata(activeConnectionId);
-            if (!metadata) return;
+            if (!metadata) return false;
 
             // Check if slug changed (title was generated)
             const currentSlug = pathname.split("/").pop();

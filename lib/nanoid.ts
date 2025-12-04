@@ -51,18 +51,38 @@ export function generateSlug(title: string | null | undefined, id: string): stri
 }
 
 /**
+ * Valid NanoID pattern: 12 lowercase alphanumeric characters
+ */
+const NANOID_PATTERN = /^[0-9a-z]{12}$/;
+
+/**
  * Extract the connection ID from a slug.
  *
  * @param slug - The full slug from URL
  * @returns The 12-character connection ID
+ * @throws Error if slug is malformed (too short or invalid ID characters)
  *
  * @example
  * extractIdFromSlug("fix-auth-bug-a1b2c3d4e5f6")
  * // => "a1b2c3d4e5f6"
  */
 export function extractIdFromSlug(slug: string): string {
+    // Slug must be at least ID_LENGTH characters (ID only, no title)
+    if (slug.length < ID_LENGTH) {
+        throw new Error(`Invalid slug: too short (minimum ${ID_LENGTH} characters)`);
+    }
+
     // ID is always the last 12 characters
-    return slug.slice(-ID_LENGTH);
+    const id = slug.slice(-ID_LENGTH);
+
+    // Validate the ID matches NanoID format
+    if (!NANOID_PATTERN.test(id)) {
+        throw new Error(
+            `Invalid slug: ID portion must be ${ID_LENGTH} lowercase alphanumeric characters`
+        );
+    }
+
+    return id;
 }
 
 /**
