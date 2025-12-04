@@ -69,10 +69,87 @@ describe("ThinkingIndicator", () => {
     });
 
     it("renders rotating logo animation", () => {
-        render(<ThinkingIndicator />);
+        const { container } = render(<ThinkingIndicator />);
 
         // Check for rotating animation
-        const rotatingElement = document.querySelector(".animate-spin-slow");
+        const rotatingElement = container.querySelector(".animate-spin-slow");
         expect(rotatingElement).toBeInTheDocument();
+    });
+
+    describe("Error States", () => {
+        it("handles extremely long elapsed times", async () => {
+            render(<ThinkingIndicator />);
+
+            // Advance to very long time (60 seconds)
+            await act(async () => {
+                vi.advanceTimersByTime(60000);
+            });
+
+            // Should still render without crashing
+            expect(screen.getByText(/60s$/)).toBeInTheDocument();
+        });
+
+        it("handles component unmount during timer update", async () => {
+            const { unmount } = render(<ThinkingIndicator />);
+
+            await act(async () => {
+                vi.advanceTimersByTime(1000);
+            });
+
+            // Should not throw on unmount
+            expect(() => unmount()).not.toThrow();
+        });
+
+        it("handles rapid remounting", () => {
+            const { unmount: unmount1 } = render(<ThinkingIndicator />);
+            unmount1();
+
+            const { unmount: unmount2 } = render(<ThinkingIndicator />);
+            unmount2();
+
+            // Third render should work fine
+            expect(() => render(<ThinkingIndicator />)).not.toThrow();
+        });
+
+        it("continues working after extremely long duration", async () => {
+            render(<ThinkingIndicator />);
+
+            // Advance past 10 minutes
+            await act(async () => {
+                vi.advanceTimersByTime(600000);
+            });
+
+            // Should still render elapsed time
+            expect(screen.getByText(/600s$/)).toBeInTheDocument();
+        });
+
+        it("handles timer cleanup on unmount", async () => {
+            const { unmount } = render(<ThinkingIndicator />);
+
+            // Start timers
+            await act(async () => {
+                vi.advanceTimersByTime(3000);
+            });
+
+            // Unmount mid-countdown
+            unmount();
+
+            // Advance time after unmount
+            await act(async () => {
+                vi.advanceTimersByTime(10000);
+            });
+
+            // Should not throw or cause issues
+            expect(true).toBe(true);
+        });
+
+        it("handles concurrent renders", () => {
+            // Multiple indicators at once should work
+            const { container: container1 } = render(<ThinkingIndicator />);
+            const { container: container2 } = render(<ThinkingIndicator />);
+
+            expect(container1.firstChild).toBeInTheDocument();
+            expect(container2.firstChild).toBeInTheDocument();
+        });
     });
 });

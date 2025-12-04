@@ -197,9 +197,9 @@ describe("ReasoningDisplay", () => {
         });
 
         it("handles null content without crashing", () => {
-            // @ts-expect-error - Testing runtime error handling
+            // Testing runtime error handling with null content
             expect(() =>
-                render(<ReasoningDisplay content={null} isStreaming />)
+                render(<ReasoningDisplay content={null as any} isStreaming />)
             ).not.toThrow();
         });
 
@@ -242,13 +242,13 @@ describe("ReasoningDisplay", () => {
         it("handles undefined open state in controlled mode", () => {
             const onOpenChange = vi.fn();
 
-            // @ts-expect-error - Testing runtime error handling
+            // Testing runtime error handling with undefined open state
             expect(() =>
                 render(
                     <ReasoningDisplay
                         content="test"
                         isStreaming={false}
-                        open={undefined}
+                        open={undefined as any}
                         onOpenChange={onOpenChange}
                     />
                 )
