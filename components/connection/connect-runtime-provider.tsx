@@ -231,7 +231,7 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages } = useConnection();
+    const { activeConnectionId, initialMessages, addNewConnection } = useConnection();
     const [error, setError] = useState<Error | null>(null);
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     // Track last imported state to handle late-arriving messages
@@ -347,6 +347,38 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                         );
                         setConcierge(conciergeData);
                     }
+
+                    // Check if this was a new connection - update URL and add to list
+                    const isNewConnection = response.headers.get("X-Connection-Is-New");
+                    const connectionSlug = response.headers.get("X-Connection-Slug");
+                    const connectionId = response.headers.get("X-Connection-Id");
+                    const connectionTitle = response.headers.get("X-Connection-Title");
+                    if (isNewConnection === "true" && connectionSlug && connectionId) {
+                        logger.info(
+                            {
+                                slug: connectionSlug,
+                                id: connectionId,
+                                title: connectionTitle,
+                            },
+                            "New connection created, updating URL and adding to list"
+                        );
+                        // Use replaceState to update URL without navigation
+                        // This follows the pattern from ai-chatbot and open-webui
+                        window.history.replaceState(
+                            {},
+                            "",
+                            `/connection/${connectionSlug}`
+                        );
+                        // Add to connections list with delightful animation
+                        addNewConnection({
+                            id: connectionId,
+                            slug: connectionSlug,
+                            title: connectionTitle
+                                ? decodeURIComponent(connectionTitle)
+                                : null,
+                            modelId: conciergeData?.modelId ?? null,
+                        });
+                    }
                 }
 
                 return response;
@@ -364,7 +396,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 throw error;
             }
         },
-        [setConcierge, overrides, activeConnectionId]
+        [setConcierge, overrides, activeConnectionId, addNewConnection]
     );
 
     // Memoize transport to prevent recreation on every render

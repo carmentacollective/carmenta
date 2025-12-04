@@ -49,7 +49,7 @@ export default function NotFound() {
                         Go Home
                     </Link>
                     <Link
-                        href="/connection"
+                        href="/connection/new"
                         className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-6 py-3 font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
                         Start Connecting

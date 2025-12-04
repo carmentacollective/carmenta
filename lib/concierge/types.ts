@@ -56,6 +56,12 @@ export interface ConciergeResult {
 
     /** Extended reasoning configuration for this request */
     reasoning: ReasoningConfig;
+
+    /**
+     * Generated title for the connection (max 50 chars).
+     * Only present on first message - used to create the connection.
+     */
+    title?: string;
 }
 
 /**
@@ -128,6 +134,12 @@ export const EFFORT_BASED_MODELS = ["x-ai/grok-4-fast"] as const;
  * Prevents excessive header sizes and potential injection.
  */
 export const MAX_EXPLANATION_LENGTH = 500;
+
+/**
+ * Maximum length for generated titles.
+ * Short enough for clean URLs, long enough to be descriptive.
+ */
+export const MAX_TITLE_LENGTH = 50;
 
 /**
  * Max output tokens for concierge LLM call.

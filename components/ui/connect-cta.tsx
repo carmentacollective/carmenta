@@ -7,17 +7,18 @@ import { useUserContext } from "@/lib/auth/user-context";
 /**
  * Adaptive CTA that changes based on auth state.
  *
- * Logged in: "Continue" - feels like picking up where we left off
- * Logged out: "Start Connecting" - inviting first-time users
+ * Logged in: "Continue" → /connection (shows recent, or redirects to new)
+ * Logged out: "Start Connecting" → /connection/new (start fresh)
  */
 export function ConnectCTA() {
     const { user, isLoaded } = useUserContext();
     const isLoggedIn = isLoaded && !!user;
 
     const label = isLoggedIn ? "Continue" : "Start Connecting";
+    const href = isLoggedIn ? "/connection" : "/connection/new";
 
     return (
-        <Link href="/connection" className="btn-holo inline-flex items-center gap-2">
+        <Link href={href} className="btn-holo inline-flex items-center gap-2">
             <span>{isLoaded ? label : "..."}</span>
             <svg
                 className="h-4 w-4"

@@ -41,7 +41,7 @@ export function ConnectLayout({
             initialMessages={initialMessages}
         >
             <ConnectHeader />
-            <main className="flex-1 overflow-hidden">{children}</main>
+            <main className="relative z-0 flex-1 overflow-hidden">{children}</main>
         </ConnectionProvider>
     );
 }

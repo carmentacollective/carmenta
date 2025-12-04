@@ -101,7 +101,7 @@ export default function LandingPage() {
                                 <p>
                                     You can{" "}
                                     <Link
-                                        href="/connection"
+                                        href="/connection/new"
                                         className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
                                     >
                                         connect with Carmenta
