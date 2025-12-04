@@ -27,11 +27,29 @@ import { ModelSelectorPopover } from "./model-selector";
  * Instead of overriding assistant-ui's pre-styled Thread with !important hacks,
  * we build our own using the headless primitives and apply our holographic
  * theme directly. This is the "composition over inheritance" approach.
+ *
+ * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the viewport
+ * to prevent content from showing under the glass input dock. Content gradually
+ * fades to transparent starting at 65%, creating a smooth visual transition while
+ * maintaining readability.
+ *
+ * Layout: Uses flexbox where the Viewport takes flex-1 (grows) and the input
+ * container takes flex-none (natural height). This prevents the input from
+ * overlapping viewport content, even on short screens.
+ *
+ * Accessibility: Tab order follows DOM order (Viewport → Input), ensuring proper
+ * keyboard navigation. Screen readers announce elements in logical sequence.
+ *
+ * Mobile: Responsive bottom padding adjusts for smaller viewports. Virtual keyboard
+ * appearance on mobile triggers viewport resize, which flexbox handles gracefully.
  */
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            <ThreadPrimitive.Viewport className="flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pt-8">
+            {/* Viewport with fade mask - grows to fill available space
+                Responsive padding: pb-24 (96px) on mobile, pb-32 (128px) on desktop
+                Fade ensures content transitions smoothly before viewport edge */}
+            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32">
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
                 </ThreadPrimitive.Empty>
@@ -42,12 +60,17 @@ export function HoloThread() {
                         AssistantMessage: AssistantMessage,
                     }}
                 />
+            </ThreadPrimitive.Viewport>
 
-                <div className="sticky bottom-0 mt-3 flex w-full max-w-[700px] flex-col items-center justify-end bg-transparent pb-4">
+            {/* Input container - takes natural height, sits below viewport
+                flex-none prevents it from shrinking, naturally reserves space
+                No overlap with viewport content, even on short screens */}
+            <div className="flex flex-none items-center justify-center bg-transparent px-4 pb-4 pt-3">
+                <div className="relative flex w-full max-w-[700px] flex-col items-center">
                     <ThreadScrollToBottom />
                     <Composer />
                 </div>
-            </ThreadPrimitive.Viewport>
+            </div>
         </ThreadPrimitive.Root>
     );
 }
