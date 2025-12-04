@@ -15,6 +15,13 @@
       "when": 1764705590102,
       "tag": "0001_message_id_text",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764878400000,
+      "tag": "0002_rename_conversations_to_connections",
+      "breakpoints": true
     }
   ]
 }
