@@ -269,8 +269,8 @@ Last updated: {current-date}
 
 - **Type**: TypeScript
 - **Framework**: Next.js 14
-- **Package Manager**: pnpm 10.18.0
-- **Node Version**: 22.12.0 (LTS)
+- **Package Manager**: bun 1.x
+- **Node Version**: 24.x
 
 ## Enabled Features
 
@@ -286,7 +286,7 @@ Last updated: {current-date}
 - **ESLint**: v9 with flat config (eslint.config.mjs)
 - **Prettier**: v3 with Tailwind plugin
 - **Husky**: v9 for git hooks
-- **GitHub Actions**: Node 22, pnpm 10
+- **GitHub Actions**: Node 24, bun 1.x
 
 ## Git Hooks
 

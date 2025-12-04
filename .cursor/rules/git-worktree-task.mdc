@@ -10,7 +10,7 @@ Deliver a pull request that passes all checks and merges without back-and-forth.
 </objective>
 
 <workspace-setup>
-Create git worktree as a sibling directory to avoid pnpm/ESLint module resolution issues:
+Create git worktree as a sibling directory to avoid module resolution issues:
 
 ```bash
 # Extract project name from current directory
@@ -26,19 +26,18 @@ Example: If working in `/Users/nick/src/mcp-hubby`, worktree will be created at
 
 **Why sibling directories?**
 
-- Avoids pnpm symlink resolution issues with nested worktrees
+- Avoids symlink resolution issues with nested worktrees
 - Prevents ESLint module patching errors (@rushstack/eslint-patch)
 - Cleaner separation between main repo and feature work
 - Standard practice for monorepo tools and shared dependency trees
 
-**Note:** Do NOT use `.gitworktrees/` inside the repo - this breaks module resolution
-for pnpm-based projects. </workspace-setup>
+**Note:** Do NOT use `.gitworktrees/` inside the repo - this breaks module resolution. </workspace-setup>
 
 <environment-initialization>
 Run /setup-environment to prepare the worktree. This detects project type and sets up dependencies, code generation, and environment files.
 
 If /setup-environment doesn't exist, set up manually based on project type (Node.js:
-`pnpm install`, Python: `pip install -r requirements.txt`, Ruby: `bundle install`).
+`bun install`, Python: `pip install -r requirements.txt`, Ruby: `bundle install`).
 
 Copy environment files from parent directory if needed. After proper setup, all tests
 (unit + integration) should pass. </environment-initialization>
@@ -53,7 +52,7 @@ Write code that solves the problem following all cursor rules. Make commits alon
 
 <local-validation>
 Run project's pre-push validation before pushing. This catches issues before CI:
-- Node.js: `pnpm pre-push` or check package.json scripts
+- Node.js: `bun pre-push` or check package.json scripts
 - Python: `pre-commit run --all-files`, `pytest`, `ruff check`, `mypy`
 - Ruby: `bundle exec rake test`, `bundle exec rubocop`
 - Go: `go test ./...`, `golangci-lint run`

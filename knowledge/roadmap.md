@@ -28,7 +28,7 @@ Landing page with:
 
 | Component      | Scope          | Notes                                           |
 | -------------- | -------------- | ----------------------------------------------- |
-| **Foundation** | Full           | Next.js 16, TypeScript, pnpm, tooling, linting  |
+| **Foundation** | Full           | Next.js 16, TypeScript, bun, tooling, linting   |
 | **Hosting**    | Full           | Render deployment, CI/CD                        |
 | **Testing**    | Infrastructure | Vitest + Playwright setup, patterns established |
 

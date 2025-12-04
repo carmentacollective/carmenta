@@ -159,7 +159,7 @@ with clear options and context. </error-recovery>
 ## Requirements
 
 - GitHub CLI (`gh`) installed and authenticated
-- Node.js/npm
+- bun
 - Project standards accessible via /load-cursor-rules
 
 ## Configuration

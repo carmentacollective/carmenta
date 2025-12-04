@@ -105,7 +105,7 @@ When setting up, prefer scripted installers over writing config files from memor
 - Use `npx create-next-app@latest` for Next.js scaffold
 - Use `npx shadcn@latest init` for shadcn/ui setup
 - Use `npx playwright install` for browser binaries
-- Use `pnpm create` variants where available
+- Use `bunx` or `bun create` variants where available
 
 For packages with complex setup, fetch latest documentation from Context7 MCP server
 before installing. This ensures we use current best practices rather than stale
@@ -130,8 +130,8 @@ These are industry standards for modern React applications. No debate needed.
 | **Next.js**    | 16.x    | React framework standard. 7/10 competitors use it. App Router, RSC, streaming. |
 | **React**      | 19.x    | Latest stable with concurrent features                                         |
 | **TypeScript** | 5.9+    | Type safety is table stakes                                                    |
-| **pnpm**       | 10.x    | Fast, disk-efficient, workspace support. All competitors use pnpm.             |
-| **Node.js**    | 22+     | LTS with native ESM, performance improvements                                  |
+| **bun**        | 1.x     | Fast runtime and package manager. All-in-one tooling for TypeScript.           |
+| **Node.js**    | 24+     | Latest with native ESM, performance improvements                               |
 
 ### Why Next.js 16 over 15?
 
@@ -263,9 +263,9 @@ Error tracking and analytics are handled in separate component specifications.
 ### Render Configuration
 
 - Auto-deploy from main branch
-- Node.js 22 runtime
-- Build command: `pnpm build`
-- Start command: `pnpm start`
+- Node.js 24 runtime
+- Build command: `bun build`
+- Start command: `bun start`
 
 For initial homepage, static export is also an option (`output: 'export'` in
 next.config).

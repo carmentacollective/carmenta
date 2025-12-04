@@ -2,8 +2,8 @@
  * Drizzle Kit Configuration
  *
  * Configures the Drizzle migration tool for schema management.
- * Run `pnpm drizzle-kit generate` to create migrations.
- * Run `pnpm drizzle-kit migrate` to apply migrations.
+ * Run `bun drizzle-kit generate` to create migrations.
+ * Run `bun drizzle-kit migrate` to apply migrations.
  */
 
 import type { Config } from "drizzle-kit";

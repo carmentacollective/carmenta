@@ -17,7 +17,7 @@ Each component spec includes:
 ### [Foundation](foundation.md)
 
 The technology stack and development environment. Next.js, React, TypeScript, Node.js,
-pnpm, and the toolchain that makes development fast and reliable. Everything else is
+bun, and the toolchain that makes development fast and reliable. Everything else is
 built on this.
 
 ### [Hosting](hosting.md)

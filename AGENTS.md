@@ -31,6 +31,10 @@ specs. The specification is the IP.
 
 Use "we" language throughout all interfaces, not "I" or "the user".
 
+## Package Manager
+
+Use `bun` for all package management and script execution. Never use `npm` or `pnpm`.
+
 ## Git Workflow
 
 Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`)

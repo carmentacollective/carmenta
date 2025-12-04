@@ -244,9 +244,9 @@ Target: 5-10% improvement per iteration, 3-5 rounds to reach 100% pass rate.
 ### 1. Run Tests
 
 ```bash
-pnpm test:prompts                              # All prompts
-pnpm promptfoo eval -c promptfoo/classify-request/eval.yaml  # Single prompt
-pnpm promptfoo:view                            # Web UI for results
+bun test:prompts                              # All prompts
+bun promptfoo eval -c promptfoo/classify-request/eval.yaml  # Single prompt
+bun promptfoo:view                            # Web UI for results
 ```
 
 ### 2. Analyze Failures
@@ -302,7 +302,7 @@ Rules:
 ### 4. Re-run and Repeat
 
 ```bash
-pnpm promptfoo eval -c promptfoo/classify-request/eval.yaml
+bun promptfoo eval -c promptfoo/classify-request/eval.yaml
 ```
 
 Track progress: Round 1 (75%) → Round 2 (85%) → Round 3 (92%) → Round 4 (100%)
@@ -364,19 +364,19 @@ Output only: URGENT, NORMAL, or LOW`;
 
 ```bash
 # Run all prompt tests
-pnpm test:prompts
+bun test:prompts
 
 # Run specific prompt tests
-pnpm promptfoo eval -c promptfoo/classify-request/eval.yaml
+bun promptfoo eval -c promptfoo/classify-request/eval.yaml
 
 # View results in browser
-pnpm promptfoo:view
+bun promptfoo:view
 
 # CI mode (JSON output, no interactive)
-pnpm test:prompts:ci
+bun test:prompts:ci
 
 # Generate summary report
-pnpm test:prompts:summary
+bun test:prompts:summary
 ```
 
 ## Success Criteria
