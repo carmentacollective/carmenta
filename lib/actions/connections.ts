@@ -27,6 +27,14 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/logger";
 
 /**
+ * Result from creating a new connection
+ */
+export interface CreateConnectionResult {
+    id: string;
+    slug: string;
+}
+
+/**
  * Gets or creates the database user for the current session.
  * Returns null if not authenticated.
  */
@@ -50,9 +58,9 @@ async function getDbUser() {
 }
 
 /**
- * Creates a new connection and redirects to it
+ * Creates a new connection and returns id and slug for navigation
  */
-export async function createNewConnection(): Promise<string> {
+export async function createNewConnection(): Promise<CreateConnectionResult> {
     const dbUser = await getDbUser();
 
     if (!dbUser) {
@@ -61,17 +69,20 @@ export async function createNewConnection(): Promise<string> {
 
     const connection = await dbCreateConnection(dbUser.id);
 
-    logger.info({ connectionId: connection.id }, "Created new connection via action");
+    logger.info(
+        { connectionId: connection.id, slug: connection.slug },
+        "Created new connection via action"
+    );
 
-    return connection.id;
+    return { id: connection.id, slug: connection.slug };
 }
 
 /**
  * Creates a new connection and redirects to the connection page
  */
 export async function createAndRedirect(): Promise<void> {
-    const connectionId = await createNewConnection();
-    redirect(`/connection/${connectionId}`);
+    const { slug } = await createNewConnection();
+    redirect(`/connection/${slug}`);
 }
 
 /**
@@ -196,4 +207,29 @@ export async function deleteConnection(connectionId: string): Promise<void> {
     }
 
     await dbDeleteConnection(connectionId);
+}
+
+/**
+ * Fetches the latest connection metadata (title, slug).
+ * Used by client to sync URL after title generation.
+ */
+export async function getConnectionMetadata(
+    connectionId: string
+): Promise<{ title: string | null; slug: string } | null> {
+    const dbUser = await getDbUser();
+
+    if (!dbUser) {
+        return null;
+    }
+
+    const connection = await getConnectionWithMessages(connectionId);
+
+    if (!connection || connection.userId !== dbUser.id) {
+        return null;
+    }
+
+    return {
+        title: connection.title,
+        slug: connection.slug,
+    };
 }

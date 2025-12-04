@@ -285,7 +285,7 @@ export function ConnectHeader() {
                                                 <button
                                                     key={conn.id}
                                                     onClick={() =>
-                                                        handleSelect(conn.id)
+                                                        handleSelect(conn.slug)
                                                     }
                                                     className={cn(
                                                         "flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-foreground/5",

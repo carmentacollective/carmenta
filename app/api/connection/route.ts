@@ -26,6 +26,7 @@ import {
 } from "@/lib/db";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { getModel } from "@/lib/models";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 
@@ -40,7 +41,11 @@ export const maxDuration = 120;
  */
 const requestSchema = z.object({
     messages: z.array(z.any()).min(1, "At least one message is required"),
-    connectionId: z.string().uuid().optional(),
+    /** Connection ID - 12 character NanoID (lowercase alphanumeric only) */
+    connectionId: z
+        .string()
+        .regex(/^[0-9a-z]{12}$/, "Invalid connection ID format")
+        .optional(),
     /** User override for model - bypasses concierge selection */
     modelOverride: z.string().optional(),
     /** User override for temperature (0-1) - bypasses concierge selection */
@@ -365,6 +370,11 @@ export async function POST(req: Request) {
                 : conciergeResult.reasoning,
         };
 
+        // Check if the selected model supports tool calling
+        // Default to false for unknown models to avoid runtime errors
+        const modelConfig = getModel(concierge.modelId);
+        const modelSupportsTools = modelConfig?.supportsTools ?? false;
+
         logger.info(
             {
                 userEmail,
@@ -373,7 +383,7 @@ export async function POST(req: Request) {
                 temperature: concierge.temperature,
                 explanation: concierge.explanation,
                 reasoning: concierge.reasoning,
-                toolsAvailable: Object.keys(tools),
+                toolsAvailable: modelSupportsTools ? Object.keys(tools) : [],
             },
             "Starting connect stream"
         );
@@ -435,9 +445,10 @@ export async function POST(req: Request) {
             model: openrouter.chat(concierge.modelId),
             system: SYSTEM_PROMPT,
             messages: convertToModelMessages(messages),
-            tools,
+            // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
+            ...(modelSupportsTools && { tools }),
             temperature: concierge.temperature,
-            stopWhen: stepCountIs(5), // Allow up to 5 steps for multi-step tool usage
+            ...(modelSupportsTools && { stopWhen: stepCountIs(5) }), // Multi-step only with tools
             // Pass provider-specific reasoning configuration
             providerOptions,
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
@@ -574,7 +585,9 @@ export async function POST(req: Request) {
             "X-Concierge-Reasoning",
             encodeURIComponent(JSON.stringify(concierge.reasoning))
         );
-        headers.set("X-Conversation-Id", connectionId!);
+        headers.set("X-Connection-Id", connectionId!);
+        // Slug is updated after title generation - client should refetch connection for latest slug
+        headers.set("X-Connection-Slug-Pending", "true");
 
         // Return response with concierge headers
         return new Response(response.body, {

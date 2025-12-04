@@ -264,11 +264,13 @@ beforeEach(async () => {
     `);
 
     // Create connections table
+    // Note: id is TEXT (NanoID) not UUID
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS connections (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id TEXT PRIMARY KEY,
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             title VARCHAR(500),
+            slug VARCHAR(255) NOT NULL,
             status connection_status NOT NULL DEFAULT 'active',
             streaming_status streaming_status NOT NULL DEFAULT 'idle',
             model_id VARCHAR(255),
@@ -288,13 +290,17 @@ beforeEach(async () => {
     await db.execute(sql`
         CREATE INDEX IF NOT EXISTS connections_streaming_status_idx ON connections(streaming_status)
     `);
+    await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS connections_slug_idx ON connections(slug)
+    `);
 
     // Create messages table
     // Note: id is TEXT (not UUID) to accept nanoid-style IDs from AI SDK
+    // Note: connection_id is TEXT (NanoID) not UUID
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS messages (
             id TEXT PRIMARY KEY,
-            connection_id UUID NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+            connection_id TEXT NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
             role message_role NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )

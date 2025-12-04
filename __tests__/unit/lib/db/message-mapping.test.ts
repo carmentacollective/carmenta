@@ -613,6 +613,7 @@ describe("mapConnectionMessagesToUI", () => {
             id: "conv-123",
             userId: "user-456",
             title: "Test Conversation",
+            slug: "test-conversation-conv-123",
             status: "active",
             streamingStatus: "idle",
             modelId: null,

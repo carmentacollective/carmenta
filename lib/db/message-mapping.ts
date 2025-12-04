@@ -55,6 +55,7 @@ export interface ConnectionWithMessages {
     id: string;
     userId: string;
     title: string | null;
+    slug: string;
     status: "active" | "background" | "archived";
     streamingStatus: "idle" | "streaming" | "completed" | "failed";
     modelId: string | null;
