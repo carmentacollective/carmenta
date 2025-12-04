@@ -1,5 +1,7 @@
 ---
-description: Drizzle ORM migration workflow - ALWAYS use drizzle-kit generate, never write migrations manually
+description:
+  Drizzle ORM migration workflow - ALWAYS use drizzle-kit generate, never write
+  migrations manually
 globs: ["**/drizzle/**", "**/lib/db/schema.ts", "**/drizzle.config.ts"]
 ---
 
@@ -22,6 +24,7 @@ When you need a schema change:
 4. Test locally with `bun drizzle-kit migrate`
 
 The tool automatically:
+
 - Creates the migration SQL file
 - Updates the journal to track it
 - Creates a snapshot for the new schema state
@@ -29,6 +32,7 @@ The tool automatically:
 ## Why This Matters
 
 LLM-generated migrations fail silently because:
+
 - The journal doesn't get updated
 - Production deployment runs migrations from journal entries only
 - Files exist but never execute
@@ -44,21 +48,17 @@ Example schema definition:
 
 ```typescript
 export const connections = pgTable(
-    "connections",
-    {
-        id: uuid("id").primaryKey().defaultRandom(),
-        userId: uuid("user_id")
-            .references(() => users.id, { onDelete: "cascade" })
-            .notNull(),
-        title: varchar("title", { length: 500 }),
-        status: connectionStatusEnum("status").notNull().default("active"),
-        createdAt: timestamp("created_at", { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-    },
-    (table) => [
-        index("connections_user_idx").on(table.userId),
-    ]
+  "connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 500 }),
+    status: connectionStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("connections_user_idx").on(table.userId)]
 );
 ```
 

@@ -73,7 +73,11 @@ self.addEventListener("fetch", (event) => {
         fetch(event.request)
             .then((response) => {
                 // Don't cache non-successful responses or opaque responses
-                if (!response || response.status !== 200 || response.type === "opaque") {
+                if (
+                    !response ||
+                    response.status !== 200 ||
+                    response.type === "opaque"
+                ) {
                     return response;
                 }
 
@@ -140,7 +144,9 @@ self.addEventListener("push", (event) => {
         actions: data.actions || [],
     };
 
-    event.waitUntil(self.registration.showNotification(data.title || "Carmenta", options));
+    event.waitUntil(
+        self.registration.showNotification(data.title || "Carmenta", options)
+    );
 });
 
 /**
@@ -162,7 +168,10 @@ self.addEventListener("notificationclick", (event) => {
             .then((clientList) => {
                 // Check if there's already a window open
                 for (const client of clientList) {
-                    if (client.url.startsWith(self.location.origin) && "focus" in client) {
+                    if (
+                        client.url.startsWith(self.location.origin) &&
+                        "focus" in client
+                    ) {
                         return client.focus().then((client) => client.navigate(url));
                     }
                 }
