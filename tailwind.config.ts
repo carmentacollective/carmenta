@@ -86,6 +86,10 @@ const config: Config = {
                     from: { opacity: "0", transform: "translateY(10px)" },
                     to: { opacity: "1", transform: "translateY(0)" },
                 },
+                "drawer-down": {
+                    from: { opacity: "0", transform: "translateY(-100%)" },
+                    to: { opacity: "1", transform: "translateY(0)" },
+                },
                 float: {
                     "0%, 100%": { transform: "translateY(0)" },
                     "50%": { transform: "translateY(-10px)" },
@@ -100,6 +104,7 @@ const config: Config = {
             animation: {
                 "fade-in": "fade-in 0.5s ease-out",
                 "fade-up": "fade-up 0.5s ease-out",
+                "drawer-down": "drawer-down 0.2s ease-out",
                 float: "float 6s ease-in-out infinite",
                 "pulse-glow": "pulse-glow 3s ease-in-out infinite",
             },

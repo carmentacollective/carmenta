@@ -10,20 +10,25 @@
  *
  * The ConnectionProvider wraps both components so they share state.
  * Initial data is passed from the server component for SSR.
+ *
+ * Key Architecture Decision:
+ * - The main content uses a `key` prop based on connection ID
+ * - This forces the Chat/Runtime to remount when switching connections
+ * - Ensures clean state reset without stale messages or streaming state
  */
 
 import type { ReactNode } from "react";
 import { ConnectionProvider } from "./connection-context";
 import { ConnectHeader } from "./connect-header";
-import type { Connection } from "@/lib/db/schema";
+import type { PublicConnection } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 interface ConnectLayoutProps {
     children: ReactNode;
     /** Initial connections from server (recent list) */
-    initialConnections?: Connection[];
+    initialConnections?: PublicConnection[];
     /** The currently active connection (from [id] param) */
-    activeConnection?: Connection | null;
+    activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
 }
@@ -34,6 +39,10 @@ export function ConnectLayout({
     activeConnection = null,
     initialMessages = [],
 }: ConnectLayoutProps) {
+    // Use connection ID as key to force remount when switching connections
+    // "new" is used for /connection/new route where no connection exists yet
+    const connectionKey = activeConnection?.id ?? "new";
+
     return (
         <ConnectionProvider
             initialConnections={initialConnections}
@@ -41,7 +50,9 @@ export function ConnectLayout({
             initialMessages={initialMessages}
         >
             <ConnectHeader />
-            <main className="flex-1 overflow-hidden">{children}</main>
+            <main key={connectionKey} className="relative z-0 flex-1 overflow-hidden">
+                {children}
+            </main>
         </ConnectionProvider>
     );
 }

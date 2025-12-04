@@ -264,10 +264,10 @@ beforeEach(async () => {
     `);
 
     // Create connections table
-    // Note: id is TEXT (NanoID) not UUID
+    // Note: id is SERIAL (auto-incrementing integer), encoded to Sqid at API boundary
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS connections (
-            id TEXT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             title VARCHAR(500),
             slug VARCHAR(255) NOT NULL,
@@ -296,11 +296,11 @@ beforeEach(async () => {
 
     // Create messages table
     // Note: id is TEXT (not UUID) to accept nanoid-style IDs from AI SDK
-    // Note: connection_id is TEXT (NanoID) not UUID
+    // Note: connection_id is INTEGER referencing connections.id (SERIAL)
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS messages (
             id TEXT PRIMARY KEY,
-            connection_id TEXT NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+            connection_id INTEGER NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
             role message_role NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )

@@ -24,7 +24,7 @@ import {
 } from "./message-mapping";
 import { logger } from "../logger";
 import { generateTitle } from "./title-generator";
-import { generateConnectionId, generateSlug } from "../nanoid";
+import { encodeConnectionId, generateSlug } from "../sqids";
 
 // ============================================================================
 // CONNECTION OPERATIONS
@@ -43,28 +43,36 @@ export async function createConnection(
     title?: string,
     modelId?: string
 ): Promise<Connection> {
-    const id = generateConnectionId();
-    const slug = generateSlug(title, id);
-
+    // Insert without ID - Postgres auto-generates it via SERIAL
     const [connection] = await db
         .insert(connections)
         .values({
-            id,
             userId,
             title: title ?? null,
-            slug,
+            slug: "temp", // Placeholder, updated below
             modelId: modelId ?? null,
             status: "active",
             streamingStatus: "idle",
         })
         .returning();
 
+    // Generate slug from the auto-generated ID
+    const publicId = encodeConnectionId(connection.id);
+    const slug = generateSlug(title, publicId);
+
+    // Update with the real slug
+    const [updated] = await db
+        .update(connections)
+        .set({ slug })
+        .where(eq(connections.id, connection.id))
+        .returning();
+
     logger.info(
-        { connectionId: connection.id, slug: connection.slug, userId },
+        { connectionId: updated.id, publicId, slug: updated.slug, userId },
         "Created new connection"
     );
 
-    return connection;
+    return updated;
 }
 
 /**
@@ -74,7 +82,7 @@ export async function createConnection(
  * @returns Connection with messages, or null if not found
  */
 export async function getConnectionWithMessages(
-    connectionId: string
+    connectionId: number
 ): Promise<ConnectionWithMessages | null> {
     const connection = await db.query.connections.findFirst({
         where: eq(connections.id, connectionId),
@@ -129,17 +137,18 @@ export async function getRecentConnections(
  * If title is updated, the slug is automatically regenerated.
  */
 export async function updateConnection(
-    connectionId: string,
+    connectionId: number,
     updates: Partial<Pick<NewConnection, "title" | "status" | "modelId">>
 ): Promise<Connection | null> {
-    // If title is being updated, regenerate the slug
+    // If title is being updated, regenerate the slug with encoded ID
     const updateData: Record<string, unknown> = {
         ...updates,
         updatedAt: new Date(),
     };
 
     if (updates.title !== undefined) {
-        updateData.slug = generateSlug(updates.title, connectionId);
+        const publicId = encodeConnectionId(connectionId);
+        updateData.slug = generateSlug(updates.title, publicId);
     }
 
     const [updated] = await db
@@ -154,7 +163,7 @@ export async function updateConnection(
 /**
  * Archives a connection (hides from recent, still searchable)
  */
-export async function archiveConnection(connectionId: string): Promise<void> {
+export async function archiveConnection(connectionId: number): Promise<void> {
     await db
         .update(connections)
         .set({
@@ -169,7 +178,7 @@ export async function archiveConnection(connectionId: string): Promise<void> {
 /**
  * Deletes a connection and all its messages (cascade)
  */
-export async function deleteConnection(connectionId: string): Promise<void> {
+export async function deleteConnection(connectionId: number): Promise<void> {
     await db.delete(connections).where(eq(connections.id, connectionId));
     logger.info({ connectionId }, "Deleted connection");
 }
@@ -189,7 +198,7 @@ export async function deleteConnection(connectionId: string): Promise<void> {
  * @returns The saved message ID
  */
 export async function saveMessage(
-    connectionId: string,
+    connectionId: number,
     uiMessage: UIMessageLike
 ): Promise<string> {
     const { message, parts } = mapUIMessageToDB(uiMessage, connectionId);
@@ -234,7 +243,7 @@ export async function updateMessage(
     messageId: string,
     uiMessage: UIMessageLike
 ): Promise<void> {
-    const { parts } = mapUIMessageToDB(uiMessage, ""); // connectionId not needed for parts
+    const { parts } = mapUIMessageToDB(uiMessage, 0); // connectionId not used for parts extraction
 
     // Fix: set correct messageId on parts
     const partsWithMessageId = parts.map((p) => ({ ...p, messageId }));
@@ -265,7 +274,7 @@ export async function updateMessage(
  * @param uiMessage - UI message to save
  */
 export async function upsertMessage(
-    connectionId: string,
+    connectionId: number,
     uiMessage: UIMessageLike
 ): Promise<void> {
     const { message, parts } = mapUIMessageToDB(uiMessage, connectionId);
@@ -301,7 +310,7 @@ export async function upsertMessage(
  * @param connectionId - ID of the connection
  * @returns Array of UI messages ordered by creation time
  */
-export async function loadMessages(connectionId: string): Promise<UIMessageLike[]> {
+export async function loadMessages(connectionId: number): Promise<UIMessageLike[]> {
     const connection = await getConnectionWithMessages(connectionId);
 
     if (!connection) {
@@ -327,7 +336,7 @@ export async function loadMessages(connectionId: string): Promise<UIMessageLike[
  * @param status - New streaming status
  */
 export async function updateStreamingStatus(
-    connectionId: string,
+    connectionId: number,
     status: "idle" | "streaming" | "completed" | "failed"
 ): Promise<void> {
     await db
@@ -347,7 +356,7 @@ export async function updateStreamingStatus(
  * Call this when the user closes the window but streaming is in progress.
  * The connection will appear in "background" status and can be recovered.
  */
-export async function markAsBackground(connectionId: string): Promise<void> {
+export async function markAsBackground(connectionId: number): Promise<void> {
     await db
         .update(connections)
         .set({
@@ -393,7 +402,7 @@ export async function findInterruptedConnections(
  * @param connectionId - ID of the connection
  */
 export async function generateTitleFromFirstMessage(
-    connectionId: string
+    connectionId: number
 ): Promise<void> {
     const connection = await getConnectionWithMessages(connectionId);
 

@@ -546,11 +546,11 @@ describe("mapUIMessageToDB", () => {
             ],
         };
 
-        const result = mapUIMessageToDB(uiMessage, "conv-456");
+        const result = mapUIMessageToDB(uiMessage, 456);
 
         expect(result.message).toMatchObject({
             id: "msg-123",
-            connectionId: "conv-456",
+            connectionId: 456,
             role: "assistant",
         });
         expect(result.parts).toHaveLength(2);
@@ -563,7 +563,7 @@ describe("mapDBMessageToUI", () => {
     it("sorts parts by order", () => {
         const messageWithParts: MessageWithParts = {
             id: "msg-123",
-            connectionId: "conv-456",
+            connectionId: 456,
             role: "assistant",
             createdAt: new Date(),
             parts: [
@@ -610,7 +610,7 @@ describe("mapDBMessageToUI", () => {
 describe("mapConnectionMessagesToUI", () => {
     it("sorts messages by creation time", () => {
         const connection: ConnectionWithMessages = {
-            id: "conv-123",
+            id: 123,
             userId: "user-456",
             title: "Test Conversation",
             slug: "test-conversation-conv-123",
@@ -623,7 +623,7 @@ describe("mapConnectionMessagesToUI", () => {
             messages: [
                 {
                     id: "msg-2",
-                    connectionId: "conv-123",
+                    connectionId: 123,
                     role: "assistant",
                     createdAt: new Date("2024-01-01T12:00:01Z"),
                     parts: [
@@ -646,7 +646,7 @@ describe("mapConnectionMessagesToUI", () => {
                 },
                 {
                     id: "msg-1",
-                    connectionId: "conv-123",
+                    connectionId: 123,
                     role: "user",
                     createdAt: new Date("2024-01-01T12:00:00Z"),
                     parts: [

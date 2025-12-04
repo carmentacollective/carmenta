@@ -52,7 +52,7 @@ export interface MessageWithParts extends Message {
  * Connection with all messages and parts loaded
  */
 export interface ConnectionWithMessages {
-    id: string;
+    id: number;
     userId: string;
     title: string | null;
     slug: string;
@@ -196,7 +196,7 @@ function mapDataPartToDBPart(
  */
 export function mapUIMessageToDB(
     uiMessage: UIMessageLike,
-    connectionId: string
+    connectionId: number
 ): { message: NewMessage; parts: NewMessagePart[] } {
     const message: NewMessage = {
         id: uiMessage.id,

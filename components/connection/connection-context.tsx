@@ -21,29 +21,33 @@ import {
     useTransition,
     useMemo,
     useEffect,
+    useRef,
     type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import {
-    createNewConnection,
     archiveConnection,
     deleteConnection as deleteConnectionAction,
     getConnectionMetadata,
+    type PublicConnection,
 } from "@/lib/actions/connections";
-import type { Connection } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/client-logger";
 
 interface ConnectionContextValue {
     /** All available connections (recent) */
-    connections: Connection[];
+    connections: PublicConnection[];
     /** Currently active connection (from DB) */
-    activeConnection: Connection | null;
+    activeConnection: PublicConnection | null;
     /** ID of the currently active connection */
     activeConnectionId: string | null;
+    /** IDs of recently created connections (for animation) */
+    freshConnectionIds: Set<string>;
     /** Number of connections with background streaming */
     runningCount: number;
+    /** Whether the AI is currently generating a response */
+    isStreaming: boolean;
     /** Whether the context has been initialized with data */
     isLoaded: boolean;
     /** Whether a transition (create/delete) is in progress */
@@ -64,6 +68,12 @@ interface ConnectionContextValue {
     clearError: () => void;
     /** Refresh connection metadata (call after streaming to sync URL/title) */
     refreshConnectionMetadata: () => Promise<boolean>;
+    /** Add a newly created connection to the list (called from runtime provider) */
+    addNewConnection: (
+        connection: Partial<PublicConnection> & { id: string; slug: string }
+    ) => void;
+    /** Update streaming state (called from runtime provider) */
+    setIsStreaming: (streaming: boolean) => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
@@ -71,9 +81,9 @@ const ConnectionContext = createContext<ConnectionContextValue | null>(null);
 interface ConnectionProviderProps {
     children: ReactNode;
     /** Initial connections from server (recent list) */
-    initialConnections?: Connection[];
+    initialConnections?: PublicConnection[];
     /** The currently active connection (from [id] param) */
-    activeConnection?: Connection | null;
+    activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
 }
@@ -89,15 +99,35 @@ export function ConnectionProvider({
     const [isPending, startTransition] = useTransition();
 
     // Local state for connections list (optimistic updates)
-    const [connections, setConnections] = useState<Connection[]>(initialConnections);
+    const [connections, setConnections] =
+        useState<PublicConnection[]>(initialConnections);
+
+    // Local state for active connection - allows updating when new connection is created
+    // Initialized from server prop, updated on navigation or new connection
+    const [localActiveConnection, setLocalActiveConnection] =
+        useState<PublicConnection | null>(activeConnection);
+
+    // Sync with prop when it changes (e.g., navigation to different connection)
+    useEffect(() => {
+        setLocalActiveConnection(activeConnection);
+    }, [activeConnection]);
+
+    // Track recently created connections for animation (cleared after 3s)
+    const [freshConnectionIds, setFreshConnectionIds] = useState<Set<string>>(
+        new Set()
+    );
+
+    // Streaming state - tracks whether AI is generating a response
+    // Updated by the runtime provider, read by the header for the pulsing indicator
+    const [isStreaming, setIsStreaming] = useState(false);
 
     // Error state - surfaces operation failures to the UI
     const [error, setError] = useState<Error | null>(null);
 
     const clearError = useCallback(() => setError(null), []);
 
-    // Derive active connection ID from the prop
-    const activeConnectionId = activeConnection?.id ?? null;
+    // Derive active connection ID from local state
+    const activeConnectionId = localActiveConnection?.id ?? null;
 
     // Count connections with streaming status (running in background)
     const runningCount = useMemo(
@@ -105,7 +135,7 @@ export function ConnectionProvider({
         [connections]
     );
 
-    const isLoaded = initialConnections.length > 0 || activeConnection !== null;
+    const isLoaded = initialConnections.length > 0 || localActiveConnection !== null;
 
     /**
      * Navigate to a connection using its slug.
@@ -118,18 +148,13 @@ export function ConnectionProvider({
         [router]
     );
 
+    /**
+     * Navigate to the new connection page.
+     * The actual connection is created lazily when the user sends their first message.
+     * This follows the pattern from ai-chatbot and LibreChat.
+     */
     const handleCreateNewConnection = useCallback(() => {
-        startTransition(async () => {
-            try {
-                const { slug } = await createNewConnection();
-                logger.debug({ slug }, "Created new connection");
-                router.push(`/connection/${slug}`);
-            } catch (err) {
-                const error = err instanceof Error ? err : new Error(String(err));
-                logger.error({ error }, "Failed to create connection");
-                setError(error);
-            }
-        });
+        router.push("/connection/new");
     }, [router]);
 
     const archiveActiveConnection = useCallback(() => {
@@ -229,63 +254,100 @@ export function ConnectionProvider({
     }, [activeConnectionId, pathname, router]);
 
     /**
-     * Poll for title updates on new connections.
-     * When a connection has no title, poll every 3 seconds until we get one.
-     * This handles the case where title is generated after streaming completes.
+     * Title is now generated by concierge at connection creation time.
+     * No polling needed - URL updates via replaceState when new connection is created.
+     *
+     * This effect can be used for edge cases like page refresh on old URLs
+     * where the slug might be stale.
      */
+    // Track if we've already refreshed metadata for this connection
+    const refreshedRef = useRef<string | null>(null);
+
     useEffect(() => {
-        // Only poll if we have an active connection without a title
+        // Skip if no connection or already has title
         if (!activeConnectionId || activeConnection?.title) {
             return;
         }
 
-        let pollInterval: NodeJS.Timeout | null = null;
-        let isCancelled = false;
+        // Skip if we've already refreshed for this connection
+        if (refreshedRef.current === activeConnectionId) {
+            return;
+        }
 
-        // Check immediately first, then start polling
-        // This prevents missing titles generated between mount and first poll
-        const startPolling = async () => {
-            // Immediate check
-            const updated = await refreshConnectionMetadata();
-            if (updated || isCancelled) {
-                return;
-            }
+        // Mark as refreshed to prevent duplicate calls
+        refreshedRef.current = activeConnectionId;
 
-            // Start interval polling if immediate check didn't find a title
-            pollInterval = setInterval(async () => {
-                const updated = await refreshConnectionMetadata();
-                if (updated && pollInterval) {
-                    clearInterval(pollInterval);
-                    pollInterval = null;
-                }
-            }, 3000);
-        };
+        // Schedule the refresh for next tick to avoid synchronous setState
+        const timeoutId = setTimeout(() => {
+            refreshConnectionMetadata();
+        }, 0);
 
-        void startPolling();
-
-        // Stop polling after 30 seconds max
-        const timeout = setTimeout(() => {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-            }
-        }, 30000);
-
-        return () => {
-            isCancelled = true;
-            if (pollInterval) {
-                clearInterval(pollInterval);
-            }
-            clearTimeout(timeout);
-        };
+        return () => clearTimeout(timeoutId);
     }, [activeConnectionId, activeConnection?.title, refreshConnectionMetadata]);
+
+    /**
+     * Add a newly created connection to the list and set it as active.
+     * Called from runtime provider when a new connection is created via API.
+     * Triggers a delightful animation in the connection chooser and updates the header title.
+     */
+    const addNewConnection = useCallback(
+        (
+            partialConnection: Partial<PublicConnection> & { id: string; slug: string }
+        ) => {
+            const now = new Date();
+            const newConnection: PublicConnection = {
+                id: partialConnection.id,
+                userId: "", // Will be filled in by actual data
+                slug: partialConnection.slug,
+                title: partialConnection.title ?? null,
+                modelId: partialConnection.modelId ?? null,
+                status: "active",
+                streamingStatus: "idle", // Runtime tracks actual streaming state
+                createdAt: now,
+                updatedAt: now,
+                lastActivityAt: now,
+            };
+
+            // Set as active connection - this updates the header title
+            setLocalActiveConnection(newConnection);
+
+            // Add to front of list (most recent)
+            setConnections((prev) => {
+                // Don't add if already exists
+                if (prev.some((c) => c.id === newConnection.id)) {
+                    return prev;
+                }
+                return [newConnection, ...prev];
+            });
+
+            // Mark as fresh for animation
+            setFreshConnectionIds((prev) => new Set(prev).add(newConnection.id));
+
+            // Clear "fresh" status after animation completes (3 seconds)
+            setTimeout(() => {
+                setFreshConnectionIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(newConnection.id);
+                    return next;
+                });
+            }, 3000);
+
+            logger.debug(
+                { connectionId: newConnection.id, title: newConnection.title },
+                "Added new connection to list and set as active"
+            );
+        },
+        []
+    );
 
     const value = useMemo<ConnectionContextValue>(
         () => ({
             connections,
-            activeConnection,
+            activeConnection: localActiveConnection,
             activeConnectionId,
+            freshConnectionIds,
             runningCount,
+            isStreaming,
             isLoaded,
             isPending,
             error,
@@ -296,12 +358,16 @@ export function ConnectionProvider({
             deleteConnection: handleDeleteConnection,
             clearError,
             refreshConnectionMetadata,
+            addNewConnection,
+            setIsStreaming,
         }),
         [
             connections,
-            activeConnection,
+            localActiveConnection,
             activeConnectionId,
+            freshConnectionIds,
             runningCount,
+            isStreaming,
             isLoaded,
             isPending,
             error,
@@ -312,6 +378,7 @@ export function ConnectionProvider({
             handleDeleteConnection,
             clearError,
             refreshConnectionMetadata,
+            addNewConnection,
         ]
     );
 

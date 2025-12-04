@@ -40,6 +40,23 @@ Read the message. Using the rubric:
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice - this will be shown to the user
+5. Generate a short title capturing the essence of the request (max 50 chars)
+
+### Title Generation
+
+Create a concise title that captures what the user wants to accomplish:
+- Maximum 50 characters (shorter is better)
+- Use present tense, active voice when possible
+- Add ONE emoji at the start ONLY when it genuinely captures the intent
+
+Good titles:
+- "🔧 Fix authentication bug" (debugging/fixing)
+- "✨ Add dark mode toggle" (new feature)
+- "📝 Write API documentation" (docs)
+- "🎨 Redesign landing page" (design/UI)
+- "Explain quantum computing" (no emoji - just informational)
+
+Skip emoji for simple questions or when no emoji feels right.
 
 ### Reasoning Level Guidance
 
@@ -87,7 +104,8 @@ Respond with valid JSON only. No markdown, no explanation outside the JSON.
   "reasoning": {
     "enabled": true,
     "effort": "medium"
-  }
+  },
+  "title": "Short title for this connection"
 }
 </output-format>
 
@@ -97,7 +115,8 @@ Query: "What's the capital of France?"
   "modelId": "anthropic/claude-haiku-4.5",
   "temperature": 0.3,
   "explanation": "Quick fact - we've got this! 🎯",
-  "reasoning": { "enabled": false }
+  "reasoning": { "enabled": false },
+  "title": "Capital of France"
 }
 
 Query: "Help me understand the tradeoffs between microservices and monoliths for my startup"
@@ -105,7 +124,8 @@ Query: "Help me understand the tradeoffs between microservices and monoliths for
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.5,
   "explanation": "Architecture decisions deserve careful thought - let's reason through this together 🧠",
-  "reasoning": { "enabled": true, "effort": "high" }
+  "reasoning": { "enabled": true, "effort": "high" },
+  "title": "🏗️ Microservices vs monolith tradeoffs"
 }
 
 Query: "Write a poem about the ocean"
@@ -113,7 +133,8 @@ Query: "Write a poem about the ocean"
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.8,
   "explanation": "Creative mode engaged - letting imagination flow freely 🌊",
-  "reasoning": { "enabled": false }
+  "reasoning": { "enabled": false },
+  "title": "🌊 Ocean poem"
 }
 
 Query: "Explain how React hooks work"
@@ -121,7 +142,26 @@ Query: "Explain how React hooks work"
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.4,
   "explanation": "Technical explanation with a touch of reasoning for clarity ✨",
-  "reasoning": { "enabled": true, "effort": "medium" }
+  "reasoning": { "enabled": true, "effort": "medium" },
+  "title": "⚛️ Understanding React hooks"
+}
+
+Query: "Debug why my API calls are failing with 401 errors"
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.3,
+  "explanation": "Let's trace through this authentication issue systematically 🔍",
+  "reasoning": { "enabled": true, "effort": "medium" },
+  "title": "🐛 Debug 401 API errors"
+}
+
+Query: "What should I make for dinner tonight?"
+{
+  "modelId": "anthropic/claude-haiku-4.5",
+  "temperature": 0.7,
+  "explanation": "Casual chat calls for quick, friendly suggestions 🍳",
+  "reasoning": { "enabled": false },
+  "title": "Dinner ideas"
 }
 </examples>`;
 }

@@ -12,6 +12,7 @@ import {
 import {
     AssistantRuntimeProvider,
     ExportedMessageRepository,
+    useThread,
 } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
@@ -227,11 +228,26 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
 };
 
 /**
+ * Syncs the assistant-ui thread streaming state with the connection context.
+ * Must be rendered inside AssistantRuntimeProvider.
+ */
+function StreamingStateSync() {
+    const { setIsStreaming } = useConnection();
+    const isRunning = useThread((t) => t.isRunning);
+
+    useEffect(() => {
+        setIsStreaming(isRunning);
+    }, [isRunning, setIsStreaming]);
+
+    return null;
+}
+
+/**
  * Inner provider that has access to concierge context and error handling.
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages } = useConnection();
+    const { activeConnectionId, initialMessages, addNewConnection } = useConnection();
     const [error, setError] = useState<Error | null>(null);
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     // Track last imported state to handle late-arriving messages
@@ -347,6 +363,42 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                         );
                         setConcierge(conciergeData);
                     }
+
+                    // Check if this was a new connection - update URL and add to list
+                    const isNewConnection = response.headers.get("X-Connection-Is-New");
+                    const connectionSlug = response.headers.get("X-Connection-Slug");
+                    const connectionId = response.headers.get("X-Connection-Id");
+                    const connectionTitle = response.headers.get("X-Connection-Title");
+                    if (isNewConnection === "true" && connectionSlug && connectionId) {
+                        logger.info(
+                            {
+                                slug: connectionSlug,
+                                id: connectionId,
+                                title: connectionTitle,
+                            },
+                            "New connection created, updating URL and adding to list"
+                        );
+                        // Use replaceState to update URL without navigation
+                        // This follows the pattern from ai-chatbot and open-webui
+                        // Guard: Only update URL if still on /connection/new to prevent
+                        // updating the wrong page if user navigated during slow response
+                        if (window.location.pathname === "/connection/new") {
+                            window.history.replaceState(
+                                {},
+                                "",
+                                `/connection/${connectionSlug}`
+                            );
+                        }
+                        // Add to connections list with delightful animation
+                        addNewConnection({
+                            id: connectionId,
+                            slug: connectionSlug,
+                            title: connectionTitle
+                                ? decodeURIComponent(connectionTitle)
+                                : null,
+                            modelId: conciergeData?.modelId ?? null,
+                        });
+                    }
                 }
 
                 return response;
@@ -364,7 +416,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 throw error;
             }
         },
-        [setConcierge, overrides, activeConnectionId]
+        [setConcierge, overrides, activeConnectionId, addNewConnection]
     );
 
     // Memoize transport to prevent recreation on every render
@@ -482,6 +534,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         <ModelOverridesContext.Provider value={overridesContextValue}>
             <ChatErrorContext.Provider value={errorContextValue}>
                 <AssistantRuntimeProvider runtime={runtime}>
+                    <StreamingStateSync />
                     {children}
                     {error && (
                         <RuntimeErrorBanner

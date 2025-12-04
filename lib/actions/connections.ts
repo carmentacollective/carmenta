@@ -18,13 +18,13 @@ import {
     archiveConnection as dbArchiveConnection,
     deleteConnection as dbDeleteConnection,
     loadMessages as dbLoadMessages,
-    type ConnectionWithMessages,
     mapConnectionMessagesToUI,
 } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/db";
 import type { Connection } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/logger";
+import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 
 /**
  * Result from creating a new connection
@@ -33,6 +33,39 @@ export interface CreateConnectionResult {
     id: string;
     slug: string;
 }
+
+/**
+ * Public-facing Connection type with string ID (Sqid) for UI consumption.
+ * This is the connection type used by client components.
+ */
+export interface PublicConnection {
+    id: string; // Sqid string, not DB integer
+    userId: string;
+    title: string | null;
+    slug: string;
+    status: "active" | "background" | "archived";
+    streamingStatus: "idle" | "streaming" | "completed" | "failed";
+    modelId: string | null;
+    lastActivityAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Maps a DB connection to a public connection with encoded string ID
+ */
+function toPublicConnection(connection: Connection): PublicConnection {
+    return {
+        ...connection,
+        id: encodeConnectionId(connection.id),
+    };
+}
+
+/**
+ * PublicConnectionWithMessages - connection with string ID and loaded messages.
+ * Messages are returned as a separate field alongside the connection.
+ */
+export type PublicConnectionWithMessages = PublicConnection;
 
 /**
  * Gets or creates the database user for the current session.
@@ -69,12 +102,15 @@ export async function createNewConnection(): Promise<CreateConnectionResult> {
 
     const connection = await dbCreateConnection(dbUser.id);
 
+    // Encode the integer ID as a Sqid for the client
+    const publicId = encodeConnectionId(connection.id);
+
     logger.info(
-        { connectionId: connection.id, slug: connection.slug },
+        { connectionId: connection.id, publicId, slug: connection.slug },
         "Created new connection via action"
     );
 
-    return { id: connection.id, slug: connection.slug };
+    return { id: publicId, slug: connection.slug };
 }
 
 /**
@@ -87,33 +123,40 @@ export async function createAndRedirect(): Promise<void> {
 
 /**
  * Gets recent connections for the current user
+ * @returns PublicConnection[] with encoded Sqid IDs for UI consumption
  */
 export async function getRecentConnections(
     limit: number = 20,
     status?: "active" | "background" | "archived"
-): Promise<Connection[]> {
+): Promise<PublicConnection[]> {
     const dbUser = await getDbUser();
 
     if (!dbUser) {
         return [];
     }
 
-    return dbGetRecentConnections(dbUser.id, limit, status);
+    const connections = await dbGetRecentConnections(dbUser.id, limit, status);
+    return connections.map(toPublicConnection);
 }
 
 /**
  * Loads a connection with all its messages
+ * @param connectionId - Public Sqid string from the client
+ * @returns PublicConnectionWithMessages with encoded Sqid ID
  */
-export async function loadConnection(
-    connectionId: string
-): Promise<{ connection: ConnectionWithMessages; messages: UIMessageLike[] } | null> {
+export async function loadConnection(connectionId: string): Promise<{
+    connection: PublicConnectionWithMessages;
+    messages: UIMessageLike[];
+} | null> {
     const dbUser = await getDbUser();
 
     if (!dbUser) {
         return null;
     }
 
-    const connection = await getConnectionWithMessages(connectionId);
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+    const connection = await getConnectionWithMessages(internalId);
 
     if (!connection || connection.userId !== dbUser.id) {
         return null;
@@ -121,11 +164,16 @@ export async function loadConnection(
 
     const messages = mapConnectionMessagesToUI(connection);
 
-    return { connection, messages };
+    // Convert to public connection with string ID
+    const publicConnection: PublicConnectionWithMessages =
+        toPublicConnection(connection);
+
+    return { connection: publicConnection, messages };
 }
 
 /**
  * Loads just the messages for a connection (for chat history)
+ * @param connectionId - Public Sqid string from the client
  */
 export async function loadConnectionMessages(
     connectionId: string
@@ -136,17 +184,22 @@ export async function loadConnectionMessages(
         return [];
     }
 
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+
     // Verify ownership first
-    const connection = await getConnectionWithMessages(connectionId);
+    const connection = await getConnectionWithMessages(internalId);
     if (!connection || connection.userId !== dbUser.id) {
         return [];
     }
 
-    return dbLoadMessages(connectionId);
+    return dbLoadMessages(internalId);
 }
 
 /**
  * Updates connection metadata (title, status, etc.)
+ * @param connectionId - Public Sqid string from the client
+ * @returns PublicConnection with encoded Sqid ID
  */
 export async function updateConnection(
     connectionId: string,
@@ -155,24 +208,29 @@ export async function updateConnection(
         status?: "active" | "background" | "archived";
         modelId?: string;
     }
-): Promise<Connection | null> {
+): Promise<PublicConnection | null> {
     const dbUser = await getDbUser();
 
     if (!dbUser) {
         return null;
     }
 
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+
     // Verify ownership
-    const connection = await getConnectionWithMessages(connectionId);
+    const connection = await getConnectionWithMessages(internalId);
     if (!connection || connection.userId !== dbUser.id) {
         return null;
     }
 
-    return dbUpdateConnection(connectionId, updates);
+    const updated = await dbUpdateConnection(internalId, updates);
+    return updated ? toPublicConnection(updated) : null;
 }
 
 /**
  * Archives a connection
+ * @param connectionId - Public Sqid string from the client
  */
 export async function archiveConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
@@ -181,17 +239,21 @@ export async function archiveConnection(connectionId: string): Promise<void> {
         throw new Error("Not authenticated");
     }
 
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+
     // Verify ownership
-    const connection = await getConnectionWithMessages(connectionId);
+    const connection = await getConnectionWithMessages(internalId);
     if (!connection || connection.userId !== dbUser.id) {
         throw new Error("Connection not found or not authorized");
     }
 
-    await dbArchiveConnection(connectionId);
+    await dbArchiveConnection(internalId);
 }
 
 /**
  * Deletes a connection permanently
+ * @param connectionId - Public Sqid string from the client
  */
 export async function deleteConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
@@ -200,18 +262,22 @@ export async function deleteConnection(connectionId: string): Promise<void> {
         throw new Error("Not authenticated");
     }
 
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+
     // Verify ownership
-    const connection = await getConnectionWithMessages(connectionId);
+    const connection = await getConnectionWithMessages(internalId);
     if (!connection || connection.userId !== dbUser.id) {
         throw new Error("Connection not found or not authorized");
     }
 
-    await dbDeleteConnection(connectionId);
+    await dbDeleteConnection(internalId);
 }
 
 /**
  * Fetches the latest connection metadata (title, slug).
  * Used by client to sync URL after title generation.
+ * @param connectionId - Public Sqid string from the client
  */
 export async function getConnectionMetadata(
     connectionId: string
@@ -222,7 +288,10 @@ export async function getConnectionMetadata(
         return null;
     }
 
-    const connection = await getConnectionWithMessages(connectionId);
+    // Decode Sqid to internal integer ID
+    const internalId = decodeConnectionId(connectionId);
+
+    const connection = await getConnectionWithMessages(internalId);
 
     if (!connection || connection.userId !== dbUser.id) {
         return null;

@@ -235,6 +235,121 @@ describe("Concierge", () => {
             expect(result.explanation.length).toBe(MAX_EXPLANATION_LENGTH);
         });
 
+        it("parses title from response", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: "Fix authentication bug",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBe("Fix authentication bug");
+        });
+
+        it("handles title with emoji prefix", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: "🔧 Fix authentication bug",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBe("🔧 Fix authentication bug");
+        });
+
+        it("strips quotes from wrapped title", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: '"Fix authentication bug"',
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBe("Fix authentication bug");
+        });
+
+        it("truncates title to 50 characters with ellipsis", () => {
+            const longTitle = "a".repeat(60);
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: longTitle,
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title?.length).toBe(50);
+            expect(result.title?.endsWith("...")).toBe(true);
+        });
+
+        it("truncates title with emoji without breaking unicode", () => {
+            // Each emoji is one grapheme but may be multiple code units
+            // Create a title with emojis that would be cut mid-character with naive slice
+            const emojiTitle = "🚀".repeat(60); // 60 rocket emojis
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: emojiTitle,
+            });
+
+            const result = parseConciergeResponse(response);
+            // Should be 47 emojis + "..." = 50 graphemes total
+            const graphemes = [...result.title!];
+            expect(graphemes.length).toBe(50);
+            expect(result.title?.endsWith("...")).toBe(true);
+            // Verify no broken unicode - all graphemes before "..." should be valid emojis
+            const emojiGraphemes = graphemes.slice(0, -3);
+            expect(emojiGraphemes.every((g) => g === "🚀")).toBe(true);
+            expect(emojiGraphemes.length).toBe(47);
+        });
+
+        it("returns undefined title when too short", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: "a",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBeUndefined();
+        });
+
+        it("returns undefined title when empty", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: "",
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBeUndefined();
+        });
+
+        it("returns undefined title when not provided", () => {
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+            });
+
+            const result = parseConciergeResponse(response);
+            expect(result.title).toBeUndefined();
+        });
+
         it("handles null temperature by throwing", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",

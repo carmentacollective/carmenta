@@ -23,6 +23,7 @@ import {
     CONCIERGE_MAX_OUTPUT_TOKENS,
     CONCIERGE_MODEL,
     MAX_EXPLANATION_LENGTH,
+    MAX_TITLE_LENGTH,
     REASONING_TOKEN_BUDGETS,
     TOKEN_BUDGET_MODELS,
     type ConciergeResult,
@@ -258,11 +259,34 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
     };
     const reasoning = buildReasoningConfig(modelId, rawReasoning);
 
+    // Parse and validate title (optional but expected)
+    let title: string | undefined;
+    if (parsed.title && typeof parsed.title === "string") {
+        title = parsed.title.trim();
+        // Remove quotes if the model wrapped the title
+        if (
+            (title.startsWith('"') && title.endsWith('"')) ||
+            (title.startsWith("'") && title.endsWith("'"))
+        ) {
+            title = title.slice(1, -1);
+        }
+        // Enforce max length with unicode-safe truncation
+        // Using Array.from() to properly handle multi-byte characters (emoji, CJK)
+        if ([...title].length > MAX_TITLE_LENGTH) {
+            title = [...title].slice(0, MAX_TITLE_LENGTH - 3).join("") + "...";
+        }
+        // Ensure we have something useful
+        if (title.length < 2) {
+            title = undefined;
+        }
+    }
+
     return {
         modelId,
         temperature,
         explanation,
         reasoning,
+        title,
     };
 }
 
@@ -353,6 +377,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                         temperature: conciergeResult.temperature,
                         explanation: conciergeResult.explanation,
                         reasoning: conciergeResult.reasoning,
+                        title: conciergeResult.title,
                     },
                     "Concierge selection complete"
                 );
