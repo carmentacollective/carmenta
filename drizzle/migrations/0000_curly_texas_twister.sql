@@ -4,7 +4,7 @@ CREATE TYPE "public"."part_type" AS ENUM('text', 'reasoning', 'tool_call', 'file
 CREATE TYPE "public"."streaming_status" AS ENUM('idle', 'streaming', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."tool_state" AS ENUM('input_streaming', 'input_available', 'output_available', 'output_error');--> statement-breakpoint
 CREATE TABLE "connections" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,
 	"title" varchar(500),
 	"slug" varchar(255) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE "message_parts" (
 --> statement-breakpoint
 CREATE TABLE "messages" (
 	"id" text PRIMARY KEY NOT NULL,
-	"connection_id" text NOT NULL,
+	"connection_id" integer NOT NULL,
 	"role" "message_role" NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );

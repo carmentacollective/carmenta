@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
+import { encodeConnectionId } from "@/lib/sqids";
 
 // Use vi.hoisted to define mock functions that can be referenced in vi.mock
 const mocks = vi.hoisted(() => ({
@@ -90,17 +91,23 @@ describe("POST /api/connection", () => {
             email: "test@example.com",
         });
 
-        mocks.mockCreateConnection.mockImplementation((userId, title) => ({
-            id: "abc123", // 6+ character Sqid
-            userId,
-            title: title ?? null,
-            slug: title ? "fix-authentication-bug-abc123" : "connection-abc123",
-            status: "active",
-            streamingStatus: "idle",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            lastActivityAt: new Date(),
-        }));
+        mocks.mockCreateConnection.mockImplementation((userId, title) => {
+            const id = 1; // Integer ID from database
+            const publicId = encodeConnectionId(id);
+            return {
+                id, // Integer, not string
+                userId,
+                title: title ?? null,
+                slug: title
+                    ? `fix-authentication-bug-${publicId}`
+                    : `connection-${publicId}`,
+                status: "active",
+                streamingStatus: "idle",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                lastActivityAt: new Date(),
+            };
+        });
 
         mocks.mockUpsertMessage.mockResolvedValue(undefined);
         mocks.mockUpdateStreamingStatus.mockResolvedValue(undefined);
@@ -240,18 +247,24 @@ describe("POST /api/connection", () => {
 
             const response = await POST(request);
 
+            // The mock creates connection with id: 1
+            const expectedPublicId = encodeConnectionId(1);
+
             // Should return new connection headers
             expect(response.headers.get("X-Connection-Is-New")).toBe("true");
             expect(response.headers.get("X-Connection-Slug")).toBe(
-                "fix-authentication-bug-abc123"
+                `fix-authentication-bug-${expectedPublicId}`
             );
-            expect(response.headers.get("X-Connection-Id")).toBe("abc123");
+            expect(response.headers.get("X-Connection-Id")).toBe(expectedPublicId);
             expect(response.headers.get("X-Connection-Title")).toBe(
                 encodeURIComponent("Fix authentication bug")
             );
         });
 
         it("does not return new connection headers when connectionId is provided", async () => {
+            // Use a valid Sqid for an existing connection (e.g., DB ID 42)
+            const existingPublicId = encodeConnectionId(42);
+
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -263,7 +276,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "exist1", // 6-character existing ID
+                    connectionId: existingPublicId, // Valid existing Sqid
                 }),
             });
 
@@ -286,12 +299,15 @@ describe("POST /api/connection", () => {
                 title: "Debug API errors",
             });
 
-            // Update mock to reflect new title
+            const testId = 2; // Use a different ID
+            const testPublicId = encodeConnectionId(testId);
+
+            // Update mock to reflect new title with integer ID
             mocks.mockCreateConnection.mockImplementationOnce((userId, title) => ({
-                id: "xyz78901",
+                id: testId,
                 userId,
                 title,
-                slug: "debug-api-errors-xyz78901",
+                slug: `debug-api-errors-${testPublicId}`,
                 status: "active",
                 streamingStatus: "idle",
                 createdAt: new Date(),
@@ -316,7 +332,7 @@ describe("POST /api/connection", () => {
             const response = await POST(request);
 
             expect(response.headers.get("X-Connection-Slug")).toBe(
-                "debug-api-errors-xyz78901"
+                `debug-api-errors-${testPublicId}`
             );
         });
 
@@ -329,11 +345,14 @@ describe("POST /api/connection", () => {
                 title: undefined, // No title
             });
 
+            const testId = 3;
+            const testPublicId = encodeConnectionId(testId);
+
             mocks.mockCreateConnection.mockImplementationOnce((userId, _title) => ({
-                id: "abc123",
+                id: testId,
                 userId,
                 title: null,
-                slug: "connection-abc123", // Fallback slug
+                slug: `connection-${testPublicId}`, // Fallback slug
                 status: "active",
                 streamingStatus: "idle",
                 createdAt: new Date(),
@@ -357,7 +376,9 @@ describe("POST /api/connection", () => {
 
             const response = await POST(request);
 
-            expect(response.headers.get("X-Connection-Slug")).toBe("connection-abc123");
+            expect(response.headers.get("X-Connection-Slug")).toBe(
+                `connection-${testPublicId}`
+            );
             // No title header when no title
             expect(response.headers.get("X-Connection-Title")).toBeNull();
         });
@@ -365,6 +386,9 @@ describe("POST /api/connection", () => {
 
     describe("Connection ID Validation", () => {
         it("accepts valid 6+ character connection ID", async () => {
+            // Use an actual valid Sqid
+            const validSqid = encodeConnectionId(100);
+
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -376,7 +400,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "abc123", // Valid 6+ char Sqid
+                    connectionId: validSqid,
                 }),
             });
 
@@ -448,6 +472,9 @@ describe("POST /api/connection", () => {
         });
 
         it("accepts longer Sqid connection IDs (variable length)", async () => {
+            // Use a large number that produces a longer Sqid
+            const longerSqid = encodeConnectionId(999999999);
+
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -459,7 +486,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    connectionId: "a1b2c3d4e5f6", // 12-char Sqid is valid
+                    connectionId: longerSqid,
                 }),
             });
 

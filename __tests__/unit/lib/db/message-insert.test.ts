@@ -19,7 +19,7 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 describe("Message Insert Error Handling", () => {
     let testUserId: string;
-    let testConnectionId: string;
+    let testConnectionId: number;
 
     beforeEach(async () => {
         // Create test user
@@ -34,7 +34,7 @@ describe("Message Insert Error Handling", () => {
 
         // Create test connection
         const connection = await createConnection(testUserId);
-        testConnectionId = connection.id;
+        testConnectionId = connection.id; // Now a number (serial)
     });
 
     afterEach(async () => {
@@ -120,7 +120,7 @@ describe("Message Insert Error Handling", () => {
             };
 
             // Using a non-existent connection ID should throw a meaningful error
-            const invalidConnectionId = "00000000-0000-0000-0000-000000000000";
+            const invalidConnectionId = 999999999;
 
             await expect(
                 upsertMessage(invalidConnectionId, uiMessage)

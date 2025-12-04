@@ -1,29 +1,60 @@
 import { describe, it, expect } from "vitest";
 import {
-    generateConnectionId,
+    encodeConnectionId,
+    decodeConnectionId,
     generateSlug,
     extractIdFromSlug,
-    decodeSqid,
 } from "@/lib/sqids";
 
-describe("generateConnectionId", () => {
-    it("generates 6+ character alphanumeric ID", () => {
-        const id = generateConnectionId();
-        expect(id.length).toBeGreaterThanOrEqual(6);
-        expect(id).toMatch(/^[0-9a-z]+$/);
+describe("encodeConnectionId", () => {
+    it("encodes sequential ID to 6+ character alphanumeric string", () => {
+        const encoded = encodeConnectionId(1);
+        expect(encoded.length).toBeGreaterThanOrEqual(6);
+        expect(encoded).toMatch(/^[0-9a-z]+$/);
     });
 
-    it("generates unique IDs", () => {
-        const ids = new Set(Array.from({ length: 100 }, () => generateConnectionId()));
-        expect(ids.size).toBe(100);
+    it("encodes different IDs to different strings", () => {
+        const id1 = encodeConnectionId(1);
+        const id2 = encodeConnectionId(2);
+        const id3 = encodeConnectionId(100);
+        expect(id1).not.toBe(id2);
+        expect(id2).not.toBe(id3);
+        expect(id1).not.toBe(id3);
     });
 
-    it("generates IDs that can be decoded", () => {
-        const id = generateConnectionId();
-        const decoded = decodeSqid(id);
-        expect(decoded).toHaveLength(1); // We encode one 24-bit number
-        expect(decoded[0]).toBeGreaterThanOrEqual(0);
-        expect(decoded[0]).toBeLessThan(16777216); // 2^24
+    it("produces consistent encoding for the same ID", () => {
+        const encoded1 = encodeConnectionId(42);
+        const encoded2 = encodeConnectionId(42);
+        expect(encoded1).toBe(encoded2);
+    });
+
+    it("grows length for larger numbers", () => {
+        const small = encodeConnectionId(1);
+        const large = encodeConnectionId(1000000000);
+        // Large numbers need more characters
+        expect(large.length).toBeGreaterThanOrEqual(small.length);
+    });
+});
+
+describe("decodeConnectionId", () => {
+    it("decodes Sqid back to original sequential ID", () => {
+        const original = 42;
+        const encoded = encodeConnectionId(original);
+        const decoded = decodeConnectionId(encoded);
+        expect(decoded).toBe(original);
+    });
+
+    it("round-trips various IDs correctly", () => {
+        const testIds = [1, 2, 100, 1000, 10000, 1000000];
+        for (const id of testIds) {
+            const encoded = encodeConnectionId(id);
+            const decoded = decodeConnectionId(encoded);
+            expect(decoded).toBe(id);
+        }
+    });
+
+    it("throws on invalid Sqid format", () => {
+        expect(() => decodeConnectionId("")).toThrow();
     });
 });
 
@@ -136,11 +167,15 @@ describe("extractIdFromSlug", () => {
     });
 });
 
-describe("decodeSqid", () => {
-    it("decodes Sqid back to numbers", () => {
-        const id = generateConnectionId();
-        const decoded = decodeSqid(id);
-        expect(Array.isArray(decoded)).toBe(true);
-        expect(decoded.length).toBe(1);
+describe("encode/decode integration", () => {
+    it("works with generateSlug and extractIdFromSlug", () => {
+        // Simulate the full flow: DB ID → Sqid → Slug → Extract → Decode
+        const dbId = 123;
+        const sqid = encodeConnectionId(dbId);
+        const slug = generateSlug("Test Connection", sqid);
+        const extractedSqid = extractIdFromSlug(slug);
+        const decodedId = decodeConnectionId(extractedSqid);
+
+        expect(decodedId).toBe(dbId);
     });
 });

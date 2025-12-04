@@ -32,25 +32,42 @@ const sqids = new Sqids({
 });
 
 /**
- * Generate a URL-safe Sqid for connections.
+ * Encode a sequential database ID into a URL-safe Sqid.
  *
- * Uses crypto.getRandomValues for secure random number generation,
- * then encodes via Sqids for a clean, URL-safe ID.
+ * This is the core of Sqids: sequential IDs (1, 2, 3...) become
+ * non-sequential-looking strings that grow naturally as IDs increase.
  *
- * 24 bits of entropy = 16.7 million unique IDs, consistently 6 characters.
+ * @param seqId - Sequential integer from database (e.g., SERIAL column)
+ * @returns 6+ character lowercase alphanumeric ID
  *
- * @returns 6-character lowercase alphanumeric ID
- * @example "vbp96w"
+ * @example
+ * encodeConnectionId(1)       // => "2ot9ib" (6 chars)
+ * encodeConnectionId(1000000) // => "2ot9ib5s" (8 chars)
  */
-export function generateConnectionId(): string {
-    // Generate 24-bit random number (3 bytes) for compact 6-char IDs
-    const randomBytes = new Uint8Array(3);
-    crypto.getRandomValues(randomBytes);
+export function encodeConnectionId(seqId: number): string {
+    return sqids.encode([seqId]);
+}
 
-    // Combine bytes into single 24-bit number
-    const num = (randomBytes[0] << 16) | (randomBytes[1] << 8) | randomBytes[2];
-
-    return sqids.encode([num]);
+/**
+ * Decode a Sqid back to its sequential database ID.
+ *
+ * Useful for database lookups - decode the URL ID to get the seq_id,
+ * then query by the indexed integer column.
+ *
+ * @param id - The Sqid to decode
+ * @returns The original sequential ID
+ *
+ * @example
+ * decodeConnectionId("2ot9ib") // => 1
+ */
+export function decodeConnectionId(id: string): number {
+    const decoded = sqids.decode(id);
+    if (decoded.length !== 1) {
+        throw new Error(
+            `Invalid connection ID: expected 1 number, got ${decoded.length}`
+        );
+    }
+    return decoded[0];
 }
 
 /**
@@ -138,19 +155,6 @@ export function extractIdFromSlug(slug: string): string {
     }
 
     return potentialId;
-}
-
-/**
- * Decode a Sqid back to its original numbers.
- *
- * Useful for debugging or if we ever need to extract metadata
- * encoded in the ID.
- *
- * @param id - The Sqid to decode
- * @returns Array of numbers that were encoded
- */
-export function decodeSqid(id: string): number[] {
-    return sqids.decode(id);
 }
 
 /**

@@ -20,15 +20,15 @@
 import type { ReactNode } from "react";
 import { ConnectionProvider } from "./connection-context";
 import { ConnectHeader } from "./connect-header";
-import type { Connection } from "@/lib/db/schema";
+import type { PublicConnection } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 interface ConnectLayoutProps {
     children: ReactNode;
     /** Initial connections from server (recent list) */
-    initialConnections?: Connection[];
+    initialConnections?: PublicConnection[];
     /** The currently active connection (from [id] param) */
-    activeConnection?: Connection | null;
+    activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
 }

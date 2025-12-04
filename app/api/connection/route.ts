@@ -24,6 +24,7 @@ import {
     type UIMessageLike,
 } from "@/lib/db";
 import { assertEnv, env } from "@/lib/env";
+import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { getModel } from "@/lib/models";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
@@ -248,7 +249,10 @@ const tools = {
 
 export async function POST(req: Request) {
     let userEmail: string | null = null;
-    let connectionId: string | null = null;
+    /** Internal numeric ID for database operations */
+    let connectionId: number | null = null;
+    /** Public Sqid for response headers */
+    let connectionPublicId: string | null = null;
 
     try {
         // Authentication: required in production, optional in development
@@ -327,7 +331,9 @@ export async function POST(req: Request) {
 
         // Get or create connection
         if (existingConnectionId) {
-            connectionId = existingConnectionId;
+            // Decode Sqid string to internal integer ID
+            connectionId = decodeConnectionId(existingConnectionId);
+            connectionPublicId = existingConnectionId;
         } else {
             // New connection - create it with title from concierge
             isNewConnection = true;
@@ -338,10 +344,12 @@ export async function POST(req: Request) {
                     conciergeResult.modelId
                 );
                 connectionId = connection.id;
+                connectionPublicId = encodeConnectionId(connection.id);
                 connectionSlug = connection.slug;
                 logger.info(
                     {
                         connectionId,
+                        publicId: connectionPublicId,
                         slug: connectionSlug,
                         title: conciergeResult.title,
                         userId: dbUser.id,
@@ -610,7 +618,7 @@ export async function POST(req: Request) {
             "X-Concierge-Reasoning",
             encodeURIComponent(JSON.stringify(concierge.reasoning))
         );
-        headers.set("X-Connection-Id", connectionId!);
+        headers.set("X-Connection-Id", connectionPublicId!);
 
         // For new connections, include the slug and title so client can update UI immediately
         if (isNewConnection && connectionSlug) {

@@ -20,6 +20,7 @@ import {
     index,
     text,
     integer,
+    serial,
     pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -148,10 +149,10 @@ export const connections = pgTable(
     "connections",
     {
         /**
-         * Sqid primary key for URL-safe, non-sequential IDs.
-         * 6+ lowercase alphanumeric characters (e.g., "vbp96w").
+         * Sequential integer ID, auto-incremented by Postgres.
+         * Encoded via Sqids for public URLs: id 1 → "2ot9ib"
          */
-        id: text("id").primaryKey(),
+        id: serial("id").primaryKey(),
 
         /** Owner of this connection */
         userId: uuid("user_id")
@@ -231,9 +232,9 @@ export const messages = pgTable(
         id: text("id").primaryKey(),
 
         /**
-         * Connection ID - references connections.id (Sqid text)
+         * Connection ID - references connections.id (integer)
          */
-        connectionId: text("connection_id")
+        connectionId: integer("connection_id")
             .references(() => connections.id, { onDelete: "cascade" })
             .notNull(),
 

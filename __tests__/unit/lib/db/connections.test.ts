@@ -176,7 +176,7 @@ describe("Connection CRUD Operations", () => {
         });
 
         it("returns null for non-existent connection", async () => {
-            const result = await getConnectionWithMessages(uuid());
+            const result = await getConnectionWithMessages(999999999);
             expect(result).toBeNull();
         });
     });
@@ -235,7 +235,7 @@ describe("Connection CRUD Operations", () => {
         });
 
         it("returns null for non-existent connection", async () => {
-            const result = await updateConnection(uuid(), { title: "Test" });
+            const result = await updateConnection(999999999, { title: "Test" });
             expect(result).toBeNull();
         });
     });
@@ -418,7 +418,7 @@ describe("Message Persistence", () => {
         });
 
         it("returns empty array for non-existent connection", async () => {
-            const messages = await loadMessages(uuid());
+            const messages = await loadMessages(999999999);
             expect(messages).toEqual([]);
         });
     });
@@ -926,11 +926,11 @@ describe("Message Mapping", () => {
                 ],
             };
 
-            const { message: dbMsg, parts } = mapUIMessageToDB(message, "conn-1");
+            const { message: dbMsg, parts } = mapUIMessageToDB(message, 1);
 
             expect(dbMsg).toMatchObject({
                 id: "msg-1",
-                connectionId: "conn-1",
+                connectionId: 1,
                 role: "assistant",
             });
             expect(parts).toHaveLength(2);
