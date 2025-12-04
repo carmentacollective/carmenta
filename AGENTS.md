@@ -6,7 +6,6 @@
 @.cursor/rules/trust-and-decision-making.mdc
 @.cursor/rules/personalities/common-personality.mdc @.cursor/rules/git-interaction.mdc
 @.cursor/rules/frontend/typescript-coding-standards.mdc
-@.cursor/rules/prompt-engineering.mdc
 
 ## Project Overview
 
@@ -17,7 +16,7 @@ and an AI team that works autonomously.
 Philosophy: Human and AI as expressions of unified consciousness. Interface uses "we"
 language, dissolving human-machine boundaries.
 
-100x Framework: Three levels - 1x (clarity/systems), 10x (AI team), 10x (vision
+100x Framework: Three levels - 1x (clarity/systems), 10x (AI team), 100x (vision
 execution partner).
 
 ## Project Structure
@@ -30,17 +29,7 @@ specification is the IP.
 - knowledge/components/ - Feature-level specifications
 - knowledge/competitors/ - Competitive analysis
 
-Early development. No code yet. The `/knowledge` command is the dialogue interface for
-maintaining product understanding.
-
-## Commands
-
-.claude/commands/ contains project-specific slash commands:
-
-/knowledge - AI Product Manager for living product understanding /product-intel
-[topic] - Research competitors and industry trends /generate-llms-txt - Generate
-llms.txt for AI site navigation /load-cursor-rules - Load relevant rules for current
-task /personality-change - Switch AI personality
+Early development.
 
 ## Code Conventions
 
@@ -57,8 +46,7 @@ to product identity.
 
 Commit format: emoji type: description
 
-Examples: 💫 Deepen heart-centered AI philosophy with clarity on unity and alignment 🔧
-Fix commands structure: real files + single symlink 📖 Add project README
+Example: ✨ Add elegant 404 not-found page
 
 Never commit to main without explicit permission. Never use --no-verify unless
 explicitly requested for emergencies. Full workflow in
