@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, fireEvent } from "@testing-library/react";
+import { render, screen, act, fireEvent, within } from "@testing-library/react";
 import { ReasoningDisplay } from "@/components/connection/reasoning-display";
 
 describe("ReasoningDisplay", () => {
@@ -29,10 +29,7 @@ describe("ReasoningDisplay", () => {
 
         // Should extract and display context from content using pattern matching
         // The extractReasoningSummary function looks for "I need to..." patterns
-        // Check the status span in the trigger button (not the pre content)
-        const statusSpan = container.querySelector(
-            "button[data-state] > span.max-w-\\[400px\\]"
-        );
+        const statusSpan = within(container).getByTestId("reasoning-status");
         expect(statusSpan).toHaveTextContent(/analyze the database schema/i);
     });
 
@@ -45,15 +42,12 @@ describe("ReasoningDisplay", () => {
         );
 
         // Should prioritize explicit summary tags
-        // Check the status span in the trigger button (not the pre content)
-        const statusSpan = container.querySelector(
-            "button[data-state] > span.max-w-\\[400px\\]"
-        );
+        const statusSpan = within(container).getByTestId("reasoning-status");
         expect(statusSpan).toHaveTextContent(/Evaluating authentication options/i);
     });
 
     it("auto-closes after streaming ends", async () => {
-        const { rerender } = render(
+        const { rerender, container } = render(
             <ReasoningDisplay content="Some reasoning" isStreaming />
         );
 
@@ -69,8 +63,8 @@ describe("ReasoningDisplay", () => {
         });
 
         // Content area should be collapsed (hidden)
-        const collapsibleContent = document.querySelector('[data-state="closed"]');
-        expect(collapsibleContent).toBeInTheDocument();
+        const collapsibleContent = within(container).getByTestId("reasoning-content");
+        expect(collapsibleContent).toHaveAttribute("data-state", "closed");
     });
 
     it("calculates and shows duration after streaming", async () => {
@@ -120,7 +114,7 @@ describe("ReasoningDisplay", () => {
     });
 
     it("allows manual toggle even when auto-closing", async () => {
-        const { rerender } = render(
+        const { rerender, container } = render(
             <ReasoningDisplay content="Some content" isStreaming />
         );
 
@@ -133,12 +127,12 @@ describe("ReasoningDisplay", () => {
         });
 
         // Now manually re-open
-        const triggers = screen.getAllByRole("button");
-        const trigger = triggers[0]; // First button is the collapsible trigger
+        const trigger = within(container).getByTestId("reasoning-trigger");
         fireEvent.click(trigger);
 
         // Should be open now
-        expect(document.querySelector('[data-state="open"]')).toBeInTheDocument();
+        const content = within(container).getByTestId("reasoning-content");
+        expect(content).toHaveAttribute("data-state", "open");
     });
 
     it("supports controlled mode", () => {
@@ -153,20 +147,20 @@ describe("ReasoningDisplay", () => {
             />
         );
 
-        // Find the collapsible trigger button within our component
-        const trigger = container.querySelector("button[data-state]");
+        // Find the collapsible trigger button
+        const trigger = within(container).getByTestId("reasoning-trigger");
         expect(trigger).toBeInTheDocument();
-        fireEvent.click(trigger!);
+        fireEvent.click(trigger);
 
         expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     it("renders brain icon", () => {
-        render(<ReasoningDisplay content="Test" isStreaming />);
+        const { container } = render(<ReasoningDisplay content="Test" isStreaming />);
 
-        // Brain icon should be present (as SVG)
-        const svg = document.querySelector("svg");
-        expect(svg).toBeInTheDocument();
+        // Brain icon should be present
+        const icon = within(container).getByTestId("reasoning-icon");
+        expect(icon).toBeInTheDocument();
     });
 
     it("applies custom className", () => {
@@ -186,12 +180,139 @@ describe("ReasoningDisplay", () => {
         );
 
         // Find the status message span (next to brain icon)
-        const statusSpans = container.querySelectorAll("button[data-state] > span");
-        const statusText = Array.from(statusSpans)
-            .map((s) => s.textContent)
-            .join("");
+        const statusSpan = within(container).getByTestId("reasoning-status");
 
         // Should contain truncated context with ellipsis
-        expect(statusText).toContain("...");
+        expect(statusSpan.textContent).toContain("...");
+    });
+
+    describe("Error States", () => {
+        it("handles empty content gracefully", () => {
+            const { container } = render(<ReasoningDisplay content="" isStreaming />);
+
+            // Should show default streaming message
+            expect(
+                within(container).getByText(/Working through this together/)
+            ).toBeInTheDocument();
+        });
+
+        it("handles null content without crashing", () => {
+            // Testing runtime error handling with null content
+            expect(() =>
+                render(<ReasoningDisplay content={null as any} isStreaming />)
+            ).not.toThrow();
+        });
+
+        it("handles extremely long content without breaking layout", () => {
+            const veryLongContent = "x".repeat(10000);
+            const { container } = render(
+                <ReasoningDisplay content={veryLongContent} isStreaming />
+            );
+
+            const statusSpan = within(container).getByTestId("reasoning-status");
+            expect(statusSpan.textContent!.length).toBeLessThan(500); // Truncated
+        });
+
+        it("handles content with special characters", () => {
+            const specialContent =
+                '<script>alert("xss")</script> & "quotes" \'single\'';
+            const { container } = render(
+                <ReasoningDisplay content={specialContent} isStreaming />
+            );
+
+            // Content should be escaped, not executed - check in the collapsible content area
+            const content = within(container).getByTestId("reasoning-content");
+            expect(within(content).getByText(specialContent)).toBeInTheDocument();
+        });
+
+        it("handles rapid streaming state changes", async () => {
+            const { rerender } = render(
+                <ReasoningDisplay content="test" isStreaming />
+            );
+
+            // Rapidly toggle streaming
+            rerender(<ReasoningDisplay content="test" isStreaming={false} />);
+            rerender(<ReasoningDisplay content="test" isStreaming />);
+            rerender(<ReasoningDisplay content="test" isStreaming={false} />);
+
+            // Should handle without errors
+            expect(screen.getByText("test")).toBeInTheDocument();
+        });
+
+        it("handles undefined open state in controlled mode", () => {
+            const onOpenChange = vi.fn();
+
+            // Testing runtime error handling with undefined open state
+            expect(() =>
+                render(
+                    <ReasoningDisplay
+                        content="test"
+                        isStreaming={false}
+                        open={undefined as any}
+                        onOpenChange={onOpenChange}
+                    />
+                )
+            ).not.toThrow();
+        });
+
+        it("handles content that changes while streaming", () => {
+            const { rerender } = render(
+                <ReasoningDisplay content="First thought" isStreaming />
+            );
+
+            // Change content mid-stream
+            rerender(<ReasoningDisplay content="Second thought" isStreaming />);
+            rerender(
+                <ReasoningDisplay
+                    content="Third thought with much more detail"
+                    isStreaming
+                />
+            );
+
+            // Should show latest content
+            expect(
+                screen.getByText("Third thought with much more detail")
+            ).toBeInTheDocument();
+        });
+
+        it("handles malformed reasoning_summary tags", () => {
+            const malformedContent =
+                "<reasoning_summary>Unclosed tag... <other>nested</other>";
+            const { container } = render(
+                <ReasoningDisplay content={malformedContent} isStreaming />
+            );
+
+            // Should not crash, should show some fallback
+            const statusSpan = within(container).getByTestId("reasoning-status");
+            expect(statusSpan).toBeInTheDocument();
+        });
+
+        it("handles whitespace-only content", () => {
+            const { container } = render(
+                <ReasoningDisplay content="   \n\n\t   " isStreaming />
+            );
+
+            // Should show default message for empty content
+            expect(
+                within(container).getByText(/Working through this together/)
+            ).toBeInTheDocument();
+        });
+
+        it("handles component unmount during auto-close timer", async () => {
+            const { rerender, unmount } = render(
+                <ReasoningDisplay content="test" isStreaming />
+            );
+
+            // Stop streaming to trigger auto-close
+            rerender(<ReasoningDisplay content="test" isStreaming={false} />);
+
+            // Unmount before timer fires
+            await act(async () => {
+                vi.advanceTimersByTime(200); // Partway through 500ms delay
+            });
+
+            // Should not throw on unmount
+            expect(() => unmount()).not.toThrow();
+        });
     });
 });
