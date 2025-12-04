@@ -300,7 +300,7 @@
 
     /* Code blocks */
     .holo-markdown .aui-md-pre {
-        @apply my-3 overflow-x-auto rounded-lg bg-foreground/10 p-4 font-mono text-sm;
+        @apply my-3 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm text-foreground;
         backdrop-filter: blur(8px);
     }
 
