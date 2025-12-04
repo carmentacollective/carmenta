@@ -37,7 +37,7 @@ export default function SignInPage() {
                         identityPreviewEditButton: "text-primary",
                     },
                 }}
-                forceRedirectUrl="/connect"
+                forceRedirectUrl="/connection"
             />
         </div>
     );

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ConnectionsPage() {
-    // Load recent connections
+    // Load recent connections (auth protected by middleware)
     const recentConnections = await getRecentConnections(10);
 
     // If there are recent connections, redirect to the most recent one

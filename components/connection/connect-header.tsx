@@ -162,7 +162,7 @@ export function ConnectHeader() {
     return (
         <header
             className={cn(
-                "flex items-center justify-between px-4 py-3 sm:px-6",
+                "flex items-center justify-center px-4 py-3 sm:px-6",
                 "transition-all duration-500 ease-out",
                 // Entrance animation
                 hasShownHeader
@@ -170,10 +170,10 @@ export function ConnectHeader() {
                     : "-translate-y-4 opacity-0"
             )}
         >
-            {/* Logo */}
+            {/* Logo - absolute positioned left */}
             <Link
                 href="/"
-                className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
+                className="absolute left-4 flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80 sm:left-6"
             >
                 <Image
                     src="/logos/icon-transparent.png"
@@ -189,10 +189,10 @@ export function ConnectHeader() {
             </Link>
 
             {/* Center: Dock style - mirrors chat input */}
-            <div className="relative">
+            <div className="relative w-full max-w-[700px]">
                 <div
                     className={cn(
-                        "glass-input-dock flex min-w-[280px] items-center gap-2 sm:min-w-[400px]",
+                        "glass-input-dock flex w-full items-center gap-2",
                         "transition-all duration-500 ease-out",
                         hasShownHeader ? "scale-100 opacity-100" : "scale-95 opacity-0"
                     )}
@@ -340,8 +340,8 @@ export function ConnectHeader() {
                 )}
             </div>
 
-            {/* Right side - just user button */}
-            <div className="flex shrink-0 items-center gap-3">
+            {/* Right side - absolute positioned right */}
+            <div className="absolute right-4 flex shrink-0 items-center gap-3 sm:right-6">
                 <OptionalUserButton />
             </div>
         </header>
