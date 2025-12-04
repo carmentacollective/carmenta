@@ -265,6 +265,7 @@ export function ConnectHeader() {
                                         onClick={closeSearch}
                                         className="rounded-full p-1 transition-colors hover:bg-foreground/5"
                                         title="Close"
+                                        aria-label="Close search"
                                     >
                                         <X className="h-4 w-4 text-foreground/40" />
                                     </button>
@@ -328,8 +329,8 @@ export function ConnectHeader() {
                                     ) : (
                                         <div className="py-8 text-center text-sm text-foreground/50">
                                             {connections.length === 0
-                                                ? "No connections yet"
-                                                : "No connections found"}
+                                                ? "We haven't started any connections yet"
+                                                : "We couldn't find any matching connections"}
                                         </div>
                                     )}
                                 </div>

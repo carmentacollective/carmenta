@@ -31,6 +31,7 @@ import {
 } from "@/lib/actions/connections";
 import type { Connection } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
+import { logger } from "@/lib/client-logger";
 
 interface ConnectionContextValue {
     /** All available connections (recent) */
@@ -104,9 +105,10 @@ export function ConnectionProvider({
         startTransition(async () => {
             try {
                 const connectionId = await createNewConnection();
+                logger.debug({ connectionId }, "Created new connection");
                 router.push(`/connection/${connectionId}`);
             } catch (error) {
-                console.error("Failed to create connection:", error);
+                logger.error({ error }, "Failed to create connection");
             }
         });
     }, [router]);
@@ -117,10 +119,16 @@ export function ConnectionProvider({
         startTransition(async () => {
             try {
                 await archiveConnection(activeConnectionId);
-                // Navigate to connection list or most recent
+                logger.debug(
+                    { connectionId: activeConnectionId },
+                    "Archived connection"
+                );
                 router.push("/connection");
             } catch (error) {
-                console.error("Failed to archive connection:", error);
+                logger.error(
+                    { error, connectionId: activeConnectionId },
+                    "Failed to archive connection"
+                );
             }
         });
     }, [activeConnectionId, router]);
@@ -130,6 +138,7 @@ export function ConnectionProvider({
             startTransition(async () => {
                 try {
                     await deleteConnectionAction(id);
+                    logger.debug({ connectionId: id }, "Deleted connection");
                     // Optimistically remove from list
                     setConnections((prev) => prev.filter((c) => c.id !== id));
                     // Navigate away if deleted the active one
@@ -137,7 +146,10 @@ export function ConnectionProvider({
                         router.push("/connection");
                     }
                 } catch (error) {
-                    console.error("Failed to delete connection:", error);
+                    logger.error(
+                        { error, connectionId: id },
+                        "Failed to delete connection"
+                    );
                 }
             });
         },
