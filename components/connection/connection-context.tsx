@@ -239,21 +239,43 @@ export function ConnectionProvider({
             return;
         }
 
-        // Start polling after a short delay (give time for first message)
-        const pollInterval = setInterval(async () => {
+        let pollInterval: NodeJS.Timeout | null = null;
+        let isCancelled = false;
+
+        // Check immediately first, then start polling
+        // This prevents missing titles generated between mount and first poll
+        const startPolling = async () => {
+            // Immediate check
             const updated = await refreshConnectionMetadata();
-            if (updated) {
-                clearInterval(pollInterval);
+            if (updated || isCancelled) {
+                return;
             }
-        }, 3000);
+
+            // Start interval polling if immediate check didn't find a title
+            pollInterval = setInterval(async () => {
+                const updated = await refreshConnectionMetadata();
+                if (updated && pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+            }, 3000);
+        };
+
+        void startPolling();
 
         // Stop polling after 30 seconds max
         const timeout = setTimeout(() => {
-            clearInterval(pollInterval);
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
         }, 30000);
 
         return () => {
-            clearInterval(pollInterval);
+            isCancelled = true;
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
             clearTimeout(timeout);
         };
     }, [activeConnectionId, activeConnection?.title, refreshConnectionMetadata]);

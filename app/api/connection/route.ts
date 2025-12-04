@@ -371,8 +371,9 @@ export async function POST(req: Request) {
         };
 
         // Check if the selected model supports tool calling
+        // Default to false for unknown models to avoid runtime errors
         const modelConfig = getModel(concierge.modelId);
-        const modelSupportsTools = modelConfig?.supportsTools ?? true;
+        const modelSupportsTools = modelConfig?.supportsTools ?? false;
 
         logger.info(
             {

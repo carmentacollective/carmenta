@@ -29,24 +29,38 @@ const ID_LENGTH = 12;
 export const generateConnectionId = customAlphabet(URL_SAFE_ALPHABET, ID_LENGTH);
 
 /**
+ * Default slug prefix when title is empty or contains only special characters.
+ */
+const DEFAULT_SLUG_PREFIX = "connection";
+
+/**
  * Generate a URL-safe slug from a title and ID.
  *
  * @param title - The connection title (can be null/undefined)
  * @param id - The connection NanoID
- * @returns SEO-friendly slug: "title-slug-id" or "new-connection-id"
+ * @returns SEO-friendly slug: "title-slug-id" or "connection-id"
  *
  * @example
  * generateSlug("Fix authentication bug", "a1b2c3d4e5f6")
  * // => "fix-authentication-bug-a1b2c3d4e5f6"
  *
  * generateSlug(null, "a1b2c3d4e5f6")
- * // => "new-connection-a1b2c3d4e5f6"
+ * // => "connection-a1b2c3d4e5f6"
  *
  * generateSlug("✨ Add dark mode", "xyz789abc123")
  * // => "add-dark-mode-xyz789abc123"
+ *
+ * generateSlug("✨🎉🔥", "xyz789abc123")
+ * // => "connection-xyz789abc123" (fallback for emoji-only titles)
  */
 export function generateSlug(title: string | null | undefined, id: string): string {
-    const baseSlug = slugify(title ?? "New connection");
+    const baseSlug = slugify(title ?? "");
+
+    // Fallback if title was empty or contained only special characters
+    if (!baseSlug) {
+        return `${DEFAULT_SLUG_PREFIX}-${id}`;
+    }
+
     return `${baseSlug}-${id}`;
 }
 

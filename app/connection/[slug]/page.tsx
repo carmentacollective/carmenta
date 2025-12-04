@@ -11,6 +11,18 @@ interface ConnectionPageProps {
 }
 
 /**
+ * Safely extract connection ID from slug.
+ * Returns null if slug is malformed (triggers 404).
+ */
+function safeExtractId(slug: string): string | null {
+    try {
+        return extractIdFromSlug(slug);
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Generate dynamic metadata for SEO.
  *
  * Page title format: "{Connection Title} | Carmenta" or "Connect | Carmenta" for untitled.
@@ -19,7 +31,12 @@ export async function generateMetadata({
     params,
 }: ConnectionPageProps): Promise<Metadata> {
     const { slug } = await params;
-    const connectionId = extractIdFromSlug(slug);
+    const connectionId = safeExtractId(slug);
+
+    if (!connectionId) {
+        return { title: "Not Found | Carmenta" };
+    }
+
     const result = await loadConnection(connectionId);
 
     if (!result) {
@@ -42,7 +59,12 @@ export async function generateMetadata({
 
 export default async function ConnectionPage({ params }: ConnectionPageProps) {
     const { slug } = await params;
-    const connectionId = extractIdFromSlug(slug);
+    const connectionId = safeExtractId(slug);
+
+    // Invalid slug format - show 404
+    if (!connectionId) {
+        notFound();
+    }
 
     // Load the connection and its messages
     const result = await loadConnection(connectionId);
