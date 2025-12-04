@@ -331,22 +331,30 @@ export async function POST(req: Request) {
         } else {
             // New connection - create it with title from concierge
             isNewConnection = true;
-            const connection = await createConnection(
-                dbUser.id,
-                conciergeResult.title, // Title from concierge
-                conciergeResult.modelId
-            );
-            connectionId = connection.id;
-            connectionSlug = connection.slug;
-            logger.info(
-                {
-                    connectionId,
-                    slug: connectionSlug,
-                    title: conciergeResult.title,
-                    userId: dbUser.id,
-                },
-                "Created new connection with title"
-            );
+            try {
+                const connection = await createConnection(
+                    dbUser.id,
+                    conciergeResult.title, // Title from concierge
+                    conciergeResult.modelId
+                );
+                connectionId = connection.id;
+                connectionSlug = connection.slug;
+                logger.info(
+                    {
+                        connectionId,
+                        slug: connectionSlug,
+                        title: conciergeResult.title,
+                        userId: dbUser.id,
+                    },
+                    "Created new connection with title"
+                );
+            } catch (error) {
+                logger.error(
+                    { error, userId: dbUser.id, title: conciergeResult.title },
+                    "Failed to create connection"
+                );
+                throw error;
+            }
         }
 
         // Save the latest user message before streaming

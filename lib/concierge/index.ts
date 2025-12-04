@@ -270,9 +270,10 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
         ) {
             title = title.slice(1, -1);
         }
-        // Enforce max length
-        if (title.length > MAX_TITLE_LENGTH) {
-            title = title.slice(0, MAX_TITLE_LENGTH - 3) + "...";
+        // Enforce max length with unicode-safe truncation
+        // Using Array.from() to properly handle multi-byte characters (emoji, CJK)
+        if ([...title].length > MAX_TITLE_LENGTH) {
+            title = [...title].slice(0, MAX_TITLE_LENGTH - 3).join("") + "...";
         }
         // Ensure we have something useful
         if (title.length < 2) {

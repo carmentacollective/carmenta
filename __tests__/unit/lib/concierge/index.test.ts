@@ -289,6 +289,29 @@ describe("Concierge", () => {
             expect(result.title?.endsWith("...")).toBe(true);
         });
 
+        it("truncates title with emoji without breaking unicode", () => {
+            // Each emoji is one grapheme but may be multiple code units
+            // Create a title with emojis that would be cut mid-character with naive slice
+            const emojiTitle = "🚀".repeat(60); // 60 rocket emojis
+            const response = JSON.stringify({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test",
+                reasoning: { enabled: false },
+                title: emojiTitle,
+            });
+
+            const result = parseConciergeResponse(response);
+            // Should be 47 emojis + "..." = 50 graphemes total
+            const graphemes = [...result.title!];
+            expect(graphemes.length).toBe(50);
+            expect(result.title?.endsWith("...")).toBe(true);
+            // Verify no broken unicode - all graphemes before "..." should be valid emojis
+            const emojiGraphemes = graphemes.slice(0, -3);
+            expect(emojiGraphemes.every((g) => g === "🚀")).toBe(true);
+            expect(emojiGraphemes.length).toBe(47);
+        });
+
         it("returns undefined title when too short", () => {
             const response = JSON.stringify({
                 modelId: "anthropic/claude-sonnet-4.5",

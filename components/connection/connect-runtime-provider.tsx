@@ -380,11 +380,15 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                         );
                         // Use replaceState to update URL without navigation
                         // This follows the pattern from ai-chatbot and open-webui
-                        window.history.replaceState(
-                            {},
-                            "",
-                            `/connection/${connectionSlug}`
-                        );
+                        // Guard: Only update URL if still on /connection/new to prevent
+                        // updating the wrong page if user navigated during slow response
+                        if (window.location.pathname === "/connection/new") {
+                            window.history.replaceState(
+                                {},
+                                "",
+                                `/connection/${connectionSlug}`
+                            );
+                        }
                         // Add to connections list with delightful animation
                         addNewConnection({
                             id: connectionId,
