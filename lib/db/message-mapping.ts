@@ -355,6 +355,7 @@ export function mapDBMessageToUI(messageWithParts: MessageWithParts): UIMessageL
         id: messageWithParts.id,
         role: messageWithParts.role,
         parts: sortedParts.map(mapDBPartToUIPart),
+        createdAt: messageWithParts.createdAt,
     };
 }
 
