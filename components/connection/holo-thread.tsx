@@ -352,11 +352,13 @@ function Composer() {
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={() => setIsComposing(false)}
+                onCompositionEnd={() => {
+                    // IME composition ends before value updates, defer flag reset
+                    setTimeout(() => setIsComposing(false), 0);
+                }}
                 placeholder="Message Carmenta..."
                 className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
                 rows={1}
-                disabled={isLoading}
                 data-testid="composer-input"
             />
 
