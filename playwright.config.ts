@@ -3,15 +3,11 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright configuration for E2E tests
  *
- * Uses Clerk Testing Tokens for authenticated flows.
- * @see https://clerk.com/docs/testing/playwright/overview
+ * Tests public routes and auth redirects. No authentication required.
+ * Authenticated functionality is tested via unit tests with mocked Clerk.
  */
 export default defineConfig({
     testDir: "./__tests__/e2e",
-
-    // Global setup configures Clerk's Testing Token for authenticated tests
-    globalSetup: require.resolve("./__tests__/e2e/global.setup.ts"),
-
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
