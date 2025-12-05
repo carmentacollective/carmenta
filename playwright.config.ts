@@ -2,6 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for E2E tests
+ *
+ * Tests public routes and auth redirects. No authentication required.
+ * Authenticated functionality is tested via unit tests with mocked Clerk.
  */
 export default defineConfig({
     testDir: "./__tests__/e2e",
@@ -10,6 +13,7 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: "html",
+
     use: {
         baseURL: process.env.BASE_URL || "http://localhost:3000",
         trace: "on-first-retry",
