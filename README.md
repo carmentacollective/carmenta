@@ -129,7 +129,7 @@ bun install
 bun dev
 
 # Run tests
-bun test
+bun run test
 
 # Type check
 bun type-check

@@ -64,19 +64,19 @@ explicit, type-safe data creation.
 
 ```bash
 # Run all unit/integration tests
-bun test
+bun run test
 
 # Run specific test file
-bun vitest run __tests__/unit/lib/utils.test.ts
+bun run test __tests__/unit/lib/utils.test.ts
 
 # Run tests matching pattern
-bun vitest run -t "validates email"
+bun run test -t "validates email"
 
 # Run with coverage
-bun test:coverage
+bun run test:coverage
 
 # Run E2E tests
-bun test:e2e
+bun run test:e2e
 
 # Run E2E in headed mode
 bun playwright test --headed

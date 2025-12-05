@@ -120,6 +120,34 @@ describe("User Database Operations", () => {
             // Both should return the same user (upsert handles conflict)
             expect(user1.id).toBe(user2.id);
         });
+
+        it("updates clerk_id when same email appears with different clerk_id", async () => {
+            // Use unique identifiers to avoid test isolation issues
+            const uniqueId = Date.now().toString();
+            const testEmail = `reregistered-${uniqueId}@example.com`;
+            const originalClerkId = `clerk_original_${uniqueId}`;
+            const newClerkId = `clerk_new_${uniqueId}`;
+
+            // Setup: User exists with original clerk_id
+            // This happens when: user re-registers, switches OAuth providers,
+            // or Clerk user ID changes for any reason
+            await db.insert(schema.users).values({
+                clerkId: originalClerkId,
+                email: testEmail,
+                firstName: "Original",
+            });
+
+            // Act: Same email, different clerk_id (simulates re-registration)
+            const user = await getOrCreateUser(newClerkId, testEmail, {
+                firstName: "Updated",
+                lastName: "Name",
+            });
+
+            // Assert: Should succeed and update the clerk_id
+            expect(user.email).toBe(testEmail);
+            expect(user.clerkId).toBe(newClerkId);
+            expect(user.firstName).toBe("Updated");
+        });
     });
 
     describe("updateUserPreferences", () => {
