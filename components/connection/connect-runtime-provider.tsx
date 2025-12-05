@@ -414,14 +414,20 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const handleNewConnectionCreated = useCallback(
         (slug: string, connectionId: string) => {
             logger.debug({ slug, connectionId }, "Updating URL for new connection");
-            // Update URL without triggering Next.js navigation/page load
+            // Update URL without triggering Next.js navigation/page load.
+            // We preserve existing history.state (which contains Next.js router state like __NA)
+            // to avoid breaking back/forward navigation. Adding connectionId for potential
+            // future use in popstate handling.
             window.history.replaceState(
                 { ...window.history.state, connectionId },
                 "",
                 `/connection/${slug}`
             );
             // Update document title to match new connection
-            document.title = `${slug.split("-")[0].charAt(0).toUpperCase() + slug.split("-")[0].slice(1)} | Carmenta`;
+            const titleWord = slug.split("-")[0] || "Connection";
+            const capitalizedTitle =
+                titleWord.charAt(0).toUpperCase() + titleWord.slice(1);
+            document.title = `${capitalizedTitle} | Carmenta`;
         },
         []
     );
