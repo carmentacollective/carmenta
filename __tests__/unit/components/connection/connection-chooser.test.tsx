@@ -118,9 +118,9 @@ describe("ConnectionChooser", () => {
         it("hides search button when no connections exist", () => {
             setupMock({
                 connections: [],
-                activeConnection: null,
-                activeConnectionId: null,
-                displayTitle: null, // S1: no connections
+                activeConnection: undefined,
+                activeConnectionId: undefined,
+                displayTitle: undefined, // S1: no connections
             });
             render(<ConnectionChooser />);
 
@@ -401,9 +401,9 @@ describe("ConnectionChooser", () => {
         it("handles empty connection list gracefully", () => {
             setupMock({
                 connections: [],
-                activeConnection: null,
-                activeConnectionId: null,
-                displayTitle: null, // S1: no connections at all
+                activeConnection: undefined,
+                activeConnectionId: undefined,
+                displayTitle: undefined, // S1: no connections at all
             });
             const { container } = render(<ConnectionChooser />);
 
@@ -415,7 +415,7 @@ describe("ConnectionChooser", () => {
             setupMock({
                 connections: [createMockConnection({ title: null })],
                 activeConnection: createMockConnection({ title: null }),
-                displayTitle: null, // S2-S4: no title yet
+                displayTitle: undefined, // S2-S4: no title yet
             });
             render(<ConnectionChooser />);
 

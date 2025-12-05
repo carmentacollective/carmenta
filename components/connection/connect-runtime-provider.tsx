@@ -253,7 +253,7 @@ function createFetchWrapper(
         title: string | null;
         modelId: string | null;
     }) => void,
-    onNewConnectionCreated: (title: string | null) => void
+    onNewConnectionCreated: (title: string | null, slug: string | null) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const url = typeof input === "string" ? input : input.toString();
@@ -356,7 +356,7 @@ function createFetchWrapper(
                         title: decodedTitle,
                         modelId: conciergeData?.modelId ?? null,
                     });
-                    onNewConnectionCreated(decodedTitle);
+                    onNewConnectionCreated(decodedTitle, connectionSlug);
                 }
             }
 
@@ -408,15 +408,23 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         connectionIdRef.current = activeConnectionId;
     }, [activeConnectionId]);
 
-    // Handle new connection creation notification
-    // We intentionally do NOT update the URL here - that causes state sync issues
-    // and can kill the active stream. The URL stays as /connection/new until
-    // the user explicitly navigates. They can find their conversation in the dropdown.
-    const handleNewConnectionCreated = useCallback((title: string | null) => {
-        if (title) {
-            document.title = `${title} | Carmenta`;
-        }
-    }, []);
+    // Update document title and URL when a new connection is created
+    // Uses replaceState so the URL updates without triggering navigation
+    const handleNewConnectionCreated = useCallback(
+        (title: string | null, slug: string | null) => {
+            if (title) {
+                document.title = `${title} | Carmenta`;
+            }
+            if (slug) {
+                window.history.replaceState(
+                    { ...window.history.state },
+                    "",
+                    `/connection/${slug}`
+                );
+            }
+        },
+        []
+    );
 
     // Convert initial messages to AI SDK UIMessage format
     const initialAIMessages = useMemo(() => {
