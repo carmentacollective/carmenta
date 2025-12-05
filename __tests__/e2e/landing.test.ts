@@ -3,10 +3,9 @@ import { test, expect } from "@playwright/test";
 test.describe("Landing Page", () => {
     test("displays the greeting heading", async ({ page }) => {
         await page.goto("/");
-        // Greeting component shows time-based greeting (Good morning/afternoon/evening)
+        // Greeting component renders an h1 (content varies by auth state)
         const heading = page.getByRole("heading", { level: 1 });
         await expect(heading).toBeVisible();
-        await expect(heading).toHaveText(/Good (morning|afternoon|evening)/);
     });
 
     test("displays the value proposition", async ({ page }) => {

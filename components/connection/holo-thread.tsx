@@ -28,28 +28,31 @@ import { ModelSelectorPopover } from "./model-selector";
  * we build our own using the headless primitives and apply our holographic
  * theme directly. This is the "composition over inheritance" approach.
  *
- * Uses the iOS Messages-style fade pattern (.chat-viewport-fade) on the viewport
- * to prevent content from showing under the glass input dock. Content gradually
- * fades to transparent starting at 65%, creating a smooth visual transition while
- * maintaining readability.
+ * Scroll Fades (Apple-level polish):
+ * Uses bidirectional CSS mask fades (.chat-viewport-fade) with fixed pixel values:
+ * - Top fade: 40px - subtle hint that content exists above
+ * - Bottom fade: 56px - gentle transition into input dock area
+ * These are whisper-thin by design - hints, not visibility blockers. Content
+ * remains fully readable until the very edge. The fades are constant regardless
+ * of viewport height, ensuring consistent subtlety across devices.
  *
  * Layout: Uses flexbox where the Viewport takes flex-1 (grows) and the input
- * container takes flex-none (natural height). This prevents the input from
- * overlapping viewport content, even on short screens.
+ * container takes flex-none (natural height). Padding is calibrated to the fade
+ * zones (pt-6/pb-20 mobile, pb-24 desktop) for tight, efficient screen use.
  *
  * Accessibility: Tab order follows DOM order (Viewport → Input), ensuring proper
  * keyboard navigation. Screen readers announce elements in logical sequence.
  *
- * Mobile: Responsive bottom padding adjusts for smaller viewports. Virtual keyboard
+ * Mobile: Responsive padding adjusts for smaller viewports. Virtual keyboard
  * appearance on mobile triggers viewport resize, which flexbox handles gracefully.
  */
 export function HoloThread() {
     return (
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            {/* Viewport with fade mask - grows to fill available space
-                Responsive padding: pb-24 (96px) on mobile, pb-32 (128px) on desktop
-                Fade ensures content transitions smoothly before viewport edge */}
-            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32">
+            {/* Viewport with bidirectional fade mask - grows to fill available space
+                Padding calibrated to fade zones: top fade 40px, bottom fade 56px
+                Tighter spacing maximizes content area while respecting fade transitions */}
+            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-20 pt-6 md:pb-24">
                 <ThreadPrimitive.Empty>
                     <ThreadWelcome />
                 </ThreadPrimitive.Empty>
@@ -207,7 +210,7 @@ function Composer() {
     return (
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
             <ComposerPrimitive.Input
-                placeholder="What's on your mind?"
+                placeholder="Message Carmenta..."
                 className="min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
                 rows={1}
                 autoFocus

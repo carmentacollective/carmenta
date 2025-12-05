@@ -1,16 +1,8 @@
 "use client";
 
-import { useUserContext } from "@/lib/auth/user-context";
+import { AnimatePresence, motion } from "framer-motion";
 
-/**
- * Get time-appropriate greeting.
- */
-function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-}
+import { useUserContext } from "@/lib/auth/user-context";
 
 interface GreetingProps {
     className?: string;
@@ -19,12 +11,13 @@ interface GreetingProps {
 }
 
 /**
- * Dynamic greeting that adapts to authentication state.
+ * Greeting that adapts to authentication state.
  *
- * Logged in: "Good morning, Nick" + custom or default subtitle
- * Logged out: "Good morning" (no awkward "there") + landing-appropriate subtitle
+ * Logged in: "Hey, Nick" + "What are we creating together?"
+ * Logged out: "Hey" + landing-appropriate subtitle
  *
- * Handles SSR gracefully - shows generic greeting until client hydrates.
+ * Waits for auth state to load before rendering, so the greeting animates in
+ * with the complete content—no awkward "Hey" → "Hey, Nick" flash.
  */
 export function Greeting({ className, subtitleClassName, subtitle }: GreetingProps) {
     // Safely get user context - may be null during SSR
@@ -42,7 +35,6 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
 
     const isLoggedIn = isLoaded && !!user;
     const firstName = user?.firstName;
-    const greeting = getGreeting();
 
     // Adapt subtitle based on auth state if not explicitly provided
     const defaultSubtitle = isLoggedIn
@@ -51,13 +43,61 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
 
     const displaySubtitle = subtitle ?? defaultSubtitle;
 
+    // Build the complete greeting text
+    const greetingText = firstName ? `Hey, ${firstName}` : "Hey";
+
     return (
-        <>
-            <h1 className={className}>
-                {greeting}
-                {isLoaded && firstName ? `, ${firstName}` : ""}
-            </h1>
-            {displaySubtitle && <p className={subtitleClassName}>{displaySubtitle}</p>}
-        </>
+        <AnimatePresence mode="wait">
+            {isLoaded && (
+                <motion.div
+                    key="greeting"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: {},
+                        visible: {
+                            transition: {
+                                staggerChildren: 0.15,
+                            },
+                        },
+                    }}
+                >
+                    <motion.h1
+                        className={className}
+                        variants={{
+                            hidden: { opacity: 0, y: 12 },
+                            visible: {
+                                opacity: 1,
+                                y: 0,
+                                transition: {
+                                    duration: 0.5,
+                                    ease: [0.25, 0.46, 0.45, 0.94],
+                                },
+                            },
+                        }}
+                    >
+                        {greetingText}
+                    </motion.h1>
+                    {displaySubtitle && (
+                        <motion.p
+                            className={subtitleClassName}
+                            variants={{
+                                hidden: { opacity: 0, y: 8 },
+                                visible: {
+                                    opacity: 1,
+                                    y: 0,
+                                    transition: {
+                                        duration: 0.5,
+                                        ease: [0.25, 0.46, 0.45, 0.94],
+                                    },
+                                },
+                            }}
+                        >
+                            {displaySubtitle}
+                        </motion.p>
+                    )}
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
