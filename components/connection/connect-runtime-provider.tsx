@@ -450,8 +450,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     const handleRetry = useCallback(() => {
         setError(null);
-        // The user can simply resend their message after dismissing
-        // Focus the composer input for convenience
+        // Intentional UX: Don't auto-retry the failed request
+        // User must manually retype/resend to avoid:
+        // - Retrying invalid input repeatedly
+        // - Auto-retrying persistent server errors
+        // We just focus the composer for convenience
         const composer = document.querySelector<HTMLTextAreaElement>(
             '[data-testid="composer-input"], textarea[placeholder]'
         );
@@ -514,8 +517,13 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 logger.debug({}, "No active connection - clearing thread");
                 runtime.thread.import(ExportedMessageRepository.fromArray([]));
             }
-            // If we have activeConnectionId but no initialMessages, leave thread alone
-            // (messages are being streamed in via the runtime)
+            // Implicit else case: activeConnectionId exists but initialMessages is empty
+            // In this case, we intentionally do NOTHING to preserve the thread state.
+            // This happens after the first message creates a new connection:
+            // 1. Message is sent and streamed into the thread
+            // 2. URL changes via replaceState to /connection/[slug]
+            // 3. This effect runs again but initialMessages hasn't loaded yet
+            // 4. We must NOT clear the thread or we lose the just-streamed messages
         } catch (err) {
             logger.error(
                 { error: err, connectionId: activeConnectionId },
