@@ -158,9 +158,7 @@ describe("ConnectionChooser", () => {
             const searchButton = screen.getByTitle("Search connections");
             fireEvent.click(searchButton);
 
-            expect(
-                screen.getByPlaceholderText("Search connections...")
-            ).toBeInTheDocument();
+            expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
         });
 
         it("opens dropdown when title is clicked", () => {
@@ -169,9 +167,7 @@ describe("ConnectionChooser", () => {
             const title = screen.getByText("First Conversation");
             fireEvent.click(title);
 
-            expect(
-                screen.getByPlaceholderText("Search connections...")
-            ).toBeInTheDocument();
+            expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
         });
 
         it("displays recent connections in dropdown", () => {
@@ -195,16 +191,14 @@ describe("ConnectionChooser", () => {
             render(<ConnectionChooser />);
 
             fireEvent.click(screen.getByTitle("Search connections"));
-            expect(
-                screen.getByPlaceholderText("Search connections...")
-            ).toBeInTheDocument();
+            expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
 
             fireEvent.keyDown(window, { key: "Escape" });
 
             // AnimatePresence has exit animations, so we need to wait
             await vi.waitFor(() => {
                 expect(
-                    screen.queryByPlaceholderText("Search connections...")
+                    screen.queryByPlaceholderText("Search...")
                 ).not.toBeInTheDocument();
             });
         });
@@ -213,12 +207,12 @@ describe("ConnectionChooser", () => {
             render(<ConnectionChooser />);
 
             fireEvent.click(screen.getByTitle("Search connections"));
-            const closeButton = screen.getByLabelText("Close search");
+            const closeButton = screen.getByLabelText("Close");
             fireEvent.click(closeButton);
 
             await vi.waitFor(() => {
                 expect(
-                    screen.queryByPlaceholderText("Search connections...")
+                    screen.queryByPlaceholderText("Search...")
                 ).not.toBeInTheDocument();
             });
         });
@@ -232,18 +226,21 @@ describe("ConnectionChooser", () => {
 
             await vi.waitFor(() => {
                 expect(
-                    screen.queryByPlaceholderText("Search connections...")
+                    screen.queryByPlaceholderText("Search...")
                 ).not.toBeInTheDocument();
             });
         });
 
-        it("focuses search input when dropdown opens", () => {
+        it("focuses search input when dropdown opens", async () => {
             render(<ConnectionChooser />);
 
             fireEvent.click(screen.getByTitle("Search connections"));
-            const searchInput = screen.getByPlaceholderText("Search connections...");
+            const searchInput = screen.getByPlaceholderText("Search...");
 
-            expect(searchInput).toHaveFocus();
+            // Focus happens via requestAnimationFrame, so we wait
+            await vi.waitFor(() => {
+                expect(searchInput).toHaveFocus();
+            });
         });
     });
 
@@ -399,7 +396,8 @@ describe("ConnectionChooser", () => {
             setupMock({ connections: [], activeConnection: undefined });
             const { container } = render(<ConnectionChooser />);
 
-            expect(container.querySelector(".rounded-xl")).toBeInTheDocument();
+            // S1 state: fresh user, renders nothing
+            expect(container.firstChild).toBeNull();
         });
 
         it("handles connection with no title", () => {
@@ -409,8 +407,9 @@ describe("ConnectionChooser", () => {
             });
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
-            // "New connection" appears as fallback title (may appear multiple times)
+            // S2-S4 state: untitled connection shows "Recent Connections" trigger
+            fireEvent.click(screen.getByText("Recent Connections"));
+            // "New connection" appears as fallback title in the dropdown
             expect(screen.getAllByText("New connection").length).toBeGreaterThanOrEqual(
                 1
             );
