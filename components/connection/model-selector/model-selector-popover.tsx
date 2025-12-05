@@ -183,8 +183,12 @@ export function ModelSelectorPopover({
                     <ProviderIcon
                         provider={displayModel.provider}
                         className={cn(
-                            "h-4 w-4 transition-all duration-300",
-                            isAuto ? "text-foreground/50" : "text-foreground/70"
+                            "h-5 w-5 transition-all duration-300",
+                            disabled
+                                ? "text-foreground/30"
+                                : isAuto
+                                  ? "text-foreground/60"
+                                  : "text-foreground/90"
                         )}
                     />
                 ) : (
