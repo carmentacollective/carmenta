@@ -391,6 +391,29 @@ describe("ConnectionChooser", () => {
             expect(icon).toBeInTheDocument();
             expect(icon).toHaveClass("text-red-500");
         });
+
+        it("delete button is keyboard accessible with focus-visible", () => {
+            render(<ConnectionChooser />);
+
+            fireEvent.click(screen.getByTitle("Search connections"));
+            const deleteButton = screen.getByLabelText("Delete First Conversation");
+
+            // Button should become visible on keyboard focus
+            expect(deleteButton).toHaveClass("focus-visible:opacity-100");
+            expect(deleteButton).toHaveClass("focus-visible:ring-2");
+        });
+
+        it("can delete the currently active connection", () => {
+            // The active connection is conn-1 (First Conversation)
+            render(<ConnectionChooser />);
+
+            fireEvent.click(screen.getByTitle("Search connections"));
+            const deleteButton = screen.getByLabelText("Delete First Conversation");
+            fireEvent.click(deleteButton);
+
+            // Should still call deleteConnection - context handles navigation
+            expect(mockDeleteConnection).toHaveBeenCalledWith("conn-1");
+        });
     });
 
     describe("Edge Cases", () => {

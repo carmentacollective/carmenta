@@ -346,12 +346,12 @@ export function ConnectionChooser() {
                                                                 </span>
                                                             </div>
                                                         </button>
-                                                        {/* Delete button - appears on hover */}
+                                                        {/* Delete button - appears on hover and focus for keyboard users */}
                                                         <button
                                                             onClick={(e) =>
                                                                 handleDelete(e, conn.id)
                                                             }
-                                                            className="mt-0.5 rounded-md p-1 opacity-0 transition-opacity hover:bg-red-100 group-hover:opacity-100"
+                                                            className="mt-0.5 rounded-md p-1 opacity-0 transition-opacity hover:bg-red-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
                                                             title={`Delete ${conn.title || "connection"}`}
                                                             aria-label={`Delete ${conn.title || "connection"}`}
                                                         >
