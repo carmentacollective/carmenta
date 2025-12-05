@@ -20,7 +20,7 @@ import {
     type ComponentProps,
     forwardRef,
 } from "react";
-import { SendHorizontal, ArrowDown } from "lucide-react";
+import { ArrowUp, Square, ArrowDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "@ai-sdk/react";
 
@@ -259,47 +259,75 @@ function AssistantMessage({
 
 /**
  * Composer - The glassmorphism input dock with model selector.
+ *
+ * Core behaviors:
+ * - Enter = send, Shift+Enter = newline, Escape = stop
+ * - IME composition detection (prevents sending mid-composition)
+ * - Stop returns last message to input for quick correction
  */
 function Composer() {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge } = useConcierge();
-    const { append, isLoading, input, setInput, handleInputChange } = useChatContext();
+    const { append, isLoading, stop, input, setInput, handleInputChange } =
+        useChatContext();
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    // Get the model config for concierge-selected model (for icon display)
+    // IME composition state
+    const [isComposing, setIsComposing] = useState(false);
+
+    // Track last sent message for stop-returns-message behavior
+    const lastSentMessageRef = useRef<string | null>(null);
+
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
             e.preventDefault();
-            if (!input.trim() || isLoading) return;
+            if (!input.trim() || isLoading || isComposing) return;
 
             const message = input.trim();
+            lastSentMessageRef.current = message;
             setInput("");
 
             try {
                 await append({ role: "user", content: message });
             } catch (error) {
-                // Log for observability - runtime provider also handles this
                 logger.error(
                     { error: error instanceof Error ? error.message : String(error) },
-                    "Failed to send message from composer"
+                    "Failed to send message"
                 );
-                setInput(message); // Restore input on error
+                setInput(message);
             }
         },
-        [input, isLoading, setInput, append]
+        [input, isLoading, isComposing, setInput, append]
     );
+
+    const handleStop = useCallback(() => {
+        if (!isLoading) return;
+        stop();
+        // Restore message for quick correction
+        if (lastSentMessageRef.current) {
+            setInput(lastSentMessageRef.current);
+            lastSentMessageRef.current = null;
+        }
+    }, [isLoading, stop, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
-            // Only submit on Enter if there's content
+            if (isComposing) return;
+
+            if (e.key === "Escape" && isLoading) {
+                e.preventDefault();
+                handleStop();
+                return;
+            }
+
             if (e.key === "Enter" && !e.shiftKey && input.trim()) {
                 e.preventDefault();
                 handleSubmit(e as unknown as FormEvent);
             }
         },
-        [handleSubmit, input]
+        [isComposing, isLoading, input, handleStop, handleSubmit]
     );
 
     // Auto-resize textarea
@@ -309,6 +337,9 @@ function Composer() {
             inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
         }
     }, [input]);
+
+    const showStop = isLoading;
+    const canSend = input.trim() && !isLoading;
 
     return (
         <form
@@ -320,23 +351,37 @@ function Composer() {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
                 placeholder="Message Carmenta..."
                 className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
                 rows={1}
-                autoFocus
                 disabled={isLoading}
                 data-testid="composer-input"
             />
 
             <div className="flex items-center gap-2 pr-1">
-                <ComposerButton
-                    type="submit"
-                    variant="send"
-                    aria-label="Send message"
-                    disabled={!input.trim() || isLoading}
-                >
-                    <SendHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
-                </ComposerButton>
+                {showStop ? (
+                    <ComposerButton
+                        type="button"
+                        variant="stop"
+                        aria-label="Stop generation"
+                        onClick={handleStop}
+                        data-testid="stop-button"
+                    >
+                        <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </ComposerButton>
+                ) : (
+                    <ComposerButton
+                        type="submit"
+                        variant="send"
+                        aria-label="Send message"
+                        disabled={!canSend}
+                        data-testid="send-button"
+                    >
+                        <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </ComposerButton>
+                )}
 
                 <ModelSelectorPopover
                     overrides={overrides}
@@ -350,9 +395,14 @@ function Composer() {
 
 /**
  * Composer button with variants.
+ *
+ * Variants:
+ * - ghost: Subtle background for secondary actions
+ * - send: Holographic gradient for primary send action
+ * - stop: Warning color for stop generation
  */
 interface ComposerButtonProps extends ComponentProps<"button"> {
-    variant?: "ghost" | "send";
+    variant?: "ghost" | "send" | "stop";
 }
 
 const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
@@ -367,6 +417,8 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                         "bg-white/50 text-foreground/60 hover:scale-105 hover:bg-white/80",
                     variant === "send" &&
                         "bg-gradient-to-br from-[rgba(200,160,220,0.9)] via-[rgba(160,200,220,0.9)] to-[rgba(220,180,200,0.9)] text-white shadow-md hover:scale-105",
+                    variant === "stop" &&
+                        "bg-amber-500/90 text-white shadow-md hover:scale-105 hover:bg-amber-600/90",
                     disabled
                         ? "cursor-not-allowed opacity-50"
                         : "opacity-70 hover:opacity-100",
