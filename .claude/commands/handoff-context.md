@@ -1,6 +1,7 @@
 ---
 description:
-  Generate comprehensive context handoff and copy to clipboard for continuing work
+  "Generate comprehensive context handoff and copy to clipboard for continuing work in a
+  new session"
 ---
 
 # Handoff Context

@@ -1,6 +1,6 @@
 ---
 description:
-  Execute complete development task autonomously from description to PR-ready state
+  "Execute complete development task autonomously from description to PR-ready state"
 ---
 
 # /autotask - Autonomous Task Execution
@@ -159,7 +159,7 @@ with clear options and context. </error-recovery>
 ## Requirements
 
 - GitHub CLI (`gh`) installed and authenticated
-- bun
+- Node.js/npm
 - Project standards accessible via /load-cursor-rules
 
 ## Configuration

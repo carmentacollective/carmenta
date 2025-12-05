@@ -28,8 +28,8 @@ Project types: Node.js (package.json), Python (requirements.txt or Pipfile), Rub
 (Gemfile), Go (go.mod), Rust (Cargo.toml), Java (pom.xml or build.gradle), .NET
 (.csproj).
 
-Node.js package managers: bun (bun.lock or bun.lockb), pnpm (pnpm-lock.yaml), yarn
-(yarn.lock), npm (package-lock.json). </project-detection>
+Node.js package managers: pnpm (pnpm-lock.yaml), yarn (yarn.lock), bun (bun.lockb), npm
+(default). </project-detection>
 
 <dependencies>
 Install project dependencies using the appropriate package manager. Use frozen/locked versions to ensure consistency with the main repository.
