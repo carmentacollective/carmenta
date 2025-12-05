@@ -289,8 +289,31 @@ Render-managed PostgreSQL for production.
 | Choice                          | Version | Rationale                                             |
 | ------------------------------- | ------- | ----------------------------------------------------- |
 | **Vercel AI SDK**               | 5.x     | Streaming, hooks, transport layer. Industry standard. |
-| **@ai-sdk/react**               | latest  | React hooks for chat UI (useChat, etc.)               |
 | **@openrouter/ai-sdk-provider** | latest  | OpenRouter integration for multi-model access.        |
+
+### Chat Architecture: Backend-First with SSE
+
+Carmenta uses a backend-first architecture where the database is the source of truth and
+the frontend renders from server state. This enables multi-tab support, background
+tasks, and conversation recovery.
+
+**Streaming pattern**: Server-Sent Events (SSE) via Vercel AI SDK's
+`toDataStreamResponse()`. SSE provides:
+
+- Simpler protocol than WebSocket (HTTP-based, auto-reconnect)
+- Sufficient for server→client streaming
+- Native AI SDK support
+- Serverless-friendly
+
+**Multi-tab synchronization**: BroadcastChannel API broadcasts message updates across
+tabs. All tabs maintain SSE connections to backend and display the same server state.
+
+**State ownership**: PostgreSQL owns conversation history. Backend streams to frontend.
+Frontend displays messages using simple React state.
+
+See
+[decisions/chat-architecture-backend-first.md](./decisions/chat-architecture-backend-first.md)
+for full rationale.
 
 ### Why OpenRouter?
 
@@ -314,9 +337,7 @@ For model selection logic, see
 
 These require deep research and are out of scope for initial homepage:
 
-- **Chat UI primitives** - assistant-ui vs custom vs CopilotKit (M0.5 uses raw SDK)
 - **Voice input** - OpenAI Realtime vs Whisper vs browser APIs
-- **State management** - Zustand (LobeChat pattern) vs React Context vs other
 - **Local-first database** - PGLite for offline support (complementing PostgreSQL)
 - **Authentication** - Clerk vs NextAuth vs custom
 - **MCP integration** - Architecture patterns from LibreChat/LobeChat
