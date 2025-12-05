@@ -1,3 +1,4 @@
+import { Brain, FolderOpen, Heart, Layers, Link2, Users } from "lucide-react";
 import Link from "next/link";
 
 import { Footer } from "@/components/footer";
@@ -21,178 +22,210 @@ export default function LandingPage() {
 
                 {/* Main content */}
                 <main className="flex flex-1 flex-col items-center px-6 pb-16">
-                    <div className="mx-auto max-w-2xl space-y-12 text-center">
-                        {/* Vision Card */}
-                        <article className="glass-card space-y-4 text-left">
-                            <h2 className="text-lg font-semibold text-foreground/90">
-                                The Vision
-                            </h2>
-                            <div className="space-y-4 leading-relaxed text-foreground/70">
-                                <p>One interface. All AI models. Complete memory.</p>
-                                <p>
-                                    Carmenta remembers who you are, what you're working
-                                    on, what you've decided, who you know, what you've
-                                    learned. The right model for each moment, chosen
-                                    automatically. An AI team—including a Digital Chief
-                                    of Staff—works alongside you. Purpose-built
-                                    responses, not chat bubbles.
-                                </p>
-                                <p>The best interface to AI that exists.</p>
-                            </div>
-                        </article>
+                    <div className="mx-auto w-full max-w-4xl">
+                        {/* Vision - Hero statement */}
+                        <section className="mb-20 text-center">
+                            <p className="text-2xl font-light leading-relaxed text-foreground/60 md:text-3xl">
+                                One interface.{" "}
+                                <span className="text-foreground/80">Every model.</span>{" "}
+                                <span className="text-foreground/90">
+                                    Complete memory.
+                                </span>
+                            </p>
+                        </section>
 
-                        {/* Philosophy Card */}
-                        <article className="glass-card space-y-4 text-left">
-                            <h2 className="text-lg font-semibold text-foreground/90">
-                                The Philosophy
-                            </h2>
-                            <div className="space-y-4 leading-relaxed text-foreground/70">
-                                <p>
-                                    We use "we" language because this is a partnership.
-                                    Human and AI as expressions of the same creative
-                                    impulse, working together.{" "}
+                        {/* Feature grid */}
+                        <section className="mb-20 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="group relative overflow-hidden rounded-2xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-purple-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-purple-200/30 blur-2xl transition-all duration-300 group-hover:bg-purple-300/40" />
+                                <Brain className="relative mb-4 h-7 w-7 text-purple-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Remembers You
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    Context persists across conversations. What you're
+                                    building, what you've decided, where you left off.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-2xl border border-blue-200/50 bg-gradient-to-br from-blue-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-blue-200/30 blur-2xl transition-all duration-300 group-hover:bg-blue-300/40" />
+                                <Layers className="relative mb-4 h-7 w-7 text-blue-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Best Model, Every Time
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    Claude, GPT, Gemini, Perplexity, Grok—with extended
+                                    reasoning when depth matters, speed when it doesn't.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-2xl border border-cyan-200/50 bg-gradient-to-br from-cyan-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-cyan-200/30 blur-2xl transition-all duration-300 group-hover:bg-cyan-300/40" />
+                                <Link2 className="relative mb-4 h-7 w-7 text-cyan-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Service Connectivity
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    Gmail, Calendar, Notion, GitHub—native integrations
+                                    that let your AI team actually do things.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-amber-200/30 blur-2xl transition-all duration-300 group-hover:bg-amber-300/40" />
+                                <Users className="relative mb-4 h-7 w-7 text-amber-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Your AI Team
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    A Digital Chief of Staff tracks commitments,
+                                    anticipates needs, handles coordination. One person
+                                    becomes ten.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-emerald-200/30 blur-2xl transition-all duration-300 group-hover:bg-emerald-300/40" />
+                                <FolderOpen className="relative mb-4 h-7 w-7 text-emerald-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Knowledge Base
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    AI as librarian. Everything you upload, every
+                                    insight from conversations—organized and findable.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-2xl border border-rose-200/50 bg-gradient-to-br from-rose-50/80 to-white/80 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-rose-200/30">
+                                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-rose-200/30 blur-2xl transition-all duration-300 group-hover:bg-rose-300/40" />
+                                <Heart className="relative mb-4 h-7 w-7 text-rose-500" />
+                                <h3 className="relative mb-2 font-semibold text-foreground/90">
+                                    Heart-Centered
+                                </h3>
+                                <p className="relative text-sm leading-relaxed text-foreground/60">
+                                    Partnership, not tool-use. "We" not "I help you."
+                                    Technology in service of human flourishing.
+                                </p>
+                            </div>
+                        </section>
+
+                        {/* Philosophy */}
+                        <section className="mb-20">
+                            <div className="mx-auto max-w-2xl text-center">
+                                <p className="mb-6 text-lg leading-relaxed text-foreground/70">
+                                    We say "we" because this is a partnership. Human and
+                                    AI as expressions of the same creative impulse,
+                                    working together.
+                                </p>
+                                <p className="text-sm text-foreground/50">
                                     <Link
                                         href="https://heartcentered.ai"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
+                                        className="text-primary underline decoration-primary/30 underline-offset-2 transition-colors hover:decoration-primary"
                                     >
                                         Heart-centered AI
                                     </Link>{" "}
-                                    in practice, not theory.
+                                    in practice. Technology in service of human
+                                    flourishing.
                                 </p>
-                                <p>
-                                    Carmenta was a Roman goddess who invented the Latin
-                                    alphabet—adapting Greek letters into a system that
-                                    carried human knowledge for millennia. She was also
-                                    the goddess of prophecy and protector of those going
-                                    through transformation.
-                                </p>
-                                <p>Technology in service of human flourishing.</p>
                             </div>
-                        </article>
+                        </section>
 
-                        {/* Status Card */}
-                        <article className="glass-card space-y-4 text-left">
-                            <h2 className="text-lg font-semibold text-foreground/90">
-                                Where We Are
-                            </h2>
-                            <div className="space-y-4 leading-relaxed text-foreground/70">
-                                <p>
-                                    You can{" "}
+                        {/* Origin story */}
+                        <section className="mb-20">
+                            <div className="mx-auto max-w-xl rounded-2xl border border-foreground/5 bg-white/30 p-8 text-center backdrop-blur-sm">
+                                <p className="text-sm leading-relaxed text-foreground/60">
+                                    <span className="font-medium text-foreground/80">
+                                        Carmenta
+                                    </span>{" "}
+                                    was a Roman goddess who invented the Latin
+                                    alphabet—the most transformative technology in human
+                                    history. She was also goddess of prophecy and
+                                    protector of those going through transformation.
+                                </p>
+                            </div>
+                        </section>
+
+                        {/* Status */}
+                        <section className="mb-20">
+                            <div className="mx-auto max-w-2xl text-center">
+                                <p className="mb-6 text-lg text-foreground/70">
                                     <Link
                                         href="/connection/new"
-                                        className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
+                                        className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
                                     >
-                                        connect with Carmenta
-                                    </Link>{" "}
-                                    right now. Sign in, choose your model, and we pick
-                                    up where we left off—conversations persist, context
-                                    intact.
+                                        Connect now
+                                    </Link>
+                                    . Sign in, choose your model, pick up where you left
+                                    off.
                                 </p>
-                                <p>
-                                    We're open source. The specification, the decisions,
-                                    the code—all{" "}
+                                <p className="text-sm text-foreground/50">
+                                    Open source on{" "}
                                     <Link
                                         href="https://github.com/carmentacollective/carmenta"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
+                                        className="text-foreground/60 underline decoration-foreground/20 underline-offset-2 transition-colors hover:text-foreground/80"
                                     >
-                                        on GitHub
+                                        GitHub
                                     </Link>
-                                    . Next: memory that spans conversations, so Carmenta
-                                    truly knows you.
+                                    . Next: memory that spans conversations.
                                 </p>
                             </div>
-                        </article>
+                        </section>
 
-                        {/* Journey Section */}
-                        <section className="glass-card space-y-5 text-left">
-                            <div className="space-y-3">
-                                <h2 className="text-lg font-semibold text-foreground/90">
+                        {/* Journey */}
+                        <section className="mb-16">
+                            <div className="mx-auto max-w-xl">
+                                <h2 className="mb-8 text-center text-xs font-medium uppercase tracking-widest text-foreground/40">
                                     The Journey
                                 </h2>
-                                {/* Progress bar */}
-                                <div className="flex gap-1">
-                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-primary" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-primary/30" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
-                                    <div className="h-1.5 flex-1 rounded-full bg-foreground/10" />
-                                </div>
-                            </div>
 
-                            {/* Completed milestones */}
-                            <div className="space-y-1 text-sm">
-                                <div className="flex items-center gap-2 text-foreground/50">
-                                    <span className="text-primary">✓</span>
-                                    <span>
-                                        M0: Stake in the Ground — Vision articulated,
-                                        building in public
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-foreground/50">
-                                    <span className="text-primary">✓</span>
-                                    <span>
-                                        M0.5: First Connection — Backend-first
-                                        streaming, conversation persistence, model
-                                        selection
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-foreground/50">
-                                    <span className="text-primary">✓</span>
-                                    <span>
-                                        M1: Soul Proven — Auth, error handling,
-                                        observability, an experience worth returning to
-                                    </span>
-                                </div>
-                            </div>
+                                <div className="relative space-y-4 pl-6">
+                                    <div className="absolute bottom-0 left-[7px] top-0 w-px bg-gradient-to-b from-primary via-primary/30 to-foreground/10" />
 
-                            {/* Current milestone */}
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                                <div className="mb-2 flex items-center gap-2">
-                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-                                    <span className="font-semibold text-foreground/90">
-                                        M2: Relationship Grows
-                                    </span>
-                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs uppercase tracking-wider text-primary">
-                                        Now
-                                    </span>
-                                </div>
-                                <p className="text-sm text-foreground/70">
-                                    Memory that spans conversations. Extended thinking
-                                    you can see. Carmenta starts to know you.
-                                </p>
-                            </div>
+                                    {[
+                                        "Vision shipped",
+                                        "Streaming chat",
+                                        "Auth & observability",
+                                    ].map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="relative flex items-center gap-3"
+                                        >
+                                            <div className="absolute -left-6 h-3.5 w-3.5 rounded-full border-2 border-primary bg-white" />
+                                            <span className="text-sm text-foreground/40">
+                                                {item}
+                                            </span>
+                                        </div>
+                                    ))}
 
-                            {/* Future milestones */}
-                            <div className="space-y-3 text-sm">
-                                <div>
-                                    <span className="font-medium text-foreground/70">
-                                        M3: Flow State
-                                    </span>
-                                    <p className="mt-0.5 text-foreground/50">
-                                        Voice-first interaction. Intelligent model
-                                        routing. Files and context. Work at the speed
-                                        you think.
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-foreground/70">
-                                        M4: Ready for Everyone
-                                    </span>
-                                    <p className="mt-0.5 text-foreground/50">
-                                        Your AI team. Service integrations. The full
-                                        vision realized.
-                                    </p>
+                                    <div className="relative flex items-center gap-3">
+                                        <div className="absolute -left-6 h-3.5 w-3.5 animate-pulse rounded-full bg-primary" />
+                                        <span className="text-sm font-medium text-foreground/80">
+                                            Memory across conversations
+                                        </span>
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+                                            Now
+                                        </span>
+                                    </div>
+
+                                    {["Voice-first flow state", "Your AI team"].map(
+                                        (item, i) => (
+                                            <div
+                                                key={i}
+                                                className="relative flex items-center gap-3"
+                                            >
+                                                <div className="absolute -left-6 h-3.5 w-3.5 rounded-full border-2 border-foreground/20 bg-white" />
+                                                <span className="text-sm text-foreground/30">
+                                                    {item}
+                                                </span>
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             </div>
                         </section>
 
                         {/* CTA */}
-                        <section className="pt-4">
+                        <section className="text-center">
                             <ConnectCTA />
                         </section>
                     </div>
