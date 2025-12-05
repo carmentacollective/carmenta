@@ -72,12 +72,12 @@ export function HoloThread() {
             <div
                 ref={viewportRef}
                 onScroll={handleScroll}
-                className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32"
+                className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
             >
                 {isEmpty ? (
                     <ThreadWelcome />
                 ) : (
-                    <div className="flex w-full max-w-[700px] flex-col">
+                    <div className="flex w-full max-w-4xl flex-col">
                         {messages.map((message, index) => (
                             <MessageBubble
                                 key={message.id}
@@ -91,15 +91,15 @@ export function HoloThread() {
             </div>
 
             {/* Input container */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-4 pb-4 pt-3">
-                <div className="relative flex w-full max-w-[700px] flex-col items-center">
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+                <div className="relative flex w-full max-w-4xl flex-col items-center">
                     {!isAtBottom && (
                         <button
                             onClick={scrollToBottom}
-                            className="absolute -top-10 rounded-full bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95"
+                            className="absolute -top-12 rounded-full bg-white/80 p-3 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95 sm:-top-10 sm:p-2"
                             aria-label="Scroll to bottom"
                         >
-                            <ArrowDown className="h-4 w-4 text-foreground/70" />
+                            <ArrowDown className="h-5 w-5 text-foreground/70 sm:h-4 sm:w-4" />
                         </button>
                     )}
                     <Composer />
@@ -114,7 +114,7 @@ export function HoloThread() {
  */
 function ThreadWelcome() {
     return (
-        <div className="flex w-full max-w-[700px] flex-grow flex-col items-center justify-center text-center">
+        <div className="flex w-full max-w-4xl flex-grow flex-col items-center justify-center text-center">
             <Greeting
                 className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
                 subtitleClassName="mt-2 text-base text-foreground/60"
@@ -188,7 +188,7 @@ function UserMessage({ message }: { message: UIMessage }) {
     const content = getMessageContent(message);
     return (
         <div className="my-4 flex w-full justify-end">
-            <div className="user-message-bubble max-w-[80%] rounded-2xl rounded-br-md px-4 py-4">
+            <div className="user-message-bubble max-w-full rounded-2xl rounded-br-md px-4 py-4 sm:max-w-[80%]">
                 <div className="holo-markdown">
                     <ReactMarkdown>{content}</ReactMarkdown>
                 </div>
@@ -247,7 +247,7 @@ function AssistantMessage({
 
             {/* Message content */}
             {hasContent && (
-                <div className="assistant-message-bubble max-w-[85%] rounded-2xl rounded-bl-md px-4 py-4">
+                <div className="assistant-message-bubble max-w-full rounded-2xl rounded-bl-md px-4 py-4 sm:max-w-[85%]">
                     <div className="holo-markdown">
                         <ReactMarkdown>{content}</ReactMarkdown>
                     </div>
@@ -313,7 +313,7 @@ function Composer() {
     return (
         <form
             onSubmit={handleSubmit}
-            className="glass-input-dock flex w-full max-w-[700px] items-center"
+            className="glass-input-dock flex w-full max-w-4xl items-center"
         >
             <textarea
                 ref={inputRef}
@@ -335,7 +335,7 @@ function Composer() {
                     aria-label="Send message"
                     disabled={!input.trim() || isLoading}
                 >
-                    <SendHorizontal className="h-5 w-5" />
+                    <SendHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
                 </ComposerButton>
 
                 <ModelSelectorPopover
@@ -362,7 +362,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                 ref={ref}
                 disabled={disabled}
                 className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all",
                     variant === "ghost" &&
                         "bg-white/50 text-foreground/60 hover:scale-105 hover:bg-white/80",
                     variant === "send" &&
