@@ -167,7 +167,7 @@ export function ConnectionChooser() {
         );
     }, [connections, debouncedQuery]);
 
-    const displayTitle = activeConnection?.title || "";
+    const displayTitle = activeConnection?.title || "New connection";
 
     return (
         <div className="relative">
