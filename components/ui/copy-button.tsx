@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useState, useEffect, useRef, type ComponentProps } from "react";
 import { Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/copy-utils";
@@ -36,7 +36,7 @@ interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
  * Copy button with visual feedback and accessibility
  *
  * Shows a copy icon that changes to a check mark for 2 seconds after successful copy.
- * Uses client-logger for error tracking.
+ * Uses client-logger for error tracking. Properly cleans up timers to prevent memory leaks.
  */
 export function CopyButton({
     text,
@@ -48,6 +48,16 @@ export function CopyButton({
     ...props
 }: CopyButtonProps) {
     const [copied, setCopied] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup timeout on unmount to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleCopy = async () => {
         const success = await copyToClipboard(text);
@@ -56,8 +66,15 @@ export function CopyButton({
             setCopied(true);
             onCopySuccess?.();
 
-            setTimeout(() => {
+            // Clear any existing timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+
+            // Set new timeout and store reference
+            timeoutRef.current = setTimeout(() => {
                 setCopied(false);
+                timeoutRef.current = null;
             }, 2000);
         }
     };
