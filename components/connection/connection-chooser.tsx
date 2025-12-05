@@ -13,7 +13,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Plus, Search, X, Clock, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Search, X, Clock, Trash2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -92,6 +92,7 @@ export function ConnectionChooser() {
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
     const debouncedQuery = useDebouncedValue(query, 300);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -110,13 +111,26 @@ export function ConnectionChooser() {
         [setActiveConnection, closeSearch]
     );
 
-    const handleDelete = useCallback(
+    const handleDeleteClick = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
-            e.stopPropagation(); // Prevent selecting the connection
+            e.stopPropagation();
+            setPendingDeleteId(connectionId);
+        },
+        []
+    );
+
+    const confirmDelete = useCallback(
+        (e: React.MouseEvent, connectionId: string) => {
+            e.stopPropagation();
             deleteConnection(connectionId);
+            setPendingDeleteId(null);
         },
         [deleteConnection]
     );
+
+    const cancelDelete = useCallback(() => {
+        setPendingDeleteId(null);
+    }, []);
 
     // Focus input when search opens
     useEffect(() => {
@@ -125,16 +139,20 @@ export function ConnectionChooser() {
         }
     }, [isSearchOpen]);
 
-    // Handle ESC key to close search
+    // Handle ESC key to close search and cancel delete
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isSearchOpen) {
-                closeSearch();
+            if (e.key === "Escape") {
+                if (pendingDeleteId) {
+                    cancelDelete();
+                } else if (isSearchOpen) {
+                    closeSearch();
+                }
             }
         };
         window.addEventListener("keydown", handleEscape);
         return () => window.removeEventListener("keydown", handleEscape);
-    }, [isSearchOpen, closeSearch]);
+    }, [isSearchOpen, closeSearch, pendingDeleteId, cancelDelete]);
 
     // Filter connections based on debounced search query
     const filtered = useMemo(() => {
@@ -237,14 +255,17 @@ export function ConnectionChooser() {
                     <>
                         <motion.div
                             className="fixed inset-0 z-40"
-                            onClick={closeSearch}
+                            onClick={() => {
+                                closeSearch();
+                                cancelDelete();
+                            }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
                         />
                         <motion.div
-                            className="absolute left-1/2 top-full z-50 mt-2 w-full max-w-[500px] -translate-x-1/2"
+                            className="fixed inset-x-0 top-24 z-50 mx-auto w-[calc(100vw-2rem)] sm:w-[420px]"
                             initial={{ opacity: 0, y: -16 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -16 }}
@@ -271,7 +292,7 @@ export function ConnectionChooser() {
                                     </button>
                                 </div>
 
-                                <div className="max-h-80 overflow-y-auto">
+                                <div className="max-h-[50vh] overflow-y-auto">
                                     <div className="flex items-center gap-2 bg-foreground/5 px-4 py-2">
                                         <Clock className="h-3.5 w-3.5 text-foreground/40" />
                                         <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
@@ -284,11 +305,53 @@ export function ConnectionChooser() {
                                                 const isFresh = freshConnectionIds.has(
                                                     conn.id
                                                 );
+                                                const isPendingDelete =
+                                                    pendingDeleteId === conn.id;
+
+                                                // Row transforms completely when pending delete
+                                                if (isPendingDelete) {
+                                                    return (
+                                                        <div
+                                                            key={conn.id}
+                                                            className="flex items-center justify-between bg-red-50 px-4 py-3"
+                                                        >
+                                                            <span className="text-sm text-red-700">
+                                                                Delete &ldquo;
+                                                                {conn.title ||
+                                                                    "this connection"}
+                                                                &rdquo;?
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        cancelDelete();
+                                                                    }}
+                                                                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-white/60"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) =>
+                                                                        confirmDelete(
+                                                                            e,
+                                                                            conn.id
+                                                                        )
+                                                                    }
+                                                                    className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
                                                 return (
                                                     <div
                                                         key={conn.id}
                                                         className={cn(
-                                                            "group flex items-start gap-3 px-4 py-2.5 transition-all hover:bg-foreground/5",
+                                                            "group flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-foreground/5",
                                                             conn.id ===
                                                                 activeConnection?.id &&
                                                                 "bg-primary/5",
@@ -306,56 +369,44 @@ export function ConnectionChooser() {
                                                             onClick={() =>
                                                                 handleSelect(conn.slug)
                                                             }
-                                                            className="flex flex-1 items-start gap-3 text-left"
+                                                            className="flex flex-1 items-center gap-3 text-left"
                                                         >
-                                                            <div className="mt-0.5">
-                                                                {conn.streamingStatus ===
-                                                                "streaming" ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                                ) : isFresh ? (
-                                                                    <Sparkles className="h-4 w-4 animate-pulse text-primary" />
-                                                                ) : (
-                                                                    <Sparkles className="h-4 w-4 text-foreground/40" />
+                                                            <span
+                                                                className={cn(
+                                                                    "min-w-0 flex-1 truncate text-sm font-medium",
+                                                                    isFresh
+                                                                        ? "text-foreground/90"
+                                                                        : "text-foreground/80"
                                                                 )}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span
-                                                                        className={cn(
-                                                                            "truncate text-sm font-medium",
-                                                                            isFresh
-                                                                                ? "text-foreground/90"
-                                                                                : "text-foreground/80"
-                                                                        )}
-                                                                    >
-                                                                        {conn.title ||
-                                                                            "New connection"}
-                                                                    </span>
-                                                                    {isFresh && (
-                                                                        <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                                                                            new
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs text-foreground/30">
-                                                                    {isFresh
-                                                                        ? "Just now"
-                                                                        : getRelativeTime(
-                                                                              conn.lastActivityAt
-                                                                          )}
+                                                            >
+                                                                {conn.title ||
+                                                                    "New connection"}
+                                                            </span>
+                                                            {isFresh && (
+                                                                <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                                                                    new
                                                                 </span>
-                                                            </div>
+                                                            )}
+                                                            <span className="shrink-0 text-xs text-foreground/50">
+                                                                {isFresh
+                                                                    ? "Just now"
+                                                                    : getRelativeTime(
+                                                                          conn.lastActivityAt
+                                                                      )}
+                                                            </span>
                                                         </button>
-                                                        {/* Delete button - appears on hover and focus for keyboard users */}
                                                         <button
                                                             onClick={(e) =>
-                                                                handleDelete(e, conn.id)
+                                                                handleDeleteClick(
+                                                                    e,
+                                                                    conn.id
+                                                                )
                                                             }
-                                                            className="mt-0.5 rounded-md p-1 opacity-0 transition-opacity hover:bg-red-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                                                            className="rounded-md p-1 transition-colors hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
                                                             title={`Delete ${conn.title || "connection"}`}
                                                             aria-label={`Delete ${conn.title || "connection"}`}
                                                         >
-                                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                                            <Trash2 className="h-4 w-4 text-foreground/30 transition-colors hover:text-red-500" />
                                                         </button>
                                                     </div>
                                                 );
