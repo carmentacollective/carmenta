@@ -5,7 +5,6 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
-import "@assistant-ui/react-ui/styles/index.css";
 import "./globals.css";
 
 /**

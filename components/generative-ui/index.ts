@@ -1,5 +1,4 @@
-export { WeatherToolUI } from "./weather-card";
-export { CompareToolUI } from "./data-table";
-export { WebSearchToolUI } from "./web-search";
-export { FetchPageToolUI } from "./fetch-page";
-export { DeepResearchToolUI } from "./deep-research";
+export { CompareTable } from "./data-table";
+export { WebSearchResults } from "./web-search";
+export { FetchPageResult } from "./fetch-page";
+export { DeepResearchResult } from "./deep-research";

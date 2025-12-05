@@ -6,7 +6,6 @@ const config: Config = {
         "./components/**/*.{ts,tsx}",
         "./app/**/*.{ts,tsx}",
         "./lib/**/*.{ts,tsx}",
-        "./node_modules/@assistant-ui/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
         container: {
@@ -110,13 +109,7 @@ const config: Config = {
             },
         },
     },
-    plugins: [
-        require("tailwindcss-animate"),
-        require("@assistant-ui/react-ui/tailwindcss")({
-            components: ["thread", "markdown"],
-            shadcn: true,
-        }),
-    ],
+    plugins: [require("tailwindcss-animate")],
 };
 
 export default config;

@@ -1,51 +1,39 @@
 "use client";
 
-import { makeAssistantToolUI } from "@assistant-ui/react";
-
 import { ToolWrapper } from "./tool-wrapper";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
-interface CompareArgs {
-    title: string;
-    options: Array<{
-        name: string;
-        attributes: Record<string, string>;
-    }>;
+interface CompareOption {
+    name: string;
+    attributes: Record<string, string>;
 }
 
-interface CompareResult {
+interface CompareTableProps {
+    toolCallId: string;
+    status: ToolStatus;
     title: string;
-    options: Array<{
-        name: string;
-        attributes: Record<string, string>;
-    }>;
-}
-
-/**
- * Map assistant-ui status to our ToolStatus
- */
-function mapStatus(
-    statusType: "running" | "incomplete" | "requires-action" | "complete",
-    hasResult: boolean
-): ToolStatus {
-    if (statusType === "running") return "running";
-    if (statusType === "incomplete") return "error";
-    if (hasResult) return "completed";
-    return "pending";
+    options?: CompareOption[];
+    error?: string;
 }
 
 /**
  * Comparison table content - the actual data display
  */
-function CompareTableContent({ result }: { result: CompareResult }) {
+function CompareTableContent({
+    title,
+    options,
+}: {
+    title: string;
+    options: CompareOption[];
+}) {
     // Get all unique attribute keys across all options
     const attributeKeys = [
-        ...new Set(result.options.flatMap((opt) => Object.keys(opt.attributes))),
+        ...new Set(options.flatMap((opt) => Object.keys(opt.attributes))),
     ];
 
     return (
         <div className="overflow-x-auto">
-            <h3 className="mb-4 font-bold text-foreground">{result.title}</h3>
+            <h3 className="mb-4 font-bold text-foreground">{title}</h3>
             <table className="w-full text-sm">
                 <thead>
                     <tr className="border-b border-border">
@@ -63,7 +51,7 @@ function CompareTableContent({ result }: { result: CompareResult }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {result.options.map((option) => (
+                    {options.map((option) => (
                         <tr
                             key={option.name}
                             className="border-b border-border/50 last:border-0"
@@ -126,32 +114,27 @@ function CompareTableError({ title }: { title: string }) {
  * - Admin debug panel
  * - First-use celebration
  */
-export const CompareToolUI = makeAssistantToolUI<CompareArgs, CompareResult>({
-    toolName: "compareOptions",
-    render: ({ args, result, status, toolCallId }) => {
-        const toolStatus = mapStatus(status.type, !!result);
-
-        return (
-            <ToolWrapper
-                toolName="compareOptions"
-                toolCallId={toolCallId}
-                status={toolStatus}
-                input={args}
-                output={result}
-                error={
-                    status.type === "incomplete"
-                        ? "Comparison request failed"
-                        : undefined
-                }
-            >
-                {status.type === "running" && (
-                    <CompareTableSkeleton title={args.title} />
-                )}
-                {status.type === "incomplete" && (
-                    <CompareTableError title={args.title} />
-                )}
-                {result && <CompareTableContent result={result} />}
-            </ToolWrapper>
-        );
-    },
-});
+export function CompareTable({
+    toolCallId,
+    status,
+    title,
+    options,
+    error,
+}: CompareTableProps) {
+    return (
+        <ToolWrapper
+            toolName="compareOptions"
+            toolCallId={toolCallId}
+            status={status}
+            input={{ title, options }}
+            output={options ? { title, options } : undefined}
+            error={error}
+        >
+            {status === "running" && <CompareTableSkeleton title={title} />}
+            {status === "error" && <CompareTableError title={title} />}
+            {options && status === "completed" && (
+                <CompareTableContent title={title} options={options} />
+            )}
+        </ToolWrapper>
+    );
+}
