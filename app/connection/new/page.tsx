@@ -29,7 +29,7 @@ export default async function NewConnectionPage() {
         <div className="relative h-screen overflow-hidden">
             <HolographicBackground />
 
-            <div className="relative z-10 flex h-full flex-col">
+            <div className="relative z-10 h-full">
                 <ConnectLayout
                     initialConnections={recentConnections}
                     activeConnection={null}
