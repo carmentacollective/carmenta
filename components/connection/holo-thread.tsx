@@ -208,7 +208,7 @@ function Composer() {
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
             <ComposerPrimitive.Input
                 placeholder="What's on your mind?"
-                className="min-h-12 flex-1 resize-none border-none bg-transparent px-2 py-3 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+                className="min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
                 rows={1}
                 autoFocus
             />
