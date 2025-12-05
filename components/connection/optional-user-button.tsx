@@ -1,18 +1,17 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { UserCircle2 } from "lucide-react";
 
-import { env } from "@/lib/env";
-
 /**
- * UserButton that only renders when Clerk keys are configured.
+ * UserButton that renders when signed in (works in keyless mode too).
  * Shows a User icon instead of profile picture for consistent UI.
  */
 export function OptionalUserButton() {
-    const hasClerkKeys = !!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    const { isLoaded, isSignedIn } = useAuth();
 
-    if (!hasClerkKeys) {
+    // Don't render until Clerk loads, or if not signed in
+    if (!isLoaded || !isSignedIn) {
         return null;
     }
 
