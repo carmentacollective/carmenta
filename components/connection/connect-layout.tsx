@@ -17,7 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
-import { ConnectionChooser } from "./connect-header";
+import { ConnectionChooser } from "./connection-chooser";
 import { OptionalUserButton } from "./optional-user-button";
 import type { PublicConnection } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
