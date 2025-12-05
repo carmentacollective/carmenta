@@ -11,7 +11,7 @@ See [personas.md](./product/personas.md) for detailed persona definitions. See
 
 ---
 
-## M0: Stake in the Ground
+## M0: Stake in the Ground ✅ COMPLETE
 
 **Persona:** The Curious (see personas.md) **Signal:** "We're building something
 different, in public" **Test:** Does the vision resonate? Can we build in public?
@@ -26,27 +26,20 @@ Landing page with:
 
 ### Components
 
-| Component      | Scope          | Notes                                           |
-| -------------- | -------------- | ----------------------------------------------- |
-| **Foundation** | Full           | Next.js 16, TypeScript, bun, tooling, linting   |
-| **Hosting**    | Full           | Render deployment, CI/CD                        |
-| **Testing**    | Infrastructure | Vitest + Playwright setup, patterns established |
+| Component      | Status | Notes                                           |
+| -------------- | ------ | ----------------------------------------------- |
+| **Foundation** | ✅     | Next.js 15, TypeScript, bun, tooling, linting   |
+| **Hosting**    | ✅     | Render deployment, CI/CD via GitHub Actions     |
+| **Testing**    | ✅     | Vitest + Playwright setup, patterns established |
 
-### Success Criteria
+### Decisions Made
 
-- Landing page live at carmenta.ai (or similar)
-- GitHub repo public with README explaining the vision
-- CI/CD deploys on push to main
-
-### Not Yet
-
-- No AI functionality
-- No chat interface
-- No backend beyond static page
+- **Package manager**: bun (fast, modern)
+- **Hosting**: Render (simple, reliable)
 
 ---
 
-## M0.5: First Connection
+## M0.5: First Connection ✅ COMPLETE
 
 **Persona:** Nick (pioneer mode) **Signal:** "We can connect. The interaction feels
 right." **Test:** Does the basic loop feel natural? What's clunky before we add
@@ -54,9 +47,8 @@ complexity?
 
 ### What This Proves
 
-The fundamental interaction works before we layer on persistence, error handling, and
-observability. We can iterate on the feel of connection without those concerns muddying
-the feedback.
+The fundamental interaction works before we layer on complexity. We can iterate on the
+feel of connection without unrelated concerns muddying the feedback.
 
 ### Why "Connect"
 
@@ -68,52 +60,36 @@ building.
 chatting at a tool. It works for Q&A, creation, exploration - all modes of interaction.
 The page lives at `/connect` and the experience is called "connecting with Carmenta."
 
-### Deliverables
-
-- `/connect` page (separate from landing)
-- Text input → API → streaming response → markdown display
-- Single session (page refresh clears it)
-- Heart-centered system prompt establishing "we" tone
-
 ### Components
 
-| Component     | Scope     | Notes                                               |
-| ------------- | --------- | --------------------------------------------------- |
-| **Interface** | Prototype | Basic UI, text input, streaming, markdown rendering |
-| **Concierge** | Stub      | Direct pass-through to one model, no classification |
+| Component                | Status | Notes                                                |
+| ------------------------ | ------ | ---------------------------------------------------- |
+| **Interface**            | ✅     | Holographic UI, text input, streaming, markdown      |
+| **Concierge**            | ✅     | Model selection with explanation, OpenRouter gateway |
+| **System Prompt**        | ✅     | Heart-centered "we" tone established                 |
+| **Conversation Persist** | ✅     | Tab-style access, not sidebar (decision made)        |
+| **Connection Chooser**   | ✅     | Header-based navigation between conversations        |
 
-### Key Decisions to Make
+### Decisions Made
 
-- **UI library**: Start with assistant-ui, CopilotKit, or raw implementation?
-- **Model**: Which single model for prototyping? (Claude Sonnet?)
-- **Styling approach**: Tailwind + shadcn? Match landing page aesthetic?
+- **UI library**: Backend-first with SSE, not assistant-ui
+  ([decision](./decisions/chat-architecture-backend-first.md))
+- **Model gateway**: OpenRouter (300+ models, single API key)
+- **Persistence**: Tab-style access pattern, JSONB for tools, LLM-generated titles
+  ([decision](./decisions/conversation-persistence.md))
+- **Styling**: Tailwind + shadcn + holographic glassmorphism aesthetic
 
-### Success Criteria
+### What We Learned
 
-- Can send a message and see streaming response
-- Markdown renders correctly (code blocks, lists, emphasis)
-- "We" tone comes through in responses
-- Interaction feels responsive (not laggy)
-- You find yourself actually using it
-
-### Not Yet
-
-- No persistence (page refresh = gone)
-- No error handling beyond browser defaults
-- No observability/tracing
-- No conversation history UI
-- No mobile optimization
-
-### What We Learn
-
-- Which UI approach feels right
-- What streaming performance is achievable
-- Whether the "we" prompt engineering works
-- What interaction patterns need refinement
+- assistant-ui is frontend-first; our needs are backend-first (multi-tab, background
+  tasks, persistence as truth)
+- SSE streaming with Vercel AI SDK is elegant and sufficient
+- Tab-style conversation access beats traditional sidebar
+- The "we" tone requires explicit system prompt engineering
 
 ---
 
-## M1: Soul Proven
+## M1: Soul Proven ✅ MOSTLY COMPLETE
 
 **Persona:** Nick (see personas.md) **Signal:** "The core experience works and feels
 like Carmenta" **Test:** Does this feel meaningfully different from ChatGPT/Claude? Do
@@ -126,33 +102,38 @@ warm, collaborative, intelligent. The soul is there before the features.
 
 ### Components
 
-| Component          | Scope              | Notes                                               |
-| ------------------ | ------------------ | --------------------------------------------------- |
-| **Interface**      | Basic chat         | Text input, streaming responses, markdown rendering |
-| **Concierge**      | Minimal            | Request → model → response, no classification yet   |
-| **Data Storage**   | Conversations only | Postgres for messages, no user tables yet           |
-| **Error Handling** | Foundation         | Sentry integration, graceful error states           |
-| **Observability**  | LLM tracing        | See what prompts/responses, debug issues            |
+| Component              | Status | Notes                                              |
+| ---------------------- | ------ | -------------------------------------------------- |
+| **Interface**          | ✅     | Holographic thread, glassmorphism, streaming       |
+| **Concierge**          | ✅     | Model selection + explanation, temperature control |
+| **Data Storage**       | ✅     | Drizzle + Supabase Postgres, full message parts    |
+| **Error Handling**     | ✅     | Sentry integration, graceful error states          |
+| **Observability**      | ✅     | Pino structured logging, test-aware silence        |
+| **Thinking Indicator** | ✅     | Glass card with shimmer, warm varied messages      |
+| **Status Indicators**  | 🔨     | Tool execution states, debug mode for admins       |
+| **Delight Layer**      | 🔨     | Variable reinforcement, occasional celebrations    |
 
-### Key Decisions to Make
+### Remaining Work
 
-- **Chat UI approach**: Build on assistant-ui? CopilotKit? Custom with AG-UI primitives?
+- **Status Indicators**: Complete tool execution feedback
+  (pending/running/complete/error)
+- **Delight Integration**: Hash-based variable reinforcement for warmth
+- **System Prompt Refinement**: Ensure consistent "we" framing in all responses
 
 ### Success Criteria
 
-- Can have a multi-turn conversation
-- Responses stream with low perceived latency
-- Heart-centered "we" tone is consistent
-- Errors display helpfully, not as stack traces
-- You actually use it for real conversations
+- Can have a multi-turn conversation ✅
+- Responses stream with low perceived latency ✅
+- Heart-centered "we" tone is consistent (needs verification)
+- Errors display helpfully, not as stack traces ✅
+- You actually use it for real conversations (dogfooding ongoing)
 
 ### Not Yet
 
-- No auth (single user, you)
-- No memory (conversations ephemeral or local only)
+- No memory (conversations persist but no cross-conversation learning)
 - No voice
 - No file uploads
-- No model routing (one model for everything)
+- No dynamic model routing (user selects, not auto-routed)
 
 ---
 
@@ -169,37 +150,43 @@ return because Carmenta knows them, not just because it's capable.
 
 ### Components
 
-| Component           | Scope         | Notes                                                  |
-| ------------------- | ------------- | ------------------------------------------------------ |
-| **Auth**            | Core          | Login/signup, sessions, profile basics                 |
-| **Memory**          | Foundation    | Profile storage, conversation memory, basic retrieval  |
-| **Conversations**   | Full          | History, continue threads, search past conversations   |
-| **Onboarding**      | MVP           | Profile collection, quick capability demo              |
-| **Analytics**       | Foundation    | PostHog or similar - who uses what, retention          |
-| **Usage Metering**  | Tracking only | Token counting, cost attribution (no billing yet)      |
-| **Model Selection** | Basic         | User can choose model per conversation, basic defaults |
+| Component            | Status | Notes                                                   |
+| -------------------- | ------ | ------------------------------------------------------- |
+| **Auth**             | ✅     | Clerk integration complete, sessions, profiles          |
+| **Memory**           | 🔨     | Profile storage, conversation memory, basic retrieval   |
+| **Conversations**    | ✅     | History via Connection Chooser, search past             |
+| **Reasoning Tokens** | 🔨     | Extended thinking display, auto-collapse, warm messages |
+| **Model Selection**  | ✅     | User choice per conversation with stepped slider        |
+| **Onboarding**       | ⏳     | Profile collection, quick capability demo               |
+| **Analytics**        | ⏳     | PostHog integration - who uses what, retention          |
+| **Usage Metering**   | ⏳     | Token counting, cost attribution (no billing yet)       |
 
-### Key Decisions to Make
+### Decisions Made
 
-- **Auth provider**: Clerk? Auth.js? Supabase Auth?
-- **Memory architecture**: Vector DB (Pinecone)? pgvector? Memory service (Zep, Mem0)?
+- **Auth provider**: Clerk - best DX, beautiful components, already integrated
+  ([infrastructure decision](./decisions/infrastructure-stack.md))
+- **Model selection UX**: Stepped slider with quality/speed/cost tradeoff visualization
+
+### Decisions To Make
+
+- **Memory architecture**: pgvector in Supabase? Memory service (Zep, Mem0)?
 - **Retrieval strategy**: Semantic search? Hybrid? What context gets injected?
 - **Onboarding flow**: Conversational vs. form? What's essential to collect?
-- **Model selection UX**: Dropdown? Per-conversation? Default preferences?
 
 ### Enhancements to Existing
 
-- **Concierge**: Now retrieves Memory context for each request, supports basic model
-  selection
-- **Interface**: Shows conversation history, profile settings, model selector
+- **Concierge**: Retrieves Memory context for each request, determines reasoning level
+- **Interface**: Reasoning display component shows extended thinking transparently
+- **System Prompt**: Maintains "we" framing even in reasoning tokens (never "the user")
 
 ### Success Criteria
 
-- Testers can sign up and log in without friction
-- Conversations persist and can be continued
+- Testers can sign up and log in without friction ✅
+- Conversations persist and can be continued ✅
 - Memory noticeably improves response relevance
 - Testers return for multiple sessions
 - Profile information reflects in responses
+- Reasoning transparency builds trust
 
 ### Not Yet
 
@@ -233,26 +220,51 @@ capability, not just because it has more features.
 
 ### Components
 
-| Component              | Scope    | Notes                                                                       |
-| ---------------------- | -------- | --------------------------------------------------------------------------- |
-| **Voice**              | Full     | STT, TTS, natural conversation, push-to-talk                                |
-| **Model Intelligence** | Full     | Dynamic routing, benchmark aggregation, model profiles, automatic selection |
-| **Concierge**          | Full     | Classification, query enhancement, intelligent model routing                |
-| **File Attachments**   | Full     | PDF, images, documents into conversation context                            |
-| **Interface**          | Polished | Responsive, accessible, voice UI, file upload                               |
+| Component                 | Status | Notes                                                          |
+| ------------------------- | ------ | -------------------------------------------------------------- |
+| **Voice**                 | ⏳     | STT, TTS, natural conversation, push-to-talk                   |
+| **Model Intelligence**    | ⏳     | Routing rubric, task classification, automatic model selection |
+| **Concierge (Full)**      | ⏳     | Query classification, context assembly, intelligent routing    |
+| **File Attachments**      | ⏳     | PDF, images, documents into conversation context               |
+| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI, file upload                  |
+| **Concierge Improvement** | ⏳     | Live query evaluation, pattern detection, self-improvement     |
 
-### Key Decisions to Make
+### Architecture: Model Intelligence
+
+The routing system ([spec](./components/model-intelligence.md)) aggregates external
+benchmarks (LMSYS, Artificial Analysis) rather than running our own. The rubric maps
+task signals to model recommendations:
+
+- **Task signals**: complexity, domain, tools_needed, quality_sensitivity
+- **Priorities per task type**: quality vs speed vs cost weighting
+- **Model profiles**: capabilities, pricing, status
+- **Automatic updates**: `/update-model-rubric` command for maintenance
+
+The Concierge reads the rubric at runtime - updating recommendations doesn't require
+code changes.
+
+### Architecture: Concierge Phases
+
+The full Concierge ([spec](./components/concierge.md)) operates in three phases:
+
+1. **Pre-Query**: Understand needs, assemble context, select model, determine reasoning
+   level
+2. **Post-Response**: Format output, add enhancements, maintain personality
+3. **Self-Improvement**: Evaluate quality, detect patterns, drive product evolution
+
+### Decisions to Make
 
 - **Voice providers**: STT (Whisper? Deepgram?), TTS (ElevenLabs? OpenAI?)
 - **Voice UX**: Wake word? Push-to-talk? Both? Latency targets?
 - **File processing**: RAG strategy, chunking approach, vision routing
-- **Model routing**: Classification model? Self-routing? Latency budget?
+- **Model routing approach**: Fast LLM classification? RouteLLM? OpenRouter auto-router?
 
 ### Enhancements to Existing
 
-- **Memory**: Fast retrieval, doesn't slow down responses
-- **Concierge**: Dynamic model selection based on query type, latency, and context
+- **Memory**: Fast retrieval (< 100ms), doesn't slow down responses
+- **Concierge**: Signal-based classification, reasoning level determination
 - **Interface**: Voice button, file drag-drop, mobile-responsive
+- **Delight**: Context-aware celebrations, milestone recognition
 
 ### Success Criteria
 
@@ -294,16 +306,25 @@ and people pay for genuine leverage.
 
 ### Components
 
-| Component                | Scope              | Notes                                         |
-| ------------------------ | ------------------ | --------------------------------------------- |
-| **Service Connectivity** | Priority services  | Gmail, Calendar, Notion, GitHub, etc.         |
-| **External Tools**       | MCP marketplace    | Featured tools, community tools, custom       |
-| **AI Team**              | DCOS + specialists | Digital Chief of Staff, Researcher, Analyst   |
-| **Scheduled Agents**     | Core patterns      | Daily briefings, meeting prep, monitoring     |
-| **Usage Metering**       | Billing            | Pricing tiers, payment processing             |
-| **Onboarding**           | Full               | Service connection, AI team intro, value demo |
+| Component                | Status | Notes                                               |
+| ------------------------ | ------ | --------------------------------------------------- |
+| **Service Connectivity** | ⏳     | Gmail, Calendar, Notion, GitHub via Nango           |
+| **External Tools**       | ⏳     | MCP marketplace - featured, community, custom tools |
+| **AI Team**              | ⏳     | Digital Chief of Staff, Researcher, Analyst         |
+| **Scheduled Agents**     | ⏳     | Daily briefings, meeting prep, monitoring           |
+| **Usage Metering**       | ⏳     | Pricing tiers, Stripe payment processing            |
+| **Onboarding (Full)**    | ⏳     | Service connection, AI team intro, value demo       |
 
-### Key Decisions to Make
+### Infrastructure Ready
+
+The infrastructure stack ([decision](./decisions/infrastructure-stack.md)) is designed
+for M4:
+
+- **Nango**: OAuth flows for 200+ services, token refresh, API proxying
+- **Supabase Storage**: File uploads, CDN delivery, image transformations
+- **Clerk Organizations**: Ready when team features needed
+
+### Decisions to Make
 
 - **Pricing model**: Subscription tiers? Usage-based? Hybrid?
 - **Service prioritization**: Which integrations matter most for target users?
@@ -357,17 +378,18 @@ Components and capabilities that come after initial public launch:
 ## Dependency Graph
 
 ```
-M0: Foundation → Hosting → Testing
+M0: Foundation → Hosting → Testing                               ✅ COMPLETE
          ↓
-M0.5: Interface (prototype) → Concierge (stub)
+M0.5: Interface → Concierge (stub) → Persistence → Chooser       ✅ COMPLETE
          ↓
-M1: Interface → Concierge (min) → Data Storage → Error Handling → Observability
+M1: Data Storage → Error Handling → Observability                ✅ MOSTLY DONE
+    Status Indicators → Delight Layer                            🔨 IN PROGRESS
          ↓
-M2: Auth → Memory → Conversations → Onboarding → Analytics → Usage Metering → Model Selection
+M2: Auth ✅ → Memory → Reasoning Tokens → Onboarding → Analytics
          ↓
-M3: Voice → Model Intelligence → Concierge (full) → File Attachments
+M3: Voice → Model Intelligence → Concierge (full) → Files → Improvement Loop
          ↓
-M4: Service Connectivity → External Tools → AI Team → Scheduled Agents → Billing
+M4: Service Connectivity → External Tools → AI Team → Agents → Billing
 ```
 
 Within each milestone, components can often be built in parallel. Across milestones,
@@ -375,32 +397,95 @@ earlier components are prerequisites for later ones.
 
 ---
 
+## Key Decisions Made
+
+Decisions that shaped the architecture - these are settled, not open questions:
+
+- **Backend-first architecture**: Database as source of truth, SSE streaming, not
+  assistant-ui ([decision](./decisions/chat-architecture-backend-first.md))
+- **Infrastructure stack**: Clerk + Supabase + Nango
+  ([decision](./decisions/infrastructure-stack.md))
+- **Conversation access**: Tab-style with recency, not sidebar
+  ([decision](./decisions/conversation-persistence.md))
+- **Model gateway**: OpenRouter for 300+ models via single API
+- **"We" framing**: Extends to reasoning tokens - never "the user"
+
+---
+
 ## Open Questions
 
-### Sequencing Decisions
+### Current Focus (M1 → M2)
 
-- Voice vs. integrations priority: M3 prioritizes voice because it's the 1x foundation
-  (flow state, presence, zone of genius). M4 prioritizes integrations because they
-  enable the AI team (10x capacity multiplication). This sequence is deliberate: you
-  can't multiply what isn't working at 100%.
+- **Memory architecture**: pgvector in Supabase? External service (Zep, Mem0)? What
+  context window strategy?
+- **Reasoning level calibration**: How accurately can we determine appropriate effort
+  from query alone?
+- **Delight implementation**: What's the right balance of celebration frequency?
 
-- AI team timing: Currently M4. The AI Team requires the 1x foundation (M3) to deliver
-  value. Adding team capacity before achieving flow state would create more complexity,
-  not more leverage.
+### Sequencing Rationale
 
-- File attachments: Currently M3. Files support the flow state by enabling seamless
-  context switching without breaking presence.
+- **Voice before integrations (M3 before M4)**: Voice enables the 1x foundation (flow
+  state, presence). You can't multiply what isn't working at 100%.
+- **AI team after voice (M4)**: The AI Team requires the 1x foundation to deliver value.
+  Adding team capacity before achieving flow state creates complexity, not leverage.
+- **File attachments in M3**: Files support flow state by enabling seamless context
+  switching without breaking presence.
 
-### Scope Management
+### Scope Philosophy
 
 - Each milestone should be shippable. If scope grows, push features to next milestone
   rather than delaying the current one.
-
-- "Good enough" beats "perfect." M1 chat doesn't need to be polished - it needs to prove
-  the soul works.
+- "Good enough" beats "perfect." M1 chat doesn't need polish - it needs to prove the
+  soul works.
+- Status: ✅ = complete, 🔨 = in progress, ⏳ = planned
 
 ### Timeline Philosophy
 
 No time estimates. This is about sequence, not schedule. Build each milestone until it's
 done, then move to the next. The AI-First SDLC means code is fast; understanding what to
 build is the bottleneck.
+
+---
+
+## Component Specifications
+
+Detailed specifications live in `knowledge/components/`. Key specs by milestone:
+
+### M1 Components
+
+- [Concierge](./components/concierge.md) - Pre/post query processing, model selection
+- [Status Indicators](./components/status-indicators.md) - Thinking, reasoning, tool
+  states
+- [Delight and Joy](./components/delight-and-joy.md) - Variable reinforcement,
+  celebrations
+
+### M2 Components
+
+- [Reasoning Tokens](./components/reasoning-tokens.md) - Extended thinking, display,
+  storage
+- [Memory](./components/memory.md) - Profile, facts, cross-conversation learning
+- [Analytics](./components/analytics.md) - Usage tracking, retention metrics
+
+### M3 Components
+
+- [Model Intelligence](./components/model-intelligence.md) - Routing rubric, task
+  classification
+- [Voice](./components/voice.md) - STT, TTS, push-to-talk, latency targets
+- [File Attachments](./components/file-attachments.md) - PDF, images, documents
+- [Concierge Improvement Loop](./components/concierge-improvement-loop.md) -
+  Self-improvement
+
+### M4 Components
+
+- [Service Connectivity](./components/service-connectivity.md) - OAuth, Nango
+  integration
+- [AI Team](./components/ai-team.md) - DCOS, specialists, coordination
+- [Scheduled Agents](./components/scheduled-agents.md) - Daily briefings, monitoring
+
+### Cross-Cutting Specs
+
+- [System Prompt Architecture](./components/system-prompt-architecture.md) - "We"
+  framing, tool patterns
+- [Carmenta Presence](./components/carmenta-presence.md) - Three-phase interaction model
+- [Connection Chooser](./components/connection-chooser.md) - Navigation, state
+  management

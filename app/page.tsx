@@ -34,7 +34,7 @@ export default function LandingPage() {
                         {/* Hero */}
                         <section className="space-y-4">
                             <div className="inline-block rounded-full bg-white/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
-                                M1: Soul Proven
+                                Building M2
                             </div>
                             <Greeting
                                 className="greeting-title"
@@ -106,14 +106,23 @@ export default function LandingPage() {
                                     >
                                         connect with Carmenta
                                     </Link>{" "}
-                                    right now. Conversations persist. Create an account,
-                                    and we pick up where we left off—context intact,
-                                    relationship growing.
+                                    right now. Sign in, choose your model, and we pick
+                                    up where we left off—conversations persist, context
+                                    intact.
                                 </p>
                                 <p>
                                     We're building in public. The specification, the
-                                    decisions, the code—all open. Next: memory that
-                                    spans conversations, so Carmenta truly knows you.
+                                    decisions, the code—all{" "}
+                                    <Link
+                                        href="https://github.com/carmentacollective/carmenta"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
+                                    >
+                                        open on GitHub
+                                    </Link>
+                                    . Next: memory that spans conversations, so Carmenta
+                                    truly knows you.
                                 </p>
                             </div>
                         </article>
@@ -147,16 +156,16 @@ export default function LandingPage() {
                                 <div className="flex items-center gap-2 text-foreground/50">
                                     <span className="text-primary">✓</span>
                                     <span>
-                                        M0.5: First Connection — Streaming responses,
-                                        web intelligence, heart-centered tone
+                                        M0.5: First Connection — Backend-first
+                                        streaming, conversation persistence, model
+                                        selection
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-foreground/50">
                                     <span className="text-primary">✓</span>
                                     <span>
-                                        M1: Soul Proven — Persistent conversations,
-                                        graceful errors, an experience worth returning
-                                        to
+                                        M1: Soul Proven — Auth, error handling,
+                                        observability, an experience worth returning to
                                     </span>
                                 </div>
                             </div>
@@ -173,9 +182,8 @@ export default function LandingPage() {
                                     </span>
                                 </div>
                                 <p className="text-sm text-foreground/70">
-                                    Carmenta remembers you—your preferences, your
-                                    projects, your people. The relationship builds over
-                                    time.
+                                    Memory that spans conversations. Extended thinking
+                                    you can see. Carmenta starts to know you.
                                 </p>
                             </div>
 
@@ -186,8 +194,9 @@ export default function LandingPage() {
                                         M3: Flow State
                                     </span>
                                     <p className="mt-0.5 text-foreground/50">
-                                        Voice-first interaction. Smart model selection.
-                                        Work at the speed you think.
+                                        Voice-first interaction. Intelligent model
+                                        routing. Files and context. Work at the speed
+                                        you think.
                                     </p>
                                 </div>
                                 <div>
