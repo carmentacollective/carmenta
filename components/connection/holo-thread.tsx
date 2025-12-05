@@ -339,7 +339,7 @@ function Composer() {
     }, [input]);
 
     const showStop = isLoading;
-    const canSend = input.trim() && !isLoading;
+    const canSend = input.trim() && !isLoading && !isComposing;
 
     return (
         <form
