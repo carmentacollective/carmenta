@@ -262,9 +262,6 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
      *
      * When activeConnectionId changes, this callback is recreated, which recreates
      * the transport, which recreates the runtime. This clears the in-memory thread state.
-     * However, for new connections created via replaceState (URL change without navigation),
-     * the messages are already streamed into the thread, and we rely on the useEffect below
-     * to NOT clear the thread when initialMessages is empty but activeConnectionId exists.
      */
     const fetchWithConcierge = useCallback(
         async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -370,7 +367,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                         setConcierge(conciergeData);
                     }
 
-                    // Check if this was a new connection - update URL and add to list
+                    // Add new connection to chooser list (no URL change)
                     const isNewConnection = response.headers.get("X-Connection-Is-New");
                     const connectionSlug = response.headers.get("X-Connection-Slug");
                     const connectionId = response.headers.get("X-Connection-Id");
@@ -382,17 +379,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                                 id: connectionId,
                                 title: connectionTitle,
                             },
-                            "New connection created, updating URL and adding to list"
+                            "New connection created, adding to list"
                         );
-                        // Update URL without navigation using replaceState
-                        // This follows the pattern from ai-chatbot and open-webui
-                        window.history.replaceState(
-                            {},
-                            "",
-                            `/connection/${connectionSlug}`
-                        );
-
-                        // Add to connections list with delightful animation
                         addNewConnection({
                             id: connectionId,
                             slug: connectionSlug,
@@ -512,18 +500,9 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 runtime.thread.import(repository);
             } else if (!activeConnectionId) {
                 // Only clear thread when we truly have no connection (/connection/new)
-                // Do NOT clear when we have a connectionId but empty initialMessages
-                // (happens after first message when URL changes via replaceState)
                 logger.debug({}, "No active connection - clearing thread");
                 runtime.thread.import(ExportedMessageRepository.fromArray([]));
             }
-            // Implicit else case: activeConnectionId exists but initialMessages is empty
-            // In this case, we intentionally do NOTHING to preserve the thread state.
-            // This happens after the first message creates a new connection:
-            // 1. Message is sent and streamed into the thread
-            // 2. URL changes via replaceState to /connection/[slug]
-            // 3. This effect runs again but initialMessages hasn't loaded yet
-            // 4. We must NOT clear the thread or we lose the just-streamed messages
         } catch (err) {
             logger.error(
                 { error: err, connectionId: activeConnectionId },
