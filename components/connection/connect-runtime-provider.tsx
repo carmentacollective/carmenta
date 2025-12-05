@@ -393,12 +393,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     addNewConnection
                 ),
                 prepareSendMessagesRequest(request) {
-                    // The last message is the user's new message
-                    const userMessage = request.messages.at(-1);
+                    // Send the full messages array - API expects this format
                     return {
                         body: {
                             id: request.id,
-                            message: userMessage,
+                            messages: request.messages,
                             ...request.body,
                         },
                     };
