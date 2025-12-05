@@ -61,6 +61,9 @@ export async function getOrCreateUser(
     profile?: UserProfileData
 ): Promise<User> {
     // Pure upsert: single atomic operation eliminates race conditions
+    // Email is the canonical identity - if a user re-registers with a new
+    // Clerk ID (switched OAuth providers, deleted account, etc.), we update
+    // the Clerk ID to match.
     const [user] = await db
         .insert(schema.users)
         .values({
@@ -73,8 +76,12 @@ export async function getOrCreateUser(
             lastSignedInAt: new Date(),
         })
         .onConflictDoUpdate({
-            target: schema.users.clerkId,
+            target: schema.users.email,
             set: {
+                clerkId,
+                firstName: profile?.firstName,
+                lastName: profile?.lastName,
+                imageUrl: profile?.imageUrl,
                 lastSignedInAt: new Date(),
                 updatedAt: new Date(),
             },

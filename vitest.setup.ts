@@ -114,6 +114,7 @@ vi.mock("./lib/db/index", async () => {
         }
     ) => {
         // Pure upsert: single atomic operation eliminates race conditions
+        // Email is the canonical identity - update clerk_id if it changed
         const [user] = await db
             .insert(schema.users)
             .values({
@@ -126,8 +127,12 @@ vi.mock("./lib/db/index", async () => {
                 lastSignedInAt: new Date(),
             })
             .onConflictDoUpdate({
-                target: schema.users.clerkId,
+                target: schema.users.email,
                 set: {
+                    clerkId,
+                    firstName: profile?.firstName,
+                    lastName: profile?.lastName,
+                    imageUrl: profile?.imageUrl,
                     lastSignedInAt: new Date(),
                     updatedAt: new Date(),
                 },
