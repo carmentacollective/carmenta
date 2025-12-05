@@ -23,7 +23,7 @@ import {
     type ReactNode,
 } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, generateId } from "ai";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
 
 import { logger } from "@/lib/client-logger";
@@ -252,7 +252,8 @@ function createFetchWrapper(
         slug: string;
         title: string | null;
         modelId: string | null;
-    }) => void
+    }) => void,
+    onNewConnectionCreated: (slug: string, connectionId: string) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const url = typeof input === "string" ? input : input.toString();
@@ -354,6 +355,8 @@ function createFetchWrapper(
                             : null,
                         modelId: conciergeData?.modelId ?? null,
                     });
+                    // Update URL to the new connection (without full navigation)
+                    onNewConnectionCreated(connectionSlug, connectionId);
                 }
             }
 
@@ -384,6 +387,15 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
 
+    // Generate a stable chat ID for new connections.
+    // This matches Vercel's ai-chatbot pattern where the ID is known BEFORE sending.
+    // For existing connections, we use the server-provided ID.
+    const [pendingChatId] = useState(() => generateId());
+
+    // The effective chat ID: use existing connection ID if available,
+    // otherwise use the pending ID for new connections
+    const effectiveChatId = activeConnectionId ?? pendingChatId;
+
     // Use refs for values that change but shouldn't recreate the transport
     const overridesRef = useRef(overrides);
     const connectionIdRef = useRef(activeConnectionId);
@@ -395,6 +407,30 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     useEffect(() => {
         connectionIdRef.current = activeConnectionId;
     }, [activeConnectionId]);
+
+    // Handle URL update when a new connection is created
+    // Uses window.history.replaceState to update URL WITHOUT triggering navigation.
+    // This is critical - router.replace() causes a full page load which loses stream state.
+    const handleNewConnectionCreated = useCallback(
+        (slug: string, connectionId: string) => {
+            logger.debug({ slug, connectionId }, "Updating URL for new connection");
+            // Update URL without triggering Next.js navigation/page load.
+            // We preserve existing history.state (which contains Next.js router state like __NA)
+            // to avoid breaking back/forward navigation. Adding connectionId for potential
+            // future use in popstate handling.
+            window.history.replaceState(
+                { ...window.history.state, connectionId },
+                "",
+                `/connection/${slug}`
+            );
+            // Update document title to match new connection
+            const titleWord = slug.split("-")[0] || "Connection";
+            const capitalizedTitle =
+                titleWord.charAt(0).toUpperCase() + titleWord.slice(1);
+            document.title = `${capitalizedTitle} | Carmenta`;
+        },
+        []
+    );
 
     // Convert initial messages to AI SDK UIMessage format
     const initialAIMessages = useMemo(() => {
@@ -413,7 +449,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     setConcierge,
                     overridesRef,
                     connectionIdRef,
-                    addNewConnection
+                    addNewConnection,
+                    handleNewConnectionCreated
                 ),
                 /* eslint-enable react-hooks/refs */
                 prepareSendMessagesRequest(request) {
@@ -427,10 +464,13 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     };
                 },
             }),
-        [setConcierge, addNewConnection]
+        [setConcierge, addNewConnection, handleNewConnectionCreated]
     );
 
     // Chat hook with AI SDK 5.0
+    // Key insight: We use effectiveChatId (which is stable from the start)
+    // so that messages are tracked correctly even before the server creates
+    // the connection. This matches Vercel's ai-chatbot pattern.
     const {
         messages,
         setMessages,
@@ -441,7 +481,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         error,
         clearError: sdkClearError,
     } = useChat({
-        id: activeConnectionId ?? undefined,
+        id: effectiveChatId,
         messages: initialAIMessages,
         transport,
         onError: (err) => {
@@ -459,21 +499,30 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         setIsStreaming(isLoading);
     }, [isLoading, setIsStreaming]);
 
-    // Track previous message IDs to avoid stale closure issues
-    const prevMessageIdsRef = useRef<string>("");
+    // Track previous connection ID to detect navigation between connections
+    const prevConnectionIdRef = useRef<string | null>(activeConnectionId);
 
-    // Update messages when connection changes
+    // Update messages when navigating to a different connection
+    // Key: We DON'T clear messages when activeConnectionId is null (new connection)
+    // because the chat hook is already tracking messages by effectiveChatId
     useEffect(() => {
-        if (activeConnectionId && initialAIMessages && initialAIMessages.length > 0) {
-            // Only set if different (prevents infinite loop)
-            const newIds = initialAIMessages.map((m) => m.id).join(",");
-            if (prevMessageIdsRef.current !== newIds) {
-                prevMessageIdsRef.current = newIds;
+        const prevId = prevConnectionIdRef.current;
+        const currentId = activeConnectionId;
+
+        // Only act when connection ID actually changes
+        if (prevId !== currentId) {
+            prevConnectionIdRef.current = currentId;
+
+            if (currentId && initialAIMessages && initialAIMessages.length > 0) {
+                // Navigated to existing connection - load its messages
                 setMessages(initialAIMessages);
+            } else if (prevId && !currentId) {
+                // Navigated from existing connection to new - clear messages
+                // (but only if we had a previous connection)
+                setMessages([]);
             }
-        } else if (!activeConnectionId) {
-            prevMessageIdsRef.current = "";
-            setMessages([]);
+            // If prevId was null (new) and currentId is now set (connection created),
+            // don't clear - the messages are already in state from streaming
         }
     }, [activeConnectionId, initialAIMessages, setMessages]);
 
