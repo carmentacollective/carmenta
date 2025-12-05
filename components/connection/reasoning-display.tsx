@@ -10,6 +10,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { getReasoningCompleteMessage } from "@/lib/tools/tool-config";
+import { CopyButton } from "@/components/ui/copy-button";
 
 const AUTO_CLOSE_DELAY_MS = 500;
 const MS_PER_SECOND = 1000;
@@ -243,10 +244,18 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                 )}
                 data-testid="reasoning-content"
             >
-                <div className="max-h-[200px] overflow-y-auto rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm">
+                <div className="group relative max-h-[200px] overflow-y-auto rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm">
                     <pre className="whitespace-pre-wrap font-sans leading-relaxed">
                         {content}
                     </pre>
+                    <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <CopyButton
+                            text={content}
+                            ariaLabel="Copy reasoning"
+                            variant="glass"
+                            size="sm"
+                        />
+                    </div>
                 </div>
             </CollapsibleContent>
         </Collapsible>
