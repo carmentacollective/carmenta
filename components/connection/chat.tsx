@@ -4,13 +4,6 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { ConnectRuntimeProvider } from "./connect-runtime-provider";
 import { HoloThread } from "./holo-thread";
-import {
-    WeatherToolUI,
-    CompareToolUI,
-    WebSearchToolUI,
-    FetchPageToolUI,
-    DeepResearchToolUI,
-} from "@/components/generative-ui";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -66,19 +59,17 @@ class ChatErrorBoundary extends Component<
 /**
  * Main Chat component for the Connect page.
  *
- * Uses our custom HoloThread built with headless primitives.
- * No fighting with pre-styled components - just clean composition.
+ * Uses our custom HoloThread built with plain React components.
+ * Chat state is managed via ChatContext from ConnectRuntimeProvider.
+ *
+ * Tool UIs (weather, search, etc.) will be rendered inline when
+ * we encounter tool call parts in assistant messages. For now,
+ * we focus on text content rendering which was the core issue.
  */
 export function Chat() {
     return (
         <ChatErrorBoundary>
             <ConnectRuntimeProvider>
-                <WeatherToolUI />
-                <CompareToolUI />
-                <WebSearchToolUI />
-                <FetchPageToolUI />
-                <DeepResearchToolUI />
-
                 <div className="scrollbar-holo h-full">
                     <HoloThread />
                 </div>
