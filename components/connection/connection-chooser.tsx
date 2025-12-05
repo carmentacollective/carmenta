@@ -13,7 +13,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Plus, Search, X, Clock, Loader2, Sparkles } from "lucide-react";
+import { Plus, Search, X, Clock, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -86,6 +86,7 @@ export function ConnectionChooser() {
         isStreaming,
         setActiveConnection,
         createNewConnection,
+        deleteConnection,
         isPending,
     } = useConnection();
 
@@ -107,6 +108,14 @@ export function ConnectionChooser() {
             closeSearch();
         },
         [setActiveConnection, closeSearch]
+    );
+
+    const handleDelete = useCallback(
+        (e: React.MouseEvent, connectionId: string) => {
+            e.stopPropagation(); // Prevent selecting the connection
+            deleteConnection(connectionId);
+        },
+        [deleteConnection]
     );
 
     // Focus input when search opens
@@ -276,13 +285,10 @@ export function ConnectionChooser() {
                                                     conn.id
                                                 );
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={conn.id}
-                                                        onClick={() =>
-                                                            handleSelect(conn.slug)
-                                                        }
                                                         className={cn(
-                                                            "flex w-full items-start gap-3 px-4 py-2.5 text-left transition-all hover:bg-foreground/5",
+                                                            "group flex items-start gap-3 px-4 py-2.5 transition-all hover:bg-foreground/5",
                                                             conn.id ===
                                                                 activeConnection?.id &&
                                                                 "bg-primary/5",
@@ -296,44 +302,62 @@ export function ConnectionChooser() {
                                                                 "backwards",
                                                         }}
                                                     >
-                                                        <div className="mt-0.5">
-                                                            {conn.streamingStatus ===
-                                                            "streaming" ? (
-                                                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                            ) : isFresh ? (
-                                                                <Sparkles className="h-4 w-4 animate-pulse text-primary" />
-                                                            ) : (
-                                                                <Sparkles className="h-4 w-4 text-foreground/40" />
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span
-                                                                    className={cn(
-                                                                        "truncate text-sm font-medium",
-                                                                        isFresh
-                                                                            ? "text-foreground/90"
-                                                                            : "text-foreground/80"
-                                                                    )}
-                                                                >
-                                                                    {conn.title ||
-                                                                        "New connection"}
-                                                                </span>
-                                                                {isFresh && (
-                                                                    <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                                                                        new
-                                                                    </span>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleSelect(conn.slug)
+                                                            }
+                                                            className="flex flex-1 items-start gap-3 text-left"
+                                                        >
+                                                            <div className="mt-0.5">
+                                                                {conn.streamingStatus ===
+                                                                "streaming" ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                                                ) : isFresh ? (
+                                                                    <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+                                                                ) : (
+                                                                    <Sparkles className="h-4 w-4 text-foreground/40" />
                                                                 )}
                                                             </div>
-                                                            <span className="text-xs text-foreground/30">
-                                                                {isFresh
-                                                                    ? "Just now"
-                                                                    : getRelativeTime(
-                                                                          conn.lastActivityAt
-                                                                      )}
-                                                            </span>
-                                                        </div>
-                                                    </button>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span
+                                                                        className={cn(
+                                                                            "truncate text-sm font-medium",
+                                                                            isFresh
+                                                                                ? "text-foreground/90"
+                                                                                : "text-foreground/80"
+                                                                        )}
+                                                                    >
+                                                                        {conn.title ||
+                                                                            "New connection"}
+                                                                    </span>
+                                                                    {isFresh && (
+                                                                        <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                                                                            new
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-xs text-foreground/30">
+                                                                    {isFresh
+                                                                        ? "Just now"
+                                                                        : getRelativeTime(
+                                                                              conn.lastActivityAt
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        </button>
+                                                        {/* Delete button - appears on hover and focus for keyboard users */}
+                                                        <button
+                                                            onClick={(e) =>
+                                                                handleDelete(e, conn.id)
+                                                            }
+                                                            className="mt-0.5 rounded-md p-1 opacity-0 transition-opacity hover:bg-red-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                                                            title={`Delete ${conn.title || "connection"}`}
+                                                            aria-label={`Delete ${conn.title || "connection"}`}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                                        </button>
+                                                    </div>
                                                 );
                                             })}
                                         </div>
