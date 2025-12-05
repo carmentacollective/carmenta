@@ -293,19 +293,3 @@ export const clerkAppearance: Appearance = {
         activeDevice: "rounded-xl p-3 bg-foreground/[0.02] border border-foreground/5",
     },
 };
-
-/**
- * Dark mode overrides - applied via CSS custom properties
- * These selectors use Tailwind's dark: prefix for automatic switching
- */
-export const clerkDarkModeElements = {
-    card: [
-        "dark:bg-[rgba(40,30,50,0.6)]",
-        "dark:shadow-[0_8px_32px_rgba(100,80,120,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.1)]",
-    ].join(" "),
-    userButtonPopoverCard: [
-        "dark:bg-[rgba(40,30,50,0.9)]",
-        "dark:border-white/10",
-    ].join(" "),
-    modalContent: ["dark:bg-[rgba(40,30,50,0.95)]", "dark:border-white/10"].join(" "),
-};
