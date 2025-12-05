@@ -372,126 +372,111 @@ export function ConnectionChooser() {
     // Focus input when dropdown opens
     useEffect(() => {
         if (isDropdownOpen && inputRef.current) {
-            // Small delay to ensure animation has started
             requestAnimationFrame(() => {
                 inputRef.current?.focus();
             });
         }
     }, [isDropdownOpen]);
 
-    // Simple: use displayTitle from context (handles both server and client-created)
     const hasConnections = connections.length > 0;
     const hasTitle = Boolean(displayTitle);
     const title = displayTitle ?? "";
 
-    // S1: Fresh user - no connections at all
+    // S1: Fresh user - render nothing
     if (!hasConnections) {
         return null;
     }
 
-    // S2/S3/S4: Has connections but current one is untitled
-    // Show minimal "Recent Connections..." trigger
-    if (!hasTitle) {
-        return (
-            <div className="relative">
-                <motion.button
-                    onClick={openDropdown}
-                    className={cn(
-                        "flex items-center gap-2 rounded-xl px-4 py-2",
-                        "bg-white/60 ring-1 ring-foreground/15 backdrop-blur-xl",
-                        "text-sm text-foreground/60",
-                        "hover:bg-white/70 hover:text-foreground/80 hover:ring-foreground/20",
-                        "transition-all duration-200"
-                    )}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                >
-                    {isStreaming && <RunningIndicator />}
-                    <span>Recent Connections</span>
-                    <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                </motion.button>
-
-                <ConnectionDropdown
-                    isOpen={isDropdownOpen}
-                    onClose={closeDropdown}
-                    connections={connections}
-                    activeConnection={activeConnection}
-                    freshConnectionIds={freshConnectionIds}
-                    onSelect={handleSelect}
-                    onDelete={deleteConnection}
-                    query={query}
-                    setQuery={setQuery}
-                    debouncedQuery={debouncedQuery}
-                    inputRef={inputRef}
-                />
-            </div>
-        );
-    }
-
-    // S5: Has a titled connection - show full layout
+    // Unified container - smooth transitions between states
     return (
         <div className="relative">
             <motion.div
                 layout
                 className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-2",
+                    "flex items-center rounded-xl",
                     "bg-white/60 ring-1 ring-foreground/15 backdrop-blur-xl",
-                    "transition-colors duration-200"
+                    "transition-colors duration-200",
+                    "hover:bg-white/70 hover:ring-foreground/20"
                 )}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                transition={{
+                    layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                }}
             >
-                {/* Search button */}
-                <button
-                    onClick={openDropdown}
-                    className="text-foreground/40 transition-colors hover:text-foreground/60"
-                    title="Search connections"
-                >
-                    <Search className="h-4 w-4" />
-                </button>
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {hasTitle ? (
+                        // S5: Full layout [Search | Title | New]
+                        <motion.div
+                            key="full"
+                            className="flex items-center gap-3 px-4 py-2"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {/* Search button */}
+                            <button
+                                onClick={openDropdown}
+                                className="text-foreground/40 transition-colors hover:text-foreground/60"
+                                title="Search connections"
+                            >
+                                <Search className="h-4 w-4" />
+                            </button>
 
-                {/* Divider */}
-                <div className="h-4 w-px bg-foreground/10" />
+                            {/* Divider */}
+                            <div className="h-4 w-px bg-foreground/10" />
 
-                {/* Title - clickable to open dropdown */}
-                <button
-                    onClick={openDropdown}
-                    className="flex items-center gap-2 transition-colors hover:text-foreground/80"
-                >
-                    {isStreaming && <RunningIndicator />}
-                    <motion.span
-                        key={title}
-                        className="text-sm text-foreground/70"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                    >
-                        {title}
-                    </motion.span>
-                </button>
+                            {/* Title */}
+                            <button
+                                onClick={openDropdown}
+                                className="flex items-center gap-2 transition-colors hover:text-foreground/80"
+                            >
+                                {isStreaming && <RunningIndicator />}
+                                <span className="text-sm text-foreground/70">
+                                    {title}
+                                </span>
+                            </button>
 
-                {/* Divider */}
-                <div className="h-4 w-px bg-foreground/10" />
+                            {/* Divider */}
+                            <div className="h-4 w-px bg-foreground/10" />
 
-                {/* New connection button */}
-                <button
-                    onClick={createNewConnection}
-                    disabled={isPending}
-                    className={cn(
-                        "flex items-center gap-1.5 text-sm transition-all",
-                        "text-foreground/50 hover:text-foreground/80",
-                        "disabled:opacity-50"
-                    )}
-                    title="New connection"
-                >
-                    {isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                            {/* New button */}
+                            <button
+                                onClick={createNewConnection}
+                                disabled={isPending}
+                                className={cn(
+                                    "flex items-center gap-1.5 text-sm transition-all",
+                                    "text-foreground/50 hover:text-foreground/80",
+                                    "disabled:opacity-50"
+                                )}
+                                title="New connection"
+                            >
+                                {isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Plus className="h-4 w-4" />
+                                )}
+                                <span className="hidden font-medium sm:inline">
+                                    New
+                                </span>
+                            </button>
+                        </motion.div>
                     ) : (
-                        <Plus className="h-4 w-4" />
+                        // S2/S3/S4: Minimal trigger
+                        <motion.button
+                            key="minimal"
+                            onClick={openDropdown}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground/60"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {isStreaming && <RunningIndicator />}
+                            <span>Recent Connections</span>
+                            <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                        </motion.button>
                     )}
-                    <span className="hidden font-medium sm:inline">New</span>
-                </button>
+                </AnimatePresence>
             </motion.div>
 
             <ConnectionDropdown
