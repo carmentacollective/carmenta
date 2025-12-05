@@ -1,6 +1,6 @@
 ---
 description:
-  Generate or update AGENTS.md with essential project context for AI coding assistants
+  "Generate or update AGENTS.md with essential project context for AI coding assistants"
 ---
 
 # Generate AGENTS.md
@@ -23,7 +23,7 @@ What belongs in AGENTS.md:
 
 What does NOT belong:
 
-- Commands (LLMs know how to run bun, npm, pytest, etc.)
+- Commands (LLMs know how to run pnpm, npm, pytest, etc.)
 - Generic best practices (LLMs already know these)
 - Project descriptions (that's what README is for)
 - Anything an LLM would figure out from reading the code
@@ -144,7 +144,7 @@ DON'T:
 After generating content, review and optimize:
 
 1. Remove redundancy: If tech stack mentions "Node 20", don't repeat it elsewhere
-2. Be concise: "Use bun not npm" instead of paragraph explaining why
+2. Be concise: "Use pnpm not npm" instead of paragraph explaining why
 3. Cut obvious fluff: Remove generic advice like "write good code"
 4. Use examples sparingly: Only when they clarify non-obvious patterns
 5. Cut generic commands: Remove `git status`, `git diff`, basic npm/pip commands
@@ -203,7 +203,7 @@ Avoid restating README: If README explains it well, don't duplicate it here.
 
 <exclusion-list>
 What does NOT belong in AGENTS.md:
-- Generic commands (LLMs know how to run bun install, git status, pytest, etc.)
+- Generic commands (LLMs know how to run npm install, git status, pytest, etc.)
 - Project descriptions and marketing copy (that's for README)
 - Installation instructions
 - Generic best practices AI already knows
@@ -215,7 +215,7 @@ What does NOT belong in AGENTS.md:
 
 Exception: Project-specific tooling choices that prevent mistakes DO belong:
 
-- "Use bun not npm/pnpm" (prevents lockfile conflicts)
+- "Use pnpm not npm" (prevents lockfile conflicts)
 - "Use bun drizzle-kit not npx drizzle-kit" (project convention) </exclusion-list>
 
 <subdirectory-agents>
@@ -300,6 +300,8 @@ Don't create subdirectory AGENTS.md when:
 - Root AGENTS.md already covers the directory adequately
 - The directory is rarely touched by AI
 - Adding context wouldn't prevent any realistic mistake
+- `.cursor/` or `.claude/` already have AGENTS.md from ai-coding-config (these explain
+  how to write rules/commands and reference prompt-engineering.mdc)
 
 ## Symlinks
 

@@ -31,9 +31,9 @@ personality exists and matches requested, confirm already active and stop. If di
 remove entire section. If not removing (name != "none"), read personality file, strip
 frontmatter, append to `.claude/context.md` with HTML comments marking boundaries.
 
-For Cursor: Find all personality files in `.cursor/rules/personalities/` (except
-`common-personality.mdc`). For each file, update frontmatter: set `alwaysApply: true`
-for selected personality, set `alwaysApply: false` for all others.
+For Cursor: Find all personality files in `.cursor/rules/personalities/`. For each file,
+update frontmatter: set `alwaysApply: true` for selected personality, set
+`alwaysApply: false` for all others.
 
 Report results clearly showing what changed in both Claude Code and Cursor
 configurations. </workflow>
@@ -45,5 +45,5 @@ configurations. </workflow>
 </examples>
 
 <notes>
-Only one personality active at a time (plus common-personality baseline). Personality affects ALL future interactions in this project. common-personality.mdc is always applied as baseline.
+Only one personality active at a time. Personality affects ALL future interactions in this project.
 </notes>

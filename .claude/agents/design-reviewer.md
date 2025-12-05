@@ -1,8 +1,9 @@
 ---
 name: design-reviewer
 description:
-  Evaluates frontend changes for visual quality, usability, and accessibility using
-  Playwright for live UI testing
+  "Invoke for frontend design review. Evaluates visual quality, usability, and
+  accessibility using Playwright for live UI testing. Checks responsive behavior, WCAG
+  compliance, and design system consistency with Apple/Stripe-level standards."
 color: pink
 model: sonnet
 ---

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 
+import { Chat, ConnectLayout } from "@/components/connection";
+import { HolographicBackground } from "@/components/ui/holographic-background";
 import { getRecentConnections } from "@/lib/actions/connections";
 
 export const metadata: Metadata = {
@@ -10,23 +11,31 @@ export const metadata: Metadata = {
 };
 
 /**
- * Connection Index Page
+ * Connection Page - New Chat Interface
  *
- * Routes users to the appropriate connection:
- * - If they have recent connections, go to the most recent one
- * - Otherwise, go to /connection/new for a fresh start
+ * Renders an empty chat interface without creating a database record.
+ * The connection is created lazily when the user sends their first message.
  *
- * No connections are created here - that happens lazily on first message.
+ * This is the canonical URL for starting a new conversation.
+ * /connection/new redirects here for fresh page loads.
  */
-export default async function ConnectionsPage() {
-    // Load recent connections (auth protected by middleware)
+export default async function ConnectionPage() {
+    // Load recent connections for the header dropdown (auth protected by middleware)
     const recentConnections = await getRecentConnections(10);
 
-    // If there are recent connections, redirect to the most recent one
-    if (recentConnections.length > 0) {
-        redirect(`/connection/${recentConnections[0].slug}`);
-    }
+    return (
+        <div className="relative h-screen overflow-hidden">
+            <HolographicBackground />
 
-    // No connections exist - go to new connection page
-    redirect("/connection/new");
+            <div className="relative z-10 h-full">
+                <ConnectLayout
+                    initialConnections={recentConnections}
+                    activeConnection={null}
+                    initialMessages={[]}
+                >
+                    <Chat />
+                </ConnectLayout>
+            </div>
+        </div>
+    );
 }

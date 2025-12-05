@@ -1,6 +1,6 @@
 ---
 description:
-  Create optimized prompts for complex tasks and save them with descriptive names
+  "Create optimized prompts for complex tasks following prompt-engineering principles"
 argument-hint: <task description>
 ---
 
