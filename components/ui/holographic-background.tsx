@@ -95,6 +95,11 @@ function createParticle(width: number, height: number): Particle {
     };
 }
 
+interface HolographicBackgroundProps {
+    /** Hide the logo watermark (e.g., on homepage where logo is prominently displayed) */
+    hideWatermark?: boolean;
+}
+
 /**
  * Animated holographic background with color-shifting blobs and sparkle particles.
  *
@@ -104,7 +109,9 @@ function createParticle(width: number, height: number): Particle {
  *
  * The effect is ethereal and dream-like, reflecting Carmenta's heart-centered philosophy.
  */
-export function HolographicBackground() {
+export function HolographicBackground({
+    hideWatermark = false,
+}: HolographicBackgroundProps) {
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
@@ -357,9 +364,24 @@ export function HolographicBackground() {
                 aria-hidden="true"
             />
 
+            {/* Logo watermark - subtle brand presence */}
+            {!hideWatermark && (
+                <div
+                    className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden"
+                    aria-hidden="true"
+                >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/logos/icon-transparent.png"
+                        alt=""
+                        className="h-[120vh] w-[120vh] max-w-none object-contain opacity-[0.06]"
+                    />
+                </div>
+            )}
+
             {/* Light overlay for depth */}
             <div
-                className="pointer-events-none fixed inset-0 z-[1] opacity-50"
+                className="pointer-events-none fixed inset-0 z-[2] opacity-50"
                 style={{
                     background: `linear-gradient(135deg,
                         rgba(255, 255, 255, 0.3) 0%,
@@ -373,7 +395,7 @@ export function HolographicBackground() {
             {/* Shimmer particles layer */}
             <canvas
                 ref={shimmerCanvasRef}
-                className="pointer-events-none fixed inset-0 z-[2]"
+                className="pointer-events-none fixed inset-0 z-[3]"
                 aria-hidden="true"
             />
         </>
