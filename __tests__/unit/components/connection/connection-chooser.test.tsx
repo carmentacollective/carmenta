@@ -270,7 +270,7 @@ describe("ConnectionChooser", () => {
 
             await vi.waitFor(() => {
                 expect(
-                    screen.queryByPlaceholderText("Search connections...")
+                    screen.queryByPlaceholderText("Search...")
                 ).not.toBeInTheDocument();
             });
         });
