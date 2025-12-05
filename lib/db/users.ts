@@ -61,8 +61,6 @@ export async function getOrCreateUser(
     profile?: UserProfileData
 ): Promise<User> {
     // Pure upsert: single atomic operation eliminates race conditions
-    // Key on email (the true user identity) - clerkId can vary between
-    // Clerk environments (dev, prod, keyless mode, different workspaces)
     const [user] = await db
         .insert(schema.users)
         .values({
@@ -75,9 +73,8 @@ export async function getOrCreateUser(
             lastSignedInAt: new Date(),
         })
         .onConflictDoUpdate({
-            target: schema.users.email,
+            target: schema.users.clerkId,
             set: {
-                clerkId, // Update clerkId when switching Clerk environments
                 lastSignedInAt: new Date(),
                 updatedAt: new Date(),
             },
