@@ -459,22 +459,33 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         setIsStreaming(isLoading);
     }, [isLoading, setIsStreaming]);
 
+    // Track previous connection ID to detect navigation between connections
+    const prevConnectionIdRef = useRef<string | null>(activeConnectionId);
     // Track previous message IDs to avoid stale closure issues
     const prevMessageIdsRef = useRef<string>("");
 
     // Update messages when connection changes
+    // Only clear messages when navigating FROM an existing connection to /new
+    // Don't clear when already on /new (activeConnectionId stays null)
     useEffect(() => {
         if (activeConnectionId && initialAIMessages && initialAIMessages.length > 0) {
-            // Only set if different (prevents infinite loop)
+            // Navigated to an existing connection - sync messages
             const newIds = initialAIMessages.map((m) => m.id).join(",");
             if (prevMessageIdsRef.current !== newIds) {
                 prevMessageIdsRef.current = newIds;
                 setMessages(initialAIMessages);
             }
-        } else if (!activeConnectionId) {
+        } else if (
+            !activeConnectionId &&
+            prevConnectionIdRef.current !== null &&
+            prevConnectionIdRef.current !== activeConnectionId
+        ) {
+            // Navigated FROM an existing connection TO /new - clear messages
             prevMessageIdsRef.current = "";
             setMessages([]);
         }
+        // Update previous connection ID ref
+        prevConnectionIdRef.current = activeConnectionId;
     }, [activeConnectionId, initialAIMessages, setMessages]);
 
     // Sync display error with SDK error
