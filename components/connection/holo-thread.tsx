@@ -25,6 +25,7 @@ import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/models";
 import { Greeting } from "@/components/ui/greeting";
@@ -66,14 +67,6 @@ export function HoloThread() {
     const isEmpty = messages.length === 0;
 
     return (
-<<<<<<< HEAD
-        <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
-            {/* Viewport with bidirectional fade mask - grows to fill available space
-                Padding calibrated to fade zones: top fade 40px, bottom fade 56px
-                Tighter spacing maximizes content area while respecting fade transitions */}
-            <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-20 pt-6 md:pb-24">
-                <ThreadPrimitive.Empty>
-=======
         <div className="flex h-full flex-col bg-transparent">
             {/* Viewport with fade mask */}
             <div
@@ -82,7 +75,6 @@ export function HoloThread() {
                 className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32"
             >
                 {isEmpty ? (
->>>>>>> 5d45fbf (♻️ Rewrite chat UI with Vercel AI SDK 5.0 patterns)
                     <ThreadWelcome />
                 ) : (
                     <div className="flex w-full max-w-[700px] flex-col">
@@ -133,21 +125,29 @@ function ThreadWelcome() {
 
 /**
  * Extract text content from UIMessage parts
+ * Defensive checks handle malformed messages gracefully
  */
 function getMessageContent(message: UIMessage): string {
+    if (!message?.parts) return "";
     return message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => (part as { type: "text"; text: string }).text)
+        .filter((part) => part?.type === "text")
+        .map((part) => {
+            const textPart = part as { type: "text"; text?: string };
+            return textPart?.text ?? "";
+        })
         .join("");
 }
 
 /**
  * Extract reasoning content from UIMessage parts
+ * Defensive checks handle malformed messages gracefully
  */
 function getReasoningContent(message: UIMessage): string | null {
-    const reasoningPart = message.parts.find((part) => part.type === "reasoning");
+    if (!message?.parts) return null;
+    const reasoningPart = message.parts.find((part) => part?.type === "reasoning");
     if (reasoningPart && reasoningPart.type === "reasoning") {
-        return (reasoningPart as { type: "reasoning"; text: string }).text;
+        const typedPart = reasoningPart as { type: "reasoning"; text?: string };
+        return typedPart?.text ?? null;
     }
     return null;
 }
@@ -280,7 +280,11 @@ function Composer() {
             try {
                 await append({ role: "user", content: message });
             } catch (error) {
-                // Error is handled by the runtime provider
+                // Log for observability - runtime provider also handles this
+                logger.error(
+                    { error: error instanceof Error ? error.message : String(error) },
+                    "Failed to send message from composer"
+                );
                 setInput(message); // Restore input on error
             }
         },
@@ -289,12 +293,13 @@ function Composer() {
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            // Only submit on Enter if there's content
+            if (e.key === "Enter" && !e.shiftKey && input.trim()) {
                 e.preventDefault();
                 handleSubmit(e as unknown as FormEvent);
             }
         },
-        [handleSubmit]
+        [handleSubmit, input]
     );
 
     // Auto-resize textarea
@@ -306,12 +311,6 @@ function Composer() {
     }, [input]);
 
     return (
-<<<<<<< HEAD
-        <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
-            <ComposerPrimitive.Input
-                placeholder="Message Carmenta..."
-                className="min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
-=======
         <form
             onSubmit={handleSubmit}
             className="glass-input-dock flex w-full max-w-[700px] items-center"
@@ -323,7 +322,6 @@ function Composer() {
                 onKeyDown={handleKeyDown}
                 placeholder="What's on your mind?"
                 className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
->>>>>>> 5d45fbf (♻️ Rewrite chat UI with Vercel AI SDK 5.0 patterns)
                 rows={1}
                 autoFocus
                 disabled={isLoading}

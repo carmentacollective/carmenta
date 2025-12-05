@@ -22,7 +22,7 @@ import {
     useRef,
     type ReactNode,
 } from "react";
-import { useChat, type UseChatHelpers, type UIMessage } from "@ai-sdk/react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
 
@@ -382,16 +382,19 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     }, [initialMessages]);
 
     // Create transport with custom fetch
+    // Note: We pass ref objects (not .current) to be read at fetch time, not render time
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
                 api: "/api/connection",
+                /* eslint-disable react-hooks/refs -- refs are read in fetch callback at call time, not render */
                 fetch: createFetchWrapper(
                     setConcierge,
                     overridesRef,
                     connectionIdRef,
                     addNewConnection
                 ),
+                /* eslint-enable react-hooks/refs */
                 prepareSendMessagesRequest(request) {
                     // Send the full messages array - API expects this format
                     return {
@@ -435,25 +438,31 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         setIsStreaming(isLoading);
     }, [isLoading, setIsStreaming]);
 
+    // Track previous message IDs to avoid stale closure issues
+    const prevMessageIdsRef = useRef<string>("");
+
     // Update messages when connection changes
     useEffect(() => {
         if (activeConnectionId && initialAIMessages && initialAIMessages.length > 0) {
             // Only set if different (prevents infinite loop)
-            const currentIds = messages.map((m) => m.id).join(",");
             const newIds = initialAIMessages.map((m) => m.id).join(",");
-            if (currentIds !== newIds) {
+            if (prevMessageIdsRef.current !== newIds) {
+                prevMessageIdsRef.current = newIds;
                 setMessages(initialAIMessages);
             }
         } else if (!activeConnectionId) {
+            prevMessageIdsRef.current = "";
             setMessages([]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeConnectionId, initialAIMessages, setMessages]);
 
     // Sync display error with SDK error
     useEffect(() => {
         if (error) {
             setDisplayError(error);
+        } else {
+            // Clear display error when SDK error clears
+            setDisplayError(null);
         }
     }, [error]);
 
