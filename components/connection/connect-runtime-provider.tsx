@@ -378,17 +378,14 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                             },
                             "New connection created, updating URL and adding to list"
                         );
-                        // Use replaceState to update URL without navigation
+                        // Update URL without navigation using replaceState
                         // This follows the pattern from ai-chatbot and open-webui
-                        // Guard: Only update URL if still on /connection/new to prevent
-                        // updating the wrong page if user navigated during slow response
-                        if (window.location.pathname === "/connection/new") {
-                            window.history.replaceState(
-                                {},
-                                "",
-                                `/connection/${connectionSlug}`
-                            );
-                        }
+                        window.history.replaceState(
+                            {},
+                            "",
+                            `/connection/${connectionSlug}`
+                        );
+
                         // Add to connections list with delightful animation
                         addNewConnection({
                             id: connectionId,
