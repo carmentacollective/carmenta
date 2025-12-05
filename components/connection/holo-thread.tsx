@@ -305,12 +305,12 @@ function Composer() {
     const handleStop = useCallback(() => {
         if (!isLoading) return;
         stop();
-        // Restore message for quick correction
-        if (lastSentMessageRef.current) {
+        // Restore message for quick correction (only if user hasn't typed new content)
+        if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
-            lastSentMessageRef.current = null;
         }
-    }, [isLoading, stop, setInput]);
+        lastSentMessageRef.current = null;
+    }, [isLoading, stop, input, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
