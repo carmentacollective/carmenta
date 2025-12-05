@@ -2,26 +2,46 @@ import Link from "next/link";
 
 import { Footer } from "@/components/footer";
 import { FAQSchema } from "@/components/seo/faq-schema";
+import { SiteHeader } from "@/components/site-header";
 import { ConnectCTA } from "@/components/ui/connect-cta";
+import { Greeting } from "@/components/ui/greeting";
 import { HolographicBackground } from "@/components/ui/holographic-background";
-import { OracleHero } from "@/components/ui/oracle-hero";
 
 export default function LandingPage() {
     return (
         <div className="relative flex min-h-screen flex-col">
             <FAQSchema />
 
-            {/* Animated holographic background (no watermark - logo displayed prominently in hero) */}
-            <HolographicBackground hideWatermark />
+            {/* Animated holographic background */}
+            <HolographicBackground />
 
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
-                {/* Oracle Hero - logo as mystical portal */}
-                <OracleHero />
+                <SiteHeader
+                    rightContent={
+                        <Link
+                            href="/connection/new"
+                            className="rounded-full bg-white/50 px-4 py-2 text-sm font-medium text-foreground/70 backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground"
+                        >
+                            Connect
+                        </Link>
+                    }
+                />
 
                 {/* Main content */}
-                <main className="flex flex-1 flex-col items-center px-6 pb-16">
+                <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
                     <div className="mx-auto max-w-2xl space-y-12 text-center">
+                        {/* Hero */}
+                        <section className="space-y-4">
+                            <div className="inline-block rounded-full bg-white/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground/60 backdrop-blur-sm">
+                                Building M2
+                            </div>
+                            <Greeting
+                                className="greeting-title"
+                                subtitleClassName="greeting-subtitle"
+                            />
+                        </section>
+
                         {/* Vision Card */}
                         <article className="glass-card space-y-4 text-left">
                             <h2 className="text-lg font-semibold text-foreground/90">
@@ -91,15 +111,15 @@ export default function LandingPage() {
                                     intact.
                                 </p>
                                 <p>
-                                    We're open source. The specification, the decisions,
-                                    the code—all{" "}
+                                    We're building in public. The specification, the
+                                    decisions, the code—all{" "}
                                     <Link
                                         href="https://github.com/carmentacollective/carmenta"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary"
                                     >
-                                        on GitHub
+                                        open on GitHub
                                     </Link>
                                     . Next: memory that spans conversations, so Carmenta
                                     truly knows you.
