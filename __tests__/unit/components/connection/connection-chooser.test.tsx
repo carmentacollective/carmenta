@@ -55,24 +55,24 @@ const mockConnections: PublicConnection[] = [
     }),
 ];
 
-// Default mock values
+// Default mock values - S5 state (has title, shows full [Search | Title | New] pill)
 const defaultMockValue = {
     connections: mockConnections,
     activeConnection: mockConnections[0],
-    freshConnectionIds: new Set<string>(),
-    isStreaming: false,
-    setActiveConnection: mockSetActiveConnection,
-    createNewConnection: mockCreateNewConnection,
-    deleteConnection: mockDeleteConnection,
-    isPending: false,
     activeConnectionId: mockConnections[0].id,
+    displayTitle: "First Conversation", // S5: has title
+    freshConnectionIds: new Set<string>(),
     runningCount: 0,
+    isStreaming: false,
     isLoaded: true,
+    isPending: false,
     error: null,
     initialMessages: [],
+    setActiveConnection: mockSetActiveConnection,
+    createNewConnection: mockCreateNewConnection,
     archiveActiveConnection: vi.fn(),
+    deleteConnection: mockDeleteConnection,
     clearError: vi.fn(),
-    refreshConnectionMetadata: vi.fn(),
     addNewConnection: vi.fn(),
     setIsStreaming: vi.fn(),
 };
@@ -116,9 +116,15 @@ describe("ConnectionChooser", () => {
         });
 
         it("hides search button when no connections exist", () => {
-            setupMock({ connections: [], activeConnection: undefined });
+            setupMock({
+                connections: [],
+                activeConnection: null,
+                activeConnectionId: null,
+                displayTitle: null, // S1: no connections
+            });
             render(<ConnectionChooser />);
 
+            // S1 renders nothing
             expect(screen.queryByTitle("Search connections")).not.toBeInTheDocument();
         });
 
@@ -393,7 +399,12 @@ describe("ConnectionChooser", () => {
 
     describe("Edge Cases", () => {
         it("handles empty connection list gracefully", () => {
-            setupMock({ connections: [], activeConnection: undefined });
+            setupMock({
+                connections: [],
+                activeConnection: null,
+                activeConnectionId: null,
+                displayTitle: null, // S1: no connections at all
+            });
             const { container } = render(<ConnectionChooser />);
 
             // S1 state: fresh user, renders nothing
@@ -404,6 +415,7 @@ describe("ConnectionChooser", () => {
             setupMock({
                 connections: [createMockConnection({ title: null })],
                 activeConnection: createMockConnection({ title: null }),
+                displayTitle: null, // S2-S4: no title yet
             });
             render(<ConnectionChooser />);
 
@@ -424,13 +436,16 @@ describe("ConnectionChooser", () => {
                         streamingStatus: "streaming",
                     }),
                 ],
+                displayTitle: "Streaming Connection", // S5: has title
             });
             render(<ConnectionChooser />);
 
             fireEvent.click(screen.getByTitle("Search connections"));
 
-            // Connection should appear in the list
-            expect(screen.getByText("Streaming Connection")).toBeInTheDocument();
+            // Connection should appear in the list (may appear twice - header and dropdown)
+            expect(
+                screen.getAllByText("Streaming Connection").length
+            ).toBeGreaterThanOrEqual(1);
         });
     });
 });
