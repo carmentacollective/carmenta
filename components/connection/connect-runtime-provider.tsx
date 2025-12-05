@@ -135,12 +135,15 @@ export function useModelOverrides() {
 }
 
 /**
- * Parses an error message that might be raw JSON and extracts the user-friendly message.
+ * Parses an error message and extracts a user-friendly message.
+ * Handles JSON error responses, HTML error pages, and plain text.
  */
 function parseErrorMessage(message: string | undefined): string {
     if (!message) return "We couldn't complete that request.";
 
     const trimmed = message.trim();
+
+    // Handle JSON error responses
     if (trimmed.startsWith("{")) {
         try {
             const parsed = JSON.parse(trimmed);
@@ -150,6 +153,24 @@ function parseErrorMessage(message: string | undefined): string {
         } catch {
             // Not valid JSON
         }
+    }
+
+    // Handle HTML error pages (like 404s) - extract just the status code if present
+    if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+        // Try to extract status code from Next.js error page
+        const statusMatch = trimmed.match(/<h1[^>]*>(\d{3})<\/h1>/);
+        if (statusMatch) {
+            const status = statusMatch[1];
+            if (status === "404") return "The requested endpoint was not found.";
+            if (status === "500") return "The server encountered an error.";
+            return `Server returned status ${status}.`;
+        }
+        return "The server returned an unexpected response.";
+    }
+
+    // If the message is very long (likely a stack trace or HTML), truncate it
+    if (trimmed.length > 200) {
+        return "An unexpected error occurred.";
     }
 
     return message;
