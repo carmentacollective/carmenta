@@ -102,15 +102,25 @@ export function ConnectionProvider({
     const [connections, setConnections] =
         useState<PublicConnection[]>(initialConnections);
 
-    // Local state for active connection - allows updating when new connection is created
-    // Initialized from server prop, updated on navigation or new connection
-    const [localActiveConnection, setLocalActiveConnection] =
-        useState<PublicConnection | null>(activeConnection);
+    // Override connection - only set when a new connection is created via addNewConnection.
+    // We use the prop by default and only override when explicitly set.
+    // This avoids the timing issue where state sync via useEffect happens after render.
+    const [overrideConnection, setOverrideConnection] =
+        useState<PublicConnection | null>(null);
 
-    // Sync with prop when it changes (e.g., navigation to different connection)
-    useEffect(() => {
-        setLocalActiveConnection(activeConnection);
-    }, [activeConnection]);
+    // Effective active connection: use override only if it matches a "new connection" scenario
+    // (i.e., when we're on /connection/new and the override has data the prop doesn't).
+    // If the prop has data (navigation happened), always prefer the prop.
+    // This gives us immediate updates from props (navigation) while supporting
+    // local updates from addNewConnection.
+    const effectiveActiveConnection = useMemo(() => {
+        // If prop has a valid connection, use it (covers navigation case)
+        if (activeConnection) {
+            return activeConnection;
+        }
+        // No prop connection, use override if set (covers new connection case)
+        return overrideConnection;
+    }, [activeConnection, overrideConnection]);
 
     // Track recently created connections for animation (cleared after 3s)
     const [freshConnectionIds, setFreshConnectionIds] = useState<Set<string>>(
@@ -126,8 +136,8 @@ export function ConnectionProvider({
 
     const clearError = useCallback(() => setError(null), []);
 
-    // Derive active connection ID from local state
-    const activeConnectionId = localActiveConnection?.id ?? null;
+    // Derive active connection ID from effective connection
+    const activeConnectionId = effectiveActiveConnection?.id ?? null;
 
     // Count connections with streaming status (running in background)
     const runningCount = useMemo(
@@ -135,7 +145,8 @@ export function ConnectionProvider({
         [connections]
     );
 
-    const isLoaded = initialConnections.length > 0 || localActiveConnection !== null;
+    const isLoaded =
+        initialConnections.length > 0 || effectiveActiveConnection !== null;
 
     /**
      * Navigate to a connection using its slug.
@@ -308,8 +319,8 @@ export function ConnectionProvider({
                 lastActivityAt: now,
             };
 
-            // Set as active connection - this updates the header title
-            setLocalActiveConnection(newConnection);
+            // Set as active connection override - this updates the header title
+            setOverrideConnection(newConnection);
 
             // Add to front of list (most recent)
             setConnections((prev) => {
@@ -343,7 +354,7 @@ export function ConnectionProvider({
     const value = useMemo<ConnectionContextValue>(
         () => ({
             connections,
-            activeConnection: localActiveConnection,
+            activeConnection: effectiveActiveConnection,
             activeConnectionId,
             freshConnectionIds,
             runningCount,
@@ -363,7 +374,7 @@ export function ConnectionProvider({
         }),
         [
             connections,
-            localActiveConnection,
+            effectiveActiveConnection,
             activeConnectionId,
             freshConnectionIds,
             runningCount,
