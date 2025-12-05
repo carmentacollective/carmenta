@@ -384,14 +384,7 @@ export function ConnectHeader() {
                                                                 <div className="mt-0.5">
                                                                     {conn.streamingStatus ===
                                                                     "streaming" ? (
-                                                                        <Loader2
-                                                                            className={cn(
-                                                                                "h-4 w-4 animate-spin",
-                                                                                isFresh
-                                                                                    ? "text-primary"
-                                                                                    : "text-primary"
-                                                                            )}
-                                                                        />
+                                                                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                                                     ) : isFresh ? (
                                                                         <Sparkles className="h-4 w-4 animate-pulse text-primary" />
                                                                     ) : (
@@ -631,8 +624,7 @@ export function ConnectionChooser() {
                             transition={{ duration: 0.15 }}
                         />
                         <motion.div
-                            style={{ left: "50%", x: "-50%" }}
-                            className="absolute top-full z-50 mt-2 w-full max-w-[500px]"
+                            className="absolute left-1/2 top-full z-50 mt-2 w-full max-w-[500px] -translate-x-1/2"
                             initial={{ opacity: 0, y: -16 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -16 }}
@@ -653,6 +645,7 @@ export function ConnectionChooser() {
                                         onClick={closeSearch}
                                         className="rounded-full p-1 transition-colors hover:bg-foreground/5"
                                         title="Close"
+                                        aria-label="Close search"
                                     >
                                         <X className="h-4 w-4 text-foreground/40" />
                                     </button>

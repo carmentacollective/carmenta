@@ -64,8 +64,10 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     {/* Oracle - links to home */}
                     <CarmentaOracle />
 
-                    {/* Connection chooser - hidden until first conversation */}
-                    {showConnectionChooser && <ConnectionChooser />}
+                    {/* Center section - maintains spacing even when chooser is hidden */}
+                    <div className="flex flex-1 items-center justify-center">
+                        {showConnectionChooser && <ConnectionChooser />}
+                    </div>
 
                     {/* Account */}
                     <OptionalUserButton />
