@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 1,
         },
         {
-            url: `${baseUrl}/connect`,
+            url: `${baseUrl}/connection/new`,
             changeFrequency: "monthly",
             priority: 0.8,
         },

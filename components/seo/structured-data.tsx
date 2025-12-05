@@ -28,7 +28,7 @@ const organizationSchema: WithContext<Organization> = {
     contactPoint: {
         "@type": "ContactPoint",
         contactType: "Support",
-        url: "https://carmenta.ai/connect",
+        url: "https://carmenta.ai/connection/new",
     },
 };
 

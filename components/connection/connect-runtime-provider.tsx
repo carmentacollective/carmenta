@@ -258,7 +258,10 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     /**
      * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
-     * Note: We include `overrides` in deps so the callback updates when overrides change.
+     * Note: We include `overrides` and `activeConnectionId` in deps.
+     *
+     * When activeConnectionId changes, this callback is recreated, which recreates
+     * the transport, which recreates the runtime. This clears the in-memory thread state.
      */
     const fetchWithConcierge = useCallback(
         async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -364,7 +367,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                         setConcierge(conciergeData);
                     }
 
-                    // Check if this was a new connection - update URL and add to list
+                    // Add new connection to chooser list (no URL change)
                     const isNewConnection = response.headers.get("X-Connection-Is-New");
                     const connectionSlug = response.headers.get("X-Connection-Slug");
                     const connectionId = response.headers.get("X-Connection-Id");
@@ -376,17 +379,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                                 id: connectionId,
                                 title: connectionTitle,
                             },
-                            "New connection created, updating URL and adding to list"
+                            "New connection created, adding to list"
                         );
-                        // Update URL without navigation using replaceState
-                        // This follows the pattern from ai-chatbot and open-webui
-                        window.history.replaceState(
-                            {},
-                            "",
-                            `/connection/${connectionSlug}`
-                        );
-
-                        // Add to connections list with delightful animation
                         addNewConnection({
                             id: connectionId,
                             slug: connectionSlug,
@@ -444,8 +438,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     const handleRetry = useCallback(() => {
         setError(null);
-        // The user can simply resend their message after dismissing
-        // Focus the composer input for convenience
+        // Intentional UX: Don't auto-retry the failed request
+        // User must manually retype/resend to avoid:
+        // - Retrying invalid input repeatedly
+        // - Auto-retrying persistent server errors
+        // We just focus the composer for convenience
         const composer = document.querySelector<HTMLTextAreaElement>(
             '[data-testid="composer-input"], textarea[placeholder]'
         );
@@ -501,12 +498,9 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     threadMessages as any
                 );
                 runtime.thread.import(repository);
-            } else {
-                // New/empty connection - clear any existing messages
-                logger.debug(
-                    { connectionId: activeConnectionId },
-                    "New connection - clearing thread"
-                );
+            } else if (!activeConnectionId) {
+                // Only clear thread when we truly have no connection (/connection/new)
+                logger.debug({}, "No active connection - clearing thread");
                 runtime.thread.import(ExportedMessageRepository.fromArray([]));
             }
         } catch (err) {

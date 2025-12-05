@@ -111,36 +111,16 @@ export function ConnectionProvider({
     // Error state - surfaces operation failures to the UI
     const [error, setError] = useState<Error | null>(null);
 
-    // Track ID of just-created connection (bridges timing gap before server prop arrives)
-    // This is needed because usePathname() doesn't update after replaceState()
-    const [pendingConnectionId, setPendingConnectionId] = useState<string | null>(null);
-
     const clearError = useCallback(() => setError(null), []);
-
-    // Clear pending connection when server prop arrives (navigation complete)
-    // This is intentional prop→state sync for the timing gap after replaceState()
-    useEffect(() => {
-        if (activeConnection) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setPendingConnectionId(null);
-        }
-    }, [activeConnection]);
 
     /**
      * Derive the active connection.
-     * Priority: server prop > pending (just created) > URL parsing
+     * Priority: server prop > URL parsing from connections list
      */
     const effectiveActiveConnection = useMemo(() => {
         // Server prop takes precedence (normal navigation)
         if (activeConnection) {
             return activeConnection;
-        }
-
-        // Just created a connection? Find it in our list by ID
-        // This handles the timing gap where usePathname() is stale after replaceState()
-        if (pendingConnectionId) {
-            const pending = connections.find((c) => c.id === pendingConnectionId);
-            if (pending) return pending;
         }
 
         // Fall back to URL parsing for edge cases (e.g., direct navigation, refresh)
@@ -157,7 +137,7 @@ export function ConnectionProvider({
         } catch {
             return null;
         }
-    }, [activeConnection, pendingConnectionId, pathname, connections]);
+    }, [activeConnection, pathname, connections]);
 
     // Derive active connection ID from effective connection
     const activeConnectionId = effectiveActiveConnection?.id ?? null;
@@ -188,7 +168,6 @@ export function ConnectionProvider({
      * This follows the pattern from ai-chatbot and LibreChat.
      */
     const handleCreateNewConnection = useCallback(() => {
-        setPendingConnectionId(null); // Clear any pending connection
         router.push("/connection/new");
     }, [router]);
 
@@ -242,7 +221,7 @@ export function ConnectionProvider({
     /**
      * Add a newly created connection to the list.
      * Called from runtime provider when a new connection is created via API.
-     * Triggers a delightful animation in the connection chooser.
+     * Does NOT update URL - just adds to list with animation.
      */
     const addNewConnection = useCallback(
         (
@@ -251,34 +230,26 @@ export function ConnectionProvider({
             const now = new Date();
             const newConnection: PublicConnection = {
                 id: partialConnection.id,
-                userId: "", // Will be filled in by actual data
+                userId: "",
                 slug: partialConnection.slug,
                 title: partialConnection.title ?? null,
                 modelId: partialConnection.modelId ?? null,
                 status: "active",
-                streamingStatus: "idle", // Runtime tracks actual streaming state
+                streamingStatus: "streaming",
                 createdAt: now,
                 updatedAt: now,
                 lastActivityAt: now,
             };
 
-            // Track as pending so effectiveActiveConnection finds it
-            // (usePathname is stale after replaceState)
-            setPendingConnectionId(newConnection.id);
-
-            // Add to front of list (most recent)
             setConnections((prev) => {
-                // Don't add if already exists
                 if (prev.some((c) => c.id === newConnection.id)) {
                     return prev;
                 }
                 return [newConnection, ...prev];
             });
 
-            // Mark as fresh for animation
             setFreshConnectionIds((prev) => new Set(prev).add(newConnection.id));
 
-            // Clear "fresh" status after animation completes (3 seconds)
             setTimeout(() => {
                 setFreshConnectionIds((prev) => {
                     const next = new Set(prev);
