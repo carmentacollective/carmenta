@@ -1,8 +1,9 @@
 ---
 name: research
 description:
-  Web research skill for augmenting agent context with current information. Used when
-  outdated information could lead to broken implementations or wasted effort.
+  "Use when current web information needed to avoid broken implementations. Triggers:
+  version-specific errors, deprecated methods, security-critical code, post-2023
+  technologies, or 'is this still how we do this?' moments."
 ---
 
 <philosophy>

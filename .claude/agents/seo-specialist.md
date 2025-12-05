@@ -1,10 +1,9 @@
 ---
 name: seo-specialist
 description:
-  Expert SEO strategist specializing in technical SEO, content optimization, and search
-  engine rankings. Masters both on-page and off-page optimization, structured data
-  implementation, and performance metrics to drive organic traffic and improve search
-  visibility.
+  "Invoke for SEO audits and optimization. Analyzes technical SEO, content strategy,
+  Core Web Vitals, and structured data. Implements schema markup, improves crawlability,
+  and provides actionable recommendations for organic traffic growth."
 tools: Read, Write, Edit, Bash
 ---
 

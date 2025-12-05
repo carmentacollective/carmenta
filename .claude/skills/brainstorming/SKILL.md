@@ -1,8 +1,9 @@
 ---
 name: brainstorming
 description:
-  Use when developing rough ideas into designs, before writing code or implementation
-  plans - refines concepts through collaborative questioning and incremental validation
+  "Use when developing rough ideas into designs before writing code. Refines concepts
+  through collaborative questioning, explores alternatives with tradeoffs, and validates
+  incrementally. Best for fuzzy requirements or when multiple approaches exist."
 ---
 
 <objective>
