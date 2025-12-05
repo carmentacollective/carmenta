@@ -474,10 +474,17 @@ export async function POST(req: Request) {
             };
         }
 
+        // Strip reasoning parts before sending to API
+        // Anthropic requires thinking blocks unchanged, but we don't need to send them back
+        const messagesWithoutReasoning = messages.map((msg) => ({
+            ...msg,
+            parts: msg.parts.filter((part) => part.type !== "reasoning"),
+        }));
+
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
             system: SYSTEM_PROMPT,
-            messages: convertToModelMessages(messages),
+            messages: convertToModelMessages(messagesWithoutReasoning),
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             ...(modelSupportsTools && { tools }),
             temperature: concierge.temperature,
