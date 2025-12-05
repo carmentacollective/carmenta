@@ -35,21 +35,8 @@ export default function SignInPage() {
                 <SignIn
                     appearance={{
                         elements: {
-                            rootBox: "mx-auto",
+                            // Page-specific: remove card shadow since we have HolographicBackground
                             card: "glass-card border-0 shadow-none",
-                            headerTitle: "text-foreground",
-                            headerSubtitle: "text-muted-foreground",
-                            socialButtonsBlockButton:
-                                "bg-white/50 text-foreground hover:bg-white/80 border border-foreground/10 backdrop-blur-sm",
-                            socialButtonsBlockButtonText: "text-foreground font-medium",
-                            dividerLine: "bg-foreground/10",
-                            dividerText: "text-muted-foreground",
-                            formFieldLabel: "text-foreground",
-                            formFieldInput:
-                                "bg-white/50 border-foreground/10 text-foreground focus:ring-primary backdrop-blur-sm",
-                            formButtonPrimary: "btn-holo border-0",
-                            footerActionLink: "text-primary hover:text-primary/80",
-                            identityPreviewEditButton: "text-primary",
                         },
                     }}
                     forceRedirectUrl="/connection"

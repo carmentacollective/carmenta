@@ -175,13 +175,9 @@ export function OracleHero() {
                     0%,
                     100% {
                         opacity: 0.3;
-                        transform: rotate(inherit) translateX(115px) translateY(-50%)
-                            scale(1);
                     }
                     50% {
                         opacity: 1;
-                        transform: rotate(inherit) translateX(115px) translateY(-50%)
-                            scale(1.4);
                     }
                 }
             `}</style>

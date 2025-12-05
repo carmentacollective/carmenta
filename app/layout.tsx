@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
 /**
@@ -121,7 +122,12 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
+        <ClerkProvider
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            afterSignOutUrl="/"
+            appearance={clerkAppearance}
+        >
             <UserProvider>
                 <html
                     lang="en"
