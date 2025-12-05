@@ -1,20 +1,29 @@
 "use client";
 
+/**
+ * Connect Runtime Provider
+ *
+ * Provides chat functionality via Vercel AI SDK 5.0's useChat hook.
+ * This is the core state management for the chat interface.
+ *
+ * Pattern based on Vercel's ai-chatbot reference implementation:
+ * - Uses useChat with UIMessage type (parts-based messages)
+ * - Uses DefaultChatTransport for custom fetch logic
+ * - Exposes sendMessage, status, and messages to children
+ */
+
 import {
     useMemo,
     useCallback,
     useState,
     useEffect,
-    useRef,
     createContext,
     useContext,
+    useRef,
+    type ReactNode,
 } from "react";
-import {
-    AssistantRuntimeProvider,
-    ExportedMessageRepository,
-    useThread,
-} from "@assistant-ui/react";
-import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
+import { useChat, type UseChatHelpers, type UIMessage } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
 
 import { logger } from "@/lib/client-logger";
@@ -29,86 +38,70 @@ import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 /**
- * Convert UIMessageLike (our DB format) to ThreadMessageLike (assistant-ui format)
- * Main difference: UIMessageLike uses "parts", ThreadMessageLike uses "content"
- *
- * ThreadMessageLike content supports: text, reasoning, tool-call, file, source, image, data
- * Our UIMessageLike parts use: text, reasoning, tool-*, data-*, file, step-start
+ * Convert our DB UIMessageLike format to AI SDK UIMessage format
  */
-type ThreadMessageContent =
-    | { type: "text"; text: string }
-    | { type: "reasoning"; text: string }
-    | {
-          type: "tool-call";
-          toolCallId: string;
-          toolName: string;
-          args?: Record<string, unknown>;
-          result?: unknown;
-      };
-
-function toThreadMessageLike(msg: UIMessageLike): {
-    id: string;
-    role: "user" | "assistant" | "system";
-    content: ThreadMessageContent[];
-    createdAt?: Date;
-} {
-    // Map our parts to assistant-ui content format
-    const content: ThreadMessageContent[] = [];
-
-    for (const part of msg.parts) {
-        // Text parts
-        if (part.type === "text") {
-            content.push({ type: "text", text: part.text as string });
-            continue;
-        }
-
-        // Reasoning parts
-        if (part.type === "reasoning") {
-            content.push({ type: "reasoning", text: part.text as string });
-            continue;
-        }
-
-        // Tool parts: "tool-getWeather" → type: "tool-call"
-        if (part.type.startsWith("tool-")) {
-            const toolName = part.type.replace("tool-", "");
-            content.push({
-                type: "tool-call",
-                toolCallId: (part.toolCallId as string) ?? "",
-                toolName,
-                args: part.input as Record<string, unknown>,
-                result: part.output,
-            });
-            continue;
-        }
-
-        // Data parts and step-start - convert to text representation for now
-        // (assistant-ui data parts have different structure)
-        if (part.type.startsWith("data-") || part.type === "step-start") {
-            // Skip these as they're UI-only parts
-            continue;
-        }
-
-        // Fallback: unknown parts become text placeholders
-        content.push({ type: "text", text: `[${part.type}]` });
-    }
-
-    // Ensure we have at least one content item
-    if (content.length === 0) {
-        content.push({ type: "text", text: "" });
-    }
-
+function toAIMessage(msg: UIMessageLike): UIMessage {
     return {
         id: msg.id,
         role: msg.role,
-        content,
-        createdAt: msg.createdAt,
+        parts: msg.parts.map((part) => {
+            if (part.type === "text") {
+                return { type: "text" as const, text: String(part.text || "") };
+            }
+            if (part.type === "reasoning") {
+                return {
+                    type: "reasoning" as const,
+                    text: String(part.text || ""),
+                    // providerMetadata is optional - omit if not present
+                };
+            }
+            // Default to text for any unknown types
+            return { type: "text" as const, text: String(part.text || "") };
+        }),
     };
 }
 
-interface ConnectRuntimeProviderProps {
-    children: React.ReactNode;
+/**
+ * Chat context type - provides chat state and actions to children
+ */
+interface ChatContextType {
+    /** Messages in the chat */
+    messages: UIMessage[];
+    /** Send a message - wraps sendMessage with our format */
+    append: (message: { role: "user"; content: string }) => Promise<void>;
+    /** Whether the AI is currently generating */
+    isLoading: boolean;
+    /** Stop the current generation */
+    stop: () => void;
+    /** Regenerate the last response */
+    reload: () => void;
+    /** Error from the last request */
+    error: Error | null;
+    /** Clear error */
+    clearError: () => void;
+    /** Current input value (managed locally) */
+    input: string;
+    /** Set input value */
+    setInput: (input: string) => void;
+    /** Handle input change */
+    handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    /** Handle form submission */
+    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
+const ChatContext = createContext<ChatContextType | null>(null);
+
+export function useChatContext() {
+    const context = useContext(ChatContext);
+    if (!context) {
+        throw new Error("useChatContext must be used within ConnectRuntimeProvider");
+    }
+    return context;
+}
+
+/**
+ * Chat error context - for components that only need error state
+ */
 interface ChatErrorContextType {
     error: Error | null;
     clearError: () => void;
@@ -143,23 +136,19 @@ export function useModelOverrides() {
 
 /**
  * Parses an error message that might be raw JSON and extracts the user-friendly message.
- * The API returns JSON like {"error": "friendly message", "errorType": "Error"}
- * but the AI SDK may pass this as the raw error message.
  */
 function parseErrorMessage(message: string | undefined): string {
     if (!message) return "We couldn't complete that request.";
 
-    // Check if it looks like JSON
     const trimmed = message.trim();
     if (trimmed.startsWith("{")) {
         try {
             const parsed = JSON.parse(trimmed);
-            // If it has an 'error' field, use that (our API format)
             if (typeof parsed.error === "string") {
                 return parsed.error;
             }
         } catch {
-            // Not valid JSON, return as-is
+            // Not valid JSON
         }
     }
 
@@ -168,7 +157,6 @@ function parseErrorMessage(message: string | undefined): string {
 
 /**
  * Error banner displayed when a runtime error occurs.
- * Provides a way to dismiss the error and retry.
  */
 function RuntimeErrorBanner({
     error,
@@ -179,7 +167,6 @@ function RuntimeErrorBanner({
     onDismiss: () => void;
     onRetry: () => void;
 }) {
-    // Parse the error message in case it's raw JSON from the API
     const displayMessage = parseErrorMessage(error.message);
 
     return (
@@ -227,293 +214,331 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
     reasoning: null,
 };
 
-/**
- * Syncs the assistant-ui thread streaming state with the connection context.
- * Must be rendered inside AssistantRuntimeProvider.
- */
-function StreamingStateSync() {
-    const { setIsStreaming } = useConnection();
-    const isRunning = useThread((t) => t.isRunning);
-
-    useEffect(() => {
-        setIsStreaming(isRunning);
-    }, [isRunning, setIsStreaming]);
-
-    return null;
+interface ConnectRuntimeProviderProps {
+    children: ReactNode;
 }
 
 /**
- * Inner provider that has access to concierge context and error handling.
+ * Custom fetch wrapper that injects connectionId, model overrides,
+ * and extracts concierge headers from responses.
+ */
+function createFetchWrapper(
+    setConcierge: (data: ReturnType<typeof parseConciergeHeaders>) => void,
+    overridesRef: React.MutableRefObject<ModelOverrides>,
+    connectionIdRef: React.MutableRefObject<string | null>,
+    addNewConnection: (connection: {
+        id: string;
+        slug: string;
+        title: string | null;
+        modelId: string | null;
+    }) => void
+) {
+    return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = typeof input === "string" ? input : input.toString();
+        const method = init?.method || "GET";
+
+        logger.debug({ url, method }, "API request starting");
+
+        // Clear stale concierge data
+        setConcierge(null);
+
+        // Inject connectionId and model overrides into POST body
+        let modifiedInit = init;
+        if (method === "POST" && init?.body) {
+            try {
+                const body = JSON.parse(init.body as string);
+
+                if (connectionIdRef.current) {
+                    body.connectionId = connectionIdRef.current;
+                }
+
+                if (overridesRef.current.modelId) {
+                    body.modelOverride = overridesRef.current.modelId;
+                }
+                if (overridesRef.current.temperature !== null) {
+                    body.temperatureOverride = overridesRef.current.temperature;
+                }
+                if (overridesRef.current.reasoning) {
+                    body.reasoningOverride = overridesRef.current.reasoning;
+                }
+
+                modifiedInit = {
+                    ...init,
+                    body: JSON.stringify(body),
+                };
+
+                logger.debug(
+                    {
+                        connectionId: connectionIdRef.current,
+                        modelOverride: overridesRef.current.modelId,
+                    },
+                    "Applied connectionId and model overrides"
+                );
+            } catch {
+                logger.warn({}, "Failed to parse request body for override injection");
+            }
+        }
+
+        try {
+            const response = await fetch(input, modifiedInit);
+
+            if (!response.ok) {
+                let errorDetails: unknown = null;
+                try {
+                    errorDetails = await response.clone().json();
+                } catch {
+                    try {
+                        errorDetails = await response.clone().text();
+                    } catch {
+                        errorDetails = "Could not read response body";
+                    }
+                }
+
+                logger.error(
+                    { url, method, status: response.status, errorDetails },
+                    "API request failed"
+                );
+                setConcierge(null);
+            } else {
+                logger.debug(
+                    { url, method, status: response.status },
+                    "API request successful"
+                );
+
+                // Parse concierge headers
+                const conciergeData = parseConciergeHeaders(response);
+                if (conciergeData) {
+                    logger.debug(
+                        { modelId: conciergeData.modelId },
+                        "Concierge data received"
+                    );
+                    setConcierge(conciergeData);
+                }
+
+                // Handle new connection creation
+                const isNewConnection = response.headers.get("X-Connection-Is-New");
+                const connectionSlug = response.headers.get("X-Connection-Slug");
+                const connectionId = response.headers.get("X-Connection-Id");
+                const connectionTitle = response.headers.get("X-Connection-Title");
+                if (isNewConnection === "true" && connectionSlug && connectionId) {
+                    logger.info(
+                        { slug: connectionSlug, id: connectionId },
+                        "New connection created"
+                    );
+                    addNewConnection({
+                        id: connectionId,
+                        slug: connectionSlug,
+                        title: connectionTitle
+                            ? decodeURIComponent(connectionTitle)
+                            : null,
+                        modelId: conciergeData?.modelId ?? null,
+                    });
+                }
+            }
+
+            return response;
+        } catch (error) {
+            logger.error(
+                {
+                    url,
+                    method,
+                    error: error instanceof Error ? error.message : String(error),
+                },
+                "API request threw exception"
+            );
+            setConcierge(null);
+            throw error;
+        }
+    };
+}
+
+/**
+ * Inner provider that has access to concierge context.
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages, addNewConnection } = useConnection();
-    const [error, setError] = useState<Error | null>(null);
+    const { activeConnectionId, initialMessages, addNewConnection, setIsStreaming } =
+        useConnection();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
-    // Track last imported state to handle late-arriving messages
-    const lastImportedRef = useRef<{
-        connectionId: string | null;
-        messageCount: number;
-    }>({ connectionId: null, messageCount: 0 });
+    const [displayError, setDisplayError] = useState<Error | null>(null);
+    const [input, setInput] = useState("");
 
-    /**
-     * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
-     * Note: We include `overrides` and `activeConnectionId` in deps.
-     *
-     * When activeConnectionId changes, this callback is recreated, which recreates
-     * the transport, which recreates the runtime. This clears the in-memory thread state.
-     */
-    const fetchWithConcierge = useCallback(
-        async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            const url = typeof input === "string" ? input : input.toString();
-            const method = init?.method || "GET";
+    // Use refs for values that change but shouldn't recreate the transport
+    const overridesRef = useRef(overrides);
+    const connectionIdRef = useRef(activeConnectionId);
 
-            logger.debug({ url, method }, "API request starting");
+    useEffect(() => {
+        overridesRef.current = overrides;
+    }, [overrides]);
 
-            // Clear stale concierge data when new request starts
-            // This prevents showing previous message's model selection during loading
-            setConcierge(null);
+    useEffect(() => {
+        connectionIdRef.current = activeConnectionId;
+    }, [activeConnectionId]);
 
-            // Inject connectionId and model overrides into POST request body
-            let modifiedInit = init;
-            if (method === "POST" && init?.body) {
-                try {
-                    const body = JSON.parse(init.body as string);
+    // Convert initial messages to AI SDK UIMessage format
+    const initialAIMessages = useMemo(() => {
+        if (!initialMessages || initialMessages.length === 0) return undefined;
+        return initialMessages.map(toAIMessage);
+    }, [initialMessages]);
 
-                    // Include connectionId for message persistence
-                    if (activeConnectionId) {
-                        body.connectionId = activeConnectionId;
-                    }
-
-                    // Only add overrides that are non-null
-                    if (overrides.modelId) {
-                        body.modelOverride = overrides.modelId;
-                    }
-                    if (overrides.temperature !== null) {
-                        body.temperatureOverride = overrides.temperature;
-                    }
-                    if (overrides.reasoning) {
-                        body.reasoningOverride = overrides.reasoning;
-                    }
-
-                    modifiedInit = {
-                        ...init,
-                        body: JSON.stringify(body),
-                    };
-
-                    logger.debug(
-                        {
-                            connectionId: activeConnectionId,
-                            modelOverride: overrides.modelId,
-                            temperatureOverride: overrides.temperature,
-                            reasoningOverride: overrides.reasoning,
-                        },
-                        "Applied connectionId and model overrides to request"
-                    );
-                } catch {
-                    // If body parsing fails, proceed without modification
-                    logger.warn(
-                        {},
-                        "Failed to parse request body for override injection"
-                    );
-                }
-            }
-
-            try {
-                const response = await fetch(input, modifiedInit);
-
-                if (!response.ok) {
-                    // Try to get error details from response body
-                    let errorDetails: unknown = null;
-                    try {
-                        errorDetails = await response.clone().json();
-                    } catch {
-                        try {
-                            errorDetails = await response.clone().text();
-                        } catch {
-                            errorDetails = "Could not read response body";
-                        }
-                    }
-
-                    logger.error(
-                        {
-                            url,
-                            method,
-                            status: response.status,
-                            statusText: response.statusText,
-                            errorDetails,
-                        },
-                        "API request failed"
-                    );
-
-                    // Clear concierge on error
-                    setConcierge(null);
-                } else {
-                    logger.debug(
-                        { url, method, status: response.status },
-                        "API request successful"
-                    );
-
-                    // Parse and set concierge data from headers
-                    const conciergeData = parseConciergeHeaders(response);
-                    if (conciergeData) {
-                        logger.debug(
-                            {
-                                modelId: conciergeData.modelId,
-                                temperature: conciergeData.temperature,
-                            },
-                            "Concierge data received"
-                        );
-                        setConcierge(conciergeData);
-                    }
-
-                    // Add new connection to chooser list (no URL change)
-                    const isNewConnection = response.headers.get("X-Connection-Is-New");
-                    const connectionSlug = response.headers.get("X-Connection-Slug");
-                    const connectionId = response.headers.get("X-Connection-Id");
-                    const connectionTitle = response.headers.get("X-Connection-Title");
-                    if (isNewConnection === "true" && connectionSlug && connectionId) {
-                        logger.info(
-                            {
-                                slug: connectionSlug,
-                                id: connectionId,
-                                title: connectionTitle,
-                            },
-                            "New connection created, adding to list"
-                        );
-                        addNewConnection({
-                            id: connectionId,
-                            slug: connectionSlug,
-                            title: connectionTitle
-                                ? decodeURIComponent(connectionTitle)
-                                : null,
-                            modelId: conciergeData?.modelId ?? null,
-                        });
-                    }
-                }
-
-                return response;
-            } catch (error) {
-                logger.error(
-                    {
-                        url,
-                        method,
-                        error: error instanceof Error ? error.message : String(error),
-                        stack: error instanceof Error ? error.stack : undefined,
-                    },
-                    "API request threw exception"
-                );
-                setConcierge(null);
-                throw error;
-            }
-        },
-        [setConcierge, overrides, activeConnectionId, addNewConnection]
-    );
-
-    // Memoize transport to prevent recreation on every render
+    // Create transport with custom fetch
     const transport = useMemo(
         () =>
-            new AssistantChatTransport({
+            new DefaultChatTransport({
                 api: "/api/connection",
-                fetch: fetchWithConcierge,
+                fetch: createFetchWrapper(
+                    setConcierge,
+                    overridesRef,
+                    connectionIdRef,
+                    addNewConnection
+                ),
+                prepareSendMessagesRequest(request) {
+                    // The last message is the user's new message
+                    const userMessage = request.messages.at(-1);
+                    return {
+                        body: {
+                            id: request.id,
+                            message: userMessage,
+                            ...request.body,
+                        },
+                    };
+                },
             }),
-        [fetchWithConcierge]
+        [setConcierge, addNewConnection]
     );
 
-    const handleError = useCallback((err: Error) => {
-        logger.error(
-            {
-                error: err.message,
-                stack: err.stack,
-                name: err.name,
-            },
-            "Chat runtime error"
-        );
-        setError(err);
-    }, []);
+    // Chat hook with AI SDK 5.0
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        regenerate,
+        stop,
+        status,
+        error,
+        clearError: sdkClearError,
+    } = useChat({
+        id: activeConnectionId ?? undefined,
+        messages: initialAIMessages,
+        transport,
+        onError: (err) => {
+            logger.error({ error: err.message }, "Chat error");
+            setDisplayError(err);
+        },
+        experimental_throttle: 50,
+    });
+
+    // Derive isLoading from status
+    const isLoading = status === "streaming" || status === "submitted";
+
+    // Sync streaming state with connection context
+    useEffect(() => {
+        setIsStreaming(isLoading);
+    }, [isLoading, setIsStreaming]);
+
+    // Update messages when connection changes
+    useEffect(() => {
+        if (activeConnectionId && initialAIMessages && initialAIMessages.length > 0) {
+            // Only set if different (prevents infinite loop)
+            const currentIds = messages.map((m) => m.id).join(",");
+            const newIds = initialAIMessages.map((m) => m.id).join(",");
+            if (currentIds !== newIds) {
+                setMessages(initialAIMessages);
+            }
+        } else if (!activeConnectionId) {
+            setMessages([]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeConnectionId, initialAIMessages, setMessages]);
+
+    // Sync display error with SDK error
+    useEffect(() => {
+        if (error) {
+            setDisplayError(error);
+        }
+    }, [error]);
+
+    // Wrap sendMessage to use our simple format
+    const append = useCallback(
+        async (message: { role: "user"; content: string }) => {
+            setDisplayError(null);
+            setInput("");
+            try {
+                await sendMessage({
+                    role: message.role,
+                    parts: [{ type: "text", text: message.content }],
+                });
+            } catch (err) {
+                logger.error({ error: err }, "Failed to send message");
+                setInput(message.content); // Restore input on error
+                throw err;
+            }
+        },
+        [sendMessage]
+    );
+
+    // Input handling
+    const handleInputChange = useCallback(
+        (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            setInput(e.target.value);
+        },
+        []
+    );
+
+    const handleSubmit = useCallback(
+        async (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            if (!input.trim() || isLoading) return;
+            await append({ role: "user", content: input.trim() });
+        },
+        [input, isLoading, append]
+    );
 
     const clearError = useCallback(() => {
-        setError(null);
-    }, []);
+        setDisplayError(null);
+        sdkClearError();
+    }, [sdkClearError]);
 
     const handleRetry = useCallback(() => {
-        setError(null);
-        // Intentional UX: Don't auto-retry the failed request
-        // User must manually retype/resend to avoid:
-        // - Retrying invalid input repeatedly
-        // - Auto-retrying persistent server errors
-        // We just focus the composer for convenience
+        clearError();
         const composer = document.querySelector<HTMLTextAreaElement>(
             '[data-testid="composer-input"], textarea[placeholder]'
         );
         composer?.focus();
-    }, []);
+    }, [clearError]);
 
-    const runtime = useChatRuntime({
-        transport,
-        onError: handleError,
-    });
-
-    /**
-     * Initialize thread with messages when connection changes.
-     * This ensures existing messages are displayed when navigating to a connection.
-     *
-     * We track both connectionId and messageCount to handle:
-     * 1. Connection changes (clear and reload)
-     * 2. Late-arriving messages (messages that load after the connection ID is set)
-     */
-    useEffect(() => {
-        if (!activeConnectionId) return;
-
-        const currentMessageCount = initialMessages?.length ?? 0;
-        const lastImported = lastImportedRef.current;
-
-        // Skip if we've already imported these exact messages for this connection
-        const isSameConnection = lastImported.connectionId === activeConnectionId;
-        const isSameMessageCount = lastImported.messageCount === currentMessageCount;
-        if (isSameConnection && isSameMessageCount) return;
-
-        // Update tracking ref
-        lastImportedRef.current = {
-            connectionId: activeConnectionId,
-            messageCount: currentMessageCount,
-        };
-
-        try {
-            if (initialMessages && initialMessages.length > 0) {
-                logger.debug(
-                    {
-                        connectionId: activeConnectionId,
-                        messageCount: initialMessages.length,
-                    },
-                    "Initializing thread with existing messages"
-                );
-
-                // Convert UIMessageLike to ThreadMessageLike format for assistant-ui
-                const threadMessages = initialMessages.map(toThreadMessageLike);
-                // fromArray creates parent-child relationships based on message order
-                // Type assertion needed because our JSON types are looser than assistant-ui expects
-
-                const repository = ExportedMessageRepository.fromArray(
-                    threadMessages as any
-                );
-                runtime.thread.import(repository);
-            } else if (!activeConnectionId) {
-                // Only clear thread when we truly have no connection (/connection/new)
-                logger.debug({}, "No active connection - clearing thread");
-                runtime.thread.import(ExportedMessageRepository.fromArray([]));
-            }
-        } catch (err) {
-            logger.error(
-                { error: err, connectionId: activeConnectionId },
-                "Failed to import messages into thread"
-            );
-        }
-    }, [activeConnectionId, initialMessages, runtime]);
+    // Build context value
+    const chatContextValue = useMemo<ChatContextType>(
+        () => ({
+            messages,
+            append,
+            isLoading,
+            stop,
+            reload: regenerate,
+            error: displayError,
+            clearError,
+            input,
+            setInput,
+            handleInputChange,
+            handleSubmit,
+        }),
+        [
+            messages,
+            append,
+            isLoading,
+            stop,
+            regenerate,
+            displayError,
+            clearError,
+            input,
+            handleInputChange,
+            handleSubmit,
+        ]
+    );
 
     const errorContextValue = useMemo(
-        () => ({ error, clearError }),
-        [error, clearError]
+        () => ({ error: displayError, clearError }),
+        [displayError, clearError]
     );
 
     const overridesContextValue = useMemo(
@@ -524,32 +549,28 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     return (
         <ModelOverridesContext.Provider value={overridesContextValue}>
             <ChatErrorContext.Provider value={errorContextValue}>
-                <AssistantRuntimeProvider runtime={runtime}>
-                    <StreamingStateSync />
+                <ChatContext.Provider value={chatContextValue}>
                     {children}
-                    {error && (
+                    {displayError && (
                         <RuntimeErrorBanner
-                            error={error}
+                            error={displayError}
                             onDismiss={clearError}
                             onRetry={handleRetry}
                         />
                     )}
-                </AssistantRuntimeProvider>
+                </ChatContext.Provider>
             </ChatErrorContext.Provider>
         </ModelOverridesContext.Provider>
     );
 }
 
 /**
- * Provides the assistant-ui runtime configured for our /api/connection endpoint.
+ * Provides chat functionality via Vercel AI SDK's useChat hook.
  *
  * This wraps the app with:
  * - ConciergeProvider for concierge data
- * - AssistantRuntimeProvider for message state, tool UI, and streaming
+ * - ChatContext for message state and actions
  * - Runtime error display with retry capability
- *
- * Captures concierge headers from responses and makes them available
- * to child components via useConcierge().
  */
 export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
     return (

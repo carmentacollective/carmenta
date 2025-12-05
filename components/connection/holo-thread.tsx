@@ -1,15 +1,28 @@
 "use client";
 
-import { ComponentProps, forwardRef } from "react";
-import { SendHorizontal, ArrowDown, AlertCircle } from "lucide-react";
+/**
+ * HoloThread - Chat message thread with holographic styling
+ *
+ * Renders the message history and composer without assistant-ui dependencies.
+ * Uses our ChatContext for state and react-markdown for message rendering.
+ *
+ * Layout: Uses flexbox where the viewport takes flex-1 (grows) and the input
+ * container takes flex-none (natural height). This prevents overlap.
+ */
+
 import {
-    ComposerPrimitive,
-    MessagePrimitive,
-    ThreadPrimitive,
-    useMessage,
-} from "@assistant-ui/react";
-import type { ReasoningMessagePartProps } from "@assistant-ui/react";
-import { makeMarkdownText } from "@assistant-ui/react-ui";
+    useState,
+    useRef,
+    useEffect,
+    useCallback,
+    type FormEvent,
+    type KeyboardEvent,
+    type ComponentProps,
+    forwardRef,
+} from "react";
+import { SendHorizontal, ArrowDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
 import { useConcierge } from "@/lib/concierge/context";
@@ -18,63 +31,89 @@ import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
-import { useModelOverrides } from "./connect-runtime-provider";
+import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorPopover } from "./model-selector";
 
-/**
- * HoloThread - A custom Thread built with headless primitives.
- *
- * Instead of overriding assistant-ui's pre-styled Thread with !important hacks,
- * we build our own using the headless primitives and apply our holographic
- * theme directly. This is the "composition over inheritance" approach.
- *
- * Scroll Fades (Apple-level polish):
- * Uses bidirectional CSS mask fades (.chat-viewport-fade) with fixed pixel values:
- * - Top fade: 40px - subtle hint that content exists above
- * - Bottom fade: 56px - gentle transition into input dock area
- * These are whisper-thin by design - hints, not visibility blockers. Content
- * remains fully readable until the very edge. The fades are constant regardless
- * of viewport height, ensuring consistent subtlety across devices.
- *
- * Layout: Uses flexbox where the Viewport takes flex-1 (grows) and the input
- * container takes flex-none (natural height). Padding is calibrated to the fade
- * zones (pt-6/pb-20 mobile, pb-24 desktop) for tight, efficient screen use.
- *
- * Accessibility: Tab order follows DOM order (Viewport → Input), ensuring proper
- * keyboard navigation. Screen readers announce elements in logical sequence.
- *
- * Mobile: Responsive padding adjusts for smaller viewports. Virtual keyboard
- * appearance on mobile triggers viewport resize, which flexbox handles gracefully.
- */
 export function HoloThread() {
+    const { messages, isLoading } = useChatContext();
+    const viewportRef = useRef<HTMLDivElement>(null);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+        if (isAtBottom && viewportRef.current) {
+            viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+        }
+    }, [messages, isAtBottom]);
+
+    // Track scroll position
+    const handleScroll = useCallback(() => {
+        if (!viewportRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
+        const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        setIsAtBottom(nearBottom);
+    }, []);
+
+    const scrollToBottom = useCallback(() => {
+        if (viewportRef.current) {
+            viewportRef.current.scrollTo({
+                top: viewportRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, []);
+
+    const isEmpty = messages.length === 0;
+
     return (
+<<<<<<< HEAD
         <ThreadPrimitive.Root className="flex h-full flex-col bg-transparent">
             {/* Viewport with bidirectional fade mask - grows to fill available space
                 Padding calibrated to fade zones: top fade 40px, bottom fade 56px
                 Tighter spacing maximizes content area while respecting fade transitions */}
             <ThreadPrimitive.Viewport className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-20 pt-6 md:pb-24">
                 <ThreadPrimitive.Empty>
+=======
+        <div className="flex h-full flex-col bg-transparent">
+            {/* Viewport with fade mask */}
+            <div
+                ref={viewportRef}
+                onScroll={handleScroll}
+                className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-4 pb-24 pt-8 md:pb-32"
+            >
+                {isEmpty ? (
+>>>>>>> 5d45fbf (♻️ Rewrite chat UI with Vercel AI SDK 5.0 patterns)
                     <ThreadWelcome />
-                </ThreadPrimitive.Empty>
+                ) : (
+                    <div className="flex w-full max-w-[700px] flex-col">
+                        {messages.map((message, index) => (
+                            <MessageBubble
+                                key={message.id}
+                                message={message}
+                                isLast={index === messages.length - 1}
+                                isStreaming={isLoading && index === messages.length - 1}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
 
-                <ThreadPrimitive.Messages
-                    components={{
-                        UserMessage: UserMessage,
-                        AssistantMessage: AssistantMessage,
-                    }}
-                />
-            </ThreadPrimitive.Viewport>
-
-            {/* Input container - takes natural height, sits below viewport
-                flex-none prevents it from shrinking, naturally reserves space
-                No overlap with viewport content, even on short screens */}
+            {/* Input container */}
             <div className="flex flex-none items-center justify-center bg-transparent px-4 pb-4 pt-3">
                 <div className="relative flex w-full max-w-[700px] flex-col items-center">
-                    <ThreadScrollToBottom />
+                    {!isAtBottom && (
+                        <button
+                            onClick={scrollToBottom}
+                            className="absolute -top-10 rounded-full bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95"
+                            aria-label="Scroll to bottom"
+                        >
+                            <ArrowDown className="h-4 w-4 text-foreground/70" />
+                        </button>
+                    )}
                     <Composer />
                 </div>
             </div>
-        </ThreadPrimitive.Root>
+        </div>
     );
 }
 
@@ -93,58 +132,98 @@ function ThreadWelcome() {
 }
 
 /**
- * Markdown-enabled text component for rendering message content.
- * Uses assistant-ui's makeMarkdownText for proper markdown parsing.
- * Styling is applied via the holo-markdown class in globals.css.
+ * Extract text content from UIMessage parts
  */
-const MarkdownText = makeMarkdownText({
-    className: "holo-markdown",
-});
+function getMessageContent(message: UIMessage): string {
+    return message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => (part as { type: "text"; text: string }).text)
+        .join("");
+}
+
+/**
+ * Extract reasoning content from UIMessage parts
+ */
+function getReasoningContent(message: UIMessage): string | null {
+    const reasoningPart = message.parts.find((part) => part.type === "reasoning");
+    if (reasoningPart && reasoningPart.type === "reasoning") {
+        return (reasoningPart as { type: "reasoning"; text: string }).text;
+    }
+    return null;
+}
+
+/**
+ * Individual message bubble - user or assistant
+ */
+function MessageBubble({
+    message,
+    isLast,
+    isStreaming,
+}: {
+    message: UIMessage;
+    isLast: boolean;
+    isStreaming: boolean;
+}) {
+    if (message.role === "user") {
+        return <UserMessage message={message} />;
+    }
+
+    if (message.role === "assistant") {
+        return (
+            <AssistantMessage
+                message={message}
+                isLast={isLast}
+                isStreaming={isStreaming}
+            />
+        );
+    }
+
+    return null;
+}
 
 /**
  * User message bubble with holographic gradient.
  */
-function UserMessage() {
+function UserMessage({ message }: { message: UIMessage }) {
+    const content = getMessageContent(message);
     return (
-        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] justify-end">
+        <div className="my-4 flex w-full justify-end">
             <div className="user-message-bubble max-w-[80%] rounded-2xl rounded-br-md px-4 py-4">
-                <MessagePrimitive.Content components={{ Text: MarkdownText }} />
+                <div className="holo-markdown">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                </div>
             </div>
-        </MessagePrimitive.Root>
+        </div>
     );
 }
 
 /**
- * Reasoning content component for assistant-ui's content type.
- * Wraps our ReasoningDisplay to work with MessagePrimitive.Content.
+ * Assistant message bubble with glass effect.
+ * Includes concierge display, thinking indicator, and markdown content.
  */
-function ReasoningContent(props: ReasoningMessagePartProps) {
-    const isStreaming = props.status.type === "running";
-    return (
-        <ReasoningDisplay
-            content={props.text}
-            isStreaming={isStreaming}
-            className="mb-3"
-        />
-    );
-}
-
-/**
- * Assistant message bubble content.
- * This inner component uses the useMessage hook to check status.
- */
-function AssistantMessageContent() {
-    const isRunning = useMessage((state) => state.status?.type === "running");
-    const hasContent = useMessage((state) => state.content && state.content.length > 0);
+function AssistantMessage({
+    message,
+    isLast,
+    isStreaming,
+}: {
+    message: UIMessage;
+    isLast: boolean;
+    isStreaming: boolean;
+}) {
     const { concierge } = useConcierge();
+    const content = getMessageContent(message);
+    const hasContent = content.trim().length > 0;
 
-    // Show thinking indicator only when running AND no content yet
-    const showThinking = isRunning && !hasContent;
+    // Show thinking indicator only when streaming AND no content yet AND this is the last message
+    const showThinking = isStreaming && !hasContent && isLast;
+
+    // Check for reasoning in message parts
+    const reasoning = getReasoningContent(message);
 
     return (
-        <>
-            {/* Concierge display - shown before response content */}
-            {concierge && (
+        <div className="my-4 flex w-full flex-col gap-2">
+            {/* Concierge display - shown for the most recent assistant message */}
+            {isLast && concierge && (
                 <ConciergeDisplay
                     modelId={concierge.modelId}
                     temperature={concierge.temperature}
@@ -157,43 +236,24 @@ function AssistantMessageContent() {
             {/* Thinking indicator - shown while waiting for first content */}
             {showThinking && <ThinkingIndicator className="mb-2" />}
 
-            <div className="assistant-message-bubble max-w-[85%] rounded-2xl rounded-bl-md px-4 py-4">
-                <MessagePrimitive.Content
-                    components={{
-                        Text: MarkdownText,
-                        Reasoning: ReasoningContent,
-                    }}
+            {/* Reasoning display if present */}
+            {reasoning && (
+                <ReasoningDisplay
+                    content={reasoning}
+                    isStreaming={isStreaming}
+                    className="mb-3"
                 />
-            </div>
+            )}
 
-            <MessagePrimitive.Error>
-                <div
-                    className="error-message-bubble flex max-w-[85%] items-center gap-2 rounded-xl px-4 py-4"
-                    role="alert"
-                >
-                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500/80" />
-                    <span className="text-base text-red-600/90">
-                        We hit a snag. Give it a moment.
-                    </span>
+            {/* Message content */}
+            {hasContent && (
+                <div className="assistant-message-bubble max-w-[85%] rounded-2xl rounded-bl-md px-4 py-4">
+                    <div className="holo-markdown">
+                        <ReactMarkdown>{content}</ReactMarkdown>
+                    </div>
                 </div>
-            </MessagePrimitive.Error>
-        </>
-    );
-}
-
-/**
- * Assistant message bubble with glass effect.
- * Includes:
- * - Concierge display showing model selection reasoning
- * - Thinking indicator while waiting for response
- * - Reasoning display for extended thinking content
- * - Error handling with user-friendly messages
- */
-function AssistantMessage() {
-    return (
-        <MessagePrimitive.Root className="my-4 flex w-full max-w-[700px] flex-col gap-2">
-            <AssistantMessageContent />
-        </MessagePrimitive.Root>
+            )}
+        </div>
     );
 }
 
@@ -203,25 +263,82 @@ function AssistantMessage() {
 function Composer() {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge } = useConcierge();
+    const { append, isLoading, input, setInput, handleInputChange } = useChatContext();
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Get the model config for concierge-selected model (for icon display)
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
+    const handleSubmit = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            if (!input.trim() || isLoading) return;
+
+            const message = input.trim();
+            setInput("");
+
+            try {
+                await append({ role: "user", content: message });
+            } catch (error) {
+                // Error is handled by the runtime provider
+                setInput(message); // Restore input on error
+            }
+        },
+        [input, isLoading, setInput, append]
+    );
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent<HTMLTextAreaElement>) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e as unknown as FormEvent);
+            }
+        },
+        [handleSubmit]
+    );
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.height = "auto";
+            inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+        }
+    }, [input]);
+
     return (
+<<<<<<< HEAD
         <ComposerPrimitive.Root className="glass-input-dock flex w-full max-w-[700px] items-center">
             <ComposerPrimitive.Input
                 placeholder="Message Carmenta..."
                 className="min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+=======
+        <form
+            onSubmit={handleSubmit}
+            className="glass-input-dock flex w-full max-w-[700px] items-center"
+        >
+            <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="What's on your mind?"
+                className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+>>>>>>> 5d45fbf (♻️ Rewrite chat UI with Vercel AI SDK 5.0 patterns)
                 rows={1}
                 autoFocus
+                disabled={isLoading}
+                data-testid="composer-input"
             />
 
             <div className="flex items-center gap-2 pr-1">
-                <ComposerPrimitive.Send asChild>
-                    <ComposerButton variant="send" aria-label="Send message">
-                        <SendHorizontal className="h-5 w-5" />
-                    </ComposerButton>
-                </ComposerPrimitive.Send>
+                <ComposerButton
+                    type="submit"
+                    variant="send"
+                    aria-label="Send message"
+                    disabled={!input.trim() || isLoading}
+                >
+                    <SendHorizontal className="h-5 w-5" />
+                </ComposerButton>
 
                 <ModelSelectorPopover
                     overrides={overrides}
@@ -229,23 +346,7 @@ function Composer() {
                     conciergeModel={conciergeModel}
                 />
             </div>
-        </ComposerPrimitive.Root>
-    );
-}
-
-/**
- * Scroll to bottom button.
- */
-function ThreadScrollToBottom() {
-    return (
-        <ThreadPrimitive.ScrollToBottom asChild>
-            <button
-                className="absolute -top-10 rounded-full bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95 disabled:invisible"
-                aria-label="Scroll to bottom"
-            >
-                <ArrowDown className="h-4 w-4 text-foreground/70" />
-            </button>
-        </ThreadPrimitive.ScrollToBottom>
+        </form>
     );
 }
 
@@ -257,16 +358,20 @@ interface ComposerButtonProps extends ComponentProps<"button"> {
 }
 
 const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
-    ({ className, variant = "ghost", ...props }, ref) => {
+    ({ className, variant = "ghost", disabled, ...props }, ref) => {
         return (
             <button
                 ref={ref}
+                disabled={disabled}
                 className={cn(
                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
                     variant === "ghost" &&
                         "bg-white/50 text-foreground/60 hover:scale-105 hover:bg-white/80",
                     variant === "send" &&
-                        "bg-gradient-to-br from-[rgba(200,160,220,0.9)] via-[rgba(160,200,220,0.9)] to-[rgba(220,180,200,0.9)] text-white opacity-70 shadow-md hover:scale-105 hover:opacity-100",
+                        "bg-gradient-to-br from-[rgba(200,160,220,0.9)] via-[rgba(160,200,220,0.9)] to-[rgba(220,180,200,0.9)] text-white shadow-md hover:scale-105",
+                    disabled
+                        ? "cursor-not-allowed opacity-50"
+                        : "opacity-70 hover:opacity-100",
                     className
                 )}
                 {...props}
