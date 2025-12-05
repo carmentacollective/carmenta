@@ -217,7 +217,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
             className={cn("not-prose", className)}
         >
             <CollapsibleTrigger
-                className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 data-testid="reasoning-trigger"
             >
                 <Brain
@@ -237,7 +237,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
 
             <CollapsibleContent
                 className={cn(
-                    "mt-2 overflow-hidden text-xs text-muted-foreground",
+                    "mt-2 overflow-hidden text-sm text-muted-foreground",
                     "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2",
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
                 )}

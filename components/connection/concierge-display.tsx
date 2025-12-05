@@ -91,7 +91,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
             onOpenChange={setIsOpen}
             className={cn("not-prose", className)}
         >
-            <CollapsibleTrigger className="group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-xs transition-colors hover:bg-white/5">
+            <CollapsibleTrigger className="group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/5">
                 <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40" />
                 <div className="min-w-0 flex-1">
                     <span className="font-medium text-foreground/70">
@@ -124,7 +124,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0"
                 )}
             >
-                <div className="ml-5 mt-1 space-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs">
+                <div className="ml-5 mt-1 space-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
                     <div className="flex items-center justify-between">
                         <span className="text-foreground/40">Model</span>
                         <code className="font-mono text-foreground/60">{modelId}</code>
