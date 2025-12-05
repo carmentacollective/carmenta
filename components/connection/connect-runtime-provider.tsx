@@ -253,7 +253,7 @@ function createFetchWrapper(
         title: string | null;
         modelId: string | null;
     }) => void,
-    onNewConnectionCreated: (slug: string, connectionId: string) => void
+    onNewConnectionCreated: (title: string | null, slug: string | null) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const url = typeof input === "string" ? input : input.toString();
@@ -347,16 +347,16 @@ function createFetchWrapper(
                         { slug: connectionSlug, id: connectionId },
                         "New connection created"
                     );
+                    const decodedTitle = connectionTitle
+                        ? decodeURIComponent(connectionTitle)
+                        : null;
                     addNewConnection({
                         id: connectionId,
                         slug: connectionSlug,
-                        title: connectionTitle
-                            ? decodeURIComponent(connectionTitle)
-                            : null,
+                        title: decodedTitle,
                         modelId: conciergeData?.modelId ?? null,
                     });
-                    // Update URL to the new connection (without full navigation)
-                    onNewConnectionCreated(connectionSlug, connectionId);
+                    onNewConnectionCreated(decodedTitle, connectionSlug);
                 }
             }
 
@@ -408,26 +408,20 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         connectionIdRef.current = activeConnectionId;
     }, [activeConnectionId]);
 
-    // Handle URL update when a new connection is created
-    // Uses window.history.replaceState to update URL WITHOUT triggering navigation.
-    // This is critical - router.replace() causes a full page load which loses stream state.
+    // Update document title and URL when a new connection is created
+    // Uses replaceState so the URL updates without triggering navigation
     const handleNewConnectionCreated = useCallback(
-        (slug: string, connectionId: string) => {
-            logger.debug({ slug, connectionId }, "Updating URL for new connection");
-            // Update URL without triggering Next.js navigation/page load.
-            // We preserve existing history.state (which contains Next.js router state like __NA)
-            // to avoid breaking back/forward navigation. Adding connectionId for potential
-            // future use in popstate handling.
-            window.history.replaceState(
-                { ...window.history.state, connectionId },
-                "",
-                `/connection/${slug}`
-            );
-            // Update document title to match new connection
-            const titleWord = slug.split("-")[0] || "Connection";
-            const capitalizedTitle =
-                titleWord.charAt(0).toUpperCase() + titleWord.slice(1);
-            document.title = `${capitalizedTitle} | Carmenta`;
+        (title: string | null, slug: string | null) => {
+            if (title) {
+                document.title = `${title} | Carmenta`;
+            }
+            if (slug) {
+                window.history.replaceState(
+                    { ...window.history.state },
+                    "",
+                    `/connection/${slug}`
+                );
+            }
         },
         []
     );

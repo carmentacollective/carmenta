@@ -3,17 +3,19 @@
 /**
  * Connection Chooser
  *
- * Glass pill for switching between connections.
- * Shows search, title, and new button. Dropdown lists recent connections.
+ * Contextual navigation that grows with user's history.
  *
- * Features:
- * - Debounced search filter (300ms) for performance
- * - Keyboard navigation (ESC to close)
- * - Animated transitions for smooth UX
+ * States:
+ * - S1: Fresh user (no connections) → renders nothing
+ * - S2/S3/S4: Untitled connection → minimal "Recent Connections..." trigger
+ * - S5: Titled connection → full [Search | Title | New] pill
+ *
+ * The component gracefully expands when a title arrives,
+ * creating a moment of delight as the conversation gets named.
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Plus, Search, X, Clock, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Search, X, Clock, Trash2, Loader2, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -50,93 +52,88 @@ function getRelativeTime(date: Date | null): string {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/** Animated indicator for running connections */
+/** Animated indicator for streaming/running connections */
 function RunningIndicator() {
     return (
-        <div className="flex items-center gap-1">
-            <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-        </div>
+        <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+        </span>
     );
 }
 
-/** Animated title with smooth fade-in */
-function AnimatedTitle({ title }: { title: string }) {
-    return (
-        <motion.span
-            key={title}
-            className="truncate text-sm text-foreground/70"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-        >
-            {title}
-        </motion.span>
+/** Shared dropdown for both minimal and full states */
+function ConnectionDropdown({
+    isOpen,
+    onClose,
+    connections,
+    activeConnection,
+    freshConnectionIds,
+    onSelect,
+    onDelete,
+    query,
+    setQuery,
+    debouncedQuery,
+    inputRef,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    connections: ReturnType<typeof useConnection>["connections"];
+    activeConnection: ReturnType<typeof useConnection>["activeConnection"];
+    freshConnectionIds: Set<string>;
+    onSelect: (slug: string) => void;
+    onDelete: (id: string) => void;
+    query: string;
+    setQuery: (q: string) => void;
+    debouncedQuery: string;
+    inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = useCallback(
+        (e: React.MouseEvent, connectionId: string) => {
+            e.stopPropagation();
+            setPendingDeleteId(connectionId);
+        },
+        []
     );
-}
 
-export function ConnectionChooser() {
-    const {
-        connections,
-        activeConnection,
-        freshConnectionIds,
-        isStreaming,
-        setActiveConnection,
-        createNewConnection,
-        deleteConnection,
-        isPending,
-    } = useConnection();
+    const confirmDelete = useCallback(
+        (e: React.MouseEvent, connectionId: string) => {
+            e.stopPropagation();
+            onDelete(connectionId);
+            setPendingDeleteId(null);
+        },
+        [onDelete]
+    );
 
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [query, setQuery] = useState("");
-    const debouncedQuery = useDebouncedValue(query, 300);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const closeSearch = useCallback(() => {
-        setIsSearchOpen(false);
-        setQuery("");
+    const cancelDelete = useCallback(() => {
+        setPendingDeleteId(null);
     }, []);
 
-    const openSearch = useCallback(() => setIsSearchOpen(true), []);
+    // Wrap onClose to also clear pending delete state
+    const handleClose = useCallback(() => {
+        setPendingDeleteId(null);
+        onClose();
+    }, [onClose]);
 
-    const handleSelect = useCallback(
-        (slug: string) => {
-            setActiveConnection(slug);
-            closeSearch();
-        },
-        [setActiveConnection, closeSearch]
-    );
-
-    const handleDelete = useCallback(
-        (e: React.MouseEvent, connectionId: string) => {
-            e.stopPropagation(); // Prevent selecting the connection
-            deleteConnection(connectionId);
-        },
-        [deleteConnection]
-    );
-
-    // Focus input when search opens
+    // Handle ESC to cancel delete or close
     useEffect(() => {
-        if (isSearchOpen && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [isSearchOpen]);
-
-    // Handle ESC key to close search
-    useEffect(() => {
+        if (!isOpen) return;
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isSearchOpen) {
-                closeSearch();
+            if (e.key === "Escape") {
+                if (pendingDeleteId) {
+                    cancelDelete();
+                } else {
+                    handleClose();
+                }
             }
         };
         window.addEventListener("keydown", handleEscape);
         return () => window.removeEventListener("keydown", handleEscape);
-    }, [isSearchOpen, closeSearch]);
+    }, [isOpen, handleClose, pendingDeleteId, cancelDelete]);
 
-    // Filter connections based on debounced search query
+    // Filter connections based on search
     const filtered = useMemo(() => {
         if (!debouncedQuery.trim()) {
             return connections.slice(0, 6);
@@ -149,231 +146,352 @@ export function ConnectionChooser() {
         );
     }, [connections, debouncedQuery]);
 
-    const displayTitle = activeConnection?.title || "";
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div
+                        className="fixed inset-0 z-40"
+                        onClick={handleClose}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                    />
 
+                    {/* Dropdown panel */}
+                    <motion.div
+                        className="fixed inset-x-0 top-24 z-50 mx-auto w-[calc(100vw-2rem)] sm:w-[420px]"
+                        initial={{ opacity: 0, y: -12, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                        <div className="overflow-hidden rounded-2xl bg-white/90 shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
+                            {/* Search header */}
+                            <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
+                                <Search className="h-5 w-5 text-foreground/40" />
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Search..."
+                                    className="flex-1 bg-transparent text-base text-foreground/90 outline-none placeholder:text-foreground/40"
+                                />
+                                <button
+                                    onClick={handleClose}
+                                    className="rounded-full p-1 transition-colors hover:bg-foreground/5"
+                                    aria-label="Close"
+                                >
+                                    <X className="h-4 w-4 text-foreground/40" />
+                                </button>
+                            </div>
+
+                            {/* Connection list */}
+                            <div className="max-h-[50vh] overflow-y-auto">
+                                <div className="flex items-center gap-2 bg-foreground/[0.03] px-4 py-2">
+                                    <Clock className="h-3.5 w-3.5 text-foreground/40" />
+                                    <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                        {debouncedQuery ? "Results" : "Recent"}
+                                    </span>
+                                </div>
+
+                                {filtered.length > 0 ? (
+                                    <div className="py-1">
+                                        {filtered.map((conn, index) => {
+                                            const isFresh = freshConnectionIds.has(
+                                                conn.id
+                                            );
+                                            const isPendingDelete =
+                                                pendingDeleteId === conn.id;
+                                            const isActive =
+                                                conn.id === activeConnection?.id;
+
+                                            // Delete confirmation state
+                                            if (isPendingDelete) {
+                                                return (
+                                                    <motion.div
+                                                        key={conn.id}
+                                                        className="flex items-center justify-between bg-red-50 px-4 py-3"
+                                                        initial={{
+                                                            backgroundColor:
+                                                                "transparent",
+                                                        }}
+                                                        animate={{
+                                                            backgroundColor:
+                                                                "rgb(254 242 242)",
+                                                        }}
+                                                        transition={{ duration: 0.15 }}
+                                                    >
+                                                        <span className="text-sm text-red-700">
+                                                            Delete &ldquo;
+                                                            {conn.title ||
+                                                                "this connection"}
+                                                            &rdquo;?
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    cancelDelete();
+                                                                }}
+                                                                className="rounded-lg px-3 py-1.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-white/60"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) =>
+                                                                    confirmDelete(
+                                                                        e,
+                                                                        conn.id
+                                                                    )
+                                                                }
+                                                                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            }
+
+                                            return (
+                                                <motion.div
+                                                    key={conn.id}
+                                                    className={cn(
+                                                        "group flex items-center gap-3 px-4 py-2.5 transition-colors",
+                                                        isActive && "bg-primary/5",
+                                                        isFresh &&
+                                                            "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
+                                                    )}
+                                                    initial={{ opacity: 0, x: -8 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{
+                                                        duration: 0.2,
+                                                        delay: index * 0.03,
+                                                        ease: "easeOut",
+                                                    }}
+                                                >
+                                                    <button
+                                                        onClick={() =>
+                                                            onSelect(conn.slug)
+                                                        }
+                                                        className="flex flex-1 items-center gap-3 text-left transition-colors hover:text-foreground"
+                                                    >
+                                                        <span
+                                                            className={cn(
+                                                                "min-w-0 flex-1 truncate text-sm font-medium",
+                                                                isActive
+                                                                    ? "text-foreground"
+                                                                    : "text-foreground/80"
+                                                            )}
+                                                        >
+                                                            {conn.title ||
+                                                                "New connection"}
+                                                        </span>
+                                                        {isFresh && (
+                                                            <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                                                                new
+                                                            </span>
+                                                        )}
+                                                        <span className="shrink-0 text-xs text-foreground/40">
+                                                            {isFresh
+                                                                ? "Just now"
+                                                                : getRelativeTime(
+                                                                      conn.lastActivityAt
+                                                                  )}
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) =>
+                                                            handleDeleteClick(
+                                                                e,
+                                                                conn.id
+                                                            )
+                                                        }
+                                                        className="rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                                                        title={`Delete ${conn.title || "connection"}`}
+                                                        aria-label={`Delete ${conn.title || "connection"}`}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
+                                                    </button>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center text-sm text-foreground/50">
+                                        {connections.length === 0
+                                            ? "We haven't started any connections yet"
+                                            : "No matching connections found"}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+}
+
+export function ConnectionChooser() {
+    const {
+        connections,
+        activeConnection,
+        displayTitle,
+        freshConnectionIds,
+        isStreaming,
+        setActiveConnection,
+        createNewConnection,
+        deleteConnection,
+        isPending,
+    } = useConnection();
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const debouncedQuery = useDebouncedValue(query, 300);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const openDropdown = useCallback(() => setIsDropdownOpen(true), []);
+    const closeDropdown = useCallback(() => {
+        setIsDropdownOpen(false);
+        setQuery("");
+    }, []);
+
+    const handleSelect = useCallback(
+        (slug: string) => {
+            setActiveConnection(slug);
+            closeDropdown();
+        },
+        [setActiveConnection, closeDropdown]
+    );
+
+    // Focus input when dropdown opens
+    useEffect(() => {
+        if (isDropdownOpen && inputRef.current) {
+            requestAnimationFrame(() => {
+                inputRef.current?.focus();
+            });
+        }
+    }, [isDropdownOpen]);
+
+    const hasConnections = connections.length > 0;
+    const hasTitle = Boolean(displayTitle);
+    const title = displayTitle ?? "";
+
+    // S1: Fresh user - render nothing
+    if (!hasConnections) {
+        return null;
+    }
+
+    // Unified container - smooth transitions between states
     return (
         <div className="relative">
             <motion.div
                 layout
                 className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-2",
+                    "flex items-center rounded-xl",
                     "bg-white/60 ring-1 ring-foreground/15 backdrop-blur-xl",
-                    "hover:bg-white/70 hover:ring-foreground/20",
-                    "transition-colors duration-200"
+                    "transition-colors duration-200",
+                    "hover:bg-white/70 hover:ring-foreground/20"
                 )}
+                transition={{
+                    layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                }}
             >
-                {/* Search button - only shows after first connection */}
-                {connections.length > 0 && (
-                    <button
-                        onClick={openSearch}
-                        className="text-foreground/40 transition-colors hover:text-foreground/60"
-                        title="Search connections"
-                    >
-                        <Search className="h-4 w-4" />
-                    </button>
-                )}
-
-                {/* Title section - only shows when there's a title */}
-                <AnimatePresence mode="popLayout">
-                    {displayTitle && (
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {hasTitle ? (
+                        // S5: Full layout [Search | Title | New]
                         <motion.div
-                            key="title-section"
-                            className="flex items-center gap-3 overflow-hidden"
-                            initial={{ width: 0, opacity: 0 }}
-                            animate={{ width: "auto", opacity: 1 }}
-                            exit={{ width: 0, opacity: 0 }}
-                            transition={{
-                                width: { type: "spring", stiffness: 300, damping: 30 },
-                                opacity: { duration: 0.2 },
-                            }}
-                        >
-                            {connections.length > 0 && (
-                                <div className="h-4 w-px bg-foreground/10" />
-                            )}
-
-                            {connections.length > 0 ? (
-                                <button
-                                    onClick={openSearch}
-                                    className="flex items-center gap-2 whitespace-nowrap"
-                                >
-                                    {isStreaming && <RunningIndicator />}
-                                    <AnimatedTitle title={displayTitle} />
-                                </button>
-                            ) : (
-                                <div className="flex items-center gap-2 whitespace-nowrap">
-                                    {isStreaming && <RunningIndicator />}
-                                    <AnimatedTitle title={displayTitle} />
-                                </div>
-                            )}
-
-                            <div className="h-4 w-px bg-foreground/10" />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* New connection button */}
-                <button
-                    onClick={createNewConnection}
-                    disabled={isPending}
-                    className={cn(
-                        "flex items-center gap-1.5 text-sm transition-all",
-                        "text-foreground/50 hover:text-foreground/80",
-                        "disabled:opacity-50"
-                    )}
-                    title="New connection"
-                >
-                    {isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <Plus className="h-4 w-4" />
-                    )}
-                    <span className="hidden font-medium sm:inline">New</span>
-                </button>
-            </motion.div>
-
-            {/* Search dropdown */}
-            <AnimatePresence>
-                {isSearchOpen && (
-                    <>
-                        <motion.div
-                            className="fixed inset-0 z-40"
-                            onClick={closeSearch}
+                            key="full"
+                            className="flex items-center gap-3 px-4 py-2"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                        />
-                        <motion.div
-                            className="absolute left-1/2 top-full z-50 mt-2 w-full max-w-[500px] -translate-x-1/2"
-                            initial={{ opacity: 0, y: -16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -16 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            transition={{ duration: 0.2 }}
                         >
-                            <div className="overflow-hidden rounded-2xl bg-white/80 shadow-2xl ring-1 ring-foreground/20 backdrop-blur-xl">
-                                <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
-                                    <Search className="h-5 w-5 text-foreground/40" />
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                        placeholder="Search connections..."
-                                        className="flex-1 bg-transparent text-base text-foreground/90 outline-none placeholder:text-foreground/40"
-                                    />
-                                    <button
-                                        onClick={closeSearch}
-                                        className="rounded-full p-1 transition-colors hover:bg-foreground/5"
-                                        title="Close"
-                                        aria-label="Close search"
-                                    >
-                                        <X className="h-4 w-4 text-foreground/40" />
-                                    </button>
-                                </div>
+                            {/* Search button */}
+                            <button
+                                onClick={openDropdown}
+                                className="text-foreground/40 transition-colors hover:text-foreground/60"
+                                title="Search connections"
+                            >
+                                <Search className="h-4 w-4" />
+                            </button>
 
-                                <div className="max-h-80 overflow-y-auto">
-                                    <div className="flex items-center gap-2 bg-foreground/5 px-4 py-2">
-                                        <Clock className="h-3.5 w-3.5 text-foreground/40" />
-                                        <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
-                                            {debouncedQuery ? "Results" : "Recent"}
-                                        </span>
-                                    </div>
-                                    {filtered.length > 0 ? (
-                                        <div className="py-2">
-                                            {filtered.map((conn, index) => {
-                                                const isFresh = freshConnectionIds.has(
-                                                    conn.id
-                                                );
-                                                return (
-                                                    <div
-                                                        key={conn.id}
-                                                        className={cn(
-                                                            "group flex items-start gap-3 px-4 py-2.5 transition-all hover:bg-foreground/5",
-                                                            conn.id ===
-                                                                activeConnection?.id &&
-                                                                "bg-primary/5",
-                                                            "animate-in fade-in slide-in-from-left-2",
-                                                            isFresh &&
-                                                                "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
-                                                        )}
-                                                        style={{
-                                                            animationDelay: `${index * 30}ms`,
-                                                            animationFillMode:
-                                                                "backwards",
-                                                        }}
-                                                    >
-                                                        <button
-                                                            onClick={() =>
-                                                                handleSelect(conn.slug)
-                                                            }
-                                                            className="flex flex-1 items-start gap-3 text-left"
-                                                        >
-                                                            <div className="mt-0.5">
-                                                                {conn.streamingStatus ===
-                                                                "streaming" ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                                ) : isFresh ? (
-                                                                    <Sparkles className="h-4 w-4 animate-pulse text-primary" />
-                                                                ) : (
-                                                                    <Sparkles className="h-4 w-4 text-foreground/40" />
-                                                                )}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span
-                                                                        className={cn(
-                                                                            "truncate text-sm font-medium",
-                                                                            isFresh
-                                                                                ? "text-foreground/90"
-                                                                                : "text-foreground/80"
-                                                                        )}
-                                                                    >
-                                                                        {conn.title ||
-                                                                            "New connection"}
-                                                                    </span>
-                                                                    {isFresh && (
-                                                                        <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                                                                            new
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs text-foreground/30">
-                                                                    {isFresh
-                                                                        ? "Just now"
-                                                                        : getRelativeTime(
-                                                                              conn.lastActivityAt
-                                                                          )}
-                                                                </span>
-                                                            </div>
-                                                        </button>
-                                                        {/* Delete button - appears on hover and focus for keyboard users */}
-                                                        <button
-                                                            onClick={(e) =>
-                                                                handleDelete(e, conn.id)
-                                                            }
-                                                            className="mt-0.5 rounded-md p-1 opacity-0 transition-opacity hover:bg-red-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
-                                                            title={`Delete ${conn.title || "connection"}`}
-                                                            aria-label={`Delete ${conn.title || "connection"}`}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="py-8 text-center text-sm text-foreground/50">
-                                            {connections.length === 0
-                                                ? "We haven't started any connections yet"
-                                                : "We couldn't find any matching connections"}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            {/* Divider */}
+                            <div className="h-4 w-px bg-foreground/10" />
+
+                            {/* Title */}
+                            <button
+                                onClick={openDropdown}
+                                className="flex items-center gap-2 transition-colors hover:text-foreground/80"
+                            >
+                                {isStreaming && <RunningIndicator />}
+                                <span className="text-sm text-foreground/70">
+                                    {title}
+                                </span>
+                            </button>
+
+                            {/* Divider */}
+                            <div className="h-4 w-px bg-foreground/10" />
+
+                            {/* New button */}
+                            <button
+                                onClick={createNewConnection}
+                                disabled={isPending}
+                                className={cn(
+                                    "flex items-center gap-1.5 text-sm transition-all",
+                                    "text-foreground/50 hover:text-foreground/80",
+                                    "disabled:opacity-50"
+                                )}
+                                title="New connection"
+                            >
+                                {isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Plus className="h-4 w-4" />
+                                )}
+                                <span className="hidden font-medium sm:inline">
+                                    New
+                                </span>
+                            </button>
                         </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                    ) : (
+                        // S2/S3/S4: Minimal trigger
+                        <motion.button
+                            key="minimal"
+                            onClick={openDropdown}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground/60"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {isStreaming && <RunningIndicator />}
+                            <span>Recent Connections</span>
+                            <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                        </motion.button>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+
+            <ConnectionDropdown
+                isOpen={isDropdownOpen}
+                onClose={closeDropdown}
+                connections={connections}
+                activeConnection={activeConnection}
+                freshConnectionIds={freshConnectionIds}
+                onSelect={handleSelect}
+                onDelete={deleteConnection}
+                query={query}
+                setQuery={setQuery}
+                debouncedQuery={debouncedQuery}
+                inputRef={inputRef}
+            />
         </div>
     );
 }

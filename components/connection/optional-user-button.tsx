@@ -13,9 +13,9 @@ export function OptionalUserButton() {
     const { user } = useUser();
     const { signOut, openUserProfile } = useClerk();
 
-    // Don't render until Clerk loads, or if not signed in
+    // Reserve space to prevent layout shift
     if (!isLoaded || !isSignedIn || !user) {
-        return null;
+        return <div className="h-12 w-12" aria-hidden="true" />;
     }
 
     return (
