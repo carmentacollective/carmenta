@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Carmenta - Heart-Centered AI",
         short_name: "Carmenta",
         description:
-            "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders working at the speed of thought.",
+            "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
         start_url: "/",
         display: "standalone",
         background_color: "#0a0a0a",
