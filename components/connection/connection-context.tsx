@@ -6,11 +6,11 @@
  * Manages the active connection state shared between
  * the header navigation and the chat interface.
  *
- * Architecture:
- * - Receives initial data from server component (SSR)
- * - Uses server actions for mutations (create, archive, delete)
- * - Maintains local state for fast UI updates
- * - Supports both URL-based routing (/connection/[id]) and context-based switching
+ * Simplified Architecture:
+ * - Uses URL as source of truth (via pathname)
+ * - Server prop provides connection when available (after navigation)
+ * - For new connections, reads from client-side list until server catches up
+ * - No complex state synchronization - pathname tells us everything we need
  */
 
 import {
@@ -21,7 +21,6 @@ import {
     useTransition,
     useMemo,
     useEffect,
-    useRef,
     type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -29,16 +28,16 @@ import { useRouter, usePathname } from "next/navigation";
 import {
     archiveConnection,
     deleteConnection as deleteConnectionAction,
-    getConnectionMetadata,
     type PublicConnection,
 } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/client-logger";
+import { extractIdFromSlug } from "@/lib/sqids";
 
 interface ConnectionContextValue {
     /** All available connections (recent) */
     connections: PublicConnection[];
-    /** Currently active connection (from DB) */
+    /** Currently active connection */
     activeConnection: PublicConnection | null;
     /** ID of the currently active connection */
     activeConnectionId: string | null;
@@ -66,8 +65,6 @@ interface ConnectionContextValue {
     deleteConnection: (id: string) => void;
     /** Clear the current error */
     clearError: () => void;
-    /** Refresh connection metadata (call after streaming to sync URL/title) */
-    refreshConnectionMetadata: () => Promise<boolean>;
     /** Add a newly created connection to the list (called from runtime provider) */
     addNewConnection: (
         connection: Partial<PublicConnection> & { id: string; slug: string }
@@ -82,7 +79,7 @@ interface ConnectionProviderProps {
     children: ReactNode;
     /** Initial connections from server (recent list) */
     initialConnections?: PublicConnection[];
-    /** The currently active connection (from [id] param) */
+    /** The currently active connection (from server) */
     activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
@@ -102,38 +99,6 @@ export function ConnectionProvider({
     const [connections, setConnections] =
         useState<PublicConnection[]>(initialConnections);
 
-    // Override connection - only set when a new connection is created via addNewConnection.
-    // We use the prop by default and only override when explicitly set.
-    // This avoids the timing issue where state sync via useEffect happens after render.
-    const [overrideConnection, setOverrideConnection] =
-        useState<PublicConnection | null>(null);
-
-    // Clear override when activeConnection prop changes (navigation happened).
-    // This prevents stale override from showing when user clicks "New" after
-    // creating a connection. This is intentional props→state sync.
-    const prevPropIdRef = useRef(activeConnection?.id);
-    useEffect(() => {
-        if (activeConnection?.id !== prevPropIdRef.current) {
-            prevPropIdRef.current = activeConnection?.id;
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setOverrideConnection(null);
-        }
-    }, [activeConnection?.id]);
-
-    // Effective active connection: use override only if it matches a "new connection" scenario
-    // (i.e., when we're on /connection/new and the override has data the prop doesn't).
-    // If the prop has data (navigation happened), always prefer the prop.
-    // This gives us immediate updates from props (navigation) while supporting
-    // local updates from addNewConnection.
-    const effectiveActiveConnection = useMemo(() => {
-        // If prop has a valid connection, use it (covers navigation case)
-        if (activeConnection) {
-            return activeConnection;
-        }
-        // No prop connection, use override if set (covers new connection case)
-        return overrideConnection;
-    }, [activeConnection, overrideConnection]);
-
     // Track recently created connections for animation (cleared after 3s)
     const [freshConnectionIds, setFreshConnectionIds] = useState<Set<string>>(
         new Set()
@@ -146,7 +111,53 @@ export function ConnectionProvider({
     // Error state - surfaces operation failures to the UI
     const [error, setError] = useState<Error | null>(null);
 
+    // Track ID of just-created connection (bridges timing gap before server prop arrives)
+    // This is needed because usePathname() doesn't update after replaceState()
+    const [pendingConnectionId, setPendingConnectionId] = useState<string | null>(null);
+
     const clearError = useCallback(() => setError(null), []);
+
+    // Clear pending connection when server prop arrives (navigation complete)
+    // This is intentional prop→state sync for the timing gap after replaceState()
+    useEffect(() => {
+        if (activeConnection) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setPendingConnectionId(null);
+        }
+    }, [activeConnection]);
+
+    /**
+     * Derive the active connection.
+     * Priority: server prop > pending (just created) > URL parsing
+     */
+    const effectiveActiveConnection = useMemo(() => {
+        // Server prop takes precedence (normal navigation)
+        if (activeConnection) {
+            return activeConnection;
+        }
+
+        // Just created a connection? Find it in our list by ID
+        // This handles the timing gap where usePathname() is stale after replaceState()
+        if (pendingConnectionId) {
+            const pending = connections.find((c) => c.id === pendingConnectionId);
+            if (pending) return pending;
+        }
+
+        // Fall back to URL parsing for edge cases (e.g., direct navigation, refresh)
+        const pathSegments = pathname.split("/");
+        const slug = pathSegments[pathSegments.length - 1];
+
+        if (!slug || slug === "new" || slug === "connection") {
+            return null;
+        }
+
+        try {
+            const connectionId = extractIdFromSlug(slug);
+            return connections.find((c) => c.id === connectionId) ?? null;
+        } catch {
+            return null;
+        }
+    }, [activeConnection, pendingConnectionId, pathname, connections]);
 
     // Derive active connection ID from effective connection
     const activeConnectionId = effectiveActiveConnection?.id ?? null;
@@ -177,6 +188,7 @@ export function ConnectionProvider({
      * This follows the pattern from ai-chatbot and LibreChat.
      */
     const handleCreateNewConnection = useCallback(() => {
+        setPendingConnectionId(null); // Clear any pending connection
         router.push("/connection/new");
     }, [router]);
 
@@ -228,90 +240,9 @@ export function ConnectionProvider({
     );
 
     /**
-     * Refresh connection metadata from the server.
-     * Call this after streaming completes to sync URL and page title
-     * if the connection title was generated.
-     *
-     * @returns true if title was updated, false otherwise
-     */
-    const refreshConnectionMetadata = useCallback(async (): Promise<boolean> => {
-        if (!activeConnectionId) return false;
-
-        try {
-            const metadata = await getConnectionMetadata(activeConnectionId);
-            if (!metadata) return false;
-
-            // Check if slug changed (title was generated)
-            const currentSlug = pathname.split("/").pop();
-            if (metadata.slug !== currentSlug) {
-                logger.debug(
-                    { oldSlug: currentSlug, newSlug: metadata.slug },
-                    "Slug changed, updating URL"
-                );
-
-                // Update URL without navigation (replace in history)
-                router.replace(`/connection/${metadata.slug}`);
-
-                // Update document title
-                if (metadata.title) {
-                    document.title = `${metadata.title} | Carmenta`;
-                }
-
-                // Update the connections list with new metadata
-                setConnections((prev) =>
-                    prev.map((c) =>
-                        c.id === activeConnectionId
-                            ? { ...c, title: metadata.title, slug: metadata.slug }
-                            : c
-                    )
-                );
-
-                return true; // Title was updated
-            }
-            return false;
-        } catch (err) {
-            // Non-critical - log but don't error
-            logger.warn({ error: err }, "Failed to refresh connection metadata");
-            return false;
-        }
-    }, [activeConnectionId, pathname, router]);
-
-    /**
-     * Title is now generated by concierge at connection creation time.
-     * No polling needed - URL updates via replaceState when new connection is created.
-     *
-     * This effect can be used for edge cases like page refresh on old URLs
-     * where the slug might be stale.
-     */
-    // Track if we've already refreshed metadata for this connection
-    const refreshedRef = useRef<string | null>(null);
-
-    useEffect(() => {
-        // Skip if no connection or already has title
-        if (!activeConnectionId || activeConnection?.title) {
-            return;
-        }
-
-        // Skip if we've already refreshed for this connection
-        if (refreshedRef.current === activeConnectionId) {
-            return;
-        }
-
-        // Mark as refreshed to prevent duplicate calls
-        refreshedRef.current = activeConnectionId;
-
-        // Schedule the refresh for next tick to avoid synchronous setState
-        const timeoutId = setTimeout(() => {
-            refreshConnectionMetadata();
-        }, 0);
-
-        return () => clearTimeout(timeoutId);
-    }, [activeConnectionId, activeConnection?.title, refreshConnectionMetadata]);
-
-    /**
-     * Add a newly created connection to the list and set it as active.
+     * Add a newly created connection to the list.
      * Called from runtime provider when a new connection is created via API.
-     * Triggers a delightful animation in the connection chooser and updates the header title.
+     * Triggers a delightful animation in the connection chooser.
      */
     const addNewConnection = useCallback(
         (
@@ -331,8 +262,9 @@ export function ConnectionProvider({
                 lastActivityAt: now,
             };
 
-            // Set as active connection override - this updates the header title
-            setOverrideConnection(newConnection);
+            // Track as pending so effectiveActiveConnection finds it
+            // (usePathname is stale after replaceState)
+            setPendingConnectionId(newConnection.id);
 
             // Add to front of list (most recent)
             setConnections((prev) => {
@@ -357,7 +289,7 @@ export function ConnectionProvider({
 
             logger.debug(
                 { connectionId: newConnection.id, title: newConnection.title },
-                "Added new connection to list and set as active"
+                "Added new connection to list"
             );
         },
         []
@@ -380,7 +312,6 @@ export function ConnectionProvider({
             archiveActiveConnection,
             deleteConnection: handleDeleteConnection,
             clearError,
-            refreshConnectionMetadata,
             addNewConnection,
             setIsStreaming,
         }),
@@ -400,7 +331,6 @@ export function ConnectionProvider({
             archiveActiveConnection,
             handleDeleteConnection,
             clearError,
-            refreshConnectionMetadata,
             addNewConnection,
         ]
     );
