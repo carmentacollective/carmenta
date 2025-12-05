@@ -53,8 +53,12 @@
         /* Glassmorphism */
         --glass-blur: 24px;
 
-        /* Chat viewport fade (iOS Messages pattern) */
-        --chat-fade-start: 65%;
+        /* Chat viewport fade - Apple-level subtle fades
+         * Uses fixed pixels, not percentages, for consistent subtlety
+         * Top fade: hint that content exists above
+         * Bottom fade: slightly larger to transition into input dock area */
+        --chat-fade-top: 40px;
+        --chat-fade-bottom: 56px;
     }
 
     .dark {
@@ -358,20 +362,30 @@
     }
 
     /*
-     * Chat viewport fade (iOS Messages pattern)
-     * Prevents content from showing under the glass input dock.
-     * Content gradually fades to transparent starting at var(--chat-fade-start).
+     * Chat viewport fade - Apple-level subtle bidirectional fades
+     *
+     * Creates whisper-thin fades at both edges:
+     * - Top fade (40px): subtle hint under the header
+     * - Bottom fade (56px): gentle transition into input dock area
+     *
+     * The fades are fixed pixels, not percentages, ensuring they remain
+     * subtle regardless of viewport height. Content stays readable until
+     * the very edge - these are polish, not visibility blockers.
      */
     .chat-viewport-fade {
         mask-image: linear-gradient(
             to bottom,
-            black var(--chat-fade-start),
-            transparent 100%
+            transparent,
+            black var(--chat-fade-top),
+            black calc(100% - var(--chat-fade-bottom)),
+            transparent
         );
         -webkit-mask-image: linear-gradient(
             to bottom,
-            black var(--chat-fade-start),
-            transparent 100%
+            transparent,
+            black var(--chat-fade-top),
+            black calc(100% - var(--chat-fade-bottom)),
+            transparent
         );
     }
 
