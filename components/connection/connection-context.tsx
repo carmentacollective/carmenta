@@ -20,6 +20,7 @@ import {
     useCallback,
     useTransition,
     useMemo,
+    useEffect,
     type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -110,37 +111,53 @@ export function ConnectionProvider({
     // Error state - surfaces operation failures to the UI
     const [error, setError] = useState<Error | null>(null);
 
+    // Track ID of just-created connection (bridges timing gap before server prop arrives)
+    // This is needed because usePathname() doesn't update after replaceState()
+    const [pendingConnectionId, setPendingConnectionId] = useState<string | null>(null);
+
     const clearError = useCallback(() => setError(null), []);
 
+    // Clear pending connection when server prop arrives (navigation complete)
+    // This is intentional prop→state sync for the timing gap after replaceState()
+    useEffect(() => {
+        if (activeConnection) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setPendingConnectionId(null);
+        }
+    }, [activeConnection]);
+
     /**
-     * Derive the active connection from URL.
-     * Prefer server prop when available, otherwise find in client list.
-     * This handles the timing gap when URL updates but server hasn't re-rendered yet.
+     * Derive the active connection.
+     * Priority: server prop > pending (just created) > URL parsing
      */
     const effectiveActiveConnection = useMemo(() => {
-        // If server provided a connection, use it (most common case)
+        // Server prop takes precedence (normal navigation)
         if (activeConnection) {
             return activeConnection;
         }
 
-        // Extract slug from current pathname
+        // Just created a connection? Find it in our list by ID
+        // This handles the timing gap where usePathname() is stale after replaceState()
+        if (pendingConnectionId) {
+            const pending = connections.find((c) => c.id === pendingConnectionId);
+            if (pending) return pending;
+        }
+
+        // Fall back to URL parsing for edge cases (e.g., direct navigation, refresh)
         const pathSegments = pathname.split("/");
         const slug = pathSegments[pathSegments.length - 1];
 
-        // Not on a connection page
         if (!slug || slug === "new" || slug === "connection") {
             return null;
         }
 
-        // Try to extract ID and find in client list
         try {
             const connectionId = extractIdFromSlug(slug);
             return connections.find((c) => c.id === connectionId) ?? null;
         } catch {
-            // Invalid slug format
             return null;
         }
-    }, [activeConnection, pathname, connections]);
+    }, [activeConnection, pendingConnectionId, pathname, connections]);
 
     // Derive active connection ID from effective connection
     const activeConnectionId = effectiveActiveConnection?.id ?? null;
@@ -171,6 +188,7 @@ export function ConnectionProvider({
      * This follows the pattern from ai-chatbot and LibreChat.
      */
     const handleCreateNewConnection = useCallback(() => {
+        setPendingConnectionId(null); // Clear any pending connection
         router.push("/connection/new");
     }, [router]);
 
@@ -243,6 +261,10 @@ export function ConnectionProvider({
                 updatedAt: now,
                 lastActivityAt: now,
             };
+
+            // Track as pending so effectiveActiveConnection finds it
+            // (usePathname is stale after replaceState)
+            setPendingConnectionId(newConnection.id);
 
             // Add to front of list (most recent)
             setConnections((prev) => {
