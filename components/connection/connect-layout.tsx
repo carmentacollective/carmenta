@@ -13,41 +13,27 @@
  */
 
 import { type ReactNode } from "react";
-import Image from "next/image";
-import Link from "next/link";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectionChooser } from "./connection-chooser";
 import { OptionalUserButton } from "./optional-user-button";
+import { Oracle } from "@/components/ui/oracle";
 import type { PublicConnection } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 // ============================================================
-// Oracle - Link to home
+// Oracle - Link to home, state-aware
 // ============================================================
 
 function CarmentaOracle() {
+    const { isConciergeRunning } = useConnection();
+
     return (
-        <Link href="/" className="group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-white/70 backdrop-blur-xl transition-all duration-200 group-hover:scale-105 group-hover:ring-primary/30 sm:h-12 sm:w-12">
-                <Image
-                    src="/logos/icon-transparent.png"
-                    alt="Carmenta"
-                    width={28}
-                    height={28}
-                    className="sm:hidden"
-                    style={{ width: 28, height: 28 }}
-                />
-                <Image
-                    src="/logos/icon-transparent.png"
-                    alt="Carmenta"
-                    width={32}
-                    height={32}
-                    className="hidden sm:block"
-                    style={{ width: 32, height: 32 }}
-                />
-            </div>
-        </Link>
+        <Oracle
+            href="/"
+            size="sm"
+            state={isConciergeRunning ? "working" : "breathing"}
+        />
     );
 }
 

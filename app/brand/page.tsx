@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ColorSwatch } from "@/components/brand/color-swatch";
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
+import { OracleShowcase } from "@/components/brand/oracle-showcase";
 
 export const metadata: Metadata = {
     title: "Brand Guidelines | Carmenta",
@@ -92,6 +93,9 @@ export default function BrandPage() {
                                 </div>
                             </div>
                         </section>
+
+                        {/* Oracle States */}
+                        <OracleShowcase />
                     </div>
 
                     {/* Social Previews - FULL WIDTH, outside container */}

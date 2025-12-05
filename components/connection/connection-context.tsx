@@ -40,6 +40,8 @@ interface ConnectionContextValue {
     freshConnectionIds: Set<string>;
     runningCount: number;
     isStreaming: boolean;
+    /** True when concierge is analyzing (before main LLM streams) */
+    isConciergeRunning: boolean;
     isLoaded: boolean;
     isPending: boolean;
     error: Error | null;
@@ -53,6 +55,7 @@ interface ConnectionContextValue {
         connection: Partial<PublicConnection> & { id: string; slug: string }
     ) => void;
     setIsStreaming: (streaming: boolean) => void;
+    setIsConciergeRunning: (running: boolean) => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
@@ -86,6 +89,7 @@ export function ConnectionProvider({
     const [displayTitle, setDisplayTitle] = useState<string | null>(null);
 
     const [isStreaming, setIsStreaming] = useState(false);
+    const [isConciergeRunning, setIsConciergeRunning] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const clearError = useCallback(() => setError(null), []);
@@ -213,6 +217,7 @@ export function ConnectionProvider({
             freshConnectionIds,
             runningCount,
             isStreaming,
+            isConciergeRunning,
             isLoaded,
             isPending,
             error,
@@ -224,6 +229,7 @@ export function ConnectionProvider({
             clearError,
             addNewConnection,
             setIsStreaming,
+            setIsConciergeRunning,
         }),
         [
             connections,
@@ -233,6 +239,7 @@ export function ConnectionProvider({
             freshConnectionIds,
             runningCount,
             isStreaming,
+            isConciergeRunning,
             isLoaded,
             isPending,
             error,

@@ -6,8 +6,8 @@ import Link from "next/link";
 /**
  * Oracle Hero
  *
- * The Carmenta logo as a mystical portal/gateway.
- * Combines three animation styles:
+ * The Carmenta logo as a mystical portal/gateway for the landing page.
+ * A larger, more elaborate version of the Oracle component with:
  * - Breathing glow (pronounced inhale/exhale rhythm)
  * - Orbiting particles (satellites circling the logo)
  * - Hover reveal (magic on interaction)
@@ -23,7 +23,7 @@ export function OracleHero() {
                     style={{
                         background:
                             "radial-gradient(circle, rgba(200,180,220,0.4) 0%, transparent 70%)",
-                        animation: "breathe 8s ease-in-out infinite",
+                        animation: "oracle-breathe 8s ease-in-out infinite",
                     }}
                 />
 
@@ -33,7 +33,7 @@ export function OracleHero() {
                     style={{
                         background:
                             "radial-gradient(circle, rgba(180,200,255,0.3) 0%, transparent 60%)",
-                        animation: "breathe 8s ease-in-out infinite 1s",
+                        animation: "oracle-breathe 8s ease-in-out infinite 1s",
                     }}
                 />
 
@@ -41,7 +41,7 @@ export function OracleHero() {
                 <div
                     className="absolute inset-0 transition-all duration-500 group-hover:scale-110"
                     style={{
-                        animation: "orbit 25s linear infinite",
+                        animation: "oracle-orbit 25s linear infinite",
                     }}
                 >
                     {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -50,7 +50,7 @@ export function OracleHero() {
                             className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-primary/50 transition-all duration-500 group-hover:bg-primary/80"
                             style={{
                                 transform: `rotate(${i * 60}deg) translateX(115px) translateY(-50%)`,
-                                animation: `twinkle ${1.5 + i * 0.2}s ease-in-out infinite`,
+                                animation: `oracle-twinkle ${1.5 + i * 0.2}s ease-in-out infinite`,
                             }}
                         />
                     ))}
@@ -60,7 +60,7 @@ export function OracleHero() {
                 <div
                     className="absolute inset-0 transition-all duration-500 group-hover:scale-105"
                     style={{
-                        animation: "orbit 18s linear infinite reverse",
+                        animation: "oracle-orbit 18s linear infinite reverse",
                     }}
                 >
                     {[0, 1, 2, 3].map((i) => (
@@ -97,12 +97,7 @@ export function OracleHero() {
                 ))}
 
                 {/* Logo container - lifts and glows on hover */}
-                <div
-                    className="relative flex h-40 w-40 items-center justify-center rounded-full bg-white/70 shadow-xl ring-1 ring-white/80 backdrop-blur-xl transition-all duration-500 group-hover:-translate-y-2 group-hover:bg-white/90 group-hover:shadow-2xl md:h-44 md:w-44"
-                    style={{
-                        animation: "breathe-subtle 8s ease-in-out infinite",
-                    }}
-                >
+                <div className="oracle-breathing relative flex h-40 w-40 items-center justify-center rounded-full bg-white/70 shadow-xl ring-1 ring-white/80 backdrop-blur-xl transition-all duration-500 group-hover:-translate-y-2 group-hover:bg-white/90 group-hover:shadow-2xl md:h-44 md:w-44">
                     <Image
                         src="/logos/icon-transparent.png"
                         alt="Carmenta"
@@ -140,47 +135,6 @@ export function OracleHero() {
                     }}
                 />
             </Link>
-
-            {/* Keyframes */}
-            <style jsx global>{`
-                @keyframes breathe {
-                    0%,
-                    100% {
-                        transform: scale(1.5);
-                        opacity: 0.3;
-                    }
-                    50% {
-                        transform: scale(2.8);
-                        opacity: 1;
-                    }
-                }
-                @keyframes breathe-subtle {
-                    0%,
-                    100% {
-                        transform: scale(1);
-                    }
-                    50% {
-                        transform: scale(1.06);
-                    }
-                }
-                @keyframes orbit {
-                    from {
-                        transform: rotate(0deg);
-                    }
-                    to {
-                        transform: rotate(360deg);
-                    }
-                }
-                @keyframes twinkle {
-                    0%,
-                    100% {
-                        opacity: 0.3;
-                    }
-                    50% {
-                        opacity: 1;
-                    }
-                }
-            `}</style>
         </div>
     );
 }
