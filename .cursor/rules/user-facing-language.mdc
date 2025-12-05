@@ -1,7 +1,7 @@
 ---
 description:
-  When writing any user-facing content (README, docs, website copy, UI text, error
-  messages)
+  "When writing user-facing content (README, docs, website copy, UI text, error
+  messages). Apple-level standards where every word earns its place."
 alwaysApply: false
 ---
 
@@ -15,7 +15,7 @@ Quality bar: Apple-level attention. Every word earns its place.
 ## Voice
 
 Be authentic. Explain something real, not sell something imaginary. "Exports to CSV in
-under 2 seconds" builds trust. Vague claims like "fast and efficient" say nothing.
+under 2 seconds" builds trust. "Fast and efficient" says nothing.
 
 Be direct. Say what you mean. Cut unnecessary words.
 
@@ -27,100 +27,113 @@ well."
 
 ## Language Patterns
 
-Use imperatives for instructions: "Install the package. Set your API key."
+Use "we" for the team: "We built this to solve the N machines problem." Use "you" for
+users: "You configure it once, then it runs automatically." Use imperatives for
+instructions: "Install the package. Set your API key."
 
-## Errors and Recovery
+## What Not to Write
 
-### Honest Error Messages
+### AI Clichés
 
-When something fails, be honest about what's happening. Avoid phrases that imply user
-error when they did nothing wrong, or that suggest retrying will help when it won't.
-
-For transient errors: "Give it a moment"
-
-For network issues: "Check your connection"
-
-For bugs on our end: "We're on it"
-
-When the user's input was unclear: "Could you rephrase that?"
-
-### Direct Error Language
-
-Use direct language that acknowledges what happened without being vague or passive.
-
-"That didn't work" is direct and honest.
-
-"We hit a snag" is warm but still clear.
-
-### Error Pattern
-
-The standard error structure:
+The "it's not just X, it's Y" pattern appears constantly in AI-generated content. Never
+use it.
 
 ```
-We hit a snag
+✗ "It's not just a code editor, it's a complete development environment"
+✗ "This isn't just about speed, it's about transforming your workflow"
+✗ "If 2024 was the year of X, 2025 will be..."
+✗ "Imagine a world where..."
+✗ "Let's dive in..."
 
-[One sentence about what happened or that we're handling it]
-
-[Action button: Refresh, Go Home, Check Connection—honest about what it does]
+✓ "A code editor with integrated debugging and deployment"
+✓ "Processes 10,000 records in 2 seconds instead of 5 minutes"
 ```
 
-Button labels should be honest about what they do. "Refresh" refreshes the page.
-"Check Connection" checks network status.
+### CRITICAL Means Something Dies
 
-## Avoiding AI Clichés
+AI marks everything as CRITICAL. Reserve this word for when something actually breaks
+without it.
 
-AI-generated content tends toward certain patterns. Avoid the "it's not just X, it's Y"
-construction, "imagine a world where" openings, and "let's dive in" transitions.
+```
+✗ "CRITICAL: Read this section"
+✗ "CRITICAL: Follow these best practices"
+✗ "CRITICAL: Understand the architecture"
 
-Write concretely instead. "A code editor with integrated debugging and deployment" says
-more than grand claims. "Processes 10,000 records in 2 seconds instead of 5 minutes"
-builds trust through specifics.
+✓ "CRITICAL: Set ANTHROPIC_API_KEY or Claude Code won't start"
+✓ "CRITICAL: Back up data before running - this operation is destructive"
+```
 
-"Automagically" gets a pass—it's delightful.
-
-## Warm Without Being Precious
-
-Warmth is presence, not exclamation points. Keep thinking messages brief. Avoid language
-that tries too hard to be clever or whimsical.
-
-Good thinking messages: "Thinking...", "Working through this...", "One moment...",
-"Connecting..."
-
-For long waits (5+ seconds), acknowledge without apologizing: "Still here...", "Taking a
-bit longer..."
-
-## CRITICAL Means Something Dies
-
-Reserve CRITICAL for when something actually breaks without it. The system fails, data
-is lost, or security is compromised. Don't use it for recommendations, best practices,
-or things that are merely helpful.
-
-"CRITICAL: Set ANTHROPIC_API_KEY or the app won't start" is appropriate.
-
-"CRITICAL: Follow these best practices" is not—nothing breaks if they don't.
+CRITICAL means the system fails, data is lost, or security is compromised. Don't use it
+for recommendations, best practices, or things that are merely helpful. Most things
+aren't critical.
 
 ## Format
 
 ### Prose Over Lists
 
-Write in paragraphs by default. Lists sacrifice readability for brevity. The tool
-delivers fast performance, taking under 100ms for most operations. It's designed for
-ease of use—most developers are productive within minutes. Security is built in from
-the start.
+Write in paragraphs by default. Lists sacrifice readability for brevity.
 
-Use lists for steps in procedures, options to choose from, or reference items.
+```
+✗ Benefits:
+  - Fast performance
+  - Easy to use
+  - Secure by default
+
+✓ The tool delivers fast performance, taking under 100ms for most operations.
+  It's designed for ease of use - most developers are productive within minutes.
+  Security is built in from the start.
+```
+
+Use lists for steps in procedures, options to choose from, or reference items. Don't use
+lists to avoid writing prose.
 
 ### Bold Sparingly
 
 Bold is for emphasis. If everything is bold, nothing is.
 
+```
+✗ **Cursor** is an **AI-powered** editor with **inline suggestions** and
+  **chat interface** for **consistent behavior**.
+
+✓ Cursor is an AI-powered code editor. It provides inline suggestions as you
+  type, a chat interface for larger changes, and a rules system to keep AI
+  behavior consistent.
+```
+
 Use bold for key terms on first mention, UI elements ("Click **Save**"), or data loss
-warnings. Never bold emphasis words themselves (important, critical, key).
+warnings. Never bold emphasis words themselves (important, critical, key). Never bold
+every other phrase.
 
 ### Structure with Paragraphs
 
-First paragraph states the key point. Following paragraphs add details. Headings let
-readers scan and find what they need.
+The first paragraph of each section states the key point. Following paragraphs add
+details. Headings let readers scan and find what they need.
+
+Use diagrams when spatial relationships or visual structure helps understanding. ASCII
+art and Mermaid work well for showing how things connect or flow.
+
+## Examples
+
+**Feature description**:
+
+```
+✗ Our revolutionary platform leverages cutting-edge technology to transform
+  your workflow. It's not just about automation—it's about unlocking your
+  full potential.
+
+✓ Automates data entry, validation, and export. You go from 4 hours of manual
+  work to 10 minutes of review.
+```
+
+**Technical capability**:
+
+```
+✗ The system utilizes advanced algorithms to process your data and generate
+  intelligent insights.
+
+✓ Uses PostgreSQL full-text search to find relevant records in under 100ms,
+  even across millions of rows.
+```
 
 ## The North Star
 
