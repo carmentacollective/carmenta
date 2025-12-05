@@ -258,7 +258,13 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     /**
      * Custom fetch wrapper that captures concierge headers, injects overrides, and logs errors.
-     * Note: We include `overrides` in deps so the callback updates when overrides change.
+     * Note: We include `overrides` and `activeConnectionId` in deps.
+     *
+     * When activeConnectionId changes, this callback is recreated, which recreates
+     * the transport, which recreates the runtime. This clears the in-memory thread state.
+     * However, for new connections created via replaceState (URL change without navigation),
+     * the messages are already streamed into the thread, and we rely on the useEffect below
+     * to NOT clear the thread when initialMessages is empty but activeConnectionId exists.
      */
     const fetchWithConcierge = useCallback(
         async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -501,14 +507,15 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     threadMessages as any
                 );
                 runtime.thread.import(repository);
-            } else {
-                // New/empty connection - clear any existing messages
-                logger.debug(
-                    { connectionId: activeConnectionId },
-                    "New connection - clearing thread"
-                );
+            } else if (!activeConnectionId) {
+                // Only clear thread when we truly have no connection (/connection/new)
+                // Do NOT clear when we have a connectionId but empty initialMessages
+                // (happens after first message when URL changes via replaceState)
+                logger.debug({}, "No active connection - clearing thread");
                 runtime.thread.import(ExportedMessageRepository.fromArray([]));
             }
+            // If we have activeConnectionId but no initialMessages, leave thread alone
+            // (messages are being streamed in via the runtime)
         } catch (err) {
             logger.error(
                 { error: err, connectionId: activeConnectionId },

@@ -23,9 +23,23 @@ interface GreetingProps {
  *
  * Logged in: "Good morning, Nick" + custom or default subtitle
  * Logged out: "Good morning" (no awkward "there") + landing-appropriate subtitle
+ *
+ * Handles SSR gracefully - shows generic greeting until client hydrates.
  */
 export function Greeting({ className, subtitleClassName, subtitle }: GreetingProps) {
-    const { user, isLoaded } = useUserContext();
+    // Safely get user context - may be null during SSR
+    let user = null;
+    let isLoaded = false;
+    try {
+        const context = useUserContext();
+        user = context.user;
+        isLoaded = context.isLoaded;
+    } catch {
+        // During SSR or if context not available, use defaults
+        isLoaded = false;
+        user = null;
+    }
+
     const isLoggedIn = isLoaded && !!user;
     const firstName = user?.firstName;
     const greeting = getGreeting();

@@ -16,7 +16,7 @@ const RUNTIME_CACHE = `carmenta-runtime-${BUILD_VERSION}`;
 // Assets to cache on install
 const PRECACHE_ASSETS = [
     "/",
-    "/connect",
+    "/connection/new",
     "/offline",
     "/logos/icon-transparent-192.png",
     "/logos/icon-transparent-512.png",
@@ -125,7 +125,7 @@ self.addEventListener("fetch", (event) => {
  *   title: "Notification Title",
  *   body: "Notification body text",
  *   icon: "/logos/icon-transparent-192.png",
- *   url: "/connect",
+ *   url: "/connection/new",
  *   actions: [{ action: "view", title: "View" }]
  * }
  */

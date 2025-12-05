@@ -26,8 +26,8 @@ test.describe("Public Routes", () => {
     test("sign-in page is accessible", async ({ page }) => {
         await page.goto("/sign-in");
 
-        // Sign-in page should show Carmenta branding
-        await expect(page.getByText("Carmenta")).toBeVisible();
+        // Sign-in page should show Carmenta branding (use heading to avoid title tag match)
+        await expect(page.getByRole("heading", { name: "Carmenta" })).toBeVisible();
         await expect(
             page.getByText("Welcome back. Pick up where we left off.")
         ).toBeVisible();
@@ -76,14 +76,6 @@ test.describe("Protected Route Guards", () => {
         await page.waitForURL(/sign-in/, { timeout: 10000 });
         expect(page.url()).toContain("sign-in");
     });
-
-    test("/connect redirects unauthenticated users to sign-in", async ({ page }) => {
-        await page.goto("/connect");
-
-        // Should redirect to sign-in
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
-        expect(page.url()).toContain("sign-in");
-    });
 });
 
 test.describe("Navigation Flow (Unauthenticated)", () => {
@@ -94,8 +86,8 @@ test.describe("Navigation Flow (Unauthenticated)", () => {
         await page.goto("/");
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-        // Click connect link in header
-        const connectLink = page.getByRole("link", { name: /connect/i });
+        // Click first connect link (header button)
+        const connectLink = page.getByRole("link", { name: /connect/i }).first();
         await connectLink.click();
 
         // Should redirect to sign-in (unauthenticated)
