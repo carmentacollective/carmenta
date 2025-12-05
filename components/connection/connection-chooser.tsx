@@ -341,6 +341,7 @@ export function ConnectionChooser() {
     const {
         connections,
         activeConnection,
+        displayTitle,
         freshConnectionIds,
         isStreaming,
         setActiveConnection,
@@ -378,10 +379,10 @@ export function ConnectionChooser() {
         }
     }, [isDropdownOpen]);
 
-    // Derive state
+    // Simple: use displayTitle from context (handles both server and client-created)
     const hasConnections = connections.length > 0;
-    const hasTitle = Boolean(activeConnection?.title);
-    const title = activeConnection?.title ?? "";
+    const hasTitle = Boolean(displayTitle);
+    const title = displayTitle ?? "";
 
     // S1: Fresh user - no connections at all
     if (!hasConnections) {

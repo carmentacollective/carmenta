@@ -49,7 +49,7 @@ function CarmentaOracle() {
 function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const { activeConnection, connections } = useConnection();
 
-    // Use connection ID as key to force remount when switching connections
+    // Simple: key only changes on real navigation (when activeConnection changes)
     const connectionKey = activeConnection?.id ?? "new";
 
     // Hide connection chooser until we have at least one conversation
