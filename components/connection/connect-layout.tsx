@@ -29,12 +29,21 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
 function CarmentaOracle() {
     return (
         <Link href="/" className="group">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-white/70 backdrop-blur-xl transition-all duration-200 group-hover:scale-105 group-hover:ring-primary/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-white/70 backdrop-blur-xl transition-all duration-200 group-hover:scale-105 group-hover:ring-primary/30 sm:h-12 sm:w-12">
+                <Image
+                    src="/logos/icon-transparent.png"
+                    alt="Carmenta"
+                    width={28}
+                    height={28}
+                    className="sm:hidden"
+                    style={{ width: 28, height: 28 }}
+                />
                 <Image
                     src="/logos/icon-transparent.png"
                     alt="Carmenta"
                     width={32}
                     height={32}
+                    className="hidden sm:block"
                     style={{ width: 32, height: 32 }}
                 />
             </div>
@@ -56,11 +65,11 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const showConnectionChooser = connections.length > 0;
 
     return (
-        <div className="flex h-full items-center justify-center p-4">
+        <div className="flex h-full items-center justify-center p-0 sm:p-4">
             {/* ONE container for everything - header, chat, input - all same width */}
-            <div className="relative flex h-full w-full max-w-[800px] flex-col">
-                {/* Header row - px-12 (48px) aligns with 700px chat content */}
-                <header className="flex items-center justify-between px-12 py-3">
+            <div className="relative flex h-full w-full max-w-4xl flex-col">
+                {/* Header row - compact on mobile, spacious on desktop */}
+                <header className="flex items-center justify-between px-2 py-2 sm:px-4 sm:py-3 md:px-12">
                     {/* Oracle - links to home */}
                     <CarmentaOracle />
 
