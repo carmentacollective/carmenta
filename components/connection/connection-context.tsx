@@ -108,6 +108,18 @@ export function ConnectionProvider({
     const [overrideConnection, setOverrideConnection] =
         useState<PublicConnection | null>(null);
 
+    // Clear override when activeConnection prop changes (navigation happened).
+    // This prevents stale override from showing when user clicks "New" after
+    // creating a connection. This is intentional props→state sync.
+    const prevPropIdRef = useRef(activeConnection?.id);
+    useEffect(() => {
+        if (activeConnection?.id !== prevPropIdRef.current) {
+            prevPropIdRef.current = activeConnection?.id;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setOverrideConnection(null);
+        }
+    }, [activeConnection?.id]);
+
     // Effective active connection: use override only if it matches a "new connection" scenario
     // (i.e., when we're on /connection/new and the override has data the prop doesn't).
     // If the prop has data (navigation happened), always prefer the prop.
