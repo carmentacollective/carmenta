@@ -2,13 +2,25 @@
  * Next.js Instrumentation
  *
  * This file is loaded early in the Next.js lifecycle and is used to
- * initialize monitoring and tracing tools like Sentry.
+ * initialize monitoring and tracing tools:
+ * - Phoenix (Arize): LLM tracing and observability
+ * - Sentry: Error tracking and general APM
  *
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
     if (process.env.NEXT_RUNTIME === "nodejs") {
-        // Server-side Sentry initialization
+        // Initialize Phoenix OTEL for LLM tracing (must be before Sentry)
+        // This sends all LLM traces to Phoenix for evals and observability
+        if (process.env.ARIZE_API_KEY) {
+            const { register: registerPhoenix } = await import("@arizeai/phoenix-otel");
+            registerPhoenix({
+                projectName: "carmenta",
+                batch: true, // Batch spans for efficiency
+            });
+        }
+
+        // Server-side Sentry initialization (error tracking only, not LLM traces)
         await import("./sentry.server.config");
     }
 }

@@ -68,82 +68,79 @@ but doesn't duplicate the detailed prompt/response/token data.
 - **Phoenix**: All LLM traces, evals, experiments, quality tracking
 - **Sentry**: Errors, exceptions, non-LLM performance, alerts
 
-## Implementation Plan
+## Implementation Status
 
-### Phase 1: Integration Tests + Phoenix Setup
+### Phase 1: Integration Tests + Phoenix Setup - COMPLETE
 
-**Goal:** Validate system behavior, record everything to Phoenix from day one.
+**What's implemented:**
 
-Setup:
+- Phoenix OTEL tracing via `@arizeai/phoenix-otel` in `instrumentation.ts`
+- Sentry configured with `skipOpenTelemetrySetup: true` (no LLM trace duplication)
+- Integration test runner at `scripts/evals/run-integration-tests.ts`
+- 22 test queries covering all routing dimensions
 
-1. Sign up at [phoenix.arize.com](https://phoenix.arize.com) (free tier)
-2. Install packages:
-   ```bash
-   bun add @arizeai/openinference-vercel @arizeai/phoenix-otel
-   ```
-3. Create `instrumentation.ts` for Next.js (Phoenix tracing)
-4. Configure Sentry with `skipOpenTelemetrySetup: true`
-5. Remove `experimental_telemetry` from Sentry (Phoenix owns LLM traces now)
+**Configuration:**
 
-Integration tests - 10 seed queries:
-
-| ID               | Query                                     | Tests                          |
-| ---------------- | ----------------------------------------- | ------------------------------ |
-| simple-factual   | "What year did WW2 end?"                  | model=haiku, reasoning=false   |
-| complex-analysis | "Analyze economic implications of UBI..." | model=opus, reasoning=true     |
-| code-task        | "Write a debounce function"               | model=sonnet, temp<0.5         |
-| creative         | "Write a poem about the ocean"            | temp>0.6                       |
-| speed-signal     | "Quick question: capital of France?"      | model=haiku                    |
-| math-proof       | "Prove sqrt(2) is irrational"             | reasoning=high                 |
-| weather-tool     | "Weather in San Francisco?"               | response contains weather data |
-| web-search       | "Latest AI regulation news"               | response contains current info |
-| casual-chat      | "Hey, how's it going?"                    | reasoning=false                |
-| precise-code     | "Exact regex for email validation"        | temp<0.4                       |
-
-Runner script:
-
-- Uses JWT auth (long-lived Clerk token)
-- Calls `/api/connection` with full UIMessage format
-- Asserts on response headers (model, temp, reasoning)
-- All traces recorded to Phoenix automatically
-
-**Value:** Confidence that routing, reasoning, and tools work correctly.
-
-### Phase 2: Quality Scoring
-
-**Goal:** Measure response quality with LLM-as-judge.
-
-Define evaluators:
-
-```typescript
-// Correctness: Is the information accurate?
-const correctnessEval = createClassifier({
-  model: judge,
-  choices: { correct: 1, incorrect: 0 },
-  promptTemplate: `...`,
-});
-
-// Helpfulness: Would a user find this useful?
-const helpfulnessEval = createClassifier({
-  model: judge,
-  choices: { "very helpful": 1, "somewhat helpful": 0.5, "not helpful": 0 },
-  promptTemplate: `...`,
-});
-
-// Relevance: Does it answer what was asked?
-const relevanceEval = createClassifier({
-  model: judge,
-  choices: { relevant: 1, "partially relevant": 0.5, irrelevant: 0 },
-  promptTemplate: `...`,
-});
+```bash
+# Required env vars in .env.local
+TEST_USER_TOKEN=<long-lived JWT from Clerk>
+ARIZE_API_KEY=<from phoenix.arize.com>
 ```
 
-Workflow:
+**Running integration tests:**
 
-1. Run test queries through Carmenta
-2. Score each response with evaluators
-3. Log scores to Phoenix
-4. Establish baseline metrics
+```bash
+bun evals              # Run all tests
+bun evals:fast         # Skip slow tests (deep research)
+bun evals:routing      # Model routing tests only
+bun evals:tools        # Tool invocation tests only
+bun evals:reasoning    # Reasoning tests only
+bun evals:overrides    # Override tests only
+bun evals:verbose      # Show full response content
+```
+
+**Test categories:**
+
+| Category   | Tests | What's Validated                                     |
+| ---------- | ----- | ---------------------------------------------------- |
+| routing    | 6     | Model selection (haiku/sonnet/opus), temperature     |
+| tools      | 4     | Tool invocation (weather, search, compare, research) |
+| reasoning  | 3     | Reasoning enabled/disabled based on complexity       |
+| overrides  | 6     | User overrides respected (model, temp, reasoning)    |
+| edge-cases | 3     | Unicode, long context, edge inputs                   |
+
+### Phase 2: Quality Scoring - COMPLETE
+
+**What's implemented:**
+
+- LLM-as-judge evaluators in `scripts/evals/evaluators.ts`
+- Three quality dimensions: Correctness, Helpfulness, Relevance
+- Quality eval runner at `scripts/evals/run-quality-evals.ts`
+- Claude Haiku 3.5 as the judge model
+
+**Running quality evals:**
+
+```bash
+bun evals:quality              # Run quality scoring (5 tests default)
+bun evals:quality:verbose      # Show full responses
+bun evals:quality --limit=10   # Run more tests
+```
+
+**Evaluators:**
+
+- **Correctness**: Is the information factually accurate? (correct/partially/incorrect)
+- **Helpfulness**: Would a user find this useful? (very/somewhat/not helpful)
+- **Relevance**: Does it answer what was asked? (relevant/partial/irrelevant)
+
+**Output:**
+
+```
+Query ID                  | Correct    | Helpful    | Relevant   | Overall
+--------------------------------------------------------------------------------
+route-simple-factual      | correct    | very_help  | relevant   | 100%
+route-code-task           | correct    | very_help  | relevant   | 100%
+...
+```
 
 **Value:** Know if responses are actually good, not just routed correctly.
 
@@ -212,12 +209,19 @@ Output:
 
 **Different judge:** Use GPT-4 or Claude Opus as judge, not the same model generating
 
+## Decisions Made
+
+1. **Judge model:** Claude Haiku 3.5 (fast, cost-effective, good enough for evals)
+2. **Packages:** `@arizeai/phoenix-otel`, `@arizeai/phoenix-evals`,
+   `@arizeai/phoenix-client`
+3. **Sentry integration:** `skipOpenTelemetrySetup: true`, no `vercelAIIntegration`
+
 ## Open Questions
 
-1. **Judge model:** GPT-4o? Claude Opus? Panel of multiple judges?
-2. **How often to run competitor comparison?** Weekly? Monthly?
-3. **Public results:** Publish the comparison matrix? Where?
-4. **CI integration:** Run evals on every PR? Just before release?
+1. **How often to run competitor comparison?** Weekly? Monthly?
+2. **Public results:** Publish the comparison matrix? Where?
+3. **CI integration:** Run evals on every PR? Just before release?
+4. **Phoenix integration:** Should quality scores be logged to Phoenix automatically?
 
 ## Resources
 

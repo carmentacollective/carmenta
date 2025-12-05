@@ -1,8 +1,8 @@
 /**
  * Sentry Server Configuration
  *
- * Initializes Sentry on the server for error tracking, performance monitoring,
- * and LLM tracing via the Vercel AI SDK integration.
+ * Initializes Sentry on the server for error tracking and general APM.
+ * LLM tracing is handled by Phoenix (Arize) - see instrumentation.ts.
  */
 import * as Sentry from "@sentry/nextjs";
 
@@ -21,17 +21,12 @@ Sentry.init({
     // Don't log debug info in production
     debug: false,
 
-    // Integrations including Vercel AI SDK for LLM tracing
-    integrations: [
-        // Vercel AI SDK integration for LLM tracing (enabled by default in Node runtime)
-        // This automatically captures spans for streamText, generateText, etc.
-        Sentry.vercelAIIntegration({
-            // Record inputs/outputs for LLM debugging
-            // Note: This captures prompts and responses - be mindful of PII
-            recordInputs: true,
-            recordOutputs: true,
-        }),
-    ],
+    // Skip OTEL setup - Phoenix handles LLM tracing via its own OTEL registration
+    // This prevents conflicts between Sentry and Phoenix OTEL exporters
+    skipOpenTelemetrySetup: true,
+
+    // Note: vercelAIIntegration removed - LLM traces now go to Phoenix
+    // Sentry focuses on error tracking and general APM
 
     // Filter out noisy errors
     ignoreErrors: [
