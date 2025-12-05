@@ -1,4 +1,20 @@
 import { test, expect } from "@playwright/test";
+import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
+
+/**
+ * Connect Page E2E Tests
+ *
+ * Tests the /connect route which redirects to /connection.
+ * Includes both unauthenticated (redirect) and authenticated (chat) flows.
+ *
+ * Uses Clerk Testing Tokens for authenticated tests.
+ * @see https://clerk.com/docs/testing/playwright/overview
+ */
+
+const TEST_USER = {
+    identifier: process.env.E2E_CLERK_USER_EMAIL ?? "test@example.com",
+    password: process.env.E2E_CLERK_USER_PASSWORD ?? "testpassword123",
+};
 
 test.describe("Connect Page - Unauthenticated", () => {
     test("redirects to sign-in when not authenticated", async ({ page }) => {
@@ -11,15 +27,19 @@ test.describe("Connect Page - Unauthenticated", () => {
 });
 
 test.describe("Connect Page - Authenticated", () => {
-    // These tests require a valid Clerk session
-    // Skip in environments without auth setup
-    test.skip(
-        () => !process.env.CLERK_TESTING_TOKEN,
-        "Skipping authenticated tests without CLERK_TESTING_TOKEN"
-    );
-
+    // Setup Clerk testing token for authenticated tests
     test.beforeEach(async ({ page }) => {
-        await page.goto("/connect");
+        await setupClerkTestingToken({ page });
+        await clerk.signIn({
+            page,
+            signInParams: {
+                strategy: "password",
+                identifier: TEST_USER.identifier,
+                password: TEST_USER.password,
+            },
+        });
+        await page.goto("/connection/new");
+        await page.waitForLoadState("networkidle");
     });
 
     test("displays the connect page header", async ({ page }) => {
@@ -31,7 +51,7 @@ test.describe("Connect Page - Authenticated", () => {
     });
 
     test("displays the page title", async ({ page }) => {
-        await expect(page).toHaveTitle(/Connect.*Carmenta/);
+        await expect(page).toHaveTitle(/Connection.*Carmenta/);
     });
 
     test("has a chat interface", async ({ page }) => {

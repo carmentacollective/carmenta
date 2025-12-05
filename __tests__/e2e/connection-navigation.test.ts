@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 
 /**
  * Connection Navigation E2E Tests
@@ -8,14 +9,29 @@ import { test, expect } from "@playwright/test";
  * 2. Header title updates when switching connections
  * 3. Creating new connection updates URL and shows title
  * 4. Messages persist across navigation
+ *
+ * Uses Clerk Testing Tokens for authenticated tests.
+ * @see https://clerk.com/docs/testing/playwright/overview
  */
 
+const TEST_USER = {
+    identifier: process.env.E2E_CLERK_USER_EMAIL ?? "test@example.com",
+    password: process.env.E2E_CLERK_USER_PASSWORD ?? "testpassword123",
+};
+
 test.describe("Connection Navigation", () => {
-    // These tests require authentication
-    test.skip(
-        () => !process.env.CLERK_TESTING_TOKEN,
-        "Skipping authenticated tests without CLERK_TESTING_TOKEN"
-    );
+    // Setup Clerk testing token for authenticated tests
+    test.beforeEach(async ({ page }) => {
+        await setupClerkTestingToken({ page });
+        await clerk.signIn({
+            page,
+            signInParams: {
+                strategy: "password",
+                identifier: TEST_USER.identifier,
+                password: TEST_USER.password,
+            },
+        });
+    });
 
     test("displays connection chooser in header", async ({ page }) => {
         await page.goto("/connection/new");
@@ -136,7 +152,9 @@ test.describe("Connection Navigation", () => {
         await page.waitForLoadState("networkidle");
 
         // The original message should be visible again
-        await expect(page.getByText(testMessage)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(testMessage)).toBeVisible({
+            timeout: 10000,
+        });
         await expect(page.getByText(/paris/i)).toBeVisible();
     });
 
@@ -247,10 +265,18 @@ test.describe("Connection Navigation", () => {
 });
 
 test.describe("Connection Persistence", () => {
-    test.skip(
-        () => !process.env.CLERK_TESTING_TOKEN,
-        "Skipping authenticated tests without CLERK_TESTING_TOKEN"
-    );
+    // Setup Clerk testing token for authenticated tests
+    test.beforeEach(async ({ page }) => {
+        await setupClerkTestingToken({ page });
+        await clerk.signIn({
+            page,
+            signInParams: {
+                strategy: "password",
+                identifier: TEST_USER.identifier,
+                password: TEST_USER.password,
+            },
+        });
+    });
 
     test("messages persist after page refresh", async ({ page }) => {
         await page.goto("/connection/new");
@@ -267,15 +293,17 @@ test.describe("Connection Persistence", () => {
         await page.waitForTimeout(5000);
 
         // Store current URL (verifying we're on the connection page, not /new)
-        const _connectionUrl = page.url();
-        expect(_connectionUrl).not.toContain("/connection/new");
+        const connectionUrl = page.url();
+        expect(connectionUrl).not.toContain("/connection/new");
 
         // Refresh the page
         await page.reload();
         await page.waitForLoadState("networkidle");
 
         // Message should still be visible
-        await expect(page.getByText(testMessage)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(testMessage)).toBeVisible({
+            timeout: 10000,
+        });
     });
 
     test("messages persist after navigating away and back", async ({ page }) => {
@@ -304,6 +332,8 @@ test.describe("Connection Persistence", () => {
         await page.waitForLoadState("networkidle");
 
         // Message should still be visible
-        await expect(page.getByText(testMessage)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(testMessage)).toBeVisible({
+            timeout: 10000,
+        });
     });
 });
