@@ -165,6 +165,135 @@ export default function BrandPage() {
                     </section>
 
                     <div className="mx-auto max-w-6xl space-y-12 px-6">
+                        {/* Buttons */}
+                        <section className="space-y-6">
+                            <h2 className="text-lg font-semibold text-foreground/90">
+                                Vibrant Holo Button
+                            </h2>
+
+                            <div className="glass-card space-y-6">
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-medium text-foreground/90">
+                                        Primary Action Button
+                                    </h3>
+                                    <p className="text-foreground/70">
+                                        Our signature Vibrant Holo gradient (Purple →
+                                        Cyan → Pink) captures Carmenta's holographic
+                                        aesthetic. Use for primary CTAs and send
+                                        actions.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* Button States */}
+                                    <div>
+                                        <h4 className="mb-3 text-sm font-medium text-foreground/80">
+                                            Button States
+                                        </h4>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <button className="rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-6 py-3 font-medium text-white opacity-100 shadow-md transition-all hover:scale-105 hover:opacity-100">
+                                                Active
+                                            </button>
+                                            <button className="rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-6 py-3 font-medium text-white opacity-70 shadow-md transition-all hover:scale-105 hover:opacity-90">
+                                                Hover (70%)
+                                            </button>
+                                            <button
+                                                disabled
+                                                className="cursor-default rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-6 py-3 font-medium text-white opacity-30 shadow-md transition-all"
+                                            >
+                                                Disabled
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Icon Buttons */}
+                                    <div>
+                                        <h4 className="mb-3 text-sm font-medium text-foreground/80">
+                                            Icon Buttons
+                                        </h4>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <button className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white opacity-100 shadow-md transition-all hover:scale-105 hover:opacity-100">
+                                                <svg
+                                                    className="h-6 w-6"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white opacity-100 shadow-md transition-all hover:scale-105 hover:opacity-100">
+                                                <svg
+                                                    className="h-5 w-5"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white opacity-100 shadow-md transition-all hover:scale-105 hover:opacity-100">
+                                                <svg
+                                                    className="h-4 w-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* CSS */}
+                                    <div>
+                                        <h4 className="mb-3 text-sm font-medium text-foreground/80">
+                                            CSS Classes
+                                        </h4>
+                                        <div className="space-y-3 rounded-lg bg-foreground/5 p-4">
+                                            <div>
+                                                <p className="mb-1 text-xs font-medium text-foreground/60">
+                                                    Background:
+                                                </p>
+                                                <code className="font-mono text-sm text-foreground/80">
+                                                    bg-gradient-to-br from-purple-500
+                                                    via-cyan-500 to-pink-500
+                                                </code>
+                                            </div>
+                                            <div>
+                                                <p className="mb-1 text-xs font-medium text-foreground/60">
+                                                    Full button class:
+                                                </p>
+                                                <code className="break-all font-mono text-xs text-foreground/80">
+                                                    rounded-full bg-gradient-to-br
+                                                    from-purple-500 via-cyan-500
+                                                    to-pink-500 px-6 py-3 font-medium
+                                                    text-white shadow-md opacity-100
+                                                    hover:opacity-100 transition-all
+                                                    hover:scale-105
+                                                </code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         {/* Colors */}
                         <section className="space-y-6">
                             <h2 className="text-lg font-semibold text-foreground/90">

@@ -20,7 +20,7 @@ import {
     type ComponentProps,
     forwardRef,
 } from "react";
-import { ArrowUp, Square, ArrowDown } from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "@ai-sdk/react";
 
@@ -381,7 +381,7 @@ function Composer() {
                         disabled={!canSend}
                         data-testid="send-button"
                     >
-                        <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6" />
+                        <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                     </ComposerButton>
                 )}
 
@@ -400,8 +400,8 @@ function Composer() {
  *
  * Variants:
  * - ghost: Subtle background for secondary actions
- * - send: Holographic gradient for primary send action
- * - stop: Warning color for stop generation
+ * - send: Vibrant Holo gradient (purple → cyan → pink)
+ * - stop: Muted slate for stop generation
  */
 interface ComposerButtonProps extends ComponentProps<"button"> {
     variant?: "ghost" | "send" | "stop";
@@ -416,14 +416,12 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                 className={cn(
                     "flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all",
                     variant === "ghost" &&
-                        "bg-white/50 text-foreground/60 hover:scale-105 hover:bg-white/80",
+                        "bg-white/50 text-foreground/60 opacity-70 hover:scale-105 hover:bg-white/80 hover:opacity-100",
                     variant === "send" &&
-                        "bg-gradient-to-br from-[rgba(200,160,220,0.9)] via-[rgba(160,200,220,0.9)] to-[rgba(220,180,200,0.9)] text-white shadow-md hover:scale-105",
+                        "bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white opacity-100 shadow-md hover:scale-105 hover:opacity-100",
                     variant === "stop" &&
-                        "bg-amber-500/90 text-white shadow-md hover:scale-105 hover:bg-amber-600/90",
-                    disabled
-                        ? "cursor-not-allowed opacity-50"
-                        : "opacity-70 hover:opacity-100",
+                        "bg-slate-500/90 text-white opacity-60 shadow-sm hover:scale-105 hover:bg-slate-600/90 hover:opacity-75",
+                    disabled && "cursor-default opacity-50",
                     className
                 )}
                 {...props}
