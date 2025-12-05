@@ -31,7 +31,8 @@ Example: If working in `/Users/nick/src/mcp-hubby`, worktree will be created at
 - Cleaner separation between main repo and feature work
 - Standard practice for monorepo tools and shared dependency trees
 
-**Note:** Do NOT use `.gitworktrees/` inside the repo - this breaks module resolution. </workspace-setup>
+**Note:** Do NOT use `.gitworktrees/` inside the repo - this breaks module resolution.
+</workspace-setup>
 
 <environment-initialization>
 Run /setup-environment to prepare the worktree. This detects project type and sets up dependencies, code generation, and environment files.
