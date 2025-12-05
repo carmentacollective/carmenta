@@ -475,10 +475,18 @@ export async function POST(req: Request) {
         }
 
         // Strip reasoning parts before sending to API
-        // Anthropic requires thinking blocks unchanged, but we don't need to send them back
+        // Anthropic's thinking blocks ('thinking', 'redacted_thinking') cannot be modified
+        // in multi-turn conversations. We also strip our custom 'reasoning' type.
         const messagesWithoutReasoning = messages.map((msg) => ({
             ...msg,
-            parts: msg.parts.filter((part) => part.type !== "reasoning"),
+            parts: msg.parts.filter((part) => {
+                const partType = part.type as string;
+                return (
+                    partType !== "reasoning" &&
+                    partType !== "thinking" &&
+                    partType !== "redacted_thinking"
+                );
+            }),
         }));
 
         const result = await streamText({
