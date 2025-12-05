@@ -40,9 +40,9 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-    title: "Carmenta - One Interface, All AI, Complete Memory",
+    title: "Carmenta - One Interface. Every Model. Complete Memory.",
     description:
-        "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders working at the speed of thought.",
+        "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs. Heart-centered AI for builders who work at the speed of thought.",
 
     appleWebApp: {
         capable: true,
@@ -61,25 +61,16 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://carmenta.ai",
         siteName: "Carmenta",
-        title: "Carmenta - One Interface, All AI, Complete Memory",
+        title: "Carmenta - One Interface. Every Model. Complete Memory.",
         description:
-            "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders.",
-        images: [
-            {
-                url: "https://carmenta.ai/og-image.png",
-                width: 1200,
-                height: 630,
-                alt: "Carmenta - One Interface, All AI, Complete Memory",
-            },
-        ],
+            "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
     },
 
     twitter: {
         card: "summary_large_image",
-        title: "Carmenta - One Interface, All AI, Complete Memory",
+        title: "Carmenta - One Interface. Every Model. Complete Memory.",
         description:
-            "Unified AI interface with complete memory, multi-model access, AI team, and purpose-built responses. Heart-centered AI for builders.",
-        images: ["https://carmenta.ai/og-image.png"],
+            "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
     },
 
     keywords: [
@@ -101,18 +92,6 @@ export const metadata: Metadata = {
     robots: {
         index: true,
         follow: true,
-    },
-
-    icons: {
-        icon: [
-            { url: "/favicon.png", sizes: "32x32", type: "image/png" },
-            {
-                url: "/logos/icon-transparent-512.png",
-                sizes: "512x512",
-                type: "image/png",
-            },
-        ],
-        apple: "/apple-touch-icon.png",
     },
 };
 
