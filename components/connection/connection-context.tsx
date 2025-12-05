@@ -210,9 +210,9 @@ export function ConnectionProvider({
                     logger.debug({ connectionId: id }, "Deleted connection");
                     // Optimistically remove from list
                     setConnections((prev) => prev.filter((c) => c.id !== id));
-                    // Navigate away if deleted the active one
+                    // Navigate to new connection if deleted the active one
                     if (id === activeConnectionId) {
-                        router.push("/connection");
+                        router.push("/connection/new");
                     }
                 } catch (err) {
                     const error = err instanceof Error ? err : new Error(String(err));
