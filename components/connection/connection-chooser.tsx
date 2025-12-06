@@ -15,7 +15,16 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Plus, Search, X, Clock, Trash2, Loader2, ChevronDown } from "lucide-react";
+import {
+    Plus,
+    Search,
+    X,
+    Clock,
+    Trash2,
+    Loader2,
+    ChevronDown,
+    ArrowRight,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -182,10 +191,10 @@ function ConnectionDropdown({
                                 />
                                 <button
                                     onClick={handleClose}
-                                    className="rounded-full p-1 transition-colors hover:bg-foreground/5"
+                                    className="btn-glass-interactive h-8 w-8"
                                     aria-label="Close"
                                 >
-                                    <X className="h-4 w-4 text-foreground/40" />
+                                    <X className="h-4 w-4 text-foreground/60" />
                                 </button>
                             </div>
 
@@ -261,7 +270,7 @@ function ConnectionDropdown({
                                                 <motion.div
                                                     key={conn.id}
                                                     className={cn(
-                                                        "group flex items-center gap-3 px-4 py-2.5 transition-colors",
+                                                        "group relative flex items-center gap-3 overflow-hidden px-4 py-2.5 transition-all",
                                                         isActive && "bg-primary/5",
                                                         isFresh &&
                                                             "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
@@ -274,18 +283,21 @@ function ConnectionDropdown({
                                                         ease: "easeOut",
                                                     }}
                                                 >
+                                                    {/* Hover background indicator */}
+                                                    <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
                                                     <button
                                                         onClick={() =>
                                                             onSelect(conn.slug)
                                                         }
-                                                        className="flex flex-1 items-center gap-3 text-left transition-colors hover:text-foreground"
+                                                        className="relative flex flex-1 items-center gap-3 text-left transition-all group-hover:translate-x-1"
                                                     >
                                                         <span
                                                             className={cn(
-                                                                "min-w-0 flex-1 truncate text-sm font-medium",
+                                                                "min-w-0 flex-1 truncate text-sm font-medium transition-colors",
                                                                 isActive
                                                                     ? "text-foreground"
-                                                                    : "text-foreground/80"
+                                                                    : "text-foreground/80 group-hover:text-foreground"
                                                             )}
                                                         >
                                                             {conn.title ||
@@ -296,13 +308,15 @@ function ConnectionDropdown({
                                                                 new
                                                             </span>
                                                         )}
-                                                        <span className="shrink-0 text-xs text-foreground/40">
+                                                        <span className="shrink-0 text-xs text-foreground/40 transition-opacity group-hover:opacity-0">
                                                             {isFresh
                                                                 ? "Just now"
                                                                 : getRelativeTime(
                                                                       conn.lastActivityAt
                                                                   )}
                                                         </span>
+                                                        {/* Arrow icon - appears on hover */}
+                                                        <ArrowRight className="h-4 w-4 shrink-0 translate-x-2 text-primary opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
                                                     </button>
                                                     <button
                                                         onClick={(e) =>
@@ -311,7 +325,7 @@ function ConnectionDropdown({
                                                                 conn.id
                                                             )
                                                         }
-                                                        className="rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                                                        className="relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
                                                         title={`Delete ${conn.title || "connection"}`}
                                                         aria-label={`Delete ${conn.title || "connection"}`}
                                                     >
@@ -394,9 +408,9 @@ export function ConnectionChooser() {
                 layout
                 className={cn(
                     "flex items-center rounded-xl",
-                    "bg-white/60 ring-1 ring-foreground/15 backdrop-blur-xl",
-                    "transition-colors duration-200",
-                    "hover:bg-white/70 hover:ring-foreground/20"
+                    "bg-white/60 shadow-xl ring-1 ring-foreground/15 backdrop-blur-xl",
+                    "transition-all duration-200",
+                    "hover:bg-white/70 hover:shadow-2xl hover:ring-foreground/20"
                 )}
                 transition={{
                     layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
@@ -416,7 +430,7 @@ export function ConnectionChooser() {
                             {/* Search button */}
                             <button
                                 onClick={openDropdown}
-                                className="text-foreground/40 transition-colors hover:text-foreground/60"
+                                className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
                                 title="Search connections"
                             >
                                 <Search className="h-4 w-4" />
@@ -428,7 +442,7 @@ export function ConnectionChooser() {
                             {/* Title */}
                             <button
                                 onClick={openDropdown}
-                                className="flex items-center gap-2 transition-colors hover:text-foreground/80"
+                                className="btn-subtle-text flex items-center gap-2"
                             >
                                 {isStreaming && <RunningIndicator />}
                                 <span className="text-sm text-foreground/70">
@@ -444,9 +458,9 @@ export function ConnectionChooser() {
                                 onClick={createNewConnection}
                                 disabled={isPending}
                                 className={cn(
-                                    "flex items-center gap-1.5 text-sm transition-all",
+                                    "btn-subtle-text flex items-center gap-1.5 text-sm",
                                     "text-foreground/50 hover:text-foreground/80",
-                                    "disabled:opacity-50"
+                                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                 )}
                                 title="New connection"
                             >
@@ -465,7 +479,7 @@ export function ConnectionChooser() {
                         <motion.button
                             key="minimal"
                             onClick={openDropdown}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground/60"
+                            className="btn-subtle flex items-center gap-2 px-4 py-2 text-sm text-foreground/60 hover:text-foreground/80"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}

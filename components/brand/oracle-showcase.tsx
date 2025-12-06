@@ -90,12 +90,11 @@ export function OracleShowcase() {
                 </h3>
                 <div className="space-y-2 text-sm text-foreground/70">
                     <p>
-                        <strong>Breathing:</strong> Container scales 1.0 → 1.08 over 8s
+                        <strong>Breathing:</strong> Container scales 0.9 → 1.1 over 8s
                         (ease-in-out)
                     </p>
                     <p>
-                        <strong>Working:</strong> Rainbow ring spins + glow pulses over
-                        3s
+                        <strong>Working:</strong> Holographic ring spins over 2s
                     </p>
                     <p>
                         <strong>Notification:</strong> Icon badge with subtle glow
