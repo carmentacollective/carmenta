@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Holographic color palette for the animated background blobs.
@@ -20,22 +20,6 @@ const HOLO_COLORS = [
 const BLOB_COUNT = 12;
 const PARTICLE_COUNT = 80;
 const BACKGROUND_COLOR = "#F8F4F8";
-
-/**
- * Hook to detect prefers-reduced-motion using useSyncExternalStore.
- * Avoids the lint error from calling setState in useEffect.
- */
-function usePrefersReducedMotion(): boolean {
-    return useSyncExternalStore(
-        (callback) => {
-            const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-            mediaQuery.addEventListener("change", callback);
-            return () => mediaQuery.removeEventListener("change", callback);
-        },
-        () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        () => false // Server-side fallback
-    );
-}
 
 interface Blob {
     x: number;
@@ -119,7 +103,6 @@ export function HolographicBackground({
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
-    const prefersReducedMotion = usePrefersReducedMotion();
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
@@ -129,60 +112,6 @@ export function HolographicBackground({
         const holoCtx = holoCanvas.getContext("2d");
         const shimmerCtx = shimmerCanvas.getContext("2d");
         if (!holoCtx || !shimmerCtx) return;
-
-        // For users who prefer reduced motion, render static background
-        if (prefersReducedMotion) {
-            holoCanvas.width = window.innerWidth;
-            holoCanvas.height = window.innerHeight;
-            shimmerCanvas.width = window.innerWidth;
-            shimmerCanvas.height = window.innerHeight;
-
-            // Draw static gradient background
-            holoCtx.fillStyle = BACKGROUND_COLOR;
-            holoCtx.fillRect(0, 0, holoCanvas.width, holoCanvas.height);
-
-            // Draw a few static blobs for visual interest
-            holoCtx.globalCompositeOperation = "multiply";
-            const staticBlobs = [
-                {
-                    x: holoCanvas.width * 0.2,
-                    y: holoCanvas.height * 0.3,
-                    r: 250,
-                    color: HOLO_COLORS[0],
-                },
-                {
-                    x: holoCanvas.width * 0.7,
-                    y: holoCanvas.height * 0.2,
-                    r: 300,
-                    color: HOLO_COLORS[2],
-                },
-                {
-                    x: holoCanvas.width * 0.5,
-                    y: holoCanvas.height * 0.7,
-                    r: 280,
-                    color: HOLO_COLORS[4],
-                },
-            ];
-
-            staticBlobs.forEach(({ x, y, r, color }) => {
-                const gradient = holoCtx.createRadialGradient(x, y, 0, x, y, r);
-                gradient.addColorStop(
-                    0,
-                    `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`
-                );
-                gradient.addColorStop(
-                    0.5,
-                    `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`
-                );
-                gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-                holoCtx.beginPath();
-                holoCtx.arc(x, y, r, 0, Math.PI * 2);
-                holoCtx.fillStyle = gradient;
-                holoCtx.fill();
-            });
-
-            return;
-        }
 
         // Simple resize handler - just update canvas dimensions
         // The wrapping logic in the animation loop handles any out-of-bounds blobs
@@ -353,7 +282,7 @@ export function HolographicBackground({
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [prefersReducedMotion]);
+    }, []);
 
     return (
         <>

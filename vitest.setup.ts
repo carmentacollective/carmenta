@@ -4,7 +4,7 @@ import { vi, beforeEach, afterEach } from "vitest";
 // Environment is automatically set to "test" by vitest
 // env.ts skips validation when NODE_ENV === "test"
 
-// Mock window.matchMedia for components that check for prefers-reduced-motion
+// Mock window.matchMedia for components that use media queries
 Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: (query: string) => ({

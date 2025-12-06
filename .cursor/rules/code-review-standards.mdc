@@ -33,8 +33,8 @@ Only flag repeated values that would require multiple updates to change. Extract
 
 ### Accessibility Improvements
 
-ARIA labels, keyboard navigation, and screen reader support are not current project
-priorities.
+ARIA labels, keyboard navigation, screen reader support, and prefers-reduced-motion are
+not current project priorities.
 
 ### Minor Type Safety Improvements
 

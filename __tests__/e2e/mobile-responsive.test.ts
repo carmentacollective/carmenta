@@ -126,24 +126,6 @@ test.describe("Accessibility", () => {
 
         expect(scrollBehavior).toBe("smooth");
     });
-
-    test("should respect prefers-reduced-motion", async ({ page, browser }) => {
-        const context = await browser.newContext({
-            reducedMotion: "reduce",
-        });
-
-        const reducedMotionPage = await context.newPage();
-        await reducedMotionPage.goto("/");
-
-        const scrollBehavior = await reducedMotionPage.evaluate(() => {
-            const html = document.documentElement;
-            return window.getComputedStyle(html).getPropertyValue("scroll-behavior");
-        });
-
-        expect(scrollBehavior).toBe("auto");
-
-        await context.close();
-    });
 });
 
 test.describe("Font Loading", () => {
