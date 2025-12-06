@@ -291,18 +291,161 @@ If user wants markdown-wrapped code, they use message-level "Copy as Markdown".
 - `CodeBlock` - Renders code blocks with copy button
 - `copyToClipboard` - Utilities with structured logging
 
+## Delight Messages
+
+On successful copy, cycling messages add personality and warmth:
+
+```typescript
+const DELIGHT_MESSAGES = [
+  "Copy that!",
+  "Yoinked!",
+  "Snatched!",
+  "At least give me credit",
+  "I'll be in the footnotes, right?",
+  "Citation needed 😏",
+  "I made that, you know",
+  "Fine, take it",
+  "Carry it well",
+  "Go make something beautiful",
+  "Take good care of it",
+  "That one was good, wasn't it?",
+  "I don't share with just anyone",
+  "Artisanally duplicated",
+];
+```
+
+**Behavior:**
+
+- Messages cycle sequentially (not random) for variety without repetition
+- Index persisted to localStorage across sessions
+- Message appears next to checkmark for 2 seconds
+- Fade-in animation with slide-from-left
+
+**Philosophy:** Authentic celebration, not gamification. Flow-enhancing (under 500ms,
+non-blocking). Matches Carmenta's voice: playful, warm, occasionally cheeky.
+
+## Button Positioning
+
+### Current Implementation
+
+Top-right corner of message bubble, hover-to-reveal:
+
+```
+absolute right-2 top-2 opacity-0 group-hover:opacity-100
+```
+
+### Problems with Top-Right
+
+1. **Hidden by default** - Users must discover hover behavior
+2. **Small message overlap** - On short messages, button covers content
+3. **Inconsistent with industry** - Most competitors use bottom positioning
+
+### Competitive Analysis: Positioning
+
+**ChatGPT:**
+
+- **Position:** Bottom of message in horizontal toolbar
+- **Visibility:** Always visible (not hover-reveal)
+- **Code blocks:** Top-right corner with dedicated button
+
+**Claude.ai:**
+
+- **Position:** Bottom-right for artifacts (always visible)
+- **Chat messages:** Hover-reveal (similar to current)
+- **Philosophy:** Non-intrusive, bottom-right for primary actions
+
+**Open Source Reference Implementations:**
+
+| Implementation | Position          | Visibility                           |
+| -------------- | ----------------- | ------------------------------------ |
+| AI Chatbot     | Below message     | Always visible                       |
+| Chat-UI        | Below/alongside   | Streaming-aware (hide while loading) |
+| Open-WebUI     | Below message     | Group hover desktop, always mobile   |
+| LibreChat      | Below message     | Last message always visible          |
+| LobeChat       | Composition-based | Props-driven                         |
+
+### Recommended Approach
+
+**Bottom-left positioning** with adaptive visibility:
+
+1. **Desktop:** Group hover reveals actions, last message always visible
+2. **Mobile:** Always visible (no hover on touch)
+3. **Streaming:** Hide during generation, show on completion
+4. **Small messages:** Position below content, not overlapping
+
+```
+┌─────────────────────────────────────┐
+│ This is a message with content      │
+│                                     │
+└─────────────────────────────────────┘
+ [📋 ▼] [✏️] [🔄]  ← Action toolbar below message
+```
+
+## Per-Message Actions Inventory
+
+Beyond copy, these actions are available on messages:
+
+### Tier 1: Core Actions
+
+| Action         | Description               | Applies To         |
+| -------------- | ------------------------- | ------------------ |
+| **Copy**       | Multi-format clipboard    | All messages       |
+| **Edit**       | Modify and resend message | User messages      |
+| **Regenerate** | Generate new response     | Assistant messages |
+
+### Tier 2: Feedback & Social
+
+| Action          | Description                | Applies To         |
+| --------------- | -------------------------- | ------------------ |
+| **Thumbs up**   | Mark as helpful            | Assistant messages |
+| **Thumbs down** | Mark as unhelpful          | Assistant messages |
+| **Share**       | Share conversation/message | All messages       |
+
+### Tier 3: Advanced
+
+| Action     | Description                         | Applies To         |
+| ---------- | ----------------------------------- | ------------------ |
+| **TTS**    | Read message aloud                  | Assistant messages |
+| **Fork**   | Branch conversation from this point | All messages       |
+| **Delete** | Remove message from conversation    | All messages       |
+
+### Implementation Priority
+
+**Phase 1 (Now):** Copy with delight messages **Phase 2:** Edit user messages,
+Regenerate responses **Phase 3:** Feedback (thumbs), Share **Phase 4:** TTS, Fork,
+Delete
+
 ## Competitive Analysis
 
-**What competitors do**:
+**Copy Format Support:**
 
 - **assistant-ui**: Plain text only, no formatting
 - **chatbot-ui**: Plain text with fallback
 - **lobe-chat**: Plain text with analytics
 - **ai-chatbot**: Plain text via usehooks-ts
+- **ChatGPT**: Rich text (recent change Oct 2024)
+- **Claude.ai**: Clean markdown export
 
-**None** offer multi-format or user choice.
+**None** offer multi-format with user choice except us.
 
-**Our advantage**: Smart default (works everywhere) + precise control when needed.
+**Per-Message Actions Comparison:**
+
+| Feature    | ChatGPT | Claude | Carmenta (planned) |
+| ---------- | ------- | ------ | ------------------ |
+| Copy       | ✅      | ✅     | ✅ (multi-format)  |
+| Edit       | ✅      | ✅     | Phase 2            |
+| Regenerate | ✅      | ✅     | Phase 2            |
+| Feedback   | ✅      | ✅     | Phase 3            |
+| TTS        | ✅      | ❌     | Phase 4            |
+| Share      | ✅      | ✅     | Phase 3            |
+| Fork       | ❌      | ❌     | Phase 4            |
+| Delight    | ❌      | ❌     | ✅                 |
+
+**Our advantages:**
+
+1. Multi-format copy (HTML + Markdown + Plain Text)
+2. Delight messages that add personality
+3. Planned: Fork conversations (unique feature)
 
 ## References
 

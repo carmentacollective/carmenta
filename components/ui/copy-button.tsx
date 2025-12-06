@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type ComponentProps } from "react";
+import { useState, useEffect, useRef, useCallback, type ComponentProps } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +17,76 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type CopyMode = "rich" | "markdown" | "plain";
+
+/**
+ * Cycling delight messages shown after successful copy.
+ * These messages cycle sequentially through the list, persisted across sessions.
+ * Curated to match Carmenta's voice: playful, warm, occasionally cheeky.
+ */
+const DELIGHT_MESSAGES = [
+    "Copy that!",
+    "Yoinked!",
+    "Snatched!",
+    "At least give me credit",
+    "I'll be in the footnotes, right?",
+    "Citation needed 😏",
+    "I made that, you know",
+    "Fine, take it",
+    "Carry it well",
+    "Go make something beautiful",
+    "Take good care of it",
+    "That one was good, wasn't it?",
+    "I don't share with just anyone",
+    "Artisanally duplicated",
+] as const;
+
+const STORAGE_KEY = "carmenta-copy-delight-index";
+
+/**
+ * Custom hook to manage cycling delight messages for copy actions.
+ * Persists the current index to localStorage so users experience the full cycle
+ * across sessions rather than always seeing the first few messages.
+ */
+function useCopyDelight() {
+    const indexRef = useRef<number>(0);
+    const initializedRef = useRef(false);
+    const [currentMessage, setCurrentMessage] = useState<string | null>(null);
+
+    // Initialize index from localStorage on mount (client-side only)
+    useEffect(() => {
+        if (!initializedRef.current) {
+            initializedRef.current = true;
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                indexRef.current = parseInt(stored, 10) % DELIGHT_MESSAGES.length;
+            }
+        }
+    }, []);
+
+    const triggerDelight = useCallback(() => {
+        const currentIndex = indexRef.current;
+
+        // Set the message
+        setCurrentMessage(DELIGHT_MESSAGES[currentIndex]);
+
+        // Advance to next message for next time
+        const nextIndex = (currentIndex + 1) % DELIGHT_MESSAGES.length;
+        indexRef.current = nextIndex;
+
+        // Persist to localStorage
+        try {
+            localStorage.setItem(STORAGE_KEY, String(nextIndex));
+        } catch {
+            // localStorage might be unavailable, ignore
+        }
+    }, []);
+
+    const clearMessage = useCallback(() => {
+        setCurrentMessage(null);
+    }, []);
+
+    return { currentMessage, triggerDelight, clearMessage };
+}
 
 interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
     /**
@@ -53,9 +123,12 @@ interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
 }
 
 /**
- * Copy button with visual feedback and accessibility
+ * Copy button with visual feedback, delight messages, and accessibility.
  *
- * Shows a copy icon that changes to a check mark for 2 seconds after successful copy.
+ * Shows a copy icon that changes to a check mark with a cycling delight message
+ * for 2 seconds after successful copy. Messages cycle sequentially through
+ * a curated list, persisted across sessions.
+ *
  * Two variants:
  * - Simple button (showMenu=false): One-click copy for code blocks
  * - Button with menu (showMenu=true): Default rich text + dropdown for markdown/plain text
@@ -75,6 +148,7 @@ export function CopyButton({
     const [copied, setCopied] = useState<CopyMode | false>(false);
     const [isOpen, setIsOpen] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { currentMessage, triggerDelight, clearMessage } = useCopyDelight();
 
     // Cleanup timeout on unmount to prevent memory leaks
     useEffect(() => {
@@ -104,6 +178,7 @@ export function CopyButton({
         if (success) {
             setCopied(mode);
             setIsOpen(false);
+            triggerDelight();
             onCopySuccess?.();
 
             // Clear any existing timeout
@@ -114,6 +189,7 @@ export function CopyButton({
             // Set new timeout and store reference
             timeoutRef.current = setTimeout(() => {
                 setCopied(false);
+                clearMessage();
                 timeoutRef.current = null;
             }, 2000);
         }
@@ -125,6 +201,7 @@ export function CopyButton({
 
         if (success) {
             setCopied("plain");
+            triggerDelight();
             onCopySuccess?.();
 
             if (timeoutRef.current) {
@@ -133,6 +210,7 @@ export function CopyButton({
 
             timeoutRef.current = setTimeout(() => {
                 setCopied(false);
+                clearMessage();
                 timeoutRef.current = null;
             }, 2000);
         }
@@ -155,25 +233,35 @@ export function CopyButton({
     // Simple button mode (no menu)
     if (!showMenu) {
         return (
-            <button
-                onClick={handleSimpleCopy}
-                aria-label={copied ? "Copied!" : ariaLabel}
-                className={cn(buttonClasses, "w-7 rounded-md sm:w-8", className)}
-                {...props}
-            >
-                {copied ? (
-                    <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
-                ) : (
-                    <Copy className={iconSize} />
+            <div className="relative inline-flex items-center">
+                <button
+                    onClick={handleSimpleCopy}
+                    aria-label={copied ? "Copied!" : ariaLabel}
+                    className={cn(buttonClasses, "w-7 rounded-md sm:w-8", className)}
+                    {...props}
+                >
+                    {copied ? (
+                        <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
+                    ) : (
+                        <Copy className={iconSize} />
+                    )}
+                </button>
+                {currentMessage && (
+                    <span
+                        className="pointer-events-none absolute left-full ml-2 whitespace-nowrap text-xs text-green-600 animate-in fade-in slide-in-from-left-1"
+                        aria-live="polite"
+                    >
+                        {currentMessage}
+                    </span>
                 )}
-            </button>
+            </div>
         );
     }
 
     // Button with dropdown menu
     return (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-            <div className="flex items-center gap-0.5">
+            <div className="relative flex items-center gap-0.5">
                 {/* Main copy button */}
                 <button
                     onClick={() => handleCopy("rich")}
@@ -200,6 +288,16 @@ export function CopyButton({
                         <ChevronDown className={chevronSize} />
                     </button>
                 </DropdownMenuTrigger>
+
+                {/* Delight message */}
+                {currentMessage && (
+                    <span
+                        className="pointer-events-none absolute left-full ml-2 whitespace-nowrap text-xs text-green-600 animate-in fade-in slide-in-from-left-1"
+                        aria-live="polite"
+                    >
+                        {currentMessage}
+                    </span>
+                )}
             </div>
 
             <DropdownMenuContent align="end" className="w-48">
