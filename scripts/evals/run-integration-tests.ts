@@ -33,11 +33,14 @@ const args = process.argv.slice(2);
 const flags = {
     fast: args.includes("--fast"),
     verbose: args.includes("--verbose"),
-    category: args.find((a) => a.startsWith("--category="))?.split("=")[1],
-    testId: args.find((a) => a.startsWith("--test="))?.split("=")[1],
+    category: args
+        .find((a) => a.startsWith("--category="))
+        ?.substring("--category=".length),
+    testId: args.find((a) => a.startsWith("--test="))?.substring("--test=".length),
     baseUrl:
-        args.find((a) => a.startsWith("--base-url="))?.split("=")[1] ??
-        "http://localhost:3000",
+        args
+            .find((a) => a.startsWith("--base-url="))
+            ?.substring("--base-url=".length) ?? "http://localhost:3000",
 };
 
 // Load JWT from environment
@@ -171,8 +174,10 @@ async function consumeStream(
     }
 
     // Extract actual text content from stream (format: 0:"text content"\n)
+    // Use regex that handles escaped quotes: [^"\\]* matches non-quote/backslash,
+    // (?:\\.[^"\\]*)* matches backslash + any char followed by more non-quote/backslash
     let extractedText = "";
-    const textMatches = fullText.matchAll(/0:"([^"]*)"/g);
+    const textMatches = fullText.matchAll(/0:"([^"\\]*(?:\\.[^"\\]*)*)"/g);
     for (const match of textMatches) {
         // Unescape the JSON string
         try {
@@ -225,23 +230,25 @@ async function runTest(query: TestQuery): Promise<TestResult> {
         // Handle error responses
         if (!response.ok) {
             let errorText = "";
+            // Clone response before reading body since it can only be consumed once
+            const clonedResponse = response.clone();
             try {
                 const errorBody = await response.json();
                 errorText = errorBody.error || JSON.stringify(errorBody);
             } catch {
-                errorText = await response.text();
+                errorText = await clonedResponse.text();
             }
 
             validations.push({
                 name: "HTTP Status",
-                passed: !query.expectations.shouldSucceed,
+                passed: query.expectations.shouldSucceed === false,
                 expected: query.expectations.shouldSucceed ? "200" : "non-200",
                 actual: String(response.status),
             });
 
             return {
                 query,
-                success: !query.expectations.shouldSucceed,
+                success: query.expectations.shouldSucceed === false,
                 duration,
                 response: {
                     status: response.status,
