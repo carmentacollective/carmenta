@@ -326,13 +326,17 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
-    // Smart autofocus:
+    // Track if initial autofocus has been applied (prevents re-focus on resize)
+    const hasInitialFocusRef = useRef(false);
+
+    // Smart autofocus (runs once on initial mount):
     // - New conversation: always focus (user intent is to type)
     // - Existing conversation on desktop: focus (keyboard doesn't obscure)
     // - Existing conversation on mobile: don't focus (let user read first)
     useEffect(() => {
-        // Wait for mobile detection to complete
-        if (isMobile === undefined) return;
+        // Only run once after mobile detection completes
+        if (isMobile === undefined || hasInitialFocusRef.current) return;
+        hasInitialFocusRef.current = true;
 
         const shouldFocus = isNewConversation || !isMobile;
 
