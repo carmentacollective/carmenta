@@ -8,7 +8,7 @@
  * - Helpfulness: Would a user find it useful?
  * - Relevance: Does it answer the question?
  *
- * Results are logged to Phoenix for tracking and analysis.
+ * Results are logged to Arize AX for tracking and analysis.
  *
  * Usage:
  *   bun scripts/evals/run-quality-evals.ts [options]
@@ -17,7 +17,7 @@
  *   --limit=N      Run only N tests (default: 5)
  *   --verbose      Show full response content
  *   --base-url=X   Override API base URL (default: http://localhost:3000)
- *   --no-phoenix   Skip logging to Phoenix (console only)
+ *   --no-arize     Skip logging to Arize (console only)
  */
 
 import { trace, SpanStatusCode } from "@opentelemetry/api";
@@ -32,7 +32,7 @@ import {
 const args = process.argv.slice(2);
 const flags = {
     verbose: args.includes("--verbose"),
-    noPhoenix: args.includes("--no-phoenix"),
+    noArize: args.includes("--no-arize"),
     limit: parseInt(args.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "5"),
     baseUrl:
         args.find((a) => a.startsWith("--base-url="))?.split("=")[1] ??
@@ -162,42 +162,66 @@ function formatDuration(ms: number): string {
 }
 
 /**
- * Initialize Phoenix OTEL for tracing evals
+ * Initialize Arize AX OTEL for tracing evals
+ * Based on: https://arize.com/docs/ax/quickstarts/quickstart-tracing
  */
-async function initPhoenixTracing() {
-    const { register } = await import("@arizeai/phoenix-otel");
+async function initArizeTracing(): Promise<boolean> {
+    const { NodeTracerProvider, BatchSpanProcessor } =
+        await import("@opentelemetry/sdk-trace-node");
+    const { OTLPTraceExporter } =
+        await import("@opentelemetry/exporter-trace-otlp-grpc");
+    const { resourceFromAttributes } = await import("@opentelemetry/resources");
+    const { Metadata } = await import("@grpc/grpc-js");
 
-    const phoenixUrl = process.env.PHOENIX_HOST || "https://app.phoenix.arize.com";
-    const apiKey = process.env.PHOENIX_API_KEY;
+    const spaceId = process.env.ARIZE_SPACE_ID;
+    const apiKey = process.env.ARIZE_API_KEY;
 
-    if (!apiKey) {
+    if (!spaceId || !apiKey) {
         console.warn(
-            "⚠️  PHOENIX_API_KEY not set - spans may not be exported to cloud"
+            "⚠️  ARIZE_SPACE_ID or ARIZE_API_KEY not set - running in console-only mode"
         );
+        return false;
     }
 
-    register({
-        projectName: "carmenta-evals",
-        url: phoenixUrl,
-        apiKey,
-        batch: true,
+    // Create gRPC metadata with Arize credentials
+    const metadata = new Metadata();
+    metadata.set("space_id", spaceId);
+    metadata.set("api_key", apiKey);
+
+    // Create Arize gRPC exporter
+    const arizeExporter = new OTLPTraceExporter({
+        url: "https://otlp.arize.com/v1",
+        metadata,
     });
 
-    console.log(`Phoenix OTEL initialized → ${phoenixUrl}`);
+    // Create provider with resource and span processors
+    const provider = new NodeTracerProvider({
+        resource: resourceFromAttributes({
+            model_id: "carmenta-evals",
+            model_version: "1.0.0",
+        }),
+        spanProcessors: [new BatchSpanProcessor(arizeExporter)],
+    });
+
+    // Register globally
+    provider.register();
+
+    console.log(`Arize OTEL initialized → otlp.arize.com/v1 (gRPC)`);
+    return true;
 }
 
 /**
- * Run quality evals with Phoenix span tracking
+ * Run quality evals with Arize AX span tracking
  */
-async function runWithPhoenix() {
+async function runWithArize() {
     console.log("=".repeat(60));
-    console.log("CARMENTA QUALITY EVALUATIONS (Phoenix)");
+    console.log("CARMENTA QUALITY EVALUATIONS (Arize AX)");
     console.log("=".repeat(60));
     console.log(`Base URL: ${flags.baseUrl}`);
-    console.log(`Running ${flags.limit} evaluations with Phoenix tracking\n`);
+    console.log(`Running ${flags.limit} evaluations with Arize tracking\n`);
 
-    // Initialize Phoenix OTEL
-    await initPhoenixTracing();
+    // Initialize Arize OTEL
+    await initArizeTracing();
     const tracer = trace.getTracer("carmenta-quality-evals");
 
     // Select tests for quality evaluation
@@ -318,10 +342,33 @@ async function runWithPhoenix() {
 
     console.log(`\nEvaluated: ${validResults.length} responses`);
     console.log(`Average Overall: ${(avgOverall * 100).toFixed(0)}%`);
-    console.log(`\n\x1b[32mResults logged to Phoenix!\x1b[0m`);
-    console.log(`View at: https://phoenix.arize.com (project: carmenta-evals)`);
+    // Write results to JSON file for easy viewing
+    const resultsFile = `evals-${new Date().toISOString().split("T")[0]}.json`;
+    const outputPath = `scripts/evals/results/${resultsFile}`;
+    const { mkdir, writeFile } = await import("fs/promises");
+    await mkdir("scripts/evals/results", { recursive: true });
+    await writeFile(
+        outputPath,
+        JSON.stringify(
+            {
+                timestamp: new Date().toISOString(),
+                summary: { evaluated: validResults.length, avgOverall },
+                results: results.map((r) => ({
+                    id: r.query.id,
+                    category: r.query.category,
+                    query: r.query.content,
+                    scores: r.scores,
+                    duration: r.duration,
+                    error: r.error,
+                })),
+            },
+            null,
+            2
+        )
+    );
+    console.log(`\n\x1b[32mResults saved to ${outputPath}\x1b[0m`);
 
-    // Give time for spans to flush
+    // Give time for spans to flush (if Arize is configured)
     await new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
@@ -476,14 +523,14 @@ async function main() {
     console.log("\n\x1b[32mQuality evaluation complete!\x1b[0m");
 }
 
-// Entry point: use Phoenix by default unless --no-phoenix
-if (flags.noPhoenix) {
+// Entry point: use Arize by default unless --no-arize
+if (flags.noArize) {
     main().catch((error) => {
         console.error("Fatal error:", error);
         process.exit(1);
     });
 } else {
-    runWithPhoenix().catch((error) => {
+    runWithArize().catch((error) => {
         console.error("Fatal error:", error);
         process.exit(1);
     });
