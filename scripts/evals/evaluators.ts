@@ -46,8 +46,12 @@ function parseClassification(
 ): { label: string; score: number } {
     const lowerResponse = response.toLowerCase().trim();
 
-    // Try to find a matching choice
-    for (const [label, score] of Object.entries(choices)) {
+    // Try to find a matching choice - sort by length (longest first) to avoid
+    // substring false matches (e.g., "correct" matching "partially_correct")
+    const sortedChoices = Object.entries(choices).sort(
+        ([a], [b]) => b.length - a.length
+    );
+    for (const [label, score] of sortedChoices) {
         if (lowerResponse.includes(label.toLowerCase())) {
             return { label, score };
         }
