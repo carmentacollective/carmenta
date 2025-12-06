@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { copyToClipboard } from "@/lib/copy-utils";
 
 export function ColorSwatch({
     name,
@@ -16,13 +17,10 @@ export function ColorSwatch({
     const [copied, setCopied] = useState<string | null>(null);
 
     const handleCopy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
+        const success = await copyToClipboard(text);
+        if (success) {
             setCopied(text);
             setTimeout(() => setCopied(null), 1500);
-        } catch (error) {
-            // Clipboard API can fail due to permissions or browser support
-            console.error("Failed to copy to clipboard:", error);
         }
     };
 
