@@ -47,3 +47,6 @@ pnpm-debug.log*
 # clerk configuration (can include secrets)
 /.clerk/
 .site-keeper/
+
+# Eval results (local only, tracked in platform)
+scripts/evals/results/*.json
