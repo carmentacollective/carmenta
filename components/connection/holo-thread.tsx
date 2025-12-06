@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/models";
+import type { ToolStatus } from "@/lib/tools/tool-config";
 import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
@@ -37,6 +38,11 @@ import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorPopover } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { CodeBlock } from "@/components/ui/code-block";
+import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
+import { WebSearchResults } from "@/components/generative-ui/web-search";
+import { CompareTable } from "@/components/generative-ui/data-table";
+import { DeepResearchResult } from "@/components/generative-ui/deep-research";
+import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 
 export function HoloThread() {
     const { messages, isLoading } = useChatContext();
@@ -156,6 +162,234 @@ function getReasoningContent(message: UIMessage): string | null {
 }
 
 /**
+ * Shape of a tool part stored in messages.
+ * The API stores these with type: "tool-{toolName}" pattern.
+ *
+ * States (per Vercel AI SDK):
+ * - input-streaming: Tool is receiving input
+ * - input-available: Tool has input, waiting to execute
+ * - output-available: Tool completed successfully
+ * - output-error: Tool failed with error
+ */
+interface ToolPart {
+    type: `tool-${string}`;
+    toolCallId: string;
+    state: "input-streaming" | "input-available" | "output-available" | "output-error";
+    input: unknown;
+    output?: unknown;
+    /** Error text for output-error state (AI SDK pattern) */
+    errorText?: string;
+}
+
+/**
+ * Type guard for tool parts
+ */
+function isToolPart(part: unknown): part is ToolPart {
+    return (
+        part !== null &&
+        typeof part === "object" &&
+        "type" in part &&
+        typeof (part as { type: unknown }).type === "string" &&
+        (part as { type: string }).type.startsWith("tool-") &&
+        "toolCallId" in part &&
+        "state" in part
+    );
+}
+
+/**
+ * Extract tool parts from UIMessage
+ * Tool parts have type starting with "tool-" (e.g., "tool-getWeather")
+ */
+function getToolParts(message: UIMessage): ToolPart[] {
+    if (!message?.parts) return [];
+    // Cast needed because UIMessage.parts has a complex union type
+    // that TypeScript can't narrow through the filter type guard
+    return (message.parts as unknown[]).filter(isToolPart);
+}
+
+/**
+ * Map tool part state to ToolStatus
+ */
+function getToolStatus(state: ToolPart["state"]): ToolStatus {
+    switch (state) {
+        case "output-available":
+            return "completed";
+        case "output-error":
+            return "error";
+        default:
+            return "running";
+    }
+}
+
+/**
+ * Extract error message from tool part.
+ * Checks both AI SDK pattern (errorText) and our API pattern (output.error + output.message)
+ */
+function getToolError(
+    part: ToolPart,
+    output: Record<string, unknown> | undefined,
+    fallbackMessage: string
+): string | undefined {
+    // AI SDK pattern: errorText field on the part itself
+    if (part.errorText) return part.errorText;
+    // Our API pattern: error flag in output with message
+    if (output?.error) return String(output.message ?? fallbackMessage);
+    return undefined;
+}
+
+/**
+ * Render a single tool part with the appropriate UI component
+ */
+function ToolPartRenderer({ part }: { part: ToolPart }) {
+    const toolName = part.type.replace("tool-", "");
+    const status = getToolStatus(part.state);
+    const input = part.input as Record<string, unknown>;
+    const output = part.output as Record<string, unknown> | undefined;
+
+    switch (toolName) {
+        case "webSearch": {
+            type SearchResult = {
+                title: string;
+                url: string;
+                snippet: string;
+                publishedDate?: string;
+            };
+            return (
+                <WebSearchResults
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    query={(input?.query as string) ?? ""}
+                    results={output?.results as SearchResult[] | undefined}
+                    error={getToolError(part, output, "Search failed")}
+                />
+            );
+        }
+
+        case "compareOptions": {
+            type CompareOption = { name: string; attributes: Record<string, string> };
+            return (
+                <CompareTable
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    title={(input?.title as string) ?? "Comparison"}
+                    options={output?.options as CompareOption[] | undefined}
+                    error={getToolError(part, output, "Comparison failed")}
+                />
+            );
+        }
+
+        case "fetchPage":
+            return (
+                <FetchPageResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    url={(input?.url as string) ?? ""}
+                    title={output?.title as string | undefined}
+                    content={output?.content as string | undefined}
+                    error={getToolError(part, output, "Failed to fetch")}
+                />
+            );
+
+        case "deepResearch": {
+            type Finding = {
+                insight: string;
+                sources: string[];
+                confidence: "high" | "medium" | "low";
+            };
+            type Source = { url: string; title: string; relevance: string };
+            return (
+                <DeepResearchResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    objective={(input?.objective as string) ?? ""}
+                    depth={input?.depth as "quick" | "standard" | "deep" | undefined}
+                    summary={output?.summary as string | undefined}
+                    findings={output?.findings as Finding[] | undefined}
+                    sources={output?.sources as Source[] | undefined}
+                    error={getToolError(part, output, "Research failed")}
+                />
+            );
+        }
+
+        case "getWeather": {
+            // Weather uses generic ToolWrapper with simple content display
+            const weatherOutput = output as
+                | {
+                      location?: string;
+                      temperature?: number;
+                      condition?: string;
+                      humidity?: number;
+                      windSpeed?: number;
+                  }
+                | undefined;
+            const weatherError = getToolError(part, output, "Weather check failed");
+
+            return (
+                <ToolWrapper
+                    toolName="getWeather"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={weatherError}
+                >
+                    {status === "running" ? (
+                        <div className="animate-pulse text-sm text-muted-foreground">
+                            Checking weather for {input?.location as string}...
+                        </div>
+                    ) : status === "error" ? (
+                        <div className="text-sm text-destructive">
+                            {weatherError ?? "Weather check failed"}
+                        </div>
+                    ) : weatherOutput ? (
+                        <div className="text-sm">
+                            <div className="text-lg font-medium">
+                                {weatherOutput.temperature}°F {weatherOutput.condition}
+                            </div>
+                            <div className="text-muted-foreground">
+                                {weatherOutput.location}
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                Humidity: {weatherOutput.humidity}% · Wind:{" "}
+                                {weatherOutput.windSpeed} mph
+                            </div>
+                        </div>
+                    ) : null}
+                </ToolWrapper>
+            );
+        }
+
+        default: {
+            // Unknown tools get a generic wrapper
+            const defaultError = getToolError(part, output, "Tool failed");
+            const statusText =
+                status === "running"
+                    ? "Processing..."
+                    : status === "error"
+                      ? (defaultError ?? "Tool failed")
+                      : "Complete";
+
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={defaultError}
+                >
+                    <div
+                        className={`text-sm ${status === "error" ? "text-destructive" : "text-muted-foreground"}`}
+                    >
+                        {statusText}
+                    </div>
+                </ToolWrapper>
+            );
+        }
+    }
+}
+
+/**
  * Individual message bubble - user or assistant
  */
 function MessageBubble({
@@ -240,6 +474,9 @@ function AssistantMessage({
     // Check for reasoning in message parts
     const reasoning = getReasoningContent(message);
 
+    // Extract tool parts for rendering
+    const toolParts = getToolParts(message);
+
     return (
         <div className="my-4 flex w-full flex-col gap-2">
             {/* Concierge display - shown for the most recent assistant message */}
@@ -263,6 +500,15 @@ function AssistantMessage({
                     isStreaming={isStreaming}
                     className="mb-3"
                 />
+            )}
+
+            {/* Tool UIs - rendered before text content */}
+            {toolParts.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {toolParts.map((part) => (
+                        <ToolPartRenderer key={part.toolCallId} part={part} />
+                    ))}
+                </div>
             )}
 
             {/* Message content */}
