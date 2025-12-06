@@ -85,7 +85,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
     const recentConnections = await getRecentConnections(10);
 
     return (
-        <div className="relative h-screen overflow-hidden">
+        <div className="relative h-dvh overflow-hidden">
             <HolographicBackground />
 
             <div className="relative z-10 h-full">

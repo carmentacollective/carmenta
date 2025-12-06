@@ -54,8 +54,8 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
         <div className="flex h-full items-center justify-center p-0 sm:p-4">
             {/* ONE container for everything - header, chat, input - all same width */}
             <div className="relative flex h-full w-full max-w-4xl flex-col">
-                {/* Header row - compact on mobile, spacious on desktop */}
-                <header className="flex items-center justify-between px-2 py-2 sm:px-4 sm:py-3 md:px-12">
+                {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
+                <header className="flex items-center justify-between px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
                     {/* Oracle - links to home */}
                     <CarmentaOracle />
 
