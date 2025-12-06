@@ -328,13 +328,22 @@ non-blocking). Matches Carmenta's voice: playful, warm, occasionally cheeky.
 
 ### Current Implementation
 
-Top-right corner of message bubble, hover-to-reveal:
+Bottom of message bubble with LibreChat-inspired visibility pattern:
 
 ```
-absolute right-2 top-2 opacity-0 group-hover:opacity-100
+mt-1 flex items-center gap-1 transition-opacity
+isLast ? "opacity-100" : "md:opacity-0 md:group-hover:opacity-100"
 ```
 
-### Problems with Top-Right
+**Visibility rules:**
+
+- Last message: Always visible (teaches the pattern)
+- Older messages: Hover-reveal on desktop, always visible on mobile
+- During streaming: Hidden (content is incomplete)
+
+### Previous Approach (deprecated)
+
+Top-right corner was problematic:
 
 1. **Hidden by default** - Users must discover hover behavior
 2. **Small message overlap** - On short messages, button covers content

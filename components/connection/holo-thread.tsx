@@ -167,7 +167,7 @@ function MessageBubble({
     isStreaming: boolean;
 }) {
     if (message.role === "user") {
-        return <UserMessage message={message} />;
+        return <UserMessage message={message} isLast={isLast} />;
     }
 
     if (message.role === "assistant") {
@@ -184,13 +184,58 @@ function MessageBubble({
 }
 
 /**
- * User message bubble with holographic gradient and copy button.
+ * Message action toolbar - positioned below message bubble
+ *
+ * Visibility pattern (LibreChat-inspired):
+ * - Last message: Always visible (teaches the pattern)
+ * - Older messages: Hover-reveal on desktop, always visible on mobile
+ * - During streaming: Hidden (don't show actions for incomplete content)
  */
-function UserMessage({ message }: { message: UIMessage }) {
+function MessageActions({
+    content,
+    isLast,
+    isStreaming,
+    align = "left",
+}: {
+    content: string;
+    isLast: boolean;
+    isStreaming?: boolean;
+    align?: "left" | "right";
+}) {
+    // Hide during streaming - content is incomplete
+    if (isStreaming) return null;
+
+    return (
+        <div
+            className={cn(
+                "mt-1 flex items-center gap-1 transition-opacity",
+                // Last message: always visible
+                // Older messages: hidden on desktop until hover, always visible on mobile
+                isLast
+                    ? "opacity-100"
+                    : "opacity-100 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
+                align === "right" && "justify-end"
+            )}
+        >
+            <CopyButton
+                text={content}
+                ariaLabel="Copy message"
+                variant="ghost"
+                size="sm"
+                showMenu={true}
+            />
+        </div>
+    );
+}
+
+/**
+ * User message bubble with holographic gradient and action toolbar.
+ */
+function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean }) {
     const content = getMessageContent(message);
     return (
         <div className="my-4 flex w-full justify-end">
-            <div className="group relative max-w-full sm:max-w-[80%]">
+            <div className="group max-w-full sm:max-w-[80%]">
                 <div className="user-message-bubble rounded-2xl rounded-br-md px-4 py-4">
                     <div className="holo-markdown">
                         <ReactMarkdown
@@ -202,15 +247,7 @@ function UserMessage({ message }: { message: UIMessage }) {
                         </ReactMarkdown>
                     </div>
                 </div>
-                <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <CopyButton
-                        text={content}
-                        ariaLabel="Copy message"
-                        variant="glass"
-                        size="sm"
-                        showMenu={true}
-                    />
-                </div>
+                <MessageActions content={content} isLast={isLast} align="right" />
             </div>
         </div>
     );
@@ -266,7 +303,7 @@ function AssistantMessage({
 
             {/* Message content */}
             {hasContent && (
-                <div className="group relative max-w-full sm:max-w-[85%]">
+                <div className="group max-w-full sm:max-w-[85%]">
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
                         <div className="holo-markdown">
                             <ReactMarkdown
@@ -278,15 +315,12 @@ function AssistantMessage({
                             </ReactMarkdown>
                         </div>
                     </div>
-                    <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
-                        <CopyButton
-                            text={content}
-                            ariaLabel="Copy message"
-                            variant="glass"
-                            size="sm"
-                            showMenu={true}
-                        />
-                    </div>
+                    <MessageActions
+                        content={content}
+                        isLast={isLast}
+                        isStreaming={isStreaming}
+                        align="left"
+                    />
                 </div>
             )}
         </div>
