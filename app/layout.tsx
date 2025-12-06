@@ -40,6 +40,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://carmenta.ai"),
     title: "Carmenta - One Interface. Every Model. Complete Memory.",
     description:
         "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs. Heart-centered AI for builders who work at the speed of thought.",
