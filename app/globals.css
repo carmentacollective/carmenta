@@ -109,13 +109,6 @@
         -webkit-tap-highlight-color: transparent;
     }
 
-    /* Respect user motion preferences */
-    @media (prefers-reduced-motion: reduce) {
-        html {
-            scroll-behavior: auto;
-        }
-    }
-
     body {
         @apply bg-background text-foreground;
         font-feature-settings:
