@@ -8,6 +8,8 @@
  * - Helpfulness: Would a user find it useful?
  * - Relevance: Does it answer the question?
  *
+ * Results are logged to Phoenix for tracking and analysis.
+ *
  * Usage:
  *   bun scripts/evals/run-quality-evals.ts [options]
  *
@@ -15,8 +17,10 @@
  *   --limit=N      Run only N tests (default: 5)
  *   --verbose      Show full response content
  *   --base-url=X   Override API base URL (default: http://localhost:3000)
+ *   --no-phoenix   Skip logging to Phoenix (console only)
  */
 
+import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { TEST_QUERIES, type TestQuery } from "./test-queries";
 import {
     evaluateResponse,
@@ -28,6 +32,7 @@ import {
 const args = process.argv.slice(2);
 const flags = {
     verbose: args.includes("--verbose"),
+    noPhoenix: args.includes("--no-phoenix"),
     limit: parseInt(args.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "5"),
     baseUrl:
         args.find((a) => a.startsWith("--base-url="))?.split("=")[1] ??
@@ -154,6 +159,156 @@ async function runQuery(
 function formatDuration(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
+}
+
+/**
+ * Initialize Phoenix OTEL for tracing evals
+ */
+async function initPhoenixTracing() {
+    const { register } = await import("@arizeai/phoenix-otel");
+    register({
+        projectName: "carmenta-evals",
+        batch: true,
+    });
+}
+
+/**
+ * Run quality evals with Phoenix span tracking
+ */
+async function runWithPhoenix() {
+    console.log("=".repeat(60));
+    console.log("CARMENTA QUALITY EVALUATIONS (Phoenix)");
+    console.log("=".repeat(60));
+    console.log(`Base URL: ${flags.baseUrl}`);
+    console.log(`Running ${flags.limit} evaluations with Phoenix tracking\n`);
+
+    // Initialize Phoenix OTEL
+    await initPhoenixTracing();
+    const tracer = trace.getTracer("carmenta-quality-evals");
+
+    // Select tests for quality evaluation
+    const qualityTests = TEST_QUERIES.filter(
+        (t) => !t.skip && !t.slow && t.category !== "edge-cases"
+    ).slice(0, flags.limit);
+
+    const results: EvalResult[] = [];
+
+    for (let i = 0; i < qualityTests.length; i++) {
+        const query = qualityTests[i];
+
+        // Create a span for this eval
+        await tracer.startActiveSpan(`eval:${query.id}`, async (span) => {
+            try {
+                span.setAttribute("eval.query_id", query.id);
+                span.setAttribute("eval.category", query.category);
+                span.setAttribute("eval.query", query.content);
+
+                console.log(`\n[${i + 1}/${qualityTests.length}] Running: ${query.id}`);
+                console.log(
+                    `   Query: "${query.content.slice(0, 60)}${query.content.length > 60 ? "..." : ""}"`
+                );
+
+                // Get response from Carmenta
+                const { response, duration, error } = await runQuery(query);
+
+                if (error) {
+                    span.setAttribute("eval.error", error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: error });
+                    console.log(`   \x1b[31mError: ${error}\x1b[0m`);
+                    results.push({
+                        query,
+                        response: "",
+                        duration,
+                        scores: {
+                            correctness: { label: "error", score: 0 },
+                            helpfulness: { label: "error", score: 0 },
+                            relevance: { label: "error", score: 0 },
+                            overall: 0,
+                        },
+                        error,
+                    });
+                    span.end();
+                    return;
+                }
+
+                span.setAttribute("eval.response_length", response.length);
+                span.setAttribute("eval.duration_ms", duration);
+                console.log(`   Response received (${formatDuration(duration)})`);
+
+                if (flags.verbose) {
+                    const preview = response.slice(0, 200);
+                    console.log(
+                        `   Response: ${preview}${response.length > 200 ? "..." : ""}`
+                    );
+                }
+
+                // Evaluate response quality
+                console.log(`   Evaluating with LLM judge...`);
+                const scores = await evaluateResponse(query.content, response);
+
+                // Set score attributes on span
+                span.setAttribute("eval.correctness_score", scores.correctness.score);
+                span.setAttribute("eval.correctness_label", scores.correctness.label);
+                span.setAttribute("eval.helpfulness_score", scores.helpfulness.score);
+                span.setAttribute("eval.helpfulness_label", scores.helpfulness.label);
+                span.setAttribute("eval.relevance_score", scores.relevance.score);
+                span.setAttribute("eval.relevance_label", scores.relevance.label);
+                span.setAttribute("eval.overall_score", scores.overall);
+
+                results.push({ query, response, duration, scores });
+
+                // Display scores
+                const scoreColor =
+                    scores.overall >= 0.7
+                        ? "\x1b[32m"
+                        : scores.overall >= 0.4
+                          ? "\x1b[33m"
+                          : "\x1b[31m";
+                console.log(
+                    `   ${scoreColor}Overall: ${(scores.overall * 100).toFixed(0)}%\x1b[0m`
+                );
+                console.log(
+                    `   Correctness: ${scores.correctness.label} | Helpfulness: ${scores.helpfulness.label} | Relevance: ${scores.relevance.label}`
+                );
+
+                span.setStatus({ code: SpanStatusCode.OK });
+            } catch (evalError) {
+                span.setAttribute(
+                    "eval.error",
+                    evalError instanceof Error ? evalError.message : String(evalError)
+                );
+                span.setStatus({ code: SpanStatusCode.ERROR });
+                console.log(
+                    `   \x1b[31mEvaluation error: ${evalError instanceof Error ? evalError.message : String(evalError)}\x1b[0m`
+                );
+            } finally {
+                span.end();
+            }
+        });
+    }
+
+    // Print summary
+    console.log("\n" + "=".repeat(60));
+    console.log("QUALITY SUMMARY");
+    console.log("=".repeat(60));
+
+    const validResults = results.filter((r) => !r.error);
+    if (validResults.length === 0) {
+        console.log("No valid results to summarize.");
+        process.exit(1);
+    }
+
+    const avgOverall =
+        validResults.reduce((sum, r) => sum + r.scores.overall, 0) /
+        validResults.length;
+
+    console.log(`\nEvaluated: ${validResults.length} responses`);
+    console.log(`Average Overall: ${(avgOverall * 100).toFixed(0)}%`);
+    console.log(`\n\x1b[32mResults logged to Phoenix!\x1b[0m`);
+    console.log(`View at: https://phoenix.arize.com (project: carmenta-evals)`);
+
+    // Give time for spans to flush
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
 /**
@@ -307,7 +462,15 @@ async function main() {
     console.log("\n\x1b[32mQuality evaluation complete!\x1b[0m");
 }
 
-main().catch((error) => {
-    console.error("Fatal error:", error);
-    process.exit(1);
-});
+// Entry point: use Phoenix by default unless --no-phoenix
+if (flags.noPhoenix) {
+    main().catch((error) => {
+        console.error("Fatal error:", error);
+        process.exit(1);
+    });
+} else {
+    runWithPhoenix().catch((error) => {
+        console.error("Fatal error:", error);
+        process.exit(1);
+    });
+}
