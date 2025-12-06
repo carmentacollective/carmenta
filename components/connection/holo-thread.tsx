@@ -163,13 +163,21 @@ function getReasoningContent(message: UIMessage): string | null {
 /**
  * Shape of a tool part stored in messages.
  * The API stores these with type: "tool-{toolName}" pattern.
+ *
+ * States (per Vercel AI SDK):
+ * - input-streaming: Tool is receiving input
+ * - input-available: Tool has input, waiting to execute
+ * - output-available: Tool completed successfully
+ * - output-error: Tool failed with error
  */
 interface ToolPart {
     type: `tool-${string}`;
     toolCallId: string;
-    state: "input-available" | "output-available";
+    state: "input-streaming" | "input-available" | "output-available" | "output-error";
     input: unknown;
     output?: unknown;
+    /** Error text for output-error state (AI SDK pattern) */
+    errorText?: string;
 }
 
 /**
@@ -202,7 +210,30 @@ function getToolParts(message: UIMessage): ToolPart[] {
  * Map tool part state to ToolStatus
  */
 function getToolStatus(state: ToolPart["state"]): ToolStatus {
-    return state === "output-available" ? "completed" : "running";
+    switch (state) {
+        case "output-available":
+            return "completed";
+        case "output-error":
+            return "error";
+        default:
+            return "running";
+    }
+}
+
+/**
+ * Extract error message from tool part.
+ * Checks both AI SDK pattern (errorText) and our API pattern (output.error + output.message)
+ */
+function getToolError(
+    part: ToolPart,
+    output: Record<string, unknown> | undefined,
+    fallbackMessage: string
+): string | undefined {
+    // AI SDK pattern: errorText field on the part itself
+    if (part.errorText) return part.errorText;
+    // Our API pattern: error flag in output with message
+    if (output?.error) return String(output.message ?? fallbackMessage);
+    return undefined;
 }
 
 /**
@@ -228,11 +259,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     status={status}
                     query={(input?.query as string) ?? ""}
                     results={output?.results as SearchResult[] | undefined}
-                    error={
-                        output?.error
-                            ? String(output.message ?? "Search failed")
-                            : undefined
-                    }
+                    error={getToolError(part, output, "Search failed")}
                 />
             );
         }
@@ -245,7 +272,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     status={status}
                     title={(input?.title as string) ?? "Comparison"}
                     options={output?.options as CompareOption[] | undefined}
-                    error={undefined}
+                    error={getToolError(part, output, "Comparison failed")}
                 />
             );
         }
@@ -258,11 +285,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     url={(input?.url as string) ?? ""}
                     title={output?.title as string | undefined}
                     content={output?.content as string | undefined}
-                    error={
-                        output?.error
-                            ? String(output.message ?? "Failed to fetch")
-                            : undefined
-                    }
+                    error={getToolError(part, output, "Failed to fetch")}
                 />
             );
 
@@ -282,11 +305,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     summary={output?.summary as string | undefined}
                     findings={output?.findings as Finding[] | undefined}
                     sources={output?.sources as Source[] | undefined}
-                    error={
-                        output?.error
-                            ? String(output.message ?? "Research failed")
-                            : undefined
-                    }
+                    error={getToolError(part, output, "Research failed")}
                 />
             );
         }
