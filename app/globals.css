@@ -127,9 +127,6 @@
 
         /* Prevent overscroll bounce on iOS - keeps chat contained */
         overscroll-behavior: none;
-
-        /* Enable momentum scrolling on iOS */
-        -webkit-overflow-scrolling: touch;
     }
 }
 

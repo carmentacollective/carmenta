@@ -30,7 +30,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const viewport = {
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1, // Prevent auto-zoom on mobile input focus
+    maximumScale: 5,
     userScalable: true,
     viewportFit: "cover",
     themeColor: [
