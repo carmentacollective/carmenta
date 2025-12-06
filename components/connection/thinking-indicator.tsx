@@ -45,8 +45,15 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className={cn("flex items-center gap-3", className)}
+            className={cn(
+                "relative flex items-center gap-3 rounded-lg px-4 py-3",
+                "border border-white/20 bg-white/30 backdrop-blur-sm",
+                className
+            )}
         >
+            {/* Shimmer overlay */}
+            <div className="animate-shimmer absolute inset-0 rounded-lg opacity-50" />
+
             {/* Rotating logo */}
             <div className="relative flex h-8 w-8 items-center justify-center">
                 <div className="animate-spin-slow">
@@ -61,7 +68,7 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
             </div>
 
             {/* Message */}
-            <div className="flex items-baseline gap-2">
+            <div className="relative flex items-baseline gap-2">
                 <span className="text-sm text-muted-foreground">{message}</span>
                 {showTime && (
                     <span className="text-xs text-muted-foreground/60">

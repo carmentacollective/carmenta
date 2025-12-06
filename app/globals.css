@@ -406,6 +406,27 @@
         animation: spin-slow 2s linear infinite;
     }
 
+    /* Subtle shimmer for loading states - GPU accelerated */
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .animate-shimmer {
+        background: linear-gradient(
+            90deg,
+            hsl(var(--muted) / 0.3) 0%,
+            hsl(var(--muted) / 0.5) 50%,
+            hsl(var(--muted) / 0.3) 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 2s ease-in-out infinite;
+    }
+
     /*
      * Oracle Animations
      *
