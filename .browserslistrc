@@ -1,0 +1,13 @@
+# Target only modern browsers - no legacy polyfills needed
+# https://browsersl.ist/
+
+# Browsers with ES2020+ support
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+
+# No legacy browsers - modern Chromium Edge (79+) is fine
+not dead
+not ie 11
+not edge < 79
+not op_mini all
