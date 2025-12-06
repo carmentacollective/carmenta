@@ -321,6 +321,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                       windSpeed?: number;
                   }
                 | undefined;
+            const weatherError = getToolError(part, output, "Weather check failed");
 
             return (
                 <ToolWrapper
@@ -329,10 +330,15 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     status={status}
                     input={input}
                     output={output}
+                    error={weatherError}
                 >
                     {status === "running" ? (
                         <div className="animate-pulse text-sm text-muted-foreground">
                             Checking weather for {input?.location as string}...
+                        </div>
+                    ) : status === "error" ? (
+                        <div className="text-sm text-destructive">
+                            {weatherError ?? "Weather check failed"}
                         </div>
                     ) : weatherOutput ? (
                         <div className="text-sm">
@@ -352,8 +358,16 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
-        default:
+        default: {
             // Unknown tools get a generic wrapper
+            const defaultError = getToolError(part, output, "Tool failed");
+            const statusText =
+                status === "running"
+                    ? "Processing..."
+                    : status === "error"
+                      ? (defaultError ?? "Tool failed")
+                      : "Complete";
+
             return (
                 <ToolWrapper
                     toolName={toolName}
@@ -361,12 +375,16 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     status={status}
                     input={input}
                     output={output}
+                    error={defaultError}
                 >
-                    <div className="text-sm text-muted-foreground">
-                        {status === "running" ? "Processing..." : "Complete"}
+                    <div
+                        className={`text-sm ${status === "error" ? "text-destructive" : "text-muted-foreground"}`}
+                    >
+                        {statusText}
                     </div>
                 </ToolWrapper>
             );
+        }
     }
 }
 
