@@ -166,10 +166,24 @@ function formatDuration(ms: number): string {
  */
 async function initPhoenixTracing() {
     const { register } = await import("@arizeai/phoenix-otel");
+
+    const phoenixUrl = process.env.PHOENIX_HOST || "https://app.phoenix.arize.com";
+    const apiKey = process.env.PHOENIX_API_KEY;
+
+    if (!apiKey) {
+        console.warn(
+            "⚠️  PHOENIX_API_KEY not set - spans may not be exported to cloud"
+        );
+    }
+
     register({
         projectName: "carmenta-evals",
+        url: phoenixUrl,
+        apiKey,
         batch: true,
     });
+
+    console.log(`Phoenix OTEL initialized → ${phoenixUrl}`);
 }
 
 /**
