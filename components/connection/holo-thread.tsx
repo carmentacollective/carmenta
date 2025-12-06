@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/models";
+import type { ToolStatus } from "@/lib/tools/tool-config";
 import { Greeting } from "@/components/ui/greeting";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
@@ -36,6 +37,11 @@ import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorPopover } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { CodeBlock } from "@/components/ui/code-block";
+import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
+import { WebSearchResults } from "@/components/generative-ui/web-search";
+import { CompareTable } from "@/components/generative-ui/data-table";
+import { DeepResearchResult } from "@/components/generative-ui/deep-research";
+import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 
 export function HoloThread() {
     const { messages, isLoading } = useChatContext();
@@ -155,6 +161,197 @@ function getReasoningContent(message: UIMessage): string | null {
 }
 
 /**
+ * Shape of a tool part stored in messages.
+ * The API stores these with type: "tool-{toolName}" pattern.
+ */
+interface ToolPart {
+    type: `tool-${string}`;
+    toolCallId: string;
+    state: "input-available" | "output-available";
+    input: unknown;
+    output?: unknown;
+}
+
+/**
+ * Type guard for tool parts
+ */
+function isToolPart(part: unknown): part is ToolPart {
+    return (
+        part !== null &&
+        typeof part === "object" &&
+        "type" in part &&
+        typeof (part as { type: unknown }).type === "string" &&
+        (part as { type: string }).type.startsWith("tool-") &&
+        "toolCallId" in part &&
+        "state" in part
+    );
+}
+
+/**
+ * Extract tool parts from UIMessage
+ * Tool parts have type starting with "tool-" (e.g., "tool-getWeather")
+ */
+function getToolParts(message: UIMessage): ToolPart[] {
+    if (!message?.parts) return [];
+    // Cast needed because UIMessage.parts has a complex union type
+    // that TypeScript can't narrow through the filter type guard
+    return (message.parts as unknown[]).filter(isToolPart);
+}
+
+/**
+ * Map tool part state to ToolStatus
+ */
+function getToolStatus(state: ToolPart["state"]): ToolStatus {
+    return state === "output-available" ? "completed" : "running";
+}
+
+/**
+ * Render a single tool part with the appropriate UI component
+ */
+function ToolPartRenderer({ part }: { part: ToolPart }) {
+    const toolName = part.type.replace("tool-", "");
+    const status = getToolStatus(part.state);
+    const input = part.input as Record<string, unknown>;
+    const output = part.output as Record<string, unknown> | undefined;
+
+    switch (toolName) {
+        case "webSearch": {
+            type SearchResult = {
+                title: string;
+                url: string;
+                snippet: string;
+                publishedDate?: string;
+            };
+            return (
+                <WebSearchResults
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    query={(input?.query as string) ?? ""}
+                    results={output?.results as SearchResult[] | undefined}
+                    error={
+                        output?.error
+                            ? String(output.message ?? "Search failed")
+                            : undefined
+                    }
+                />
+            );
+        }
+
+        case "compareOptions": {
+            type CompareOption = { name: string; attributes: Record<string, string> };
+            return (
+                <CompareTable
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    title={(input?.title as string) ?? "Comparison"}
+                    options={output?.options as CompareOption[] | undefined}
+                    error={undefined}
+                />
+            );
+        }
+
+        case "fetchPage":
+            return (
+                <FetchPageResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    url={(input?.url as string) ?? ""}
+                    title={output?.title as string | undefined}
+                    content={output?.content as string | undefined}
+                    error={
+                        output?.error
+                            ? String(output.message ?? "Failed to fetch")
+                            : undefined
+                    }
+                />
+            );
+
+        case "deepResearch": {
+            type Finding = {
+                insight: string;
+                sources: string[];
+                confidence: "high" | "medium" | "low";
+            };
+            type Source = { url: string; title: string; relevance: string };
+            return (
+                <DeepResearchResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    objective={(input?.objective as string) ?? ""}
+                    depth={input?.depth as "quick" | "standard" | "deep" | undefined}
+                    summary={output?.summary as string | undefined}
+                    findings={output?.findings as Finding[] | undefined}
+                    sources={output?.sources as Source[] | undefined}
+                    error={
+                        output?.error
+                            ? String(output.message ?? "Research failed")
+                            : undefined
+                    }
+                />
+            );
+        }
+
+        case "getWeather": {
+            // Weather uses generic ToolWrapper with simple content display
+            const weatherOutput = output as
+                | {
+                      location?: string;
+                      temperature?: number;
+                      condition?: string;
+                      humidity?: number;
+                      windSpeed?: number;
+                  }
+                | undefined;
+
+            return (
+                <ToolWrapper
+                    toolName="getWeather"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                >
+                    {status === "running" ? (
+                        <div className="animate-pulse text-sm text-muted-foreground">
+                            Checking weather for {input?.location as string}...
+                        </div>
+                    ) : weatherOutput ? (
+                        <div className="text-sm">
+                            <div className="text-lg font-medium">
+                                {weatherOutput.temperature}°F {weatherOutput.condition}
+                            </div>
+                            <div className="text-muted-foreground">
+                                {weatherOutput.location}
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                Humidity: {weatherOutput.humidity}% · Wind:{" "}
+                                {weatherOutput.windSpeed} mph
+                            </div>
+                        </div>
+                    ) : null}
+                </ToolWrapper>
+            );
+        }
+
+        default:
+            // Unknown tools get a generic wrapper
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                >
+                    <div className="text-sm text-muted-foreground">
+                        {status === "running" ? "Processing..." : "Complete"}
+                    </div>
+                </ToolWrapper>
+            );
+    }
+}
+
+/**
  * Individual message bubble - user or assistant
  */
 function MessageBubble({
@@ -239,6 +436,9 @@ function AssistantMessage({
     // Check for reasoning in message parts
     const reasoning = getReasoningContent(message);
 
+    // Extract tool parts for rendering
+    const toolParts = getToolParts(message);
+
     return (
         <div className="my-4 flex w-full flex-col gap-2">
             {/* Concierge display - shown for the most recent assistant message */}
@@ -262,6 +462,15 @@ function AssistantMessage({
                     isStreaming={isStreaming}
                     className="mb-3"
                 />
+            )}
+
+            {/* Tool UIs - rendered before text content */}
+            {toolParts.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {toolParts.map((part) => (
+                        <ToolPartRenderer key={part.toolCallId} part={part} />
+                    ))}
+                </div>
             )}
 
             {/* Message content */}
