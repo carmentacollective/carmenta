@@ -53,9 +53,12 @@ function parseClassification(
         }
     }
 
-    // Default to first choice if no match
-    const firstChoice = Object.entries(choices)[0];
-    return { label: firstChoice[0], score: firstChoice[1] };
+    // Default to worst score (0) if no match - conservative approach
+    // This ensures unparseable responses don't inflate quality scores
+    const worstChoice = Object.entries(choices).reduce((worst, [label, score]) =>
+        score < worst[1] ? [label, score] : worst
+    );
+    return { label: worstChoice[0], score: worstChoice[1] };
 }
 
 /**

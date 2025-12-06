@@ -518,7 +518,7 @@ async function main() {
 
         const result = await runTest(test);
         results.push(result);
-        printResult(result, results.length - 1, tests.length);
+        printResult(result, i, tests.length);
     }
 
     printSummary(results);
