@@ -21,6 +21,7 @@ import {
     forwardRef,
 } from "react";
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "@ai-sdk/react";
 
@@ -70,11 +71,11 @@ export function HoloThread() {
 
     return (
         <div className="flex h-full flex-col bg-transparent">
-            {/* Viewport with fade mask */}
+            {/* Viewport with fade mask and mobile touch optimizations */}
             <div
                 ref={viewportRef}
                 onScroll={handleScroll}
-                className="chat-viewport-fade flex flex-1 flex-col items-center overflow-y-auto scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
+                className="chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
             >
                 {isEmpty ? (
                     <ThreadWelcome />
@@ -92,8 +93,8 @@ export function HoloThread() {
                 )}
             </div>
 
-            {/* Input container */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+            {/* Input container with safe area for notched devices */}
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
                 <div className="relative flex w-full max-w-4xl flex-col items-center">
                     {!isAtBottom && (
                         <button
@@ -104,7 +105,7 @@ export function HoloThread() {
                             <ArrowDown className="h-5 w-5 text-foreground/70 sm:h-4 sm:w-4" />
                         </button>
                     )}
-                    <Composer />
+                    <Composer isNewConversation={isEmpty} />
                 </div>
             </div>
         </div>
@@ -300,13 +301,19 @@ function AssistantMessage({
  * - Enter = send, Shift+Enter = newline, Escape = stop
  * - IME composition detection (prevents sending mid-composition)
  * - Stop returns last message to input for quick correction
+ * - Smart autofocus: new conversations always focus, existing on mobile don't
  */
-function Composer() {
+interface ComposerProps {
+    isNewConversation: boolean;
+}
+
+function Composer({ isNewConversation }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge } = useConcierge();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const isMobile = useIsMobile();
 
     // IME composition state
     const [isComposing, setIsComposing] = useState(false);
@@ -318,6 +325,22 @@ function Composer() {
     const [shouldFlash, setShouldFlash] = useState(false);
 
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
+
+    // Smart autofocus:
+    // - New conversation: always focus (user intent is to type)
+    // - Existing conversation on desktop: focus (keyboard doesn't obscure)
+    // - Existing conversation on mobile: don't focus (let user read first)
+    useEffect(() => {
+        // Wait for mobile detection to complete
+        if (isMobile === undefined) return;
+
+        const shouldFocus = isNewConversation || !isMobile;
+
+        if (shouldFocus && inputRef.current) {
+            // Use preventScroll on mobile to avoid keyboard-induced scroll jank
+            inputRef.current.focus({ preventScroll: isMobile });
+        }
+    }, [isNewConversation, isMobile]);
 
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
