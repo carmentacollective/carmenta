@@ -254,6 +254,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                             ariaLabel="Copy reasoning"
                             variant="glass"
                             size="sm"
+                            showMenu={true}
                         />
                     </div>
                 </div>

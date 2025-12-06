@@ -35,6 +35,7 @@ import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorPopover } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
+import { CodeBlock } from "@/components/ui/code-block";
 
 export function HoloThread() {
     const { messages, isLoading } = useChatContext();
@@ -192,7 +193,13 @@ function UserMessage({ message }: { message: UIMessage }) {
             <div className="group relative max-w-full sm:max-w-[80%]">
                 <div className="user-message-bubble rounded-2xl rounded-br-md px-4 py-4">
                     <div className="holo-markdown">
-                        <ReactMarkdown>{content}</ReactMarkdown>
+                        <ReactMarkdown
+                            components={{
+                                code: CodeBlock,
+                            }}
+                        >
+                            {content}
+                        </ReactMarkdown>
                     </div>
                 </div>
                 <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -201,6 +208,7 @@ function UserMessage({ message }: { message: UIMessage }) {
                         ariaLabel="Copy message"
                         variant="glass"
                         size="sm"
+                        showMenu={true}
                     />
                 </div>
             </div>
@@ -261,7 +269,13 @@ function AssistantMessage({
                 <div className="group relative max-w-full sm:max-w-[85%]">
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
                         <div className="holo-markdown">
-                            <ReactMarkdown>{content}</ReactMarkdown>
+                            <ReactMarkdown
+                                components={{
+                                    code: CodeBlock,
+                                }}
+                            >
+                                {content}
+                            </ReactMarkdown>
                         </div>
                     </div>
                     <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -270,6 +284,7 @@ function AssistantMessage({
                             ariaLabel="Copy message"
                             variant="glass"
                             size="sm"
+                            showMenu={true}
                         />
                     </div>
                 </div>
