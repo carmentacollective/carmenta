@@ -164,21 +164,15 @@ export function ModelSelectorPopover({
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full transition-all",
-                    "bg-white/50 backdrop-blur-sm",
-                    "hover:scale-105 hover:bg-white/70",
-                    "active:scale-95",
-                    "relative",
-                    hasOverrides && !isAuto
-                        ? "ring-2 ring-primary/40"
-                        : "ring-1 ring-white/40",
+                    "btn-icon-glass group relative",
+                    hasOverrides && !isAuto ? "ring-2 ring-primary/40" : "",
                     isOpen && "z-[102] bg-white/70 ring-2 ring-primary/50",
-                    disabled && "cursor-not-allowed opacity-50"
+                    disabled && "btn-disabled"
                 )}
                 aria-label="Model settings"
             >
                 {isOpen ? (
-                    <X className="h-4 w-4 text-foreground/60" />
+                    <X className="h-4 w-4 text-foreground/60 transition-colors group-hover:text-foreground/90" />
                 ) : displayModel ? (
                     <ProviderIcon
                         provider={displayModel.provider}
@@ -187,12 +181,12 @@ export function ModelSelectorPopover({
                             disabled
                                 ? "text-foreground/30"
                                 : isAuto
-                                  ? "text-foreground/60"
+                                  ? "text-foreground/60 group-hover:text-foreground/90"
                                   : "text-foreground/90"
                         )}
                     />
                 ) : (
-                    <Sparkles className="h-4 w-4 text-primary/70" />
+                    <Sparkles className="h-5 w-5 text-primary/70 transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
                 )}
             </button>
 

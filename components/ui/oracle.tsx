@@ -116,18 +116,24 @@ function BreathingEffect() {
 }
 
 /**
- * Working Effect - Rainbow + Glow "Slow" (3s)
+ * Working Effect - Holographic spinner with Carmenta brand colors
  */
 function WorkingEffect() {
     return (
-        <>
-            <div className="oracle-working-glow absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(200,180,255,0.5)_0%,transparent_70%)]" />
-            <div className="oracle-working-ring absolute -inset-1">
-                <div className="h-full w-full rounded-full bg-[conic-gradient(from_0deg,#ff0000,#ff8000,#ffff00,#80ff00,#00ff00,#00ff80,#00ffff,#0080ff,#0000ff,#8000ff,#ff00ff,#ff0080,#ff0000)] p-1">
-                    <div className="h-full w-full rounded-full bg-background" />
-                </div>
+        <div
+            className="absolute -inset-2 animate-spin"
+            style={{ animationDuration: "2s" }}
+        >
+            <div
+                className="h-full w-full rounded-full p-[3px]"
+                style={{
+                    background:
+                        "conic-gradient(from 0deg, #C4A3D4, #A3D4E8, #E8A3D4, #C4A3D4)",
+                }}
+            >
+                <div className="h-full w-full rounded-full bg-background" />
             </div>
-        </>
+        </div>
     );
 }
 

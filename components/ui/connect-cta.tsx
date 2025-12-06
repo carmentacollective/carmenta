@@ -8,7 +8,7 @@ export function ConnectCTA() {
     return (
         <Link
             href="/connection/new"
-            className="group/btn relative inline-flex overflow-hidden rounded-full bg-white/80 px-8 py-3 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+            className="btn-glass-interactive group/btn relative inline-flex overflow-hidden rounded-full px-8 py-3"
         >
             <span className="relative z-10 text-base font-medium text-foreground/80 transition-colors group-hover/btn:text-foreground">
                 Connect

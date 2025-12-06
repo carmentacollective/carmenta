@@ -21,10 +21,7 @@ export function OptionalUserButton() {
     return (
         <Popover.Root>
             <Popover.Trigger asChild>
-                <button
-                    className="group flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-white/70 backdrop-blur-xl transition-all duration-200 hover:scale-105 hover:ring-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:h-12 sm:w-12"
-                    aria-label="User menu"
-                >
+                <button className="btn-icon-glass group" aria-label="User menu">
                     <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7" />
                 </button>
             </Popover.Trigger>

@@ -96,7 +96,7 @@ export function HoloThread() {
                     {!isAtBottom && (
                         <button
                             onClick={scrollToBottom}
-                            className="absolute -top-12 rounded-full bg-white/80 p-3 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/95 sm:-top-10 sm:p-2"
+                            className="btn-glass-interactive absolute -top-12 p-3 sm:-top-10 sm:p-2"
                             aria-label="Scroll to bottom"
                         >
                             <ArrowDown className="h-5 w-5 text-foreground/70 sm:h-4 sm:w-4" />
@@ -278,12 +278,24 @@ function Composer() {
     // Track last sent message for stop-returns-message behavior
     const lastSentMessageRef = useRef<string | null>(null);
 
+    // Flash state for input when send clicked without text
+    const [shouldFlash, setShouldFlash] = useState(false);
+
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
             e.preventDefault();
-            if (!input.trim() || isLoading || isComposing) return;
+
+            // If no text, flash the input area and focus it
+            if (!input.trim()) {
+                setShouldFlash(true);
+                setTimeout(() => setShouldFlash(false), 500);
+                inputRef.current?.focus();
+                return;
+            }
+
+            if (isLoading || isComposing) return;
 
             const message = input.trim();
             lastSentMessageRef.current = message;
@@ -339,12 +351,14 @@ function Composer() {
     }, [input]);
 
     const showStop = isLoading;
-    const canSend = input.trim() && !isLoading && !isComposing;
 
     return (
         <form
             onSubmit={handleSubmit}
-            className="glass-input-dock flex w-full max-w-4xl items-center"
+            className={cn(
+                "glass-input-dock flex w-full max-w-4xl items-center transition-all",
+                shouldFlash && "ring-2 ring-primary/40"
+            )}
         >
             <textarea
                 ref={inputRef}
@@ -378,7 +392,6 @@ function Composer() {
                         type="submit"
                         variant="send"
                         aria-label="Send message"
-                        disabled={!canSend}
                         data-testid="send-button"
                     >
                         <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -414,14 +427,18 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                 ref={ref}
                 disabled={disabled}
                 className={cn(
-                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all",
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
+                    "shadow-xl ring-1 backdrop-blur-xl transition-all",
+                    "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                    "active:translate-y-0.5 active:shadow-sm",
+                    "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
                     variant === "ghost" &&
-                        "bg-white/50 text-foreground/60 opacity-70 hover:scale-105 hover:bg-white/80 hover:opacity-100",
+                        "bg-white/50 text-foreground/60 opacity-70 ring-white/40 hover:bg-white/80 hover:opacity-100",
                     variant === "send" &&
-                        "bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white opacity-100 shadow-md hover:scale-105 hover:opacity-100",
+                        "bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 text-white ring-transparent",
                     variant === "stop" &&
-                        "bg-slate-500/90 text-white opacity-60 shadow-sm hover:scale-105 hover:bg-slate-600/90 hover:opacity-75",
-                    disabled && "cursor-default opacity-50",
+                        "bg-slate-500/90 text-white opacity-60 ring-slate-500/20 hover:bg-slate-600/90 hover:opacity-75",
+                    disabled && "btn-disabled",
                     className
                 )}
                 {...props}
