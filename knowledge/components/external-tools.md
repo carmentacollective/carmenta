@@ -1,5 +1,12 @@
 # External Tools
 
+MCP ecosystem strategy and future vision for tool extensibility.
+
+**Related**: See tools.md for current tool architecture, inventory, and implementation
+decisions. See service-connectivity.md for OAuth/Nango patterns.
+
+---
+
 Connecting Carmenta to tools and services beyond conversation. The layer that lets your
 AI actually do things in the world.
 

@@ -1,5 +1,12 @@
 # Service Connectivity
 
+OAuth and credential management for user-connected services via Nango.
+
+**Related**: See tools.md for tool architecture and tier decisions. See
+external-tools.md for MCP ecosystem strategy.
+
+---
+
 Native integrations with external services - the connective tissue that lets Carmenta
 access your tools, data, and accounts. One subscription covers full connectivity. MCP
 servers remain supported for custom integrations.
