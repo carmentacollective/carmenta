@@ -16,6 +16,7 @@ import { generateText, type UIMessage } from "ai";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
+import { generateTitle } from "@/lib/db/title-generator";
 import { buildConciergePrompt } from "./prompt";
 import {
     ALLOWED_MODELS,
@@ -320,6 +321,26 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 if (!userQuery) {
                     logger.warn({}, "No user query found, using defaults");
                     return CONCIERGE_DEFAULTS;
+                }
+
+                // AUDIO ROUTING: Force Gemini if audio attachments present
+                // Audio files can ONLY be processed by Gemini (native support)
+                if (attachments.includes("audio")) {
+                    logger.info(
+                        { attachments },
+                        "Audio attachment detected - forcing Gemini"
+                    );
+                    // Generate title since we're bypassing the normal concierge LLM call
+                    const title = await generateTitle(userQuery);
+                    return {
+                        modelId: "google/gemini-3-pro-preview",
+                        temperature: 0.5,
+                        explanation:
+                            "Audio file detected - routing to Gemini for native audio processing 🎵",
+                        reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
+                        autoSwitched: true,
+                        title,
+                    };
                 }
 
                 // Build the prompt with attachment context

@@ -62,6 +62,12 @@ export interface ConciergeResult {
      * Only present on first message - used to create the connection.
      */
     title?: string;
+
+    /**
+     * Whether the model was auto-switched due to attachment requirements.
+     * True when attachments force a specific model (e.g., audio → Gemini).
+     */
+    autoSwitched?: boolean;
 }
 
 /**

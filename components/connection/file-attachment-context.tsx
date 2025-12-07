@@ -58,33 +58,23 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            // Update to uploading status
-            setPendingFiles((prev) =>
-                prev.map((u) =>
-                    u.id === upload.id ? { ...u, status: "uploading" } : u
-                )
-            );
-
             try {
                 const result = await uploadFile(
                     upload.file,
                     userEmail,
                     activeConnection?.id || null,
-                    (progress) => {
+                    (status) => {
+                        // Update status as upload progresses
                         setPendingFiles((prev) =>
-                            prev.map((u) =>
-                                u.id === upload.id ? { ...u, progress } : u
-                            )
+                            prev.map((u) => (u.id === upload.id ? { ...u, status } : u))
                         );
                     }
                 );
 
-                // Mark complete
+                // Mark complete with result
                 setPendingFiles((prev) =>
                     prev.map((u) =>
-                        u.id === upload.id
-                            ? { ...u, status: "complete", result, progress: 100 }
-                            : u
+                        u.id === upload.id ? { ...u, status: "complete", result } : u
                     )
                 );
             } catch (error) {
@@ -112,12 +102,11 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         (fileList: FileList | File[]) => {
             const files = Array.from(fileList);
 
-            // Create pending upload entries
+            // Create pending upload entries with initial "validating" status
             const newUploads: UploadProgress[] = files.map((file) => ({
                 id: nanoid(),
                 file,
-                progress: 0,
-                status: "pending" as const,
+                status: "validating" as const,
             }));
 
             setPendingFiles((prev) => [...prev, ...newUploads]);
@@ -139,7 +128,10 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const isUploading = pendingFiles.some(
-        (u) => u.status === "pending" || u.status === "uploading"
+        (u) =>
+            u.status === "validating" ||
+            u.status === "optimizing" ||
+            u.status === "uploading"
     );
 
     const completedFiles = pendingFiles

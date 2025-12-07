@@ -17,15 +17,24 @@ export interface UploadedFile {
     path: string;
 }
 
+/**
+ * Attachment metadata for model routing decisions.
+ * Tells the concierge which model to use based on file type.
+ */
+export interface AttachmentMeta {
+    /** MIME type of the attachment */
+    mediaType: string;
+    /** Required model for this attachment type (e.g., "google/gemini-3-pro-preview" for audio) */
+    requiredModel?: string;
+}
+
 export interface UploadProgress {
     /** Unique ID for tracking this upload */
     id: string;
     /** File being uploaded */
     file: File;
-    /** Upload progress (0-100) */
-    progress: number;
     /** Current status */
-    status: "pending" | "uploading" | "complete" | "error";
+    status: "validating" | "optimizing" | "uploading" | "complete" | "error";
     /** Error message if status is error */
     error?: string;
     /** Result if status is complete */

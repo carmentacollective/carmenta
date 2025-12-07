@@ -34,9 +34,12 @@ ${rubricContent}
 </rubric>
 
 <instructions>
-Read the message. Using the rubric:
+Read the message and any attachments. Using the rubric:
 
 1. Select the best model for this request
+   - If attachments include audio → MUST use google/gemini-3-pro-preview (only model with audio support)
+   - If attachments include PDFs → prefer anthropic/claude-sonnet-4.5 (best document understanding)
+   - If attachments include images → prefer anthropic/claude-sonnet-4.5 (excellent vision)
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice - this will be shown to the user

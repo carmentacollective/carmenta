@@ -35,7 +35,23 @@ function UploadItem({
     upload: UploadProgressType;
     onRemove: (id: string) => void;
 }) {
-    const { id, file, progress, status, error } = upload;
+    const { id, file, status, error } = upload;
+
+    // Honest status messages - no fake progress bars
+    const getStatusMessage = () => {
+        switch (status) {
+            case "validating":
+                return "Checking file...";
+            case "optimizing":
+                return "Optimizing...";
+            case "uploading":
+                return "Uploading...";
+            case "complete":
+                return "Complete";
+            case "error":
+                return error || "Upload failed";
+        }
+    };
 
     return (
         <div className="flex items-center gap-3 rounded-lg bg-background/60 p-2">
@@ -50,30 +66,24 @@ function UploadItem({
                 )}
             </div>
 
-            {/* Filename and progress */}
+            {/* Filename and status */}
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-foreground/90">
                     {file.name}
                 </div>
-                {status === "error" ? (
-                    <div className="text-xs text-destructive">{error}</div>
-                ) : status === "complete" ? (
-                    <div className="text-xs text-green-600 dark:text-green-400">
-                        Complete
-                    </div>
-                ) : (
-                    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-foreground/10">
-                        <div
-                            className={cn(
-                                "h-full bg-gradient-to-r from-purple-500 via-cyan-500 to-pink-500 transition-all duration-300",
-                                status === "pending" && "w-0"
-                            )}
-                            style={{
-                                width: status === "uploading" ? `${progress}%` : "0%",
-                            }}
-                        />
-                    </div>
-                )}
+                <div
+                    className={cn(
+                        "text-xs",
+                        status === "error" && "text-destructive",
+                        status === "complete" && "text-green-600 dark:text-green-400",
+                        (status === "validating" ||
+                            status === "optimizing" ||
+                            status === "uploading") &&
+                            "text-foreground/60"
+                    )}
+                >
+                    {getStatusMessage()}
+                </div>
             </div>
 
             {/* Remove button */}
