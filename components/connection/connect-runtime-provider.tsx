@@ -68,7 +68,11 @@ interface ChatContextType {
     /** Messages in the chat */
     messages: UIMessage[];
     /** Send a message - wraps sendMessage with our format */
-    append: (message: { role: "user"; content: string }) => Promise<void>;
+    append: (message: {
+        role: "user";
+        content: string;
+        files?: Array<{ url: string; mediaType: string; name: string }>;
+    }) => Promise<void>;
     /** Whether the AI is currently generating */
     isLoading: boolean;
     /** Stop the current generation */
@@ -539,13 +543,45 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Wrap sendMessage to use our simple format
     const append = useCallback(
-        async (message: { role: "user"; content: string }) => {
+        async (message: {
+            role: "user";
+            content: string;
+            files?: Array<{ url: string; mediaType: string; name: string }>;
+        }) => {
             setDisplayError(null);
             setInput("");
             try {
+                // Build parts array with text and files
+                const parts: Array<
+                    | { type: "text"; text: string }
+                    | {
+                          type: "file";
+                          url: string;
+                          mediaType: string;
+                          name: string;
+                      }
+                > = [];
+
+                // Add text part
+                if (message.content) {
+                    parts.push({ type: "text", text: message.content });
+                }
+
+                // Add file parts
+                if (message.files?.length) {
+                    for (const file of message.files) {
+                        parts.push({
+                            type: "file",
+                            url: file.url,
+                            mediaType: file.mediaType,
+                            name: file.name,
+                        });
+                    }
+                }
+
                 await sendMessage({
                     role: message.role,
-                    parts: [{ type: "text", text: message.content }],
+                    parts,
                 });
             } catch (err) {
                 logger.error({ error: err }, "Failed to send message");

@@ -43,8 +43,20 @@ import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
+import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
+import { FilePickerButton } from "./file-picker-button";
+import { UploadProgressDisplay } from "./upload-progress";
+import { FilePreview } from "./file-preview";
 
 export function HoloThread() {
+    return (
+        <FileAttachmentProvider>
+            <HoloThreadInner />
+        </FileAttachmentProvider>
+    );
+}
+
+function HoloThreadInner() {
     const { messages, isLoading } = useChatContext();
     const viewportRef = useRef<HTMLDivElement>(null);
     const [isAtBottom, setIsAtBottom] = useState(true);
@@ -205,6 +217,38 @@ function getToolParts(message: UIMessage): ToolPart[] {
     // Cast needed because UIMessage.parts has a complex union type
     // that TypeScript can't narrow through the filter type guard
     return (message.parts as unknown[]).filter(isToolPart);
+}
+
+/**
+ * File part type from AI SDK
+ */
+interface FilePart {
+    type: "file";
+    url: string;
+    mediaType: string;
+    name?: string;
+}
+
+/**
+ * Type guard for file parts
+ */
+function isFilePart(part: unknown): part is FilePart {
+    return (
+        part !== null &&
+        typeof part === "object" &&
+        "type" in part &&
+        (part as { type: unknown }).type === "file" &&
+        "url" in part &&
+        "mediaType" in part
+    );
+}
+
+/**
+ * Extract file parts from UIMessage
+ */
+function getFileParts(message: UIMessage): FilePart[] {
+    if (!message?.parts) return [];
+    return (message.parts as unknown[]).filter(isFilePart);
 }
 
 /**
@@ -468,19 +512,39 @@ function MessageActions({
  */
 function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean }) {
     const content = getMessageContent(message);
+    const fileParts = getFileParts(message);
+
     return (
         <div className="my-4 flex w-full justify-end">
             <div className="group max-w-full sm:max-w-[80%]">
                 <div className="user-message-bubble rounded-2xl rounded-br-md px-4 py-4">
-                    <div className="holo-markdown">
-                        <ReactMarkdown
-                            components={{
-                                code: CodeBlock,
-                            }}
-                        >
-                            {content}
-                        </ReactMarkdown>
-                    </div>
+                    {/* File previews */}
+                    {fileParts.length > 0 && (
+                        <div className="mb-3 flex flex-col gap-2">
+                            {fileParts.map((file, idx) => (
+                                <FilePreview
+                                    key={idx}
+                                    url={file.url}
+                                    mediaType={file.mediaType}
+                                    filename={file.name || "file"}
+                                    isUserMessage
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Text content */}
+                    {content && (
+                        <div className="holo-markdown">
+                            <ReactMarkdown
+                                components={{
+                                    code: CodeBlock,
+                                }}
+                            >
+                                {content}
+                            </ReactMarkdown>
+                        </div>
+                    )}
                 </div>
                 <MessageActions content={content} isLast={isLast} align="right" />
             </div>
@@ -548,6 +612,23 @@ function AssistantMessage({
                 </div>
             )}
 
+            {/* File previews (rare but possible for assistant messages) */}
+            {(() => {
+                const fileParts = getFileParts(message);
+                return fileParts.length > 0 ? (
+                    <div className="mb-3 flex flex-col gap-2">
+                        {fileParts.map((file, idx) => (
+                            <FilePreview
+                                key={idx}
+                                url={file.url}
+                                mediaType={file.mediaType}
+                                filename={file.name || "file"}
+                            />
+                        ))}
+                    </div>
+                ) : null;
+            })()}
+
             {/* Message content */}
             {hasContent && (
                 <div className="group max-w-full sm:max-w-[85%]">
@@ -592,7 +673,10 @@ function Composer({ isNewConversation }: ComposerProps) {
     const { concierge } = useConcierge();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
+    const { addFiles, isUploading, completedFiles, clearFiles, pendingFiles } =
+        useFileAttachments();
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
 
     // IME composition state
@@ -604,10 +688,64 @@ function Composer({ isNewConversation }: ComposerProps) {
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
 
+    // Drag-drop state
+    const [isDragging, setIsDragging] = useState(false);
+
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     // Track if initial autofocus has been applied (prevents re-focus on resize)
     const hasInitialFocusRef = useRef(false);
+
+    // Paste handler - detect images from clipboard
+    const handlePaste = useCallback(
+        (e: React.ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            const imageFiles: File[] = [];
+            for (const item of Array.from(items)) {
+                if (item.type.startsWith("image/")) {
+                    const file = item.getAsFile();
+                    if (file) imageFiles.push(file);
+                }
+            }
+
+            if (imageFiles.length > 0) {
+                e.preventDefault();
+                addFiles(imageFiles);
+            }
+        },
+        [addFiles]
+    );
+
+    // Drag-drop handlers
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Only set dragging to false if leaving the form entirely
+        if (e.currentTarget === formRef.current) {
+            setIsDragging(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+
+            if (e.dataTransfer?.files) {
+                addFiles(Array.from(e.dataTransfer.files));
+            }
+        },
+        [addFiles]
+    );
 
     // Smart autofocus (runs once on initial mount):
     // - New conversation: always focus (user intent is to type)
@@ -630,22 +768,33 @@ function Composer({ isNewConversation }: ComposerProps) {
         async (e: FormEvent) => {
             e.preventDefault();
 
-            // If no text, flash the input area and focus it
-            if (!input.trim()) {
+            // If no text and no files, flash the input area and focus it
+            if (!input.trim() && completedFiles.length === 0) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 500);
                 inputRef.current?.focus();
                 return;
             }
 
-            if (isLoading || isComposing) return;
+            // Don't send while uploading
+            if (isLoading || isComposing || isUploading) return;
 
             const message = input.trim();
             lastSentMessageRef.current = message;
             setInput("");
 
             try {
-                await append({ role: "user", content: message });
+                await append({
+                    role: "user",
+                    content: message,
+                    files: completedFiles.map((f) => ({
+                        url: f.url,
+                        mediaType: f.mediaType,
+                        name: f.name,
+                    })),
+                });
+                // Clear files after successful send
+                clearFiles();
             } catch (error) {
                 logger.error(
                     { error: error instanceof Error ? error.message : String(error) },
@@ -654,7 +803,16 @@ function Composer({ isNewConversation }: ComposerProps) {
                 setInput(message);
             }
         },
-        [input, isLoading, isComposing, setInput, append]
+        [
+            input,
+            isLoading,
+            isComposing,
+            isUploading,
+            completedFiles,
+            setInput,
+            append,
+            clearFiles,
+        ]
     );
 
     const handleStop = useCallback(() => {
@@ -694,60 +852,84 @@ function Composer({ isNewConversation }: ComposerProps) {
     }, [input]);
 
     const showStop = isLoading;
+    const hasPendingFiles = pendingFiles.length > 0;
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className={cn(
-                "glass-input-dock flex w-full max-w-4xl items-center transition-all",
-                shouldFlash && "ring-2 ring-primary/40"
-            )}
-        >
-            <textarea
-                ref={inputRef}
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={() => {
-                    // IME composition ends before value updates, defer flag reset
-                    setTimeout(() => setIsComposing(false), 0);
-                }}
-                placeholder="Message Carmenta..."
-                className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
-                rows={1}
-                data-testid="composer-input"
-            />
+        <div className="flex w-full max-w-4xl flex-col gap-2">
+            {/* Upload progress display */}
+            {hasPendingFiles && <UploadProgressDisplay />}
 
-            <div className="flex items-center gap-2 pr-1">
-                {showStop ? (
-                    <ComposerButton
-                        type="button"
-                        variant="stop"
-                        aria-label="Stop generation"
-                        onClick={handleStop}
-                        data-testid="stop-button"
-                    >
-                        <Square className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </ComposerButton>
-                ) : (
-                    <ComposerButton
-                        type="submit"
-                        variant="send"
-                        aria-label="Send message"
-                        data-testid="send-button"
-                    >
-                        <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </ComposerButton>
+            <form
+                ref={formRef}
+                onSubmit={handleSubmit}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                    "glass-input-dock relative flex w-full items-center transition-all",
+                    shouldFlash && "ring-2 ring-primary/40",
+                    isDragging && "bg-primary/5 ring-2 ring-primary/60"
+                )}
+            >
+                {/* Drag overlay */}
+                {isDragging && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/40 bg-primary/10">
+                        <div className="text-sm font-medium text-primary">
+                            Drop files to attach
+                        </div>
+                    </div>
                 )}
 
-                <ModelSelectorPopover
-                    overrides={overrides}
-                    onChange={setOverrides}
-                    conciergeModel={conciergeModel}
+                <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={() => {
+                        // IME composition ends before value updates, defer flag reset
+                        setTimeout(() => setIsComposing(false), 0);
+                    }}
+                    placeholder="Message Carmenta..."
+                    className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+                    rows={1}
+                    data-testid="composer-input"
                 />
-            </div>
-        </form>
+
+                <div className="flex items-center gap-1 pr-1">
+                    {showStop ? (
+                        <ComposerButton
+                            type="button"
+                            variant="stop"
+                            aria-label="Stop generation"
+                            onClick={handleStop}
+                            data-testid="stop-button"
+                        >
+                            <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </ComposerButton>
+                    ) : (
+                        <ComposerButton
+                            type="submit"
+                            variant="send"
+                            aria-label="Send message"
+                            disabled={isUploading}
+                            data-testid="send-button"
+                        >
+                            <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </ComposerButton>
+                    )}
+
+                    <FilePickerButton />
+
+                    <ModelSelectorPopover
+                        overrides={overrides}
+                        onChange={setOverrides}
+                        conciergeModel={conciergeModel}
+                    />
+                </div>
+            </form>
+        </div>
     );
 }
 

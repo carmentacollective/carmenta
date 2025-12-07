@@ -140,7 +140,7 @@ Dynamic selection beats static rules.
 
 **Why Supabase Storage**:
 
-- Already using Supabase for database (one vendor, one bill)
+- Database on Render.com, file storage on Supabase (best tool for each job)
 - **Real-time image transformations** via URL params (resize, crop, format, quality)
 - **Global CDN** (Cloudflare edge network)
 - Direct browser uploads (bypasses server)
@@ -168,8 +168,8 @@ const smart = `${publicUrl}?width=600&resize=cover&gravity=auto`;
 **Storage Strategy**:
 
 - File bytes: Supabase Storage (CDN, transformations)
-- Metadata: Supabase Postgres (relationships, status, permissions)
-- Processed artifacts: Same buckets (extracted text, thumbnails)
+- Metadata: Render Postgres (relationships, status, permissions)
+- Processed artifacts: Supabase Storage buckets (extracted text, thumbnails)
 
 **vs. Alternatives**:
 

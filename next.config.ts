@@ -39,6 +39,10 @@ const config: NextConfig = {
                 protocol: "https",
                 hostname: "carmenta.ai",
             },
+            {
+                protocol: "https",
+                hostname: "*.supabase.co",
+            },
         ],
     },
 
