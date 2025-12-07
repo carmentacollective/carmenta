@@ -96,9 +96,7 @@ describe("ConnectionChooser Integration", () => {
         cleanup();
     });
 
-    // TODO: Fix delete tests - deletion not persisting to database correctly
-    // See https://github.com/carmentacollective/carmenta/issues/92
-    describe.skip("Full Delete Cycle", () => {
+    describe("Full Delete Cycle", () => {
         it("creates connection, displays it, deletes it, and it disappears", async () => {
             // 1. Create connections in the database
             const conn1 = await createConnection(testUser.id);
