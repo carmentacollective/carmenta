@@ -99,7 +99,7 @@ function createParticle(width: number, height: number): Particle {
         size: Math.random() * 2 + 0.5,
         opacity: Math.random() * 0.6 + 0.2,
         twinkle: Math.random() * Math.PI * 2,
-        twinkleSpeed: 0.05 + Math.random() * 0.08,
+        twinkleSpeed: 0.015 + Math.random() * 0.025, // Slowed ~3x for gentler effect
         vx: (Math.random() - 0.5) * 0.3,
         vy: (Math.random() - 0.5) * 0.3,
     };
