@@ -892,7 +892,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                         setTimeout(() => setIsComposing(false), 0);
                     }}
                     placeholder="Message Carmenta..."
-                    className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40 md:max-h-40 md:min-h-14"
+                    className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40 sm:pl-6 md:max-h-40 md:min-h-14 md:pl-8"
                     rows={1}
                     data-testid="composer-input"
                 />
