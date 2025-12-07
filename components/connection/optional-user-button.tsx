@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
-import { User, LogOut, Moon, Sun, UserCircle2 } from "lucide-react";
+import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -16,7 +16,7 @@ const getServerSnapshot = () => false;
 
 /**
  * Custom user menu button matching ConnectionChooser style.
- * Glass morphism design with profile picture, theme switcher, and account management.
+ * Glass morphism design with profile picture, theme selector (light/dark/system), and account management.
  */
 export function OptionalUserButton() {
     const { isLoaded, isSignedIn } = useAuth();
@@ -24,7 +24,7 @@ export function OptionalUserButton() {
     const { signOut, openUserProfile } = useClerk();
     const [isOpen, setIsOpen] = useState(false);
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-    const { resolvedTheme, setTheme } = useTheme();
+    const { theme, setTheme } = useTheme();
 
     // Reserve space to prevent layout shift
     if (!isLoaded || !isSignedIn || !user) {
@@ -35,10 +35,12 @@ export function OptionalUserButton() {
     const displayName = user.fullName || user.firstName || "User";
     const email = user.primaryEmailAddress?.emailAddress;
 
-    const isDark = resolvedTheme === "dark";
-    const toggleTheme = () => {
-        setTheme(isDark ? "light" : "dark");
-    };
+    // Theme options with icons and labels
+    const themeOptions = [
+        { value: "light", label: "Light", icon: Sun },
+        { value: "dark", label: "Dark", icon: Moon },
+        { value: "system", label: "System", icon: Monitor },
+    ] as const;
 
     return (
         <>
@@ -115,29 +117,37 @@ export function OptionalUserButton() {
                                         <span className="relative">Manage account</span>
                                     </button>
 
-                                    {/* Theme switcher */}
+                                    {/* Theme selector */}
                                     {isClient && (
-                                        <button
-                                            onClick={toggleTheme}
-                                            className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
-                                        >
-                                            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                            {isDark ? (
-                                                <>
-                                                    <Moon className="relative h-4 w-4 text-foreground/60" />
-                                                    <span className="relative">
-                                                        Dark mode
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Sun className="relative h-4 w-4 text-foreground/60" />
-                                                    <span className="relative">
-                                                        Light mode
-                                                    </span>
-                                                </>
-                                            )}
-                                        </button>
+                                        <div className="border-t border-foreground/10 py-1">
+                                            <div className="px-3 py-2 text-xs font-medium text-foreground/50">
+                                                Appearance
+                                            </div>
+                                            {themeOptions.map((option) => {
+                                                const isSelected =
+                                                    theme === option.value;
+                                                const Icon = option.icon;
+
+                                                return (
+                                                    <button
+                                                        key={option.value}
+                                                        onClick={() =>
+                                                            setTheme(option.value)
+                                                        }
+                                                        className="group relative flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                                    >
+                                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                                        <Icon className="relative h-4 w-4 text-foreground/60" />
+                                                        <span className="relative flex-1 text-left">
+                                                            {option.label}
+                                                        </span>
+                                                        {isSelected && (
+                                                            <Check className="relative h-4 w-4 text-primary" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     )}
 
                                     <button
