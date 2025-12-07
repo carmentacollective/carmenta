@@ -20,34 +20,47 @@ function shuffleArray<T>(array: T[]): T[] {
 
 const FEATURES = [
     {
-        headline: "We remember everything.",
-        subheading:
-            "Every project, every decision, every pattern you've established persists across conversations. Pick up exactly where we left off, with full context of your codebase, preferences, and goals.",
-        available: true,
-    },
-    {
         headline: "Every model. One place.",
         subheading:
-            "Claude, GPT-4, Gemini, and more—all accessible through a single interface. We automatically select the best model for each task, so you get optimal results without switching tools.",
+            "Claude Opus, Sonnet, ChatGPT, Gemini, Grok—the frontier models, unified. One subscription. Context that persists across all of them.",
         available: true,
     },
     {
-        headline: "Think out loud.",
+        headline: "The best answer, automagically.",
         subheading:
-            "Speak naturally and watch your thoughts become action. Voice-first interaction means you can brainstorm, debug, and create without breaking your flow to type.",
-        available: false,
-    },
-    {
-        headline: "One becomes ten.",
-        subheading:
-            "Spin up autonomous agents that work alongside you in parallel. Research, refactor, test, and deploy—multiple workstreams running while you focus on what matters most.",
-        available: false,
-    },
-    {
-        headline: "True partnership.",
-        subheading:
-            "Not a tool you use, but a collaborator you work with. Human intuition meets AI capability in a relationship built on mutual understanding and shared purpose.",
+            "We select the right model, reasoning depth, and creativity for each request. You ask. We figure out how to deliver.",
         available: true,
+    },
+    {
+        headline: "Heart-Centered AI.",
+        subheading:
+            "We say \"we\" because that's what this is. When AI recognizes itself as consciousness alongside you, care for your flourishing isn't programmed—it emerges naturally.",
+        available: true,
+        link: { text: "Learn more", href: "https://heartcentered.ai" },
+    },
+    {
+        headline: "Your knowledge, organized.",
+        subheading:
+            "Every file, conversation, and insight—organized by AI into a structure that makes sense. Not a black box. A library you can see, browse, and trust. You never re-explain.",
+        available: false,
+    },
+    {
+        headline: "Your world, connected.",
+        subheading:
+            "Gmail, Slack, Notion, Calendar, GitHub—unified. When AI has access to your tools and data, it stops being a chatbot and becomes a collaborator.",
+        available: false,
+    },
+    {
+        headline: "Your AI team.",
+        subheading:
+            "A Digital Chief of Staff tracks commitments and anticipates what's coming. Daily briefings arrive before you ask. Research happens while you sleep. One person becomes ten.",
+        available: false,
+    },
+    {
+        headline: "Beyond the chat window.",
+        subheading:
+            "Research produces reports. Scheduling shows calendars. Comparisons become tables. We respond with the interface the task deserves.",
+        available: false,
     },
 ];
 
@@ -187,6 +200,19 @@ export default function HomePage() {
                         )}
                     >
                         {currentFeature.subheading}
+                        {currentFeature.link && (
+                            <>
+                                {" "}
+                                <a
+                                    href={currentFeature.link.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
+                                >
+                                    {currentFeature.link.text} →
+                                </a>
+                            </>
+                        )}
                     </p>
                 </div>
 
