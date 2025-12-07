@@ -322,6 +322,23 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     return CONCIERGE_DEFAULTS;
                 }
 
+                // AUDIO ROUTING: Force Gemini if audio attachments present
+                // Audio files can ONLY be processed by Gemini (native support)
+                if (attachments.includes("audio")) {
+                    logger.info(
+                        { attachments },
+                        "Audio attachment detected - forcing Gemini"
+                    );
+                    return {
+                        modelId: "google/gemini-3-pro-preview",
+                        temperature: 0.5,
+                        explanation:
+                            "Audio file detected - routing to Gemini for native audio processing 🎵",
+                        reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
+                        autoSwitched: true,
+                    };
+                }
+
                 // Build the prompt with attachment context
                 let prompt = userQuery;
                 if (attachments.length > 0) {

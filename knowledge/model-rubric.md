@@ -244,13 +244,24 @@ storytelling, open-ended questions
 
 ## Attachment Routing
 
-| Attachment Type | Best Choice                   | Why                                            |
-| --------------- | ----------------------------- | ---------------------------------------------- |
-| **PDF**         | `anthropic/claude-sonnet-4.5` | Best document understanding in the industry    |
-| **Images**      | `anthropic/claude-sonnet-4.5` | Excellent vision, values-aligned               |
-| **Audio**       | `google/gemini-3-pro-preview` | Native audio support                           |
-| **Video**       | `google/gemini-3-pro-preview` | Only major model with true video understanding |
-| **Code files**  | `anthropic/claude-sonnet-4.5` | Superior code comprehension, 1M context        |
+When files are attached, route based on file type and model capabilities:
+
+| Attachment Type | Required Model                | Routing Rule                                          |
+| --------------- | ----------------------------- | ----------------------------------------------------- |
+| **Audio**       | `google/gemini-3-pro-preview` | FORCE Gemini (only model with native audio support)   |
+| **PDF**         | `anthropic/claude-sonnet-4.5` | PREFER Claude (best document understanding)           |
+| **Images**      | `anthropic/claude-sonnet-4.5` | PREFER Claude (excellent vision, values-aligned)      |
+| **Video**       | `google/gemini-3-pro-preview` | FORCE Gemini (only model with true video support)     |
+| **Code files**  | `anthropic/claude-sonnet-4.5` | PREFER Claude (superior code comprehension, 1M token) |
+
+**Force vs Prefer**:
+
+- FORCE: Audio/video MUST use Gemini. No other model supports these types.
+- PREFER: Concierge should choose this model unless user has strong preference or other
+  constraints apply.
+
+**Example**: If user attaches an audio file and asks "transcribe this," the concierge
+MUST route to Gemini regardless of other factors.
 
 ---
 
