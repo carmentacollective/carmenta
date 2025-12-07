@@ -98,6 +98,7 @@ function ConnectionDropdown({
     inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const handleDeleteClick = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
@@ -110,8 +111,14 @@ function ConnectionDropdown({
     const confirmDelete = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
             e.stopPropagation();
-            onDelete(connectionId);
-            setPendingDeleteId(null);
+            setDeletingId(connectionId);
+
+            // Wait for exit animation then delete
+            setTimeout(() => {
+                onDelete(connectionId);
+                setPendingDeleteId(null);
+                setDeletingId(null);
+            }, 180);
         },
         [onDelete]
     );
@@ -209,131 +216,150 @@ function ConnectionDropdown({
 
                                 {filtered.length > 0 ? (
                                     <div className="py-1">
-                                        {filtered.map((conn, index) => {
-                                            const isFresh = freshConnectionIds.has(
-                                                conn.id
-                                            );
-                                            const isPendingDelete =
-                                                pendingDeleteId === conn.id;
-                                            const isActive =
-                                                conn.id === activeConnection?.id;
+                                        <AnimatePresence mode="popLayout">
+                                            {filtered.map((conn, index) => {
+                                                const isFresh = freshConnectionIds.has(
+                                                    conn.id
+                                                );
+                                                const isPendingDelete =
+                                                    pendingDeleteId === conn.id;
+                                                const isDeleting =
+                                                    deletingId === conn.id;
+                                                const isActive =
+                                                    conn.id === activeConnection?.id;
 
-                                            // Delete confirmation state
-                                            if (isPendingDelete) {
+                                                // Delete confirmation or deleting state
+                                                if (isPendingDelete || isDeleting) {
+                                                    return (
+                                                        <motion.div
+                                                            key={conn.id}
+                                                            className="flex items-center justify-between bg-red-500/10 px-4 py-3"
+                                                            initial={{
+                                                                opacity: 0,
+                                                                scale: 0.98,
+                                                            }}
+                                                            animate={{
+                                                                opacity: 1,
+                                                                scale: 1,
+                                                            }}
+                                                            exit={{
+                                                                opacity: 0,
+                                                                scale: 0.98,
+                                                            }}
+                                                            transition={{
+                                                                duration: 0.15,
+                                                            }}
+                                                        >
+                                                            <span className="text-sm text-red-600 dark:text-red-400">
+                                                                {isDeleting ? (
+                                                                    "Deleting..."
+                                                                ) : (
+                                                                    <>
+                                                                        Delete &ldquo;
+                                                                        {conn.title ||
+                                                                            "this connection"}
+                                                                        &rdquo;?
+                                                                    </>
+                                                                )}
+                                                            </span>
+                                                            {!isDeleting && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={(
+                                                                            e
+                                                                        ) => {
+                                                                            e.stopPropagation();
+                                                                            cancelDelete();
+                                                                        }}
+                                                                        className="rounded-lg px-3 py-1.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-foreground/5"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) =>
+                                                                            confirmDelete(
+                                                                                e,
+                                                                                conn.id
+                                                                            )
+                                                                        }
+                                                                        className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
+                                                    );
+                                                }
+
                                                 return (
                                                     <motion.div
                                                         key={conn.id}
-                                                        className="flex items-center justify-between bg-red-50 px-4 py-3"
-                                                        initial={{
-                                                            backgroundColor:
-                                                                "transparent",
+                                                        className={cn(
+                                                            "group relative flex items-center gap-3 overflow-hidden px-4 py-2.5 transition-all",
+                                                            isActive && "bg-primary/5",
+                                                            isFresh &&
+                                                                "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
+                                                        )}
+                                                        initial={{ opacity: 0, x: -8 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, x: 8 }}
+                                                        transition={{
+                                                            duration: 0.2,
+                                                            delay: index * 0.03,
+                                                            ease: "easeOut",
                                                         }}
-                                                        animate={{
-                                                            backgroundColor:
-                                                                "rgb(254 242 242)",
-                                                        }}
-                                                        transition={{ duration: 0.15 }}
                                                     >
-                                                        <span className="text-sm text-red-700">
-                                                            Delete &ldquo;
-                                                            {conn.title ||
-                                                                "this connection"}
-                                                            &rdquo;?
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    cancelDelete();
-                                                                }}
-                                                                className="rounded-lg px-3 py-1.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-white/60"
+                                                        {/* Hover background indicator */}
+                                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
+                                                        <button
+                                                            onClick={() =>
+                                                                onSelect(conn.slug)
+                                                            }
+                                                            className="relative flex flex-1 items-center gap-3 text-left transition-all group-hover:translate-x-1"
+                                                        >
+                                                            <span
+                                                                className={cn(
+                                                                    "min-w-0 flex-1 truncate text-sm font-medium transition-colors",
+                                                                    isActive
+                                                                        ? "text-foreground"
+                                                                        : "text-foreground/80 group-hover:text-foreground"
+                                                                )}
                                                             >
-                                                                Cancel
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) =>
-                                                                    confirmDelete(
-                                                                        e,
-                                                                        conn.id
-                                                                    )
-                                                                }
-                                                                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
+                                                                {conn.title ||
+                                                                    "New connection"}
+                                                            </span>
+                                                            {isFresh && (
+                                                                <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                                                                    new
+                                                                </span>
+                                                            )}
+                                                            <span className="shrink-0 text-xs text-foreground/40">
+                                                                {isFresh
+                                                                    ? "Just now"
+                                                                    : getRelativeTime(
+                                                                          conn.lastActivityAt
+                                                                      )}
+                                                            </span>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) =>
+                                                                handleDeleteClick(
+                                                                    e,
+                                                                    conn.id
+                                                                )
+                                                            }
+                                                            className="relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                                                            title={`Delete ${conn.title || "connection"}`}
+                                                            aria-label={`Delete ${conn.title || "connection"}`}
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
+                                                        </button>
                                                     </motion.div>
                                                 );
-                                            }
-
-                                            return (
-                                                <motion.div
-                                                    key={conn.id}
-                                                    className={cn(
-                                                        "group relative flex items-center gap-3 overflow-hidden px-4 py-2.5 transition-all",
-                                                        isActive && "bg-primary/5",
-                                                        isFresh &&
-                                                            "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
-                                                    )}
-                                                    initial={{ opacity: 0, x: -8 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{
-                                                        duration: 0.2,
-                                                        delay: index * 0.03,
-                                                        ease: "easeOut",
-                                                    }}
-                                                >
-                                                    {/* Hover background indicator */}
-                                                    <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-
-                                                    <button
-                                                        onClick={() =>
-                                                            onSelect(conn.slug)
-                                                        }
-                                                        className="relative flex flex-1 items-center gap-3 text-left transition-all group-hover:translate-x-1"
-                                                    >
-                                                        <span
-                                                            className={cn(
-                                                                "min-w-0 flex-1 truncate text-sm font-medium transition-colors",
-                                                                isActive
-                                                                    ? "text-foreground"
-                                                                    : "text-foreground/80 group-hover:text-foreground"
-                                                            )}
-                                                        >
-                                                            {conn.title ||
-                                                                "New connection"}
-                                                        </span>
-                                                        {isFresh && (
-                                                            <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                                                                new
-                                                            </span>
-                                                        )}
-                                                        <span className="shrink-0 text-xs text-foreground/40 transition-opacity group-hover:opacity-0">
-                                                            {isFresh
-                                                                ? "Just now"
-                                                                : getRelativeTime(
-                                                                      conn.lastActivityAt
-                                                                  )}
-                                                        </span>
-                                                        {/* Arrow icon - appears on hover */}
-                                                        <ArrowRight className="h-4 w-4 shrink-0 translate-x-2 text-primary opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) =>
-                                                            handleDeleteClick(
-                                                                e,
-                                                                conn.id
-                                                            )
-                                                        }
-                                                        className="relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
-                                                        title={`Delete ${conn.title || "connection"}`}
-                                                        aria-label={`Delete ${conn.title || "connection"}`}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
-                                                    </button>
-                                                </motion.div>
-                                            );
-                                        })}
+                                            })}
+                                        </AnimatePresence>
                                     </div>
                                 ) : (
                                     <div className="py-8 text-center text-sm text-foreground/50">
@@ -417,10 +443,10 @@ export function ConnectionChooser() {
                         <motion.div
                             key="full"
                             className="flex items-center gap-3 px-4 py-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         >
                             {/* Search button */}
                             <button
