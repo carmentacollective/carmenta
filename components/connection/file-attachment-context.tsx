@@ -46,7 +46,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const startUpload = useCallback(
         async (upload: UploadProgress) => {
             if (!user?.id) {
-                logger.error("Cannot upload file: user not authenticated");
+                logger.error({}, "Cannot upload file: user not authenticated");
                 setPendingFiles((prev) =>
                     prev.map((u) =>
                         u.id === upload.id

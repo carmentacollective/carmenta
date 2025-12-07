@@ -572,7 +572,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     for (const file of message.files) {
                         parts.push({
                             type: "file",
-                            data: file.url,
+                            url: file.url,
                             mediaType: file.mediaType,
                             filename: file.filename,
                         });
