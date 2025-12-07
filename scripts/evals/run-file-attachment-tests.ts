@@ -88,12 +88,18 @@ async function readFixtureAsDataUrl(
 
 /**
  * Build UIMessage format with file attachment
+ *
+ * Uses AI SDK v5 FileUIPart format:
+ * - type: "file"
+ * - mediaType: IANA media type (e.g., "image/png")
+ * - url: Data URL or hosted URL
+ * - filename: Optional filename
  */
 function buildMessageWithFile(
     content: string,
     fileUrl: string,
-    mimeType: string,
-    fileName: string
+    mediaType: string,
+    filename: string
 ) {
     return {
         id: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -104,8 +110,8 @@ function buildMessageWithFile(
             {
                 type: "file",
                 url: fileUrl,
-                mimeType,
-                name: fileName,
+                mediaType,
+                filename,
             },
         ],
     };
