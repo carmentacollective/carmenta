@@ -13,9 +13,10 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 
 /**
- * Judge model - using Claude Haiku for fast, cost-effective evaluations
+ * Judge model - using GPT-5.1 for high-quality evaluations
+ * Different from models being evaluated to avoid self-grading bias
  */
-const JUDGE_MODEL = "anthropic/claude-3-5-haiku-latest";
+const JUDGE_MODEL = "openai/gpt-5.1";
 
 /**
  * Evaluation result from a single evaluator
@@ -255,4 +256,19 @@ export function formatQualityScores(scores: QualityScores): string {
         `Relevance: ${formatScore(scores.relevance)}`,
         `Overall: ${(scores.overall * 100).toFixed(0)}%`,
     ].join("\n");
+}
+
+/**
+ * Check if scoring is available (OpenRouter API key is configured)
+ */
+export function isScoringAvailable(): boolean {
+    return !!process.env.OPENROUTER_API_KEY;
+}
+
+/**
+ * Format a single score line for compact display
+ */
+export function formatScoreCompact(scores: QualityScores): string {
+    const emoji = (s: number) => (s >= 0.75 ? "✓" : s >= 0.25 ? "~" : "✗");
+    return `${emoji(scores.correctness.score)}C ${emoji(scores.helpfulness.score)}H ${emoji(scores.relevance.score)}R = ${(scores.overall * 100).toFixed(0)}%`;
 }

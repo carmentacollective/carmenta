@@ -14,6 +14,7 @@
  *
  * Options:
  *   --fast         Skip slow tests (deep research)
+ *   --score        Enable LLM-as-judge quality scoring (requires OPENROUTER_API_KEY)
  *   --category=X   Run only tests in category (routing, tools, reasoning, overrides, edge-cases)
  *   --test=ID      Run a single test by ID
  *   --verbose      Show full response content
@@ -27,12 +28,19 @@ import {
     getTestById,
     type TestQuery,
 } from "./test-queries";
+import {
+    evaluateResponse,
+    isScoringAvailable,
+    formatScoreCompact,
+    type QualityScores,
+} from "./evaluators";
 
 // Parse CLI args
 const args = process.argv.slice(2);
 const flags = {
     fast: args.includes("--fast"),
     verbose: args.includes("--verbose"),
+    score: args.includes("--score"),
     category: args
         .find((a) => a.startsWith("--category="))
         ?.substring("--category=".length),
@@ -74,6 +82,7 @@ interface TestResult {
         expected: string;
         actual: string;
     }[];
+    scores?: QualityScores;
 }
 
 /**
@@ -454,6 +463,11 @@ function printResult(result: TestResult, index: number, total: number) {
     if (result.response.explanation) {
         console.log(`   \x1b[90mExplanation: ${result.response.explanation}\x1b[0m`);
     }
+
+    // Show quality scores if available
+    if (result.scores) {
+        console.log(`   \x1b[36mQuality: ${formatScoreCompact(result.scores)}\x1b[0m`);
+    }
 }
 
 /**
@@ -496,6 +510,29 @@ function printSummary(results: TestResult[]) {
             console.log(`  - ${r.query.id}: ${r.query.description}`);
         }
     }
+
+    // Quality scores summary
+    const scoredResults = results.filter((r) => r.scores);
+    if (scoredResults.length > 0) {
+        const avgCorrectness =
+            scoredResults.reduce((sum, r) => sum + r.scores!.correctness.score, 0) /
+            scoredResults.length;
+        const avgHelpfulness =
+            scoredResults.reduce((sum, r) => sum + r.scores!.helpfulness.score, 0) /
+            scoredResults.length;
+        const avgRelevance =
+            scoredResults.reduce((sum, r) => sum + r.scores!.relevance.score, 0) /
+            scoredResults.length;
+        const avgOverall =
+            scoredResults.reduce((sum, r) => sum + r.scores!.overall, 0) /
+            scoredResults.length;
+
+        console.log("\n\x1b[36mQuality Scores (LLM-as-Judge):\x1b[0m");
+        console.log(`  Correctness: ${(avgCorrectness * 100).toFixed(0)}%`);
+        console.log(`  Helpfulness: ${(avgHelpfulness * 100).toFixed(0)}%`);
+        console.log(`  Relevance:   ${(avgRelevance * 100).toFixed(0)}%`);
+        console.log(`  \x1b[1mOverall:      ${(avgOverall * 100).toFixed(0)}%\x1b[0m`);
+    }
 }
 
 /**
@@ -507,6 +544,16 @@ async function main() {
     console.log("=".repeat(60));
     console.log(`Base URL: ${flags.baseUrl}`);
     console.log(`JWT Token: ${JWT_TOKEN!.slice(0, 20)}...`);
+
+    // Check scoring availability
+    const scoringEnabled = flags.score && isScoringAvailable();
+    if (flags.score && !isScoringAvailable()) {
+        console.log(
+            "\x1b[33mWarning: --score flag set but OPENROUTER_API_KEY not configured\x1b[0m"
+        );
+    } else if (scoringEnabled) {
+        console.log(`Scoring: \x1b[36menabled (GPT-5.1 judge)\x1b[0m`);
+    }
 
     // Select tests to run
     let tests: TestQuery[];
@@ -541,6 +588,21 @@ async function main() {
         }
 
         const result = await runTest(test);
+
+        // Run quality scoring if enabled and we have response text
+        if (scoringEnabled && result.response.responseText && result.success) {
+            try {
+                result.scores = await evaluateResponse(
+                    test.content,
+                    result.response.responseText
+                );
+            } catch (error) {
+                console.log(
+                    `   \x1b[33mScoring failed: ${error instanceof Error ? error.message : "Unknown error"}\x1b[0m`
+                );
+            }
+        }
+
         results.push(result);
         printResult(result, i, tests.length);
     }
