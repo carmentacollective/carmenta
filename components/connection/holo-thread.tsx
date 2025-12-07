@@ -898,8 +898,6 @@ function Composer({ isNewConversation }: ComposerProps) {
                 />
 
                 <div className="flex items-center gap-1 pr-1">
-                    <FilePickerButton />
-
                     {showStop ? (
                         <ComposerButton
                             type="button"
@@ -921,6 +919,8 @@ function Composer({ isNewConversation }: ComposerProps) {
                             <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                         </ComposerButton>
                     )}
+
+                    <FilePickerButton />
 
                     <ModelSelectorPopover
                         overrides={overrides}
