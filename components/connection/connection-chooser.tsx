@@ -177,7 +177,7 @@ function ConnectionDropdown({
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="overflow-hidden rounded-2xl bg-white/90 shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
+                        <div className="glass-container overflow-hidden rounded-2xl shadow-2xl">
                             {/* Search header */}
                             <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
                                 <Search className="h-5 w-5 text-foreground/40" />
@@ -406,12 +406,7 @@ export function ConnectionChooser() {
         <div className="relative">
             <motion.div
                 layout
-                className={cn(
-                    "flex items-center rounded-xl",
-                    "bg-white/60 shadow-xl ring-1 ring-foreground/15 backdrop-blur-xl",
-                    "transition-all duration-200",
-                    "hover:bg-white/70 hover:shadow-2xl hover:ring-foreground/20"
-                )}
+                className="glass-pill flex items-center"
                 transition={{
                     layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}

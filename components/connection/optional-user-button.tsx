@@ -30,7 +30,7 @@ export function OptionalUserButton() {
                 <Popover.Content
                     align="end"
                     sideOffset={8}
-                    className="z-50 min-w-[200px] rounded-2xl border border-white/60 bg-white/90 p-2 shadow-[0_8px_32px_rgba(180,140,200,0.25),0_0_0_1px_rgba(255,255,255,0.5)] backdrop-blur-xl dark:border-white/20 dark:bg-white/10 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                    className="glass-container z-50 min-w-[200px] rounded-2xl border border-white/60 p-2 dark:border-white/20"
                 >
                     {/* User info */}
                     <div className="px-3 py-2 text-sm">
@@ -48,7 +48,7 @@ export function OptionalUserButton() {
                     {/* Menu items */}
                     <button
                         onClick={() => openUserProfile()}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-white/60 dark:hover:bg-white/10"
+                        className="glass-bg-hover flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-foreground transition-colors"
                     >
                         <User className="h-4 w-4 text-foreground/60" />
                         Manage account
@@ -56,7 +56,7 @@ export function OptionalUserButton() {
 
                     <button
                         onClick={() => signOut()}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-white/60 dark:hover:bg-white/10"
+                        className="glass-bg-hover flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-foreground transition-colors"
                     >
                         <LogOut className="h-4 w-4 text-foreground/60" />
                         Sign out

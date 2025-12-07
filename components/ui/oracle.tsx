@@ -51,7 +51,8 @@ export function Oracle({
             <div
                 className={cn(
                     "oracle-container relative flex items-center justify-center rounded-full",
-                    "bg-white/70 shadow-xl ring-1 ring-white/80 backdrop-blur-xl",
+                    "glass-bg glass-shadow ring-1 ring-white/80 backdrop-blur-xl",
+                    "dark:ring-white/15",
                     "transition-all duration-300",
                     "group-hover:-translate-y-0.5 group-hover:shadow-2xl group-hover:ring-primary/30",
                     config.container,

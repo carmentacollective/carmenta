@@ -165,13 +165,13 @@ export function ModelSelectorPopover({
                 disabled={disabled}
                 className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full transition-all",
-                    "bg-white/50 backdrop-blur-sm dark:bg-white/10",
-                    "hover:scale-105 hover:bg-white/70 dark:hover:bg-white/20",
+                    "glass-bg glass-bg-hover backdrop-blur-sm",
+                    "hover:scale-105",
                     "active:scale-95",
                     hasOverrides && !isAuto
                         ? "ring-2 ring-primary/40"
                         : "ring-1 ring-white/40 dark:ring-white/20",
-                    isOpen && "bg-white/70 ring-2 ring-primary/50 dark:bg-white/20",
+                    isOpen && "glass-bg-active ring-2 ring-primary/50",
                     disabled && "cursor-not-allowed opacity-50"
                 )}
                 aria-label="Model settings"
@@ -203,14 +203,13 @@ export function ModelSelectorPopover({
                         className={cn(
                             "fixed bottom-24 right-4 z-[101] w-80",
                             "max-h-[calc(100vh-8rem)]",
-                            "rounded-2xl bg-white backdrop-blur-xl dark:bg-card",
-                            "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
+                            "glass-container rounded-2xl",
                             "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2",
                             "flex flex-col overflow-hidden"
                         )}
                     >
                         {/* Model Selection - scrollable list with details */}
-                        <div className="bg-white p-3 pb-2 dark:bg-card">
+                        <div className="p-3 pb-2">
                             <div className="mb-2 flex items-center justify-between">
                                 <label className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
                                     Model
@@ -339,7 +338,7 @@ export function ModelSelectorPopover({
                         </div>
 
                         {/* Response Tuning Section - visually distinct */}
-                        <div className="border-t-2 border-foreground/10 bg-gradient-to-b from-slate-50/80 to-slate-100/60">
+                        <div className="border-t-2 border-foreground/10 bg-gradient-to-b from-slate-50/80 to-slate-100/60 dark:from-white/5 dark:to-transparent">
                             {/* Creativity Slider */}
                             <div className="px-3 pb-2 pt-3">
                                 <SteppedSlider
@@ -389,7 +388,7 @@ export function ModelSelectorPopover({
                                         });
                                         setIsOpen(false);
                                     }}
-                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-white hover:text-foreground/70"
+                                    className="glass-bg-hover flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:text-foreground/70"
                                 >
                                     <Sparkles className="h-3 w-3" />
                                     Carmenta AI Concierge decides automagically

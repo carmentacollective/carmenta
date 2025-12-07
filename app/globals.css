@@ -52,6 +52,11 @@
 
         /* Glassmorphism */
         --glass-blur: 24px;
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-bg-hover: rgba(255, 255, 255, 0.7);
+        --glass-bg-active: rgba(255, 255, 255, 0.8);
+        --glass-surface: rgba(255, 255, 255, 0.9);
+        --glass-shadow: 0 4px 16px rgba(180, 140, 200, 0.15);
 
         /* Chat viewport fade - Apple-level subtle fades
          * Uses fixed pixels, not percentages, for consistent subtlety
@@ -90,6 +95,13 @@
         --border: 280 20% 25%;
         --input: 280 20% 20%;
         --ring: 280 50% 65%;
+
+        /* Warm purple glassmorphism for dark mode */
+        --glass-bg: rgba(180, 140, 200, 0.15);
+        --glass-bg-hover: rgba(180, 140, 200, 0.25);
+        --glass-bg-active: rgba(180, 140, 200, 0.3);
+        --glass-surface: rgba(30, 20, 35, 0.95);
+        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 }
 
@@ -707,19 +719,70 @@
         }
     }
 
+    /* Carmenta Glass System - DRY glassmorphism using CSS variables */
+
+    /* Glass background utilities - auto-switch between light/dark */
+    .glass-bg {
+        background: var(--glass-bg);
+    }
+
+    .glass-bg-hover:hover {
+        background: var(--glass-bg-hover);
+    }
+
+    .glass-bg-active {
+        background: var(--glass-bg-active);
+    }
+
+    .glass-surface {
+        background: var(--glass-surface);
+    }
+
+    .glass-shadow {
+        box-shadow: var(--glass-shadow);
+    }
+
+    /* Glass container - for popovers, dropdowns, panels */
+    .glass-container {
+        background: var(--glass-surface);
+        box-shadow: var(--glass-shadow);
+        @apply ring-1 ring-white/40 backdrop-blur-xl;
+    }
+
+    .dark .glass-container {
+        @apply ring-white/15;
+    }
+
+    /* Glass pill - for buttons in glass containers (e.g., connection chooser) */
+    .glass-pill {
+        background: var(--glass-bg);
+        box-shadow: var(--glass-shadow);
+        @apply rounded-xl ring-1 ring-foreground/15 backdrop-blur-xl;
+        @apply transition-all duration-200;
+    }
+
+    .glass-pill:hover {
+        background: var(--glass-bg-hover);
+        @apply shadow-2xl ring-foreground/20;
+    }
+
+    .dark .glass-pill {
+        @apply ring-white/15;
+    }
+
     /* Carmenta Button States - Centralized interaction patterns */
 
-    /* Glass button base */
+    /* Glass button base - uses CSS variables */
     .btn-glass {
         @apply flex items-center justify-center rounded-full;
-        @apply bg-white/50 shadow-xl ring-1 ring-white/40 backdrop-blur-xl;
+        background: var(--glass-bg);
+        box-shadow: var(--glass-shadow);
+        @apply ring-1 ring-white/40 backdrop-blur-xl;
         @apply transition-all duration-300;
     }
 
     .dark .btn-glass {
-        background: rgba(180, 140, 200, 0.15);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        @apply ring-1 ring-white/15;
+        @apply ring-white/15;
     }
 
     /* Click state - Ripple + depth shift */
@@ -732,8 +795,8 @@
         @apply hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40;
     }
 
-    .dark .btn-hoverable:hover {
-        background: rgba(180, 140, 200, 0.25);
+    .btn-hoverable:hover {
+        background: var(--glass-bg-hover);
     }
 
     /* Focus state - Scale + shadow + ring (same as hover) */
@@ -762,14 +825,14 @@
     /* Base subtle button - hover and focus are identical */
     .btn-subtle {
         @apply rounded-md transition-all;
-        @apply hover:bg-white/50 hover:ring-2 hover:ring-primary/30;
-        @apply focus:bg-white/50 focus:outline-none focus:ring-2 focus:ring-primary/30;
+        @apply hover:ring-2 hover:ring-primary/30;
+        @apply focus:outline-none focus:ring-2 focus:ring-primary/30;
         @apply active:scale-95;
     }
 
-    .dark .btn-subtle:hover,
-    .dark .btn-subtle:focus {
-        background: rgba(180, 140, 200, 0.2);
+    .btn-subtle:hover,
+    .btn-subtle:focus {
+        background: var(--glass-bg-hover);
     }
 
     /* Subtle icon button - small icons with scale effect */
