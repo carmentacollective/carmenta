@@ -39,6 +39,12 @@ const FEATURES = [
         link: { text: "Learn more", href: "https://heartcentered.ai" },
     },
     {
+        headline: "Honest about what we know.",
+        subheading:
+            'We\'d rather say "let me check" than guess. When accuracy matters, we search for current information instead of fabricating an answer. Trust built on honesty, not false confidence.',
+        available: true,
+    },
+    {
         headline: "Your knowledge, organized.",
         subheading:
             "Every file, conversation, and insight—organized by AI into a structure that makes sense. Not a black box. A library you can see, browse, and trust. You never re-explain.",
