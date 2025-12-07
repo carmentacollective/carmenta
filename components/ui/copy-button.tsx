@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, type ComponentProps } from "react";
+import { useState, useEffect, useCallback, useRef, type ComponentProps } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -19,8 +19,8 @@ import {
 type CopyMode = "rich" | "markdown" | "plain";
 
 /**
- * Cycling delight messages shown after successful copy.
- * These messages cycle sequentially through the list, persisted across sessions.
+ * Special delight messages shown occasionally after copy.
+ * Variable reinforcement: boring most of the time, delightful sometimes.
  * Curated to match Carmenta's voice: playful, warm, occasionally cheeky.
  */
 const DELIGHT_MESSAGES = [
@@ -40,44 +40,25 @@ const DELIGHT_MESSAGES = [
     "Artisanally duplicated",
 ] as const;
 
-const STORAGE_KEY = "carmenta-copy-delight-index";
+/** Probability of showing a delight message vs plain "Copied" (1 in N) */
+const DELIGHT_CHANCE = 5; // ~20% chance of delight
 
 /**
- * Custom hook to manage cycling delight messages for copy actions.
- * Persists the current index to localStorage so users experience the full cycle
- * across sessions rather than always seeing the first few messages.
+ * Custom hook for copy feedback with variable reinforcement.
+ * Shows plain "Copied" most of the time, occasionally surprises with delight.
  */
 function useCopyDelight() {
-    const indexRef = useRef<number>(0);
-    const initializedRef = useRef(false);
     const [currentMessage, setCurrentMessage] = useState<string | null>(null);
 
-    // Initialize index from localStorage on mount (client-side only)
-    useEffect(() => {
-        if (!initializedRef.current) {
-            initializedRef.current = true;
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                indexRef.current = parseInt(stored, 10) % DELIGHT_MESSAGES.length;
-            }
-        }
-    }, []);
-
     const triggerDelight = useCallback(() => {
-        const currentIndex = indexRef.current;
+        // Variable reinforcement: usually boring, sometimes delightful
+        const isSpecial = Math.random() < 1 / DELIGHT_CHANCE;
 
-        // Set the message
-        setCurrentMessage(DELIGHT_MESSAGES[currentIndex]);
-
-        // Advance to next message for next time
-        const nextIndex = (currentIndex + 1) % DELIGHT_MESSAGES.length;
-        indexRef.current = nextIndex;
-
-        // Persist to localStorage
-        try {
-            localStorage.setItem(STORAGE_KEY, String(nextIndex));
-        } catch {
-            // localStorage might be unavailable, ignore
+        if (isSpecial) {
+            const randomIndex = Math.floor(Math.random() * DELIGHT_MESSAGES.length);
+            setCurrentMessage(DELIGHT_MESSAGES[randomIndex]);
+        } else {
+            setCurrentMessage("Copied");
         }
     }, []);
 
