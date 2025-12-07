@@ -10,7 +10,7 @@
 import { useRef } from "react";
 import { Paperclip } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
-import { SUPPORTED_FORMATS } from "@/lib/storage/types";
+import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 
 export function FilePickerButton() {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +29,7 @@ export function FilePickerButton() {
     };
 
     // Build accept string from supported formats
-    const accept = Object.values(SUPPORTED_FORMATS).flat().join(",");
+    const accept = Object.values(ALLOWED_MIME_TYPES).flat().join(",");
 
     return (
         <>

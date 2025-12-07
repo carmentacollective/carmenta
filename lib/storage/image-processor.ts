@@ -10,6 +10,7 @@
 
 import imageCompression from "browser-image-compression";
 import { logger } from "@/lib/client-logger";
+import { ALLOWED_MIME_TYPES } from "./file-config";
 
 /**
  * Target dimensions for image optimization.
@@ -110,6 +111,5 @@ export async function optimizeImage(file: File): Promise<File> {
  * Only optimize image types (not PDFs, audio, etc.)
  */
 export function shouldOptimizeImage(mimeType: string): boolean {
-    const imageMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    return imageMimes.includes(mimeType);
+    return (ALLOWED_MIME_TYPES.image as readonly string[]).includes(mimeType);
 }

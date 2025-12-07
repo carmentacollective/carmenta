@@ -10,8 +10,8 @@
  */
 
 import Image from "next/image";
-import { FileIcon, FileText, Music, Video, File } from "lucide-react";
-import { SUPPORTED_FORMATS } from "@/lib/storage/types";
+import { FileIcon, FileText, Music, File } from "lucide-react";
+import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 import { getThumbnailUrl } from "@/lib/storage/upload";
 import { cn } from "@/lib/utils";
 
@@ -28,16 +28,9 @@ export function FilePreview({
     filename,
     isUserMessage,
 }: FilePreviewProps) {
-    const isImage = SUPPORTED_FORMATS.image.includes(
-        mediaType as (typeof SUPPORTED_FORMATS.image)[number]
-    );
+    const isImage = (ALLOWED_MIME_TYPES.image as readonly string[]).includes(mediaType);
     const isPDF = mediaType === "application/pdf";
-    const isAudio = SUPPORTED_FORMATS.audio.includes(
-        mediaType as (typeof SUPPORTED_FORMATS.audio)[number]
-    );
-    const isVideo = SUPPORTED_FORMATS.video.includes(
-        mediaType as (typeof SUPPORTED_FORMATS.video)[number]
-    );
+    const isAudio = (ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mediaType);
 
     if (isImage) {
         return (
@@ -65,7 +58,6 @@ export function FilePreview({
     let Icon = File;
     if (isPDF) Icon = FileText;
     else if (isAudio) Icon = Music;
-    else if (isVideo) Icon = Video;
     else Icon = FileIcon;
 
     return (

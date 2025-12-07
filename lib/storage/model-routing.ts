@@ -5,21 +5,8 @@
  * model capabilities documented in knowledge/model-rubric.md
  */
 
+import { ALLOWED_MIME_TYPES } from "./file-config";
 import type { AttachmentMeta } from "./types";
-
-/**
- * Audio MIME types that require Gemini (only model with native audio support).
- */
-const AUDIO_TYPES = [
-    "audio/wav",
-    "audio/mp3",
-    "audio/mpeg",
-    "audio/aiff",
-    "audio/aac",
-    "audio/ogg",
-    "audio/flac",
-    "audio/m4a",
-];
 
 /**
  * Get attachment metadata including required model routing.
@@ -34,7 +21,7 @@ const AUDIO_TYPES = [
  */
 export function getAttachmentMeta(mediaType: string): AttachmentMeta {
     // Audio files MUST use Gemini (only model with native audio support)
-    if (AUDIO_TYPES.includes(mediaType)) {
+    if ((ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mediaType)) {
         return {
             mediaType,
             requiredModel: "google/gemini-3-pro-preview",

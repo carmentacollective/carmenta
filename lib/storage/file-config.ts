@@ -19,9 +19,9 @@ export const ALLOWED_MIME_TYPES = {
         "audio/aac",
         "audio/ogg",
         "audio/flac",
-        "audio/m4a",
         "audio/webm",
-        "audio/mp4",
+        "audio/mp4", // Covers M4A files (browsers report audio/mp4 for .m4a)
+        "audio/x-m4a", // Alternative MIME type some browsers use
     ],
     document: ["application/pdf"],
     text: ["text/plain", "text/markdown", "text/csv", "application/json"],
