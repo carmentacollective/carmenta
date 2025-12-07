@@ -4,9 +4,9 @@ import Link from "next/link";
 export function Footer() {
     return (
         <footer className="px-6 py-6">
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mx-auto flex max-w-4xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 {/* Links */}
-                <nav className="flex flex-wrap items-center gap-6 text-sm text-foreground/60">
+                <nav className="flex flex-wrap items-center gap-6 text-base text-foreground/60">
                     <Link
                         href="/ai-first-development"
                         className="flex items-center gap-1.5 transition-colors hover:text-foreground/90"
@@ -21,7 +21,7 @@ export function Footer() {
                         className="flex items-center gap-1.5 transition-colors hover:text-foreground/90"
                     >
                         <Heart className="h-3.5 w-3.5" />
-                        <span>Principles</span>
+                        <span>Heart Centered AI</span>
                     </Link>
                     <Link
                         href="https://github.com/carmentacollective/carmenta"
@@ -35,7 +35,7 @@ export function Footer() {
                 </nav>
 
                 {/* Credits */}
-                <div className="text-sm text-foreground/60">
+                <div className="text-base text-foreground/60">
                     <span>Built with </span>
                     <Heart className="inline h-3 w-3 fill-primary text-primary" />
                     <span> by </span>

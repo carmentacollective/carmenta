@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 // Fisher-Yates shuffle
@@ -175,141 +176,147 @@ export default function HomePage() {
     }, [phase, shuffledFeatures.length]);
 
     return (
-        <div className="relative min-h-screen overflow-hidden">
+        <div className="relative flex min-h-screen flex-col overflow-hidden">
             <HolographicBackground hideWatermark />
 
-            {/* Full-screen centered layout */}
-            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
-                {/* Logo - breathing, no container */}
-                <div className="mb-12 sm:mb-16">
-                    <div className="relative">
-                        {/* Breathing glow */}
-                        <div
-                            className="absolute inset-0 rounded-full"
-                            style={{
-                                background:
-                                    "radial-gradient(circle, rgba(200,180,220,0.4) 0%, transparent 70%)",
-                                animation:
-                                    "oracle-breathe-glow-2 4s ease-in-out infinite",
-                            }}
-                        />
-                        {/* Logo with breathing scale */}
-                        <div className="oracle-breathing relative h-32 w-32 sm:h-40 sm:w-40">
-                            <Image
-                                src="/logos/icon-transparent.png"
-                                alt="Carmenta"
-                                fill
-                                className="object-contain drop-shadow-lg"
-                                priority
+            {/* Content layer */}
+            <div className="relative z-10 flex min-h-screen flex-col">
+                {/* Main content - centered */}
+                <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+                    {/* Logo - breathing, no container */}
+                    <div className="mb-8 sm:mb-10">
+                        <div className="relative">
+                            {/* Breathing glow */}
+                            <div
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                    background:
+                                        "radial-gradient(circle, rgba(200,180,220,0.4) 0%, transparent 70%)",
+                                    animation:
+                                        "oracle-breathe-glow-2 4s ease-in-out infinite",
+                                }}
                             />
+                            {/* Logo with breathing scale - 15% larger */}
+                            <div className="oracle-breathing relative h-36 w-36 sm:h-44 sm:w-44">
+                                <Image
+                                    src="/logos/icon-transparent.png"
+                                    alt="Carmenta"
+                                    fill
+                                    className="object-contain drop-shadow-lg"
+                                    priority
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Rotating text content - centered block, LEFT-ALIGNED text */}
-                <div
-                    onClick={() => setPaused((p) => !p)}
-                    className={cn(
-                        "w-full max-w-2xl cursor-pointer transition-all duration-500",
-                        contentVisible
-                            ? "translate-y-0 opacity-100"
-                            : "translate-y-4 opacity-0"
-                    )}
-                >
-                    {/* "Coming soon" label - appears above headline */}
+                    {/* Rotating text content - centered block, LEFT-ALIGNED text */}
                     <div
+                        onClick={() => setPaused((p) => !p)}
                         className={cn(
-                            "mb-3 h-6 transition-all duration-500",
-                            phase !== "typing" && !currentFeature.available
+                            "w-full max-w-2xl cursor-pointer transition-all duration-500",
+                            contentVisible
                                 ? "translate-y-0 opacity-100"
-                                : "translate-y-2 opacity-0"
+                                : "translate-y-4 opacity-0"
                         )}
                     >
-                        {!currentFeature.available && (
-                            <span className="inline-flex items-center gap-1.5 text-sm font-medium tracking-wide text-primary/70">
-                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary/60" />
-                                Coming soon
-                            </span>
-                        )}
+                        {/* "Coming soon" label - appears above headline */}
+                        <div
+                            className={cn(
+                                "mb-3 h-6 transition-all duration-500",
+                                phase !== "typing" && !currentFeature.available
+                                    ? "translate-y-0 opacity-100"
+                                    : "translate-y-2 opacity-0"
+                            )}
+                        >
+                            {!currentFeature.available && (
+                                <span className="inline-flex items-center gap-1.5 text-sm font-medium tracking-wide text-primary/70">
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary/60" />
+                                    Coming soon
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Headline with typewriter effect - LEFT ALIGNED */}
+                        <h1 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
+                            {displayedChars}
+                            {phase === "typing" &&
+                                displayedChars.length < headline.length && (
+                                    <span className="ml-1 inline-block h-8 w-0.5 animate-pulse bg-primary/70 align-middle sm:h-10 lg:h-12" />
+                                )}
+                        </h1>
+
+                        {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
+                        <p
+                            className={cn(
+                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:min-h-[6rem] sm:text-xl",
+                                phase === "description" ||
+                                    phase === "hold" ||
+                                    phase === "exit"
+                                    ? "translate-y-0 opacity-100 blur-0"
+                                    : "translate-y-3 opacity-0 blur-sm"
+                            )}
+                        >
+                            {currentFeature.subheading}
+                            {currentFeature.link && (
+                                <>
+                                    {" "}
+                                    <a
+                                        href={currentFeature.link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
+                                    >
+                                        {currentFeature.link.text} →
+                                    </a>
+                                </>
+                            )}
+                        </p>
                     </div>
 
-                    {/* Headline with typewriter effect - LEFT ALIGNED */}
-                    <h1 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
-                        {displayedChars}
-                        {phase === "typing" &&
-                            displayedChars.length < headline.length && (
-                                <span className="ml-1 inline-block h-8 w-0.5 animate-pulse bg-primary/70 align-middle sm:h-10 lg:h-12" />
-                            )}
-                    </h1>
+                    {/* Connect CTA */}
+                    <div className="mt-12 sm:mt-16">
+                        <Button asChild size="lg" className="gap-2 rounded-full px-8">
+                            <Link href="/connection/new">
+                                Connect
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
 
-                    {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
-                    <p
-                        className={cn(
-                            "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:min-h-[6rem] sm:text-xl",
-                            phase === "description" ||
-                                phase === "hold" ||
-                                phase === "exit"
-                                ? "translate-y-0 opacity-100 blur-0"
-                                : "translate-y-3 opacity-0 blur-sm"
-                        )}
-                    >
-                        {currentFeature.subheading}
-                        {currentFeature.link && (
-                            <>
-                                {" "}
-                                <a
-                                    href={currentFeature.link.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
-                                >
-                                    {currentFeature.link.text} →
-                                </a>
-                            </>
-                        )}
-                    </p>
-                </div>
-
-                {/* Connect CTA */}
-                <div className="mt-12 sm:mt-16">
-                    <Button asChild size="lg" className="gap-2 rounded-full px-8">
-                        <Link href="/connection/new">
-                            Connect
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
-
-                {/* Progress dots */}
-                <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2">
-                    <button
-                        onClick={goPrev}
-                        className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
-                        aria-label="Previous slide"
-                    >
-                        ←
-                    </button>
-                    {shuffledFeatures.map((_, i) => (
+                    {/* Progress dots */}
+                    <div className="mt-12 flex items-center gap-2">
                         <button
-                            key={i}
-                            onClick={() => goToSlide(i)}
-                            className={cn(
-                                "h-1.5 rounded-full transition-all duration-300",
-                                activeSlide === i
-                                    ? "w-8 bg-primary/60"
-                                    : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
-                            )}
-                            aria-label={`Go to slide ${i + 1}`}
-                        />
-                    ))}
-                    <button
-                        onClick={goNext}
-                        className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
-                        aria-label="Next slide"
-                    >
-                        →
-                    </button>
-                </div>
+                            onClick={goPrev}
+                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            aria-label="Previous slide"
+                        >
+                            ←
+                        </button>
+                        {shuffledFeatures.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => goToSlide(i)}
+                                className={cn(
+                                    "h-1.5 rounded-full transition-all duration-300",
+                                    activeSlide === i
+                                        ? "w-8 bg-primary/60"
+                                        : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
+                                )}
+                                aria-label={`Go to slide ${i + 1}`}
+                            />
+                        ))}
+                        <button
+                            onClick={goNext}
+                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            aria-label="Next slide"
+                        >
+                            →
+                        </button>
+                    </div>
+                </main>
+
+                {/* Footer */}
+                <Footer />
             </div>
         </div>
     );
