@@ -62,16 +62,16 @@ export type AllowedMimeType = (typeof MIME_TYPE_WHITELIST)[number];
  * Determine file category from MIME type
  */
 export function getFileCategory(mimeType: string): FileCategory | null {
-    if (ALLOWED_MIME_TYPES.image.includes(mimeType as AllowedMimeType)) {
+    if ((ALLOWED_MIME_TYPES.image as readonly string[]).includes(mimeType)) {
         return "image";
     }
-    if (ALLOWED_MIME_TYPES.document.includes(mimeType as AllowedMimeType)) {
+    if ((ALLOWED_MIME_TYPES.document as readonly string[]).includes(mimeType)) {
         return "document";
     }
-    if (ALLOWED_MIME_TYPES.audio.includes(mimeType as AllowedMimeType)) {
+    if ((ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mimeType)) {
         return "audio";
     }
-    if (ALLOWED_MIME_TYPES.text.includes(mimeType as AllowedMimeType)) {
+    if ((ALLOWED_MIME_TYPES.text as readonly string[]).includes(mimeType)) {
         return "text";
     }
     return null;
