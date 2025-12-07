@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type ComponentProps } from "react";
+import { useState, useEffect, useCallback, useRef, type ComponentProps } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +17,79 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type CopyMode = "rich" | "markdown" | "plain";
+
+/**
+ * Special delight messages shown occasionally after copy.
+ * Variable reinforcement: boring most of the time, delightful sometimes.
+ * Curated to match Carmenta's voice: playful, warm, occasionally cheeky.
+ */
+const DELIGHT_MESSAGES = [
+    "Copy that!",
+    "Yoinked! 😏",
+    "I'll be in the footnotes, right? 📝",
+    "Citation needed 😏",
+    "I made that, you know 😌",
+    "Carry it well",
+    "Go make something beautiful",
+    "Take good care of it",
+    "That one was good, wasn't it?",
+    "I don't share with just anyone 💜",
+    "Artisanally duplicated",
+    "We created something good",
+    "Shared with care",
+] as const;
+
+/** Probability of showing a delight message vs plain "Copied" (1 in N) */
+const DELIGHT_CHANCE = 5; // ~20% chance of delight
+
+/** Duration to show success feedback before resetting */
+const FEEDBACK_DURATION_MS = 2000;
+
+/**
+ * Custom hook for copy feedback with variable reinforcement.
+ * Shows plain "Copied" most of the time, occasionally surprises with delight.
+ */
+function useCopyDelight() {
+    const [currentMessage, setCurrentMessage] = useState<string | null>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+    const triggerDelight = useCallback(() => {
+        // Variable reinforcement: usually boring, sometimes delightful
+        const isSpecial = Math.random() < 1 / DELIGHT_CHANCE;
+
+        if (isSpecial) {
+            const randomIndex = Math.floor(Math.random() * DELIGHT_MESSAGES.length);
+            setCurrentMessage(DELIGHT_MESSAGES[randomIndex]);
+        } else {
+            setCurrentMessage("Copied");
+        }
+    }, []);
+
+    const clearMessage = useCallback(() => {
+        setCurrentMessage(null);
+    }, []);
+
+    const scheduleClear = useCallback(() => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
+            clearMessage();
+            timeoutRef.current = null;
+        }, FEEDBACK_DURATION_MS);
+    }, [clearMessage]);
+
+    return { currentMessage, triggerDelight, clearMessage, scheduleClear };
+}
 
 interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
     /**
@@ -53,9 +126,12 @@ interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
 }
 
 /**
- * Copy button with visual feedback and accessibility
+ * Copy button with visual feedback, delight messages, and accessibility.
  *
- * Shows a copy icon that changes to a check mark for 2 seconds after successful copy.
+ * Shows a copy icon that changes to a check mark with a cycling delight message
+ * for 2 seconds after successful copy. Messages cycle sequentially through
+ * a curated list, persisted across sessions.
+ *
  * Two variants:
  * - Simple button (showMenu=false): One-click copy for code blocks
  * - Button with menu (showMenu=true): Default rich text + dropdown for markdown/plain text
@@ -74,21 +150,41 @@ export function CopyButton({
 }: CopyButtonProps) {
     const [copied, setCopied] = useState<CopyMode | false>(false);
     const [isOpen, setIsOpen] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { currentMessage, triggerDelight, scheduleClear } = useCopyDelight();
 
-    // Cleanup timeout on unmount to prevent memory leaks
+    // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
+            if (copiedTimeoutRef.current) {
+                clearTimeout(copiedTimeoutRef.current);
             }
         };
     }, []);
 
+    // Shared success handler for both copy modes
+    const handleSuccess = useCallback(
+        (mode: CopyMode) => {
+            setCopied(mode);
+            setIsOpen(false);
+            triggerDelight();
+            scheduleClear();
+            onCopySuccess?.();
+
+            if (copiedTimeoutRef.current) {
+                clearTimeout(copiedTimeoutRef.current);
+            }
+            copiedTimeoutRef.current = setTimeout(() => {
+                setCopied(false);
+                copiedTimeoutRef.current = null;
+            }, FEEDBACK_DURATION_MS);
+        },
+        [triggerDelight, scheduleClear, onCopySuccess]
+    );
+
     const handleCopy = async (mode: CopyMode) => {
         let success = false;
 
-        // Use appropriate copy function based on mode
         switch (mode) {
             case "rich":
                 success = await copyMarkdownWithFormats(text);
@@ -102,39 +198,14 @@ export function CopyButton({
         }
 
         if (success) {
-            setCopied(mode);
-            setIsOpen(false);
-            onCopySuccess?.();
-
-            // Clear any existing timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-
-            // Set new timeout and store reference
-            timeoutRef.current = setTimeout(() => {
-                setCopied(false);
-                timeoutRef.current = null;
-            }, 2000);
+            handleSuccess(mode);
         }
     };
 
-    // Simple button mode (for code blocks)
     const handleSimpleCopy = async () => {
         const success = await copyToClipboard(text);
-
         if (success) {
-            setCopied("plain");
-            onCopySuccess?.();
-
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-
-            timeoutRef.current = setTimeout(() => {
-                setCopied(false);
-                timeoutRef.current = null;
-            }, 2000);
+            handleSuccess("plain");
         }
     };
 
@@ -155,25 +226,35 @@ export function CopyButton({
     // Simple button mode (no menu)
     if (!showMenu) {
         return (
-            <button
-                onClick={handleSimpleCopy}
-                aria-label={copied ? "Copied!" : ariaLabel}
-                className={cn(buttonClasses, "w-7 rounded-md sm:w-8", className)}
-                {...props}
-            >
-                {copied ? (
-                    <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
-                ) : (
-                    <Copy className={iconSize} />
+            <div className="relative inline-flex items-center">
+                <button
+                    onClick={handleSimpleCopy}
+                    aria-label={copied ? "Copied!" : ariaLabel}
+                    className={cn(buttonClasses, "w-7 rounded-md sm:w-8", className)}
+                    {...props}
+                >
+                    {copied ? (
+                        <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
+                    ) : (
+                        <Copy className={iconSize} />
+                    )}
+                </button>
+                {currentMessage && (
+                    <span
+                        className="pointer-events-none absolute left-full ml-2 max-w-32 truncate text-xs text-green-600 animate-in fade-in slide-in-from-left-1 sm:max-w-none sm:whitespace-nowrap"
+                        aria-live="polite"
+                    >
+                        {currentMessage}
+                    </span>
                 )}
-            </button>
+            </div>
         );
     }
 
     // Button with dropdown menu
     return (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-            <div className="flex items-center gap-0.5">
+            <div className="relative flex items-center gap-0.5">
                 {/* Main copy button */}
                 <button
                     onClick={() => handleCopy("rich")}
@@ -200,6 +281,16 @@ export function CopyButton({
                         <ChevronDown className={chevronSize} />
                     </button>
                 </DropdownMenuTrigger>
+
+                {/* Delight message */}
+                {currentMessage && (
+                    <span
+                        className="pointer-events-none absolute left-full ml-2 max-w-32 truncate text-xs text-green-600 animate-in fade-in slide-in-from-left-1 sm:max-w-none sm:whitespace-nowrap"
+                        aria-live="polite"
+                    >
+                        {currentMessage}
+                    </span>
+                )}
             </div>
 
             <DropdownMenuContent align="end" className="w-48">
