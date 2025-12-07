@@ -18,7 +18,7 @@ export default function BrandPage() {
 
             {/* Content layer */}
             <div className="relative z-10">
-                <SiteHeader bordered />
+                <SiteHeader bordered showThemeSwitcher={false} />
 
                 <main className="py-12">
                     <div className="mx-auto max-w-6xl space-y-16 px-6">
