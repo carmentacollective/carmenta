@@ -467,6 +467,24 @@ function printResult(result: TestResult, index: number, total: number) {
     // Show quality scores if available
     if (result.scores) {
         console.log(`   \x1b[36mQuality: ${formatScoreCompact(result.scores)}\x1b[0m`);
+
+        // Show improvement feedback for any dimension that scored below 100%
+        const scores = result.scores;
+        if (scores.correctness.score < 1) {
+            console.log(
+                `   \x1b[33m→ Correctness (${scores.correctness.label}): ${scores.correctness.explanation}\x1b[0m`
+            );
+        }
+        if (scores.helpfulness.score < 1) {
+            console.log(
+                `   \x1b[33m→ Helpfulness (${scores.helpfulness.label}): ${scores.helpfulness.explanation}\x1b[0m`
+            );
+        }
+        if (scores.relevance.score < 1) {
+            console.log(
+                `   \x1b[33m→ Relevance (${scores.relevance.label}): ${scores.relevance.explanation}\x1b[0m`
+            );
+        }
     }
 }
 
@@ -532,6 +550,37 @@ function printSummary(results: TestResult[]) {
         console.log(`  Helpfulness: ${(avgHelpfulness * 100).toFixed(0)}%`);
         console.log(`  Relevance:   ${(avgRelevance * 100).toFixed(0)}%`);
         console.log(`  \x1b[1mOverall:      ${(avgOverall * 100).toFixed(0)}%\x1b[0m`);
+
+        // Improvement recommendations for tests with low scores
+        const lowScoringTests = scoredResults.filter((r) => r.scores!.overall < 1);
+        if (lowScoringTests.length > 0) {
+            console.log("\n\x1b[33m📋 Improvement Recommendations:\x1b[0m");
+            for (const r of lowScoringTests) {
+                const scores = r.scores!;
+                console.log(
+                    `\n  \x1b[1m${r.query.id}\x1b[0m (${(scores.overall * 100).toFixed(0)}%)`
+                );
+                console.log(
+                    `  Query: "${r.query.content.slice(0, 60)}${r.query.content.length > 60 ? "..." : ""}"`
+                );
+
+                if (scores.correctness.score < 1) {
+                    console.log(
+                        `  \x1b[33m• Correctness:\x1b[0m ${scores.correctness.explanation}`
+                    );
+                }
+                if (scores.helpfulness.score < 1) {
+                    console.log(
+                        `  \x1b[33m• Helpfulness:\x1b[0m ${scores.helpfulness.explanation}`
+                    );
+                }
+                if (scores.relevance.score < 1) {
+                    console.log(
+                        `  \x1b[33m• Relevance:\x1b[0m ${scores.relevance.explanation}`
+                    );
+                }
+            }
+        }
     }
 }
 
