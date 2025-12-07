@@ -1,11 +1,18 @@
 /**
- * File Validation Logic
+ * File Validator
  *
- * Validates files against format and size constraints with clear error messages.
- * Rejects bad files early to prevent wasted upload bandwidth.
+ * Validates files against MIME type whitelist and size constraints.
+ * Returns clear, user-friendly error messages using "we" language.
  */
 
-import { getAllSupportedMimeTypes, getSizeLimit, getFileCategory } from "./file-config";
+import { logger } from "@/lib/logger";
+import {
+    MIME_TYPE_WHITELIST,
+    getFileCategory,
+    getSizeLimit,
+    formatFileSize,
+    getSupportedFormatsMessage,
+} from "./file-config";
 
 export interface ValidationResult {
     valid: boolean;
@@ -13,46 +20,69 @@ export interface ValidationResult {
 }
 
 /**
- * Validate a file against format and size constraints.
- *
- * Checks performed:
- * 1. Empty file detection (file.size === 0)
- * 2. MIME type whitelist enforcement
- * 3. Per-type size limits
- *
- * Returns clear error messages for user feedback.
+ * Validate a file against our acceptance criteria
  */
 export function validateFile(file: File): ValidationResult {
-    // Check for empty files
+    // Check for empty file
     if (file.size === 0) {
+        logger.warn({ filename: file.name }, "Rejected empty file");
         return {
             valid: false,
-            error: `"${file.name}" is empty. Please select a file with content.`,
+            error: "This file is empty. We need a file with content to process.",
         };
     }
 
-    // Check if MIME type is supported
-    const supportedMimes = getAllSupportedMimeTypes();
-    if (!supportedMimes.includes(file.type)) {
+    // Check MIME type whitelist
+    if (
+        !MIME_TYPE_WHITELIST.includes(file.type as (typeof MIME_TYPE_WHITELIST)[number])
+    ) {
+        logger.warn(
+            { filename: file.name, mimeType: file.type },
+            "Rejected unsupported file type"
+        );
         return {
             valid: false,
-            error: `File type "${file.type}" is not supported. We support images (JPEG, PNG, GIF, WebP), PDFs, audio files, and text files.`,
+            error: `We don't support ${file.type || "this file type"}. We accept ${getSupportedFormatsMessage()}.`,
         };
     }
 
-    // Check size limits based on file type
-    const category = getFileCategory(file.type);
-    const maxSize = getSizeLimit(file.type);
-
-    if (file.size > maxSize) {
-        const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    // Check size limits based on file category
+    const sizeLimit = getSizeLimit(file.type);
+    if (!sizeLimit) {
+        // This shouldn't happen if whitelist is working, but handle gracefully
+        logger.error(
+            { filename: file.name, mimeType: file.type },
+            "Unknown category for whitelisted type"
+        );
         return {
             valid: false,
-            error: `"${file.name}" is ${fileSizeMB}MB. ${category === "image" ? "Images" : category === "audio" ? "Audio files" : category === "document" ? "PDFs" : "Files"} must be under ${maxSizeMB}MB.`,
+            error: "We couldn't determine the file category. Please try a different file.",
         };
     }
 
+    if (file.size > sizeLimit) {
+        const category = getFileCategory(file.type);
+        const limitFormatted = formatFileSize(sizeLimit);
+        const actualFormatted = formatFileSize(file.size);
+
+        logger.warn(
+            {
+                filename: file.name,
+                mimeType: file.type,
+                category,
+                size: file.size,
+                limit: sizeLimit,
+            },
+            "Rejected file exceeding size limit"
+        );
+
+        return {
+            valid: false,
+            error: `This ${category} file is ${actualFormatted}, but we accept files up to ${limitFormatted}.`,
+        };
+    }
+
+    // Validation passed
     return { valid: true };
 }
 
