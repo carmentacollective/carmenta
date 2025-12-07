@@ -1,0 +1,92 @@
+"use client";
+
+/**
+ * File Preview Component
+ *
+ * Renders file attachments in message bubbles:
+ * - Images: Optimized thumbnail with lightbox on click
+ * - PDFs: Icon + filename
+ * - Audio/Video/Other: Icon + filename
+ */
+
+import Image from "next/image";
+import { FileIcon, FileText, Music, Video, File } from "lucide-react";
+import { SUPPORTED_FORMATS } from "@/lib/storage/types";
+import { getThumbnailUrl } from "@/lib/storage/upload";
+import { cn } from "@/lib/utils";
+
+interface FilePreviewProps {
+    url: string;
+    mediaType: string;
+    filename: string;
+    isUserMessage?: boolean;
+}
+
+export function FilePreview({
+    url,
+    mediaType,
+    filename,
+    isUserMessage,
+}: FilePreviewProps) {
+    const isImage = SUPPORTED_FORMATS.image.includes(
+        mediaType as (typeof SUPPORTED_FORMATS.image)[number]
+    );
+    const isPDF = mediaType === "application/pdf";
+    const isAudio = SUPPORTED_FORMATS.audio.includes(
+        mediaType as (typeof SUPPORTED_FORMATS.audio)[number]
+    );
+    const isVideo = SUPPORTED_FORMATS.video.includes(
+        mediaType as (typeof SUPPORTED_FORMATS.video)[number]
+    );
+
+    if (isImage) {
+        return (
+            <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block overflow-hidden rounded-lg"
+            >
+                <Image
+                    src={getThumbnailUrl(url, mediaType)}
+                    alt={filename}
+                    width={400}
+                    height={256}
+                    className="max-h-64 w-auto object-cover transition-opacity group-hover:opacity-90"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/10 group-hover:opacity-100">
+                    <span className="text-xs text-white">Click to view full size</span>
+                </div>
+            </a>
+        );
+    }
+
+    // Non-image files: Show icon + filename
+    let Icon = File;
+    if (isPDF) Icon = FileText;
+    else if (isAudio) Icon = Music;
+    else if (isVideo) Icon = Video;
+    else Icon = FileIcon;
+
+    return (
+        <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+                "flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-foreground/5",
+                isUserMessage
+                    ? "border-white/20 bg-white/10"
+                    : "border-foreground/10 bg-background/80"
+            )}
+        >
+            <Icon className="h-5 w-5 shrink-0 text-foreground/60" />
+            <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{filename}</div>
+                <div className="text-xs text-foreground/50">
+                    {mediaType.split("/")[1]}
+                </div>
+            </div>
+        </a>
+    );
+}
