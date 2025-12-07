@@ -134,19 +134,41 @@ overflow context. First N chunks miss relevant content later in the document.
 **Insight**: Smart retrieval considers query relevance, recency, and token budget.
 Dynamic selection beats static rules.
 
-### Architecture Decision (2024-11-29) ✅
+---
 
-**File Storage**: Supabase Storage
+## Architecture Decisions
 
-**Why Supabase Storage**:
+### Storage Provider: Supabase Storage ✅ (Confirmed 2024-12-07)
 
+**Decision**: Stay with Supabase Storage despite lack of upload progress callback.
+
+**Why Supabase**:
+
+- Already integrated and working
 - Database on Render.com, file storage on Supabase (best tool for each job)
-- **Real-time image transformations** via URL params (resize, crop, format, quality)
-- **Global CDN** (Cloudflare edge network)
+- Real-time image transformations via URL params (resize, crop, format, quality)
+- Global CDN (Cloudflare edge network)
 - Direct browser uploads (bypasses server)
 - Signed URLs for temporary private access
 - Free tier: 1GB storage, 2GB bandwidth/month
 - Scales to $25/mo (100GB storage, 200GB bandwidth)
+
+**Trade-off Acknowledged**: Supabase JavaScript SDK has NO `onUploadProgress` callback.
+This is a real limitation confirmed by checking SDK source code (not just docs).
+
+**Mitigation Strategy**:
+
+1. Client-side image resize means most uploads are <500KB (completes in <1 second)
+2. Honest UI: spinner with status messages, no fake progress bars
+3. For large files (>6MB), can add TUS protocol later (Supabase supports resumable
+   uploads)
+
+**Why Not Uploadcare** (what Cora uses):
+
+- More expensive ($79/mo vs $25/mo at scale)
+- Another vendor dependency
+- We already have Supabase working
+- The progress bar advantage is minimized by client-side resize
 
 **Image Transformation Capabilities**:
 
@@ -155,33 +177,205 @@ Dynamic selection beats static rules.
 const thumbnail = `${publicUrl}?width=150&height=150&resize=cover`;
 const optimized = `${publicUrl}?width=800&quality=85&format=webp`;
 const smart = `${publicUrl}?width=600&resize=cover&gravity=auto`;
-
-// Supported operations:
-// - Resize (width, height, both)
-// - Crop modes (contain, cover, fill)
-// - Format conversion (WebP, AVIF, JPEG, PNG)
-// - Quality control (1-100)
-// - Smart cropping (gravity=auto)
-// - PDF thumbnails (page=1)
 ```
 
-**Storage Strategy**:
+### Client-Side Image Optimization ✅ (Decided 2024-12-07)
 
-- File bytes: Supabase Storage (CDN, transformations)
-- Metadata: Render Postgres (relationships, status, permissions)
-- Processed artifacts: Supabase Storage buckets (extracted text, thumbnails)
+**Decision**: Resize images client-side BEFORE upload using `browser-image-compression`.
 
-**vs. Alternatives**:
+**Why This Matters - Token Cost Formula**:
 
-- **Cloudflare R2**: Cheaper at scale ($0 egress), but no transformations, separate
-  vendor
-- **Uploadcare** (Cora uses this): More features, more expensive, separate vendor
-- **Migration path**: If bandwidth exceeds 200GB/month, consider R2
+```
+tokens = (width × height) / 750
+```
 
-**Insight from Cora**: Don't build file storage infrastructure. Use a service. Focus on
-the intelligence layer.
+| Image Size              | Tokens  | Cost (Sonnet $3/M) |
+| ----------------------- | ------- | ------------------ |
+| 200×200                 | ~54     | $0.00016           |
+| 1000×1000               | ~1,334  | $0.004             |
+| 1092×1092               | ~1,590  | $0.0048            |
+| 4000×3000 (12MP iPhone) | ~16,000 | $0.048             |
 
-See `knowledge/decisions/infrastructure-stack.md` for full rationale.
+**A single unoptimized 12MP photo costs $0.05 in tokens!**
+
+**Target**: Resize to 1092×1092 max (Claude's sweet spot before server-side resize)
+
+**Result**:
+
+- 10MB photo → ~200KB upload
+- 16,000 tokens → ~1,600 tokens
+- **90% cost savings**
+
+**Library Choice**: `browser-image-compression`
+
+- Preserves aspect ratio automatically
+- Web Worker support (non-blocking)
+- Handles EXIF rotation
+- 2.5M weekly downloads, battle-tested
+
+### Model-Aware File Routing ✅ (Decided 2024-12-07)
+
+**Decision**: Route files to models that support them, with concierge integration.
+
+**Model Capabilities (2025)**:
+
+| Model              | Images                  | PDF                 | Audio     | Video     |
+| ------------------ | ----------------------- | ------------------- | --------- | --------- |
+| Claude (Anthropic) | ✅ JPEG, PNG, GIF, WebP | ✅ Best (100 pages) | ❌        | ❌        |
+| Gemini (Google)    | ✅ + HEIC               | ✅ Good             | ✅ Native | ✅ Native |
+| GPT-4o (OpenAI)    | ✅                      | ✅ Text-only        | ❌        | ❌        |
+| Grok (xAI)         | ✅                      | ✅                  | ❌        | ❌        |
+| Perplexity         | ✅                      | ❌                  | ❌        | ❌        |
+
+**Routing Rules**:
+
+- **Audio** → Force Gemini (only option)
+- **PDF** → Prefer Claude (best document understanding)
+- **Images** → Prefer Claude (values alignment), any model works
+- **HEIC** → Deferred (not supported initially)
+- **Video** → Deferred (not supported initially)
+
+**Concierge Integration**: Pass attachment metadata to concierge. If file has
+`requiredModel`, concierge respects that constraint. UI shows when model auto-switched.
+
+### Honest Progress UI ✅ (Decided 2024-12-07)
+
+**Decision**: No fake progress bars. Ever.
+
+**Rationale**: Fake progress erodes trust. Users notice when a bar moves at constant
+speed regardless of file size.
+
+**UI States**:
+
+- "Checking file..." (validation)
+- "Optimizing..." (image resize)
+- "Uploading..." (spinner, no percentage for small files)
+- "Complete" / "Failed: reason"
+
+After client-side resize, most uploads complete in <1 second. A spinner is honest.
+
+### HEIC Support: Deferred
+
+**Decision**: Don't support HEIC initially.
+
+**Rationale**: Requires additional dependency (`heic2any` for client-side conversion).
+Most users have JPEG/PNG. Can add later if demand exists.
+
+**Alternative considered**: Auto-route HEIC to Gemini (native support). Rejected because
+it forces model choice for a common iPhone format.
+
+### Video Support: Deferred
+
+**Decision**: No video support in initial implementation.
+
+**Rationale**: Video files are large, expensive to process, and only Gemini supports
+them. Focus on images, PDFs, and audio first.
+
+### Docling PDF Processing: Deferred to Phase 2
+
+**Decision**: Start with direct PDF to Claude, add Docling later for large PDFs.
+
+**Rationale**: Claude's native PDF understanding is excellent. Docling adds server-side
+Python complexity. Worth it only when token costs for large PDFs become problematic.
+
+**Docling capabilities** (for future reference):
+
+- 97.9% accuracy on complex tables
+- 100% text fidelity
+- 30x faster than OCR
+- Extracts: text, tables, images, structure
+- Exports to: Markdown, HTML, JSON
+
+---
+
+## Implementation Milestones
+
+### Milestone 1: Foundation & Validation
+
+**Goal**: Reject bad files early with clear errors.
+
+- `lib/storage/file-config.ts` - Single source of truth for file types
+- `lib/storage/file-validator.ts` - Validation logic
+- Empty file detection (`file.size === 0`)
+- Size limits per type (images 10MB, PDFs 25MB, audio 25MB)
+- MIME type whitelist enforcement
+- Clear error messages
+
+### Milestone 2: Image Optimization
+
+**Goal**: 90% reduction in image token costs.
+
+- Add `browser-image-compression` dependency
+- `lib/storage/image-processor.ts` - Resize before upload
+- Target: 1092px max dimension, 85% JPEG quality
+- Status message: "Optimizing image..."
+- Preserve original filename
+
+### Milestone 3: Honest Progress UI
+
+**Goal**: No fake progress bars.
+
+- Remove current fake progress animation
+- Status-based UI with clear state transitions
+- Clean animations
+
+### Milestone 4: Model-Aware Routing
+
+**Goal**: Audio files automatically use Gemini.
+
+- `AttachmentMeta` type with `requiredModel` field
+- Update concierge to receive attachment metadata
+- Routing rules enforced
+- UI indicator when model auto-switched
+
+### Milestone 5: Edge Cases & Polish
+
+**Goal**: Handle weird stuff gracefully.
+
+- Corrupt file detection
+- Large PDF warnings
+- Multiple file conflict resolution
+- Comprehensive test coverage
+
+---
+
+## File Type Configuration
+
+### Supported Formats (Phase 1)
+
+**Images**:
+
+- MIME: `image/jpeg`, `image/png`, `image/gif`, `image/webp`
+- Max size: 10MB (before resize)
+- Target: 1092px max dimension
+- Supported by: All models
+
+**PDFs**:
+
+- MIME: `application/pdf`
+- Max size: 25MB
+- Supported by: Claude (preferred), Gemini, Grok
+
+**Audio**:
+
+- MIME: `audio/mpeg`, `audio/mp3`, `audio/wav`, `audio/ogg`, `audio/flac`, `audio/m4a`
+- Max size: 25MB
+- Supported by: Gemini only (auto-routed)
+
+**Text**:
+
+- MIME: `text/plain`, `text/markdown`, `text/csv`, `application/json`
+- Max size: 5MB
+- Supported by: All models
+
+### Explicitly Not Supported (Phase 1)
+
+- HEIC/HEIF images (requires conversion library)
+- Video files (large, expensive, limited model support)
+- DOCX/XLSX (future consideration)
+- Archives (ZIP, etc.)
+
+---
 
 ## Architecture Principles
 
@@ -206,10 +400,10 @@ See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 
 **Multi-Tier**:
 
-- File bytes: External service (CDN, transformations, virus scanning)
-- Metadata: Fast database (relationships, status, permissions)
-- Chunks: Vector store with embeddings
-- Processing artifacts: Separate storage (extracted images, transcripts, summaries)
+- File bytes: Supabase Storage (CDN, transformations)
+- Metadata: Render Postgres (relationships, status, permissions)
+- Chunks: Vector store with embeddings (Phase 2)
+- Processing artifacts: Separate storage (extracted text, thumbnails)
 
 **Persistence Model**:
 
@@ -220,7 +414,7 @@ See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 
 ### Retrieval Strategy
 
-**Hybrid Search**:
+**Hybrid Search** (Phase 2):
 
 - Vector similarity for semantic matches
 - Keyword search for exact terms
@@ -235,250 +429,7 @@ See `knowledge/decisions/infrastructure-stack.md` for full rationale.
 - Merge adjacent chunks when relevant
 - Always cite sources (file, page, section)
 
-## Core Functions
-
-### Upload
-
-Accept common file types through interface:
-
-- Drag-and-drop
-- File picker
-- Paste (future: clipboard monitoring)
-- Mobile camera (future)
-
-Validate client-side:
-
-- Format detection
-- Size limits
-- Progress indication
-- Resumable for large files
-
-Handle errors gracefully with clear messages.
-
-### Processing
-
-Transform files into usable knowledge:
-
-**PDFs**:
-
-- Extract text, handling both digital and scanned
-- Chunk semantically (respect document structure)
-- Store with metadata (page numbers, headings, position)
-- Extract embedded images separately
-- Preserve tables
-
-**Images**:
-
-- Vision model analysis for understanding
-- OCR for text-heavy images
-- Choose approach based on content
-- Generate thumbnails
-
-**Audio**:
-
-- Transcribe speech to text
-- Identify speakers if multiple
-- Extract timestamps for reference
-- Detect language
-
-**Documents** (DOCX, TXT, MD):
-
-- Extract text with formatting preserved
-- Handle embedded images
-- Respect structure (headings, lists)
-
-**Spreadsheets**:
-
-- Parse structured data
-- Detect headers and types
-- Generate natural language summary
-- Support queries against data
-
-**Code Files**:
-
-- Syntax-aware structure extraction
-- Detect language and frameworks
-- Extract functions/classes for search
-
-### Context Integration
-
-Make file content available intelligently:
-
-**Retrieval**:
-
-- Search across all user files, not just current conversation
-- Rank by relevance to query
-- Return chunks with source attribution
-- Cross-file connections and insights
-
-**Injection**:
-
-- Include relevant chunks in prompts with clear source markers
-- Respect token limits through dynamic selection
-- Multi-file contexts with intelligent prioritization
-
-**Voice**:
-
-- Natural language references: "what did that PDF say about X?"
-- Read relevant sections aloud on request
-- Announce processing completion without interrupting flow
-
-## Product Decisions Needed
-
-### Supported Formats
-
-**Must Have**:
-
-- Images (JPG, PNG, WebP, HEIC)
-- PDFs (standard and scanned)
-- Text files (TXT, MD)
-
-**Should Have**:
-
-- Audio (MP3, WAV, M4A)
-- Documents (DOCX)
-- Spreadsheets (CSV, XLSX)
-
-**Could Have**:
-
-- Code files (syntax-aware)
-- Videos (transcription)
-- Presentations (PPTX)
-- Archives (ZIP with multi-file processing)
-
-What's the priority order? What gates moving to next tier?
-
-### Size Limits
-
-Need to balance user experience with costs:
-
-- How large can a PDF be? (100 pages? 1000 pages?)
-- What's reasonable for audio? (1 hour? 10 hours?)
-- Image file sizes?
-- Total storage per user?
-
-Different limits for free vs paid tiers?
-
-### Retention Policy
-
-How long do files persist?
-
-- Forever while account exists?
-- Tied to conversation retention?
-- Separate expiration?
-- Soft delete with recovery window?
-
-Can users "save to knowledge base" to decouple from conversations?
-
-### Multi-File Handling
-
-How do we handle context limits when users upload many files?
-
-- Unlimited attachments per conversation?
-- Smart selection of most relevant chunks across files?
-- Visual indicator of which files are "in context"?
-- Voice command to focus on specific files?
-
-### Knowledge Base Integration
-
-Should files automatically join knowledge base or require explicit action?
-
-How do we handle:
-
-- File updates (new version vs separate file)?
-- Organization (folders, tags, collections)?
-- Sharing (per-file permissions or collection-based)?
-- Search across all files vs conversation-specific?
-
-### Voice Features
-
-Which voice interactions are realistic?
-
-**Realistic**:
-
-- "What did that PDF say about X?" (reference uploaded file)
-- "Read me the summary" (TTS of processed content)
-- "Search my files for Y" (search across knowledge base)
-- Voice announcements of processing status
-
-**Not Realistic** (without OS-level integration):
-
-- "Attach that screenshot I just took" (no clipboard/screenshot access)
-- "Include the PDF from my email" (no email access)
-- "Add the file I just downloaded" (no filesystem monitoring)
-
-What's the boundary between useful voice integration and bullshit features?
-
-### Collaboration
-
-Team features now or later?
-
-- Shared file collections?
-- Per-file permissions?
-- Comments and annotations?
-- Version history?
-
-What's the mental model for shared vs personal files?
-
-## Open Questions
-
-### Architecture
-
-**Processing Infrastructure**:
-
-- Serverless functions or dedicated workers?
-- How to handle very large files without timeouts?
-- Job queue priority system?
-- Retry strategy for failures?
-
-**Storage Costs** (Resolved):
-
-- External storage: Supabase Storage (decided 2024-11-29)
-- Vector store: pgvector in Supabase Postgres (Phase 2, when needed)
-- Caching: Cloudflare CDN handles this (built into Supabase)
-- Cleanup: Soft delete with configurable retention
-
-### Product Direction
-
-**Privacy & Security**:
-
-- Encryption for sensitive files?
-- User control over processing location (local vs cloud)?
-- Compliance requirements (HIPAA, GDPR)?
-- Audit trail for file access?
-
-**Advanced Features** (2027 Vision):
-
-- Live collaboration on files (CRDT-based)?
-- AI-generated annotations and summaries?
-- Cross-file insights ("these PDFs discuss similar topics")?
-- File-to-artifact workflows (PDF → presentation)?
-
-Which of these align with "memory-aware, voice-first" positioning?
-
-### Technical Choices Deferred
-
-**Document Processing**:
-
-- Which PDF extraction library for primary?
-- Which for fallback?
-- Cloud OCR service or local?
-- Chunking strategy details?
-
-**Vector Search**:
-
-- Embedding model (local or cloud)?
-- Embedding dimensions and approach?
-- Index strategy?
-- Scoring algorithm details?
-
-**Job Queue**:
-
-- Which queue system?
-- Persistence approach?
-- Monitoring and observability?
-
-These decisions happen during implementation, not spec.
+---
 
 ## Success Criteria
 
@@ -493,41 +444,32 @@ These decisions happen during implementation, not spec.
 
 **Quality Requirements**:
 
-- OCR accuracy sufficient for usability (what's acceptable?)
-- Transcription accuracy sufficient for search (what's acceptable?)
-- Retrieval precision that feels magical (how do we measure?)
-- Processing speed that doesn't frustrate (what's the threshold?)
+- OCR accuracy sufficient for usability
+- Transcription accuracy sufficient for search
+- Retrieval precision that feels magical
+- Processing speed that doesn't frustrate
 
 **User Experience**:
 
-- Upload feedback is immediate
+- Upload feedback is immediate and honest
 - Processing status always visible
 - Errors have clear resolution paths
 - File preview loads quickly
 - Search feels instant
 - Voice references work naturally
 
-## What to Build Next
-
-This spec establishes vision and principles. Next steps:
-
-1. **Validate Product Direction**: Review open questions above, make product decisions
-2. **Technical Design**: Choose specific technologies and approaches based on decisions
-3. **Prototype Core Flow**: Build simplest version (image upload → vision analysis →
-   retrieval)
-4. **Test with Users**: Validate that files-as-knowledge model resonates
-5. **Iterate**: Expand formats and capabilities based on learning
-
-No timelines. Build when ready. Validate assumptions first.
+---
 
 ## Notes from Cora
 
 Clean implementation patterns worth preserving:
 
 - UI components separated from server actions
-- External service for storage (Uploadcare)
+- External service for storage (Uploadcare → we use Supabase)
 - Metadata in fast store for access patterns
 - Simple type definitions that extend easily
 - Server-side operations for security
+- Pre-processing large images before sending to Claude
+- Status messages with personality ("Optimizing this image for us 🖼️")
 
 Don't reinvent storage infrastructure. Focus on intelligence.
