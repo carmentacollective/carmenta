@@ -897,7 +897,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                     data-testid="composer-input"
                 />
 
-                <div className="flex items-center gap-1 pr-1">
+                <div className="flex items-center gap-2 pr-1">
                     {showStop ? (
                         <ComposerButton
                             type="button"
