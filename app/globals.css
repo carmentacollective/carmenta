@@ -192,6 +192,14 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
+    .dark .glass-input-dock {
+        background: rgba(40, 30, 50, 0.85);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
     /* Holographic gradient button */
     .btn-holo {
         @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-all;
@@ -211,15 +219,17 @@
 
     /* Greeting text styles */
     .greeting-title {
-        @apply text-4xl font-light tracking-tight md:text-5xl;
-        color: rgba(90, 60, 100, 0.85);
+        @apply text-4xl font-light tracking-tight text-foreground/85 md:text-5xl;
         letter-spacing: -1.5px;
         text-shadow: 0 2px 20px rgba(255, 255, 255, 0.5);
     }
 
+    .dark .greeting-title {
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+
     .greeting-subtitle {
-        @apply text-base;
-        color: rgba(120, 90, 130, 0.8);
+        @apply text-base text-foreground/70;
     }
 }
 
@@ -341,6 +351,10 @@
         scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
     }
 
+    .dark .scrollbar-holo {
+        scrollbar-color: rgba(200, 160, 180, 0.3) transparent;
+    }
+
     .scrollbar-holo::-webkit-scrollbar {
         width: 8px;
     }
@@ -354,8 +368,16 @@
         border-radius: 4px;
     }
 
+    .dark .scrollbar-holo::-webkit-scrollbar-thumb {
+        background: rgba(200, 160, 180, 0.3);
+    }
+
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
         background: rgba(180, 140, 200, 0.5);
+    }
+
+    .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
+        background: rgba(200, 160, 180, 0.5);
     }
 
     /*

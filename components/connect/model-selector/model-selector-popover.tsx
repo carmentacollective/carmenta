@@ -165,13 +165,13 @@ export function ModelSelectorPopover({
                 disabled={disabled}
                 className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full transition-all",
-                    "bg-white/50 backdrop-blur-sm",
-                    "hover:scale-105 hover:bg-white/70",
+                    "bg-white/50 backdrop-blur-sm dark:bg-white/10",
+                    "hover:scale-105 hover:bg-white/70 dark:hover:bg-white/20",
                     "active:scale-95",
                     hasOverrides && !isAuto
                         ? "ring-2 ring-primary/40"
-                        : "ring-1 ring-white/40",
-                    isOpen && "bg-white/70 ring-2 ring-primary/50",
+                        : "ring-1 ring-white/40 dark:ring-white/20",
+                    isOpen && "bg-white/70 ring-2 ring-primary/50 dark:bg-white/20",
                     disabled && "cursor-not-allowed opacity-50"
                 )}
                 aria-label="Model settings"
@@ -203,14 +203,14 @@ export function ModelSelectorPopover({
                         className={cn(
                             "fixed bottom-24 right-4 z-[101] w-80",
                             "max-h-[calc(100vh-8rem)]",
-                            "rounded-2xl bg-white backdrop-blur-xl",
-                            "shadow-2xl ring-1 ring-black/10",
+                            "rounded-2xl bg-white backdrop-blur-xl dark:bg-card",
+                            "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
                             "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2",
                             "flex flex-col overflow-hidden"
                         )}
                     >
                         {/* Model Selection - scrollable list with details */}
-                        <div className="bg-white p-3 pb-2">
+                        <div className="bg-white p-3 pb-2 dark:bg-card">
                             <div className="mb-2 flex items-center justify-between">
                                 <label className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
                                     Model
@@ -240,8 +240,8 @@ export function ModelSelectorPopover({
                                     className={cn(
                                         "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
                                         overrides.modelId === null
-                                            ? "bg-white shadow-sm ring-1 ring-primary/20"
-                                            : "hover:bg-white/50"
+                                            ? "bg-white shadow-sm ring-1 ring-primary/20 dark:bg-white/10"
+                                            : "hover:bg-white/50 dark:hover:bg-white/10"
                                     )}
                                 >
                                     <div className="flex items-center gap-2">
@@ -284,8 +284,8 @@ export function ModelSelectorPopover({
                                             className={cn(
                                                 "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
                                                 overrides.modelId === model.id
-                                                    ? "bg-white shadow-sm ring-1 ring-primary/20"
-                                                    : "hover:bg-white/50"
+                                                    ? "bg-white shadow-sm ring-1 ring-primary/20 dark:bg-white/10"
+                                                    : "hover:bg-white/50 dark:hover:bg-white/10"
                                             )}
                                         >
                                             <div className="flex items-center gap-2">

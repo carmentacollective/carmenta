@@ -33,7 +33,7 @@ export function SiteHeader({
             className={cn(
                 "flex items-center justify-between px-6 py-4",
                 bordered &&
-                    "border-b border-foreground/10 bg-white/80 backdrop-blur-sm dark:bg-background/80"
+                    "border-b border-foreground/10 bg-white/80 backdrop-blur-sm dark:bg-black/30"
             )}
         >
             <Link
