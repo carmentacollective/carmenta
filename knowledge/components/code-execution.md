@@ -78,67 +78,115 @@ Code can produce visual artifacts:
 
 ## Technical Architecture
 
-### Recommended Implementation: llm-sandbox
+### Infrastructure Constraint
 
-After evaluating the landscape, [llm-sandbox](https://github.com/vndee/llm-sandbox) is
-the recommended foundation:
+Carmenta runs on Render.com as a web service. Render services run inside containers but
+cannot spawn additional containers (no Docker-in-Docker). This rules out self-hosted
+solutions like llm-sandbox that require a Docker daemon.
 
-**Why llm-sandbox:**
+Two viable paths: **managed sandbox APIs** or **WebAssembly-based execution**.
 
-- Docker-based isolation (familiar infrastructure)
-- Interactive sessions with state persistence
-- Automatic artifact extraction (plots become images)
-- Multi-language support (Python primary, JS/Go/R available)
-- MCP server support built-in
-- MIT licensed, actively maintained
-- Simple API: `pip install llm-sandbox`
+### Option A: E2B (Managed Service) - Recommended for MVP
 
-**Basic integration:**
+[E2B](https://e2b.dev/) provides sandboxed execution as an API. No infrastructure to
+manage - just HTTP calls to their service.
 
-```python
-from llm_sandbox import SandboxSession
-
-with SandboxSession(lang="python") as session:
-    result = session.run("""
-import pandas as pd
-df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-df['sum'] = df['a'] + df['b']
-print(df.to_markdown())
-    """)
-    # result.stdout contains the markdown table
-    # result.artifacts contains any generated images
-```
-
-### Alternative Approaches Considered
-
-**Pyodide (WebAssembly Python):**
-
-- Runs in browser, zero server infrastructure
-- User data never leaves their machine
-- Limited: no filesystem, no network, ~10MB download
-- Better for: pure computation where data stays client-side
-
-**E2B (managed service):**
+**Why E2B:**
 
 - Firecracker microVMs, ~150ms cold start
-- Used by major players (Groq, Fortune 500)
-- Pricing: $150/mo base + usage
-- Better for: teams wanting zero infrastructure management
+- Full Python ecosystem (numpy, pandas, matplotlib, etc.)
+- Stateful sessions - state persists across calls
+- Used by Groq, ~50% of Fortune 500
+- Simple SDK integration
 
-**Cohere Terrarium:**
+**Integration:**
 
-- Pyodide inside Docker (double isolation)
-- Very locked down (no network, no filesystem)
-- ~900ms for matplotlib chart
-- Better for: maximum security, limited capability
+```typescript
+import { Sandbox } from "@e2b/code-interpreter";
+
+const sandbox = await Sandbox.create();
+await sandbox.runCode("import pandas as pd");
+await sandbox.runCode("df = pd.read_csv('/data/sales.csv')");
+const result = await sandbox.runCode("print(df.describe())");
+console.log(result.text);
+```
+
+**Tradeoffs:**
+
+- Pricing: $150/mo base + usage (can escalate with heavy use)
+- Data leaves our infrastructure (security/privacy consideration)
+- Vendor dependency
+
+### Option B: Pyodide (WebAssembly) - Privacy-First Alternative
+
+[Pyodide](https://pyodide.org/) runs CPython compiled to WebAssembly. Executes in the
+browser or in a Node.js service - no container spawning required.
+
+**Why Pyodide:**
+
+- Zero external dependencies - runs in-process
+- User data never leaves their machine (browser) or our infrastructure (server)
+- WASM sandbox provides memory isolation
+- Works on Render as a regular service
+
+**Integration (server-side):**
+
+```typescript
+import { loadPyodide } from "pyodide";
+
+const pyodide = await loadPyodide();
+await pyodide.loadPackage(["numpy", "pandas"]);
+
+const result = await pyodide.runPythonAsync(`
+import pandas as pd
+df = pd.DataFrame({'a': [1, 2, 3]})
+df.describe().to_dict()
+`);
+```
+
+**Tradeoffs:**
+
+- ~10MB runtime download (cacheable)
+- Limited packages (pre-built WASM versions only)
+- No network access from Python
+- No real filesystem (virtual FS only)
+- 2-3x slower than native Python
+
+### Option C: Cohere Terrarium - Hybrid Approach
+
+[Terrarium](https://github.com/cohere-ai/cohere-terrarium) wraps Pyodide in an HTTP
+service. Deploy as a Render private service, call from main app.
+
+- Pyodide execution with HTTP API
+- ~900ms for matplotlib charts
+- ~$30/mo hosting cost
+- No Docker-in-Docker needed
+
+### Future Exploration: Docker-Based Solutions
+
+When/if we move to infrastructure with Docker daemon access (dedicated VM, Fly.io
+Machines, Kubernetes), these become viable:
+
+- **[llm-sandbox](https://github.com/vndee/llm-sandbox)**: Full-featured, stateful
+  sessions, multi-language, MCP support
+- **[DifySandbox](https://dify.ai/blog/difysandbox-goes-open-source-secure-execution-of-code)**:
+  Syscall whitelisting, enterprise-focused
+- **[Code Sandbox MCP](https://www.philschmid.de/code-sandbox-mcp)**: Purpose-built MCP
+  server
+
+These offer more power and flexibility but require infrastructure we don't currently
+have.
 
 ### Security Model
 
-Code execution is inherently risky. Our approach:
+Code execution is inherently risky. Our approach varies by implementation:
 
-**Container Isolation:** Every execution runs in a fresh Docker container. No host
-filesystem access. No network by default. Resource limits (CPU, memory, time) prevent
-runaway code.
+**E2B:** Firecracker microVMs provide hardware-level isolation. Each execution runs in
+an ephemeral VM. E2B handles security - we trust their infrastructure.
+
+**Pyodide/Terrarium:** WASM sandbox provides memory isolation. No filesystem access, no
+network access, no system calls. Resource limits (CPU, memory, time) prevent runaway
+code.
 
 **Timeout Enforcement:** All executions have a maximum runtime (default 30s,
 configurable). Infinite loops get killed, not the conversation.
@@ -227,14 +275,14 @@ Errors become conversation, not dead ends.
 
 ### Architecture
 
-- **Where does the sandbox run?** Local Docker for desktop? Cloud-hosted for web users?
-  Hybrid approach where web users connect to a managed sandbox service?
+- **E2B vs Pyodide**: E2B is more capable but costs $150/mo+ and data leaves our infra.
+  Pyodide is free and private but limited. Which tradeoff fits our users?
 - **Session lifecycle**: How long do sessions persist? Per-conversation? Timed expiry?
-  User-controlled?
-- **Package management**: Pre-installed set only? Allow micropip installs from
-  allowlist? Full PyPI access with security scanning?
-- **Multi-language priority**: Python is primary. When do we add JavaScript? R for
-  statistics-heavy users? Go for performance?
+  E2B sessions have cost implications.
+- **Package management**: E2B has full PyPI. Pyodide has ~200 pre-built packages. Is
+  that enough for our use cases?
+- **Hybrid approach**: Could we use Pyodide for simple math and E2B only for complex
+  data analysis? Worth the complexity?
 
 ### Product Decisions
 
@@ -248,45 +296,50 @@ Errors become conversation, not dead ends.
 
 ### Technical Specifications Needed
 
-- Docker container image specification (base image, pre-installed packages)
 - Sandbox API contract (input/output schemas)
-- Artifact extraction and delivery mechanism
-- Resource limit configuration (CPU, memory, timeout defaults)
-- Monitoring and observability approach for sandbox health
+- Artifact extraction and delivery mechanism (especially for charts/images)
+- Timeout and resource limit configuration
+- File upload flow (user file → sandbox virtual filesystem)
 - MCP tool definition for code_execution
+- Error handling and retry patterns
 
 ### Research Needed
 
-- Performance benchmarking: llm-sandbox vs direct Docker vs E2B for our workload
-- Security audit of container configuration
-- User research: how do people want to interact with code execution? Show code vs hide
-  code? Iterative refinement workflows?
-- Cost modeling for cloud-hosted sandboxes at scale
-- Evaluate Pyodide as fallback for offline/privacy-sensitive use cases
+- E2B pricing deep-dive: what does realistic usage actually cost?
+- Pyodide package coverage: do we have what we need for data analysis workflows?
+- Performance benchmarking: Pyodide vs E2B for typical operations
+- User research: how do people want to interact with code execution?
+- Terrarium evaluation: worth deploying as private service, or just use E2B?
 
 ---
 
 ## Landscape Context
 
-### Managed Services
+### Viable for Render.com
 
-| Service                             | Architecture         | Cold Start | Pricing          |
-| ----------------------------------- | -------------------- | ---------- | ---------------- |
-| [E2B](https://e2b.dev/)             | Firecracker microVMs | ~150ms     | $150/mo + usage  |
-| [Modal](https://modal.com/)         | Containers           | 2-5s       | Usage-based      |
-| [Together AI](https://together.ai/) | VM snapshots         | 500ms-2.7s | Bundled with API |
+| Option                                                     | Architecture | Cost     | Capability    |
+| ---------------------------------------------------------- | ------------ | -------- | ------------- |
+| [E2B](https://e2b.dev/)                                    | Firecracker  | $150/mo+ | Full Python   |
+| [Pyodide](https://pyodide.org/)                            | WASM         | Free     | ~200 packages |
+| [Terrarium](https://github.com/cohere-ai/cohere-terrarium) | Pyodide+HTTP | ~$30/mo  | ~200 packages |
+| [Together AI](https://together.ai/)                        | VM snapshots | Bundled  | Full Python   |
 
-### Self-Hosted Open Source
+### Future Options (Require Docker Daemon)
 
-| Project                                                                                   | Architecture      | Notes                                        |
-| ----------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------- |
-| [llm-sandbox](https://github.com/vndee/llm-sandbox)                                       | Docker/K8s/Podman | Recommended - stateful sessions, MCP support |
-| [Cohere Terrarium](https://github.com/cohere-ai/cohere-terrarium)                         | Pyodide + Docker  | Maximum isolation, limited packages          |
-| [DifySandbox](https://dify.ai/blog/difysandbox-goes-open-source-secure-execution-of-code) | Syscall whitelist | Part of Dify, enterprise-focused             |
-| [Code Sandbox MCP](https://www.philschmid.de/code-sandbox-mcp)                            | Docker/Podman     | Purpose-built MCP server                     |
+| Project                                                                                   | Architecture      | Notes                           |
+| ----------------------------------------------------------------------------------------- | ----------------- | ------------------------------- |
+| [llm-sandbox](https://github.com/vndee/llm-sandbox)                                       | Docker/K8s/Podman | Best DX, stateful sessions, MCP |
+| [DifySandbox](https://dify.ai/blog/difysandbox-goes-open-source-secure-execution-of-code) | Syscall whitelist | Enterprise-focused              |
+| [Code Sandbox MCP](https://www.philschmid.de/code-sandbox-mcp)                            | Docker/Podman     | Purpose-built for agents        |
 
-### Key Insight
+These become viable if we move to Fly.io, dedicated VMs, or Kubernetes.
 
-The conference booth was probably E2B - they're the market leader with slick marketing.
-But for self-hosted control and cost efficiency, llm-sandbox provides the same
-capability without the $150/mo base cost or vendor dependency.
+### Decision Context
+
+E2B is the market leader - polished product, used by Fortune 500 companies. The $150/mo
+base feels steep for MVP but might be worth it for full capability without
+infrastructure complexity.
+
+Pyodide is the scrappy alternative - free, private, works today. Limited packages could
+be a problem for power users, but covers core data analysis needs (pandas, numpy,
+matplotlib).
