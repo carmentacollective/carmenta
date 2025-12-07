@@ -293,7 +293,7 @@ If user wants markdown-wrapped code, they use message-level "Copy as Markdown".
 
 ## Delight Messages
 
-On successful copy, cycling messages add personality and warmth:
+Variable reinforcement: boring most of the time, delightful sometimes.
 
 ```typescript
 const DELIGHT_MESSAGES = [
@@ -312,14 +312,20 @@ const DELIGHT_MESSAGES = [
   "I don't share with just anyone",
   "Artisanally duplicated",
 ];
+
+const DELIGHT_CHANCE = 5; // ~20% chance of special message
 ```
 
 **Behavior:**
 
-- Messages cycle sequentially (not random) for variety without repetition
-- Index persisted to localStorage across sessions
+- ~80% of copies show plain "Copied" (reliable, expected)
+- ~20% show a random delight message (surprise, memorable)
 - Message appears next to checkmark for 2 seconds
 - Fade-in animation with slide-from-left
+
+**Psychology:** Variable ratio reinforcement (slot machine pattern) creates more
+engagement than predictable rewards. Users can't predict when delight happens, making
+the surprise more impactful. Research suggests 15-25% is the sweet spot.
 
 **Philosophy:** Authentic celebration, not gamification. Flow-enhancing (under 500ms,
 non-blocking). Matches Carmenta's voice: playful, warm, occasionally cheeky.
