@@ -14,6 +14,7 @@
  *
  * Options:
  *   --fast         Skip slow tests (deep research)
+ *   --score        Enable LLM-as-judge quality scoring (requires OPENROUTER_API_KEY)
  *   --category=X   Run only tests in category (routing, tools, reasoning, overrides, edge-cases)
  *   --test=ID      Run a single test by ID
  *   --verbose      Show full response content
@@ -27,12 +28,19 @@ import {
     getTestById,
     type TestQuery,
 } from "./test-queries";
+import {
+    evaluateResponse,
+    isScoringAvailable,
+    formatScoreCompact,
+    type QualityScores,
+} from "./evaluators";
 
 // Parse CLI args
 const args = process.argv.slice(2);
 const flags = {
     fast: args.includes("--fast"),
     verbose: args.includes("--verbose"),
+    score: args.includes("--score"),
     category: args
         .find((a) => a.startsWith("--category="))
         ?.substring("--category=".length),
@@ -74,6 +82,7 @@ interface TestResult {
         expected: string;
         actual: string;
     }[];
+    scores?: QualityScores;
 }
 
 /**
@@ -120,6 +129,11 @@ function parseHeaders(headers: Headers) {
 
 /**
  * Consume streaming response and extract content
+ *
+ * The API uses toUIMessageStreamResponse which outputs SSE format:
+ * - data: {"type":"text-delta","id":"...","delta":"text"}
+ * - data: {"type":"tool-input-start","toolCallId":"...","toolName":"getWeather"}
+ * - data: {"type":"tool-input-available","toolCallId":"...","toolName":"getWeather","input":{...}}
  */
 async function consumeStream(
     response: Response
@@ -131,7 +145,9 @@ async function consumeStream(
 
     const decoder = new TextDecoder();
     let fullText = "";
+    let extractedText = "";
     const toolsCalled: string[] = [];
+    let buffer = ""; // Buffer for incomplete lines across chunks
 
     try {
         while (true) {
@@ -141,12 +157,42 @@ async function consumeStream(
             const chunk = decoder.decode(value, { stream: true });
             fullText += chunk;
 
-            // Parse streaming chunks for tool calls
-            // Format: 0:"{text}"\n or other data-stream protocol lines
-            const lines = chunk.split("\n");
+            // Add chunk to buffer and split by newlines
+            buffer += chunk;
+            const lines = buffer.split("\n");
+
+            // Keep the last (potentially incomplete) line in the buffer
+            buffer = lines.pop() || "";
+
+            // Process complete lines
             for (const line of lines) {
-                // Tool invocation pattern in AI SDK stream: e:{"toolCallId":...,"toolName":...}
-                if (line.startsWith("e:")) {
+                // SSE data line format
+                if (line.startsWith("data: ")) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+
+                        // Extract text content from text-delta chunks
+                        if (data.type === "text-delta" && data.delta) {
+                            extractedText += data.delta;
+                        }
+
+                        // Tool invocation - tool-input-start or tool-input-available
+                        if (
+                            (data.type === "tool-input-start" ||
+                                data.type === "tool-input-available") &&
+                            data.toolName &&
+                            !toolsCalled.includes(data.toolName)
+                        ) {
+                            toolsCalled.push(data.toolName);
+                        }
+                    } catch {
+                        // Ignore parse errors for non-JSON lines
+                    }
+                }
+
+                // Also support legacy data-stream protocol format (e: and 9: prefixes)
+                // in case some endpoints still use toDataStreamResponse
+                if (line.startsWith("e:") || line.startsWith("9:")) {
                     try {
                         const data = JSON.parse(line.slice(2));
                         if (data.toolName && !toolsCalled.includes(data.toolName)) {
@@ -156,35 +202,44 @@ async function consumeStream(
                         // Ignore parse errors
                     }
                 }
-                // Also check for 9: tool invocation start
-                if (line.startsWith("9:")) {
-                    try {
-                        const data = JSON.parse(line.slice(2));
-                        if (data.toolName && !toolsCalled.includes(data.toolName)) {
-                            toolsCalled.push(data.toolName);
+
+                // Legacy text format: 0:"text content"
+                if (line.startsWith("0:")) {
+                    const match = line.match(/^0:"([^"\\]*(?:\\.[^"\\]*)*)"/);
+                    if (match) {
+                        try {
+                            extractedText += JSON.parse(`"${match[1]}"`);
+                        } catch {
+                            extractedText += match[1];
                         }
-                    } catch {
-                        // Ignore parse errors
                     }
+                }
+            }
+        }
+
+        // Process any remaining buffered content
+        if (buffer.trim()) {
+            if (buffer.startsWith("data: ")) {
+                try {
+                    const data = JSON.parse(buffer.slice(6));
+                    if (data.type === "text-delta" && data.delta) {
+                        extractedText += data.delta;
+                    }
+                    if (
+                        (data.type === "tool-input-start" ||
+                            data.type === "tool-input-available") &&
+                        data.toolName &&
+                        !toolsCalled.includes(data.toolName)
+                    ) {
+                        toolsCalled.push(data.toolName);
+                    }
+                } catch {
+                    // Ignore parse errors
                 }
             }
         }
     } catch (error) {
         // Stream read error
-    }
-
-    // Extract actual text content from stream (format: 0:"text content"\n)
-    // Use regex that handles escaped quotes: [^"\\]* matches non-quote/backslash,
-    // (?:\\.[^"\\]*)* matches backslash + any char followed by more non-quote/backslash
-    let extractedText = "";
-    const textMatches = fullText.matchAll(/0:"([^"\\]*(?:\\.[^"\\]*)*)"/g);
-    for (const match of textMatches) {
-        // Unescape the JSON string
-        try {
-            extractedText += JSON.parse(`"${match[1]}"`);
-        } catch {
-            extractedText += match[1];
-        }
     }
 
     return { text: extractedText || fullText.slice(0, 1000), toolsCalled };
@@ -437,6 +492,38 @@ function printResult(result: TestResult, index: number, total: number) {
     if (result.response.explanation) {
         console.log(`   \x1b[90mExplanation: ${result.response.explanation}\x1b[0m`);
     }
+
+    // Show quality scores if available
+    if (result.scores) {
+        console.log(`   \x1b[36mQuality: ${formatScoreCompact(result.scores)}\x1b[0m`);
+
+        // Show improvement feedback for any dimension that scored below 100%
+        const scores = result.scores;
+        if (scores.correctness.score < 1 && scores.correctness.issue) {
+            console.log(
+                `   \x1b[33m→ Correctness (${scores.correctness.label}):\x1b[0m ${scores.correctness.issue}`
+            );
+            if (scores.correctness.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.correctness.fix}`);
+            }
+        }
+        if (scores.helpfulness.score < 1 && scores.helpfulness.issue) {
+            console.log(
+                `   \x1b[33m→ Helpfulness (${scores.helpfulness.label}):\x1b[0m ${scores.helpfulness.issue}`
+            );
+            if (scores.helpfulness.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.helpfulness.fix}`);
+            }
+        }
+        if (scores.relevance.score < 1 && scores.relevance.issue) {
+            console.log(
+                `   \x1b[33m→ Relevance (${scores.relevance.label}):\x1b[0m ${scores.relevance.issue}`
+            );
+            if (scores.relevance.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.relevance.fix}`);
+            }
+        }
+    }
 }
 
 /**
@@ -479,6 +566,75 @@ function printSummary(results: TestResult[]) {
             console.log(`  - ${r.query.id}: ${r.query.description}`);
         }
     }
+
+    // Quality scores summary
+    const scoredResults = results.filter((r) => r.scores);
+    if (scoredResults.length > 0) {
+        const avgCorrectness =
+            scoredResults.reduce((sum, r) => sum + r.scores!.correctness.score, 0) /
+            scoredResults.length;
+        const avgHelpfulness =
+            scoredResults.reduce((sum, r) => sum + r.scores!.helpfulness.score, 0) /
+            scoredResults.length;
+        const avgRelevance =
+            scoredResults.reduce((sum, r) => sum + r.scores!.relevance.score, 0) /
+            scoredResults.length;
+        const avgOverall =
+            scoredResults.reduce((sum, r) => sum + r.scores!.overall, 0) /
+            scoredResults.length;
+
+        console.log("\n\x1b[36mQuality Scores (LLM-as-Judge):\x1b[0m");
+        console.log(`  Correctness: ${(avgCorrectness * 100).toFixed(0)}%`);
+        console.log(`  Helpfulness: ${(avgHelpfulness * 100).toFixed(0)}%`);
+        console.log(`  Relevance:   ${(avgRelevance * 100).toFixed(0)}%`);
+        console.log(`  \x1b[1mOverall:      ${(avgOverall * 100).toFixed(0)}%\x1b[0m`);
+
+        // Improvement recommendations for tests with low scores
+        const lowScoringTests = scoredResults.filter((r) => r.scores!.overall < 1);
+        if (lowScoringTests.length > 0) {
+            console.log("\n\x1b[33m📋 Improvement Recommendations:\x1b[0m");
+            for (const r of lowScoringTests) {
+                const scores = r.scores!;
+                console.log(
+                    `\n  \x1b[1m${r.query.id}\x1b[0m (${(scores.overall * 100).toFixed(0)}%)`
+                );
+                console.log(
+                    `  Query: "${r.query.content.slice(0, 60)}${r.query.content.length > 60 ? "..." : ""}"`
+                );
+
+                if (scores.correctness.score < 1 && scores.correctness.issue) {
+                    console.log(
+                        `  \x1b[33m• Correctness Issue:\x1b[0m ${scores.correctness.issue}`
+                    );
+                    if (scores.correctness.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.correctness.fix}`
+                        );
+                    }
+                }
+                if (scores.helpfulness.score < 1 && scores.helpfulness.issue) {
+                    console.log(
+                        `  \x1b[33m• Helpfulness Issue:\x1b[0m ${scores.helpfulness.issue}`
+                    );
+                    if (scores.helpfulness.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.helpfulness.fix}`
+                        );
+                    }
+                }
+                if (scores.relevance.score < 1 && scores.relevance.issue) {
+                    console.log(
+                        `  \x1b[33m• Relevance Issue:\x1b[0m ${scores.relevance.issue}`
+                    );
+                    if (scores.relevance.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.relevance.fix}`
+                        );
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -490,6 +646,16 @@ async function main() {
     console.log("=".repeat(60));
     console.log(`Base URL: ${flags.baseUrl}`);
     console.log(`JWT Token: ${JWT_TOKEN!.slice(0, 20)}...`);
+
+    // Check scoring availability
+    const scoringEnabled = flags.score && isScoringAvailable();
+    if (flags.score && !isScoringAvailable()) {
+        console.log(
+            "\x1b[33mWarning: --score flag set but OPENROUTER_API_KEY not configured\x1b[0m"
+        );
+    } else if (scoringEnabled) {
+        console.log(`Scoring: \x1b[36menabled (GPT-5.1 judge)\x1b[0m`);
+    }
 
     // Select tests to run
     let tests: TestQuery[];
@@ -524,6 +690,21 @@ async function main() {
         }
 
         const result = await runTest(test);
+
+        // Run quality scoring if enabled and we have response text
+        if (scoringEnabled && result.response.responseText && result.success) {
+            try {
+                result.scores = await evaluateResponse(
+                    test.content,
+                    result.response.responseText
+                );
+            } catch (error) {
+                console.log(
+                    `   \x1b[33mScoring failed: ${error instanceof Error ? error.message : "Unknown error"}\x1b[0m`
+                );
+            }
+        }
+
         results.push(result);
         printResult(result, i, tests.length);
     }
