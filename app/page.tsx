@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
@@ -219,23 +218,6 @@ export default function HomePage() {
                                 : "translate-y-4 opacity-0"
                         )}
                     >
-                        {/* "Coming soon" label - appears above headline */}
-                        <div
-                            className={cn(
-                                "mb-3 h-6 transition-all duration-500",
-                                phase !== "typing" && !currentFeature.available
-                                    ? "translate-y-0 opacity-100"
-                                    : "translate-y-2 opacity-0"
-                            )}
-                        >
-                            {!currentFeature.available && (
-                                <span className="inline-flex items-center gap-1.5 text-sm font-medium tracking-wide text-primary/70">
-                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary/60" />
-                                    Coming soon
-                                </span>
-                            )}
-                        </div>
-
                         {/* Headline with typewriter effect - LEFT ALIGNED */}
                         <h1 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
                             {displayedChars}
@@ -270,17 +252,24 @@ export default function HomePage() {
                                     </a>
                                 </>
                             )}
+                            {!currentFeature.available && (
+                                <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-0.5 text-sm font-medium text-primary">
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                                    Coming soon
+                                </span>
+                            )}
                         </p>
                     </div>
 
                     {/* Connect CTA */}
                     <div className="mt-12 sm:mt-16">
-                        <Button asChild size="lg" className="gap-2 rounded-full px-8">
-                            <Link href="/connection/new">
-                                Connect
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </Button>
+                        <Link
+                            href="/connection/new"
+                            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3 text-base font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
+                        >
+                            Connect
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
                     </div>
 
                     {/* Progress dots */}

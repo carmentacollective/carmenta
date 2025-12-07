@@ -20,7 +20,7 @@ export function Footer() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 transition-colors hover:text-foreground/90"
                     >
-                        <Heart className="h-3.5 w-3.5" />
+                        <Heart className="h-3.5 w-3.5 fill-primary text-primary" />
                         <span>Heart Centered AI</span>
                     </Link>
                     <Link
@@ -37,7 +37,7 @@ export function Footer() {
                 {/* Credits */}
                 <div className="text-base text-foreground/60">
                     <span>Built with </span>
-                    <Heart className="inline h-3 w-3 fill-primary text-primary" />
+                    <Heart className="inline h-3.5 w-3.5 fill-primary text-primary" />
                     <span> by </span>
                     <Link
                         href="https://technick.ai"
