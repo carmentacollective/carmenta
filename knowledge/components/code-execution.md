@@ -78,13 +78,21 @@ Code can produce visual artifacts:
 
 ## Technical Architecture
 
-### Infrastructure Constraint
+### Infrastructure Context
 
-Carmenta runs on Render.com as a web service. Render services run inside containers but
-cannot spawn additional containers (no Docker-in-Docker). This rules out self-hosted
-solutions like llm-sandbox that require a Docker daemon.
+Carmenta currently runs on Render.com. Render services run inside containers but cannot
+spawn additional containers (no Docker-in-Docker), which limits our options.
 
-Two viable paths: **managed sandbox APIs** or **WebAssembly-based execution**.
+However, **Fly.io** is a compelling alternative that would unlock more powerful
+approaches. The infrastructure decision affects which code execution paths are viable:
+
+| Platform   | Docker-in-Docker | Ephemeral VMs | Implications                      |
+| ---------- | ---------------- | ------------- | --------------------------------- |
+| Render.com | No               | No            | E2B, Pyodide, or Terrarium only   |
+| Fly.io     | Yes (Machines)   | Yes           | Full Docker, DIY E2B, llm-sandbox |
+
+Three paths forward: **stay on Render with constraints**, **migrate to Fly.io**, or
+**use managed services regardless of platform**.
 
 ### Option A: E2B (Managed Service) - Recommended for MVP
 
@@ -162,20 +170,74 @@ service. Deploy as a Render private service, call from main app.
 - ~$30/mo hosting cost
 - No Docker-in-Docker needed
 
-### Future Exploration: Docker-Based Solutions
+### Option D: Fly.io Machines - DIY E2B
 
-When/if we move to infrastructure with Docker daemon access (dedicated VM, Fly.io
-Machines, Kubernetes), these become viable:
+[Fly Machines](https://fly.io/docs/machines/) are Firecracker VMs controllable via REST
+API. This is the same underlying technology E2B uses, but self-managed.
 
-- **[llm-sandbox](https://github.com/vndee/llm-sandbox)**: Full-featured, stateful
-  sessions, multi-language, MCP support
+**Why Fly.io:**
+
+- Firecracker VMs with ~300ms boot time
+- Spawn ephemeral machines per execution via REST API
+- Pay only for running time (~$0.0000022/s for shared CPU)
+- No $150/mo base cost - pure usage-based
+- Full Docker support - llm-sandbox works here
+- 35+ global regions
+- Data stays in our infrastructure
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Fly.io Private Network                                  │
+│                                                          │
+│  ┌─────────────────┐      ┌─────────────────────────┐   │
+│  │  Carmenta App   │─────▶│  Sandbox Machine        │   │
+│  │  (always-on)    │ API  │  (ephemeral)            │   │
+│  │                 │      │                         │   │
+│  │  Next.js        │      │  Python + llm-sandbox   │   │
+│  └─────────────────┘      │  Spawned per session    │   │
+│                           │  Auto-stops when idle   │   │
+│                           └─────────────────────────┘   │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Integration:**
+
+```bash
+# Spawn a sandbox machine
+curl -X POST \
+  -H "Authorization: Bearer ${FLY_API_TOKEN}" \
+  "https://api.machines.dev/v1/apps/carmenta-sandbox/machines" \
+  -d '{
+    "config": {
+      "image": "carmenta/python-sandbox:latest",
+      "auto_destroy": true,
+      "restart": { "policy": "no" }
+    }
+  }'
+```
+
+**Tradeoffs:**
+
+- Requires migrating from Render to Fly.io
+- More infrastructure to manage (but not much - Fly handles orchestration)
+- CLI-first workflow vs Render's git-push deploys
+- Learning curve for team
+
+**What this unlocks:**
+
+With Fly.io, these Docker-based solutions become viable:
+
+- **[llm-sandbox](https://github.com/vndee/llm-sandbox)**: Best DX, stateful sessions,
+  multi-language, MCP support built-in
 - **[DifySandbox](https://dify.ai/blog/difysandbox-goes-open-source-secure-execution-of-code)**:
   Syscall whitelisting, enterprise-focused
 - **[Code Sandbox MCP](https://www.philschmid.de/code-sandbox-mcp)**: Purpose-built MCP
   server
 
-These offer more power and flexibility but require infrastructure we don't currently
-have.
+The Fly.io path gives us E2B-level capability without the $150/mo base cost or vendor
+lock-in.
 
 ### Security Model
 
@@ -183,6 +245,10 @@ Code execution is inherently risky. Our approach varies by implementation:
 
 **E2B:** Firecracker microVMs provide hardware-level isolation. Each execution runs in
 an ephemeral VM. E2B handles security - we trust their infrastructure.
+
+**Fly.io Machines:** Same Firecracker isolation as E2B, but we manage it. Each sandbox
+runs in its own VM, destroyed after use. Fly's docs explicitly state support for running
+"the most awful, buggy, and downright hostile user code" safely.
 
 **Pyodide/Terrarium:** WASM sandbox provides memory isolation. No filesystem access, no
 network access, no system calls. Resource limits (CPU, memory, time) prevent runaway
@@ -275,14 +341,14 @@ Errors become conversation, not dead ends.
 
 ### Architecture
 
-- **E2B vs Pyodide**: E2B is more capable but costs $150/mo+ and data leaves our infra.
-  Pyodide is free and private but limited. Which tradeoff fits our users?
+- **Platform decision**: Stay on Render (constrained options) or migrate to Fly.io
+  (unlocks Docker-based solutions)? This is the key infrastructure question.
+- **If Fly.io**: Build on llm-sandbox + Fly Machines, or use E2B anyway for simplicity?
+- **If Render**: E2B ($150/mo) vs Pyodide (free but limited) - which tradeoff fits?
 - **Session lifecycle**: How long do sessions persist? Per-conversation? Timed expiry?
-  E2B sessions have cost implications.
-- **Package management**: E2B has full PyPI. Pyodide has ~200 pre-built packages. Is
-  that enough for our use cases?
-- **Hybrid approach**: Could we use Pyodide for simple math and E2B only for complex
-  data analysis? Worth the complexity?
+  Cost implications vary by platform.
+- **Package management**: E2B/Fly have full PyPI. Pyodide has ~200 pre-built packages.
+  Is that enough for our use cases?
 
 ### Product Decisions
 
@@ -305,41 +371,48 @@ Errors become conversation, not dead ends.
 
 ### Research Needed
 
-- E2B pricing deep-dive: what does realistic usage actually cost?
-- Pyodide package coverage: do we have what we need for data analysis workflows?
-- Performance benchmarking: Pyodide vs E2B for typical operations
-- User research: how do people want to interact with code execution?
-- Terrarium evaluation: worth deploying as private service, or just use E2B?
+- **Fly.io migration scope**: What's involved in moving from Render? Database, env vars,
+  CI/CD, DNS, etc. Is this a weekend or a month?
+- **Fly.io Machines patterns**: Best practices for ephemeral sandbox VMs. Session
+  pooling? Pre-warmed machines? Cost optimization?
+- **E2B pricing deep-dive**: What does realistic usage actually cost?
+- **Pyodide package coverage**: Do we have what we need for data analysis workflows?
+- **Performance benchmarking**: Pyodide vs E2B vs Fly Machines for typical operations
+- **User research**: How do people want to interact with code execution?
 
 ---
 
 ## Landscape Context
 
-### Viable for Render.com
+### Platform Comparison
 
-| Option                                                     | Architecture | Cost     | Capability    |
-| ---------------------------------------------------------- | ------------ | -------- | ------------- |
-| [E2B](https://e2b.dev/)                                    | Firecracker  | $150/mo+ | Full Python   |
-| [Pyodide](https://pyodide.org/)                            | WASM         | Free     | ~200 packages |
-| [Terrarium](https://github.com/cohere-ai/cohere-terrarium) | Pyodide+HTTP | ~$30/mo  | ~200 packages |
-| [Together AI](https://together.ai/)                        | VM snapshots | Bundled  | Full Python   |
+| Platform                  | Code Execution Options                   | Migration Effort |
+| ------------------------- | ---------------------------------------- | ---------------- |
+| Render.com (current)      | E2B, Pyodide, Terrarium only             | N/A              |
+| [Fly.io](https://fly.io/) | All options including Docker/llm-sandbox | Medium           |
+| Dedicated VM              | All options                              | High             |
 
-### Future Options (Require Docker Daemon)
+### Execution Options Comparison
 
-| Project                                                                                   | Architecture      | Notes                           |
-| ----------------------------------------------------------------------------------------- | ----------------- | ------------------------------- |
-| [llm-sandbox](https://github.com/vndee/llm-sandbox)                                       | Docker/K8s/Podman | Best DX, stateful sessions, MCP |
-| [DifySandbox](https://dify.ai/blog/difysandbox-goes-open-source-secure-execution-of-code) | Syscall whitelist | Enterprise-focused              |
-| [Code Sandbox MCP](https://www.philschmid.de/code-sandbox-mcp)                            | Docker/Podman     | Purpose-built for agents        |
-
-These become viable if we move to Fly.io, dedicated VMs, or Kubernetes.
+| Option                                                     | Architecture | Cost        | Capability    | Platform Req |
+| ---------------------------------------------------------- | ------------ | ----------- | ------------- | ------------ |
+| [E2B](https://e2b.dev/)                                    | Firecracker  | $150/mo+    | Full Python   | Any          |
+| [Fly Machines](https://fly.io/docs/machines/)              | Firecracker  | Usage-based | Full Python   | Fly.io       |
+| [llm-sandbox](https://github.com/vndee/llm-sandbox)        | Docker       | Self-hosted | Full Python   | Fly.io/VM    |
+| [Pyodide](https://pyodide.org/)                            | WASM         | Free        | ~200 packages | Any          |
+| [Terrarium](https://github.com/cohere-ai/cohere-terrarium) | Pyodide+HTTP | ~$30/mo     | ~200 packages | Any          |
 
 ### Decision Context
 
-E2B is the market leader - polished product, used by Fortune 500 companies. The $150/mo
-base feels steep for MVP but might be worth it for full capability without
-infrastructure complexity.
+**The key question is platform, not execution engine.**
 
-Pyodide is the scrappy alternative - free, private, works today. Limited packages could
-be a problem for power users, but covers core data analysis needs (pandas, numpy,
-matplotlib).
+If we stay on Render: E2B ($150/mo) or Pyodide (limited). Both work, both have
+tradeoffs.
+
+If we migrate to Fly.io: We get E2B-equivalent capability (Firecracker VMs) without the
+$150/mo base cost. Fly Machines + llm-sandbox gives us full control, usage-based
+pricing, and data stays in our infrastructure.
+
+Fly.io has a steeper learning curve (CLI-first, more config) but unlocks the most
+capable and cost-effective path for code execution. The platform decision cascades into
+everything else.
