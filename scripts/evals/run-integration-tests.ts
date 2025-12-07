@@ -470,20 +470,29 @@ function printResult(result: TestResult, index: number, total: number) {
 
         // Show improvement feedback for any dimension that scored below 100%
         const scores = result.scores;
-        if (scores.correctness.score < 1) {
+        if (scores.correctness.score < 1 && scores.correctness.issue) {
             console.log(
-                `   \x1b[33m→ Correctness (${scores.correctness.label}): ${scores.correctness.explanation}\x1b[0m`
+                `   \x1b[33m→ Correctness (${scores.correctness.label}):\x1b[0m ${scores.correctness.issue}`
             );
+            if (scores.correctness.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.correctness.fix}`);
+            }
         }
-        if (scores.helpfulness.score < 1) {
+        if (scores.helpfulness.score < 1 && scores.helpfulness.issue) {
             console.log(
-                `   \x1b[33m→ Helpfulness (${scores.helpfulness.label}): ${scores.helpfulness.explanation}\x1b[0m`
+                `   \x1b[33m→ Helpfulness (${scores.helpfulness.label}):\x1b[0m ${scores.helpfulness.issue}`
             );
+            if (scores.helpfulness.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.helpfulness.fix}`);
+            }
         }
-        if (scores.relevance.score < 1) {
+        if (scores.relevance.score < 1 && scores.relevance.issue) {
             console.log(
-                `   \x1b[33m→ Relevance (${scores.relevance.label}): ${scores.relevance.explanation}\x1b[0m`
+                `   \x1b[33m→ Relevance (${scores.relevance.label}):\x1b[0m ${scores.relevance.issue}`
             );
+            if (scores.relevance.fix) {
+                console.log(`     \x1b[32mFix:\x1b[0m ${scores.relevance.fix}`);
+            }
         }
     }
 }
@@ -564,20 +573,35 @@ function printSummary(results: TestResult[]) {
                     `  Query: "${r.query.content.slice(0, 60)}${r.query.content.length > 60 ? "..." : ""}"`
                 );
 
-                if (scores.correctness.score < 1) {
+                if (scores.correctness.score < 1 && scores.correctness.issue) {
                     console.log(
-                        `  \x1b[33m• Correctness:\x1b[0m ${scores.correctness.explanation}`
+                        `  \x1b[33m• Correctness Issue:\x1b[0m ${scores.correctness.issue}`
                     );
+                    if (scores.correctness.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.correctness.fix}`
+                        );
+                    }
                 }
-                if (scores.helpfulness.score < 1) {
+                if (scores.helpfulness.score < 1 && scores.helpfulness.issue) {
                     console.log(
-                        `  \x1b[33m• Helpfulness:\x1b[0m ${scores.helpfulness.explanation}`
+                        `  \x1b[33m• Helpfulness Issue:\x1b[0m ${scores.helpfulness.issue}`
                     );
+                    if (scores.helpfulness.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.helpfulness.fix}`
+                        );
+                    }
                 }
-                if (scores.relevance.score < 1) {
+                if (scores.relevance.score < 1 && scores.relevance.issue) {
                     console.log(
-                        `  \x1b[33m• Relevance:\x1b[0m ${scores.relevance.explanation}`
+                        `  \x1b[33m• Relevance Issue:\x1b[0m ${scores.relevance.issue}`
                     );
+                    if (scores.relevance.fix) {
+                        console.log(
+                            `    \x1b[32m→ Fix:\x1b[0m ${scores.relevance.fix}`
+                        );
+                    }
                 }
             }
         }

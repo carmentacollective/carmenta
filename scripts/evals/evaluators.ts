@@ -24,7 +24,10 @@ const JUDGE_MODEL = "openai/gpt-5.1";
 export interface EvaluationResult {
     label: string;
     score: number;
-    explanation: string;
+    /** What's wrong with the response */
+    issue: string;
+    /** How to improve (actionable for coding agent) */
+    fix: string;
 }
 
 /**
@@ -39,35 +42,56 @@ export interface QualityScores {
 }
 
 /**
- * Parse a classification response from the judge
+ * Parse a structured evaluation response from the judge
+ * Expected format:
+ * RATING: <label>
+ * ISSUE: <what's wrong>
+ * FIX: <how to improve>
  */
-function parseClassification(
+function parseEvaluation(
     response: string,
     choices: Record<string, number>
-): { label: string; score: number } {
-    const lowerResponse = response.toLowerCase().trim();
+): { label: string; score: number; issue: string; fix: string } {
+    const lowerResponse = response.toLowerCase();
 
-    // Try to find a matching choice - sort by length (longest first) to avoid
-    // substring false matches (e.g., "correct" matching "partially_correct")
+    // Extract label from RATING line or find it anywhere
+    let label = "";
+    let score = 0;
+
+    // Sort by length (longest first) to avoid substring false matches
     const sortedChoices = Object.entries(choices).sort(
         ([a], [b]) => b.length - a.length
     );
-    for (const [label, score] of sortedChoices) {
-        if (lowerResponse.includes(label.toLowerCase())) {
-            return { label, score };
+
+    for (const [choiceLabel, choiceScore] of sortedChoices) {
+        if (lowerResponse.includes(choiceLabel.toLowerCase())) {
+            label = choiceLabel;
+            score = choiceScore;
+            break;
         }
     }
 
-    // Default to worst score (0) if no match - conservative approach
-    // This ensures unparseable responses don't inflate quality scores
-    const worstChoice = Object.entries(choices).reduce((worst, [label, score]) =>
-        score < worst[1] ? [label, score] : worst
-    );
-    return { label: worstChoice[0], score: worstChoice[1] };
+    // Default to worst score if no match
+    if (!label) {
+        const worstChoice = Object.entries(choices).reduce((worst, [l, s]) =>
+            s < worst[1] ? [l, s] : worst
+        );
+        label = worstChoice[0];
+        score = worstChoice[1];
+    }
+
+    // Extract ISSUE and FIX sections
+    const issueMatch = response.match(/ISSUE:\s*(.+?)(?=FIX:|$)/is);
+    const fixMatch = response.match(/FIX:\s*(.+?)$/is);
+
+    const issue = issueMatch ? issueMatch[1].trim() : "";
+    const fix = fixMatch ? fixMatch[1].trim() : "";
+
+    return { label, score, issue, fix };
 }
 
 /**
- * Run a classification evaluation
+ * Run a classification evaluation with actionable feedback
  */
 async function classify(
     input: string,
@@ -88,15 +112,16 @@ async function classify(
     const { text } = await generateText({
         model: openrouter.chat(JUDGE_MODEL),
         prompt: filledPrompt,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
     });
 
-    const { label, score } = parseClassification(text, choices);
+    const { label, score, issue, fix } = parseEvaluation(text, choices);
 
     return {
         label,
         score,
-        explanation: text,
+        issue,
+        fix,
     };
 }
 
@@ -110,7 +135,7 @@ async function evaluateCorrectness(
     input: string,
     output: string
 ): Promise<EvaluationResult> {
-    const prompt = `You are evaluating the factual correctness of an AI assistant's response.
+    const prompt = `You are evaluating the factual correctness of an AI assistant called "Carmenta". Your feedback will be used by a coding agent to improve the system prompt, tools, or response generation.
 
 User Question:
 {{input}}
@@ -125,12 +150,23 @@ Evaluate the response for factual accuracy. Consider:
 
 If no specific facts are claimed (e.g., creative writing, opinions), evaluate whether the response is logically consistent and doesn't make false claims.
 
-Respond with exactly one of these labels:
-- "correct" - The response is factually accurate with no errors
-- "partially_correct" - The response has some accurate information but also contains minor errors or imprecisions
-- "incorrect" - The response contains significant factual errors or hallucinations
+Respond in this exact format:
 
-Label:`;
+RATING: <one of: correct, partially_correct, incorrect>
+ISSUE: <If not "correct", explain specifically what facts are wrong or missing. Be concrete.>
+FIX: <If not "correct", suggest how to fix it. Reference specific changes to: system prompt instructions, tool usage, response formatting, or information sourcing. Be actionable.>
+
+Example for a good response:
+RATING: correct
+ISSUE: None
+FIX: None
+
+Example for a problematic response:
+RATING: partially_correct
+ISSUE: The response states WW2 ended in 1944, but it actually ended in 1945 (VE Day May 8, VJ Day Sept 2).
+FIX: For simple factual questions, ensure the model provides the correct date without hedging. Consider adding a fact-checking step or using web search for date verification.
+
+Now evaluate:`;
 
     return classify(input, output, prompt, {
         correct: 1,
@@ -149,7 +185,9 @@ async function evaluateHelpfulness(
     input: string,
     output: string
 ): Promise<EvaluationResult> {
-    const prompt = `You are evaluating how helpful an AI assistant's response is to the user.
+    const prompt = `You are evaluating how helpful an AI assistant called "Carmenta" is. Your feedback will be used by a coding agent to improve the system prompt, tools, or response generation.
+
+Carmenta has access to tools: webSearch (search the web), deepResearch (multi-step research), compareOptions (structured comparisons), fetchPage (fetch a URL). The response may show tool usage.
 
 User Question:
 {{input}}
@@ -161,14 +199,26 @@ Evaluate the response for helpfulness. Consider:
 1. Does it address what the user actually needs?
 2. Is it actionable and practical?
 3. Is it appropriately detailed (not too sparse, not overwhelming)?
-4. Does it provide value beyond a simple answer?
+4. If tools were available, were they used effectively?
+5. Does it provide value beyond a simple answer?
 
-Respond with exactly one of these labels:
-- "very_helpful" - The response fully addresses the user's needs and provides real value
-- "somewhat_helpful" - The response partially addresses the needs but could be better
-- "not_helpful" - The response fails to address the user's needs or provides no value
+Respond in this exact format:
 
-Label:`;
+RATING: <one of: very_helpful, somewhat_helpful, not_helpful>
+ISSUE: <If not "very_helpful", explain specifically what's missing or could be better. Be concrete about what the user needed but didn't get.>
+FIX: <If not "very_helpful", suggest how to fix it. Reference specific changes to: system prompt instructions, tool selection/usage, response length/depth, or formatting. Be actionable.>
+
+Example for a good response:
+RATING: very_helpful
+ISSUE: None
+FIX: None
+
+Example for a problematic response:
+RATING: somewhat_helpful
+ISSUE: The response explains the concept but doesn't provide the code example the user asked for. User wanted actionable code, got theory.
+FIX: Update system prompt to prioritize code examples when users ask "how to" questions. For programming questions, lead with working code, then explain.
+
+Now evaluate:`;
 
     return classify(input, output, prompt, {
         very_helpful: 1,
@@ -187,7 +237,7 @@ async function evaluateRelevance(
     input: string,
     output: string
 ): Promise<EvaluationResult> {
-    const prompt = `You are evaluating whether an AI assistant's response is relevant to the user's question.
+    const prompt = `You are evaluating whether an AI assistant called "Carmenta" gives relevant responses. Your feedback will be used by a coding agent to improve the system prompt, tools, or response generation.
 
 User Question:
 {{input}}
@@ -197,15 +247,27 @@ AI Response:
 
 Evaluate the response for relevance. Consider:
 1. Does it directly address the question asked?
-2. Does it stay on topic?
+2. Does it stay on topic without unnecessary tangents?
 3. Is the information provided pertinent to what was requested?
+4. Does it answer what was asked vs. what might have been interesting to add?
 
-Respond with exactly one of these labels:
-- "relevant" - The response directly and fully addresses the question
-- "partially_relevant" - The response addresses the question but also includes irrelevant content or misses key aspects
-- "irrelevant" - The response does not address the question or is off-topic
+Respond in this exact format:
 
-Label:`;
+RATING: <one of: relevant, partially_relevant, irrelevant>
+ISSUE: <If not "relevant", explain specifically what's off-topic or missing. What did the user ask for that wasn't addressed?>
+FIX: <If not "relevant", suggest how to fix it. Reference specific changes to: system prompt focus instructions, response scoping, or query interpretation. Be actionable.>
+
+Example for a good response:
+RATING: relevant
+ISSUE: None
+FIX: None
+
+Example for a problematic response:
+RATING: partially_relevant
+ISSUE: User asked for the capital of France. Response correctly says Paris but then goes into a long history of French politics that wasn't requested.
+FIX: Add system prompt instruction: "Match response depth to question complexity. Simple factual questions get concise answers. Only elaborate when the question warrants it."
+
+Now evaluate:`;
 
     return classify(input, output, prompt, {
         relevant: 1,
