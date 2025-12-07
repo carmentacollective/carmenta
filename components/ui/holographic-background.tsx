@@ -44,7 +44,7 @@ const DARK_COLORS = [
 const DARK_BACKGROUND = "#1F120F"; // Dark with warm red undertone
 
 const BLOB_COUNT = 12;
-const PARTICLE_COUNT = 80;
+const PARTICLE_COUNT = 35; // Reduced from 80 for subtler effect
 const LIGHT_BACKGROUND = "#F8F4F8";
 
 interface Blob {
@@ -296,8 +296,15 @@ export function HolographicBackground({
                 if (p.y < 0) p.y = shimmerCanvas.height;
                 if (p.y > shimmerCanvas.height) p.y = 0;
 
-                // Draw particle
-                const twinkleOpacity = p.opacity * (0.4 + Math.sin(p.twinkle) * 0.6);
+                // Draw particle - theme-aware opacity
+                // Dark mode: subtler sparkles (max ~30% opacity)
+                // Light mode: even lighter (max ~20% opacity)
+                const isDarkTheme = bg === DARK_BACKGROUND;
+                const themeOpacityMultiplier = isDarkTheme ? 0.4 : 0.25;
+                const twinkleOpacity =
+                    p.opacity *
+                    (0.3 + Math.sin(p.twinkle) * 0.5) *
+                    themeOpacityMultiplier;
                 shimmerCtx.beginPath();
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 shimmerCtx.fillStyle = `rgba(255, 255, 255, ${twinkleOpacity})`;
