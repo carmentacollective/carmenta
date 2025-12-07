@@ -224,7 +224,7 @@ function getToolParts(message: UIMessage): ToolPart[] {
  */
 interface FilePart {
     type: "file";
-    data: string; // URL
+    url: string;
     mediaType: string;
     filename?: string;
 }
@@ -238,7 +238,7 @@ function isFilePart(part: unknown): part is FilePart {
         typeof part === "object" &&
         "type" in part &&
         (part as { type: unknown }).type === "file" &&
-        "data" in part &&
+        "url" in part &&
         "mediaType" in part
     );
 }
@@ -524,7 +524,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                             {fileParts.map((file, idx) => (
                                 <FilePreview
                                     key={idx}
-                                    url={file.data}
+                                    url={file.url}
                                     mediaType={file.mediaType}
                                     filename={file.filename || "file"}
                                     isUserMessage
@@ -620,7 +620,7 @@ function AssistantMessage({
                         {fileParts.map((file, idx) => (
                             <FilePreview
                                 key={idx}
-                                url={file.data}
+                                url={file.url}
                                 mediaType={file.mediaType}
                                 filename={file.filename || "file"}
                             />

@@ -40,7 +40,7 @@ const FileAttachmentContext = createContext<FileAttachmentContextType | null>(nu
 
 export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const [pendingFiles, setPendingFiles] = useState<UploadProgress[]>([]);
-    const { connection } = useConnection();
+    const { activeConnection } = useConnection();
     const { user } = useUser();
 
     const startUpload = useCallback(
@@ -68,7 +68,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                 const result = await uploadFile(
                     upload.file,
                     user.id,
-                    connection?.id.toString() || null,
+                    activeConnection?.id || null,
                     (progress) => {
                         setPendingFiles((prev) =>
                             prev.map((u) =>
@@ -104,7 +104,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                 );
             }
         },
-        [user, connection]
+        [user, activeConnection]
     );
 
     const addFiles = useCallback(
