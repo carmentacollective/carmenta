@@ -1,16 +1,16 @@
 #!/usr/bin/env bun
 /**
- * Carmenta Integration Test Runner
+ * LLM Routing Tests
  *
- * Sends test queries to the API and validates:
- * - Model routing decisions
+ * Tests how the Concierge routes queries to models. Validates:
+ * - Model selection based on query type
  * - Temperature selection
  * - Reasoning configuration
  * - Tool invocations
  * - Response streaming
  *
  * Usage:
- *   bun scripts/evals/run-integration-tests.ts [options]
+ *   bun scripts/evals/run-llm-routing-tests.ts [options]
  *
  * Options:
  *   --fast         Skip slow tests (deep research)
@@ -27,13 +27,13 @@ import {
     getTestsByCategory,
     getTestById,
     type TestQuery,
-} from "./test-queries";
+} from "./llm-routing-queries";
 import {
     evaluateResponse,
     isScoringAvailable,
     formatScoreCompact,
     type QualityScores,
-} from "./evaluators";
+} from "./quality-evaluators";
 
 // Parse CLI args
 const args = process.argv.slice(2);
@@ -642,7 +642,7 @@ function printSummary(results: TestResult[]) {
  */
 async function main() {
     console.log("=".repeat(60));
-    console.log("CARMENTA INTEGRATION TESTS");
+    console.log("CARMENTA LLM ROUTING TESTS");
     console.log("=".repeat(60));
     console.log(`Base URL: ${flags.baseUrl}`);
     console.log(`JWT Token: ${JWT_TOKEN!.slice(0, 20)}...`);

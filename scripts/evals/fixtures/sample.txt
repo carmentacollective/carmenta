@@ -1,0 +1,8 @@
+This is a sample text file for Carmenta file attachment testing.
+
+The file contains:
+- A title
+- Three bullet points
+- A closing statement
+
+If you can read this, the text file was processed correctly.
