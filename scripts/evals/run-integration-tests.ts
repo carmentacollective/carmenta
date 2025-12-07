@@ -120,6 +120,11 @@ function parseHeaders(headers: Headers) {
 
 /**
  * Consume streaming response and extract content
+ *
+ * The API uses toUIMessageStreamResponse which outputs SSE format:
+ * - data: {"type":"text-delta","id":"...","delta":"text"}
+ * - data: {"type":"tool-input-start","toolCallId":"...","toolName":"getWeather"}
+ * - data: {"type":"tool-input-available","toolCallId":"...","toolName":"getWeather","input":{...}}
  */
 async function consumeStream(
     response: Response
@@ -131,6 +136,7 @@ async function consumeStream(
 
     const decoder = new TextDecoder();
     let fullText = "";
+    let extractedText = "";
     const toolsCalled: string[] = [];
 
     try {
@@ -141,12 +147,36 @@ async function consumeStream(
             const chunk = decoder.decode(value, { stream: true });
             fullText += chunk;
 
-            // Parse streaming chunks for tool calls
-            // Format: 0:"{text}"\n or other data-stream protocol lines
+            // Parse SSE format lines: "data: {...}\n\n"
             const lines = chunk.split("\n");
             for (const line of lines) {
-                // Tool invocation pattern in AI SDK stream: e:{"toolCallId":...,"toolName":...}
-                if (line.startsWith("e:")) {
+                // SSE data line format
+                if (line.startsWith("data: ")) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+
+                        // Extract text content from text-delta chunks
+                        if (data.type === "text-delta" && data.delta) {
+                            extractedText += data.delta;
+                        }
+
+                        // Tool invocation - tool-input-start or tool-input-available
+                        if (
+                            (data.type === "tool-input-start" ||
+                                data.type === "tool-input-available") &&
+                            data.toolName &&
+                            !toolsCalled.includes(data.toolName)
+                        ) {
+                            toolsCalled.push(data.toolName);
+                        }
+                    } catch {
+                        // Ignore parse errors for non-JSON lines
+                    }
+                }
+
+                // Also support legacy data-stream protocol format (e: and 9: prefixes)
+                // in case some endpoints still use toDataStreamResponse
+                if (line.startsWith("e:") || line.startsWith("9:")) {
                     try {
                         const data = JSON.parse(line.slice(2));
                         if (data.toolName && !toolsCalled.includes(data.toolName)) {
@@ -156,35 +186,22 @@ async function consumeStream(
                         // Ignore parse errors
                     }
                 }
-                // Also check for 9: tool invocation start
-                if (line.startsWith("9:")) {
-                    try {
-                        const data = JSON.parse(line.slice(2));
-                        if (data.toolName && !toolsCalled.includes(data.toolName)) {
-                            toolsCalled.push(data.toolName);
+
+                // Legacy text format: 0:"text content"
+                if (line.startsWith("0:")) {
+                    const match = line.match(/^0:"([^"\\]*(?:\\.[^"\\]*)*)"/);
+                    if (match) {
+                        try {
+                            extractedText += JSON.parse(`"${match[1]}"`);
+                        } catch {
+                            extractedText += match[1];
                         }
-                    } catch {
-                        // Ignore parse errors
                     }
                 }
             }
         }
     } catch (error) {
         // Stream read error
-    }
-
-    // Extract actual text content from stream (format: 0:"text content"\n)
-    // Use regex that handles escaped quotes: [^"\\]* matches non-quote/backslash,
-    // (?:\\.[^"\\]*)* matches backslash + any char followed by more non-quote/backslash
-    let extractedText = "";
-    const textMatches = fullText.matchAll(/0:"([^"\\]*(?:\\.[^"\\]*)*)"/g);
-    for (const match of textMatches) {
-        // Unescape the JSON string
-        try {
-            extractedText += JSON.parse(`"${match[1]}"`);
-        } catch {
-            extractedText += match[1];
-        }
     }
 
     return { text: extractedText || fullText.slice(0, 1000), toolsCalled };
