@@ -103,8 +103,8 @@ export function mapUIPartToDBPart(
             return {
                 ...basePart,
                 type: "file",
-                fileMediaType: part.mediaType as string,
-                fileName: part.filename as string,
+                fileMediaType: (part.mediaType || part.mimeType) as string,
+                fileName: part.name as string,
                 fileUrl: part.url as string,
             };
 

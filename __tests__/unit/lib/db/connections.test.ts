@@ -840,7 +840,7 @@ describe("Message Mapping", () => {
             const part: UIMessagePartLike = {
                 type: "file",
                 mediaType: "image/png",
-                filename: "screenshot.png",
+                name: "screenshot.png",
                 url: "https://example.com/image.png",
             };
             const result = mapUIPartToDBPart(part, "msg-1", 0);

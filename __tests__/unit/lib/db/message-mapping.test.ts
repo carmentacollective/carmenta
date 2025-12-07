@@ -72,7 +72,7 @@ describe("mapUIPartToDBPart", () => {
             const uiPart: UIMessagePartLike = {
                 type: "file",
                 mediaType: "image/png",
-                filename: "screenshot.png",
+                name: "screenshot.png",
                 url: "https://example.com/image.png",
             };
 
