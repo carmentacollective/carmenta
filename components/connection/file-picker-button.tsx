@@ -11,6 +11,7 @@ import { useRef } from "react";
 import { Paperclip } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
 import { SUPPORTED_FORMATS } from "@/lib/storage/types";
+import { cn } from "@/lib/utils";
 
 export function FilePickerButton() {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -36,10 +37,17 @@ export function FilePickerButton() {
             <button
                 type="button"
                 onClick={handleClick}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground/80"
+                className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
+                    "shadow-xl ring-1 backdrop-blur-xl transition-all",
+                    "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                    "active:translate-y-0.5 active:shadow-sm",
+                    "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                    "bg-white/50 text-foreground/60 opacity-70 ring-white/40 hover:bg-white/80 hover:opacity-100"
+                )}
                 aria-label="Attach file"
             >
-                <Paperclip className="h-5 w-5" />
+                <Paperclip className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <input
                 ref={inputRef}
