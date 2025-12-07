@@ -50,7 +50,7 @@ export function OptionalUserButton() {
                 className="btn-icon-glass group relative"
                 aria-label="User menu"
             >
-                <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7" />
+                <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7 md:h-8 md:w-8" />
             </button>
 
             <AnimatePresence>

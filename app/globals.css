@@ -200,7 +200,7 @@
 
     /* Glassmorphism input dock */
     .glass-input-dock {
-        @apply rounded-[28px] p-2;
+        @apply rounded-3xl p-1.5 sm:p-2;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
@@ -822,7 +822,7 @@
 
     /* Icon button variant */
     .btn-icon-glass {
-        @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12;
+        @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14;
     }
 
     /* Subtle buttons - for buttons inside glass containers */

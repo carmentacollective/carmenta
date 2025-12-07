@@ -892,7 +892,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                         setTimeout(() => setIsComposing(false), 0);
                     }}
                     placeholder="Message Carmenta..."
-                    className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40"
+                    className="max-h-32 min-h-12 flex-1 resize-none border-none bg-transparent py-3 pl-4 pr-2 text-base text-foreground/95 outline-none placeholder:text-foreground/40 md:max-h-40 md:min-h-14"
                     rows={1}
                     data-testid="composer-input"
                 />
@@ -952,7 +952,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                 ref={ref}
                 disabled={disabled}
                 className={cn(
-                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                     "shadow-xl ring-1 backdrop-blur-xl transition-all",
                     "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
                     "active:translate-y-0.5 active:shadow-sm",

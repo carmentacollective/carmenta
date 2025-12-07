@@ -19,7 +19,13 @@ interface OracleProps {
 }
 
 const sizeConfig = {
-    sm: { container: "h-10 w-10 sm:h-12 sm:w-12", image: 28, imageLg: 32, radius: 24 },
+    sm: {
+        container: "h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14",
+        imageMobile: 28,
+        imageSm: 32,
+        imageMd: 40,
+        radius: 24,
+    },
     md: { container: "h-16 w-16", image: 40, imageLg: 40, radius: 36 },
     lg: {
         container: "h-40 w-40 md:h-44 md:w-44",
@@ -64,18 +70,29 @@ export function Oracle({
                         <Image
                             src="/logos/icon-transparent.png"
                             alt="Carmenta"
-                            width={config.image}
-                            height={config.image}
+                            width={config.imageMobile}
+                            height={config.imageMobile}
                             className="sm:hidden"
-                            style={{ width: config.image, height: config.image }}
+                            style={{
+                                width: config.imageMobile,
+                                height: config.imageMobile,
+                            }}
                         />
                         <Image
                             src="/logos/icon-transparent.png"
                             alt="Carmenta"
-                            width={config.imageLg}
-                            height={config.imageLg}
-                            className="hidden sm:block"
-                            style={{ width: config.imageLg, height: config.imageLg }}
+                            width={config.imageSm}
+                            height={config.imageSm}
+                            className="hidden sm:block md:hidden"
+                            style={{ width: config.imageSm, height: config.imageSm }}
+                        />
+                        <Image
+                            src="/logos/icon-transparent.png"
+                            alt="Carmenta"
+                            width={config.imageMd}
+                            height={config.imageMd}
+                            className="hidden md:block"
+                            style={{ width: config.imageMd, height: config.imageMd }}
                         />
                     </>
                 ) : (
