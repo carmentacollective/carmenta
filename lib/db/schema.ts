@@ -66,7 +66,7 @@ export const messageRoleEnum = pgEnum("message_role", ["user", "assistant", "sys
  * - reasoning: Model's reasoning/thinking (e.g., Claude's extended thinking)
  * - tool_call: Tool invocation with state tracking
  * - file: Attached file reference
- * - data: Generative UI data (weather cards, comparison tables, etc.)
+ * - data: Generative UI data (comparison tables, research results, etc.)
  * - step_start: Step boundary marker
  */
 export const partTypeEnum = pgEnum("part_type", [
@@ -275,10 +275,10 @@ export interface ToolCallData {
 }
 
 /**
- * Generative UI data - weather cards, comparison tables, etc.
+ * Generative UI data - comparison tables, research results, etc.
  */
 export interface DataPartContent {
-    /** Data type discriminator (e.g., "weather", "comparison", "research") */
+    /** Data type discriminator (e.g., "comparison", "research") */
     type: string;
     /** Component-specific data */
     data: Record<string, unknown>;
@@ -334,7 +334,7 @@ export const messageParts = pgTable(
         fileUrl: varchar("file_url", { length: 4096 }),
 
         // ---- Generative UI data ----
-        /** Component data for weather cards, comparisons, research results, etc. */
+        /** Component data for comparisons, research results, etc. */
         dataContent: jsonb("data_content").$type<DataPartContent>(),
 
         // ---- Metadata ----

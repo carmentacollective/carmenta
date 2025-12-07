@@ -23,55 +23,55 @@ describe("ToolWrapper", () => {
     it("renders with pending status", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="pending"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
             >
-                <div>Weather content</div>
+                <div>Comparison content</div>
             </ToolWrapper>
         );
 
-        expect(screen.getByText("Weather")).toBeInTheDocument();
+        expect(screen.getByText("Comparison")).toBeInTheDocument();
         expect(screen.getByText("Preparing...")).toBeInTheDocument();
     });
 
     it("renders with running status", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="running"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
             >
                 <div>Loading...</div>
             </ToolWrapper>
         );
 
-        expect(screen.getByText("Checking the weather...")).toBeInTheDocument();
+        expect(screen.getByText("Building comparison...")).toBeInTheDocument();
     });
 
     it("renders with completed status", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="completed"
-                input={{ city: "NYC" }}
-                output={{ temp: 72 }}
+                input={{ options: ["A", "B"] }}
+                output={{ result: "comparison data" }}
             >
-                <div>72°F</div>
+                <div>Comparison table</div>
             </ToolWrapper>
         );
 
         // Should show one of the completed messages (base or delight)
         const possibleMessages = [
-            "Weather retrieved",
-            "Got the forecast",
-            "Here's the weather",
-            "Weather's in",
-            "Quick check!",
-            "Speedy forecast",
+            "Comparison ready",
+            "All lined up",
+            "Side by side",
+            "Here's the breakdown",
+            "Quick compare!",
+            "That was fast",
         ];
 
         const foundMessage = possibleMessages.some(
@@ -83,10 +83,10 @@ describe("ToolWrapper", () => {
     it("renders with error status", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="error"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
                 error="Network error"
             >
                 <div>Error state</div>
@@ -99,12 +99,12 @@ describe("ToolWrapper", () => {
     it("is open by default when not completed", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="running"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
             >
-                <div data-testid="content">Weather loading</div>
+                <div data-testid="content">Comparison loading</div>
             </ToolWrapper>
         );
 
@@ -114,25 +114,25 @@ describe("ToolWrapper", () => {
     it("auto-collapses after completion", async () => {
         const { rerender } = render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="running"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
             >
-                <div data-testid="content">Weather content</div>
+                <div data-testid="content">Comparison content</div>
             </ToolWrapper>
         );
 
         // Change to completed
         rerender(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="completed"
-                input={{ city: "NYC" }}
-                output={{ temp: 72 }}
+                input={{ options: ["A", "B"] }}
+                output={{ result: "comparison data" }}
             >
-                <div data-testid="content">Weather content</div>
+                <div data-testid="content">Comparison content</div>
             </ToolWrapper>
         );
 
@@ -149,13 +149,13 @@ describe("ToolWrapper", () => {
     it("can be toggled open/closed by user", async () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="completed"
-                input={{ city: "NYC" }}
-                output={{ temp: 72 }}
+                input={{ options: ["A", "B"] }}
+                output={{ result: "comparison data" }}
             >
-                <div data-testid="content">Weather content</div>
+                <div data-testid="content">Comparison content</div>
             </ToolWrapper>
         );
 
@@ -176,16 +176,16 @@ describe("ToolWrapper", () => {
     it("shows tool-specific icon", () => {
         render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="running"
-                input={{ city: "NYC" }}
+                input={{ options: ["A", "B"] }}
             >
                 <div>Content</div>
             </ToolWrapper>
         );
 
-        // Cloud icon should be rendered for weather tool
+        // Table icon should be rendered for comparison tool
         const icons = document.querySelectorAll("svg");
         expect(icons.length).toBeGreaterThan(0);
     });
@@ -209,7 +209,7 @@ describe("ToolWrapper", () => {
     it("applies custom className", () => {
         const { container } = render(
             <ToolWrapper
-                toolName="getWeather"
+                toolName="compareOptions"
                 toolCallId="call-1"
                 status="running"
                 input={{}}
@@ -244,10 +244,10 @@ describe("ToolWrapper", () => {
         it("shows debug panel trigger when debug param is present", () => {
             render(
                 <ToolWrapper
-                    toolName="getWeather"
+                    toolName="compareOptions"
                     toolCallId="call-1"
                     status="running"
-                    input={{ city: "NYC" }}
+                    input={{ options: ["A", "B"] }}
                 >
                     <div>Content</div>
                 </ToolWrapper>

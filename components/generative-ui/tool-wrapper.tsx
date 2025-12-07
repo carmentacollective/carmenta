@@ -22,7 +22,7 @@ import {
 } from "@/lib/tools/tool-config";
 
 interface ToolWrapperProps {
-    /** Tool name (e.g., "getWeather", "compareOptions") */
+    /** Tool name (e.g., "compareOptions", "webSearch") */
     toolName: string;
     /** Unique ID for this tool call */
     toolCallId: string;
@@ -34,7 +34,7 @@ interface ToolWrapperProps {
     output?: unknown;
     /** Error message (when failed) */
     error?: string;
-    /** The rendered tool result (e.g., WeatherCard) */
+    /** The rendered tool result (e.g., ComparisonTable) */
     children: React.ReactNode;
     className?: string;
 }
@@ -145,13 +145,13 @@ function useFirstUseCelebration(toolName: string, status: ToolStatus) {
  * Usage:
  * ```tsx
  * <ToolWrapper
- *   toolName="getWeather"
+ *   toolName="compareOptions"
  *   toolCallId={toolCallId}
  *   status={status}
  *   input={args}
  *   output={result}
  * >
- *   <WeatherCard result={result} />
+ *   <ComparisonTable result={result} />
  * </ToolWrapper>
  * ```
  */

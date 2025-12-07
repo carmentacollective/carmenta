@@ -433,20 +433,6 @@ error: "That didn't work"
 
 "Something went wrong" is passive and vague. "That didn't work" is direct and honest.
 
-**Current weather tool error:**
-
-```
-Weather check didn't come through
-```
-
-**Proposed:**
-
-```
-Weather didn't load
-```
-
-Shorter, clearer.
-
 **Current comparison tool error:**
 
 ```

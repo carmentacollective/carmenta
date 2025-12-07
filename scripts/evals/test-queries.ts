@@ -5,7 +5,7 @@
  * - Model routing (Haiku, Sonnet, Opus, Gemini, Grok)
  * - Reasoning levels (none, low, medium, high)
  * - Temperature selection (precise vs creative)
- * - Tool invocation (weather, search, research, compare, fetch)
+ * - Tool invocation (search, research, compare, fetch)
  * - User overrides (model, temperature, reasoning)
  */
 
@@ -124,17 +124,6 @@ export const TEST_QUERIES: TestQuery[] = [
     // TOOL INVOCATION TESTS
     // Validate that tools are called when appropriate
     // ========================================================================
-    {
-        id: "tool-weather",
-        description: "Weather query should invoke getWeather tool",
-        content: "What's the weather like in San Francisco right now?",
-        category: "tools",
-        expectations: {
-            toolCalled: "getWeather",
-            responseContains: "san francisco",
-            shouldSucceed: true,
-        },
-    },
     {
         id: "tool-web-search",
         description: "Current events query should invoke webSearch tool",

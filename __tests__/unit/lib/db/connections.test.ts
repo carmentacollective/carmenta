@@ -438,37 +438,37 @@ describe("Tool Call Persistence", () => {
     });
 
     it("persists tool call with input-available state", async () => {
-        const message = createToolCallMessage(uuid(), "getWeather", "input-available", {
-            location: "San Francisco",
+        const message = createToolCallMessage(uuid(), "webSearch", "input-available", {
+            query: "best coffee shops",
         });
 
         await saveMessage(connection.id, message);
         const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
-            type: "tool-getWeather",
+            type: "tool-webSearch",
             state: "input-available",
-            input: { location: "San Francisco" },
+            input: { query: "best coffee shops" },
         });
     });
 
     it("persists tool call with output-available state", async () => {
         const message = createToolCallMessage(
             uuid(),
-            "getWeather",
+            "webSearch",
             "output-available",
-            { location: "San Francisco" },
-            { temperature: 68, conditions: "Sunny" }
+            { query: "best coffee shops" },
+            { results: [{ title: "Blue Bottle", url: "https://example.com" }] }
         );
 
         await saveMessage(connection.id, message);
         const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
-            type: "tool-getWeather",
+            type: "tool-webSearch",
             state: "output-available",
-            input: { location: "San Francisco" },
-            output: { temperature: 68, conditions: "Sunny" },
+            input: { query: "best coffee shops" },
+            output: { results: [{ title: "Blue Bottle", url: "https://example.com" }] },
         });
     });
 
@@ -502,22 +502,22 @@ describe("Tool Call Persistence", () => {
             id: uuid(),
             role: "assistant",
             parts: [
-                { type: "text", text: "Let me check the weather in both cities" },
+                { type: "text", text: "Let me search for both topics" },
                 {
-                    type: "tool-getWeather",
+                    type: "tool-webSearch",
                     toolCallId: "call_1",
                     state: "output-available",
-                    input: { location: "NYC" },
-                    output: { temp: 50 },
+                    input: { query: "React performance" },
+                    output: { results: [] },
                 },
                 {
-                    type: "tool-getWeather",
+                    type: "tool-webSearch",
                     toolCallId: "call_2",
                     state: "output-available",
-                    input: { location: "LA" },
-                    output: { temp: 72 },
+                    input: { query: "Vue performance" },
+                    output: { results: [] },
                 },
-                { type: "text", text: "NYC is 50°F and LA is 72°F" },
+                { type: "text", text: "Here are the results for both frameworks" },
             ],
         };
 
@@ -525,8 +525,12 @@ describe("Tool Call Persistence", () => {
         const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts).toHaveLength(4);
-        expect(messages[0].parts[1]).toMatchObject({ input: { location: "NYC" } });
-        expect(messages[0].parts[2]).toMatchObject({ input: { location: "LA" } });
+        expect(messages[0].parts[1]).toMatchObject({
+            input: { query: "React performance" },
+        });
+        expect(messages[0].parts[2]).toMatchObject({
+            input: { query: "Vue performance" },
+        });
     });
 });
 
@@ -543,22 +547,20 @@ describe("Generative UI Data Persistence", () => {
         connection = await createConnection(testUser.id);
     });
 
-    it("persists weather card data", async () => {
-        const message = createDataMessage(uuid(), "weather", {
-            location: "San Francisco",
-            temperature: 68,
-            conditions: "Sunny",
+    it("persists comparison data", async () => {
+        const message = createDataMessage(uuid(), "comparison", {
+            title: "Framework Comparison",
+            options: ["React", "Vue"],
         });
 
         await saveMessage(connection.id, message);
         const messages = await loadMessages(connection.id);
 
         expect(messages[0].parts[0]).toMatchObject({
-            type: "data-weather",
+            type: "data-comparison",
             data: {
-                location: "San Francisco",
-                temperature: 68,
-                conditions: "Sunny",
+                title: "Framework Comparison",
+                options: ["React", "Vue"],
                 loading: false,
             },
         });
@@ -860,39 +862,39 @@ describe("Message Mapping", () => {
 
         it("maps tool call part", () => {
             const part: UIMessagePartLike = {
-                type: "tool-getWeather",
+                type: "tool-webSearch",
                 toolCallId: "call_123",
                 state: "output-available",
-                input: { location: "NYC" },
-                output: { temp: 50 },
+                input: { query: "best coffee" },
+                output: { results: [] },
             };
             const result = mapUIPartToDBPart(part, "msg-1", 0);
 
             expect(result).toMatchObject({
                 type: "tool_call",
                 toolCall: {
-                    toolName: "getWeather",
+                    toolName: "webSearch",
                     toolCallId: "call_123",
                     state: "output_available",
-                    input: { location: "NYC" },
-                    output: { temp: 50 },
+                    input: { query: "best coffee" },
+                    output: { results: [] },
                 },
             });
         });
 
         it("maps data part", () => {
             const part: UIMessagePartLike = {
-                type: "data-weather",
+                type: "data-comparison",
                 id: "data_123",
-                data: { location: "NYC", temp: 50 },
+                data: { title: "Options", options: ["A", "B"] },
             };
             const result = mapUIPartToDBPart(part, "msg-1", 0);
 
             expect(result).toMatchObject({
                 type: "data",
                 dataContent: {
-                    type: "weather",
-                    data: { location: "NYC", temp: 50, id: "data_123" },
+                    type: "comparison",
+                    data: { title: "Options", options: ["A", "B"], id: "data_123" },
                     loading: false,
                 },
             });

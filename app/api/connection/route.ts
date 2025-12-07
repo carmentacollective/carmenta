@@ -55,49 +55,9 @@ const requestSchema = z.object({
 });
 
 /**
- * Mock weather data ranges - in production these would come from a real API
- */
-const MOCK_WEATHER = {
-    TEMP_MIN: 10,
-    TEMP_RANGE: 25,
-    HUMIDITY_MIN: 40,
-    HUMIDITY_RANGE: 40,
-    WIND_MIN: 5,
-    WIND_RANGE: 20,
-    CONDITIONS: ["sunny", "cloudy", "rainy", "partly cloudy"] as const,
-};
-
-/**
  * Tools available to the AI for generating purpose-built UI responses
  */
 const tools = {
-    getWeather: tool({
-        description:
-            "Get current weather for a location. Use this when the user asks about weather.",
-        inputSchema: z.object({
-            location: z.string().describe("City name or location"),
-        }),
-        execute: async ({ location }) => {
-            // Mock weather data for demo - in production this would call a weather API
-            return {
-                location,
-                temperature:
-                    Math.floor(Math.random() * MOCK_WEATHER.TEMP_RANGE) +
-                    MOCK_WEATHER.TEMP_MIN,
-                condition:
-                    MOCK_WEATHER.CONDITIONS[
-                        Math.floor(Math.random() * MOCK_WEATHER.CONDITIONS.length)
-                    ],
-                humidity:
-                    Math.floor(Math.random() * MOCK_WEATHER.HUMIDITY_RANGE) +
-                    MOCK_WEATHER.HUMIDITY_MIN,
-                windSpeed:
-                    Math.floor(Math.random() * MOCK_WEATHER.WIND_RANGE) +
-                    MOCK_WEATHER.WIND_MIN,
-            };
-        },
-    }),
-
     compareOptions: tool({
         description:
             "Compare multiple options in a table format. Use this when the user wants to compare products, services, or alternatives.",

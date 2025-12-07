@@ -50,7 +50,7 @@ thought process without competing with the final response.
 
 ### Tool Execution
 
-When tools run (weather, search, comparison), users see clear status progression.
+When tools run (search, comparison), users see clear status progression.
 
 Four states:
 
@@ -68,11 +68,10 @@ Each state has distinct visuals:
 
 Tool-specific messaging makes each tool feel intentional:
 
-| Tool           | Running Message           | Complete Message    |
-| -------------- | ------------------------- | ------------------- |
-| getWeather     | "Checking the weather..." | "Weather retrieved" |
-| compareOptions | "Building comparison..."  | "Comparison ready"  |
-| webSearch      | "Searching the web..."    | "Search complete"   |
+| Tool           | Running Message          | Complete Message   |
+| -------------- | ------------------------ | ------------------ |
+| compareOptions | "Building comparison..." | "Comparison ready" |
+| webSearch      | "Searching the web..."   | "Search complete"  |
 
 Tools render in collapsible containers. Collapsed by default after completion. Header
 shows tool name, status badge, and expand/collapse control.
@@ -200,7 +199,7 @@ Occasional delight variants (10% chance):
 
 ### Tool Completion Delight
 
-Standard completions are functional: "Weather retrieved", "Comparison ready"
+Standard completions are functional: "Comparison ready", "Search complete"
 
 Occasional completions (15% chance) add warmth:
 
@@ -227,8 +226,7 @@ Not anxious, just present. We see them waiting.
 
 Errors should feel human, not robotic. We hit snags together.
 
-Instead of: "Failed to retrieve weather" We say: "The weather check didn't come through.
-Want to try again?"
+Instead of: "Failed to execute search" We say: "The search didn't work."
 
 Instead of: "Tool execution error" We say: "We hit a snag there. Let's give it another
 shot."
@@ -237,7 +235,7 @@ shot."
 
 The first time each tool type is used in a session gets acknowledged:
 
-- "First weather check! Nice." (subtle, in status badge briefly)
+- "First comparison check!" (subtle, in status badge briefly)
 
 Stored in session storage, resets on page reload. Light touch, not overwhelming.
 

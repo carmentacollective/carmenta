@@ -21,26 +21,26 @@ preambles, walls of text, slow responses
 
 **Test queries**:
 
-1. "What's the weather in San Francisco?"
-   - Tests: Weather tool, expects quick factual response
-   - Evaluate: Was it fast? Was it concise? Did the tool UI appear cleanly?
-
-2. "Best no-code tool for building a landing page - just give me one recommendation"
+1. "Best no-code tool for building a landing page - just give me one recommendation"
    - Tests: Web search, decision-making
    - Evaluate: Did it give ONE recommendation or hedge with options? How long to
      respond?
 
-3. "Compare Vercel vs Netlify for a simple marketing site - table format"
+2. "Compare Vercel vs Netlify for a simple marketing site - table format"
    - Tests: Compare tool
    - Evaluate: Did it use comparison UI? Was the table scannable?
 
-4. "What did you recommend for the landing page?" (follow-up)
+3. "What did you recommend for the landing page?" (follow-up)
    - Tests: Context retention
    - Evaluate: Did it remember the previous recommendation?
 
-5. "Quick summary of https://stripe.com/docs/payments"
+4. "Quick summary of https://stripe.com/docs/payments"
    - Tests: FetchPage tool
    - Evaluate: Was the summary actually quick? Or did it dump everything?
+
+5. "Search for recent AI startup funding news"
+   - Tests: WebSearch tool
+   - Evaluate: Were results current? Did it synthesize or just list links?
 
 6. **[WILDCARD]** Generate a random question a busy founder might ask
    - Invent something plausible: quick decision, tool recommendation, or "what should I
@@ -99,9 +99,9 @@ flags**: Jank, unclear states, missing feedback, confusing UI
    - Tests: Long streaming response, scroll behavior
    - Evaluate: How did streaming look? Did scroll follow? Any jank?
 
-2. "What's the weather in Tokyo?"
+2. "Search for the latest iPhone reviews"
    - Tests: Tool UI rendering
-   - Evaluate: Did the weather card appear smoothly? Loading states?
+   - Evaluate: Did the search results appear smoothly? Loading states?
 
 3. "Compare iPhone 15 vs Pixel 8 vs Galaxy S24"
    - Tests: Comparison table UI
@@ -169,7 +169,7 @@ Misaligned elements, inconsistent styles, typos, mixed tone
    - Tests: Default response styling
    - Evaluate: Typography hierarchy, spacing, tone of greeting
 
-2. "What's the weather in London?"
+2. "Search for design inspiration"
    - Tests: Tool card styling
    - Evaluate: Does card match overall design language? Consistent spacing?
 
@@ -237,9 +237,9 @@ For each test, capture:
 
 ```yaml
 test: 1
-query: "What's the weather in San Francisco?"
-purpose: Weather tool, quick factual response
-expected: Fast response, clean tool UI, concise answer
+query: "Compare React vs Vue"
+purpose: Comparison tool, structured response
+expected: Clean comparison table, clear formatting
 actual: [what happened]
 response_time: [fast/medium/slow]
 verdict: pass | issue | observation
@@ -328,5 +328,5 @@ details} </work_remaining>
 - Worktree: /Users/nick/src/carmenta-concierge
 - Chat interface: /connect route
 - Auth: Clerk (should auto-login in dev)
-- Available tools: Weather, Compare, WebSearch, FetchPage, DeepResearch
+- Available tools: Compare, WebSearch, FetchPage, DeepResearch
 </context>

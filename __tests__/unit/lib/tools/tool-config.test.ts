@@ -16,7 +16,6 @@ import {
 describe("tool-config", () => {
     describe("TOOL_CONFIG", () => {
         it("has configurations for known tools", () => {
-            expect(TOOL_CONFIG.getWeather).toBeDefined();
             expect(TOOL_CONFIG.compareOptions).toBeDefined();
             expect(TOOL_CONFIG.webSearch).toBeDefined();
         });
@@ -35,8 +34,8 @@ describe("tool-config", () => {
 
     describe("getToolConfig", () => {
         it("returns config for known tools", () => {
-            const config = getToolConfig("getWeather");
-            expect(config.displayName).toBe("Weather");
+            const config = getToolConfig("compareOptions");
+            expect(config.displayName).toBe("Comparison");
         });
 
         it("returns default config for unknown tools", () => {
@@ -136,27 +135,27 @@ describe("tool-config", () => {
 
     describe("getStatusMessage", () => {
         it("returns base message for pending status", () => {
-            const message = getStatusMessage("getWeather", "pending", "call-1");
+            const message = getStatusMessage("compareOptions", "pending", "call-1");
             expect(message).toBe("Preparing...");
         });
 
         it("returns base message for running status", () => {
-            const message = getStatusMessage("getWeather", "running", "call-1");
-            expect(message).toBe("Checking the weather...");
+            const message = getStatusMessage("compareOptions", "running", "call-1");
+            expect(message).toBe("Building comparison...");
         });
 
         it("returns non-empty message for error status", () => {
-            const message = getStatusMessage("getWeather", "error", "call-1");
+            const message = getStatusMessage("compareOptions", "error", "call-1");
             expect(typeof message).toBe("string");
             expect(message.length).toBeGreaterThan(0);
         });
 
         it("returns base or delight message for completed status", () => {
-            const config = getToolConfig("getWeather");
+            const config = getToolConfig("compareOptions");
             const baseMessage = config.messages.completed;
             const delightMessages = config.delightMessages?.completed ?? [];
 
-            const message = getStatusMessage("getWeather", "completed", "call-1");
+            const message = getStatusMessage("compareOptions", "completed", "call-1");
 
             // Should be either base or one of the delight messages
             const allPossible = [baseMessage, ...delightMessages];
@@ -168,12 +167,12 @@ describe("tool-config", () => {
             const fastMessages = new Set<string>();
             for (let i = 0; i < 100; i++) {
                 fastMessages.add(
-                    getStatusMessage("getWeather", "completed", `fast-${i}`, 100) // 100ms = fast
+                    getStatusMessage("compareOptions", "completed", `fast-${i}`, 100) // 100ms = fast
                 );
             }
 
             // Should see at least one fast message among results
-            const config = getToolConfig("getWeather");
+            const config = getToolConfig("compareOptions");
             const fastVariants = config.delightMessages?.fast ?? [];
             const hasSeenFast = fastVariants.some((msg) => fastMessages.has(msg));
             expect(hasSeenFast).toBe(true);
@@ -289,13 +288,13 @@ describe("tool-config", () => {
 
     describe("getErrorMessage", () => {
         it("wraps custom error text warmly", () => {
-            const message = getErrorMessage("getWeather", "Connection timed out");
+            const message = getErrorMessage("compareOptions", "Connection timed out");
             expect(message).toBe("We hit a snag: Connection timed out");
         });
 
         it("uses tool-specific error without custom text", () => {
-            const message = getErrorMessage("getWeather");
-            expect(message).toBe("Weather didn't load");
+            const message = getErrorMessage("compareOptions");
+            expect(message).toBe("Comparison didn't work");
         });
 
         it("uses default error for unknown tools", () => {
@@ -333,8 +332,8 @@ describe("tool-config", () => {
 
     describe("getFirstUseMessage", () => {
         it("returns celebration message for known tool", () => {
-            const message = getFirstUseMessage("getWeather");
-            expect(message).toBe("First weather check!");
+            const message = getFirstUseMessage("compareOptions");
+            expect(message).toBe("First comparison check!");
         });
 
         it("returns generic message for unknown tool", () => {

@@ -142,8 +142,9 @@ purpose-built interface, that interface needs:
 **Component Storage**: The AG-UI component tree serialized for later rendering. Not just
 raw data - the actual interface structure, styling, interaction handlers.
 
-**Data Binding**: Many AG-UI interfaces display live data (weather, calendar, etc.). The
-artifact stores both the interface definition and the data source configuration.
+**Data Binding**: Many AG-UI interfaces display live data (calendar, search results,
+etc.). The artifact stores both the interface definition and the data source
+configuration.
 
 **State Persistence**: Interactive AG-UI may have state (selected filters, expanded
 sections, user inputs). This state persists with the artifact.

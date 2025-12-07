@@ -53,7 +53,7 @@ scripts/evals/
 Categories:
 
 - **Routing** - Model selection, temperature, reasoning
-- **Tools** - Weather, search, research invocation
+- **Tools** - Search, research invocation
 - **Reasoning** - When enabled/disabled
 - **Overrides** - User preference handling
 - **Edge cases** - Unicode, long context, etc.
@@ -101,7 +101,7 @@ Same evaluators score all responses → comparison matrix.
 - Model routing (Haiku/Sonnet/Opus selection)
 - Temperature selection (creative vs precise)
 - Reasoning (when enabled, what level)
-- Tool invocation (weather, search, research)
+- Tool invocation (search, research, comparison)
 
 **Realism:** Queries should reflect actual user behavior
 

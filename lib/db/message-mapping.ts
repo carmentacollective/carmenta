@@ -140,7 +140,7 @@ function mapToolPartToDBPart(
     messageId: string,
     order: number
 ): NewMessagePart {
-    // Extract tool name from type (e.g., "tool-getWeather" → "getWeather")
+    // Extract tool name from type (e.g., "tool-webSearch" → "webSearch")
     const toolName = part.type.replace("tool-", "");
 
     const state = (part.state as string)?.replace("-", "_") as ToolCallData["state"];
@@ -170,7 +170,7 @@ function mapDataPartToDBPart(
     messageId: string,
     order: number
 ): NewMessagePart {
-    // Extract data type from type (e.g., "data-weather" → "weather")
+    // Extract data type from type (e.g., "data-comparison" → "comparison")
     const dataType = part.type.replace("data-", "");
 
     const dataContent: DataPartContent = {

@@ -1,4 +1,4 @@
-import { Cloud, Table, Search, type LucideIcon } from "lucide-react";
+import { Table, Search, type LucideIcon } from "lucide-react";
 
 /**
  * Tool status states matching Vercel AI SDK's tool part states
@@ -29,20 +29,6 @@ export interface ToolConfig {
  * Each tool can have delight variants for occasional warmth.
  */
 export const TOOL_CONFIG: Record<string, ToolConfig> = {
-    getWeather: {
-        displayName: "Weather",
-        icon: Cloud,
-        messages: {
-            pending: "Preparing...",
-            running: "Checking the weather...",
-            completed: "Weather retrieved",
-            error: "Weather didn't load",
-        },
-        delightMessages: {
-            completed: ["Got the forecast", "Here's the weather", "Weather's in"],
-            fast: ["Quick check!", "Speedy forecast"],
-        },
-    },
     compareOptions: {
         displayName: "Comparison",
         icon: Table,

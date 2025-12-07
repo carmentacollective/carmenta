@@ -48,7 +48,7 @@ Emoji usage (inspired by gitmoji):
   - "🔍 Research caching strategies" (research)
   - "💡 Brainstorm product ideas" (ideation)
   - "Explain quantum computing" (no emoji - just informational)
-  - "What's the weather today" (no emoji - simple question)
+  - "What's the capital of France" (no emoji - simple question)
 
 Skip emoji for:
 - Simple questions or lookups

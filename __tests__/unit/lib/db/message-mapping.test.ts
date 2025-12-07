@@ -104,10 +104,10 @@ describe("mapUIPartToDBPart", () => {
     describe("tool parts", () => {
         it("maps tool-* part with input-available state", () => {
             const uiPart: UIMessagePartLike = {
-                type: "tool-getWeather",
+                type: "tool-webSearch",
                 toolCallId: "call-123",
                 state: "input-available",
-                input: { city: "Seattle" },
+                input: { query: "best coffee" },
             };
 
             const result = mapUIPartToDBPart(uiPart, messageId, 0);
@@ -115,10 +115,10 @@ describe("mapUIPartToDBPart", () => {
             expect(result).toMatchObject({
                 type: "tool_call",
                 toolCall: {
-                    toolName: "getWeather",
+                    toolName: "webSearch",
                     toolCallId: "call-123",
                     state: "input_available",
-                    input: { city: "Seattle" },
+                    input: { query: "best coffee" },
                 },
             });
         });
@@ -184,11 +184,11 @@ describe("mapUIPartToDBPart", () => {
     describe("data parts", () => {
         it("maps data-* part correctly", () => {
             const uiPart: UIMessagePartLike = {
-                type: "data-weather",
+                type: "data-comparison",
                 id: "data-123",
                 data: {
-                    temp: 72,
-                    condition: "sunny",
+                    options: ["A", "B"],
+                    winner: "A",
                 },
             };
 
@@ -197,10 +197,10 @@ describe("mapUIPartToDBPart", () => {
             expect(result).toMatchObject({
                 type: "data",
                 dataContent: {
-                    type: "weather",
+                    type: "comparison",
                     data: {
-                        temp: 72,
-                        condition: "sunny",
+                        options: ["A", "B"],
+                        winner: "A",
                         id: "data-123",
                     },
                     loading: false,
@@ -335,20 +335,20 @@ describe("mapDBPartToUIPart", () => {
                 ...basePart,
                 type: "tool_call",
                 toolCall: {
-                    toolName: "getWeather",
+                    toolName: "webSearch",
                     toolCallId: "call-123",
                     state: "input_streaming",
-                    input: { partial: "Sea" },
+                    input: { partial: "best coff" },
                 },
             };
 
             const result = mapDBPartToUIPart(dbPart);
 
             expect(result).toMatchObject({
-                type: "tool-getWeather",
+                type: "tool-webSearch",
                 toolCallId: "call-123",
                 state: "input-streaming",
-                input: { partial: "Sea" },
+                input: { partial: "best coff" },
             });
         });
 
@@ -357,19 +357,19 @@ describe("mapDBPartToUIPart", () => {
                 ...basePart,
                 type: "tool_call",
                 toolCall: {
-                    toolName: "searchWeb",
+                    toolName: "webSearch",
                     toolCallId: "call-456",
                     state: "input_available",
-                    input: { query: "weather" },
+                    input: { query: "best coffee shops" },
                 },
             };
 
             const result = mapDBPartToUIPart(dbPart);
 
             expect(result).toMatchObject({
-                type: "tool-searchWeb",
+                type: "tool-webSearch",
                 state: "input-available",
-                input: { query: "weather" },
+                input: { query: "best coffee shops" },
             });
         });
 
@@ -462,11 +462,11 @@ describe("mapDBPartToUIPart", () => {
                 ...basePart,
                 type: "data",
                 dataContent: {
-                    type: "weather",
+                    type: "comparison",
                     data: {
-                        id: "weather-123",
-                        temp: 75,
-                        condition: "cloudy",
+                        id: "comparison-123",
+                        options: ["A", "B", "C"],
+                        winner: "B",
                     },
                     loading: true, // Should be overwritten to false
                 },
@@ -475,11 +475,11 @@ describe("mapDBPartToUIPart", () => {
             const result = mapDBPartToUIPart(dbPart);
 
             expect(result).toMatchObject({
-                type: "data-weather",
-                id: "weather-123",
+                type: "data-comparison",
+                id: "comparison-123",
                 data: {
-                    temp: 75,
-                    condition: "cloudy",
+                    options: ["A", "B", "C"],
+                    winner: "B",
                     loading: false,
                 },
             });

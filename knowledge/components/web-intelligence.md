@@ -93,7 +93,7 @@ gracefully with clear feedback.
 
 ### Implementation Pattern
 
-Follow the existing Vercel AI SDK tool pattern used by `getWeather`:
+Follow the existing Vercel AI SDK tool pattern:
 
 1. **Tools defined in route.ts**: Use the `tool()` function from `ai` package with zod
    schemas for input validation

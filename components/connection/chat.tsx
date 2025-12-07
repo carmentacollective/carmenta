@@ -62,7 +62,7 @@ class ChatErrorBoundary extends Component<
  * Uses our custom HoloThread built with plain React components.
  * Chat state is managed via ChatContext from ConnectRuntimeProvider.
  *
- * Tool UIs (weather, search, etc.) will be rendered inline when
+ * Tool UIs (search, comparison, etc.) will be rendered inline when
  * we encounter tool call parts in assistant messages. For now,
  * we focus on text content rendering which was the core issue.
  */
