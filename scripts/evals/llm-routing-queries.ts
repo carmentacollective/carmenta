@@ -1,7 +1,7 @@
 /**
- * Integration Test Queries for Carmenta
+ * LLM Routing Test Queries
  *
- * These queries exercise different parts of the technology stack:
+ * Test queries for validating the Concierge's routing decisions:
  * - Model routing (Haiku, Sonnet, Opus, Gemini, Grok)
  * - Reasoning levels (none, low, medium, high)
  * - Temperature selection (precise vs creative)
