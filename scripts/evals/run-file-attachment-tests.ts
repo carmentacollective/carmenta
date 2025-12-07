@@ -87,6 +87,14 @@ async function readFixtureAsDataUrl(
 }
 
 /**
+ * Read a text fixture file as UTF-8 string
+ */
+async function readFixtureAsText(fixturePath: string): Promise<string> {
+    const fullPath = join(FIXTURES_DIR, fixturePath);
+    return await readFile(fullPath, "utf-8");
+}
+
+/**
  * Build UIMessage format with file attachment
  *
  * Uses AI SDK v5 FileUIPart format:
@@ -114,6 +122,26 @@ function buildMessageWithFile(
                 filename,
             },
         ],
+    };
+}
+
+/**
+ * Build UIMessage with inline text content (no file attachment)
+ *
+ * For text/markdown files, send content inline rather than as attachment.
+ * Claude's API only accepts PDFs for document attachments.
+ */
+function buildMessageWithInlineText(
+    prompt: string,
+    textContent: string,
+    filename: string
+) {
+    const content = `${prompt}\n\n---\nFile: ${filename}\n---\n\n${textContent}`;
+    return {
+        id: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        role: "user",
+        content,
+        parts: [{ type: "text", text: content }],
     };
 }
 
@@ -178,38 +206,72 @@ async function runTest(test: FileAttachmentTest): Promise<TestResult> {
     const validations: TestResult["validations"] = [];
 
     try {
-        // Read fixture file
-        let fileUrl: string;
-        try {
-            fileUrl = await readFixtureAsDataUrl(test.fixturePath, test.mimeType);
-        } catch (error) {
-            return {
-                test,
-                success: false,
-                duration: Date.now() - startTime,
-                response: {
-                    status: 0,
-                    responseText: "",
-                    error: `Fixture file not found: ${test.fixturePath}`,
-                },
-                validations: [
-                    {
-                        name: "Fixture exists",
-                        passed: false,
-                        expected: test.fixturePath,
-                        actual: "file not found",
-                    },
-                ],
-            };
-        }
+        // Build message based on whether content should be inline or attached
+        let message;
 
-        // Build message with attachment
-        const message = buildMessageWithFile(
-            test.prompt,
-            fileUrl,
-            test.mimeType,
-            basename(test.fixturePath)
-        );
+        if (test.sendAsInline) {
+            // Read text content and send inline
+            try {
+                const textContent = await readFixtureAsText(test.fixturePath);
+                message = buildMessageWithInlineText(
+                    test.prompt,
+                    textContent,
+                    basename(test.fixturePath)
+                );
+            } catch (error) {
+                return {
+                    test,
+                    success: false,
+                    duration: Date.now() - startTime,
+                    response: {
+                        status: 0,
+                        responseText: "",
+                        error: `Fixture file not found: ${test.fixturePath}`,
+                    },
+                    validations: [
+                        {
+                            name: "Fixture exists",
+                            passed: false,
+                            expected: test.fixturePath,
+                            actual: "file not found",
+                        },
+                    ],
+                };
+            }
+        } else {
+            // Read as binary and send as file attachment
+            try {
+                const fileUrl = await readFixtureAsDataUrl(
+                    test.fixturePath,
+                    test.mimeType
+                );
+                message = buildMessageWithFile(
+                    test.prompt,
+                    fileUrl,
+                    test.mimeType,
+                    basename(test.fixturePath)
+                );
+            } catch (error) {
+                return {
+                    test,
+                    success: false,
+                    duration: Date.now() - startTime,
+                    response: {
+                        status: 0,
+                        responseText: "",
+                        error: `Fixture file not found: ${test.fixturePath}`,
+                    },
+                    validations: [
+                        {
+                            name: "Fixture exists",
+                            passed: false,
+                            expected: test.fixturePath,
+                            actual: "file not found",
+                        },
+                    ],
+                };
+            }
+        }
 
         const response = await fetch(`${flags.baseUrl}/api/connection`, {
             method: "POST",
