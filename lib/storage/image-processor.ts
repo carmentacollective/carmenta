@@ -71,6 +71,19 @@ export async function optimizeImage(file: File): Promise<File> {
         const endSize = optimizedFile.size;
         const savings = ((1 - endSize / startSize) * 100).toFixed(1);
 
+        // Return original if optimization increased size (can happen with small/well-compressed images)
+        if (endSize >= startSize) {
+            logger.info(
+                {
+                    filename: file.name,
+                    originalSize: startSize,
+                    optimizedSize: endSize,
+                },
+                "Optimization increased size, using original"
+            );
+            return file;
+        }
+
         logger.info(
             {
                 filename: file.name,
