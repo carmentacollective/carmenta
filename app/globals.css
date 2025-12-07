@@ -716,6 +716,12 @@
         @apply transition-all duration-300;
     }
 
+    .dark .btn-glass {
+        background: rgba(180, 140, 200, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        @apply ring-1 ring-white/15;
+    }
+
     /* Click state - Ripple + depth shift */
     .btn-clickable {
         @apply active:translate-y-0.5 active:shadow-sm;
@@ -724,6 +730,10 @@
     /* Hover state - Scale + shadow + ring (same as focus) */
     .btn-hoverable {
         @apply hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40;
+    }
+
+    .dark .btn-hoverable:hover {
+        background: rgba(180, 140, 200, 0.25);
     }
 
     /* Focus state - Scale + shadow + ring (same as hover) */
@@ -755,6 +765,11 @@
         @apply hover:bg-white/50 hover:ring-2 hover:ring-primary/30;
         @apply focus:bg-white/50 focus:outline-none focus:ring-2 focus:ring-primary/30;
         @apply active:scale-95;
+    }
+
+    .dark .btn-subtle:hover,
+    .dark .btn-subtle:focus {
+        background: rgba(180, 140, 200, 0.2);
     }
 
     /* Subtle icon button - small icons with scale effect */

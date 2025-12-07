@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
+
+// Track whether we're on the client to avoid hydration mismatch
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 /**
  * Light mode holographic colors - soft pastels
@@ -313,7 +318,9 @@ export function HolographicBackground({
         };
     }, []);
 
-    const isDark = resolvedTheme === "dark";
+    // Use client detection to avoid hydration mismatch
+    const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const isDark = isClient && resolvedTheme === "dark";
 
     return (
         <>
@@ -334,9 +341,7 @@ export function HolographicBackground({
                     <img
                         src="/logos/icon-transparent.png"
                         alt=""
-                        className={`h-[120vh] w-[120vh] max-w-none object-contain ${
-                            isDark ? "opacity-[0.04]" : "opacity-[0.06]"
-                        }`}
+                        className="h-[120vh] w-[120vh] max-w-none object-contain opacity-[0.06] dark:opacity-[0.04]"
                     />
                 </div>
             )}
