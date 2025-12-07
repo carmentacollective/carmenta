@@ -1,6 +1,8 @@
 import { Code2, Github, Heart } from "lucide-react";
 import Link from "next/link";
 
+import { ThemeSwitcher } from "@/components/ui";
+
 export function Footer() {
     return (
         <footer className="px-6 py-6">
@@ -32,6 +34,8 @@ export function Footer() {
                         <Github className="h-3.5 w-3.5" />
                         <span>Source</span>
                     </Link>
+                    {/* Theme switcher */}
+                    <ThemeSwitcher />
                 </nav>
 
                 {/* Credits */}

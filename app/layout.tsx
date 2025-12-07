@@ -6,7 +6,6 @@ import { UserProvider } from "@/lib/auth/user-context";
 import { ThemeProvider } from "@/lib/theme";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
-import { ThemeSwitcher } from "@/components/ui";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
@@ -120,10 +119,6 @@ export default function RootLayout({
                         <ThemeProvider>
                             <PWARegistration />
                             <StructuredData />
-                            {/* Floating theme switcher - top right of all pages */}
-                            <div className="fixed right-4 top-4 z-50">
-                                <ThemeSwitcher />
-                            </div>
                             {children}
                         </ThemeProvider>
                     </body>

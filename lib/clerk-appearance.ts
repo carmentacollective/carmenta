@@ -127,8 +127,9 @@ export const clerkAppearance: Appearance = {
         // ═══════════════════════════════════════════════════════════════════
         userButtonTrigger: "focus:ring-2 focus:ring-primary/30 rounded-full",
         userButtonBox: "rounded-full",
-        avatarBox: "h-12 w-12 rounded-full",
+        avatarBox: "h-12 w-12 rounded-full bg-[#C4A3D4]/10",
         avatarImage: "rounded-full",
+        avatarInitials: "bg-[#C4A3D4]/10 text-[#C4A3D4] font-semibold",
 
         // The popover card (dropdown container)
         userButtonPopoverCard: [
@@ -142,7 +143,7 @@ export const clerkAppearance: Appearance = {
 
         // User preview section at top of popover
         userPreview: "px-3 py-2",
-        userPreviewAvatarBox: "h-10 w-10",
+        userPreviewAvatarBox: "h-10 w-10 bg-[#C4A3D4]/10",
         userPreviewMainIdentifier: "text-foreground font-medium",
         userPreviewSecondaryIdentifier: "text-muted-foreground text-sm",
 
