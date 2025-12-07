@@ -42,11 +42,14 @@ describe("SiteHeader", () => {
         expect(screen.getByText("Test Button")).toBeInTheDocument();
     });
 
-    it("does not render right content wrapper when rightContent is not provided", () => {
-        const { container } = render(<SiteHeader />);
+    it("does not render user-provided right content when rightContent is not provided", () => {
+        const { container } = render(<SiteHeader showThemeSwitcher={false} />);
         const header = container.querySelector("header");
-        // Should only have one child (the logo link)
-        expect(header?.children.length).toBe(1);
+        // Header has 2 children: logo link and right-side wrapper
+        // Right-side wrapper should be empty when no rightContent or themeSwitcher
+        expect(header?.children.length).toBe(2);
+        const rightWrapper = header?.children[1];
+        expect(rightWrapper?.children.length).toBe(0);
     });
 
     it("renders multiple right content elements", () => {

@@ -52,6 +52,11 @@
 
         /* Glassmorphism */
         --glass-blur: 24px;
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-bg-hover: rgba(255, 255, 255, 0.7);
+        --glass-bg-active: rgba(255, 255, 255, 0.8);
+        --glass-surface: rgba(255, 255, 255, 0.9);
+        --glass-shadow: 0 4px 16px rgba(180, 140, 200, 0.15);
 
         /* Chat viewport fade - Apple-level subtle fades
          * Uses fixed pixels, not percentages, for consistent subtlety
@@ -61,6 +66,7 @@
         --chat-fade-bottom: 56px;
     }
 
+    /* Dark mode - Deep purple twilight with holographic shimmer */
     .dark {
         --background: 280 30% 8%;
         --foreground: 280 20% 90%;
@@ -89,6 +95,13 @@
         --border: 280 20% 25%;
         --input: 280 20% 20%;
         --ring: 280 50% 65%;
+
+        /* Warm purple glassmorphism for dark mode */
+        --glass-bg: rgba(180, 140, 200, 0.15);
+        --glass-bg-hover: rgba(180, 140, 200, 0.25);
+        --glass-bg-active: rgba(180, 140, 200, 0.3);
+        --glass-surface: rgba(30, 20, 35, 0.95);
+        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 }
 
@@ -197,6 +210,14 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
+    .dark .glass-input-dock {
+        background: rgba(40, 30, 50, 0.85);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
     /* Holographic gradient button */
     .btn-holo {
         @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-all;
@@ -216,15 +237,17 @@
 
     /* Greeting text styles */
     .greeting-title {
-        @apply text-4xl font-light tracking-tight md:text-5xl;
-        color: rgba(90, 60, 100, 0.85);
+        @apply text-4xl font-light tracking-tight text-foreground/85 md:text-5xl;
         letter-spacing: -1.5px;
         text-shadow: 0 2px 20px rgba(255, 255, 255, 0.5);
     }
 
+    .dark .greeting-title {
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+
     .greeting-subtitle {
-        @apply text-base;
-        color: rgba(120, 90, 130, 0.8);
+        @apply text-base text-foreground/70;
     }
 }
 
@@ -346,6 +369,10 @@
         scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
     }
 
+    .dark .scrollbar-holo {
+        scrollbar-color: rgba(200, 160, 180, 0.3) transparent;
+    }
+
     .scrollbar-holo::-webkit-scrollbar {
         width: 8px;
     }
@@ -359,8 +386,16 @@
         border-radius: 4px;
     }
 
+    .dark .scrollbar-holo::-webkit-scrollbar-thumb {
+        background: rgba(200, 160, 180, 0.3);
+    }
+
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
         background: rgba(180, 140, 200, 0.5);
+    }
+
+    .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
+        background: rgba(200, 160, 180, 0.5);
     }
 
     /*
@@ -690,13 +725,70 @@
         }
     }
 
+    /* Carmenta Glass System - DRY glassmorphism using CSS variables */
+
+    /* Glass background utilities - auto-switch between light/dark */
+    .glass-bg {
+        background: var(--glass-bg);
+    }
+
+    .glass-bg-hover:hover {
+        background: var(--glass-bg-hover);
+    }
+
+    .glass-bg-active {
+        background: var(--glass-bg-active);
+    }
+
+    .glass-surface {
+        background: var(--glass-surface);
+    }
+
+    .glass-shadow {
+        box-shadow: var(--glass-shadow);
+    }
+
+    /* Glass container - for popovers, dropdowns, panels */
+    .glass-container {
+        background: var(--glass-surface);
+        box-shadow: var(--glass-shadow);
+        @apply ring-1 ring-white/40 backdrop-blur-xl;
+    }
+
+    .dark .glass-container {
+        @apply ring-white/15;
+    }
+
+    /* Glass pill - for buttons in glass containers (e.g., connection chooser) */
+    .glass-pill {
+        background: var(--glass-bg);
+        box-shadow: var(--glass-shadow);
+        @apply rounded-xl ring-1 ring-foreground/15 backdrop-blur-xl;
+        @apply transition-all duration-200;
+    }
+
+    .glass-pill:hover {
+        background: var(--glass-bg-hover);
+        @apply shadow-2xl ring-foreground/20;
+    }
+
+    .dark .glass-pill {
+        @apply ring-white/15;
+    }
+
     /* Carmenta Button States - Centralized interaction patterns */
 
-    /* Glass button base */
+    /* Glass button base - uses CSS variables */
     .btn-glass {
         @apply flex items-center justify-center rounded-full;
-        @apply bg-white/50 shadow-xl ring-1 ring-white/40 backdrop-blur-xl;
+        background: var(--glass-bg);
+        box-shadow: var(--glass-shadow);
+        @apply ring-1 ring-white/40 backdrop-blur-xl;
         @apply transition-all duration-300;
+    }
+
+    .dark .btn-glass {
+        @apply ring-white/15;
     }
 
     /* Click state - Ripple + depth shift */
@@ -707,6 +799,10 @@
     /* Hover state - Scale + shadow + ring (same as focus) */
     .btn-hoverable {
         @apply hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40;
+    }
+
+    .btn-hoverable:hover {
+        background: var(--glass-bg-hover);
     }
 
     /* Focus state - Scale + shadow + ring (same as hover) */
@@ -735,9 +831,14 @@
     /* Base subtle button - hover and focus are identical */
     .btn-subtle {
         @apply rounded-md transition-all;
-        @apply hover:bg-white/50 hover:ring-2 hover:ring-primary/30;
-        @apply focus:bg-white/50 focus:outline-none focus:ring-2 focus:ring-primary/30;
+        @apply hover:ring-2 hover:ring-primary/30;
+        @apply focus:outline-none focus:ring-2 focus:ring-primary/30;
         @apply active:scale-95;
+    }
+
+    .btn-subtle:hover,
+    .btn-subtle:focus {
+        background: var(--glass-bg-hover);
     }
 
     /* Subtle icon button - small icons with scale effect */

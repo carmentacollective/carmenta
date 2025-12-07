@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { ThemeSwitcher } from "@/components/ui";
 
 interface SiteHeaderProps {
     /**
@@ -12,18 +13,27 @@ interface SiteHeaderProps {
      * Apply border and background for content pages (vs. landing page)
      */
     bordered?: boolean;
+    /**
+     * Show theme switcher. Defaults to true.
+     */
+    showThemeSwitcher?: boolean;
 }
 
 /**
  * Consistent site header across all pages.
  * Maintains pixel-perfect alignment and spacing.
  */
-export function SiteHeader({ rightContent, bordered = false }: SiteHeaderProps) {
+export function SiteHeader({
+    rightContent,
+    bordered = false,
+    showThemeSwitcher = true,
+}: SiteHeaderProps) {
     return (
         <header
             className={cn(
                 "flex items-center justify-between px-6 py-4",
-                bordered && "border-b border-foreground/10 bg-white/80 backdrop-blur-sm"
+                bordered &&
+                    "border-b border-foreground/10 bg-white/80 backdrop-blur-sm dark:bg-black/30"
             )}
         >
             <Link
@@ -42,9 +52,10 @@ export function SiteHeader({ rightContent, bordered = false }: SiteHeaderProps) 
                     Carmenta
                 </span>
             </Link>
-            {rightContent && (
-                <div className="flex items-center gap-4">{rightContent}</div>
-            )}
+            <div className="flex items-center gap-4">
+                {showThemeSwitcher && <ThemeSwitcher />}
+                {rightContent}
+            </div>
         </header>
     );
 }

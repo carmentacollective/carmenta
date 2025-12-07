@@ -3,8 +3,10 @@ import { Outfit, JetBrains_Mono } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
+import { ThemeProvider } from "@/lib/theme";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
+import { ThemeSwitcher } from "@/components/ui";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
@@ -112,11 +114,18 @@ export default function RootLayout({
                 <html
                     lang="en"
                     className={`${outfit.variable} ${jetbrainsMono.variable}`}
+                    suppressHydrationWarning
                 >
                     <body className="min-h-screen bg-background font-sans antialiased">
-                        <PWARegistration />
-                        <StructuredData />
-                        {children}
+                        <ThemeProvider>
+                            <PWARegistration />
+                            <StructuredData />
+                            {/* Floating theme switcher - top right of all pages */}
+                            <div className="fixed right-4 top-4 z-50">
+                                <ThemeSwitcher />
+                            </div>
+                            {children}
+                        </ThemeProvider>
                     </body>
                 </html>
             </UserProvider>

@@ -18,7 +18,7 @@ export default function BrandPage() {
 
             {/* Content layer */}
             <div className="relative z-10">
-                <SiteHeader bordered />
+                <SiteHeader bordered showThemeSwitcher={false} />
 
                 <main className="py-12">
                     <div className="mx-auto max-w-6xl space-y-16 px-6">
@@ -1028,8 +1028,8 @@ function ButtonStateDemo({ variant }: { variant: string }) {
                 className={cn(
                     "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all",
                     isGlass
-                        ? "bg-white/50 shadow-xl ring-1 ring-white/40 backdrop-blur-xl"
-                        : "bg-white/50 ring-1 ring-white/40 backdrop-blur-xl",
+                        ? "bg-white/50 shadow-xl ring-1 ring-white/40 backdrop-blur-xl dark:bg-white/10 dark:ring-white/20"
+                        : "bg-white/50 ring-1 ring-white/40 backdrop-blur-xl dark:bg-white/10 dark:ring-white/20",
                     variant === "click" && "active:translate-y-0.5 active:shadow-sm",
                     variant === "hover" && "hover:scale-105 hover:shadow-2xl",
                     variant === "focus" &&

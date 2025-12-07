@@ -105,7 +105,7 @@ describe("ConnectionChooser", () => {
             const { container } = render(<ConnectionChooser />);
 
             // The component should render the pill container
-            expect(container.querySelector(".rounded-xl")).toBeInTheDocument();
+            expect(container.querySelector(".glass-pill")).toBeInTheDocument();
         });
 
         it("shows search button when connections exist", () => {

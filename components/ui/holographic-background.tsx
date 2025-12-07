@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useTheme } from "next-themes";
+
+// Track whether we're on the client to avoid hydration mismatch
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 /**
- * Holographic color palette for the animated background blobs.
- * These soft pastels blend and shift to create a dreamy, ethereal effect.
+ * Light mode holographic colors - soft pastels
  */
-const HOLO_COLORS = [
+const LIGHT_COLORS = [
     { r: 255, g: 200, b: 220 }, // Pink
     { r: 255, g: 180, b: 200 }, // Hot Pink
     { r: 230, g: 200, b: 255 }, // Lavender
@@ -17,9 +22,30 @@ const HOLO_COLORS = [
     { r: 255, g: 220, b: 230 }, // Blush
 ];
 
+/**
+ * Dark mode holographic colors - warm variant.
+ *
+ * Preserves the same hue progression as the light theme:
+ * Pink → Hot Pink → Lavender → Periwinkle → Cyan → Mint → Yellow → Blush
+ *
+ * Shifted warmer with deeper tones for dark backgrounds.
+ */
+const DARK_COLORS = [
+    { r: 200, g: 90, b: 110 }, // Coral Rose
+    { r: 210, g: 75, b: 95 }, // Warm Magenta
+    { r: 165, g: 100, b: 160 }, // Warm Lavender
+    { r: 130, g: 115, b: 165 }, // Warm Periwinkle
+    { r: 100, g: 155, b: 150 }, // Warm Cyan
+    { r: 120, g: 170, b: 110 }, // Warm Mint
+    { r: 200, g: 170, b: 80 }, // Golden Yellow
+    { r: 195, g: 110, b: 115 }, // Warm Blush
+];
+
+const DARK_BACKGROUND = "#1F120F"; // Dark with warm red undertone
+
 const BLOB_COUNT = 12;
-const PARTICLE_COUNT = 80;
-const BACKGROUND_COLOR = "#F8F4F8";
+const PARTICLE_COUNT = 35; // Reduced from 80 for subtler effect
+const LIGHT_BACKGROUND = "#F8F4F8";
 
 interface Blob {
     x: number;
@@ -56,7 +82,7 @@ function createBlob(index: number, width: number, height: number): Blob {
         baseX: x,
         baseY: y,
         radius: 200 + Math.random() * 300,
-        colorIndex: index % HOLO_COLORS.length,
+        colorIndex: index % LIGHT_COLORS.length,
         speedX: (Math.random() - 0.5) * 0.5,
         speedY: (Math.random() - 0.5) * 0.5,
         oscillateSpeed: 0.002 + Math.random() * 0.003,
@@ -73,7 +99,7 @@ function createParticle(width: number, height: number): Particle {
         size: Math.random() * 2 + 0.5,
         opacity: Math.random() * 0.6 + 0.2,
         twinkle: Math.random() * Math.PI * 2,
-        twinkleSpeed: 0.05 + Math.random() * 0.08,
+        twinkleSpeed: 0.015 + Math.random() * 0.025, // Slowed ~3x for gentler effect
         vx: (Math.random() - 0.5) * 0.3,
         vy: (Math.random() - 0.5) * 0.3,
     };
@@ -92,10 +118,12 @@ interface HolographicBackgroundProps {
  * 2. Shimmer particles - Tiny sparkles that twinkle and respond to mouse movement
  *
  * The effect is ethereal and dream-like, reflecting Carmenta's heart-centered philosophy.
+ * Theme-aware: uses soft pastels for light mode, warm deeper tones for dark mode.
  */
 export function HolographicBackground({
     hideWatermark = false,
 }: HolographicBackgroundProps) {
+    const { resolvedTheme } = useTheme();
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
@@ -103,6 +131,17 @@ export function HolographicBackground({
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
+    const themeColorsRef = useRef({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
+
+    // Update theme colors when theme changes
+    useEffect(() => {
+        const isDark = resolvedTheme === "dark";
+        if (isDark) {
+            themeColorsRef.current = { bg: DARK_BACKGROUND, colors: DARK_COLORS };
+        } else {
+            themeColorsRef.current = { bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS };
+        }
+    }, [resolvedTheme]);
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
@@ -145,9 +184,10 @@ export function HolographicBackground({
             timeRef.current++;
             const time = timeRef.current;
             const mouse = mouseRef.current;
+            const { bg, colors } = themeColorsRef.current;
 
             // Draw holographic blobs
-            holoCtx.fillStyle = BACKGROUND_COLOR;
+            holoCtx.fillStyle = bg;
             holoCtx.fillRect(0, 0, holoCanvas.width, holoCanvas.height);
 
             holoCtx.globalCompositeOperation = "multiply";
@@ -179,7 +219,7 @@ export function HolographicBackground({
 
                 // Color shift
                 blob.colorIndex =
-                    (blob.colorIndex + blob.colorShiftSpeed) % HOLO_COLORS.length;
+                    (blob.colorIndex + blob.colorShiftSpeed) % colors.length;
 
                 // Mouse interaction
                 if (mouse.x && mouse.y) {
@@ -196,18 +236,12 @@ export function HolographicBackground({
 
                 // Draw blob with gradient
                 const idx = Math.floor(blob.colorIndex);
-                const nextIdx = (idx + 1) % HOLO_COLORS.length;
+                const nextIdx = (idx + 1) % colors.length;
                 const t = blob.colorIndex - idx;
 
-                const r =
-                    HOLO_COLORS[idx].r +
-                    (HOLO_COLORS[nextIdx].r - HOLO_COLORS[idx].r) * t;
-                const g =
-                    HOLO_COLORS[idx].g +
-                    (HOLO_COLORS[nextIdx].g - HOLO_COLORS[idx].g) * t;
-                const b =
-                    HOLO_COLORS[idx].b +
-                    (HOLO_COLORS[nextIdx].b - HOLO_COLORS[idx].b) * t;
+                const r = colors[idx].r + (colors[nextIdx].r - colors[idx].r) * t;
+                const g = colors[idx].g + (colors[nextIdx].g - colors[idx].g) * t;
+                const b = colors[idx].b + (colors[nextIdx].b - colors[idx].b) * t;
 
                 const gradient = holoCtx.createRadialGradient(
                     blob.x,
@@ -262,8 +296,15 @@ export function HolographicBackground({
                 if (p.y < 0) p.y = shimmerCanvas.height;
                 if (p.y > shimmerCanvas.height) p.y = 0;
 
-                // Draw particle
-                const twinkleOpacity = p.opacity * (0.4 + Math.sin(p.twinkle) * 0.6);
+                // Draw particle - theme-aware opacity
+                // Dark mode: subtler sparkles (max ~30% opacity)
+                // Light mode: even lighter (max ~20% opacity)
+                const isDarkTheme = bg === DARK_BACKGROUND;
+                const themeOpacityMultiplier = isDarkTheme ? 0.4 : 0.25;
+                const twinkleOpacity =
+                    p.opacity *
+                    (0.3 + Math.sin(p.twinkle) * 0.5) *
+                    themeOpacityMultiplier;
                 shimmerCtx.beginPath();
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 shimmerCtx.fillStyle = `rgba(255, 255, 255, ${twinkleOpacity})`;
@@ -284,6 +325,10 @@ export function HolographicBackground({
         };
     }, []);
 
+    // Use client detection to avoid hydration mismatch
+    const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const isDark = isClient && resolvedTheme === "dark";
+
     return (
         <>
             {/* Holographic blobs layer */}
@@ -303,20 +348,26 @@ export function HolographicBackground({
                     <img
                         src="/logos/icon-transparent.png"
                         alt=""
-                        className="h-[120vh] w-[120vh] max-w-none object-contain opacity-[0.06]"
+                        className="h-[120vh] w-[120vh] max-w-none object-contain opacity-[0.06] dark:opacity-[0.04]"
                     />
                 </div>
             )}
 
-            {/* Light overlay for depth */}
+            {/* Light/dark overlay for depth */}
             <div
                 className="pointer-events-none fixed inset-0 z-[2] opacity-50"
                 style={{
-                    background: `linear-gradient(135deg,
-                        rgba(255, 255, 255, 0.3) 0%,
-                        transparent 50%,
-                        rgba(255, 255, 255, 0.1) 100%
-                    )`,
+                    background: isDark
+                        ? `linear-gradient(135deg,
+                            rgba(255, 255, 255, 0.05) 0%,
+                            transparent 50%,
+                            rgba(255, 255, 255, 0.02) 100%
+                        )`
+                        : `linear-gradient(135deg,
+                            rgba(255, 255, 255, 0.3) 0%,
+                            transparent 50%,
+                            rgba(255, 255, 255, 0.1) 100%
+                        )`,
                 }}
                 aria-hidden="true"
             />
