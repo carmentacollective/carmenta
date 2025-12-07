@@ -61,6 +61,7 @@
         --chat-fade-bottom: 56px;
     }
 
+    /* Dark mode - Deep purple twilight with holographic shimmer */
     .dark {
         --background: 280 30% 8%;
         --foreground: 280 20% 90%;
