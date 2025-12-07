@@ -147,6 +147,7 @@ async function consumeStream(
     let fullText = "";
     let extractedText = "";
     const toolsCalled: string[] = [];
+    let buffer = ""; // Buffer for incomplete lines across chunks
 
     try {
         while (true) {
@@ -156,8 +157,14 @@ async function consumeStream(
             const chunk = decoder.decode(value, { stream: true });
             fullText += chunk;
 
-            // Parse SSE format lines: "data: {...}\n\n"
-            const lines = chunk.split("\n");
+            // Add chunk to buffer and split by newlines
+            buffer += chunk;
+            const lines = buffer.split("\n");
+
+            // Keep the last (potentially incomplete) line in the buffer
+            buffer = lines.pop() || "";
+
+            // Process complete lines
             for (const line of lines) {
                 // SSE data line format
                 if (line.startsWith("data: ")) {
@@ -206,6 +213,28 @@ async function consumeStream(
                             extractedText += match[1];
                         }
                     }
+                }
+            }
+        }
+
+        // Process any remaining buffered content
+        if (buffer.trim()) {
+            if (buffer.startsWith("data: ")) {
+                try {
+                    const data = JSON.parse(buffer.slice(6));
+                    if (data.type === "text-delta" && data.delta) {
+                        extractedText += data.delta;
+                    }
+                    if (
+                        (data.type === "tool-input-start" ||
+                            data.type === "tool-input-available") &&
+                        data.toolName &&
+                        !toolsCalled.includes(data.toolName)
+                    ) {
+                        toolsCalled.push(data.toolName);
+                    }
+                } catch {
+                    // Ignore parse errors
                 }
             }
         }
