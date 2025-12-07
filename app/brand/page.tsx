@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Sparkles, Check, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
 import { SiteHeader } from "@/components/site-header";
@@ -348,6 +349,19 @@ export default function BrandPage() {
                                     </p>
                                 </div>
                             </div>
+                        </section>
+
+                        {/* Animation Gallery */}
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-foreground/90">
+                                Animation Library
+                            </h2>
+                            <p className="text-foreground/70">
+                                Standardized entry and exit animations for consistent
+                                motion design throughout Carmenta.
+                            </p>
+
+                            <AnimationGallery />
                         </section>
 
                         {/* Button States - Clean finalized version */}
@@ -1077,6 +1091,427 @@ function ButtonStateDemo({ variant }: { variant: string }) {
                     )}
                 />
             </button>
+        </div>
+    );
+}
+
+/**
+ * Animation Gallery - Entry and Exit Animations
+ */
+function AnimationGallery() {
+    // Animation speed multiplier - change this to speed up/slow down all animations
+    const SPEED = 4; // 4x slower, 0.5 would be 2x faster
+
+    return (
+        <div className="space-y-8">
+            {/* Entry Animations */}
+            <div className="glass-card space-y-6">
+                <h3 className="text-xl font-medium text-foreground/90">
+                    Entry Animations
+                </h3>
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    <AnimationDemo
+                        name="Gentle Arrival"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0 },
+                            animate: { opacity: 1 },
+                            transition: {
+                                duration: 0.8 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Recognition"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.9 },
+                            animate: { opacity: 1, scale: 1 },
+                            transition: {
+                                duration: 0.7 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Coming Home"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, y: 10 },
+                            animate: { opacity: 1, y: 0 },
+                            transition: {
+                                duration: 0.8 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Warm Welcome"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.85 },
+                            animate: { opacity: 1, scale: 1 },
+                            transition: {
+                                type: "spring",
+                                damping: 20 / SPEED,
+                                stiffness: 100 / SPEED,
+                                mass: 1.2 * SPEED,
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Upward Spiral"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.7, rotate: -90, y: 20 },
+                            animate: { opacity: 1, scale: 1, rotate: 0, y: 0 },
+                            transition: {
+                                duration: 0.9 * SPEED,
+                                ease: [0.34, 1.56, 0.64, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Presence"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, filter: "blur(15px)" },
+                            animate: { opacity: 1, filter: "blur(0px)" },
+                            transition: { duration: 0.7 * SPEED },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Remembered"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.95, y: 5 },
+                            animate: { opacity: 1, scale: 1, y: 0 },
+                            transition: {
+                                duration: 0.6 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Flow State"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, x: -15 },
+                            animate: { opacity: 1, x: 0 },
+                            transition: {
+                                duration: 0.7 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Continuity"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scaleX: 0.7 },
+                            animate: { opacity: 1, scaleX: 1 },
+                            transition: {
+                                duration: 0.7 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Partnership"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.8, rotateY: -15 },
+                            animate: { opacity: 1, scale: 1, rotateY: 0 },
+                            transition: {
+                                duration: 0.8 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Belonging"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0 },
+                            animate: { opacity: 1, scale: 1 },
+                            transition: {
+                                type: "spring",
+                                damping: 16 / SPEED,
+                                stiffness: 120 / SPEED,
+                                mass: 1.4 * SPEED,
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Seen"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, filter: "blur(20px)", scale: 1.1 },
+                            animate: { opacity: 1, filter: "blur(0px)", scale: 1 },
+                            transition: {
+                                duration: 0.8 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Understanding"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, rotateX: 20, y: 10 },
+                            animate: { opacity: 1, rotateX: 0, y: 0 },
+                            transition: {
+                                duration: 0.8 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Amplified"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.5 },
+                            animate: { opacity: 1, scale: 1 },
+                            transition: {
+                                type: "spring",
+                                damping: 14 / SPEED,
+                                stiffness: 100 / SPEED,
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Unity"
+                        type="entry"
+                        animation={{
+                            initial: { opacity: 0, scale: 0.85, rotate: -5 },
+                            animate: { opacity: 1, scale: 1, rotate: 0 },
+                            transition: {
+                                duration: 0.9 * SPEED,
+                                ease: [0.34, 1.56, 0.64, 1],
+                            },
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* Exit Animations */}
+            <div className="glass-card space-y-6">
+                <h3 className="text-xl font-medium text-foreground/90">
+                    Exit Animations
+                </h3>
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    <AnimationDemo
+                        name="Gentle Fade"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0 },
+                            transition: {
+                                duration: 0.5 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Quiet Release"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 0.95 },
+                            transition: {
+                                duration: 0.5 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Completion"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, y: -10 },
+                            transition: {
+                                duration: 0.5 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Dissolve"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, filter: "blur(15px)" },
+                            transition: { duration: 0.6 * SPEED, ease: "easeIn" },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Upward Spiral"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 0.8, rotate: 90, y: -15 },
+                            transition: {
+                                duration: 0.7 * SPEED,
+                                ease: [0.6, -0.28, 0.735, 0.045],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Transformation"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 1.15, filter: "blur(20px)" },
+                            transition: { duration: 0.7 * SPEED, ease: "easeOut" },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Integration"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scaleX: 0.8 },
+                            transition: {
+                                duration: 0.5 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Flow Away"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, x: 20, scale: 0.9 },
+                            transition: {
+                                duration: 0.5 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Recede"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 0.7 },
+                            transition: {
+                                duration: 0.6 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Ascend"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, y: -20, scale: 0.85 },
+                            transition: {
+                                duration: 0.6 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Collapse"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 0 },
+                            transition: {
+                                type: "spring",
+                                damping: 25 / SPEED,
+                                stiffness: 150 / SPEED,
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Burst"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 1.8 },
+                            transition: { duration: 0.5 * SPEED, ease: "easeOut" },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Perspective Shift"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, rotateY: 90, scale: 0.8 },
+                            transition: {
+                                duration: 0.6 * SPEED,
+                                ease: [0.6, -0.28, 0.735, 0.045],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Drift"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, x: 15, y: -10, scale: 0.9 },
+                            transition: {
+                                duration: 0.7 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                    <AnimationDemo
+                        name="Merge"
+                        type="exit"
+                        animation={{
+                            exit: { opacity: 0, scale: 0.85, filter: "blur(10px)" },
+                            transition: {
+                                duration: 0.6 * SPEED,
+                                ease: [0.16, 1, 0.3, 1],
+                            },
+                        }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Individual Animation Demo Component
+ */
+function AnimationDemo({
+    name,
+    type,
+    animation,
+}: {
+    name: string;
+    type: "entry" | "exit";
+    animation: any;
+}) {
+    const [show, setShow] = useState(type === "entry");
+
+    const replay = () => {
+        if (type === "entry") {
+            setShow(false);
+            setTimeout(() => setShow(true), 50);
+        } else {
+            setShow(true);
+            setTimeout(() => setShow(false), 50);
+        }
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-lg bg-foreground/5 p-4">
+                <AnimatePresence mode="wait">
+                    {show && (
+                        <motion.div
+                            key={name}
+                            className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary/20 text-primary"
+                            {...animation}
+                        >
+                            <Sparkles className="h-6 w-6" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+            <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground/90">{name}</p>
+                <button
+                    onClick={replay}
+                    className="text-xs text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
+                >
+                    Replay
+                </button>
+            </div>
         </div>
     );
 }

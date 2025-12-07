@@ -97,13 +97,12 @@ function ConnectionDropdown({
     debouncedQuery: string;
     inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
-    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
     const handleDeleteClick = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
             e.stopPropagation();
-            setPendingDeleteId(connectionId);
+            setConfirmingDeleteId(connectionId);
         },
         []
     );
@@ -111,25 +110,19 @@ function ConnectionDropdown({
     const confirmDelete = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
             e.stopPropagation();
-            setDeletingId(connectionId);
-
-            // Wait for exit animation then delete
-            setTimeout(() => {
-                onDelete(connectionId);
-                setPendingDeleteId(null);
-                setDeletingId(null);
-            }, 180);
+            onDelete(connectionId);
+            setConfirmingDeleteId(null);
         },
         [onDelete]
     );
 
     const cancelDelete = useCallback(() => {
-        setPendingDeleteId(null);
+        setConfirmingDeleteId(null);
     }, []);
 
-    // Wrap onClose to also clear pending delete state
+    // Wrap onClose to also clear confirmation state
     const handleClose = useCallback(() => {
-        setPendingDeleteId(null);
+        setConfirmingDeleteId(null);
         onClose();
     }, [onClose]);
 
@@ -138,7 +131,7 @@ function ConnectionDropdown({
         if (!isOpen) return;
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                if (pendingDeleteId) {
+                if (confirmingDeleteId) {
                     cancelDelete();
                 } else {
                     handleClose();
@@ -147,7 +140,7 @@ function ConnectionDropdown({
         };
         window.addEventListener("keydown", handleEscape);
         return () => window.removeEventListener("keydown", handleEscape);
-    }, [isOpen, handleClose, pendingDeleteId, cancelDelete]);
+    }, [isOpen, handleClose, confirmingDeleteId, cancelDelete]);
 
     // Filter connections based on search
     const filtered = useMemo(() => {
@@ -221,19 +214,18 @@ function ConnectionDropdown({
                                                 const isFresh = freshConnectionIds.has(
                                                     conn.id
                                                 );
-                                                const isPendingDelete =
-                                                    pendingDeleteId === conn.id;
-                                                const isDeleting =
-                                                    deletingId === conn.id;
+                                                const isConfirming =
+                                                    confirmingDeleteId === conn.id;
                                                 const isActive =
                                                     conn.id === activeConnection?.id;
 
-                                                // Delete confirmation or deleting state
-                                                if (isPendingDelete || isDeleting) {
+                                                // Delete confirmation
+                                                if (isConfirming) {
                                                     return (
                                                         <motion.div
                                                             key={conn.id}
-                                                            className="flex items-center justify-between bg-red-500/10 px-4 py-3"
+                                                            layout
+                                                            className="flex min-h-[52px] items-center justify-between bg-red-500/10 px-4"
                                                             initial={{
                                                                 opacity: 0,
                                                                 scale: 0.98,
@@ -251,43 +243,33 @@ function ConnectionDropdown({
                                                             }}
                                                         >
                                                             <span className="text-sm text-red-600 dark:text-red-400">
-                                                                {isDeleting ? (
-                                                                    "Deleting..."
-                                                                ) : (
-                                                                    <>
-                                                                        Delete &ldquo;
-                                                                        {conn.title ||
-                                                                            "this connection"}
-                                                                        &rdquo;?
-                                                                    </>
-                                                                )}
+                                                                Delete &ldquo;
+                                                                {conn.title ||
+                                                                    "this connection"}
+                                                                &rdquo;?
                                                             </span>
-                                                            {!isDeleting && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={(
-                                                                            e
-                                                                        ) => {
-                                                                            e.stopPropagation();
-                                                                            cancelDelete();
-                                                                        }}
-                                                                        className="rounded-lg px-3 py-1.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-foreground/5"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) =>
-                                                                            confirmDelete(
-                                                                                e,
-                                                                                conn.id
-                                                                            )
-                                                                        }
-                                                                        className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
-                                                                    >
-                                                                        Delete
-                                                                    </button>
-                                                                </div>
-                                                            )}
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        cancelDelete();
+                                                                    }}
+                                                                    className="rounded-lg px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:bg-foreground/5"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) =>
+                                                                        confirmDelete(
+                                                                            e,
+                                                                            conn.id
+                                                                        )
+                                                                    }
+                                                                    className="rounded-lg bg-red-500 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-red-600"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
                                                         </motion.div>
                                                     );
                                                 }
@@ -295,19 +277,19 @@ function ConnectionDropdown({
                                                 return (
                                                     <motion.div
                                                         key={conn.id}
+                                                        layout
                                                         className={cn(
-                                                            "group relative flex items-center gap-3 overflow-hidden px-4 py-2.5 transition-all",
+                                                            "group relative flex min-h-[52px] items-center gap-3 overflow-hidden px-4 transition-all",
                                                             isActive && "bg-primary/5",
                                                             isFresh &&
                                                                 "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
                                                         )}
                                                         initial={{ opacity: 0, x: -8 }}
                                                         animate={{ opacity: 1, x: 0 }}
-                                                        exit={{ opacity: 0, x: 8 }}
+                                                        exit={{ opacity: 0 }}
                                                         transition={{
-                                                            duration: 0.2,
+                                                            duration: 0.15,
                                                             delay: index * 0.03,
-                                                            ease: "easeOut",
                                                         }}
                                                     >
                                                         {/* Hover background indicator */}
