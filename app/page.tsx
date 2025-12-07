@@ -70,6 +70,7 @@ export default function HomePage() {
     const [activeSlide, setActiveSlide] = useState(0);
     const [displayedChars, setDisplayedChars] = useState("");
     const [phase, setPhase] = useState<Phase>("typing");
+    const [paused, setPaused] = useState(false);
     const charIndex = useRef(0);
 
     // Derive visibility from phase - content hidden during exit
@@ -78,6 +79,46 @@ export default function HomePage() {
     const shuffledFeatures = useMemo(() => shuffleArray(FEATURES), []);
     const currentFeature = shuffledFeatures[activeSlide];
     const headline = currentFeature.headline;
+
+    const goToSlide = useCallback(
+        (index: number) => {
+            if (index === activeSlide) return;
+            setPhase("exit");
+            setTimeout(() => {
+                setActiveSlide(index);
+                setDisplayedChars("");
+                charIndex.current = 0;
+                setPhase("typing");
+            }, 400);
+        },
+        [activeSlide]
+    );
+
+    const goNext = useCallback(() => {
+        goToSlide((activeSlide + 1) % shuffledFeatures.length);
+    }, [activeSlide, shuffledFeatures.length, goToSlide]);
+
+    const goPrev = useCallback(() => {
+        goToSlide(
+            (activeSlide - 1 + shuffledFeatures.length) % shuffledFeatures.length
+        );
+    }, [activeSlide, shuffledFeatures.length, goToSlide]);
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "ArrowRight") {
+                goNext();
+            } else if (e.key === "ArrowLeft") {
+                goPrev();
+            } else if (e.key === " ") {
+                e.preventDefault();
+                setPaused((p) => !p);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [goNext, goPrev]);
 
     const animateNextChar = useCallback(() => {
         if (charIndex.current < headline.length) {
@@ -112,13 +153,13 @@ export default function HomePage() {
         }
     }, [phase]);
 
-    // Hold then exit
+    // Hold then exit (respects paused state)
     useEffect(() => {
-        if (phase === "hold") {
+        if (phase === "hold" && !paused) {
             const timeout = setTimeout(() => setPhase("exit"), 4000);
             return () => clearTimeout(timeout);
         }
-    }, [phase]);
+    }, [phase, paused]);
 
     // Exit animation then next slide
     useEffect(() => {
@@ -167,13 +208,31 @@ export default function HomePage() {
 
                 {/* Rotating text content - centered block, LEFT-ALIGNED text */}
                 <div
+                    onClick={() => setPaused((p) => !p)}
                     className={cn(
-                        "w-full max-w-2xl transition-all duration-500",
+                        "w-full max-w-2xl cursor-pointer transition-all duration-500",
                         contentVisible
                             ? "translate-y-0 opacity-100"
                             : "translate-y-4 opacity-0"
                     )}
                 >
+                    {/* "Coming soon" label - appears above headline */}
+                    <div
+                        className={cn(
+                            "mb-3 h-6 transition-all duration-500",
+                            phase !== "typing" && !currentFeature.available
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2 opacity-0"
+                        )}
+                    >
+                        {!currentFeature.available && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-medium tracking-wide text-primary/70">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary/60" />
+                                Coming soon
+                            </span>
+                        )}
+                    </div>
+
                     {/* Headline with typewriter effect - LEFT ALIGNED */}
                     <h1 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
                         {displayedChars}
@@ -181,17 +240,12 @@ export default function HomePage() {
                             displayedChars.length < headline.length && (
                                 <span className="ml-1 inline-block h-8 w-0.5 animate-pulse bg-primary/70 align-middle sm:h-10 lg:h-12" />
                             )}
-                        {phase !== "typing" && !currentFeature.available && (
-                            <span className="ml-3 inline-block translate-y-[-2px] rounded-full border border-foreground/20 px-2.5 py-0.5 text-xs font-normal tracking-wide text-foreground/40">
-                                building
-                            </span>
-                        )}
                     </h1>
 
-                    {/* Description - LEFT ALIGNED */}
+                    {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
                     <p
                         className={cn(
-                            "max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:text-xl",
+                            "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:min-h-[6rem] sm:text-xl",
                             phase === "description" ||
                                 phase === "hold" ||
                                 phase === "exit"
@@ -227,21 +281,18 @@ export default function HomePage() {
                 </div>
 
                 {/* Progress dots */}
-                <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
+                <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2">
+                    <button
+                        onClick={goPrev}
+                        className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                        aria-label="Previous slide"
+                    >
+                        ←
+                    </button>
                     {shuffledFeatures.map((_, i) => (
                         <button
                             key={i}
-                            onClick={() => {
-                                if (i === activeSlide) return;
-                                // Trigger exit, then jump to selected slide
-                                setPhase("exit");
-                                setTimeout(() => {
-                                    setActiveSlide(i);
-                                    setDisplayedChars("");
-                                    charIndex.current = 0;
-                                    setPhase("typing");
-                                }, 400);
-                            }}
+                            onClick={() => goToSlide(i)}
                             className={cn(
                                 "h-1.5 rounded-full transition-all duration-300",
                                 activeSlide === i
@@ -251,6 +302,13 @@ export default function HomePage() {
                             aria-label={`Go to slide ${i + 1}`}
                         />
                     ))}
+                    <button
+                        onClick={goNext}
+                        className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                        aria-label="Next slide"
+                    >
+                        →
+                    </button>
                 </div>
             </div>
         </div>
