@@ -22,10 +22,8 @@ export interface UploadProgress {
     id: string;
     /** File being uploaded */
     file: File;
-    /** Upload progress (0-100) */
-    progress: number;
     /** Current status */
-    status: "pending" | "uploading" | "complete" | "error";
+    status: "validating" | "optimizing" | "uploading" | "complete" | "error";
     /** Error message if status is error */
     error?: string;
     /** Result if status is complete */
