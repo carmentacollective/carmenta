@@ -556,7 +556,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     | { type: "text"; text: string }
                     | {
                           type: "file";
-                          data: string;
+                          url: string;
                           mediaType: string;
                           filename: string;
                       }
