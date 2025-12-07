@@ -24,6 +24,13 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+    const { userId } = await auth();
+
+    // Authenticated users on landing page → redirect to connection
+    if (userId && req.nextUrl.pathname === "/") {
+        return Response.redirect(new URL("/connection", req.url));
+    }
+
     if (!isPublicRoute(req)) {
         await auth.protect();
     }
