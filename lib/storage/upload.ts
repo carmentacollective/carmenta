@@ -114,7 +114,7 @@ export async function uploadFile(
         const result: UploadedFile = {
             url: publicUrl,
             mediaType: file.type,
-            filename: file.name,
+            name: file.name,
             size: file.size,
             path: data.path,
         };

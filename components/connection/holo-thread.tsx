@@ -226,7 +226,7 @@ interface FilePart {
     type: "file";
     url: string;
     mediaType: string;
-    filename?: string;
+    name?: string;
 }
 
 /**
@@ -526,7 +526,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                     key={idx}
                                     url={file.url}
                                     mediaType={file.mediaType}
-                                    filename={file.filename || "file"}
+                                    filename={file.name || "file"}
                                     isUserMessage
                                 />
                             ))}
@@ -622,7 +622,7 @@ function AssistantMessage({
                                 key={idx}
                                 url={file.url}
                                 mediaType={file.mediaType}
-                                filename={file.filename || "file"}
+                                filename={file.name || "file"}
                             />
                         ))}
                     </div>
@@ -790,7 +790,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                     files: completedFiles.map((f) => ({
                         url: f.url,
                         mediaType: f.mediaType,
-                        filename: f.filename,
+                        name: f.name,
                     })),
                 });
                 // Clear files after successful send

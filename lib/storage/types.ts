@@ -10,7 +10,7 @@ export interface UploadedFile {
     /** Media type (MIME type) */
     mediaType: string;
     /** Original filename */
-    filename: string;
+    name: string;
     /** File size in bytes */
     size: number;
     /** Storage path in Supabase */

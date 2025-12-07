@@ -71,7 +71,7 @@ interface ChatContextType {
     append: (message: {
         role: "user";
         content: string;
-        files?: Array<{ url: string; mediaType: string; filename: string }>;
+        files?: Array<{ url: string; mediaType: string; name: string }>;
     }) => Promise<void>;
     /** Whether the AI is currently generating */
     isLoading: boolean;
@@ -546,7 +546,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         async (message: {
             role: "user";
             content: string;
-            files?: Array<{ url: string; mediaType: string; filename: string }>;
+            files?: Array<{ url: string; mediaType: string; name: string }>;
         }) => {
             setDisplayError(null);
             setInput("");
@@ -558,7 +558,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                           type: "file";
                           url: string;
                           mediaType: string;
-                          filename: string;
+                          name: string;
                       }
                 > = [];
 
@@ -574,7 +574,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                             type: "file",
                             url: file.url,
                             mediaType: file.mediaType,
-                            filename: file.filename,
+                            name: file.name,
                         });
                     }
                 }
