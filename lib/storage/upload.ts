@@ -110,7 +110,7 @@ export async function uploadFile(
             url: publicUrl,
             mediaType: file.type,
             name: file.name,
-            size: file.size,
+            size: fileToUpload.size, // Use optimized size, not original
             path: data.path,
         };
 

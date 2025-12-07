@@ -16,6 +16,7 @@ import { generateText, type UIMessage } from "ai";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
+import { generateTitle } from "@/lib/db/title-generator";
 import { buildConciergePrompt } from "./prompt";
 import {
     ALLOWED_MODELS,
@@ -329,6 +330,8 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                         { attachments },
                         "Audio attachment detected - forcing Gemini"
                     );
+                    // Generate title since we're bypassing the normal concierge LLM call
+                    const title = await generateTitle(userQuery);
                     return {
                         modelId: "google/gemini-3-pro-preview",
                         temperature: 0.5,
@@ -336,6 +339,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                             "Audio file detected - routing to Gemini for native audio processing 🎵",
                         reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
                         autoSwitched: true,
+                        title,
                     };
                 }
 
