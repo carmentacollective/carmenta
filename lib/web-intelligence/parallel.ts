@@ -235,7 +235,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
             results: response.results.map((r) => ({
                 title: r.title,
                 url: r.url,
-                snippet: r.excerpts?.join(" ") || "",
+                snippet: r.excerpts?.join(" ... ") || "",
                 publishedDate: r.publish_date || undefined,
             })),
             query,
