@@ -864,12 +864,18 @@ function Composer({ isNewConversation }: ComposerProps) {
             e.preventDefault();
 
             // Auto-insert text file attachments inline (Anthropic doesn't support text files)
-            // Find all text/plain files with pasted content
-            const textFilesToInsert = completedFiles.filter(
-                (f) => f.mediaType === "text/plain"
-            );
+            // Text MIME types that should be sent as inline content, not file attachments
+            const TEXT_MIME_TYPES = [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json",
+            ];
+            const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
+
+            // Find all text files with pasted content
             const textFileIds = pendingFiles
-                .filter((p) => p.file.type === "text/plain")
+                .filter((p) => isTextFile(p.file.type))
                 .map((p) => p.id);
 
             if (textFileIds.length > 0) {
@@ -900,9 +906,7 @@ function Composer({ isNewConversation }: ComposerProps) {
             }
 
             // If no text and no non-text files, flash the input area and focus it
-            const nonTextFiles = completedFiles.filter(
-                (f) => f.mediaType !== "text/plain"
-            );
+            const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
             if (!input.trim() && nonTextFiles.length === 0) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 500);
