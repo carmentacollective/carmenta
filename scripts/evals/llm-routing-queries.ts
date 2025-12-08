@@ -14,8 +14,8 @@ export interface TestQuery {
     id: string;
     /** Human-readable description */
     description: string;
-    /** The message content to send */
-    content: string;
+    /** The message content to send (or array for multi-turn) */
+    content: string | string[];
     /** Category for grouping results */
     category: "routing" | "tools" | "reasoning" | "overrides" | "edge-cases";
     /** Optional overrides to send with the request */
@@ -43,6 +43,8 @@ export interface TestQuery {
     slow?: boolean;
     /** Skip this test by default */
     skip?: boolean;
+    /** Multi-turn test - requires special handling */
+    multiTurn?: boolean;
 }
 
 /**
@@ -192,6 +194,23 @@ export const TEST_QUERIES: TestQuery[] = [
             reasoningEnabled: false,
             shouldSucceed: true,
         },
+    },
+    {
+        id: "reasoning-multi-turn",
+        description: "Multi-turn conversation with reasoning should not error",
+        content: [
+            "Solve this riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+            "Now explain your reasoning process for solving that riddle",
+        ],
+        category: "reasoning",
+        overrides: {
+            reasoningOverride: "medium",
+        },
+        expectations: {
+            reasoningEnabled: true,
+            shouldSucceed: true,
+        },
+        multiTurn: true,
     },
 
     // ========================================================================
