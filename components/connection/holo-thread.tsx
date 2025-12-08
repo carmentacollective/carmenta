@@ -930,12 +930,16 @@ function Composer({ isNewConversation }: ComposerProps) {
                 return;
             }
 
-            if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+            if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (input.trim() || completedFiles.length > 0)
+            ) {
                 e.preventDefault();
                 handleSubmit(e as unknown as FormEvent);
             }
         },
-        [isComposing, isLoading, input, handleStop, handleSubmit]
+        [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
     );
 
     // Auto-resize textarea
