@@ -67,9 +67,12 @@ export function DesignLabShell({
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
             if (
-                e.target instanceof HTMLInputElement ||
-                e.target instanceof HTMLTextAreaElement
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement ||
+                target.isContentEditable
             ) {
                 return;
             }
