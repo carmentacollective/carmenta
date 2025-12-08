@@ -220,6 +220,11 @@ export default function HomePage() {
                         </div>
                     </div>
 
+                    {/* Primary tagline - always visible */}
+                    <h1 className="mb-12 text-4xl font-light text-foreground/90 sm:mb-14 sm:text-5xl lg:text-6xl">
+                        Create at the speed of thought.
+                    </h1>
+
                     {/* Rotating text content - centered block, LEFT-ALIGNED text */}
                     <div
                         onClick={() => setPaused((p) => !p)}
@@ -231,13 +236,13 @@ export default function HomePage() {
                         )}
                     >
                         {/* Headline with typewriter effect - LEFT ALIGNED */}
-                        <h1 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
+                        <h2 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
                             {displayedChars}
                             {phase === "typing" &&
                                 displayedChars.length < headline.length && (
                                     <span className="ml-1 inline-block h-8 w-0.5 animate-pulse bg-primary/70 align-middle sm:h-10 lg:h-12" />
                                 )}
-                        </h1>
+                        </h2>
 
                         {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
                         <p
@@ -274,14 +279,17 @@ export default function HomePage() {
                     </div>
 
                     {/* Connect CTA */}
-                    <div className="mt-12 sm:mt-16">
+                    <div className="mt-12 flex flex-col items-center gap-3 sm:mt-16">
                         <Link
                             href="/connection/new"
                             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3 text-base font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
                         >
-                            Connect
+                            Connect to AI
                             <ArrowRight className="h-4 w-4" />
                         </Link>
+                        <p className="text-sm text-foreground/60">
+                            Let&apos;s create together.
+                        </p>
                     </div>
 
                     {/* Progress dots */}

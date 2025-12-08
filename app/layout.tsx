@@ -42,9 +42,9 @@ export const viewport = {
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://carmenta.ai"),
-    title: "Carmenta - One Interface. Every Model. Complete Memory.",
+    title: "Carmenta – Create at the Speed of Thought",
     description:
-        "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs. Heart-centered AI for builders who work at the speed of thought.",
+        "Create at the speed of thought. One interface, every model, memory that persists. Claude, GPT, Gemini, Grok—unified. Partnership, not tool-use. Heart-centered AI for builders.",
 
     appleWebApp: {
         capable: true,
@@ -63,16 +63,16 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://carmenta.ai",
         siteName: "Carmenta",
-        title: "Carmenta - One Interface. Every Model. Complete Memory.",
+        title: "Carmenta – Create at the Speed of Thought",
         description:
-            "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
+            "Create at the speed of thought. One interface, every model, memory that persists. Partnership, not tool-use. Heart-centered AI for builders.",
     },
 
     twitter: {
         card: "summary_large_image",
-        title: "Carmenta - One Interface. Every Model. Complete Memory.",
+        title: "Carmenta – Create at the Speed of Thought",
         description:
-            "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
+            "Create at the speed of thought. One interface, every model, memory that persists. Partnership, not tool-use. Heart-centered AI for builders.",
     },
 
     keywords: [
