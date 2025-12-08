@@ -53,8 +53,10 @@ describe("decodeConnectionId", () => {
         }
     });
 
-    it("throws on invalid Sqid format", () => {
-        expect(() => decodeConnectionId("")).toThrow();
+    it("returns null on invalid Sqid format", () => {
+        expect(decodeConnectionId("")).toBeNull();
+        expect(decodeConnectionId("invalid!")).toBeNull();
+        expect(decodeConnectionId("UPPERCASE")).toBeNull();
     });
 });
 

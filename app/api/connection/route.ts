@@ -293,6 +293,12 @@ export async function POST(req: Request) {
         if (existingConnectionId) {
             // Decode Sqid string to internal integer ID
             connectionId = decodeConnectionId(existingConnectionId);
+            if (connectionId === null) {
+                return new Response(
+                    JSON.stringify({ error: "Invalid connection ID" }),
+                    { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+            }
             connectionPublicId = existingConnectionId;
         } else {
             // New connection - create it with title from concierge
