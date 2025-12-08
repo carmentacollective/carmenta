@@ -91,6 +91,24 @@ async function getDbUser() {
 }
 
 /**
+ * Validates connection access: decodes ID, fetches connection, verifies ownership.
+ * Returns null if any step fails (invalid ID, not found, or unauthorized).
+ */
+async function validateConnectionAccess(connectionId: string, userId: string) {
+    const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        return null;
+    }
+
+    const connection = await getConnectionWithMessages(internalId);
+    if (!connection || connection.userId !== userId) {
+        return null;
+    }
+
+    return connection;
+}
+
+/**
  * Creates a new connection and returns id and slug for navigation
  */
 export async function createNewConnection(): Promise<CreateConnectionResult> {
@@ -149,26 +167,16 @@ export async function loadConnection(connectionId: string): Promise<{
     messages: UIMessageLike[];
 } | null> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         return null;
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
-        return null;
-    }
-
-    const connection = await getConnectionWithMessages(internalId);
-
-    if (!connection || connection.userId !== dbUser.id) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         return null;
     }
 
     const messages = mapConnectionMessagesToUI(connection);
-
-    // Convert to public connection with string ID
     const publicConnection: PublicConnectionWithMessages =
         toPublicConnection(connection);
 
@@ -183,24 +191,16 @@ export async function loadConnectionMessages(
     connectionId: string
 ): Promise<UIMessageLike[]> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         return [];
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         return [];
     }
 
-    // Verify ownership first
-    const connection = await getConnectionWithMessages(internalId);
-    if (!connection || connection.userId !== dbUser.id) {
-        return [];
-    }
-
-    return dbLoadMessages(internalId);
+    return dbLoadMessages(connection.id);
 }
 
 /**
@@ -217,24 +217,16 @@ export async function updateConnection(
     }
 ): Promise<PublicConnection | null> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         return null;
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         return null;
     }
 
-    // Verify ownership
-    const connection = await getConnectionWithMessages(internalId);
-    if (!connection || connection.userId !== dbUser.id) {
-        return null;
-    }
-
-    const updated = await dbUpdateConnection(internalId, updates);
+    const updated = await dbUpdateConnection(connection.id, updates);
     return updated ? toPublicConnection(updated) : null;
 }
 
@@ -244,24 +236,16 @@ export async function updateConnection(
  */
 export async function archiveConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         throw new Error("Not authenticated");
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         throw new Error("Connection not found or not authorized");
     }
 
-    // Verify ownership
-    const connection = await getConnectionWithMessages(internalId);
-    if (!connection || connection.userId !== dbUser.id) {
-        throw new Error("Connection not found or not authorized");
-    }
-
-    await dbArchiveConnection(internalId);
+    await dbArchiveConnection(connection.id);
 }
 
 /**
@@ -270,24 +254,16 @@ export async function archiveConnection(connectionId: string): Promise<void> {
  */
 export async function deleteConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         throw new Error("Not authenticated");
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         throw new Error("Connection not found or not authorized");
     }
 
-    // Verify ownership
-    const connection = await getConnectionWithMessages(internalId);
-    if (!connection || connection.userId !== dbUser.id) {
-        throw new Error("Connection not found or not authorized");
-    }
-
-    await dbDeleteConnection(internalId);
+    await dbDeleteConnection(connection.id);
 }
 
 /**
@@ -299,20 +275,12 @@ export async function getConnectionMetadata(
     connectionId: string
 ): Promise<{ title: string | null; slug: string } | null> {
     const dbUser = await getDbUser();
-
     if (!dbUser) {
         return null;
     }
 
-    // Decode Sqid to internal integer ID
-    const internalId = decodeConnectionId(connectionId);
-    if (internalId === null) {
-        return null;
-    }
-
-    const connection = await getConnectionWithMessages(internalId);
-
-    if (!connection || connection.userId !== dbUser.id) {
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
         return null;
     }
 
