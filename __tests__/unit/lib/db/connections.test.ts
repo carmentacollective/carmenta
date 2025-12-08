@@ -10,18 +10,7 @@
  * - Window close / recovery simulation
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-
-// Mock the title generator to avoid LLM calls in tests
-vi.mock("@/lib/db/title-generator", () => ({
-    generateTitle: vi.fn((message: string) => {
-        // Simulate LLM-style title generation with truncation
-        if (message.length > 50) {
-            return Promise.resolve(message.slice(0, 47) + "...");
-        }
-        return Promise.resolve(message);
-    }),
-}));
+import { describe, it, expect, beforeEach } from "vitest";
 
 // Use native crypto.randomUUID() instead of uuid package
 const uuid = () => crypto.randomUUID();
@@ -41,7 +30,6 @@ import {
     updateStreamingStatus,
     markAsBackground,
     findInterruptedConnections,
-    generateTitleFromFirstMessage,
 } from "@/lib/db/connections";
 import {
     mapUIPartToDBPart,
@@ -939,70 +927,5 @@ describe("Message Mapping", () => {
             expect(parts[0].order).toBe(0);
             expect(parts[1].order).toBe(1);
         });
-    });
-});
-
-// ============================================================================
-// TITLE GENERATION TESTS
-// ============================================================================
-
-describe("Title Generation", () => {
-    let testUser: Awaited<ReturnType<typeof createTestUser>>;
-
-    beforeEach(async () => {
-        testUser = await createTestUser();
-    });
-
-    it("generates title from first user message", async () => {
-        const connection = await createConnection(testUser.id);
-        await saveMessage(
-            connection.id,
-            createTextMessage(uuid(), "user", "How do I cook pasta?")
-        );
-
-        await generateTitleFromFirstMessage(connection.id);
-
-        const conv = await getConnectionWithMessages(connection.id);
-        expect(conv!.title).toBe("How do I cook pasta?");
-    });
-
-    it("truncates long messages via LLM fallback", async () => {
-        const connection = await createConnection(testUser.id);
-        const longMessage = "A".repeat(100);
-        await saveMessage(
-            connection.id,
-            createTextMessage(uuid(), "user", longMessage)
-        );
-
-        await generateTitleFromFirstMessage(connection.id);
-
-        const conv = await getConnectionWithMessages(connection.id);
-        // Mock returns 47 chars + "..." = 50 total
-        expect(conv!.title).toHaveLength(50);
-        expect(conv!.title!.endsWith("...")).toBe(true);
-    });
-
-    it("does not overwrite existing title", async () => {
-        const connection = await createConnection(testUser.id, "Existing Title");
-        await saveMessage(connection.id, createTextMessage(uuid(), "user", "Hello"));
-
-        await generateTitleFromFirstMessage(connection.id);
-
-        const conv = await getConnectionWithMessages(connection.id);
-        expect(conv!.title).toBe("Existing Title");
-    });
-
-    it("handles connection with no user messages", async () => {
-        const connection = await createConnection(testUser.id);
-        // Only assistant messages, no user messages - title should not be generated
-        await saveMessage(
-            connection.id,
-            createTextMessage(uuid(), "assistant", "Hello, how can I help?")
-        );
-
-        await generateTitleFromFirstMessage(connection.id);
-
-        const conv = await getConnectionWithMessages(connection.id);
-        expect(conv!.title).toBeNull();
     });
 });

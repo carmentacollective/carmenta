@@ -97,7 +97,6 @@ export {
     updateStreamingStatus,
     markAsBackground,
     findInterruptedConnections,
-    generateTitleFromFirstMessage,
     mapConnectionMessagesToUI,
     type ConnectionWithMessages,
     type MessageWithParts,

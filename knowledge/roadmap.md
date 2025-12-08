@@ -89,7 +89,7 @@ The page lives at `/connect` and the experience is called "connecting with Carme
 
 ---
 
-## M1: Soul Proven ✅ MOSTLY COMPLETE
+## M1: Soul Proven ✅ COMPLETE
 
 **Persona:** Nick (see personas.md) **Signal:** "The core experience works and feels
 like Carmenta" **Test:** Does this feel meaningfully different from ChatGPT/Claude? Do
@@ -110,23 +110,16 @@ warm, collaborative, intelligent. The soul is there before the features.
 | **Error Handling**     | ✅     | Sentry integration, graceful error states          |
 | **Observability**      | ✅     | Pino structured logging, test-aware silence        |
 | **Thinking Indicator** | ✅     | Glass card with shimmer, warm varied messages      |
-| **Status Indicators**  | 🔨     | Tool execution states, debug mode for admins       |
-| **Delight Layer**      | 🔨     | Variable reinforcement, occasional celebrations    |
-
-### Remaining Work
-
-- **Status Indicators**: Complete tool execution feedback
-  (pending/running/complete/error)
-- **Delight Integration**: Hash-based variable reinforcement for warmth
-- **System Prompt Refinement**: Ensure consistent "we" framing in all responses
+| **Status Indicators**  | ✅     | Tool execution states (4-state badge), debug panel |
+| **Delight Layer**      | ✅     | Hash-based variable reinforcement, celebrations    |
 
 ### Success Criteria
 
 - Can have a multi-turn conversation ✅
 - Responses stream with low perceived latency ✅
-- Heart-centered "we" tone is consistent (needs verification)
+- Heart-centered "we" tone is consistent ✅
 - Errors display helpfully, not as stack traces ✅
-- You actually use it for real conversations (dogfooding ongoing)
+- You actually use it for real conversations ✅
 
 ### Not Yet
 
@@ -157,6 +150,7 @@ return because Carmenta knows them, not just because it's capable.
 | **Conversations**    | ✅     | History via Connection Chooser, search past             |
 | **Reasoning Tokens** | 🔨     | Extended thinking display, auto-collapse, warm messages |
 | **Model Selection**  | ✅     | User choice per conversation with stepped slider        |
+| **File Attachments** | ✅     | Upload, validation, image processing, model routing     |
 | **Onboarding**       | ⏳     | Profile collection, quick capability demo               |
 | **Analytics**        | ⏳     | PostHog integration - who uses what, retention          |
 | **Usage Metering**   | ⏳     | Token counting, cost attribution (no billing yet)       |
@@ -191,10 +185,17 @@ return because Carmenta knows them, not just because it's capable.
 ### Not Yet
 
 - No voice
-- No file uploads
 - No dynamic/automatic model routing (M3)
 - No service integrations
 - No AI team
+
+### Built Ahead of Schedule
+
+- **File Attachments** - Originally planned for M3, built in M2
+  - Upload handling (lib/storage/upload.ts)
+  - File validation and processing (lib/storage/file-validator.ts, image-processor.ts)
+  - Model routing for vision and documents (lib/storage/model-routing.ts)
+  - UI components (file-picker-button.tsx, file-preview.tsx, upload-progress.tsx)
 
 ---
 
@@ -225,8 +226,7 @@ capability, not just because it has more features.
 | **Voice**                 | ⏳     | STT, TTS, natural conversation, push-to-talk                   |
 | **Model Intelligence**    | ⏳     | Routing rubric, task classification, automatic model selection |
 | **Concierge (Full)**      | ⏳     | Query classification, context assembly, intelligent routing    |
-| **File Attachments**      | ⏳     | PDF, images, documents into conversation context               |
-| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI, file upload                  |
+| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI                               |
 | **Concierge Improvement** | ⏳     | Live query evaluation, pattern detection, self-improvement     |
 
 ### Architecture: Model Intelligence
@@ -256,21 +256,20 @@ The full Concierge ([spec](./components/concierge.md)) operates in three phases:
 
 - **Voice providers**: STT (Whisper? Deepgram?), TTS (ElevenLabs? OpenAI?)
 - **Voice UX**: Wake word? Push-to-talk? Both? Latency targets?
-- **File processing**: RAG strategy, chunking approach, vision routing
 - **Model routing approach**: Fast LLM classification? RouteLLM? OpenRouter auto-router?
 
 ### Enhancements to Existing
 
 - **Memory**: Fast retrieval (< 100ms), doesn't slow down responses
 - **Concierge**: Signal-based classification, reasoning level determination
-- **Interface**: Voice button, file drag-drop, mobile-responsive
+- **File Attachments**: Advanced RAG for documents, enhanced vision routing
+- **Interface**: Voice button, mobile-responsive, polished interactions
 - **Delight**: Context-aware celebrations, milestone recognition
 
 ### Success Criteria
 
 - Voice conversations feel natural, not robotic
 - Total latency supports flow (voice → response feels conversational)
-- File uploads work seamlessly for common formats
 - Model selection feels right (quick questions fast, deep analysis thorough)
 - Users report switching from other AI tools
 - Daily retention among active users
@@ -382,8 +381,8 @@ M0: Foundation → Hosting → Testing                               ✅ COMPLET
          ↓
 M0.5: Interface → Concierge (stub) → Persistence → Chooser       ✅ COMPLETE
          ↓
-M1: Data Storage → Error Handling → Observability                ✅ MOSTLY DONE
-    Status Indicators → Delight Layer                            🔨 IN PROGRESS
+M1: Data Storage → Error Handling → Observability                ✅ COMPLETE
+    Status Indicators → Delight Layer                            ✅ COMPLETE
          ↓
 M2: Auth ✅ → Memory → Reasoning Tokens → Onboarding → Analytics
          ↓
@@ -414,13 +413,12 @@ Decisions that shaped the architecture - these are settled, not open questions:
 
 ## Open Questions
 
-### Current Focus (M1 → M2)
+### Current Focus (M2)
 
 - **Memory architecture**: pgvector in Supabase? External service (Zep, Mem0)? What
   context window strategy?
 - **Reasoning level calibration**: How accurately can we determine appropriate effort
   from query alone?
-- **Delight implementation**: What's the right balance of celebration frequency?
 
 ### Sequencing Rationale
 
