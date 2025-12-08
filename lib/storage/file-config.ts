@@ -44,6 +44,12 @@ export const SIZE_LIMITS = {
 } as const;
 
 /**
+ * Text paste threshold for auto-attachment (roughly 200 words, 1/3 page)
+ * Paste text exceeding this character count becomes a file attachment
+ */
+export const PASTE_THRESHOLD = 1000;
+
+/**
  * Storage bucket name for Supabase
  */
 export const STORAGE_BUCKET = "carmenta-files";
