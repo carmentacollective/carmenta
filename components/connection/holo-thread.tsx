@@ -863,8 +863,9 @@ function Composer({ isNewConversation }: ComposerProps) {
         async (e: FormEvent) => {
             e.preventDefault();
 
-            // Auto-insert text file attachments inline (Anthropic doesn't support text files)
-            // Text MIME types that should be sent as inline content, not file attachments
+            // Auto-insert PASTED text file attachments inline (Anthropic doesn't support text files)
+            // Only process text files that have pasted content stored (from large paste feature)
+            // Text files from file picker don't have pasted content and should fail with clear error
             const TEXT_MIME_TYPES = [
                 "text/plain",
                 "text/markdown",
@@ -873,23 +874,25 @@ function Composer({ isNewConversation }: ComposerProps) {
             ];
             const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
 
-            // Find all text files with pasted content
-            const textFileIds = pendingFiles
-                .filter((p) => isTextFile(p.file.type))
+            // Find pasted text files (have content in pastedTextContent Map)
+            const pastedTextFileIds = pendingFiles
+                .filter(
+                    (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
+                )
                 .map((p) => p.id);
 
-            if (textFileIds.length > 0) {
-                // Collect all text content
+            if (pastedTextFileIds.length > 0) {
+                // Collect all pasted text content
                 const textContents: string[] = [];
-                for (const fileId of textFileIds) {
+                for (const fileId of pastedTextFileIds) {
                     const content = getTextContent(fileId);
                     if (content) {
                         textContents.push(content);
+                        removeFile(fileId);
                     }
-                    removeFile(fileId);
                 }
 
-                // Append to input
+                // Append to input and re-submit
                 if (textContents.length > 0) {
                     const combinedText = textContents.join("\n\n");
                     const newInput = input
