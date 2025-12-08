@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, type ComponentProps } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
     copyToClipboard,
@@ -226,48 +227,71 @@ export function CopyButton({
     // Simple button mode (no menu)
     if (!showMenu) {
         return (
-            <div className="relative inline-flex items-center">
-                <button
-                    onClick={handleSimpleCopy}
-                    aria-label={copied ? "Copied!" : ariaLabel}
-                    className={cn(buttonClasses, "w-7 rounded-md sm:w-8", className)}
-                    {...props}
-                >
-                    {copied ? (
-                        <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
-                    ) : (
-                        <Copy className={iconSize} />
-                    )}
-                </button>
-                {currentMessage && (
-                    <span
-                        className="pointer-events-none absolute left-full ml-2 max-w-32 truncate text-xs text-green-600 animate-in fade-in slide-in-from-left-1 sm:max-w-none sm:whitespace-nowrap"
-                        aria-live="polite"
-                    >
-                        {currentMessage}
-                    </span>
+            <motion.button
+                onClick={handleSimpleCopy}
+                aria-label={copied ? "Copied!" : ariaLabel}
+                layout
+                className={cn(
+                    buttonClasses,
+                    "gap-1.5 overflow-hidden rounded-md",
+                    !copied && "w-7 sm:w-8",
+                    className
                 )}
-            </div>
+                {...props}
+            >
+                {copied ? (
+                    <>
+                        <Check className={cn(iconSize, "flex-shrink-0")} />
+                        <motion.span
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: "auto" }}
+                            exit={{ opacity: 0, width: 0 }}
+                            className="whitespace-nowrap text-xs font-medium"
+                            aria-live="polite"
+                        >
+                            {currentMessage || "Copied"}
+                        </motion.span>
+                    </>
+                ) : (
+                    <Copy className={iconSize} />
+                )}
+            </motion.button>
         );
     }
 
     // Button with dropdown menu
     return (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-            <div className="relative flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5">
                 {/* Main copy button */}
-                <button
+                <motion.button
                     onClick={() => handleCopy("rich")}
                     aria-label={copied ? "Copied!" : ariaLabel}
-                    className={cn(buttonClasses, "rounded-l-md px-2", className)}
+                    layout
+                    className={cn(
+                        buttonClasses,
+                        "gap-1.5 overflow-hidden rounded-l-md px-2",
+                        className
+                    )}
                     {...props}
                 >
                     {copied ? (
-                        <Check className={cn(iconSize, "animate-in fade-in zoom-in")} />
+                        <>
+                            <Check className={cn(iconSize, "flex-shrink-0")} />
+                            <motion.span
+                                initial={{ opacity: 0, width: 0 }}
+                                animate={{ opacity: 1, width: "auto" }}
+                                exit={{ opacity: 0, width: 0 }}
+                                className="whitespace-nowrap text-xs font-medium"
+                                aria-live="polite"
+                            >
+                                {currentMessage || "Copied"}
+                            </motion.span>
+                        </>
                     ) : (
                         <Copy className={iconSize} />
                     )}
-                </button>
+                </motion.button>
 
                 {/* Dropdown trigger */}
                 <DropdownMenuTrigger asChild>
@@ -281,16 +305,6 @@ export function CopyButton({
                         <ChevronDown className={chevronSize} />
                     </button>
                 </DropdownMenuTrigger>
-
-                {/* Delight message */}
-                {currentMessage && (
-                    <span
-                        className="pointer-events-none absolute left-full ml-2 max-w-32 truncate text-xs text-green-600 animate-in fade-in slide-in-from-left-1 sm:max-w-none sm:whitespace-nowrap"
-                        aria-live="polite"
-                    >
-                        {currentMessage}
-                    </span>
-                )}
             </div>
 
             <DropdownMenuContent align="end" className="w-48">
