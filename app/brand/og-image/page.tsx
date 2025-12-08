@@ -31,17 +31,15 @@ export default function OGImagePage() {
                     {/* Right side - Message */}
                     <div className="flex w-1/2 flex-col justify-center space-y-8 px-16">
                         <div className="space-y-4">
-                            <p className="text-3xl font-normal leading-tight text-foreground">
-                                One Interface.
+                            <p className="text-4xl font-light leading-tight text-foreground">
+                                Create at the speed
                                 <br />
-                                All AI Models.
-                                <br />
-                                Complete Memory.
+                                of thought.
                             </p>
                         </div>
                         <p className="text-xl leading-normal text-muted-foreground">
-                            Heart-centered AI for builders who work at the speed of
-                            thought
+                            One interface, every model, memory that persists.
+                            Partnership, not tool-use.
                         </p>
                     </div>
                 </div>

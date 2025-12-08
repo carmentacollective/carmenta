@@ -64,17 +64,16 @@ export function PreviewVariation1() {
                         Carmenta
                     </h1>
                     <p
-                        className="text-3xl font-normal"
-                        style={{ color: "#78648A", lineHeight: "1.3" }}
+                        className="text-4xl font-light"
+                        style={{ color: "#5A3C64", lineHeight: "1.3" }}
                     >
-                        One Interface, All AI, Complete Memory
+                        Create at the speed of thought.
                     </p>
                     <p
                         className="mx-auto max-w-3xl text-xl"
                         style={{ color: "#8A7A9C", lineHeight: "1.5" }}
                     >
-                        Memory-aware AI that remembers your projects, decisions, and
-                        context. Voice-first interface with purpose-built responses.
+                        One interface, every model, memory that persists. Partnership, not tool-use.
                     </p>
                 </div>
             </div>
@@ -103,23 +102,23 @@ export function PreviewVariation2() {
                         </h1>
                     </div>
                     <p
-                        className="text-2xl font-normal"
-                        style={{ color: "#78648A", lineHeight: "1.4" }}
+                        className="text-3xl font-light"
+                        style={{ color: "#5A3C64", lineHeight: "1.4" }}
                     >
-                        Work at the speed of thought with AI that remembers everything
+                        Create at the speed of thought.
                     </p>
                     <div className="space-y-3 text-lg" style={{ color: "#8A7A9C" }}>
                         <div className="flex items-start gap-3">
                             <span style={{ color: "#C4A3D4" }}>✓</span>
-                            <span>Complete memory across all conversations</span>
+                            <span>One interface, every model</span>
                         </div>
                         <div className="flex items-start gap-3">
                             <span style={{ color: "#C4A3D4" }}>✓</span>
-                            <span>Voice-first for natural flow state</span>
+                            <span>Memory that persists across conversations</span>
                         </div>
                         <div className="flex items-start gap-3">
                             <span style={{ color: "#C4A3D4" }}>✓</span>
-                            <span>Purpose-built responses, not chat bubbles</span>
+                            <span>Partnership, not tool-use</span>
                         </div>
                     </div>
                 </div>
@@ -150,21 +149,20 @@ export function PreviewVariation3() {
                 <div className="flex w-1/2 flex-col justify-center space-y-8 px-16">
                     <div className="space-y-4">
                         <p
-                            className="text-3xl font-normal"
+                            className="text-4xl font-light"
                             style={{ color: "#5A3C64", lineHeight: "1.3" }}
                         >
-                            One Interface.
+                            Create at the speed
                             <br />
-                            All AI Models.
-                            <br />
-                            Complete Memory.
+                            of thought.
                         </p>
                     </div>
                     <p
                         className="text-xl"
                         style={{ color: "#8A7A9C", lineHeight: "1.5" }}
                     >
-                        Heart-centered AI for builders who work at the speed of thought
+                        One interface, every model, memory that persists.
+                        Partnership, not tool-use.
                     </p>
                 </div>
             </div>
@@ -197,14 +195,13 @@ export function PreviewVariation4() {
                             className="text-lg font-medium uppercase tracking-wider"
                             style={{ color: "#C4A3D4" }}
                         >
-                            The Problem
+                            The Vision
                         </p>
                         <p
-                            className="text-2xl"
-                            style={{ color: "#78648A", lineHeight: "1.4" }}
+                            className="text-3xl font-light"
+                            style={{ color: "#5A3C64", lineHeight: "1.4" }}
                         >
-                            Fragmented AI tools. Every conversation starts fresh.
-                            Re-explaining context constantly.
+                            Create at the speed of thought.
                         </p>
                     </div>
                     <div className="space-y-3">
@@ -212,14 +209,14 @@ export function PreviewVariation4() {
                             className="text-lg font-medium uppercase tracking-wider"
                             style={{ color: "#C4A3D4" }}
                         >
-                            The Solution
+                            How We Get There
                         </p>
                         <p
                             className="text-2xl"
-                            style={{ color: "#5A3C64", lineHeight: "1.4" }}
+                            style={{ color: "#78648A", lineHeight: "1.4" }}
                         >
-                            One interface that remembers everything. Voice-first.
-                            Purpose-built responses. AI that works while you sleep.
+                            One interface, every model, memory that persists.
+                            Partnership, not tool-use.
                         </p>
                     </div>
                 </div>
@@ -247,21 +244,21 @@ export function PreviewVariation5() {
                         Carmenta
                     </h1>
                     <p
-                        className="mx-auto max-w-3xl text-2xl font-normal"
-                        style={{ color: "#78648A", lineHeight: "1.4" }}
+                        className="mx-auto max-w-3xl text-3xl font-light"
+                        style={{ color: "#5A3C64", lineHeight: "1.4" }}
                     >
-                        Named for the Roman goddess who invented the Latin alphabet
+                        Create at the speed of thought.
                     </p>
                     <p
                         className="mx-auto max-w-4xl text-xl"
                         style={{ color: "#8A7A9C", lineHeight: "1.5" }}
                     >
-                        Technology in service of human flourishing. Memory-aware AI for
-                        builders who work at the speed of thought.
+                        Named for the Roman goddess who invented the Latin alphabet.
+                        Technology in service of human flourishing.
                     </p>
                 </div>
                 <p className="text-lg font-medium" style={{ color: "#C4A3D4" }}>
-                    One Interface • All AI • Complete Memory
+                    One Interface • Every Model • Memory That Persists
                 </p>
             </div>
         </div>
