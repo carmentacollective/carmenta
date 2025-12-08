@@ -48,7 +48,11 @@ export const MarkdownRenderer = memo(
             </div>
         );
     },
-    (prev, next) => prev.content === next.content
+    (prev, next) =>
+        prev.content === next.content &&
+        prev.className === next.className &&
+        prev.inline === next.inline &&
+        prev.components === next.components
 );
 
 MarkdownRenderer.displayName = "MarkdownRenderer";
