@@ -412,7 +412,7 @@ us in.
 - `knowledge/components/knowledge-base.md` - Overall knowledge base vision
 - `knowledge/components/knowledge-base-storage.md` - Complete technical specification
 - `knowledge/components/file-attachments.md` - File upload and processing
-- `knowledge/components/memory.md` - Relationship to Memory system
+- `knowledge/components/memory.md` - Context retrieval patterns
 
 ## Decision Log
 

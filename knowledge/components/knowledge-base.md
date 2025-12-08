@@ -87,6 +87,141 @@ management tracks what changed when. Calendar tracks schedule evolution. Not for
 compliance - for understanding. See how your thinking evolved, what you learned, what
 decisions you made and when.
 
+## Ingestion Channels
+
+Data enters the knowledge base through three distinct channels, each with its own
+pattern and intelligence.
+
+### Channel 1: Conversations
+
+The most frequent source. Every conversation with Carmenta potentially produces
+knowledge base entries.
+
+**Flow**:
+
+1. User has conversation with Concierge
+2. Conversation completes (or reaches natural pause)
+3. [Knowledge Librarian](./knowledge-librarian.md) reviews conversation async
+4. Librarian extracts: decisions, insights, commitments, learnings
+5. Creates documents in appropriate KB locations
+6. User sees brief notification: "Noted: [topic]"
+
+**What Gets Extracted**:
+
+- Explicit decisions and their rationale
+- Commitments and action items
+- Research findings discussed
+- Preferences stated or revealed
+- Key facts worth remembering
+
+**What Doesn't Get Extracted**:
+
+- Casual chat, greetings
+- Ephemeral questions ("what time is it?")
+- Information already in KB (no duplication)
+- Noise and filler
+
+The Librarian errs toward conservation - better to miss some things than clutter the KB
+with noise. Users can always say "remember this" for explicit capture.
+
+### Channel 2: File Uploads
+
+Direct user action. Upload a file, it becomes permanent knowledge.
+
+**Flow**:
+
+1. User uploads file via [File Attachments](./file-attachments.md) component
+2. File stored in Supabase Storage (original preserved)
+3. Text extraction: PDF → Docling, Image → Vision + OCR, Audio → Whisper
+4. [Knowledge Librarian](./knowledge-librarian.md) determines placement
+5. Document created in KB with link to original file
+6. User sees file in KB structure
+
+**Processing Pipeline**:
+
+- Text extraction happens immediately (async, doesn't block conversation)
+- Librarian placement runs after extraction completes
+- Original file always preserved, text representation filed
+- Metadata extracted: topics, people mentioned, document type
+
+Files are the explicit "I want to keep this" action. Every uploaded file becomes
+permanent, searchable knowledge.
+
+### Channel 3: Integration Sync Agents
+
+External services (Limitless, Fireflies, Gmail, Slack, etc.) connect via scheduled AI
+team members - not direct API sync.
+
+**Why Agents, Not Direct Sync**:
+
+- Intelligence at ingestion: Agent decides what's worth keeping
+- Visibility: User sees "Limitless Agent synced 3 new transcripts"
+- Control: User can configure frequency, scope, filtering
+- Consistency: Same AI intelligence that organizes everything else
+- Debugging: Agent reports what it did, user can review
+
+**How It Works**:
+
+Each integration has a dedicated sync agent (part of [AI Team](./ai-team.md)):
+
+```
+Limitless Sync Agent
+├── Runs: Daily at 6am (user-configurable)
+├── Connects: Limitless API with user's OAuth token
+├── Pulls: New transcripts since last sync
+├── Filters: Drops <2min recordings, removes filler
+├── Transforms: Transcript → structured summary + full text
+├── Creates: KB documents in /integrations/limitless/ or contextual location
+├── Links: Connects to calendar events, related conversations
+└── Reports: "Synced 3 transcripts, 2 new topics identified"
+```
+
+**Integration Agent Responsibilities**:
+
+| Task          | What It Does                                    |
+| ------------- | ----------------------------------------------- |
+| Fetch         | Pull new data from external service API         |
+| Deduplicate   | Skip items already in KB (by source ID)         |
+| Filter        | Drop noise, low-value items based on heuristics |
+| Transform     | Convert to text, extract metadata               |
+| Contextualize | Link to existing KB content, identify topics    |
+| Place         | Determine KB location (may consult Librarian)   |
+| Report        | Tell user what was added, surface highlights    |
+
+**User Control**:
+
+- Enable/disable each integration
+- Configure sync frequency (hourly, daily, weekly)
+- Set filters: "Only sync meetings >30min", "Skip recurring standups"
+- Review sync history and undo if needed
+- Pause sync temporarily
+
+**Available Integrations** (planned):
+
+| Service      | Data Type                        | Sync Pattern          |
+| ------------ | -------------------------------- | --------------------- |
+| Limitless    | Audio transcripts, meeting notes | Daily or on-demand    |
+| Fireflies.ai | Meeting transcripts              | After each meeting    |
+| Gmail        | Important emails, threads        | Continuous or batched |
+| Slack        | Starred messages, key threads    | Daily digest          |
+| Google Drive | Watched folders                  | On change             |
+| Notion       | Synced pages/databases           | On change             |
+| Calendar     | Events with context              | Continuous            |
+
+Each integration is a [Scheduled Agent](./scheduled-agents.md) with specific
+configuration for that service.
+
+### Channel Summary
+
+| Channel          | Trigger              | Intelligence                | User Action      |
+| ---------------- | -------------------- | --------------------------- | ---------------- |
+| Conversations    | After each chat      | Librarian extracts insights | None (automatic) |
+| File Uploads     | User uploads file    | Librarian places in KB      | Explicit upload  |
+| Integration Sync | Scheduled agent runs | Sync agent + Librarian      | Initial setup    |
+
+All three channels converge on the Knowledge Librarian for final placement and
+organization. The Librarian maintains consistency regardless of where data originated.
+
 ## What Success Looks Like
 
 **For Users**:
@@ -117,6 +252,13 @@ phased rollout plan, see [Knowledge Base Storage](./knowledge-base-storage.md).
 **Hierarchical Organization**:
 
 ```
+/profile/
+  /identity.txt                    # Who you are, professional context
+  /preferences.txt                 # Communication style, how you work
+  /people/                         # People you know, relationships
+    /sarah-chen.txt
+    /mike-founder.txt
+  /goals.txt                       # Current priorities, what you're working toward
 /projects/
   /carmenta/
     /research/
@@ -139,6 +281,10 @@ phased rollout plan, see [Knowledge Base Storage](./knowledge-base-storage.md).
   /product-ideas.txt
   /learnings.txt
 ```
+
+The `/profile/` folder is special: its contents are injected into every conversation
+context. This is how Carmenta "knows" you without re-explaining. Profile documents are
+updated continuously as the Librarian learns from conversations.
 
 The AI creates and maintains this hierarchy based on understanding your work and
 interests. Conversations populate the structure just like uploaded files. A conversation
@@ -260,16 +406,16 @@ about database architecture creates entries in `/projects/carmenta/decisions/` a
 **File Attachments**:
 
 - Every uploaded file → text conversion → knowledge base placement
-- Original files stored in Uploadcare
+- Original files stored in Supabase Storage
 - Text representations in filesystem
 
-**Memory**:
+**Profile & Context**:
 
-- Knowledge base stores artifacts (files, documents, conversation insights)
-- Memory stores facts about you (preferences, context, relationships)
-- Separate but complementary
-- Memory references knowledge base: "Nick's architecture decisions are in
-  `/projects/carmenta/decisions/`"
+- `/profile/` folder contains identity, preferences, relationships, goals
+- Profile content injected at START of every conversation context
+- Librarian continuously updates profile as she learns from conversations
+- This is how Carmenta "remembers" you - not a separate Memory system, just KB documents
+  with special retrieval treatment
 
 **Concierge**:
 

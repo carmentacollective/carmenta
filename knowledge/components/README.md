@@ -57,10 +57,11 @@ Web application shell and AG-UI protocol. Purpose-built responses - chat when ch
 sense, rich interactive experiences when they don't. Web first, then PWA, Electron,
 mobile.
 
-### [Memory](memory.md)
+### [Context Retrieval](memory.md)
 
-Context and memory management. Remembers who you are, what you're working on, what
-you've decided, who you know. The AI always has context without re-explanation.
+How relevant knowledge is retrieved and injected into conversations. Profile at start,
+relevant docs at end - the attention patterns that make Carmenta feel like she knows
+you.
 
 ### [Service Connectivity](service-connectivity.md)
 
