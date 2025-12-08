@@ -636,14 +636,16 @@ Needs: extraction prompt, validation, storage (extend documents table or separat
 - Can users "pin" a file to prevent AI reorganization?
 - Manual move/rename - how does AI learn from this?
 
-### Concierge Integration
+### AI Integration
 
-How does Concierge query knowledge base for conversation context?
+The [Knowledge Librarian](./knowledge-librarian.md) is the intelligence layer that
+connects the knowledge base to conversations. She handles:
 
-- What triggers a knowledge base lookup?
-- How many documents get injected as context?
-- How is relevance determined (FTS score? Recency? Both)?
-- Format for injecting knowledge into system prompt?
+- Retrieval: Finding relevant context based on Concierge signals
+- Extraction: Capturing insights worth preserving post-conversation
+- Placement: Deciding where new documents belong
+
+See the Librarian spec for how this works with Concierge.
 
 ### File Attachments Handoff
 
