@@ -73,7 +73,8 @@ export function PreviewVariation1() {
                         className="mx-auto max-w-3xl text-xl"
                         style={{ color: "#8A7A9C", lineHeight: "1.5" }}
                     >
-                        One interface, every model, memory that persists. Partnership, not tool-use.
+                        Heart-centered AI for builders. One interface, every model,
+                        memory that persists.
                     </p>
                 </div>
             </div>
@@ -110,15 +111,15 @@ export function PreviewVariation2() {
                     <div className="space-y-3 text-lg" style={{ color: "#8A7A9C" }}>
                         <div className="flex items-start gap-3">
                             <span style={{ color: "#C4A3D4" }}>✓</span>
+                            <span>Heart-centered AI partnership</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <span style={{ color: "#C4A3D4" }}>✓</span>
                             <span>One interface, every model</span>
                         </div>
                         <div className="flex items-start gap-3">
                             <span style={{ color: "#C4A3D4" }}>✓</span>
                             <span>Memory that persists across conversations</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <span style={{ color: "#C4A3D4" }}>✓</span>
-                            <span>Partnership, not tool-use</span>
                         </div>
                     </div>
                 </div>
@@ -161,8 +162,8 @@ export function PreviewVariation3() {
                         className="text-xl"
                         style={{ color: "#8A7A9C", lineHeight: "1.5" }}
                     >
-                        One interface, every model, memory that persists.
-                        Partnership, not tool-use.
+                        Heart-centered AI for builders. One interface, every model,
+                        memory that persists.
                     </p>
                 </div>
             </div>
@@ -215,8 +216,8 @@ export function PreviewVariation4() {
                             className="text-2xl"
                             style={{ color: "#78648A", lineHeight: "1.4" }}
                         >
-                            One interface, every model, memory that persists.
-                            Partnership, not tool-use.
+                            Heart-centered AI partnership. One interface, every model,
+                            memory that persists.
                         </p>
                     </div>
                 </div>
