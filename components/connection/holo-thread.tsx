@@ -49,6 +49,7 @@ import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
 import { FilePreview } from "./file-preview";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
+import { ExpandableText } from "@/components/ui/expandable-text";
 
 export function HoloThread() {
     return (
@@ -535,30 +536,32 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                         </div>
                     )}
 
-                    {/* Text content */}
+                    {/* Text content with expansion for long messages */}
                     {content && (
-                        <div className="holo-markdown">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={{
-                                    code: CodeBlock,
-                                    table: ({ children }) => (
-                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
-                                            <table
-                                                style={{
-                                                    borderCollapse: "separate",
-                                                    borderSpacing: 0,
-                                                }}
-                                            >
-                                                {children}
-                                            </table>
-                                        </div>
-                                    ),
-                                }}
-                            >
-                                {content}
-                            </ReactMarkdown>
-                        </div>
+                        <ExpandableText>
+                            <div className="holo-markdown">
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        code: CodeBlock,
+                                        table: ({ children }) => (
+                                            <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+                                                <table
+                                                    style={{
+                                                        borderCollapse: "separate",
+                                                        borderSpacing: 0,
+                                                    }}
+                                                >
+                                                    {children}
+                                                </table>
+                                            </div>
+                                        ),
+                                    }}
+                                >
+                                    {content}
+                                </ReactMarkdown>
+                            </div>
+                        </ExpandableText>
                     )}
                 </div>
                 <MessageActions content={content} isLast={isLast} align="right" />

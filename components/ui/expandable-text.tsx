@@ -1,0 +1,140 @@
+"use client";
+
+/**
+ * ExpandableText - Standard drawer pattern for long text content
+ *
+ * Design decisions documented in knowledge/components/text-expansion.md:
+ * - Uses blur gradient mask matching chat viewport fade
+ * - Separate button avoids text selection conflicts
+ * - 300ms height transition with ease-out easing
+ * - Threshold: 4 lines (~120px) or semantic paragraph breaks
+ */
+
+import { useState, useRef, useLayoutEffect, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/**
+ * Height threshold in pixels (approximately 4 lines at 1.5 line-height with 16px font)
+ * Based on spec: "Show expand button when content exceeds 4 lines (approximately 120px)"
+ */
+const COLLAPSE_HEIGHT_PX = 120;
+
+/**
+ * Large max-height for expanded state.
+ * CSS transitions need numeric values on both ends - can't transition to "none".
+ * This value accommodates any reasonable content length.
+ */
+const EXPANDED_MAX_HEIGHT_PX = 10000;
+
+interface ExpandableTextProps {
+    /** Content to render - can be text or any ReactNode */
+    children: ReactNode;
+    /** Optional threshold override in pixels */
+    threshold?: number;
+    /** Additional class name for the container */
+    className?: string;
+    /** Whether to show the dashed frame around content */
+    showFrame?: boolean;
+}
+
+export function ExpandableText({
+    children,
+    threshold = COLLAPSE_HEIGHT_PX,
+    className,
+    showFrame = false,
+}: ExpandableTextProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [needsExpansion, setNeedsExpansion] = useState(false);
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    // Measure content height to determine if expansion is needed
+    // useLayoutEffect prevents flash of uncollapsed content on initial render
+    useLayoutEffect(() => {
+        if (!contentRef.current) return;
+
+        const checkHeight = () => {
+            const scrollHeight = contentRef.current?.scrollHeight ?? 0;
+            setNeedsExpansion(scrollHeight > threshold);
+        };
+
+        checkHeight();
+
+        // Re-check on resize (content might reflow)
+        const observer = new ResizeObserver(checkHeight);
+        observer.observe(contentRef.current);
+
+        return () => observer.disconnect();
+    }, [threshold, children, needsExpansion]);
+
+    // If content doesn't need expansion, render without any controls
+    if (!needsExpansion) {
+        return (
+            <div className={cn(showFrame && "expandable-text-frame", className)}>
+                <div ref={contentRef}>{children}</div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={cn("relative", showFrame && "expandable-text-frame", className)}
+        >
+            {/* Content container with animated height */}
+            <div
+                ref={contentRef}
+                className={cn(
+                    "overflow-hidden transition-[max-height] duration-300 ease-out",
+                    !isExpanded && "expandable-text-fade"
+                )}
+                style={{
+                    maxHeight: isExpanded
+                        ? `${EXPANDED_MAX_HEIGHT_PX}px`
+                        : `${threshold}px`,
+                }}
+            >
+                {children}
+            </div>
+
+            {/* Ellipsis indicator when collapsed */}
+            {!isExpanded && (
+                <div className="flex justify-center pt-1">
+                    <span className="text-xl text-purple-300">...</span>
+                </div>
+            )}
+
+            {/* Expand/collapse button */}
+            <div className="flex justify-center pt-4">
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? "Collapse message" : "Expand message"}
+                    className={cn(
+                        // Base sizing
+                        "flex h-8 w-8 items-center justify-center rounded-full",
+                        // Holographic gradient background
+                        "bg-gradient-to-b from-purple-300 to-pink-300 opacity-90",
+                        // Shadow and ring
+                        "shadow-lg ring-1 ring-white/20",
+                        // Transitions
+                        "transition-all duration-200",
+                        // Hover state
+                        "hover:scale-110 hover:shadow-xl",
+                        // Active state
+                        "active:translate-y-0.5",
+                        // Focus state
+                        "focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    )}
+                >
+                    <ChevronDown
+                        className={cn(
+                            "h-4 w-4 text-white transition-transform duration-300",
+                            isExpanded && "rotate-180"
+                        )}
+                    />
+                </button>
+            </div>
+        </div>
+    );
+}
