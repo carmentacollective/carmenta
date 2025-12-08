@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Search, ExternalLink, AlertCircle } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -31,6 +32,24 @@ export function WebSearchResults({
     results,
     error,
 }: WebSearchResultsProps) {
+    // Memoized components object for stable reference across renders
+    const snippetComponents = useMemo(
+        () => ({
+            a: ({ href, children, ...props }: any) => (
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline decoration-primary/30 hover:decoration-primary"
+                    {...props}
+                >
+                    {children}
+                </a>
+            ),
+        }),
+        []
+    );
+
     // Loading state
     if (status === "running") {
         return (
@@ -105,19 +124,7 @@ export function WebSearchResults({
                             <MarkdownRenderer
                                 content={item.snippet}
                                 inline
-                                components={{
-                                    a: ({ href, children, ...props }) => (
-                                        <a
-                                            href={href}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-primary underline decoration-primary/30 hover:decoration-primary"
-                                            {...props}
-                                        >
-                                            {children}
-                                        </a>
-                                    ),
-                                }}
+                                components={snippetComponents}
                             />
                         </div>
                         {item.publishedDate && (
