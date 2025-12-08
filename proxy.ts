@@ -17,6 +17,8 @@ const isPublicRoute = createRouteMatcher([
     "/sign-in(.*)",
     "/sign-up(.*)",
     "/ai-first-development(.*)",
+    "/brand(.*)",
+    "/design-lab(.*)",
     // Static assets and Next.js internals
     "/favicon.ico",
     "/robots.txt",
