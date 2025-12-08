@@ -354,7 +354,7 @@
     }
 
     .holo-markdown thead {
-        @apply bg-foreground/5;
+        @apply bg-foreground/12;
     }
 
     .holo-markdown th {
