@@ -45,6 +45,12 @@ const FEATURES = [
         available: true,
     },
     {
+        headline: "Share anything. We'll handle it.",
+        subheading:
+            "Images, PDFs, audio, code—we route each to the model that understands it best. Claude for visuals and documents. Gemini for audio. Your files go exactly where they should.",
+        available: true,
+    },
+    {
         headline: "Your knowledge, organized.",
         subheading:
             "Every file, conversation, and insight—organized by AI into a structure that makes sense. Not a black box. A library you can see, browse, and trust. You never re-explain.",
