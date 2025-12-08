@@ -4,7 +4,7 @@
  * File Attachment Context
  *
  * Manages pending file uploads for the composer.
- * Provides upload queue state and methods.
+ * Uses a reducer for clean state management.
  */
 
 import {
@@ -12,14 +12,53 @@ import {
     useContext,
     useState,
     useCallback,
+    useReducer,
+    useRef,
     type ReactNode,
 } from "react";
 import { nanoid } from "nanoid";
 import { useUser } from "@clerk/nextjs";
 import { uploadFile } from "@/lib/storage/upload";
 import { logger } from "@/lib/client-logger";
-import type { UploadProgress, UploadedFile } from "@/lib/storage/types";
+import type { UploadProgress, UploadedFile, UploadStatus } from "@/lib/storage/types";
 import { useConnection } from "./connection-context";
+
+// Upload state reducer actions
+type UploadAction =
+    | { type: "ADD"; uploads: UploadProgress[] }
+    | { type: "UPDATE_STATUS"; id: string; status: UploadStatus }
+    | { type: "COMPLETE"; id: string; result: UploadedFile }
+    | { type: "ERROR"; id: string; error: string }
+    | { type: "REMOVE"; id: string }
+    | { type: "CLEAR" };
+
+function uploadReducer(
+    state: UploadProgress[],
+    action: UploadAction
+): UploadProgress[] {
+    switch (action.type) {
+        case "ADD":
+            return [...state, ...action.uploads];
+        case "UPDATE_STATUS":
+            return state.map((u) =>
+                u.id === action.id ? { ...u, status: action.status } : u
+            );
+        case "COMPLETE":
+            return state.map((u) =>
+                u.id === action.id
+                    ? { ...u, status: "complete", result: action.result }
+                    : u
+            );
+        case "ERROR":
+            return state.map((u) =>
+                u.id === action.id ? { ...u, status: "error", error: action.error } : u
+            );
+        case "REMOVE":
+            return state.filter((u) => u.id !== action.id);
+        case "CLEAR":
+            return [];
+    }
+}
 
 interface FileAttachmentContextType {
     /** Pending uploads (uploading or complete) */
@@ -45,9 +84,10 @@ interface FileAttachmentContextType {
 const FileAttachmentContext = createContext<FileAttachmentContextType | null>(null);
 
 export function FileAttachmentProvider({ children }: { children: ReactNode }) {
-    const [pendingFiles, setPendingFiles] = useState<UploadProgress[]>([]);
+    const [pendingFiles, dispatch] = useReducer(uploadReducer, []);
     const [pasteCount, setPasteCount] = useState({ text: 0, image: 0 });
-    const [pastedTextContent] = useState(() => new Map<string, string>());
+    // Use ref for Map - it's mutated, not replaced, so shouldn't trigger re-renders
+    const pastedTextContentRef = useRef(new Map<string, string>());
     const { activeConnection } = useConnection();
     const { user } = useUser();
 
@@ -56,13 +96,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
             const userEmail = user?.primaryEmailAddress?.emailAddress;
             if (!userEmail) {
                 logger.error({}, "Cannot upload file: user not authenticated");
-                setPendingFiles((prev) =>
-                    prev.map((u) =>
-                        u.id === upload.id
-                            ? { ...u, status: "error", error: "Not authenticated" }
-                            : u
-                    )
-                );
+                dispatch({ type: "ERROR", id: upload.id, error: "Not authenticated" });
                 return;
             }
 
@@ -72,35 +106,18 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                     userEmail,
                     activeConnection?.id || null,
                     (status) => {
-                        // Update status as upload progresses
-                        setPendingFiles((prev) =>
-                            prev.map((u) => (u.id === upload.id ? { ...u, status } : u))
-                        );
+                        dispatch({ type: "UPDATE_STATUS", id: upload.id, status });
                     }
                 );
-
-                // Mark complete with result
-                setPendingFiles((prev) =>
-                    prev.map((u) =>
-                        u.id === upload.id ? { ...u, status: "complete", result } : u
-                    )
-                );
+                dispatch({ type: "COMPLETE", id: upload.id, result });
             } catch (error) {
                 const errorMessage =
                     error instanceof Error ? error.message : "Upload failed";
-
                 logger.error(
                     { error: errorMessage, filename: upload.file.name },
                     "Upload failed"
                 );
-
-                setPendingFiles((prev) =>
-                    prev.map((u) =>
-                        u.id === upload.id
-                            ? { ...u, status: "error", error: errorMessage }
-                            : u
-                    )
-                );
+                dispatch({ type: "ERROR", id: upload.id, error: errorMessage });
             }
         },
         [user, activeConnection]
@@ -109,20 +126,14 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const addFiles = useCallback(
         (fileList: FileList | File[]) => {
             const files = Array.from(fileList);
-
-            // Create pending upload entries with initial "validating" status
             const newUploads: UploadProgress[] = files.map((file) => ({
                 id: nanoid(),
                 file,
                 status: "validating" as const,
             }));
 
-            setPendingFiles((prev) => [...prev, ...newUploads]);
-
-            // Start uploads
-            newUploads.forEach((upload) => {
-                startUpload(upload);
-            });
+            dispatch({ type: "ADD", uploads: newUploads });
+            newUploads.forEach((upload) => startUpload(upload));
         },
         [startUpload]
     );
@@ -145,49 +156,32 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const addPastedText = useCallback(
         (fileList: File[], textContent: string) => {
             const files = Array.from(fileList);
-
-            // Create pending upload entries and store text content
             const newUploads: UploadProgress[] = files.map((file) => {
                 const id = nanoid();
-                // Store original text content for Insert inline feature
-                pastedTextContent.set(id, textContent);
-                return {
-                    id,
-                    file,
-                    status: "validating" as const,
-                };
+                pastedTextContentRef.current.set(id, textContent);
+                return { id, file, status: "validating" as const };
             });
 
-            setPendingFiles((prev) => [...prev, ...newUploads]);
-
-            // Start uploads
-            newUploads.forEach((upload) => {
-                startUpload(upload);
-            });
+            dispatch({ type: "ADD", uploads: newUploads });
+            newUploads.forEach((upload) => startUpload(upload));
         },
-        [startUpload, pastedTextContent]
+        [startUpload]
     );
 
-    const getTextContent = useCallback(
-        (fileId: string) => {
-            return pastedTextContent.get(fileId);
-        },
-        [pastedTextContent]
-    );
+    const getTextContent = useCallback((fileId: string) => {
+        return pastedTextContentRef.current.get(fileId);
+    }, []);
 
-    const removeFile = useCallback(
-        (id: string) => {
-            setPendingFiles((prev) => prev.filter((u) => u.id !== id));
-            pastedTextContent.delete(id);
-        },
-        [pastedTextContent]
-    );
+    const removeFile = useCallback((id: string) => {
+        dispatch({ type: "REMOVE", id });
+        pastedTextContentRef.current.delete(id);
+    }, []);
 
     const clearFiles = useCallback(() => {
-        setPendingFiles([]);
-        pastedTextContent.clear();
+        dispatch({ type: "CLEAR" });
+        pastedTextContentRef.current.clear();
         setPasteCount({ text: 0, image: 0 });
-    }, [pastedTextContent]);
+    }, []);
 
     const isUploading = pendingFiles.some(
         (u) =>
