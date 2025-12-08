@@ -109,6 +109,9 @@ decisions you made and when.
 
 ## Architecture Principles
 
+For technical implementation details including database schema, query patterns, and
+phased rollout plan, see [Knowledge Base Storage](./knowledge-base-storage.md).
+
 ### Filesystem Structure
 
 **Hierarchical Organization**:
@@ -569,6 +572,92 @@ on it.
 
 No timelines. Build knowledge base first. Prove it works. Then layer on tasks and
 calendar as widgets on the same backend.
+
+## Implementation Approach
+
+**Server Actions, Not API**
+
+The knowledge base is internal infrastructure, not an external service. All access via
+Next.js server actions - no REST API, no public endpoints. The Concierge queries it
+directly. Users interact through conversation, not API calls.
+
+This keeps the architecture simple and secure. No auth layer for knowledge base
+endpoints. No versioning concerns. Just functions that read and write documents.
+
+## Still To Be Figured Out
+
+### Folder Structure Definition (Critical)
+
+How do we define the initial folder hierarchy? How does AI know what folders exist and
+what belongs where? This is the organizational backbone.
+
+See: [Folder Structure](./knowledge-base-folders.md) (coming soon)
+
+Questions to answer:
+
+- Starter template vs. fully organic evolution?
+- How are folder "purposes" communicated to the AI?
+- Can users create folders manually, or AI-only?
+- How do folder descriptions/metadata work?
+
+### AI Placement Algorithm
+
+The storage doc has: `await aiDeterminePath(userId, textContent, sourceType)`
+
+But what's the actual logic?
+
+- Prompt structure for placement decisions
+- How much context about existing structure does AI get?
+- Confidence thresholds - when does AI ask vs. decide?
+- Learning from user corrections
+
+### Metadata Extraction at Ingest
+
+We want LLM to extract structured metadata at ingest time (cheaper than query-time
+reasoning). What's the schema?
+
+```typescript
+interface ExtractedMetadata {
+  people_mentioned?: string[];
+  topics?: string[];
+  document_type?: "decision" | "research" | "meeting" | "task" | "reference";
+  summary?: string; // 1-2 sentence summary
+  key_dates?: string[]; // Dates mentioned in content
+}
+```
+
+Needs: extraction prompt, validation, storage (extend documents table or separate?).
+
+### User Visibility and Control
+
+- Do users see the folder structure directly (tree view)?
+- Or is it internal plumbing they search through?
+- How are users notified when AI moves files?
+- Can users "pin" a file to prevent AI reorganization?
+- Manual move/rename - how does AI learn from this?
+
+### Concierge Integration
+
+How does Concierge query knowledge base for conversation context?
+
+- What triggers a knowledge base lookup?
+- How many documents get injected as context?
+- How is relevance determined (FTS score? Recency? Both)?
+- Format for injecting knowledge into system prompt?
+
+### File Attachments Handoff
+
+File Attachments component handles upload and processing. Knowledge Base handles
+organization and retrieval. The handoff:
+
+1. User uploads file → File Attachments
+2. File stored in Uploadcare → original preserved
+3. Text extraction (Docling for PDF, vision for images, etc.)
+4. Text + metadata → Knowledge Base ingestion
+5. AI determines path → document created
+6. Document linked to original file (source_id)
+
+Needs explicit interface definition between components.
 
 ## Notes
 
