@@ -781,6 +781,7 @@ function Composer({ isNewConversation }: ComposerProps) {
     );
 
     // Insert inline handler - converts file attachment back to textarea text
+    // Uses inputRef.current.value to avoid depending on input state (keystroke changes)
     const handleInsertInline = useCallback(
         (fileId: string) => {
             const textContent = getTextContent(fileId);
@@ -789,7 +790,7 @@ function Composer({ isNewConversation }: ComposerProps) {
             // Insert into textarea at cursor position
             const start = inputRef.current.selectionStart;
             const end = inputRef.current.selectionEnd;
-            const currentValue = input;
+            const currentValue = inputRef.current.value;
 
             const newValue =
                 currentValue.substring(0, start) +
@@ -810,7 +811,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                 inputRef.current?.focus();
             }, 0);
         },
-        [getTextContent, removeFile, input, setInput]
+        [getTextContent, removeFile, setInput]
     );
 
     // Drag-drop handlers

@@ -28,13 +28,21 @@ export interface AttachmentMeta {
     requiredModel?: string;
 }
 
+/** Upload status values */
+export type UploadStatus =
+    | "validating"
+    | "optimizing"
+    | "uploading"
+    | "complete"
+    | "error";
+
 export interface UploadProgress {
     /** Unique ID for tracking this upload */
     id: string;
     /** File being uploaded */
     file: File;
     /** Current status */
-    status: "validating" | "optimizing" | "uploading" | "complete" | "error";
+    status: UploadStatus;
     /** Error message if status is error */
     error?: string;
     /** Result if status is complete */
