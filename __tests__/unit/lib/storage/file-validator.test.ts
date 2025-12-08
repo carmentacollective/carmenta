@@ -251,7 +251,7 @@ describe("File Validator - Invalid Files", () => {
     });
 
     it("rejects text file exceeding size limit", () => {
-        const oversized = SIZE_LIMITS.text + 1024;
+        const oversized = 5 * 1024 * 1024 + 1024; // 5MB + 1KB
         const file = createMockFile("massive.txt", "text/plain", oversized);
 
         const result = validateFile(file);
