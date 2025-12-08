@@ -127,20 +127,20 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         [startUpload]
     );
 
-    const getNextPastedFileName = useCallback(
-        (type: "text" | "image") => {
-            const count = pasteCount[type] + 1;
-            setPasteCount((prev) => ({ ...prev, [type]: count }));
+    const getNextPastedFileName = useCallback((type: "text" | "image") => {
+        let nextCount = 1;
+        setPasteCount((prev) => {
+            nextCount = prev[type] + 1;
+            return { ...prev, [type]: nextCount };
+        });
 
-            if (type === "text") {
-                return count === 1
-                    ? "Pasted Content.txt"
-                    : `Pasted Content ${count}.txt`;
-            }
-            return count === 1 ? "Pasted Image.png" : `Pasted Image ${count}.png`;
-        },
-        [pasteCount]
-    );
+        if (type === "text") {
+            return nextCount === 1
+                ? "Pasted Content.txt"
+                : `Pasted Content ${nextCount}.txt`;
+        }
+        return nextCount === 1 ? "Pasted Image.png" : `Pasted Image ${nextCount}.png`;
+    }, []);
 
     const addPastedText = useCallback(
         (fileList: File[], textContent: string) => {

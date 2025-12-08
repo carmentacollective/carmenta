@@ -721,26 +721,31 @@ function Composer({ isNewConversation }: ComposerProps) {
                 }
             }
 
-            if (imageFiles.length > 0) {
-                e.preventDefault();
-                addFiles(imageFiles);
-                // Don't return - text may also be present
-            }
-
-            // Priority 2: Handle large text
+            // Priority 2: Handle text (large → attachment, small → inline)
             const plainText = e.clipboardData?.getData("text/plain");
-            if (plainText && plainText.length > PASTE_THRESHOLD) {
+            const hasLargeText = plainText && plainText.length > PASTE_THRESHOLD;
+
+            // If we have images or large text, prevent default and handle ourselves
+            if (imageFiles.length > 0 || hasLargeText) {
                 e.preventDefault();
 
-                const fileName = getNextPastedFileName("text");
-                const blob = new Blob([plainText], { type: "text/plain" });
-                const file = new File([blob], fileName, { type: "text/plain" });
+                // Process images
+                if (imageFiles.length > 0) {
+                    addFiles(imageFiles);
+                }
 
-                addPastedText([file], plainText);
+                // Process large text as attachment
+                if (hasLargeText) {
+                    const fileName = getNextPastedFileName("text");
+                    const blob = new Blob([plainText], { type: "text/plain" });
+                    const file = new File([blob], fileName, { type: "text/plain" });
+                    addPastedText([file], plainText);
+                }
+
                 return;
             }
 
-            // Under threshold: let browser paste normally (default behavior)
+            // Small text or no special content: let browser handle normally
         },
         [addFiles, addPastedText, getNextPastedFileName]
     );
@@ -749,33 +754,31 @@ function Composer({ isNewConversation }: ComposerProps) {
     const handleInsertInline = useCallback(
         (fileId: string) => {
             const textContent = getTextContent(fileId);
-            if (!textContent) return;
-
-            // Remove from attachments
-            removeFile(fileId);
+            if (!textContent || !inputRef.current) return;
 
             // Insert into textarea at cursor position
-            if (inputRef.current) {
-                const start = inputRef.current.selectionStart;
-                const end = inputRef.current.selectionEnd;
-                const currentValue = input;
+            const start = inputRef.current.selectionStart;
+            const end = inputRef.current.selectionEnd;
+            const currentValue = input;
 
-                const newValue =
-                    currentValue.substring(0, start) +
-                    textContent +
-                    currentValue.substring(end);
+            const newValue =
+                currentValue.substring(0, start) +
+                textContent +
+                currentValue.substring(end);
 
-                setInput(newValue);
+            setInput(newValue);
 
-                // Position cursor after inserted text
-                setTimeout(() => {
-                    inputRef.current?.setSelectionRange(
-                        start + textContent.length,
-                        start + textContent.length
-                    );
-                    inputRef.current?.focus();
-                }, 0);
-            }
+            // Remove from attachments only after successful insertion
+            removeFile(fileId);
+
+            // Position cursor after inserted text
+            setTimeout(() => {
+                inputRef.current?.setSelectionRange(
+                    start + textContent.length,
+                    start + textContent.length
+                );
+                inputRef.current?.focus();
+            }, 0);
         },
         [getTextContent, removeFile, input, setInput]
     );
