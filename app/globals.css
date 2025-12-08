@@ -348,22 +348,50 @@
         @apply my-4 border-foreground/10;
     }
 
-    /* Tables */
+    /* Tables - Enhanced with rounded borders and hover effects */
     .holo-markdown table {
-        @apply my-3 w-full border-collapse text-sm;
+        @apply w-full text-sm;
+    }
+
+    .holo-markdown thead {
+        @apply bg-foreground/5;
     }
 
     .holo-markdown th {
-        @apply border-b border-foreground/20 p-2 text-left font-semibold;
+        @apply border-b border-foreground/15 px-3 py-2 text-left font-semibold;
+    }
+
+    .holo-markdown th:first-child {
+        @apply rounded-tl-lg;
+    }
+
+    .holo-markdown th:last-child {
+        @apply rounded-tr-lg;
+    }
+
+    .holo-markdown tbody tr {
+        @apply transition-colors hover:bg-foreground/[0.02];
     }
 
     .holo-markdown td {
-        @apply border-b border-foreground/10 p-2;
+        @apply border-b border-foreground/10 px-3 py-2;
+    }
+
+    .holo-markdown tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .holo-markdown tbody tr:last-child td:first-child {
+        @apply rounded-bl-lg;
+    }
+
+    .holo-markdown tbody tr:last-child td:last-child {
+        @apply rounded-br-lg;
     }
 }
 
 @layer utilities {
-    /* Custom scrollbar */
+    /* Custom scrollbar - supports both vertical and horizontal scrolling */
     .scrollbar-holo {
         scrollbar-width: thin;
         scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
@@ -375,6 +403,7 @@
 
     .scrollbar-holo::-webkit-scrollbar {
         width: 8px;
+        height: 8px; /* Enable horizontal scrollbar */
     }
 
     .scrollbar-holo::-webkit-scrollbar-track {
@@ -396,6 +425,10 @@
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
         background: rgba(200, 160, 180, 0.5);
+    }
+
+    .scrollbar-holo::-webkit-scrollbar-corner {
+        background: transparent; /* Clean corner where scrollbars meet */
     }
 
     /*

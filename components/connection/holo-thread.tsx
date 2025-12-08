@@ -23,6 +23,7 @@ import {
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
@@ -94,7 +95,7 @@ function HoloThreadInner() {
             <div
                 ref={viewportRef}
                 onScroll={handleScroll}
-                className="chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
+                className="scrollbar-holo chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
             >
                 {isEmpty ? (
                     <ThreadWelcome />
@@ -538,8 +539,21 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                     {content && (
                         <div className="holo-markdown">
                             <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
                                 components={{
                                     code: CodeBlock,
+                                    table: ({ children }) => (
+                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+                                            <table
+                                                style={{
+                                                    borderCollapse: "separate",
+                                                    borderSpacing: 0,
+                                                }}
+                                            >
+                                                {children}
+                                            </table>
+                                        </div>
+                                    ),
                                 }}
                             >
                                 {content}
@@ -636,8 +650,21 @@ function AssistantMessage({
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
                         <div className="holo-markdown">
                             <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
                                 components={{
                                     code: CodeBlock,
+                                    table: ({ children }) => (
+                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+                                            <table
+                                                style={{
+                                                    borderCollapse: "separate",
+                                                    borderSpacing: 0,
+                                                }}
+                                            >
+                                                {children}
+                                            </table>
+                                        </div>
+                                    ),
                                 }}
                             >
                                 {content}

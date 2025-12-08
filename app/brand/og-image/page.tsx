@@ -38,8 +38,8 @@ export default function OGImagePage() {
                             </p>
                         </div>
                         <p className="text-xl leading-normal text-muted-foreground">
-                            Heart-centered AI for builders. One interface, every
-                            model, memory that persists.
+                            Heart-centered AI for builders. One interface, every model,
+                            memory that persists.
                         </p>
                     </div>
                 </div>
