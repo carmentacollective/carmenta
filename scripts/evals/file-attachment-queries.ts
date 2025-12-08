@@ -20,6 +20,12 @@ export interface FileAttachmentTest {
     fixturePath: string;
     /** MIME type for the file */
     mimeType: string;
+    /**
+     * Whether to send file content inline in the message rather than as an attachment.
+     * Use for text/markdown/code files that should be part of the message content.
+     * Binary files (images, PDFs, audio) should always be sent as attachments.
+     */
+    sendAsInline?: boolean;
     /** Expected outcomes */
     expectations: {
         /** Expected model pattern (substring match). Audio should route to Gemini. */
@@ -119,18 +125,36 @@ export const FILE_ATTACHMENT_TESTS: FileAttachmentTest[] = [
 
     // ========================================================================
     // TEXT FILE TESTS
-    // Plain text files should work with Claude
+    // Text/markdown content should be sent inline, not as file attachments.
+    // Claude's API only accepts PDFs for document attachments - text content
+    // should be part of the message.
     // ========================================================================
     {
         id: "text-plain-read",
-        description: "Plain text file should be read",
-        prompt: "What is the content of this text file?",
+        description: "Plain text file content should be read inline",
+        prompt: "I'm sharing a text file with you. What does it say?",
         fileType: "text",
         fixturePath: "sample.txt",
         mimeType: "text/plain",
+        sendAsInline: true,
         expectations: {
             model: "claude",
             shouldSucceed: true,
+            responseIndicates: "bullet",
+        },
+    },
+    {
+        id: "text-markdown-read",
+        description: "Markdown file content should be read inline",
+        prompt: "I'm sharing a markdown document with you. What's in it?",
+        fileType: "text",
+        fixturePath: "sample.md",
+        mimeType: "text/markdown",
+        sendAsInline: true,
+        expectations: {
+            model: "claude",
+            shouldSucceed: true,
+            responseIndicates: "markdown",
         },
     },
 ];
