@@ -104,5 +104,5 @@ export function formatFileSize(bytes: number): string {
  * Human-readable list of supported formats
  */
 export function getSupportedFormatsMessage(): string {
-    return "Images (JPEG, PNG, GIF, WebP), PDFs, audio files (MP3, WAV, FLAC, etc.), or text files";
+    return "Images (JPEG, PNG, GIF, WebP), PDFs, or audio files (MP3, WAV, FLAC, etc.)";
 }
