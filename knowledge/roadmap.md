@@ -461,7 +461,7 @@ Detailed specifications live in `knowledge/components/`. Key specs by milestone:
 
 - [Reasoning Tokens](./components/reasoning-tokens.md) - Extended thinking, display,
   storage
-- [Memory](./components/memory.md) - Profile, facts, cross-conversation learning
+- [Context Retrieval](./components/memory.md) - Profile injection, KB retrieval patterns
 - [Analytics](./components/analytics.md) - Usage tracking, retention metrics
 
 ### M3 Components

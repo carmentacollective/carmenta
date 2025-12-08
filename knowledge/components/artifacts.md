@@ -29,9 +29,10 @@ Artifacts sit at the intersection of several existing components:
   updated within conversations. But artifacts persist independently - deleting a
   conversation doesn't delete referenced artifacts.
 
-- **Memory**: Memory stores extracted facts and context. Artifacts store the actual
-  generated content. Memory might remember "we created a project plan for the Q4 launch"
-  while the artifact stores the actual plan document.
+- **Knowledge Base**: The KB stores all persistent knowledge. Artifacts are a special
+  type of KB entry - generated content that can be displayed and edited. The KB might
+  have an entry noting "we created a project plan for Q4" while the artifact stores the
+  actual plan document.
 
 - **Interface**: The Interface renders artifacts when accessed, handles AG-UI artifact
   display, and provides the editing experience for mutable artifacts.

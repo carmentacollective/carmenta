@@ -6,9 +6,9 @@ choices about hosting and ORM.
 
 ## Why This Exists
 
-Every component needs to persist data somewhere. Memory stores context. Conversations
-stores messages. Auth stores sessions. Service Connectivity stores OAuth tokens. Without
-a solid data layer, nothing else works.
+Every component needs to persist data somewhere. Knowledge Base stores all persistent
+knowledge. Conversations stores messages. Auth stores sessions. Service Connectivity
+stores OAuth tokens. Without a solid data layer, nothing else works.
 
 The choices here ripple through everything: what queries are fast, how we handle
 migrations, what our hosting costs look like, how we scale. Getting this right early
@@ -308,18 +308,19 @@ Rather than fork and heavily modify, extract patterns:
 2. Add Carmenta-specific tables:
 
 ```typescript
-// Memory system
-memory: {
+// Knowledge Base documents (see knowledge-base-storage.md for full schema)
+documents: {
   id: uuid,
   userId: uuid,
-  type: "profile" | "fact" | "preference" | "decision",
+  path: ltree,           // Filesystem path
+  name: text,
   content: text,
-  embedding: vector(1536),  // pgvector
-  confidence: real,
-  sourceQuote: text,
-  category: varchar,
+  contentTsvector: tsvector,  // Full-text search
+  sourceType: text,      // 'uploaded_pdf', 'conversation_extraction', etc.
+  sourceId: uuid,
+  tags: text[],
   createdAt: timestamp,
-  lastAccessedAt: timestamp
+  updatedAt: timestamp
 }
 
 // Concierge signals (optional, could be ephemeral)
@@ -421,4 +422,4 @@ Recommendation: Don't fork ai-chatbot directly. Instead:
 
 This gives us the benefit of their battle-tested patterns without inheriting code that
 doesn't fit our architecture. The Concierge preprocessing/postprocessing layer and
-Memory system are core differentiators that require purpose-built schemas
+Knowledge Base are core differentiators that require purpose-built schemas

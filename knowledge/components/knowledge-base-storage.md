@@ -634,65 +634,255 @@ async function moveDocument(
 wikis, databases) fundamentally changes what's possible. Making integration trivial is
 the core competency.
 
-**Ingestion Sources**:
+See [Knowledge Base: Ingestion Channels](./knowledge-base.md#ingestion-channels) for the
+complete model. This section covers the technical implementation.
 
-1. **File Uploads**:
-   - User drags PDF → convert to text → create document
-   - Source type: `uploaded_pdf`, `uploaded_image`, etc.
-   - Original file in Uploadcare, text representation in knowledge base
+### Three Ingestion Channels
 
-2. **Conversations**:
-   - After each conversation → extract insights → create documents
-   - Source type: `conversation_extraction`
-   - Link back to original conversation
+| Channel          | Source Type Pattern                                    | Trigger           | Handler                      |
+| ---------------- | ------------------------------------------------------ | ----------------- | ---------------------------- |
+| Conversations    | `conversation_extraction`                              | Post-conversation | Knowledge Librarian          |
+| File Uploads     | `uploaded_pdf`, `uploaded_image`, etc.                 | User action       | File Attachments → Librarian |
+| Integration Sync | `integration_limitless`, `integration_fireflies`, etc. | Scheduled Agent   | Sync Agent → Librarian       |
 
-3. **Integrations** (Limitless, Fireflies, etc.):
-   - OAuth connection → periodic sync
-   - Pull transcripts, meeting notes, voice memos
-   - Source type: `integration_limitless`, `integration_fireflies`
-   - Store original ID for deduplication
-
-4. **Calendar/Tasks** (future):
-   - Events and tasks stored as documents
-   - Source type: `calendar_event`, `task_item`
-   - Linked to related knowledge
-
-**Ingestion Pipeline**:
+### Source Type Registry
 
 ```typescript
-interface IngestionJob {
-  userId: string;
-  sourceType: string;
-  sourceId: string;
-  data: any; // Raw data from source
+type SourceType =
+  // Channel 1: Conversations
+  | "conversation_extraction" // Insight extracted from chat
+  | "conversation_decision" // Explicit decision made
+  | "conversation_commitment" // Action item or commitment
+
+  // Channel 2: File Uploads
+  | "uploaded_pdf"
+  | "uploaded_image"
+  | "uploaded_audio"
+  | "uploaded_document"
+  | "uploaded_text"
+
+  // Channel 3: Integration Sync
+  | "integration_limitless" // Limitless transcripts
+  | "integration_fireflies" // Fireflies meeting notes
+  | "integration_gmail" // Gmail threads
+  | "integration_slack" // Slack messages
+  | "integration_gdrive" // Google Drive documents
+  | "integration_notion" // Notion pages
+  | "integration_calendar" // Calendar events
+
+  // System-generated
+  | "system_task" // Task management entries
+  | "system_calendar_event"; // Calendar entries
+```
+
+### Ingestion Pipeline (Per Channel)
+
+**Channel 1: Conversation Extraction**
+
+```typescript
+// Triggered by Knowledge Librarian after conversation ends
+async function extractFromConversation(
+  userId: string,
+  conversationId: string,
+  messages: Message[]
+): Promise<void> {
+  // 1. Librarian analyzes conversation for extractable content
+  const extractions = await librarianExtract(messages);
+
+  // 2. For each extraction, create document
+  for (const extraction of extractions) {
+    await createDocument(userId, extraction.suggestedPath, extraction.content, {
+      sourceType: extraction.type, // 'conversation_decision', etc.
+      sourceId: conversationId,
+      tags: extraction.tags,
+      metadata: {
+        extractedAt: new Date(),
+        conversationTitle: extraction.conversationContext,
+      },
+    });
+  }
+
+  // 3. Notify user (lightweight)
+  if (extractions.length > 0) {
+    await notifyUser(userId, `Noted: ${extractions.map((e) => e.title).join(", ")}`);
+  }
 }
+```
 
-async function ingestData(job: IngestionJob): Promise<void> {
-  // 1. Transform to text
-  const textContent = await transformToText(job.data, job.sourceType);
+**Channel 2: File Upload**
 
-  // 2. AI determines path placement
-  const suggestedPath = await aiDeterminePath(job.userId, textContent, job.sourceType);
+```typescript
+// Triggered by File Attachments component after processing
+async function ingestUploadedFile(
+  userId: string,
+  file: ProcessedFile
+): Promise<Document> {
+  // 1. Text already extracted by File Attachments
+  const textContent = file.extractedText;
 
-  // 3. Extract tags
-  const tags = await extractTags(textContent);
-
-  // 4. Create document
-  const doc = await createDocument(job.userId, suggestedPath, textContent, {
-    sourceType: job.sourceType,
-    sourceId: job.sourceId,
-    tags,
+  // 2. Librarian determines placement
+  const placement = await librarianPlace(userId, textContent, {
+    originalFilename: file.name,
+    mimeType: file.mimeType,
+    extractionMethod: file.extractionMethod,
   });
 
-  // 5. Extract and create links
-  const links = await extractLinks(textContent);
-  for (const link of links) {
+  // 3. Create document with link to original
+  const doc = await createDocument(userId, placement.path, textContent, {
+    sourceType: `uploaded_${file.category}`, // 'uploaded_pdf', etc.
+    sourceId: file.storageId, // Supabase Storage ID
+    tags: placement.tags,
+    metadata: {
+      originalFilename: file.name,
+      originalSize: file.size,
+      mimeType: file.mimeType,
+    },
+  });
+
+  // 4. Create any detected links
+  for (const link of placement.detectedLinks) {
     await createLink(doc.id, link.targetId, link.type);
   }
 
-  // 6. Notify user (optional)
-  await notifyIngestion(job.userId, doc.path);
+  return doc;
 }
+```
+
+**Channel 3: Integration Sync**
+
+```typescript
+// Triggered by Scheduled Sync Agent for each integration
+interface SyncAgentContext {
+  userId: string;
+  integration: "limitless" | "fireflies" | "gmail" | "slack" | "gdrive" | "notion";
+  lastSyncAt: Date;
+  config: IntegrationConfig;
+}
+
+async function syncIntegration(ctx: SyncAgentContext): Promise<SyncReport> {
+  const report: SyncReport = { added: 0, skipped: 0, errors: [] };
+
+  // 1. Fetch new items from service
+  const items = await fetchFromService(ctx.integration, ctx.lastSyncAt);
+
+  for (const item of items) {
+    // 2. Check deduplication
+    const exists = await documentExistsBySourceId(
+      ctx.userId,
+      `integration_${ctx.integration}`,
+      item.externalId
+    );
+    if (exists) {
+      report.skipped++;
+      continue;
+    }
+
+    // 3. Apply user filters
+    if (!passesFilters(item, ctx.config.filters)) {
+      report.skipped++;
+      continue;
+    }
+
+    // 4. Transform to text
+    const textContent = await transformIntegrationItem(item, ctx.integration);
+
+    // 5. Sync agent determines placement (may consult Librarian)
+    const placement = await determinePlacement(ctx.userId, textContent, {
+      integration: ctx.integration,
+      itemType: item.type,
+      itemDate: item.date,
+      relatedEntities: item.relatedEntities, // calendar event, people, etc.
+    });
+
+    // 6. Create document
+    await createDocument(ctx.userId, placement.path, textContent, {
+      sourceType: `integration_${ctx.integration}`,
+      sourceId: item.externalId,
+      tags: placement.tags,
+      metadata: {
+        integration: ctx.integration,
+        externalId: item.externalId,
+        syncedAt: new Date(),
+        originalDate: item.date,
+      },
+    });
+
+    report.added++;
+  }
+
+  // 7. Update last sync timestamp
+  await updateLastSync(ctx.userId, ctx.integration, new Date());
+
+  // 8. Report to user
+  await notifySyncComplete(ctx.userId, ctx.integration, report);
+
+  return report;
+}
+```
+
+### Common Document Creation
+
+All channels converge on the same document creation:
+
+```typescript
+interface CreateDocumentInput {
+  sourceType: SourceType;
+  sourceId: string; // External reference (file ID, conversation ID, etc.)
+  tags: string[];
+  metadata?: Record<string, unknown>;
+}
+
+async function createDocument(
+  userId: string,
+  path: string,
+  content: string,
+  input: CreateDocumentInput
+): Promise<Document> {
+  const ltreePath = path.replace(/\//g, ".");
+  const name = path.split("/").pop()!;
+
+  return await db.query(
+    `
+    INSERT INTO documents (
+      user_id, path, name, content,
+      source_type, source_id, tags, metadata
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING *
+  `,
+    [
+      userId,
+      ltreePath,
+      name,
+      content,
+      input.sourceType,
+      input.sourceId,
+      input.tags,
+      input.metadata ? JSON.stringify(input.metadata) : null,
+    ]
+  );
+}
+```
+
+### Deduplication Strategy
+
+Each channel handles deduplication differently:
+
+| Channel          | Deduplication Key  | Strategy                                                  |
+| ---------------- | ------------------ | --------------------------------------------------------- |
+| Conversations    | Content similarity | Librarian checks if insight already exists                |
+| File Uploads     | File hash + name   | Warn user, offer to update or skip                        |
+| Integration Sync | External ID        | Skip if `source_id` already exists for that `source_type` |
+
+```sql
+-- Check if document exists by external source
+SELECT EXISTS(
+  SELECT 1 FROM documents
+  WHERE user_id = $1
+    AND source_type = $2
+    AND source_id = $3
+    AND deleted_at IS NULL
+);
 ```
 
 ## Performance Considerations

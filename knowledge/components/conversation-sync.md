@@ -28,13 +28,13 @@ interface you want - Carmenta becomes your AI memory layer.
 webhooks for new messages. We have to work with what exists today while building toward
 what should exist.
 
-## Relationship to Memory and Conversations
+## Relationship to Knowledge Base and Conversations
 
 Conversation Sync feeds both systems:
 
 - **Conversations**: Synced chat history becomes searchable conversation records
-- **Memory**: We extract facts, decisions, preferences, and relationships from synced
-  conversations to continuously update the Memory system
+- **Knowledge Base**: We extract facts, decisions, preferences, and relationships from
+  synced conversations - the Librarian files them appropriately
 
 The goal is bidirectional awareness - even if you chat elsewhere, Carmenta knows.
 
@@ -138,7 +138,7 @@ Visibility into what's connected and current:
 ## Integration Points
 
 - **Onboarding**: Initial sync/import flow during setup
-- **Memory**: Extracted facts and context continuously feed the Memory system
+- **Knowledge Base**: Extracted facts and context filed by Librarian
 - **Conversations**: Synced chats become searchable history
 - **Interface**: Sync dashboard, extension download, status indicators
 
@@ -146,7 +146,7 @@ Visibility into what's connected and current:
 
 - Real-time sync: New conversations appear in Carmenta within 5 minutes
 - Initial import: Process hundreds of conversations in under 5 minutes
-- Memory system surfaces relevant synced context in new conversations
+- KB retrieval surfaces relevant synced context in new conversations
 - We can find and reference past conversations from any platform
 - Zero data loss during sync
 - Clear status: We always know what's synced and what's pending

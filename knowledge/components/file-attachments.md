@@ -71,7 +71,7 @@ The AI tells you "I'm reading that PDF now" and continues the conversation. When
 
 **For the Product**:
 
-- Files become part of persistent memory system
+- Files become part of [Knowledge Base](./knowledge-base.md)
 - Retrieval finds relevant content, not just keyword matches
 - Multi-file contexts work without hitting token limits
 - Processing costs are manageable at scale

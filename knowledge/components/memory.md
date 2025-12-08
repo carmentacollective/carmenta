@@ -1,8 +1,8 @@
-# Memory
+# Context Retrieval
 
-Context and memory management - the system that remembers who we are, what we're working
-on, what we've decided, who we know, and what we've learned. We always have the context
-we need without re-explaining our situation every conversation.
+How the [Knowledge Librarian](./knowledge-librarian.md) retrieves relevant context from
+the [Knowledge Base](./knowledge-base.md) and injects it into conversations. This is the
+intelligence layer that makes Carmenta feel like she "knows" you.
 
 ## Why This Exists
 
@@ -10,251 +10,253 @@ The biggest failure of current AI interfaces is amnesia. Every conversation star
 fresh. We explain our job, our project, our preferences - again and again. Context that
 should persist doesn't.
 
-Memory fixes this. Carmenta builds and maintains understanding over time. The Concierge
-pulls relevant context for every request. We're known - our role, our communication
-style, the people we've mentioned, the decisions we've made.
+Context retrieval fixes this. The Knowledge Base stores everything. The Librarian
+retrieves what's relevant for each conversation. We're known - our role, our
+communication style, the people we've mentioned, the decisions we've made.
 
 This is what makes AI feel like a partner instead of a stranger.
 
-## Relationship to Conversations
+## Relationship to Knowledge Base
 
-Memory and Conversations are distinct but related:
+All persistent information lives in the [Knowledge Base](./knowledge-base.md):
 
-- **Memory** stores extracted facts, context, and learnings from conversations
-- **Conversations** stores the raw message history (who said what, when)
+- **Profile** (`/profile/`): Who you are, preferences, relationships, goals
+- **Artifacts**: Files, documents, conversation extracts
+- **Decisions**: What you've decided and why
+- **Insights**: Learnings accumulated over time
 
-Memory is what Carmenta "knows" - distilled understanding. Conversations is what was
-"said" - the transcript. Memory might store "We decided to use Postgres over MongoDB for
-the new project" while Conversations stores the actual discussion where that decision
-was made.
+Context retrieval is about _which_ KB content surfaces _when_. Storage is KB. Retrieval
+is what this doc covers.
 
-## Memory Architecture
+## Tiered Retrieval Model
 
-### Tiered Memory Model
+Different contexts require different retrieval strategies:
 
-Research shows effective AI memory requires multiple tiers with different retention and
-retrieval characteristics:
+| Tier               | Scope                | Content                          | Purpose             |
+| ------------------ | -------------------- | -------------------------------- | ------------------- |
+| **Profile**        | Always               | `/profile/` folder contents      | Core identity       |
+| **Session**        | Current conversation | Recent messages + summaries      | Immediate context   |
+| **Query-Relevant** | Per request          | KB docs matching current query   | Specific knowledge  |
+| **Background**     | Ambient              | Recent activity, upcoming events | Proactive awareness |
 
-| Tier           | Scope              | Retention                       | Purpose                |
-| -------------- | ------------------ | ------------------------------- | ---------------------- |
-| **Immediate**  | Last 5-10 messages | Full conversation               | Current context        |
-| **Recent**     | Last session       | Consolidated summaries          | Session continuity     |
-| **Historical** | All sessions       | Distilled facts and preferences | Long-term relationship |
+### Profile Tier (Always Present)
 
-Each tier uses different compression strategies. Immediate context is uncompressed.
-Recent context uses recursive summarization. Historical memory stores only extracted
-facts and patterns.
+Contents of `/profile/` are injected at the START of every context window:
 
-### Context Placement
+- `identity.txt` - Professional context, role, company
+- `preferences.txt` - Communication style, expertise level, how you work
+- `goals.txt` - Current priorities, what you're working toward
+- Key people from `/profile/people/`
 
-Research on LLM attention patterns ("lost in the middle" problem) shows information
-placement matters:
+This never changes during a conversation. It's who you are.
 
-- **Profile**: Place at START of context (highest attention)
-- **Retrieved memories**: Place at END, just before current query
-- **Less critical context**: Middle of context window
+### Session Tier (Conversation State)
 
-This is a small implementation detail with measurable impact on response quality.
+The current conversation's context:
 
-## Core Functions
+- Last 5-10 messages in full
+- Summaries of earlier parts of long conversations
+- Files/docs referenced in this conversation
 
-### Profile
+Managed by conversation state, not KB retrieval.
 
-Persistent understanding of who we are:
+### Query-Relevant Tier (On-Demand)
 
-- Professional context (role, company, industry, projects)
-- Communication preferences (tone, verbosity, expertise level)
-- Goals and priorities
-- Relationships and contacts
+When Concierge signals the Librarian needs to retrieve context:
 
-Profile is injected at the START of every context window.
+1. Librarian receives query + Concierge classification (shallow/deep/specific)
+2. Searches KB using fuzzy matching + full-text search
+3. Returns ranked documents relevant to the query
+4. Concierge injects summaries at END of context, before user's message
 
-### Conversation Memory
+This is the dynamic retrieval that makes conversations feel informed.
 
-What's been discussed across all conversations:
+### Background Tier (Proactive)
 
-- Key decisions and their rationale
-- Commitments made
-- Topics explored
-- Questions asked and answered
+Ambient context that might be relevant:
 
-Uses two-phase pipeline: extraction (identify memorable content) then update (merge with
-existing memories, handle conflicts).
+- Calendar: What's coming up today/this week
+- Tasks: Active items, upcoming deadlines
+- Recent KB activity: What was recently added or accessed
 
-### Knowledge Base
+Injected sparingly to avoid context bloat.
 
-Information we've explicitly shared or that Carmenta has learned:
+## Context Placement
 
-- Documents and files processed
-- Facts and preferences stated
-- Patterns observed over time
+Research on LLM attention patterns ("lost in the middle" problem) shows placement
+matters:
 
-### Retrieval
+```
+┌─────────────────────────────────────────┐
+│ PROFILE (highest attention)             │  ← /profile/ contents
+│ - identity, preferences, goals          │
+├─────────────────────────────────────────┤
+│ BACKGROUND CONTEXT                      │  ← calendar, tasks, ambient
+│ - today's schedule, active tasks        │
+├─────────────────────────────────────────┤
+│ CONVERSATION HISTORY                    │  ← messages so far
+│ - recent messages in full               │
+│ - summaries of earlier parts            │
+├─────────────────────────────────────────┤
+│ RETRIEVED KNOWLEDGE (high attention)    │  ← query-relevant KB docs
+│ - relevant documents, decisions         │
+├─────────────────────────────────────────┤
+│ CURRENT MESSAGE                         │  ← what user just said
+└─────────────────────────────────────────┘
+```
 
-Make stored context available when needed:
+Profile at START and retrieved knowledge at END get highest attention. Middle content
+(conversation history) gets less attention but provides continuity.
 
-- The Concierge requests relevant context for each query
-- Semantic search across all memory types
-- Recency and relevance weighting
-- Target latency: <15ms for retrieval (part of Concierge's 50ms budget)
+## Retrieval Strategies
 
-## Memory Service Options
+### Shallow Retrieval (Default)
 
-Research evaluated three production-ready memory services:
+For most queries. Fast, low-overhead.
+
+- Fuzzy match query against KB paths and names
+- Full-text search on KB content
+- Return top 3-5 documents
+- Inject summaries only (title + first ~200 chars)
+
+Latency target: <15ms
+
+### Deep Retrieval
+
+For research queries, complex questions, "what do I know about X" requests.
+
+- Expand query to related terms
+- Search across more documents (top 10-20)
+- Follow document links to find related content
+- Synthesize across multiple documents
+- May involve Librarian LLM call for analysis
+
+Latency target: <500ms (acceptable for complex queries)
+
+### Specific Retrieval
+
+For explicit references: "that PDF", "the decision we made about databases"
+
+- Parse reference from query
+- Direct lookup by path, name, or recent access
+- Return full document content
+- No summarization needed
+
+Latency target: <10ms
+
+## Implementation Options
+
+Research evaluated production-ready memory/retrieval services that could augment the
+Librarian:
 
 ### Mem0
 
-**Best for**: Quick deployment, general use cases
+**Best for**: Quick deployment, automatic extraction
 
-- Easiest integration (3 lines of code)
 - Two-phase pipeline: extraction → update
 - Automatic conflict detection and confidence scoring
-- Benchmarks: 26% higher accuracy than OpenAI Memory, 91% lower P95 latency, 90% token
-  savings
+- Benchmarks: 26% higher accuracy than OpenAI Memory, 91% lower P95 latency
 
-**Tradeoff**: Less control over memory structure
+**How it could help**: Handle extraction from conversations, maintain facts alongside KB
+documents.
 
 ### Letta (formerly MemGPT)
 
-**Best for**: Self-improving assistants, agents that manage their own memory
+**Best for**: Self-improving retrieval
 
-- OS-inspired approach with self-editing memory
-- Agent autonomously decides what to remember via tool calls (`memory_replace`,
-  `memory_insert`, `archival_memory_search`)
+- Agent autonomously manages what to remember
+- Tool calls: `memory_replace`, `memory_insert`, `archival_memory_search`
 - Benchmarks: 93.4% accuracy on Deep Memory Retrieval
 
-**Tradeoff**: Agent overhead for memory management, more complex integration
+**How it could help**: Librarian could use Letta patterns for self-improving retrieval.
 
 ### Zep
 
-**Best for**: Temporal reasoning, relationship queries
+**Best for**: Temporal reasoning
 
 - Temporal knowledge graphs via Graphiti engine
-- Bi-temporal model: tracks both event timeline and ingestion timeline
-- Enables queries like "When did user change preference from X to Y?"
-- Benchmarks: 94.8% on DMR (highest among memory systems)
+- Bi-temporal model: event timeline + ingestion timeline
+- Queries like "When did preference change from X to Y?"
+- Benchmarks: 94.8% on DMR (highest)
 
-**Tradeoff**: Graph maintenance complexity, more infrastructure
+**How it could help**: Track how knowledge evolves over time, answer temporal queries.
 
-### Recommendation
+### Current Recommendation
 
-**Start with Mem0** for rapid deployment. Reassess as we understand our specific needs
-better. Consider Letta if the "AI as partner" philosophy benefits from self-editing
-memory. Add Zep's temporal layer if users need to query how preferences evolved over
-time.
+Start with KB + Librarian's native retrieval (Postgres FTS, fuzzy matching). Layer in
+specialized services only when specific retrieval patterns demand them.
 
 ## Context Compression
 
-For users with extensive conversation history, context compression becomes essential.
+For users with extensive KB or long conversations, compression becomes necessary.
 
-**LLMLingua** (Microsoft): Achieves 10-20x compression using a small language model to
-identify unimportant tokens. Results show 20-30% reduction in response generation
-latency. GPT-4 can recover compressed prompts to near-original quality.
+**LLMLingua** (Microsoft): 10-20x compression using small language model to identify
+unimportant tokens. GPT-4 recovers compressed prompts to near-original quality.
 
-**Application**: Apply compression to historical memory tier. Never compress:
+**When to compress**:
 
-- Profile information
-- Recent conversation context
-- Context for emotional queries (fidelity matters for empathy)
+| Content Type       | Compression                           |
+| ------------------ | ------------------------------------- |
+| Profile            | Never - always full fidelity          |
+| Recent messages    | Never - need exact words              |
+| Older conversation | Summarize to key points               |
+| Retrieved KB docs  | Summarize unless explicitly requested |
+| Background context | Aggressive compression                |
 
-**Hierarchical compression strategy**:
+## Learning from Implicit Signals
 
-- Immediate (last 5-10 messages): No compression
-- Recent (last session): Light summarization
-- Historical (all sessions): Aggressive compression to key facts
+Retrieval should improve based on behavior, not just explicit feedback:
 
-## Implicit Feedback Signals
-
-Memory should learn from behavior, not just explicit statements:
-
-| Signal                   | Meaning                       | Weight |
-| ------------------------ | ----------------------------- | ------ |
-| Regeneration request     | Dissatisfaction with response | High   |
-| Conversation abandonment | Frustration or irrelevance    | Medium |
-| Copy/paste of response   | Satisfaction, useful output   | Medium |
-| Session duration         | Engagement level              | Low    |
-| User edits to AI output  | Quality signal, preferences   | High   |
+| Signal                    | Meaning                  | Retrieval Adjustment       |
+| ------------------------- | ------------------------ | -------------------------- |
+| Regeneration request      | Wrong context retrieved  | Adjust relevance scoring   |
+| "That's not what I meant" | Misunderstood query      | Improve query expansion    |
+| Follows up asking for doc | Should have retrieved it | Lower retrieval threshold  |
+| Ignores retrieved context | Wasn't relevant          | Raise relevance threshold  |
+| References specific file  | That file matters        | Boost its retrieval weight |
 
 Research shows explicit feedback has ~0.6% participation rate while implicit signals
-provide 8-13x more data volume. Combine both, weighting explicit higher.
+provide 8-13x more data volume.
 
 ## Integration Points
 
-- **Concierge**: Primary consumer - retrieves context for every request. Profile at
-  START, memories at END.
-- **AI Team**: Agents read from and write to memory
-- **Onboarding**: Initial memory population during setup
-- **Conversations**: Each conversation may update memory
-- **File Attachments**: Processed documents feed into knowledge base
+- **Concierge**: Signals retrieval depth (shallow/deep/specific), receives context to
+  inject
+- **Knowledge Librarian**: Executes retrieval, maintains retrieval quality
+- **Knowledge Base**: The store being retrieved from
+- **Conversations**: Provides session context, generates new KB content
 
 ## Success Criteria
 
 - Responses feel contextually aware without us prompting
 - We never have to re-explain established context
-- Memory retrieval completes in <15ms (doesn't blow Concierge latency budget)
-- We can see and manage what Carmenta remembers
-- Privacy controls let us delete or exclude information
-- Memory improves noticeably over time as we interact more
-
----
-
-## Decisions Made
-
-### Tiered Memory Over Flat Storage
-
-Different memory needs require different treatment. Immediate context needs full
-fidelity. Historical context needs compression. Flat storage can't optimize for both.
-
-### Context Placement is Intentional
-
-Profile at START, memories at END. This isn't arbitrary - it's based on research showing
-LLMs lose information in the middle of long contexts.
-
-### Mem0 as Starting Point
-
-Easiest path to production memory. We can swap or layer additional systems as we learn
-what our users actually need.
-
-### Implicit Signals Feed Back to Memory
-
-Don't wait for explicit "remember this" - learn from behavior. Regeneration requests
-indicate preferences. Session patterns indicate engagement.
-
----
+- Retrieval completes in <15ms for shallow, <500ms for deep
+- Can see what context was used for a response
+- Retrieval improves noticeably over time
 
 ## Open Questions
 
-### Architecture
+### Retrieval Tuning
 
-- **Embedding model**: Which embedding model for semantic search? Balance quality vs.
-  speed vs. cost.
-- **Chunking strategy**: How do we chunk memories for retrieval? Sentence-level?
-  Paragraph? Semantic boundaries?
-- **Memory updates**: Real-time extraction or batch processing? What triggers a memory
-  update?
+- How many documents to inject by default?
+- What's the right summarization length?
+- When does shallow promote to deep?
+- How to handle empty or irrelevant results?
 
-### Product Decisions
+### Profile Management
 
-- **Memory visibility**: Can we see what Carmenta remembers? Edit it? How transparent is
-  the system?
-- **Memory scope**: Per-person only? Shared team memory? Organization-wide knowledge?
-- **Forgetting**: How do we make Carmenta forget things? Granular deletion? Time-based
-  decay? Categories of "don't remember this"?
-- **Privacy boundaries**: What should Carmenta never store? How do we handle sensitive
-  information?
+- How is `/profile/` initially populated? Onboarding conversation?
+- How often does profile update from conversations?
+- Can users directly edit profile documents?
+- What's the max profile size before compression needed?
 
-### Technical Specifications Needed
+### Retrieval Visibility
 
-- Memory schema definitions (profile, facts, relationships, etc.)
-- Retrieval API contract
-- Memory update triggers and processing pipeline
-- Storage and retrieval latency requirements (<15ms target)
-
----
+- Do users see what context was retrieved?
+- Can they say "you missed this" to improve retrieval?
+- How transparent is the retrieval process?
 
 ## Research References
-
-Key sources that informed these decisions:
 
 - **Mem0**: $24M Series A (October 2025), production-ready memory service
 - **Letta/MemGPT**: UC Berkeley, self-editing memory via tool calls
