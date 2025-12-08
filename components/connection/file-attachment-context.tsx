@@ -153,20 +153,19 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         return nextCount === 1 ? "Pasted Image.png" : `Pasted Image ${nextCount}.png`;
     }, []);
 
-    const addPastedText = useCallback(
-        (fileList: File[], textContent: string) => {
-            const files = Array.from(fileList);
-            const newUploads: UploadProgress[] = files.map((file) => {
-                const id = nanoid();
-                pastedTextContentRef.current.set(id, textContent);
-                return { id, file, status: "validating" as const };
-            });
+    const addPastedText = useCallback((fileList: File[], textContent: string) => {
+        const files = Array.from(fileList);
+        const newUploads: UploadProgress[] = files.map((file) => {
+            const id = nanoid();
+            pastedTextContentRef.current.set(id, textContent);
+            // Mark complete immediately - no upload needed
+            // Pasted text is stored locally and auto-inlined on send
+            return { id, file, status: "complete" as const };
+        });
 
-            dispatch({ type: "ADD", uploads: newUploads });
-            newUploads.forEach((upload) => startUpload(upload));
-        },
-        [startUpload]
-    );
+        dispatch({ type: "ADD", uploads: newUploads });
+        // Skip startUpload() - text files don't need storage upload
+    }, []);
 
     const getTextContent = useCallback((fileId: string) => {
         return pastedTextContentRef.current.get(fileId);
