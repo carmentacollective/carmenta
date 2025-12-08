@@ -14,15 +14,25 @@ import { useFileAttachments } from "./file-attachment-context";
 import { cn } from "@/lib/utils";
 import type { UploadProgress as UploadProgressType } from "@/lib/storage/types";
 
-export function UploadProgressDisplay() {
-    const { pendingFiles, removeFile } = useFileAttachments();
+export function UploadProgressDisplay({
+    onInsertInline,
+}: {
+    onInsertInline?: (fileId: string) => void;
+}) {
+    const { pendingFiles, removeFile, getTextContent } = useFileAttachments();
 
     if (pendingFiles.length === 0) return null;
 
     return (
         <div className="flex flex-col gap-2 rounded-xl bg-background/40 p-3 backdrop-blur-sm">
             {pendingFiles.map((upload) => (
-                <UploadItem key={upload.id} upload={upload} onRemove={removeFile} />
+                <UploadItem
+                    key={upload.id}
+                    upload={upload}
+                    onRemove={removeFile}
+                    onInsertInline={onInsertInline}
+                    hasTextContent={!!getTextContent(upload.id)}
+                />
             ))}
         </div>
     );
@@ -31,11 +41,16 @@ export function UploadProgressDisplay() {
 function UploadItem({
     upload,
     onRemove,
+    onInsertInline,
+    hasTextContent,
 }: {
     upload: UploadProgressType;
     onRemove: (id: string) => void;
+    onInsertInline?: (fileId: string) => void;
+    hasTextContent: boolean;
 }) {
     const { id, file, status, error } = upload;
+    const isTextFile = file.type === "text/plain";
 
     // Honest status messages - no fake progress bars
     const getStatusMessage = () => {
@@ -84,6 +99,16 @@ function UploadItem({
                 >
                     {getStatusMessage()}
                 </div>
+                {/* Insert inline for pasted text files */}
+                {isTextFile && hasTextContent && onInsertInline && (
+                    <button
+                        type="button"
+                        onClick={() => onInsertInline(id)}
+                        className="mt-1 text-xs text-muted-foreground underline hover:text-foreground"
+                    >
+                        Insert inline
+                    </button>
+                )}
             </div>
 
             {/* Remove button */}

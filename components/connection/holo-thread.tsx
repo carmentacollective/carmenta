@@ -47,6 +47,7 @@ import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-co
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
 import { FilePreview } from "./file-preview";
+import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 
 export function HoloThread() {
     return (
@@ -673,8 +674,17 @@ function Composer({ isNewConversation }: ComposerProps) {
     const { concierge } = useConcierge();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
-    const { addFiles, isUploading, completedFiles, clearFiles, pendingFiles } =
-        useFileAttachments();
+    const {
+        addFiles,
+        isUploading,
+        completedFiles,
+        clearFiles,
+        pendingFiles,
+        removeFile,
+        addPastedText,
+        getNextPastedFileName,
+        getTextContent,
+    } = useFileAttachments();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
@@ -696,12 +706,13 @@ function Composer({ isNewConversation }: ComposerProps) {
     // Track if initial autofocus has been applied (prevents re-focus on resize)
     const hasInitialFocusRef = useRef(false);
 
-    // Paste handler - detect images from clipboard
+    // Paste handler - detect images and large text from clipboard
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             const items = e.clipboardData?.items;
             if (!items) return;
 
+            // Priority 1: Handle images (existing behavior)
             const imageFiles: File[] = [];
             for (const item of Array.from(items)) {
                 if (item.type.startsWith("image/")) {
@@ -713,9 +724,60 @@ function Composer({ isNewConversation }: ComposerProps) {
             if (imageFiles.length > 0) {
                 e.preventDefault();
                 addFiles(imageFiles);
+                // Don't return - text may also be present
+            }
+
+            // Priority 2: Handle large text
+            const plainText = e.clipboardData?.getData("text/plain");
+            if (plainText && plainText.length > PASTE_THRESHOLD) {
+                e.preventDefault();
+
+                const fileName = getNextPastedFileName("text");
+                const blob = new Blob([plainText], { type: "text/plain" });
+                const file = new File([blob], fileName, { type: "text/plain" });
+
+                addPastedText([file], plainText);
+                return;
+            }
+
+            // Under threshold: let browser paste normally (default behavior)
+        },
+        [addFiles, addPastedText, getNextPastedFileName]
+    );
+
+    // Insert inline handler - converts file attachment back to textarea text
+    const handleInsertInline = useCallback(
+        (fileId: string) => {
+            const textContent = getTextContent(fileId);
+            if (!textContent) return;
+
+            // Remove from attachments
+            removeFile(fileId);
+
+            // Insert into textarea at cursor position
+            if (inputRef.current) {
+                const start = inputRef.current.selectionStart;
+                const end = inputRef.current.selectionEnd;
+                const currentValue = input;
+
+                const newValue =
+                    currentValue.substring(0, start) +
+                    textContent +
+                    currentValue.substring(end);
+
+                setInput(newValue);
+
+                // Position cursor after inserted text
+                setTimeout(() => {
+                    inputRef.current?.setSelectionRange(
+                        start + textContent.length,
+                        start + textContent.length
+                    );
+                    inputRef.current?.focus();
+                }, 0);
             }
         },
-        [addFiles]
+        [getTextContent, removeFile, input, setInput]
     );
 
     // Drag-drop handlers
@@ -857,7 +919,9 @@ function Composer({ isNewConversation }: ComposerProps) {
     return (
         <div className="flex w-full max-w-4xl flex-col gap-2">
             {/* Upload progress display */}
-            {hasPendingFiles && <UploadProgressDisplay />}
+            {hasPendingFiles && (
+                <UploadProgressDisplay onInsertInline={handleInsertInline} />
+            )}
 
             <form
                 ref={formRef}
