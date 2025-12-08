@@ -308,7 +308,7 @@ describe("mapDBPartToUIPart", () => {
             expect(result).toEqual({
                 type: "file",
                 mediaType: "application/pdf",
-                filename: "document.pdf",
+                name: "document.pdf",
                 url: "https://example.com/doc.pdf",
             });
         });
