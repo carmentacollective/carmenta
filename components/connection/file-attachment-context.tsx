@@ -34,12 +34,20 @@ interface FileAttachmentContextType {
     isUploading: boolean;
     /** Successfully uploaded files */
     completedFiles: UploadedFile[];
+    /** Add pasted text as file (stores original content for Insert inline) */
+    addPastedText: (files: File[], textContent: string) => void;
+    /** Get next sequential filename for pasted content */
+    getNextPastedFileName: (type: "text" | "image") => string;
+    /** Get original text content for pasted text file */
+    getTextContent: (fileId: string) => string | undefined;
 }
 
 const FileAttachmentContext = createContext<FileAttachmentContextType | null>(null);
 
 export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const [pendingFiles, setPendingFiles] = useState<UploadProgress[]>([]);
+    const [pasteCount, setPasteCount] = useState({ text: 0, image: 0 });
+    const [pastedTextContent] = useState(() => new Map<string, string>());
     const { activeConnection } = useConnection();
     const { user } = useUser();
 
@@ -119,13 +127,67 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         [startUpload]
     );
 
-    const removeFile = useCallback((id: string) => {
-        setPendingFiles((prev) => prev.filter((u) => u.id !== id));
-    }, []);
+    const getNextPastedFileName = useCallback(
+        (type: "text" | "image") => {
+            const count = pasteCount[type] + 1;
+            setPasteCount((prev) => ({ ...prev, [type]: count }));
+
+            if (type === "text") {
+                return count === 1
+                    ? "Pasted Content.txt"
+                    : `Pasted Content ${count}.txt`;
+            }
+            return count === 1 ? "Pasted Image.png" : `Pasted Image ${count}.png`;
+        },
+        [pasteCount]
+    );
+
+    const addPastedText = useCallback(
+        (fileList: File[], textContent: string) => {
+            const files = Array.from(fileList);
+
+            // Create pending upload entries and store text content
+            const newUploads: UploadProgress[] = files.map((file) => {
+                const id = nanoid();
+                // Store original text content for Insert inline feature
+                pastedTextContent.set(id, textContent);
+                return {
+                    id,
+                    file,
+                    status: "validating" as const,
+                };
+            });
+
+            setPendingFiles((prev) => [...prev, ...newUploads]);
+
+            // Start uploads
+            newUploads.forEach((upload) => {
+                startUpload(upload);
+            });
+        },
+        [startUpload, pastedTextContent]
+    );
+
+    const getTextContent = useCallback(
+        (fileId: string) => {
+            return pastedTextContent.get(fileId);
+        },
+        [pastedTextContent]
+    );
+
+    const removeFile = useCallback(
+        (id: string) => {
+            setPendingFiles((prev) => prev.filter((u) => u.id !== id));
+            pastedTextContent.delete(id);
+        },
+        [pastedTextContent]
+    );
 
     const clearFiles = useCallback(() => {
         setPendingFiles([]);
-    }, []);
+        pastedTextContent.clear();
+        setPasteCount({ text: 0, image: 0 });
+    }, [pastedTextContent]);
 
     const isUploading = pendingFiles.some(
         (u) =>
@@ -147,6 +209,9 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                 clearFiles,
                 isUploading,
                 completedFiles,
+                addPastedText,
+                getNextPastedFileName,
+                getTextContent,
             }}
         >
             {children}
