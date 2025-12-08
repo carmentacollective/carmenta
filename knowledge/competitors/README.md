@@ -29,6 +29,41 @@ ranging from simple chat templates to production-grade platforms. Key patterns e
 | Chatbot UI            | Template          | 28k+    | None          | No  | No    | Historical reference          |
 | text-generation-webui | Local Models      | 40k+    | None          | No  | Yes   | Local-first, training         |
 
+## Competitor Registry
+
+This registry maps competitor names to their source repositories for implementation
+research. The `/research-competitor-code` command uses this to explore how competitors
+solve specific problems.
+
+**Repository Management**: Repos are cloned to `../reference/[folder-name]/`. If
+missing, clone from the GitHub URL. If present, run `git pull` to update before
+research.
+
+| Folder                | Name                  | Aliases             | GitHub                                             | Good For                                                         |
+| --------------------- | --------------------- | ------------------- | -------------------------------------------------- | ---------------------------------------------------------------- |
+| ai-chatbot            | Vercel AI Chatbot     | vercel, vercel-chat | https://github.com/vercel/ai-chatbot               | streaming, artifacts, ai-first-sdlc, ultracite-rules             |
+| assistant-ui          | assistant-ui          | assistant, aui      | https://github.com/assistant-ui/assistant-ui       | composable-primitives, state-management, transport-protocol, TAP |
+| better-chatbot        | Better Chatbot        | better              | https://github.com/cgoinglove/better-chatbot       | visual-workflows, voice, realtime-api, xyflow                    |
+| chat-ui               | HuggingFace Chat UI   | huggingface, hf     | https://github.com/huggingface/chat-ui             | smart-router, svelte, streaming-types                            |
+| chatbot-ui            | Chatbot UI            | mckaywrigley        | https://github.com/mckaywrigley/chatbot-ui         | provider-abstraction, workspace-scoping                          |
+| copilotkit            | CopilotKit            | copilot             | https://github.com/CopilotKit/CopilotKit           | AG-UI, generative-ui, sdk, actions                               |
+| librechat             | LibreChat             | libre               | https://github.com/danny-avila/LibreChat           | MCP, enterprise, multi-user, agent-chains                        |
+| lobe-chat             | LobeChat              | lobe                | https://github.com/lobehub/lobe-chat               | cursor-rules, prompt-testing, zustand, ai-first-sdlc, i18n       |
+| open-webui            | Open WebUI            | openwebui, owui     | https://github.com/open-webui/open-webui           | enterprise, voice, self-hosted, CRDT                             |
+| text-generation-webui | text-generation-webui | oobabooga, tgwui    | https://github.com/oobabooga/text-generation-webui | local-models, training, gradio                                   |
+
+**Tier Recommendations by Topic**:
+
+- **AI-First Development**: lobe-chat (gold standard), ai-chatbot, assistant-ui
+- **Streaming Patterns**: ai-chatbot, chat-ui, assistant-ui
+- **MCP Integration**: librechat, lobe-chat, open-webui
+- **Voice/Audio**: better-chatbot, open-webui, text-generation-webui
+- **State Management**: lobe-chat (Zustand), assistant-ui (TAP), librechat (Recoil)
+- **Component Architecture**: assistant-ui, copilotkit
+- **Visual Workflows**: better-chatbot
+- **Enterprise Features**: open-webui, librechat
+- **File Handling/Attachments**: ai-chatbot, librechat, open-webui, lobe-chat
+
 ## AI-First SDLC Leaders
 
 ### Tier 1: Sophisticated AI-Assisted Development
