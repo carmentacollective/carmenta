@@ -459,6 +459,35 @@
         );
     }
 
+    /*
+     * Expandable Text Component Styles
+     *
+     * Used for collapsing long user messages with a blur fade indicator.
+     * See knowledge/components/text-expansion.md for design decisions.
+     */
+
+    /* Blur gradient fade for truncated content - matches chat viewport fade */
+    .expandable-text-fade {
+        mask-image: linear-gradient(
+            to bottom,
+            black 0%,
+            black calc(100% - var(--chat-fade-bottom)),
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            black 0%,
+            black calc(100% - var(--chat-fade-bottom)),
+            transparent 100%
+        );
+    }
+
+    /* Dashed frame for expandable text (optional, per spec) */
+    .expandable-text-frame {
+        @apply rounded-lg border-2 border-dashed p-4;
+        border-color: hsl(280 40% 75% / 0.4); /* purple-300 at 40% opacity */
+    }
+
     /* Gentle rotating animation for loading spinner */
     @keyframes spin-slow {
         from {
