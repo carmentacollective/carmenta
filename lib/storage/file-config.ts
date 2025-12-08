@@ -24,7 +24,8 @@ export const ALLOWED_MIME_TYPES = {
         "audio/x-m4a", // Alternative MIME type some browsers use
     ],
     document: ["application/pdf"],
-    text: ["text/plain", "text/markdown", "text/csv", "application/json"],
+    // Text files removed - Anthropic API doesn't support text attachments
+    // Large pasted text is still converted to attachments, then auto-inserted inline on send
 } as const;
 
 /**
@@ -40,7 +41,6 @@ export const SIZE_LIMITS = {
     image: 10 * 1024 * 1024, // 10MB (before client-side resize)
     audio: 25 * 1024 * 1024, // 25MB
     document: 25 * 1024 * 1024, // 25MB (PDFs)
-    text: 5 * 1024 * 1024, // 5MB
 } as const;
 
 /**
@@ -77,9 +77,7 @@ export function getFileCategory(mimeType: string): FileCategory | null {
     if ((ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mimeType)) {
         return "audio";
     }
-    if ((ALLOWED_MIME_TYPES.text as readonly string[]).includes(mimeType)) {
-        return "text";
-    }
+    // Text files not supported as attachments (Anthropic API limitation)
     return null;
 }
 
@@ -106,5 +104,5 @@ export function formatFileSize(bytes: number): string {
  * Human-readable list of supported formats
  */
 export function getSupportedFormatsMessage(): string {
-    return "Images (JPEG, PNG, GIF, WebP), PDFs, audio files (MP3, WAV, FLAC, etc.), or text files";
+    return "Images (JPEG, PNG, GIF, WebP), PDFs, or audio files (MP3, WAV, FLAC, etc.)";
 }

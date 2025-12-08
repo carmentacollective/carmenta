@@ -863,8 +863,54 @@ function Composer({ isNewConversation }: ComposerProps) {
         async (e: FormEvent) => {
             e.preventDefault();
 
-            // If no text and no files, flash the input area and focus it
-            if (!input.trim() && completedFiles.length === 0) {
+            // Auto-insert PASTED text file attachments inline (Anthropic doesn't support text files)
+            // Only process text files that have pasted content stored (from large paste feature)
+            // Text files from file picker don't have pasted content and should fail with clear error
+            const TEXT_MIME_TYPES = [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json",
+            ];
+            const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
+
+            // Find pasted text files (have content in pastedTextContent Map)
+            const pastedTextFileIds = pendingFiles
+                .filter(
+                    (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
+                )
+                .map((p) => p.id);
+
+            if (pastedTextFileIds.length > 0) {
+                // Collect all pasted text content
+                const textContents: string[] = [];
+                for (const fileId of pastedTextFileIds) {
+                    const content = getTextContent(fileId);
+                    if (content) {
+                        textContents.push(content);
+                        removeFile(fileId);
+                    }
+                }
+
+                // Append to input and re-submit
+                if (textContents.length > 0) {
+                    const combinedText = textContents.join("\n\n");
+                    const newInput = input
+                        ? `${input}\n\n${combinedText}`
+                        : combinedText;
+                    setInput(newInput);
+
+                    // Wait for state update, then submit again
+                    setTimeout(() => {
+                        formRef.current?.requestSubmit();
+                    }, 0);
+                    return;
+                }
+            }
+
+            // If no text and no non-text files, flash the input area and focus it
+            const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
+            if (!input.trim() && nonTextFiles.length === 0) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 500);
                 inputRef.current?.focus();
@@ -882,7 +928,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                 await append({
                     role: "user",
                     content: message,
-                    files: completedFiles.map((f) => ({
+                    files: nonTextFiles.map((f) => ({
                         url: f.url,
                         mediaType: f.mediaType,
                         name: f.name,
@@ -904,6 +950,9 @@ function Composer({ isNewConversation }: ComposerProps) {
             isComposing,
             isUploading,
             completedFiles,
+            pendingFiles,
+            getTextContent,
+            removeFile,
             setInput,
             append,
             clearFiles,
@@ -930,12 +979,16 @@ function Composer({ isNewConversation }: ComposerProps) {
                 return;
             }
 
-            if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+            if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (input.trim() || completedFiles.length > 0)
+            ) {
                 e.preventDefault();
                 handleSubmit(e as unknown as FormEvent);
             }
         },
-        [isComposing, isLoading, input, handleStop, handleSubmit]
+        [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
     );
 
     // Auto-resize textarea
