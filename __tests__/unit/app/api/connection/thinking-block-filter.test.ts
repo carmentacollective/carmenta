@@ -6,7 +6,7 @@
  * filter them out before sending messages back to the API.
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 
 describe("Thinking block filtering", () => {
     // Simulate the filtering logic from route.ts

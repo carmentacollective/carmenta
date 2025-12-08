@@ -2,7 +2,7 @@
  * Demonstrates the bug in the old filtering logic and how the new logic fixes it
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 
 describe("Bug replication: old vs new filtering logic", () => {
     // OLD LOGIC - only filtered parts array

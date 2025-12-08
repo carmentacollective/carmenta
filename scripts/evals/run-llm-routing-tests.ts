@@ -260,7 +260,13 @@ async function runMultiTurnTest(
 
     const messages: any[] = [];
     let lastResponse: Response | null = null;
-    let lastHeaders: ReturnType<typeof parseHeaders> = {};
+    let lastHeaders: ReturnType<typeof parseHeaders> = {
+        model: undefined,
+        temperature: undefined,
+        explanation: undefined,
+        reasoning: undefined,
+        connectionId: undefined,
+    };
     let lastText = "";
     let lastToolsCalled: string[] = [];
     let connectionId: string | undefined;
@@ -940,8 +946,11 @@ async function main() {
         // Run quality scoring if enabled and we have response text
         if (scoringEnabled && result.response.responseText && result.success) {
             try {
+                const queryContent = Array.isArray(test.content)
+                    ? test.content.join(" → ")
+                    : test.content;
                 result.scores = await evaluateResponse(
-                    test.content,
+                    queryContent,
                     result.response.responseText
                 );
             } catch (error) {
