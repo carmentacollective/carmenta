@@ -59,6 +59,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "require-in-the-middle": "^8.0.1",
     "sqids": "^0.3.0",
     "svix": "^1.82.0",
