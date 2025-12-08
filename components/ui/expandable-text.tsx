@@ -15,10 +15,11 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Height threshold in pixels (approximately 4 lines at 1.5 line-height with 16px font)
- * Based on spec: "Show expand button when content exceeds 4 lines (approximately 120px)"
+ * Height threshold in pixels (approximately 6 lines at 1.5 line-height with 16px font)
+ * Increased to show more content before the blur fade (56px) takes effect.
+ * With 240px total and 56px blur, we show ~184px of readable content (~5 lines).
  */
-const COLLAPSE_HEIGHT_PX = 120;
+const COLLAPSE_HEIGHT_PX = 240;
 
 /**
  * Large max-height for expanded state.
@@ -78,7 +79,11 @@ export function ExpandableText({
 
     return (
         <div
-            className={cn("relative", showFrame && "expandable-text-frame", className)}
+            className={cn(
+                "relative pb-4",
+                showFrame && "expandable-text-frame",
+                className
+            )}
         >
             {/* Content container with animated height */}
             <div
@@ -96,45 +101,38 @@ export function ExpandableText({
                 {children}
             </div>
 
-            {/* Ellipsis indicator when collapsed */}
-            {!isExpanded && (
-                <div className="flex justify-center pt-1">
-                    <span className="text-xl text-purple-300">...</span>
-                </div>
-            )}
-
-            {/* Expand/collapse button */}
-            <div className="flex justify-center pt-4">
-                <button
-                    type="button"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    aria-expanded={isExpanded}
-                    aria-label={isExpanded ? "Collapse message" : "Expand message"}
+            {/* Expand/collapse button - positioned at bottom edge */}
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? "Collapse message" : "Expand message"}
+                className={cn(
+                    // Positioning - centered at bottom edge, overlapping content
+                    "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
+                    // Base sizing
+                    "flex h-8 w-8 items-center justify-center rounded-full",
+                    // Holographic gradient background
+                    "bg-gradient-to-b from-purple-300 to-pink-300 opacity-90",
+                    // Shadow and ring
+                    "shadow-lg ring-1 ring-white/20",
+                    // Transitions
+                    "transition-all duration-200",
+                    // Hover state
+                    "hover:scale-110 hover:shadow-xl",
+                    // Active state
+                    "active:translate-y-1/2 active:scale-105",
+                    // Focus state
+                    "focus:outline-none focus:ring-2 focus:ring-primary/60"
+                )}
+            >
+                <ChevronDown
                     className={cn(
-                        // Base sizing
-                        "flex h-8 w-8 items-center justify-center rounded-full",
-                        // Holographic gradient background
-                        "bg-gradient-to-b from-purple-300 to-pink-300 opacity-90",
-                        // Shadow and ring
-                        "shadow-lg ring-1 ring-white/20",
-                        // Transitions
-                        "transition-all duration-200",
-                        // Hover state
-                        "hover:scale-110 hover:shadow-xl",
-                        // Active state
-                        "active:translate-y-0.5",
-                        // Focus state
-                        "focus:outline-none focus:ring-2 focus:ring-primary/60"
+                        "h-4 w-4 text-white transition-transform duration-300",
+                        isExpanded && "rotate-180"
                     )}
-                >
-                    <ChevronDown
-                        className={cn(
-                            "h-4 w-4 text-white transition-transform duration-300",
-                            isExpanded && "rotate-180"
-                        )}
-                    />
-                </button>
-            </div>
+                />
+            </button>
         </div>
     );
 }
