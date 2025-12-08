@@ -150,6 +150,7 @@ return because Carmenta knows them, not just because it's capable.
 | **Conversations**    | ✅     | History via Connection Chooser, search past             |
 | **Reasoning Tokens** | 🔨     | Extended thinking display, auto-collapse, warm messages |
 | **Model Selection**  | ✅     | User choice per conversation with stepped slider        |
+| **File Attachments** | ✅     | Upload, validation, image processing, model routing     |
 | **Onboarding**       | ⏳     | Profile collection, quick capability demo               |
 | **Analytics**        | ⏳     | PostHog integration - who uses what, retention          |
 | **Usage Metering**   | ⏳     | Token counting, cost attribution (no billing yet)       |
@@ -184,10 +185,17 @@ return because Carmenta knows them, not just because it's capable.
 ### Not Yet
 
 - No voice
-- No file uploads
 - No dynamic/automatic model routing (M3)
 - No service integrations
 - No AI team
+
+### Built Ahead of Schedule
+
+- **File Attachments** - Originally planned for M3, built in M2
+  - Upload handling (lib/storage/upload.ts)
+  - File validation and processing (lib/storage/file-validator.ts, image-processor.ts)
+  - Model routing for vision and documents (lib/storage/model-routing.ts)
+  - UI components (file-picker-button.tsx, file-preview.tsx, upload-progress.tsx)
 
 ---
 
@@ -218,8 +226,7 @@ capability, not just because it has more features.
 | **Voice**                 | ⏳     | STT, TTS, natural conversation, push-to-talk                   |
 | **Model Intelligence**    | ⏳     | Routing rubric, task classification, automatic model selection |
 | **Concierge (Full)**      | ⏳     | Query classification, context assembly, intelligent routing    |
-| **File Attachments**      | ⏳     | PDF, images, documents into conversation context               |
-| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI, file upload                  |
+| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI                               |
 | **Concierge Improvement** | ⏳     | Live query evaluation, pattern detection, self-improvement     |
 
 ### Architecture: Model Intelligence
@@ -249,21 +256,20 @@ The full Concierge ([spec](./components/concierge.md)) operates in three phases:
 
 - **Voice providers**: STT (Whisper? Deepgram?), TTS (ElevenLabs? OpenAI?)
 - **Voice UX**: Wake word? Push-to-talk? Both? Latency targets?
-- **File processing**: RAG strategy, chunking approach, vision routing
 - **Model routing approach**: Fast LLM classification? RouteLLM? OpenRouter auto-router?
 
 ### Enhancements to Existing
 
 - **Memory**: Fast retrieval (< 100ms), doesn't slow down responses
 - **Concierge**: Signal-based classification, reasoning level determination
-- **Interface**: Voice button, file drag-drop, mobile-responsive
+- **File Attachments**: Advanced RAG for documents, enhanced vision routing
+- **Interface**: Voice button, mobile-responsive, polished interactions
 - **Delight**: Context-aware celebrations, milestone recognition
 
 ### Success Criteria
 
 - Voice conversations feel natural, not robotic
 - Total latency supports flow (voice → response feels conversational)
-- File uploads work seamlessly for common formats
 - Model selection feels right (quick questions fast, deep analysis thorough)
 - Users report switching from other AI tools
 - Daily retention among active users

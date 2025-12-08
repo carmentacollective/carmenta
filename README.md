@@ -110,7 +110,16 @@ component catalog.
 
 ## Status
 
-Early development. Building in public.
+**M1: Soul Proven** - Complete ✅ Core experience works and feels like Carmenta.
+Holographic interface, intelligent model selection, persistent conversations, error
+handling, observability.
+
+**M2: Relationship Grows** - In Progress 🔨 Currently building: Memory system, auth
+integration (Clerk), file attachments, reasoning token display.
+[See roadmap](knowledge/roadmap.md) for details.
+
+Building in public.
+[Follow progress on GitHub](https://github.com/nicholaswilliams/carmenta).
 
 ## Development
 
