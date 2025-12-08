@@ -237,7 +237,7 @@ export function mapDBPartToUIPart(part: MessagePart): UIMessagePartLike {
             return {
                 type: "file",
                 mediaType: part.fileMediaType ?? "",
-                filename: part.fileName ?? "",
+                name: part.fileName ?? "",
                 url: part.fileUrl ?? "",
             };
 

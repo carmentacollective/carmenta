@@ -9,8 +9,9 @@
  * - Audio/Video/Other: Icon + filename
  */
 
+import { useState } from "react";
 import Image from "next/image";
-import { FileIcon, FileText, Music, File } from "lucide-react";
+import { FileIcon, FileText, Music, File, ImageOff } from "lucide-react";
 import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 import { getThumbnailUrl } from "@/lib/storage/upload";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,20 @@ export function FilePreview({
     const isPDF = mediaType === "application/pdf";
     const isAudio = (ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mediaType);
 
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+
     if (isImage) {
+        // Show error state if image failed to load
+        if (hasError) {
+            return (
+                <div className="flex items-center gap-2 rounded-lg border border-foreground/10 bg-background/80 px-3 py-2 text-foreground/50">
+                    <ImageOff className="h-5 w-5 shrink-0" />
+                    <span className="text-sm">Image unavailable</span>
+                </div>
+            );
+        }
+
         return (
             <a
                 href={url}
@@ -45,7 +59,15 @@ export function FilePreview({
                     alt={filename}
                     width={400}
                     height={256}
-                    className="max-h-64 w-auto object-cover transition-opacity group-hover:opacity-90"
+                    onLoad={() => setIsLoading(false)}
+                    onError={() => {
+                        setIsLoading(false);
+                        setHasError(true);
+                    }}
+                    className={cn(
+                        "max-h-64 w-auto object-cover transition-opacity group-hover:opacity-90",
+                        isLoading && "animate-pulse bg-foreground/10"
+                    )}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/10 group-hover:opacity-100">
                     <span className="text-xs text-white">Click to view full size</span>
