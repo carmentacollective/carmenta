@@ -246,6 +246,246 @@ async function consumeStream(
 }
 
 /**
+ * Run a multi-turn test query
+ * Sends multiple messages in sequence, building up conversation history
+ */
+async function runMultiTurnTest(
+    query: TestQuery,
+    startTime: number,
+    validations: TestResult["validations"]
+): Promise<TestResult> {
+    if (!Array.isArray(query.content)) {
+        throw new Error("Multi-turn test must have array content");
+    }
+
+    const messages: any[] = [];
+    let lastResponse: Response | null = null;
+    let lastHeaders: ReturnType<typeof parseHeaders> = {};
+    let lastText = "";
+    let lastToolsCalled: string[] = [];
+    let connectionId: string | undefined;
+
+    try {
+        // Send each message in the conversation
+        for (let i = 0; i < query.content.length; i++) {
+            const content = query.content[i];
+
+            // Add user message to conversation
+            messages.push(buildMessage(content));
+
+            // Build request body
+            const body: Record<string, unknown> = {
+                messages: [...messages], // Send full conversation history
+            };
+
+            // Add connectionId from first response
+            if (connectionId) {
+                body.connectionId = connectionId;
+            }
+
+            // Add overrides if specified
+            if (query.overrides) {
+                if (query.overrides.modelOverride) {
+                    body.modelOverride = query.overrides.modelOverride;
+                }
+                if (query.overrides.temperatureOverride !== undefined) {
+                    body.temperatureOverride = query.overrides.temperatureOverride;
+                }
+                if (query.overrides.reasoningOverride) {
+                    body.reasoningOverride = query.overrides.reasoningOverride;
+                }
+            }
+
+            // Send request
+            const response = await fetch(`${flags.baseUrl}/api/connection`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${JWT_TOKEN}`,
+                },
+                body: JSON.stringify(body),
+            });
+
+            lastResponse = response;
+            lastHeaders = parseHeaders(response.headers);
+
+            // Get connectionId from first response
+            if (!connectionId && lastHeaders.connectionId) {
+                connectionId = lastHeaders.connectionId;
+            }
+
+            // Handle error responses
+            if (!response.ok) {
+                let errorText = "";
+                try {
+                    const errorBody = await response.json();
+                    errorText = errorBody.error || JSON.stringify(errorBody);
+                } catch {
+                    errorText = await response.clone().text();
+                }
+
+                validations.push({
+                    name: "HTTP Status",
+                    passed: query.expectations.shouldSucceed === false,
+                    expected: query.expectations.shouldSucceed ? "200" : "non-200",
+                    actual: String(response.status),
+                });
+
+                const duration = Date.now() - startTime;
+                return {
+                    query,
+                    success: query.expectations.shouldSucceed === false,
+                    duration,
+                    response: {
+                        status: response.status,
+                        ...lastHeaders,
+                        toolsCalled: [],
+                        responseText: "",
+                        error: errorText,
+                    },
+                    validations,
+                };
+            }
+
+            // Consume streaming response
+            const { text, toolsCalled } = await consumeStream(response);
+            lastText = text;
+            lastToolsCalled = toolsCalled;
+
+            // Build assistant message from response and add to conversation history
+            // This simulates what the client does
+            const assistantMessage = {
+                id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                role: "assistant" as const,
+                parts: [] as any[],
+            };
+
+            // Add text part if present
+            if (text) {
+                assistantMessage.parts.push({ type: "text", text });
+            }
+
+            // Add reasoning part if reasoning was enabled
+            // This simulates the reasoning part that would come back from the API
+            if (lastHeaders.reasoning?.enabled) {
+                assistantMessage.parts.push({
+                    type: "reasoning",
+                    text: "Simulated reasoning content for testing",
+                });
+            }
+
+            messages.push(assistantMessage);
+        }
+
+        // Validate expectations using the last response
+        const exp = query.expectations;
+
+        if (exp.shouldSucceed !== undefined) {
+            validations.push({
+                name: "HTTP Status",
+                passed: exp.shouldSucceed === (lastResponse!.status === 200),
+                expected: exp.shouldSucceed ? "200" : "non-200",
+                actual: String(lastResponse!.status),
+            });
+        }
+
+        if (exp.model !== undefined && exp.model !== null) {
+            const modelPatterns = exp.model.split("|");
+            const modelMatches = modelPatterns.some((p) =>
+                lastHeaders.model?.toLowerCase().includes(p.toLowerCase())
+            );
+            validations.push({
+                name: "Model",
+                passed: modelMatches,
+                expected: exp.model,
+                actual: lastHeaders.model ?? "unknown",
+            });
+        }
+
+        if (exp.temperatureRange !== undefined && exp.temperatureRange !== null) {
+            const [min, max] = exp.temperatureRange;
+            const temp = lastHeaders.temperature ?? -1;
+            validations.push({
+                name: "Temperature",
+                passed: temp >= min && temp <= max,
+                expected: `[${min}, ${max}]`,
+                actual: String(temp),
+            });
+        }
+
+        if (exp.reasoningEnabled !== undefined && exp.reasoningEnabled !== null) {
+            const actualEnabled = lastHeaders.reasoning?.enabled ?? false;
+            validations.push({
+                name: "Reasoning Enabled",
+                passed: actualEnabled === exp.reasoningEnabled,
+                expected: String(exp.reasoningEnabled),
+                actual: String(actualEnabled),
+            });
+        }
+
+        if (exp.toolCalled !== undefined && exp.toolCalled !== null) {
+            const toolWasCalled = lastToolsCalled.includes(exp.toolCalled);
+            validations.push({
+                name: "Tool Called",
+                passed: toolWasCalled,
+                expected: exp.toolCalled,
+                actual:
+                    lastToolsCalled.length > 0 ? lastToolsCalled.join(", ") : "none",
+            });
+        }
+
+        if (exp.responseContains !== undefined && exp.responseContains !== null) {
+            const contains = lastText
+                .toLowerCase()
+                .includes(exp.responseContains.toLowerCase());
+            validations.push({
+                name: "Response Contains",
+                passed: contains,
+                expected: `contains "${exp.responseContains}"`,
+                actual: contains ? "yes" : "no",
+            });
+        }
+
+        const allPassed = validations.every((v) => v.passed);
+        const duration = Date.now() - startTime;
+
+        return {
+            query,
+            success: allPassed,
+            duration,
+            response: {
+                status: lastResponse!.status,
+                ...lastHeaders,
+                toolsCalled: lastToolsCalled,
+                responseText: lastText,
+            },
+            validations,
+        };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        return {
+            query,
+            success: false,
+            duration,
+            response: {
+                status: 0,
+                toolsCalled: [],
+                responseText: "",
+                error: error instanceof Error ? error.message : String(error),
+            },
+            validations: [
+                {
+                    name: "Request",
+                    passed: false,
+                    expected: "no error",
+                    actual: error instanceof Error ? error.message : String(error),
+                },
+            ],
+        };
+    }
+}
+
+/**
  * Run a single test query
  */
 async function runTest(query: TestQuery): Promise<TestResult> {
@@ -253,8 +493,14 @@ async function runTest(query: TestQuery): Promise<TestResult> {
     const validations: TestResult["validations"] = [];
 
     try {
+        // Handle multi-turn conversations
+        if (query.multiTurn && Array.isArray(query.content)) {
+            return await runMultiTurnTest(query, startTime, validations);
+        }
+
+        const content = Array.isArray(query.content) ? query.content[0] : query.content;
         const body: Record<string, unknown> = {
-            messages: [buildMessage(query.content)],
+            messages: [buildMessage(content)],
         };
 
         // Add overrides if specified

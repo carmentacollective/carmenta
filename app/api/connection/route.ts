@@ -437,17 +437,39 @@ export async function POST(req: Request) {
         // Strip reasoning parts before sending to API
         // Anthropic's thinking blocks ('thinking', 'redacted_thinking') cannot be modified
         // in multi-turn conversations. We also strip our custom 'reasoning' type.
-        const messagesWithoutReasoning = messages.map((msg) => ({
-            ...msg,
-            parts: msg.parts.filter((part) => {
-                const partType = part.type as string;
-                return (
-                    partType !== "reasoning" &&
-                    partType !== "thinking" &&
-                    partType !== "redacted_thinking"
-                );
-            }),
-        }));
+        //
+        // The AI SDK's UIMessage type can have content as either a string or an array of parts.
+        // We need to filter thinking blocks from both the 'parts' array (our format) and
+        // the 'content' array (when it's an array) to ensure compatibility.
+        const messagesWithoutReasoning = messages.map((msg) => {
+            const filtered: any = { ...msg };
+
+            // Filter parts array if it exists
+            if (msg.parts) {
+                filtered.parts = msg.parts.filter((part) => {
+                    const partType = part.type as string;
+                    return (
+                        partType !== "reasoning" &&
+                        partType !== "thinking" &&
+                        partType !== "redacted_thinking"
+                    );
+                });
+            }
+
+            // Filter content array if it exists and is an array
+            if (Array.isArray((msg as any).content)) {
+                filtered.content = (msg as any).content.filter((part: any) => {
+                    const partType = part.type as string;
+                    return (
+                        partType !== "reasoning" &&
+                        partType !== "thinking" &&
+                        partType !== "redacted_thinking"
+                    );
+                });
+            }
+
+            return filtered;
+        });
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
