@@ -89,7 +89,7 @@ The page lives at `/connect` and the experience is called "connecting with Carme
 
 ---
 
-## M1: Soul Proven ✅ MOSTLY COMPLETE
+## M1: Soul Proven ✅ COMPLETE
 
 **Persona:** Nick (see personas.md) **Signal:** "The core experience works and feels
 like Carmenta" **Test:** Does this feel meaningfully different from ChatGPT/Claude? Do
@@ -110,23 +110,16 @@ warm, collaborative, intelligent. The soul is there before the features.
 | **Error Handling**     | ✅     | Sentry integration, graceful error states          |
 | **Observability**      | ✅     | Pino structured logging, test-aware silence        |
 | **Thinking Indicator** | ✅     | Glass card with shimmer, warm varied messages      |
-| **Status Indicators**  | 🔨     | Tool execution states, debug mode for admins       |
-| **Delight Layer**      | 🔨     | Variable reinforcement, occasional celebrations    |
-
-### Remaining Work
-
-- **Status Indicators**: Complete tool execution feedback
-  (pending/running/complete/error)
-- **Delight Integration**: Hash-based variable reinforcement for warmth
-- **System Prompt Refinement**: Ensure consistent "we" framing in all responses
+| **Status Indicators**  | ✅     | Tool execution states (4-state badge), debug panel |
+| **Delight Layer**      | ✅     | Hash-based variable reinforcement, celebrations    |
 
 ### Success Criteria
 
 - Can have a multi-turn conversation ✅
 - Responses stream with low perceived latency ✅
-- Heart-centered "we" tone is consistent (needs verification)
+- Heart-centered "we" tone is consistent ✅
 - Errors display helpfully, not as stack traces ✅
-- You actually use it for real conversations (dogfooding ongoing)
+- You actually use it for real conversations ✅
 
 ### Not Yet
 
@@ -382,8 +375,8 @@ M0: Foundation → Hosting → Testing                               ✅ COMPLET
          ↓
 M0.5: Interface → Concierge (stub) → Persistence → Chooser       ✅ COMPLETE
          ↓
-M1: Data Storage → Error Handling → Observability                ✅ MOSTLY DONE
-    Status Indicators → Delight Layer                            🔨 IN PROGRESS
+M1: Data Storage → Error Handling → Observability                ✅ COMPLETE
+    Status Indicators → Delight Layer                            ✅ COMPLETE
          ↓
 M2: Auth ✅ → Memory → Reasoning Tokens → Onboarding → Analytics
          ↓
@@ -414,13 +407,12 @@ Decisions that shaped the architecture - these are settled, not open questions:
 
 ## Open Questions
 
-### Current Focus (M1 → M2)
+### Current Focus (M2)
 
 - **Memory architecture**: pgvector in Supabase? External service (Zep, Mem0)? What
   context window strategy?
 - **Reasoning level calibration**: How accurately can we determine appropriate effort
   from query alone?
-- **Delight implementation**: What's the right balance of celebration frequency?
 
 ### Sequencing Rationale
 

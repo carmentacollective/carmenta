@@ -23,7 +23,6 @@ import {
     type UIMessageLike,
 } from "./message-mapping";
 import { logger } from "../logger";
-import { generateTitle } from "./title-generator";
 import { encodeConnectionId, generateSlug } from "../sqids";
 
 // ============================================================================
@@ -387,49 +386,6 @@ export async function findInterruptedConnections(
         ),
         orderBy: [desc(connections.lastActivityAt)],
     });
-}
-
-// ============================================================================
-// TITLE GENERATION
-// ============================================================================
-
-/**
- * Generates a title from the first user message using LLM.
- *
- * Uses Haiku for fast, cheap title generation with optional emoji prefixes.
- * Falls back to simple truncation if LLM fails.
- *
- * @param connectionId - ID of the connection
- */
-export async function generateTitleFromFirstMessage(
-    connectionId: number
-): Promise<void> {
-    const connection = await getConnectionWithMessages(connectionId);
-
-    if (!connection || connection.title) {
-        return; // Already has title or doesn't exist
-    }
-
-    // Find first user message
-    const firstUserMessage = connection.messages.find((m) => m.role === "user");
-
-    if (!firstUserMessage || firstUserMessage.parts.length === 0) {
-        return;
-    }
-
-    // Get text from first text part
-    const firstTextPart = firstUserMessage.parts.find((p) => p.type === "text");
-
-    if (!firstTextPart || !firstTextPart.textContent) {
-        return;
-    }
-
-    // Generate title with LLM (falls back to truncation on failure)
-    const title = await generateTitle(firstTextPart.textContent);
-
-    await updateConnection(connectionId, { title });
-
-    logger.debug({ connectionId, title }, "Generated connection title");
 }
 
 // ============================================================================
