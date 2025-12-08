@@ -10,7 +10,7 @@
  * - Threshold: 4 lines (~120px) or semantic paragraph breaks
  */
 
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useLayoutEffect, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +21,11 @@ import { cn } from "@/lib/utils";
 const COLLAPSE_HEIGHT_PX = 120;
 
 /**
- * Fade distance matching --chat-fade-bottom variable
+ * Large max-height for expanded state.
+ * CSS transitions need numeric values on both ends - can't transition to "none".
+ * This value accommodates any reasonable content length.
  */
-const FADE_DISTANCE_PX = 56;
+const EXPANDED_MAX_HEIGHT_PX = 10000;
 
 interface ExpandableTextProps {
     /** Content to render - can be text or any ReactNode */
@@ -47,7 +49,8 @@ export function ExpandableText({
     const contentRef = useRef<HTMLDivElement>(null);
 
     // Measure content height to determine if expansion is needed
-    useEffect(() => {
+    // useLayoutEffect prevents flash of uncollapsed content on initial render
+    useLayoutEffect(() => {
         if (!contentRef.current) return;
 
         const checkHeight = () => {
@@ -62,7 +65,7 @@ export function ExpandableText({
         observer.observe(contentRef.current);
 
         return () => observer.disconnect();
-    }, [threshold, children]);
+    }, [threshold, children, needsExpansion]);
 
     // If content doesn't need expansion, render without any controls
     if (!needsExpansion) {
@@ -85,7 +88,9 @@ export function ExpandableText({
                     !isExpanded && "expandable-text-fade"
                 )}
                 style={{
-                    maxHeight: isExpanded ? "none" : `${threshold}px`,
+                    maxHeight: isExpanded
+                        ? `${EXPANDED_MAX_HEIGHT_PX}px`
+                        : `${threshold}px`,
                 }}
             >
                 {children}
