@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, type ComponentProps } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
     copyToClipboard,
@@ -92,7 +92,7 @@ function useCopyDelight() {
     return { currentMessage, triggerDelight, clearMessage, scheduleClear };
 }
 
-interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
+interface CopyButtonProps {
     /**
      * Text content to copy to clipboard
      */
@@ -124,6 +124,11 @@ interface CopyButtonProps extends Omit<ComponentProps<"button">, "onClick"> {
      * - true: Button with dropdown menu (for messages)
      */
     showMenu?: boolean;
+
+    /**
+     * Optional CSS class name
+     */
+    className?: string;
 }
 
 /**
@@ -147,7 +152,6 @@ export function CopyButton({
     size = "md",
     showMenu = false,
     className,
-    ...props
 }: CopyButtonProps) {
     const [copied, setCopied] = useState<CopyMode | false>(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -237,7 +241,6 @@ export function CopyButton({
                     !copied && "w-7 sm:w-8",
                     className
                 )}
-                {...props}
             >
                 {copied ? (
                     <>
@@ -273,7 +276,6 @@ export function CopyButton({
                         "gap-1.5 overflow-hidden rounded-l-md px-2",
                         className
                     )}
-                    {...props}
                 >
                     {copied ? (
                         <>
