@@ -863,8 +863,47 @@ function Composer({ isNewConversation }: ComposerProps) {
         async (e: FormEvent) => {
             e.preventDefault();
 
-            // If no text and no files, flash the input area and focus it
-            if (!input.trim() && completedFiles.length === 0) {
+            // Auto-insert text file attachments inline (Anthropic doesn't support text files)
+            // Find all text/plain files with pasted content
+            const textFilesToInsert = completedFiles.filter(
+                (f) => f.mediaType === "text/plain"
+            );
+            const textFileIds = pendingFiles
+                .filter((p) => p.file.type === "text/plain")
+                .map((p) => p.id);
+
+            if (textFileIds.length > 0) {
+                // Collect all text content
+                const textContents: string[] = [];
+                for (const fileId of textFileIds) {
+                    const content = getTextContent(fileId);
+                    if (content) {
+                        textContents.push(content);
+                    }
+                    removeFile(fileId);
+                }
+
+                // Append to input
+                if (textContents.length > 0) {
+                    const combinedText = textContents.join("\n\n");
+                    const newInput = input
+                        ? `${input}\n\n${combinedText}`
+                        : combinedText;
+                    setInput(newInput);
+
+                    // Wait for state update, then submit again
+                    setTimeout(() => {
+                        formRef.current?.requestSubmit();
+                    }, 0);
+                    return;
+                }
+            }
+
+            // If no text and no non-text files, flash the input area and focus it
+            const nonTextFiles = completedFiles.filter(
+                (f) => f.mediaType !== "text/plain"
+            );
+            if (!input.trim() && nonTextFiles.length === 0) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 500);
                 inputRef.current?.focus();
@@ -882,7 +921,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                 await append({
                     role: "user",
                     content: message,
-                    files: completedFiles.map((f) => ({
+                    files: nonTextFiles.map((f) => ({
                         url: f.url,
                         mediaType: f.mediaType,
                         name: f.name,
@@ -904,6 +943,9 @@ function Composer({ isNewConversation }: ComposerProps) {
             isComposing,
             isUploading,
             completedFiles,
+            pendingFiles,
+            getTextContent,
+            removeFile,
             setInput,
             append,
             clearFiles,
