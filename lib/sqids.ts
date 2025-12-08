@@ -54,20 +54,26 @@ export function encodeConnectionId(seqId: number): string {
  * Useful for database lookups - decode the URL ID to get the seq_id,
  * then query by the indexed integer column.
  *
+ * Returns null for invalid IDs instead of throwing, allowing graceful
+ * handling in server actions.
+ *
  * @param id - The Sqid to decode
- * @returns The original sequential ID
+ * @returns The original sequential ID, or null if invalid
  *
  * @example
  * decodeConnectionId("2ot9ib") // => 1
+ * decodeConnectionId("invalid") // => null
  */
-export function decodeConnectionId(id: string): number {
-    const decoded = sqids.decode(id);
-    if (decoded.length !== 1) {
-        throw new Error(
-            `Invalid connection ID: expected 1 number, got ${decoded.length}`
-        );
+export function decodeConnectionId(id: string): number | null {
+    try {
+        const decoded = sqids.decode(id);
+        if (decoded.length !== 1) {
+            return null;
+        }
+        return decoded[0];
+    } catch {
+        return null;
     }
-    return decoded[0];
 }
 
 /**

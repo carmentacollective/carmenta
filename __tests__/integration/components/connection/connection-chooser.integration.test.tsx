@@ -44,6 +44,9 @@ vi.mock("@/lib/actions/connections", async (importOriginal) => {
             const { decodeConnectionId } = await import("@/lib/sqids");
             const { deleteConnection: dbDelete } = await import("@/lib/db/connections");
             const internalId = decodeConnectionId(connectionId);
+            if (internalId === null) {
+                throw new Error("Invalid connection ID");
+            }
             await dbDelete(internalId);
         },
         // archiveConnection bypasses auth
@@ -52,6 +55,9 @@ vi.mock("@/lib/actions/connections", async (importOriginal) => {
             const { archiveConnection: dbArchive } =
                 await import("@/lib/db/connections");
             const internalId = decodeConnectionId(connectionId);
+            if (internalId === null) {
+                throw new Error("Invalid connection ID");
+            }
             await dbArchive(internalId);
         },
     };

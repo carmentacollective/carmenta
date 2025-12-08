@@ -156,6 +156,10 @@ export async function loadConnection(connectionId: string): Promise<{
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        return null;
+    }
+
     const connection = await getConnectionWithMessages(internalId);
 
     if (!connection || connection.userId !== dbUser.id) {
@@ -186,6 +190,9 @@ export async function loadConnectionMessages(
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        return [];
+    }
 
     // Verify ownership first
     const connection = await getConnectionWithMessages(internalId);
@@ -217,6 +224,9 @@ export async function updateConnection(
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        return null;
+    }
 
     // Verify ownership
     const connection = await getConnectionWithMessages(internalId);
@@ -241,6 +251,9 @@ export async function archiveConnection(connectionId: string): Promise<void> {
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        throw new Error("Connection not found or not authorized");
+    }
 
     // Verify ownership
     const connection = await getConnectionWithMessages(internalId);
@@ -264,6 +277,9 @@ export async function deleteConnection(connectionId: string): Promise<void> {
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        throw new Error("Connection not found or not authorized");
+    }
 
     // Verify ownership
     const connection = await getConnectionWithMessages(internalId);
@@ -290,6 +306,9 @@ export async function getConnectionMetadata(
 
     // Decode Sqid to internal integer ID
     const internalId = decodeConnectionId(connectionId);
+    if (internalId === null) {
+        return null;
+    }
 
     const connection = await getConnectionWithMessages(internalId);
 
