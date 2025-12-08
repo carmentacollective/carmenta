@@ -348,12 +348,9 @@
         @apply my-4 border-foreground/10;
     }
 
-    /* Tables - Enhanced with rounded borders, hover effects, and horizontal scroll */
+    /* Tables - Enhanced with rounded borders and hover effects */
     .holo-markdown table {
-        @apply scrollbar-holo my-3 w-full overflow-x-auto rounded-lg border border-foreground/10 text-sm;
-        border-spacing: 0;
-        border-collapse: separate;
-        display: block; /* Enable horizontal scroll */
+        @apply w-full text-sm;
     }
 
     .holo-markdown thead {

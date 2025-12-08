@@ -542,6 +542,18 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                     code: CodeBlock,
+                                    table: ({ children }) => (
+                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+                                            <table
+                                                style={{
+                                                    borderCollapse: "separate",
+                                                    borderSpacing: 0,
+                                                }}
+                                            >
+                                                {children}
+                                            </table>
+                                        </div>
+                                    ),
                                 }}
                             >
                                 {content}
@@ -641,6 +653,18 @@ function AssistantMessage({
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                     code: CodeBlock,
+                                    table: ({ children }) => (
+                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+                                            <table
+                                                style={{
+                                                    borderCollapse: "separate",
+                                                    borderSpacing: 0,
+                                                }}
+                                            >
+                                                {children}
+                                            </table>
+                                        </div>
+                                    ),
                                 }}
                             >
                                 {content}
