@@ -80,7 +80,8 @@ export default function ConnectServicePage() {
                                     body: JSON.stringify({
                                         service,
                                         connectionId: event.payload?.connectionId,
-                                        providerConfigKey: event.payload?.providerConfigKey,
+                                        providerConfigKey:
+                                            event.payload?.providerConfigKey,
                                     }),
                                 });
 
@@ -91,7 +92,10 @@ export default function ConnectServicePage() {
                                     );
                                 }
 
-                                logger.info({ service }, "Connection saved successfully");
+                                logger.info(
+                                    { service },
+                                    "Connection saved successfully"
+                                );
                                 window.location.href = `/integrations?connected=${encodeURIComponent(service)}`;
                             } catch (err) {
                                 logger.error({ error: err }, "Error saving connection");

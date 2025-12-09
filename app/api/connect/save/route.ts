@@ -37,7 +37,10 @@ export async function POST(req: Request) {
 
         const userEmail = user.emailAddresses[0]?.emailAddress;
         if (!userEmail) {
-            return NextResponse.json({ error: "User email not found" }, { status: 400 });
+            return NextResponse.json(
+                { error: "User email not found" },
+                { status: 400 }
+            );
         }
 
         // Parse and validate
@@ -45,7 +48,10 @@ export async function POST(req: Request) {
         const parseResult = requestSchema.safeParse(body);
 
         if (!parseResult.success) {
-            logger.warn({ userEmail, error: parseResult.error }, "Invalid save request");
+            logger.warn(
+                { userEmail, error: parseResult.error },
+                "Invalid save request"
+            );
             return NextResponse.json(
                 {
                     error: "Invalid request",
@@ -75,7 +81,11 @@ export async function POST(req: Request) {
         let accountDisplayName: string;
 
         try {
-            const accountInfo = await fetchAccountInfo(service, connectionId, dbUser.id);
+            const accountInfo = await fetchAccountInfo(
+                service,
+                connectionId,
+                dbUser.id
+            );
             accountId = accountInfo.identifier;
             accountDisplayName = accountInfo.displayName;
         } catch (error) {
@@ -140,7 +150,12 @@ export async function POST(req: Request) {
                 });
 
                 logger.info(
-                    { userId: dbUser.id, service, accountId, isDefault: isFirstAccount },
+                    {
+                        userId: dbUser.id,
+                        service,
+                        accountId,
+                        isDefault: isFirstAccount,
+                    },
                     "Created new integration via save endpoint"
                 );
             }
