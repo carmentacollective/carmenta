@@ -24,11 +24,20 @@ const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
 
+interface UserAuthButtonProps {
+    /** Additional classes for the container */
+    className?: string;
+}
+
 /**
- * Custom user menu button matching ConnectionChooser style.
- * Glass morphism design with profile picture, theme selector (light/dark/system), and account management.
+ * Unified user authentication button used across all pages.
+ *
+ * When signed in: Shows user icon with dropdown (account, integrations, theme, sign out)
+ * When signed out: Shows "Sign In" button linking to /sign-in
+ *
+ * Glass morphism design matching the holographic theme.
  */
-export function OptionalUserButton() {
+export function UserAuthButton({ className }: UserAuthButtonProps) {
     const { isLoaded, isSignedIn } = useAuth();
     const { user } = useUser();
     const { signOut, openUserProfile } = useClerk();
@@ -36,16 +45,28 @@ export function OptionalUserButton() {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { theme, setTheme } = useTheme();
 
-    // Reserve space to prevent layout shift
-    if (!isLoaded || !isSignedIn || !user) {
-        return <div className="h-12 w-12" aria-hidden="true" />;
+    // Show nothing while loading to prevent flash
+    if (!isLoaded) {
+        return <div className={cn("h-10 w-10", className)} aria-hidden="true" />;
     }
 
+    // Not signed in - show Sign In button
+    if (!isSignedIn || !user) {
+        return (
+            <Link
+                href="/sign-in"
+                className={cn("btn-holo px-4 py-2 text-sm", className)}
+            >
+                Sign In
+            </Link>
+        );
+    }
+
+    // Signed in - show user dropdown
     const profileImageUrl = user.imageUrl;
     const displayName = user.fullName || user.firstName || "User";
     const email = user.primaryEmailAddress?.emailAddress;
 
-    // Theme options with icons and labels
     const themeOptions = [
         { value: "light", label: "Light", icon: Sun },
         { value: "dark", label: "Dark", icon: Moon },
@@ -53,7 +74,7 @@ export function OptionalUserButton() {
     ] as const;
 
     return (
-        <>
+        <div className={cn("relative", className)}>
             {/* Trigger button - UserCircle icon */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -78,7 +99,7 @@ export function OptionalUserButton() {
 
                         {/* Dropdown menu */}
                         <motion.div
-                            className="fixed right-2 top-20 z-50 sm:right-4 md:right-12"
+                            className="absolute right-0 top-full z-50 mt-2"
                             initial={{ opacity: 0, y: -12, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -187,6 +208,6 @@ export function OptionalUserButton() {
                     </>
                 )}
             </AnimatePresence>
-        </>
+        </div>
     );
 }

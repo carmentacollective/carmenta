@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/nextjs";
 import { db, schema } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { ClickUpAdapter } from "@/lib/integrations/adapters/clickup";
+import { fetchAccountInfo } from "@/lib/integrations/fetch-account-info";
 
 /**
  * Nango webhook handler
@@ -51,7 +51,8 @@ interface NangoWebhookEvent {
 function getServiceFromProviderKey(providerKey: string): string {
     const mapping: Record<string, string> = {
         clickup: "clickup",
-        // Add more services as needed
+        notion: "notion",
+        dropbox: "dropbox",
     };
     return mapping[providerKey] || providerKey;
 }
@@ -167,20 +168,21 @@ async function storeSuccessfulConnection(
             return;
         }
 
-        // Fetch account info from the service (e.g., ClickUp username/email)
+        // Fetch account info from the service
         let accountId: string;
         let accountDisplayName: string;
 
-        if (service === "clickup") {
-            const adapter = new ClickUpAdapter();
-            const accountInfo = await adapter.fetchAccountInfo(connectionId, user.id);
+        try {
+            const accountInfo = await fetchAccountInfo(service, connectionId, user.id);
             accountId = accountInfo.identifier;
             accountDisplayName = accountInfo.displayName;
-        } else {
-            // Fallback for unknown services
+        } catch (error) {
+            logger.error(
+                { error, service, connectionId, userId: user.id },
+                "Failed to fetch account info, falling back to defaults"
+            );
             accountId = "default";
             accountDisplayName = service;
-            logger.warn({ service }, "Unknown service - using default account info");
         }
 
         // Upsert integration record (idempotent for webhook retries)

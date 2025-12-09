@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { ThemeSwitcher } from "@/components/ui";
+import { ThemeSwitcher, UserAuthButton } from "@/components/ui";
 
 interface SiteHeaderProps {
     /**
@@ -54,6 +54,7 @@ export function SiteHeader({
             </Link>
             <div className="flex items-center gap-4">
                 {showThemeSwitcher && <ThemeSwitcher />}
+                <UserAuthButton />
                 {rightContent}
             </div>
         </header>

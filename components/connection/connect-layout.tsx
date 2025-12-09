@@ -16,8 +16,8 @@ import { type ReactNode } from "react";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectionChooser } from "./connection-chooser";
-import { OptionalUserButton } from "./optional-user-button";
 import { Oracle } from "@/components/ui/oracle";
+import { UserAuthButton } from "@/components/ui";
 import type { PublicConnection } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
@@ -65,7 +65,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     </div>
 
                     {/* Account */}
-                    <OptionalUserButton />
+                    <UserAuthButton />
                 </header>
 
                 {/* Chat (messages + input) fills the rest */}

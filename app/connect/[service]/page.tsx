@@ -63,7 +63,7 @@ export default function ConnectServicePage() {
                             // User closed the modal
                             window.location.href = "/integrations";
                         } else if (event.type === "connect") {
-                            // Successfully connected - redirect back to integrations
+                            // Successfully connected - save connection immediately (fallback for webhook issues)
                             logger.info(
                                 {
                                     connectionId: event.payload?.connectionId,
@@ -71,7 +71,40 @@ export default function ConnectServicePage() {
                                 },
                                 "Connection successful"
                             );
-                            window.location.href = `/integrations?connected=${encodeURIComponent(service)}`;
+
+                            try {
+                                // Call save endpoint as fallback for webhook
+                                const saveResponse = await fetch("/api/connect/save", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        service,
+                                        connectionId: event.payload?.connectionId,
+                                        providerConfigKey:
+                                            event.payload?.providerConfigKey,
+                                    }),
+                                });
+
+                                if (!saveResponse.ok) {
+                                    logger.error(
+                                        { status: saveResponse.status },
+                                        "Failed to save connection"
+                                    );
+                                }
+
+                                logger.info(
+                                    { service },
+                                    "Connection saved successfully"
+                                );
+                                window.location.href = `/integrations?connected=${encodeURIComponent(service)}`;
+                            } catch (err) {
+                                logger.error({ error: err }, "Error saving connection");
+                                setError(
+                                    err instanceof Error
+                                        ? err.message
+                                        : "Failed to save connection"
+                                );
+                            }
                         }
                     },
                 });
