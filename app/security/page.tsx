@@ -11,6 +11,8 @@ import {
     ExternalLink,
 } from "lucide-react";
 
+import { Footer } from "@/components/footer";
+
 export const metadata: Metadata = {
     title: "Security",
     description:
@@ -418,6 +420,7 @@ export default function SecurityPage() {
                     </div>
                 </div>
             </section>
+            <Footer />
         </div>
     );
 }

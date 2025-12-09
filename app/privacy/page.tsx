@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
 
 import { Footer } from "@/components/footer";
 
@@ -69,15 +68,15 @@ export default function PrivacyPage() {
 
                         <div className="mt-4">
                             <h3 className="mb-2 font-semibold text-primary">
-                                → Your control:
+                                → Our control:
                             </h3>
                             <ul className="list-disc space-y-1 pl-6 text-sm">
                                 <li>
-                                    Delete conversations or your entire account anytime
+                                    Delete conversations or our entire account anytime
                                 </li>
-                                <li>Export your data whenever you want</li>
+                                <li>Export our data whenever we want</li>
                                 <li>
-                                    Request your data or deletion:{" "}
+                                    Request our data or deletion:{" "}
                                     <a
                                         href="mailto:privacy@carmenta.ai"
                                         className="text-primary hover:underline"
@@ -90,10 +89,10 @@ export default function PrivacyPage() {
 
                         <p className="mt-4 border-t border-primary/20 pt-4 text-sm font-medium">
                             How we work: We unify multiple AI models (Claude, ChatGPT,
-                            Gemini, and more) into one interface. Your conversations are
+                            Gemini, and more) into one interface. Our conversations are
                             stored to maintain context across models and sessions. We
-                            route your requests to the best model for each task, always
-                            prioritizing your flourishing.
+                            route our requests to the best model for each task, always
+                            prioritizing our flourishing.
                         </p>
                     </div>
                 </div>
@@ -102,11 +101,10 @@ export default function PrivacyPage() {
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Introduction</h2>
                         <p className="mt-4">
-                            Welcome to Carmenta ("we", "our", or "us"). We're committed
-                            to protecting your privacy and being transparent about how
-                            we collect, use, and share your information. This Privacy
-                            Policy explains our practices regarding data we collect
-                            through our service.
+                            Welcome to Carmenta. We're committed to protecting our
+                            privacy and being transparent about how we collect, use,
+                            and share our information. This Privacy Policy explains our
+                            practices regarding data we collect through our service.
                         </p>
                     </section>
 
@@ -156,9 +154,9 @@ export default function PrivacyPage() {
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">
-                            How We Use Your Information
+                            How We Use Our Information
                         </h2>
-                        <p className="mt-4">We use your information to:</p>
+                        <p className="mt-4">We use our information to:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Provide and maintain our service</li>
                             <li>
@@ -190,7 +188,7 @@ export default function PrivacyPage() {
                             </li>
                             <li>
                                 <strong>Access Control:</strong> Strict user isolation -
-                                you can only access your own data
+                                we can only access our own data
                             </li>
                         </ul>
                     </section>
@@ -213,7 +211,7 @@ export default function PrivacyPage() {
                             </li>
                         </ul>
                         <p className="mt-4">
-                            These services have their own privacy policies. Your
+                            These services have their own privacy policies. Our
                             conversations are processed by AI model providers according
                             to their terms and privacy practices.
                         </p>
@@ -259,15 +257,15 @@ export default function PrivacyPage() {
                         <h2 className="text-2xl font-bold">
                             Data Retention and Deletion
                         </h2>
-                        <p className="mt-4">We retain your data:</p>
+                        <p className="mt-4">We retain our data:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
-                                <strong>Account Data:</strong> Until you delete your
+                                <strong>Account Data:</strong> Until we delete our
                                 account
                             </li>
                             <li>
-                                <strong>Conversations:</strong> Until you delete them or
-                                your account
+                                <strong>Conversations:</strong> Until we delete them or
+                                our account
                             </li>
                             <li>
                                 <strong>Usage Logs:</strong> For 90 days (for debugging
@@ -333,7 +331,7 @@ export default function PrivacyPage() {
                         <h2 className="text-2xl font-bold">Changes to This Policy</h2>
                         <p className="mt-4">
                             We may update this Privacy Policy from time to time. We'll
-                            notify you of significant changes by:
+                            notify ourselves of significant changes by:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Posting the new policy on this page</li>
@@ -370,7 +368,7 @@ export default function PrivacyPage() {
                     </section>
 
                     <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
-                        <p>Last updated: December 9, 2024</p>
+                        <p>Last updated: December 9, 2025</p>
                     </footer>
                 </div>
             </article>

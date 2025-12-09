@@ -18,17 +18,16 @@ export default function TermsPage() {
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Agreement to Terms</h2>
                         <p className="mt-4">
-                            By accessing or using Carmenta ("Service", "we", "our", or
-                            "us"), you agree to be bound by these Terms of Service
-                            ("Terms"). If you don't agree to these Terms, please don't
-                            use our Service.
+                            By accessing or using Carmenta, we agree to be bound by
+                            these Terms of Service ("Terms"). If we don't agree to
+                            these Terms, we won't use our Service.
                         </p>
                     </section>
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Description of Service</h2>
                         <p className="mt-4">
-                            Carmenta is a heart-centered AI interface that allows you
+                            Carmenta is a heart-centered AI interface that allows us
                             to:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
@@ -44,50 +43,50 @@ export default function TermsPage() {
                                 coding, analysis, and creativity
                             </li>
                             <li>Share files and attachments with AI models</li>
-                            <li>Organize and access your conversation history</li>
+                            <li>Organize and access our conversation history</li>
                         </ul>
                         <p className="mt-4">
-                            We route your requests to the most appropriate AI model
-                            provider and maintain your conversation history for
+                            We route our requests to the most appropriate AI model
+                            provider and maintain our conversation history for
                             continuity and context.
                         </p>
                     </section>
 
                     <section className="mt-8">
-                        <h2 className="text-2xl font-bold">Your Account</h2>
+                        <h2 className="text-2xl font-bold">Our Account</h2>
 
                         <h3 className="mt-6 text-xl font-semibold">Account Creation</h3>
-                        <p className="mt-2">To use our Service, you must:</p>
+                        <p className="mt-2">To use our Service, we must:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
-                                Be at least 13 years old (or the age of majority in your
+                                Be at least 13 years old (or the age of majority in our
                                 jurisdiction)
                             </li>
                             <li>Provide accurate and complete information</li>
-                            <li>Keep your account credentials secure</li>
-                            <li>Notify us immediately of any unauthorized access</li>
+                            <li>Keep our account credentials secure</li>
+                            <li>Notify ourselves immediately of any unauthorized access</li>
                         </ul>
 
                         <h3 className="mt-6 text-xl font-semibold">
                             Account Responsibility
                         </h3>
-                        <p className="mt-2">You're responsible for:</p>
+                        <p className="mt-2">We're responsible for:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>All activity that occurs under your account</li>
+                            <li>All activity that occurs under our account</li>
                             <li>
-                                Maintaining the confidentiality of your login
+                                Maintaining the confidentiality of our login
                                 credentials
                             </li>
-                            <li>Ensuring your use complies with these Terms</li>
+                            <li>Ensuring our use complies with these Terms</li>
                             <li>
-                                Any costs or damages resulting from your account usage
+                                Any costs or damages resulting from our account usage
                             </li>
                         </ul>
                     </section>
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Acceptable Use</h2>
-                        <p className="mt-4">You agree NOT to:</p>
+                        <p className="mt-4">We agree NOT to:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Use the Service for any illegal purpose</li>
                             <li>Violate any laws or regulations</li>
@@ -115,14 +114,14 @@ export default function TermsPage() {
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Third-Party AI Services</h2>
-                        <p className="mt-4">When you use AI models through Carmenta:</p>
+                        <p className="mt-4">When we use AI models through Carmenta:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
-                                Your requests are processed by third-party AI providers
+                                Our requests are processed by third-party AI providers
                                 (Anthropic, OpenAI, Google, etc.)
                             </li>
                             <li>
-                                You're also agreeing to their terms of service and
+                                We're also agreeing to their terms of service and
                                 privacy policies
                             </li>
                             <li>
@@ -168,16 +167,16 @@ export default function TermsPage() {
                             and other intellectual property laws.
                         </p>
                         <p className="mt-4">
-                            You retain ownership of your conversations and content. By
-                            using our Service, you grant us a limited license to:
+                            We retain ownership of our conversations and content. By
+                            using our Service, we grant ourselves a limited license to:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
-                                Store and process your conversations to provide the
+                                Store and process our conversations to provide the
                                 Service
                             </li>
                             <li>
-                                Route your requests to appropriate AI model providers
+                                Route our requests to appropriate AI model providers
                             </li>
                             <li>Cache responses for performance (temporarily)</li>
                             <li>Use anonymized usage data to improve the Service</li>
@@ -186,14 +185,14 @@ export default function TermsPage() {
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Payment and Billing</h2>
-                        <p className="mt-4">If you purchase a paid plan:</p>
+                        <p className="mt-4">If we purchase a paid plan:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>You agree to pay all fees for your selected plan</li>
+                            <li>We agree to pay all fees for our selected plan</li>
                             <li>Fees are billed in advance on a recurring basis</li>
                             <li>All fees are in USD unless otherwise stated</li>
                             <li>We may change pricing with 30 days notice</li>
                             <li>Refunds are provided on a case-by-case basis</li>
-                            <li>You can cancel your subscription at any time</li>
+                            <li>We can cancel our subscription at any time</li>
                         </ul>
                     </section>
 
@@ -232,8 +231,8 @@ export default function TermsPage() {
                         </p>
                         <p className="mt-4">
                             WE DO NOT WARRANT THAT AI-GENERATED CONTENT WILL BE
-                            ACCURATE, COMPLETE, RELIABLE, OR APPROPRIATE FOR YOUR USE.
-                            YOU ARE RESPONSIBLE FOR VERIFYING AND VALIDATING ALL
+                            ACCURATE, COMPLETE, RELIABLE, OR APPROPRIATE FOR OUR USE.
+                            WE ARE RESPONSIBLE FOR VERIFYING AND VALIDATING ALL
                             AI-GENERATED CONTENT.
                         </p>
                     </section>
@@ -248,7 +247,7 @@ export default function TermsPage() {
                             LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.
                         </p>
                         <p className="mt-4">
-                            Our total liability shall not exceed the amount you paid us
+                            Our total liability shall not exceed the amount we paid
                             in the 12 months prior to the event giving rise to
                             liability.
                         </p>
@@ -257,40 +256,40 @@ export default function TermsPage() {
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Indemnification</h2>
                         <p className="mt-4">
-                            You agree to indemnify and hold harmless Carmenta and its
+                            We agree to indemnify and hold harmless Carmenta and its
                             officers, directors, employees, and agents from any claims,
                             damages, losses, liabilities, and expenses (including legal
                             fees) arising from:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>Your use of the Service</li>
-                            <li>Your violation of these Terms</li>
-                            <li>Your violation of any third-party rights</li>
-                            <li>Any content you submit or transmit</li>
+                            <li>Our use of the Service</li>
+                            <li>Our violation of these Terms</li>
+                            <li>Our violation of any third-party rights</li>
+                            <li>Any content we submit or transmit</li>
                         </ul>
                     </section>
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Termination</h2>
                         <p className="mt-4">
-                            We may terminate or suspend your account and access to the
+                            We may terminate or suspend our account and access to the
                             Service:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>If you violate these Terms</li>
+                            <li>If we violate these Terms</li>
                             <li>If required by law</li>
-                            <li>If your account is inactive for an extended period</li>
+                            <li>If our account is inactive for an extended period</li>
                             <li>At our discretion, with or without notice</li>
                         </ul>
                         <p className="mt-4">
-                            You may terminate your account at any time by contacting us.
+                            We may terminate our account at any time by contacting ourselves.
                             Upon termination:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>Your access will cease immediately</li>
-                            <li>We'll delete your data per our Privacy Policy</li>
+                            <li>Our access will cease immediately</li>
+                            <li>We'll delete our data per our Privacy Policy</li>
                             <li>
-                                You'll lose access to all conversations and settings
+                                We'll lose access to all conversations and settings
                             </li>
                             <li>Certain provisions of these Terms will survive</li>
                         </ul>
@@ -300,7 +299,7 @@ export default function TermsPage() {
                         <h2 className="text-2xl font-bold">Changes to Terms</h2>
                         <p className="mt-4">
                             We reserve the right to modify these Terms at any time.
-                            We'll notify you of material changes by:
+                            We'll notify ourselves of material changes by:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Posting the updated Terms on this page</li>
@@ -308,7 +307,7 @@ export default function TermsPage() {
                             <li>Sending an email notification</li>
                         </ul>
                         <p className="mt-4">
-                            Your continued use of the Service after changes constitutes
+                            Our continued use of the Service after changes constitutes
                             acceptance of the new Terms.
                         </p>
                     </section>
@@ -325,7 +324,7 @@ export default function TermsPage() {
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Dispute Resolution</h2>
                         <p className="mt-4">
-                            If you have a dispute with us, please first contact us at{" "}
+                            If we have a dispute, we'll first contact ourselves at{" "}
                             <a
                                 href="mailto:care@carmenta.ai"
                                 className="text-primary hover:underline"
@@ -342,8 +341,7 @@ export default function TermsPage() {
                         <ul className="mt-4 list-disc space-y-2 pl-6">
                             <li>
                                 <strong>Entire Agreement:</strong> These Terms
-                                constitute the entire agreement between you and
-                                Carmenta.
+                                constitute the entire agreement within Carmenta.
                             </li>
                             <li>
                                 <strong>Severability:</strong> If any provision is found
@@ -354,7 +352,7 @@ export default function TermsPage() {
                                 right doesn't waive that right.
                             </li>
                             <li>
-                                <strong>Assignment:</strong> You may not assign these
+                                <strong>Assignment:</strong> We may not assign these
                                 Terms without our written consent.
                             </li>
                         </ul>
@@ -386,7 +384,7 @@ export default function TermsPage() {
                     </section>
 
                     <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
-                        <p>Last updated: December 9, 2024</p>
+                        <p>Last updated: December 9, 2025</p>
                     </footer>
                 </div>
             </article>
