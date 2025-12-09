@@ -102,8 +102,8 @@ export default function PrivacyPage() {
                         <h2 className="text-2xl font-bold">Introduction</h2>
                         <p className="mt-4">
                             Welcome to Carmenta. We're committed to protecting our
-                            privacy and being transparent about how we collect, use,
-                            and share our information. This Privacy Policy explains our
+                            privacy and being transparent about how we collect, use, and
+                            share our information. This Privacy Policy explains our
                             practices regarding data we collect through our service.
                         </p>
                     </section>

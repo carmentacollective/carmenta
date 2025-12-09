@@ -19,16 +19,15 @@ export default function TermsPage() {
                         <h2 className="text-2xl font-bold">Agreement to Terms</h2>
                         <p className="mt-4">
                             By accessing or using Carmenta, we agree to be bound by
-                            these Terms of Service ("Terms"). If we don't agree to
-                            these Terms, we won't use our Service.
+                            these Terms of Service ("Terms"). If we don't agree to these
+                            Terms, we won't use our Service.
                         </p>
                     </section>
 
                     <section className="mt-8">
                         <h2 className="text-2xl font-bold">Description of Service</h2>
                         <p className="mt-4">
-                            Carmenta is a heart-centered AI interface that allows us
-                            to:
+                            Carmenta is a heart-centered AI interface that allows us to:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
@@ -64,7 +63,10 @@ export default function TermsPage() {
                             </li>
                             <li>Provide accurate and complete information</li>
                             <li>Keep our account credentials secure</li>
-                            <li>Notify Carmenta immediately if we detect unauthorized access</li>
+                            <li>
+                                Notify Carmenta immediately if we detect unauthorized
+                                access
+                            </li>
                         </ul>
 
                         <h3 className="mt-6 text-xl font-semibold">
@@ -74,8 +76,7 @@ export default function TermsPage() {
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>All activity that occurs under our account</li>
                             <li>
-                                Maintaining the confidentiality of our login
-                                credentials
+                                Maintaining the confidentiality of our login credentials
                             </li>
                             <li>Ensuring our use complies with these Terms</li>
                             <li>
@@ -231,8 +232,8 @@ export default function TermsPage() {
                         </p>
                         <p className="mt-4">
                             WE DO NOT WARRANT THAT AI-GENERATED CONTENT WILL BE
-                            ACCURATE, COMPLETE, RELIABLE, OR APPROPRIATE FOR OUR USE.
-                            WE ARE RESPONSIBLE FOR VERIFYING AND VALIDATING ALL
+                            ACCURATE, COMPLETE, RELIABLE, OR APPROPRIATE FOR OUR USE. WE
+                            ARE RESPONSIBLE FOR VERIFYING AND VALIDATING ALL
                             AI-GENERATED CONTENT.
                         </p>
                     </section>
@@ -247,9 +248,8 @@ export default function TermsPage() {
                             LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.
                         </p>
                         <p className="mt-4">
-                            Our total liability shall not exceed the amount we paid
-                            in the 12 months prior to the event giving rise to
-                            liability.
+                            Our total liability shall not exceed the amount we paid in
+                            the 12 months prior to the event giving rise to liability.
                         </p>
                     </section>
 
@@ -288,9 +288,7 @@ export default function TermsPage() {
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Our access will cease immediately</li>
                             <li>We'll delete our data per our Privacy Policy</li>
-                            <li>
-                                We'll lose access to all conversations and settings
-                            </li>
+                            <li>We'll lose access to all conversations and settings</li>
                             <li>Certain provisions of these Terms will survive</li>
                         </ul>
                     </section>

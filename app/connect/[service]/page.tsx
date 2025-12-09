@@ -49,12 +49,12 @@ export default function ConnectServicePage() {
                 if (cancelled) return;
 
                 // Initialize Nango SDK with session token
-                logger.info("Initializing Nango SDK");
+                logger.info({ service }, "Initializing Nango SDK");
                 const nango = new Nango({ connectSessionToken: sessionToken });
-                logger.info("Nango SDK initialized");
+                logger.info({ service }, "Nango SDK initialized");
 
                 // Open Nango Connect UI
-                logger.info("Opening Nango Connect UI");
+                logger.info({ service }, "Opening Nango Connect UI");
                 const _connectUI = nango.openConnectUI({
                     onEvent: async (event) => {
                         logger.debug({ eventType: event.type }, "Nango event received");
