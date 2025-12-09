@@ -9,3 +9,4 @@
 
 export { ServiceAdapter } from "./base";
 export { GiphyAdapter } from "./giphy";
+export { NotionAdapter } from "./notion";
