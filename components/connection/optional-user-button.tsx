@@ -1,11 +1,21 @@
 "use client";
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
-import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Check } from "lucide-react";
+import {
+    User,
+    LogOut,
+    Moon,
+    Sun,
+    UserCircle2,
+    Monitor,
+    Check,
+    Plug,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
@@ -116,6 +126,16 @@ export function OptionalUserButton() {
                                         <User className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Manage account</span>
                                     </button>
+
+                                    <Link
+                                        href="/integrations"
+                                        onClick={() => setIsOpen(false)}
+                                        className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                    >
+                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <Plug className="relative h-4 w-4 text-foreground/60" />
+                                        <span className="relative">Integrations</span>
+                                    </Link>
 
                                     {/* Theme selector */}
                                     {isClient && (

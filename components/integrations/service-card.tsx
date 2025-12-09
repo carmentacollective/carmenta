@@ -72,7 +72,8 @@ export function ServiceCard({
 }: ServiceCardProps) {
     const isConnected = status === "connected";
     const isComingSoon = service.status === "coming_soon";
-    const isClickable = !isComingSoon && !disabled && !!onClick;
+    // Allow clicks if onClick exists, not disabled, and either not coming_soon OR explicitly allowed (disabled=false for coming_soon = admin override)
+    const isClickable = !disabled && !!onClick;
 
     return (
         <div
