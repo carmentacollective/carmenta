@@ -1,58 +1,101 @@
 ---
-description: When calling external APIs
+description: When working with external service integrations
 alwaysApply: false
 ---
 
-# External API Client Guidelines
+# External Service Integration Guidelines
 
-These guidelines ensure consistent, reliable, and maintainable API clients.
+Carmenta integrates with external services through a battle-tested adapter architecture
+ported from MCP Hubby. This pattern provides progressive disclosure (one tool per service
+with describe action), unified credential management, and comprehensive error handling.
 
-## Core Principles
+## Architecture Overview
 
-- We return None on API errors (don't raise exceptions)
-- We use type hints consistently
-- We document methods with helpful docstrings (skip redundant Args/Returns)
-- We use appropriate logging levels
-- We let exceptions bubble up unless we're truly handling them
+External integrations live in `lib/integrations/`:
 
-## Method Pattern
+- `adapters/` - Service adapters (one per service)
+- `services.ts` - SERVICE_REGISTRY (single source of truth)
+- `connection-manager.ts` - Unified credential access
+- `encryption.ts` - AES-256-GCM credential storage
+- `tools.ts` - Vercel AI SDK tool factory
 
-```python
-def get_something(self, param: str) -> dict | None:
-    """Fetch something from the API.
+## Adding New Integrations
 
-    Returns None if the API returns no data or encounters an error.
-    """
-    logger.info(f"Fetching something for {param}")
+Use `/add-integration <service-name>` command. The process:
 
-    response = self.request("/endpoint", params={"key": param})
-    if not response:
-        logger.warning(f"No data returned for {param}")
-        return None
+1. Study existing adapters (OAuth: `notion.ts`, API key: `giphy.ts`)
+2. Research target service API
+3. Create adapter extending `ServiceAdapter` base class
+4. Add to SERVICE_REGISTRY in `services.ts`
+5. Register in `adapters/index.ts` and `tools.ts`
 
-    return response["data"]
-```
+## Porting from MCP Hubby
+
+When porting adapters from MCP Hubby (`../mcp-hubby/lib/adapters/`):
+
+**Copy the adapter file directly** - These have production mileage and battle-tested error
+handling. Avoid rewriting from scratch.
+
+**Apply these transformations:**
+
+1. Update imports:
+   - `@/lib/connection-manager` → `@/lib/integrations/connection-manager`
+   - `@/lib/encryption` → `@/lib/integrations/encryption`
+
+2. Replace `userEmail` with `userId` in function signatures and calls
+
+3. For OAuth adapters, replace direct DB queries with `getCredentials()`:
+   ```typescript
+   // Before (MCP Hubby pattern with direct DB)
+   const connections = await db.select().from(schema.connections)...
+   const connectionId = connection.connectionId;
+
+   // After (Carmenta pattern with connection manager)
+   const credentials = await getCredentials(userId, this.serviceName, accountId);
+   const connectionId = credentials.connectionId;
+   ```
+
+4. Update `captureError` context from `userEmail` to `userId`
+
+5. Update `assertEnv("NANGO_SECRET_KEY")` to use helper:
+   ```typescript
+   function getNangoSecretKey(): string {
+       if (!env.NANGO_SECRET_KEY) {
+           throw new Error("Missing: NANGO_SECRET_KEY");
+       }
+       return env.NANGO_SECRET_KEY;
+   }
+   ```
+
+## Authentication Patterns
+
+**OAuth services** (Notion, ClickUp):
+- Nango handles OAuth flow and token refresh
+- Adapter receives `connectionId` from `getCredentials()`
+- API calls go through Nango proxy
+
+**API key services** (Giphy, Fireflies, Limitless):
+- Credentials encrypted with AES-256-GCM
+- Adapter receives decrypted `credentials` from `getCredentials()`
+- Direct API calls to service
+
+## HTTP Client
+
+Use `httpClient` from `@/lib/http-client` for all API calls. It provides:
+- Automatic retries (3 attempts with exponential backoff)
+- 30-second timeout
+- Sentry spans for observability
+- Proper error handling
 
 ## Error Handling
 
-We let the base HTTP client handle HTTP/network errors. We only use try/except for
-specific scenarios with actual handling. We validate response structure before access.
+Adapters should:
+- Throw `ValidationError` for user-correctable issues
+- Log errors with context via `logger.error()`
+- Capture to Sentry via `this.captureError()`
+- Return user-friendly error messages
 
-## Validation Pattern
+## Testing Integrations
 
-```python
-response = self.request("/endpoint", params={"key": value})
-if not response or "data" not in response:
-    logger.warning(f"No data returned for {value}")
-    return None
-```
-
-## Response Processing
-
-We validate response structure before access, convert to standard types (Decimal for
-financial data), clean and normalize data, and return None for errors (not empty dicts).
-
-## Testing
-
-We mock all external calls in unit tests, use @pytest.mark.flaky for live API tests, and
-test both success and error cases.
+Use `/test-integration <service-name>` command. Tests operations through the chat
+interface to verify real API connectivity.
