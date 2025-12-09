@@ -47,7 +47,14 @@ export {
 } from "./encryption";
 
 // Adapters
-export { ServiceAdapter, GiphyAdapter, NotionAdapter } from "./adapters";
+export {
+    ServiceAdapter,
+    ClickUpAdapter,
+    FirefliesAdapter,
+    GiphyAdapter,
+    LimitlessAdapter,
+    NotionAdapter,
+} from "./adapters";
 
 // Types
 export type {
