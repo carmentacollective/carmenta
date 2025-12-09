@@ -1,9 +1,10 @@
 import { Metadata } from "next";
 
+import { Footer } from "@/components/footer";
+
 export const metadata: Metadata = {
     title: "Terms of Service",
-    description:
-        "Carmenta Terms of Service - Rules and guidelines for using our service.",
+    description: "Carmenta Terms of Service - Guidelines for our partnership.",
 };
 
 export default function TermsPage() {
@@ -385,10 +386,11 @@ export default function TermsPage() {
                     </section>
 
                     <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
-                        <p>Last updated: December {new Date().getFullYear()}</p>
+                        <p>Last updated: December 9, 2024</p>
                     </footer>
                 </div>
             </article>
+            <Footer />
         </div>
     );
 }

@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
     title: "Security",
     description:
-        "Carmenta Security - How we protect your data and conversations with industry-leading security practices.",
+        "Carmenta Security - How we protect our data and conversations with industry-leading security practices.",
 };
 
 interface SecurityPartner {
@@ -50,19 +50,19 @@ const securityFeatures = [
         icon: Lock,
         title: "Encrypted Storage",
         description:
-            "All conversations and data encrypted at rest using industry-standard encryption. Your data is protected even if storage is compromised.",
+            "All conversations and data encrypted at rest using industry-standard encryption. Our data is protected even if storage is compromised.",
     },
     {
         icon: Shield,
         title: "End-to-End Encryption",
         description:
-            "All data transmission uses HTTPS/TLS 1.3. Your conversations are encrypted from your browser to our servers and to AI model providers.",
+            "All data transmission uses HTTPS/TLS 1.3. Our conversations are encrypted from browser to servers and to AI model providers.",
     },
     {
         icon: Eye,
         title: "No Human Access",
         description:
-            "Your conversations are private. No human reads your chats unless legally required or you explicitly request support.",
+            "Our conversations are private. No human reads our chats unless legally required or explicitly requested for support.",
     },
     {
         icon: KeyRound,
@@ -80,7 +80,7 @@ const securityFeatures = [
         icon: Zap,
         title: "Data Isolation",
         description:
-            "Strict user isolation ensures you can only access your own data. Database-level security prevents cross-user data access.",
+            "Strict data isolation ensures we can only access our own data. Database-level security prevents cross-user data access.",
     },
 ];
 
@@ -176,8 +176,8 @@ export default function SecurityPage() {
                                 What We Protect
                             </h3>
                             <ul className="space-y-2 text-muted-foreground">
-                                <li>• Your conversations and message history</li>
-                                <li>• Files and attachments you share</li>
+                                <li>• Our conversations and message history</li>
+                                <li>• Files and attachments we share</li>
                                 <li>• Authentication credentials</li>
                                 <li>• Personal preferences and settings</li>
                                 <li>• All data transmission and storage</li>
@@ -190,8 +190,8 @@ export default function SecurityPage() {
                                 What We Never Do
                             </h3>
                             <ul className="space-y-2 text-muted-foreground">
-                                <li>• Sell or share your conversations</li>
-                                <li>• Train models on your data without consent</li>
+                                <li>• Sell or share our conversations</li>
+                                <li>• Train models on our data without consent</li>
                                 <li>• Allow unauthorized human access</li>
                                 <li>• Store unencrypted sensitive data</li>
                                 <li>• Compromise on security for features</li>
@@ -201,10 +201,10 @@ export default function SecurityPage() {
 
                     <div className="mt-8 rounded-lg bg-background/50 p-4 backdrop-blur">
                         <p className="text-sm">
-                            <strong>How it works:</strong> Your conversations are
-                            encrypted in transit and at rest. When you chat with AI
-                            models, we route your request securely to the appropriate
-                            model provider. Your data stays protected at every step.
+                            <strong>How it works:</strong> Our conversations are
+                            encrypted in transit and at rest. When we chat with AI
+                            models, we route requests securely to the appropriate model
+                            provider. Our data stays protected at every step.
                         </p>
                     </div>
                 </div>

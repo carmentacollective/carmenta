@@ -1,10 +1,11 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
+import { Footer } from "@/components/footer";
+
 export const metadata: Metadata = {
     title: "Privacy Policy",
-    description:
-        "Carmenta Privacy Policy - How we collect, use, and protect your data.",
+    description: "Carmenta Privacy Policy - How we collect, use, and protect our data.",
 };
 
 export default function PrivacyPage() {
@@ -23,7 +24,7 @@ export default function PrivacyPage() {
                         <p className="font-medium">
                             We built Carmenta to be a heart-centered AI interface for
                             builders who work at the speed of thought. Here's what that
-                            means for your privacy:
+                            means for our privacy:
                         </p>
 
                         <div className="mt-4">
@@ -31,14 +32,14 @@ export default function PrivacyPage() {
                                 ✓ What we collect:
                             </h3>
                             <ul className="list-disc space-y-1 pl-6 text-sm">
-                                <li>Your email and name (for your account)</li>
+                                <li>Email and name (for our account)</li>
                                 <li>
                                     Conversations with AI models (to maintain context
-                                    and improve experience)
+                                    and improve our shared experience)
                                 </li>
                                 <li>
                                     Model preferences and usage patterns (which models
-                                    you use and when)
+                                    we use and when)
                                 </li>
                                 <li>
                                     Technical logs (API requests, timestamps, response
@@ -52,15 +53,15 @@ export default function PrivacyPage() {
                                 ✗ What we will NEVER do:
                             </h3>
                             <ul className="list-disc space-y-1 pl-6 text-sm">
-                                <li>Sell, license, or monetize your data - ever</li>
+                                <li>Sell, license, or monetize our data - ever</li>
                                 <li>
-                                    Train AI models on your conversations without
+                                    Train AI models on our conversations without
                                     explicit consent
                                 </li>
-                                <li>Serve you ads or use your data for advertising</li>
-                                <li>Build profiles or analyze your behavior</li>
+                                <li>Serve ads or use our data for advertising</li>
+                                <li>Build profiles or analyze behavior</li>
                                 <li>
-                                    Let humans read your conversations (except for
+                                    Let humans read our conversations (except for
                                     security/legal requirements)
                                 </li>
                             </ul>
@@ -115,7 +116,7 @@ export default function PrivacyPage() {
                         <h3 className="mt-6 text-xl font-semibold">
                             Account Information
                         </h3>
-                        <p className="mt-2">When you create an account, we collect:</p>
+                        <p className="mt-2">When we create an account, we collect:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Email address</li>
                             <li>Name</li>
@@ -129,21 +130,21 @@ export default function PrivacyPage() {
                             Conversation Data
                         </h3>
                         <p className="mt-2">
-                            When you interact with AI models through Carmenta:
+                            When we interact with AI models through Carmenta:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
-                            <li>Your messages and prompts</li>
+                            <li>Our messages and prompts</li>
                             <li>AI responses and generated content</li>
                             <li>
                                 Conversation metadata (timestamps, model used,
                                 conversation threads)
                             </li>
-                            <li>Files and attachments you share</li>
+                            <li>Files and attachments we share</li>
                         </ul>
 
                         <h3 className="mt-6 text-xl font-semibold">Usage Data</h3>
                         <p className="mt-2">
-                            We collect information about how you use our service:
+                            We collect information about how we use our service:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>Model preferences and selections</li>
@@ -219,22 +220,22 @@ export default function PrivacyPage() {
                     </section>
 
                     <section className="mt-8">
-                        <h2 className="text-2xl font-bold">Your Rights and Choices</h2>
-                        <p className="mt-4">You have the right to:</p>
+                        <h2 className="text-2xl font-bold">Our Rights and Choices</h2>
+                        <p className="mt-4">We each have the right to:</p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
                             <li>
-                                <strong>Access:</strong> Request a copy of your data
+                                <strong>Access:</strong> Request a copy of our data
                             </li>
                             <li>
                                 <strong>Correction:</strong> Update incorrect or
                                 incomplete data
                             </li>
                             <li>
-                                <strong>Deletion:</strong> Request deletion of your
+                                <strong>Deletion:</strong> Request deletion of our
                                 account and data
                             </li>
                             <li>
-                                <strong>Export:</strong> Download your conversations and
+                                <strong>Export:</strong> Download our conversations and
                                 data
                             </li>
                             <li>
@@ -243,14 +244,14 @@ export default function PrivacyPage() {
                             </li>
                         </ul>
                         <p className="mt-4">
-                            To exercise these rights, contact us at{" "}
+                            To exercise these rights, reach out at{" "}
                             <a
                                 href="mailto:privacy@carmenta.ai"
                                 className="text-primary hover:underline"
                             >
                                 privacy@carmenta.ai
                             </a>
-                            . We will respond to your request within 30 days.
+                            . We'll respond within 30 days.
                         </p>
                     </section>
 
@@ -281,7 +282,7 @@ export default function PrivacyPage() {
                         <h3 className="mt-6 text-xl font-semibold">
                             How to Request Data Deletion
                         </h3>
-                        <p className="mt-2">To request deletion of your data:</p>
+                        <p className="mt-2">To request deletion of our data:</p>
                         <ol className="mt-2 list-decimal space-y-2 pl-6">
                             <li>
                                 Email{" "}
@@ -291,15 +292,15 @@ export default function PrivacyPage() {
                                 >
                                     privacy@carmenta.ai
                                 </a>{" "}
-                                with your deletion request
+                                with the deletion request
                             </li>
                             <li>
-                                We will confirm your identity and process your request
-                                within 30 days
+                                We'll confirm identity and process the request within 30
+                                days
                             </li>
                             <li>
-                                All your account data, conversations, and settings will
-                                be permanently deleted
+                                All account data, conversations, and settings will be
+                                permanently deleted
                             </li>
                             <li>
                                 Usage logs will be purged or anonymized within 90 days
@@ -309,22 +310,22 @@ export default function PrivacyPage() {
                     </section>
 
                     <section className="mt-8">
-                        <h2 className="text-2xl font-bold">International Users</h2>
+                        <h2 className="text-2xl font-bold">International Access</h2>
                         <p className="mt-4">
-                            Our service is hosted in the United States. If you're
-                            accessing from outside the US, your information will be
-                            transferred to, stored, and processed in the US where our
-                            servers are located.
+                            Our service is hosted in the United States. When accessing
+                            from outside the US, information will be transferred to,
+                            stored, and processed in the US where our servers are
+                            located.
                         </p>
                     </section>
 
                     <section className="mt-8">
-                        <h2 className="text-2xl font-bold">Children's Privacy</h2>
+                        <h2 className="text-2xl font-bold">Age Requirements</h2>
                         <p className="mt-4">
-                            Our service is not intended for children under 13. We don't
-                            knowingly collect information from children under 13. If we
-                            discover we've collected such information, we'll delete it
-                            promptly.
+                            Carmenta is built for adults creating meaningful work. We
+                            don't knowingly collect information from anyone under 13. If
+                            we discover we've collected such information, we'll delete
+                            it promptly.
                         </p>
                     </section>
 
@@ -369,10 +370,11 @@ export default function PrivacyPage() {
                     </section>
 
                     <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
-                        <p>Last updated: December {new Date().getFullYear()}</p>
+                        <p>Last updated: December 9, 2024</p>
                     </footer>
                 </div>
             </article>
+            <Footer />
         </div>
     );
 }
