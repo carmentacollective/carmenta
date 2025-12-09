@@ -38,10 +38,10 @@ describe("tool-config", () => {
             expect(config.displayName).toBe("Comparison");
         });
 
-        it("returns default config for unknown tools", () => {
-            const config = getToolConfig("unknownTool");
-            expect(config).toBe(DEFAULT_TOOL_CONFIG);
-            expect(config.displayName).toBe("Tool");
+        it("throws error for unknown tools", () => {
+            expect(() => getToolConfig("unknownTool")).toThrow(
+                'Tool configuration missing for "unknownTool"'
+            );
         });
     });
 
@@ -178,9 +178,10 @@ describe("tool-config", () => {
             expect(hasSeenFast).toBe(true);
         });
 
-        it("uses default config for unknown tools", () => {
-            const message = getStatusMessage("unknownTool", "running", "call-1");
-            expect(message).toBe("Working...");
+        it("throws error for unknown tools", () => {
+            expect(() => getStatusMessage("unknownTool", "running", "call-1")).toThrow(
+                'Tool configuration missing for "unknownTool"'
+            );
         });
     });
 
@@ -297,9 +298,10 @@ describe("tool-config", () => {
             expect(message).toBe("Comparison didn't work");
         });
 
-        it("uses default error for unknown tools", () => {
-            const message = getErrorMessage("unknownTool");
-            expect(message).toBe("That didn't work");
+        it("throws error for unknown tools", () => {
+            expect(() => getErrorMessage("unknownTool")).toThrow(
+                'Tool configuration missing for "unknownTool"'
+            );
         });
     });
 
@@ -336,9 +338,10 @@ describe("tool-config", () => {
             expect(message).toBe("First comparison check!");
         });
 
-        it("returns generic message for unknown tool", () => {
-            const message = getFirstUseMessage("unknownTool");
-            expect(message).toBe("First tool check!");
+        it("throws error for unknown tools", () => {
+            expect(() => getFirstUseMessage("unknownTool")).toThrow(
+                'Tool configuration missing for "unknownTool"'
+            );
         });
     });
 });
