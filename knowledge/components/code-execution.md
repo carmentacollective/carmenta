@@ -4,6 +4,10 @@ Sandboxed Python execution that transforms the agent from conversationalist to
 computational partner. Instead of approximating math or describing data analysis, the
 agent writes and runs real code.
 
+**Infrastructure**: Code execution runs on the
+[ephemeral compute](./ephemeral-compute.md) layer - the same infrastructure that powers
+scheduled agents and powerhouse mode.
+
 ## Why This Exists
 
 LLMs are excellent at writing code. They're terrible at being calculators. When asked to

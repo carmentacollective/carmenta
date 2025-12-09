@@ -4,6 +4,10 @@ Agents that run on schedules, not just on demand. Daily briefings, hourly monito
 weekly research digests. Combined with proactive intelligence: preparing for meetings,
 watching for signals, escalating what matters. The shift from reactive to proactive.
 
+**Infrastructure**: Scheduled agents run on the
+[ephemeral compute](./ephemeral-compute.md) layer - the same infrastructure that powers
+code execution and powerhouse mode.
+
 ## Why This Exists
 
 On-demand AI is powerful but limited. You have to ask. You have to remember to ask. You

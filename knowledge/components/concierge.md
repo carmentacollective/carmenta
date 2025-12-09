@@ -47,8 +47,25 @@ Maintains personality through consistent voice and emotional attunement.
 
 ## Routing
 
-Inference over selection: The system infers what is needed from the query itself rather
-than relying on user-selected speed modes.
+### @carmenta Detection (Entity Mode)
+
+Before any other routing, the Concierge checks for @carmenta mentions. When detected,
+the message routes to Carmenta entity mode rather than to an LLM.
+
+Entity mode handles:
+
+- Feedback and suggestions → GitHub Issues integration
+- Bug reports → GitHub Issues with structured context
+- Settings changes → Apply directly (confirm if destructive)
+- Help requests → Answer from product knowledge
+
+The response comes from Carmenta herself with distinct visual treatment, not from an
+LLM. See [carmenta-interaction.md](./carmenta-interaction.md) for full details.
+
+### Standard Routing
+
+For messages without @carmenta, the Concierge infers what is needed from the query
+itself rather than relying on user-selected speed modes.
 
 Signals read: Query length and complexity. Explicit signals like "quick question."
 Attachment types (image needs vision). Tool requirements. Conversation context.

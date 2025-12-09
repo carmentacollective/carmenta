@@ -91,6 +91,44 @@ Render responses based on AG-UI events from the Concierge:
 - **Interactive**: Forms, calendars, confirmations via frontend tools
 - **Streaming**: Real-time display as `TextMessageContent` events arrive
 
+### Message Attribution
+
+Messages display visual indicators showing their source. This helps users understand who
+they're talking to and builds appropriate mental models.
+
+**Three message types:**
+
+- **User messages**: User's avatar or initial. Right-aligned. User's chosen accent
+  color.
+
+- **LLM responses**: Provider icon (Anthropic, OpenAI, etc.) indicating which model
+  responded. Standard bubble styling. These are AI assistance - help with tasks, answers
+  to questions, creative work.
+
+- **Carmenta responses**: Carmenta's icon (the Oracle/sparkle). Distinct visual
+  treatment - different accent color, possibly subtle gradient. These are the product
+  speaking - feedback acknowledgment, settings changes, help with Carmenta itself.
+
+The distinction matters: LLM responses are Carmenta orchestrating AI to help you.
+Carmenta responses are Carmenta herself engaging with you about the product.
+
+See [carmenta-interaction.md](./carmenta-interaction.md) for the @carmenta pattern that
+triggers entity mode.
+
+### Oracle Menu
+
+The Oracle icon appears in the header (left side of the dock). Clicking it reveals a
+menu for talking directly to Carmenta:
+
+- "I have feedback" → pre-fills "@carmenta I have feedback about..."
+- "Report a bug" → pre-fills "@carmenta I found a bug: "
+- "I have a suggestion" → pre-fills "@carmenta I wish we could..."
+- "Change my settings" → pre-fills "@carmenta please change..."
+- "I need help" → pre-fills "@carmenta help me with..."
+
+This serves as discovery for the @carmenta pattern. After users see how it works, they
+naturally start typing @carmenta directly.
+
 ### Navigation and State
 
 Conversation history, switching between threads, accessing settings, managing the AI
