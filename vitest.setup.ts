@@ -176,8 +176,9 @@ vi.mock("./lib/db/index", async () => {
             .where(eq(schema.users.email, email));
     };
 
-    // Import connection functions from the actual module
-    const connectionsModule = await import("./lib/db/connections");
+    // NOTE: DO NOT import from "./lib/db/connections" here!
+    // It creates a circular dependency: connections → index → connections
+    // Tests should import connection functions directly from "@/lib/db/connections"
 
     return {
         db,
@@ -187,21 +188,6 @@ vi.mock("./lib/db/index", async () => {
         getOrCreateUser,
         updateUserPreferences,
         updateLastSignedIn,
-        // Re-export all connection functions
-        createConnection: connectionsModule.createConnection,
-        getConnectionWithMessages: connectionsModule.getConnectionWithMessages,
-        getRecentConnections: connectionsModule.getRecentConnections,
-        updateConnection: connectionsModule.updateConnection,
-        archiveConnection: connectionsModule.archiveConnection,
-        deleteConnection: connectionsModule.deleteConnection,
-        saveMessage: connectionsModule.saveMessage,
-        updateMessage: connectionsModule.updateMessage,
-        upsertMessage: connectionsModule.upsertMessage,
-        loadMessages: connectionsModule.loadMessages,
-        updateStreamingStatus: connectionsModule.updateStreamingStatus,
-        markAsBackground: connectionsModule.markAsBackground,
-        findInterruptedConnections: connectionsModule.findInterruptedConnections,
-        mapConnectionMessagesToUI: connectionsModule.mapConnectionMessagesToUI,
     };
 });
 
@@ -217,26 +203,10 @@ vi.mock("./lib/db/users", async () => {
     };
 });
 
-// Also mock the connections module directly
-vi.mock("./lib/db/connections", async () => {
-    const dbModule = await import("./lib/db/index");
-    return {
-        createConnection: dbModule.createConnection,
-        getConnectionWithMessages: dbModule.getConnectionWithMessages,
-        getRecentConnections: dbModule.getRecentConnections,
-        updateConnection: dbModule.updateConnection,
-        archiveConnection: dbModule.archiveConnection,
-        deleteConnection: dbModule.deleteConnection,
-        saveMessage: dbModule.saveMessage,
-        updateMessage: dbModule.updateMessage,
-        upsertMessage: dbModule.upsertMessage,
-        loadMessages: dbModule.loadMessages,
-        updateStreamingStatus: dbModule.updateStreamingStatus,
-        markAsBackground: dbModule.markAsBackground,
-        findInterruptedConnections: dbModule.findInterruptedConnections,
-        mapConnectionMessagesToUI: dbModule.mapConnectionMessagesToUI,
-    };
-});
+// NOTE: DO NOT mock "./lib/db/connections" here!
+// It creates a circular dependency: connections → index → connections
+// Tests that need connection functions should import them directly from "@/lib/db/connections"
+// which will use the real PGlite database through the mocked "@/lib/db" module.
 
 /**
  * Create tables before each test
