@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ExternalLink, Check, AlertCircle, Clock } from "lucide-react";
+import { Check, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition, RolloutStatus } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -130,42 +130,6 @@ export function ServiceCard({
             <p className="text-sm leading-relaxed text-foreground/70">
                 {service.description}
             </p>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between">
-                {/* Capabilities preview */}
-                {service.capabilities && service.capabilities.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {service.capabilities.slice(0, 3).map((cap) => (
-                            <span
-                                key={cap}
-                                className="rounded-md bg-foreground/5 px-2 py-0.5 text-xs text-foreground/60"
-                            >
-                                {cap.replace(/_/g, " ")}
-                            </span>
-                        ))}
-                        {service.capabilities.length > 3 && (
-                            <span className="rounded-md bg-foreground/5 px-2 py-0.5 text-xs text-foreground/60">
-                                +{service.capabilities.length - 3}
-                            </span>
-                        )}
-                    </div>
-                )}
-
-                {/* Docs link */}
-                {service.docsUrl && (
-                    <a
-                        href={service.docsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        Docs
-                        <ExternalLink className="h-3 w-3" />
-                    </a>
-                )}
-            </div>
 
             {/* Connected actions overlay */}
             {isConnected && onDisconnect && (

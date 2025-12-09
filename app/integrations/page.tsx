@@ -43,37 +43,13 @@ export default function IntegrationsPage() {
         loadServices();
     }, [loadServices]);
 
-    const handleConnectClick = async (service: ServiceDefinition) => {
+    const handleConnectClick = (service: ServiceDefinition) => {
         if (service.authMethod === "api_key") {
             setSelectedService(service);
             setModalOpen(true);
         } else if (service.authMethod === "oauth") {
-            // OAuth flow - create Nango session and open modal
-            try {
-                const response = await fetch("/api/connect", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ service: service.id }),
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    toast.error(
-                        `Failed to initiate OAuth: ${error.error || "Unknown error"}`
-                    );
-                    return;
-                }
-
-                const { sessionToken } = await response.json();
-
-                // Redirect to Nango connect page with session token
-                // Nango will handle the OAuth flow and redirect back via /oauth/callback
-                const nangoConnectUrl = `https://api.nango.dev/connect/${sessionToken}`;
-                window.location.href = nangoConnectUrl;
-            } catch (error) {
-                logger.error({ error, service: service.id }, "OAuth initiation failed");
-                toast.error("Failed to initiate OAuth connection. Please try again.");
-            }
+            // OAuth flow - redirect to connect page which uses Nango SDK
+            window.location.href = `/connect/${service.id}`;
         }
     };
 
