@@ -15,11 +15,12 @@ import { z } from "zod";
 import { getConnectedServices, getCredentials } from "./connection-manager";
 import { getServiceById, type ServiceDefinition } from "./services";
 import {
-    GiphyAdapter,
-    NotionAdapter,
     ClickUpAdapter,
+    DropboxAdapter,
     FirefliesAdapter,
+    GiphyAdapter,
     LimitlessAdapter,
+    NotionAdapter,
 } from "./adapters";
 import type { ServiceAdapter } from "./adapters/base";
 import { logger } from "@/lib/logger";
@@ -29,11 +30,12 @@ import { logger } from "@/lib/logger";
  * Maps service ID to adapter instance
  */
 const adapterMap: Record<string, ServiceAdapter> = {
-    giphy: new GiphyAdapter(),
-    notion: new NotionAdapter(),
     clickup: new ClickUpAdapter(),
+    dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
+    giphy: new GiphyAdapter(),
     limitless: new LimitlessAdapter(),
+    notion: new NotionAdapter(),
 };
 
 /**
