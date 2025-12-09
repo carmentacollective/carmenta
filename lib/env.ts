@@ -33,6 +33,7 @@ export const env = createEnv({
         // Nango OAuth management
         NANGO_API_URL: z.string().url().optional(),
         NANGO_SECRET_KEY: z.string().min(1).optional(),
+        NANGO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Credential encryption for API key integrations
         ENCRYPTION_KEY: z.string().min(32).optional(),
         // PostgreSQL connection string
@@ -68,6 +69,7 @@ export const env = createEnv({
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
         NANGO_API_URL: process.env.NANGO_API_URL,
         NANGO_SECRET_KEY: process.env.NANGO_SECRET_KEY,
+        NANGO_WEBHOOK_SECRET: process.env.NANGO_WEBHOOK_SECRET,
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
         DATABASE_URL: process.env.DATABASE_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
