@@ -16,7 +16,6 @@
 import { ServiceAdapter } from "./base";
 import { getCredentials, nangoProxyRequest } from "../connection-manager";
 import type { HelpResponse, AdapterResponse, RawAPIParams } from "../types";
-import { logger } from "@/lib/logger";
 
 const PROVIDER_CONFIG_KEY = "clickup";
 
