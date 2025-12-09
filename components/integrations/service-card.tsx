@@ -51,10 +51,10 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
         );
     }
 
-    if (status === "coming_soon") {
+    if (status === "internal") {
         return (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium text-foreground/60">
-                Coming Soon
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                Internal
             </span>
         );
     }

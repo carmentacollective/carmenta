@@ -14,7 +14,7 @@ import {
     type ConnectedService,
 } from "@/lib/actions/integrations";
 import type { ServiceDefinition } from "@/lib/integrations/services";
-import { useIsAdmin } from "@/lib/hooks/use-is-admin";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { logger } from "@/lib/client-logger";
 
 export default function IntegrationsPage() {
@@ -25,7 +25,7 @@ export default function IntegrationsPage() {
         null
     );
     const [modalOpen, setModalOpen] = useState(false);
-    const isAdmin = useIsAdmin();
+    const permissions = usePermissions();
 
     const loadServices = useCallback(async () => {
         try {
@@ -183,10 +183,6 @@ export default function IntegrationsPage() {
                                                     service={service}
                                                     onClick={() =>
                                                         handleConnectClick(service)
-                                                    }
-                                                    disabled={
-                                                        service.status ===
-                                                            "coming_soon" && !isAdmin
                                                     }
                                                 />
                                             ))}

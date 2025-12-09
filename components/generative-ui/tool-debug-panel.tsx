@@ -9,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useDebugWelcome } from "@/lib/hooks/use-is-admin";
+import { useDebugWelcome } from "@/lib/hooks/use-permissions";
 
 interface ToolDebugPanelProps {
     toolName: string;
