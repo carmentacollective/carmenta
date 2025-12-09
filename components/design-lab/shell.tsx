@@ -18,6 +18,7 @@ export interface DesignOption {
         animationTiming?: string;
         interactionModel?: string;
         visualStyle?: string;
+        [key: string]: string | undefined;
     };
     code: string;
 }

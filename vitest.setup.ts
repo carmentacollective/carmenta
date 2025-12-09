@@ -4,6 +4,19 @@ import { vi, beforeEach, afterEach } from "vitest";
 // Environment is automatically set to "test" by vitest
 // env.ts skips validation when NODE_ENV === "test"
 
+/**
+ * Mock Clerk client-side hooks for component tests
+ */
+vi.mock("@clerk/nextjs", () => ({
+    useAuth: () => ({ isLoaded: true, isSignedIn: false, userId: null }),
+    useUser: () => ({ isLoaded: true, isSignedIn: false, user: null }),
+    useClerk: () => ({ signOut: vi.fn(), openUserProfile: vi.fn() }),
+    ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+    SignInButton: () => null,
+    SignUpButton: () => null,
+    UserButton: () => null,
+}));
+
 // Mock window.matchMedia for components that use media queries
 Object.defineProperty(window, "matchMedia", {
     writable: true,

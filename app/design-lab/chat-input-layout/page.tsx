@@ -1070,12 +1070,11 @@ function FloatingAdaptiveStackDemo() {
             <div
                 className="absolute z-10 flex gap-2 transition-all duration-500"
                 style={{
-                    left: hasContent ? "auto" : "-24px",
+                    left: hasContent ? "50%" : "-24px",
                     right: hasContent ? "auto" : "auto",
                     bottom: hasContent ? "-24px" : "auto",
                     top: hasContent ? "auto" : "50%",
                     transform: hasContent ? "translateX(-50%)" : "translateY(-50%)",
-                    left: hasContent ? "50%" : "-24px",
                 }}
             >
                 <button

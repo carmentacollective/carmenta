@@ -46,10 +46,10 @@ describe("SiteHeader", () => {
         const { container } = render(<SiteHeader showThemeSwitcher={false} />);
         const header = container.querySelector("header");
         // Header has 2 children: logo link and right-side wrapper
-        // Right-side wrapper should be empty when no rightContent or themeSwitcher
         expect(header?.children.length).toBe(2);
         const rightWrapper = header?.children[1];
-        expect(rightWrapper?.children.length).toBe(0);
+        // Right wrapper contains UserAuthButton (mocked as null, but still a child)
+        expect(rightWrapper?.children.length).toBe(1);
     });
 
     it("renders multiple right content elements", () => {
