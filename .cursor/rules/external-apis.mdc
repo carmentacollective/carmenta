@@ -6,8 +6,9 @@ alwaysApply: false
 # External Service Integration Guidelines
 
 Carmenta integrates with external services through a battle-tested adapter architecture
-ported from MCP Hubby. This pattern provides progressive disclosure (one tool per service
-with describe action), unified credential management, and comprehensive error handling.
+ported from MCP Hubby. This pattern provides progressive disclosure (one tool per
+service with describe action), unified credential management, and comprehensive error
+handling.
 
 ## Architecture Overview
 
@@ -33,8 +34,8 @@ Use `/add-integration <service-name>` command. The process:
 
 When porting adapters from MCP Hubby (`../mcp-hubby/lib/adapters/`):
 
-**Copy the adapter file directly** - These have production mileage and battle-tested error
-handling. Avoid rewriting from scratch.
+**Copy the adapter file directly** - These have production mileage and battle-tested
+error handling. Avoid rewriting from scratch.
 
 **Apply these transformations:**
 
@@ -45,6 +46,7 @@ handling. Avoid rewriting from scratch.
 2. Replace `userEmail` with `userId` in function signatures and calls
 
 3. For OAuth adapters, replace direct DB queries with `getCredentials()`:
+
    ```typescript
    // Before (MCP Hubby pattern with direct DB)
    const connections = await db.select().from(schema.connections)...
@@ -60,21 +62,23 @@ handling. Avoid rewriting from scratch.
 5. Update `assertEnv("NANGO_SECRET_KEY")` to use helper:
    ```typescript
    function getNangoSecretKey(): string {
-       if (!env.NANGO_SECRET_KEY) {
-           throw new Error("Missing: NANGO_SECRET_KEY");
-       }
-       return env.NANGO_SECRET_KEY;
+     if (!env.NANGO_SECRET_KEY) {
+       throw new Error("Missing: NANGO_SECRET_KEY");
+     }
+     return env.NANGO_SECRET_KEY;
    }
    ```
 
 ## Authentication Patterns
 
 **OAuth services** (Notion, ClickUp):
+
 - Nango handles OAuth flow and token refresh
 - Adapter receives `connectionId` from `getCredentials()`
 - API calls go through Nango proxy
 
 **API key services** (Giphy, Fireflies, Limitless):
+
 - Credentials encrypted with AES-256-GCM
 - Adapter receives decrypted `credentials` from `getCredentials()`
 - Direct API calls to service
@@ -82,6 +86,7 @@ handling. Avoid rewriting from scratch.
 ## HTTP Client
 
 Use `httpClient` from `@/lib/http-client` for all API calls. It provides:
+
 - Automatic retries (3 attempts with exponential backoff)
 - 30-second timeout
 - Sentry spans for observability
@@ -90,6 +95,7 @@ Use `httpClient` from `@/lib/http-client` for all API calls. It provides:
 ## Error Handling
 
 Adapters should:
+
 - Throw `ValidationError` for user-correctable issues
 - Log errors with context via `logger.error()`
 - Capture to Sentry via `this.captureError()`
