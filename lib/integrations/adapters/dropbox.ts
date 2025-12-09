@@ -47,20 +47,17 @@ export class DropboxAdapter extends ServiceAdapter {
     /**
      * Fetch the Dropbox account information
      * Used to populate accountIdentifier and accountDisplayName after OAuth
+     *
+     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
+     * @param userId - User ID (optional, only used for logging)
      */
-    async fetchAccountInfo(userId: string): Promise<{
+    async fetchAccountInfo(
+        connectionId: string,
+        userId?: string
+    ): Promise<{
         identifier: string;
         displayName: string;
     }> {
-        const credentials = await getCredentials(userId, this.serviceName);
-
-        if (!credentials.connectionId) {
-            throw new ValidationError(
-                `No Nango connection ID found for ${this.serviceDisplayName}. ` +
-                    `Please reconnect your account at /integrations/${this.serviceName}`
-            );
-        }
-
         const nangoUrl = this.getNangoUrl();
         const nangoSecretKey = getNangoSecretKey();
 
@@ -69,7 +66,7 @@ export class DropboxAdapter extends ServiceAdapter {
                 .post(`${nangoUrl}/proxy/2/users/get_current_account`, {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": credentials.connectionId,
+                        "Connection-Id": connectionId,
                         "Provider-Config-Key": "dropbox",
                         "Content-Type": "application/json",
                     },
@@ -647,7 +644,9 @@ export class DropboxAdapter extends ServiceAdapter {
 
         // Content endpoint - see "API Request Body Quirks" in file header
         const nangoSecretKey = getNangoSecretKey();
-        const response = await httpClient
+
+        // Get response as ArrayBuffer to preserve raw bytes for binary files
+        const arrayBuffer = await httpClient
             .post(`${this.getNangoUrl()}/proxy/2/files/download`, {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
@@ -657,16 +656,19 @@ export class DropboxAdapter extends ServiceAdapter {
                 },
                 body: "", // See "Dropbox API Request Body Quirks" above
             })
-            .text();
+            .arrayBuffer();
+
+        // Convert to Buffer for binary detection and processing
+        const buffer = Buffer.from(arrayBuffer);
 
         // Detect if file is binary or text
         // Binary files contain null bytes or excessive control characters
         const isBinary =
-            response.includes("\0") || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(response);
+            buffer.includes(0) || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(buffer.toString("binary"));
 
         if (isBinary) {
-            // Binary file - return as base64
-            const base64Content = Buffer.from(response).toString("base64");
+            // Binary file - return as base64 (preserves original bytes)
+            const base64Content = buffer.toString("base64");
             return this.createJSONResponse({
                 path,
                 contentType: "binary",
@@ -675,8 +677,9 @@ export class DropboxAdapter extends ServiceAdapter {
             });
         }
 
-        // Text file - return as readable text
-        return this.createSuccessResponse(`File: ${path}\n\nContent:\n${response}`);
+        // Text file - decode as UTF-8 and return as readable text
+        const textContent = buffer.toString("utf-8");
+        return this.createSuccessResponse(`File: ${path}\n\nContent:\n${textContent}`);
     }
 
     private async handleCreateFolder(
@@ -917,7 +920,7 @@ export class DropboxAdapter extends ServiceAdapter {
 
         const usedGB = (spaceResponse.used / (1024 * 1024 * 1024)).toFixed(2);
         const allocatedGB = spaceResponse.allocation.allocated
-            ? (spaceResponse.allocation.allocated / (1024 * 1024 * 1024)).toFixed(2)
+            ? `${(spaceResponse.allocation.allocated / (1024 * 1024 * 1024)).toFixed(2)} GB`
             : "Unlimited";
 
         return this.createJSONResponse({
