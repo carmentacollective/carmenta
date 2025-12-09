@@ -397,6 +397,7 @@ export async function disconnectService(
                     status: "disconnected",
                     encryptedCredentials: null,
                     errorMessage: null,
+                    isDefault: false,
                     updatedAt: new Date(),
                 })
                 .where(
@@ -414,6 +415,7 @@ export async function disconnectService(
                 .set({
                     status: "disconnected",
                     errorMessage: null,
+                    isDefault: false,
                     updatedAt: new Date(),
                 })
                 .where(

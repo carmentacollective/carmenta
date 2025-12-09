@@ -18,6 +18,7 @@ import {
     timestamp,
     jsonb,
     index,
+    uniqueIndex,
     text,
     integer,
     serial,
@@ -475,7 +476,7 @@ export const integrations = pgTable(
         /** Filter by service */
         index("integrations_user_service_idx").on(table.userId, table.service),
         /** Unique constraint: one account per user/service/accountId */
-        index("integrations_user_service_account_idx").on(
+        uniqueIndex("integrations_user_service_account_idx").on(
             table.userId,
             table.service,
             table.accountId

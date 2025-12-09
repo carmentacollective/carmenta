@@ -680,16 +680,18 @@ export class FirefliesAdapter extends ServiceAdapter {
         userId: string
     ): Promise<MCPToolResponse> {
         // For Fireflies, raw_api accepts GraphQL queries
-        // Note: We use 'query' field for the GraphQL query string (not REST endpoint)
-        // and accept variables from either 'body' or a custom 'variables' field
-        const { query, body } = params;
+        // We use a custom 'query' parameter (string) for the GraphQL query,
+        // not the standard RawAPIParams.query (Record<string, unknown> for URL params)
         const customParams = params as unknown as Record<string, unknown>;
+        const query = customParams.query;
 
         if (!query || typeof query !== "string") {
             return this.createErrorResponse(
                 "raw_api requires 'query' parameter (GraphQL query string)"
             );
         }
+
+        const body = params.body;
 
         // Get API key
         const connectionCreds = await getCredentials(userId, this.serviceName);

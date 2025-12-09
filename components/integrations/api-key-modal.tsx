@@ -47,6 +47,7 @@ export function ApiKeyModal({
             const result = await onSubmit(apiKey.trim());
             if (result.success) {
                 setApiKey("");
+                setShowKey(false);
                 onOpenChange(false);
             } else {
                 setError(result.error || "Failed to connect");
@@ -62,6 +63,7 @@ export function ApiKeyModal({
         if (!loading) {
             setApiKey("");
             setError(null);
+            setShowKey(false);
             onOpenChange(false);
         }
     };

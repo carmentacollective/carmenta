@@ -19,4 +19,4 @@ CREATE TABLE "integrations" (
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "integrations_user_idx" ON "integrations" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "integrations_user_service_idx" ON "integrations" USING btree ("user_id","service");--> statement-breakpoint
-CREATE INDEX "integrations_user_service_account_idx" ON "integrations" USING btree ("user_id","service","account_id");
+CREATE UNIQUE INDEX "integrations_user_service_account_idx" ON "integrations" USING btree ("user_id","service","account_id");

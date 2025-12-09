@@ -1037,9 +1037,10 @@ export class ClickUpAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
+        const nangoSecretKey = getNangoSecretKey();
         await httpClient.delete(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
             headers: {
-                Authorization: `Bearer ${env.NANGO_SECRET_KEY}`,
+                Authorization: `Bearer ${nangoSecretKey}`,
                 "Connection-Id": connectionId,
                 "Provider-Config-Key": "clickup",
             },
