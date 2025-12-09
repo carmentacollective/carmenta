@@ -40,6 +40,8 @@ export const env = createEnv({
         DATABASE_URL: z.string().url().default("postgresql://localhost:5432/carmenta"),
     },
     client: {
+        // App URL for generating integration URLs
+        NEXT_PUBLIC_APP_URL: z.string().url().optional(),
         // Client-side Sentry DSN (same value as server, exposed to browser)
         NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
         // Clerk publishable key for client-side auth
@@ -56,6 +58,7 @@ export const env = createEnv({
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
         SENTRY_DSN: process.env.SENTRY_DSN,
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,

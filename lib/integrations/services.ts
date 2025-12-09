@@ -169,3 +169,19 @@ export function getOAuthServices(): ServiceDefinition[] {
 export function getApiKeyServices(): ServiceDefinition[] {
     return SERVICE_REGISTRY.filter((s) => s.authMethod === "api_key");
 }
+
+/**
+ * Check if a service uses OAuth authentication
+ */
+export function isOAuthService(serviceId: string): boolean {
+    const service = getServiceById(serviceId);
+    return service?.authMethod === "oauth";
+}
+
+/**
+ * Check if a service uses API key authentication
+ */
+export function isApiKeyService(serviceId: string): boolean {
+    const service = getServiceById(serviceId);
+    return service?.authMethod === "api_key";
+}

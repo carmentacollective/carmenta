@@ -10,9 +10,12 @@
  * - Duration in seconds, not minutes
  */
 
-import { ServiceAdapter } from "./base";
-import { getCredentials } from "../connection-manager";
-import type { HelpResponse, AdapterResponse, RawAPIParams } from "../types";
+import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { isApiKeyCredentials } from "@/lib/integrations/encryption";
+import { httpClient } from "@/lib/http-client";
+import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
 
 const FIREFLIES_API_BASE = "https://api.fireflies.ai/graphql";
 
@@ -148,15 +151,15 @@ export class FirefliesAdapter extends ServiceAdapter {
         action: string,
         params: unknown,
         userId: string,
-        _accountId?: string
-    ): Promise<AdapterResponse> {
+        _accountId?: string // Multi-account support not yet implemented
+    ): Promise<MCPToolResponse> {
         // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
-            this.logError("Validation failed", {
-                action,
-                errors: validation.errors,
-            });
+            this.logError(
+                `[FIREFLIES ADAPTER] 🔴 Validation failed for action '${action}':`,
+                validation.errors
+            );
             return this.createErrorResponse(
                 `Validation errors:\n${validation.errors.join("\n")}`
             );
@@ -173,7 +176,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                 );
             }
 
-            if (!connectionCreds.credentials.apiKey) {
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
                 return this.createErrorResponse(
                     "Invalid credential format for Fireflies service"
                 );
@@ -181,15 +184,24 @@ export class FirefliesAdapter extends ServiceAdapter {
 
             apiKey = connectionCreds.credentials.apiKey;
         } catch (error) {
-            if (error instanceof Error && error.message.includes("No")) {
-                return this.createErrorResponse(this.createNotConnectedError());
+            if (error instanceof ValidationError) {
+                const errorMsg = [
+                    "❌ Fireflies.ai is not connected to your account.",
+                    "",
+                    `Please connect Fireflies.ai at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/fireflies`,
+                    "",
+                    "Once connected, try your request again.",
+                ].join("\n");
+                return this.createErrorResponse(errorMsg);
             }
             throw error;
         }
 
         // Route to appropriate handler
         try {
-            this.logInfo(`Executing action: ${action}`, { userId });
+            this.logInfo(
+                `[FIREFLIES ADAPTER] 📥 Executing action '${action}' for user ${userId}`
+            );
 
             switch (action) {
                 case "list_transcripts":
@@ -208,18 +220,43 @@ export class FirefliesAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            this.logError(`Failed to execute ${action}`, {
-                error: error instanceof Error ? error.message : String(error),
-                userId,
-            });
+            this.logError(
+                `[FIREFLIES ADAPTER] ❌ Failed to execute ${action} for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action,
                 params: params as Record<string, unknown>,
                 userId,
             });
 
-            return this.createErrorResponse(this.handleCommonAPIError(error, action));
+            let errorMessage = `Failed to ${action}: `;
+            if (error instanceof Error) {
+                if (
+                    error.message.includes("401") ||
+                    error.message.includes("Unauthorized")
+                ) {
+                    errorMessage +=
+                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
+                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/fireflies`;
+                } else if (error.message.includes("404")) {
+                    errorMessage += "Resource not found.";
+                } else if (error.message.includes("429")) {
+                    errorMessage +=
+                        "Rate limit exceeded (50 calls/day on free plan). Please try again later.";
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
+            }
+
+            return this.createErrorResponse(errorMessage);
         }
     }
 
@@ -228,52 +265,45 @@ export class FirefliesAdapter extends ServiceAdapter {
         apiKey: string,
         variables?: Record<string, unknown>
     ): Promise<T> {
-        this.logInfo("Executing GraphQL query", {
-            queryPreview: query.substring(0, 100) + "...",
-        });
+        this.logInfo(
+            `[FIREFLIES ADAPTER] 🚀 Executing GraphQL query:`,
+            query.substring(0, 100) + "..."
+        );
 
-        const response = await fetch(FIREFLIES_API_BASE, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                query,
-                variables: variables || {},
-            }),
-        });
+        const response = await httpClient
+            .post(FIREFLIES_API_BASE, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    query,
+                    variables: variables || {},
+                },
+            })
+            .json<{ data?: T; errors?: Array<{ message: string }> }>();
 
-        if (!response.ok) {
-            throw new Error(`Fireflies API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data?: T;
-            errors?: Array<{ message: string }>;
-        };
-
-        if (data.errors && data.errors.length > 0) {
-            const errorMessages = data.errors.map((e) => e.message).join(", ");
-            this.logError("GraphQL errors", { errors: errorMessages });
+        if (response.errors && response.errors.length > 0) {
+            const errorMessages = response.errors.map((e) => e.message).join(", ");
+            this.logError(`[FIREFLIES ADAPTER] 🔴 GraphQL errors:`, errorMessages);
             throw new Error(`GraphQL error: ${errorMessages}`);
         }
 
-        if (!data.data) {
-            this.logError("No data in GraphQL response");
+        if (!response.data) {
+            this.logError(`[FIREFLIES ADAPTER] 🔴 No data in response`);
             throw new Error("No data returned from Fireflies API");
         }
 
-        this.logInfo("GraphQL query successful");
-        return data.data;
+        this.logInfo(`[FIREFLIES ADAPTER] ✅ GraphQL query successful`);
+        return response.data;
     }
 
     private async handleListTranscripts(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { limit = 20 } = params as { limit?: number };
-        const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50);
+        const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // API max is 50
 
         const query = `
             query ListTranscripts($limit: Int!) {
@@ -306,7 +336,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                 meeting_attendees?: Array<{ displayName: string; email: string }>;
                 summary?: {
                     overview?: string;
-                    action_items?: string;
+                    action_items?: string; // API returns formatted string, not array
                     keywords?: string[];
                 };
             }>;
@@ -322,7 +352,7 @@ export class FirefliesAdapter extends ServiceAdapter {
             });
         }
 
-        this.logInfo(`Found ${transcripts.length} transcripts`);
+        this.logInfo(`[FIREFLIES ADAPTER] 📦 Found ${transcripts.length} transcripts`);
 
         return this.createJSONResponse({
             totalCount: transcripts.length,
@@ -344,7 +374,7 @@ export class FirefliesAdapter extends ServiceAdapter {
     private async handleGetTranscript(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { transcriptId } = params as { transcriptId: string };
 
         const query = `
@@ -386,7 +416,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                 meeting_attendees?: Array<{ displayName: string; email: string }>;
                 summary?: {
                     overview?: string;
-                    action_items?: string;
+                    action_items?: string; // API returns formatted string, not array
                     keywords?: string[];
                     outline?: string;
                     shorthand_bullet?: string;
@@ -408,7 +438,9 @@ export class FirefliesAdapter extends ServiceAdapter {
             );
         }
 
-        this.logInfo(`Retrieved transcript: ${transcript.title}`);
+        this.logInfo(
+            `[FIREFLIES ADAPTER] 📄 Retrieved transcript: ${transcript.title}`
+        );
 
         // Format transcript for better readability
         const formattedTranscript = [
@@ -457,13 +489,13 @@ export class FirefliesAdapter extends ServiceAdapter {
     private async handleSearchTranscripts(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { query: searchQuery, limit = 20 } = params as {
             query: string;
             limit?: number;
         };
 
-        const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50);
+        const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // API max is 50
 
         // Use GraphQL query to search transcripts by title or content
         const query = `
@@ -494,7 +526,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                     keywords?: string[];
                 };
             }>;
-        }>(query, apiKey, { limit: cappedLimit * 2 });
+        }>(query, apiKey, { limit: cappedLimit * 2 }); // Get more to filter
 
         // Filter transcripts by search query (simple text matching)
         const searchLower = searchQuery.toLowerCase();
@@ -510,7 +542,7 @@ export class FirefliesAdapter extends ServiceAdapter {
             .slice(0, cappedLimit);
 
         this.logInfo(
-            `Search for '${searchQuery}' found ${filteredTranscripts.length} results`
+            `[FIREFLIES ADAPTER] 🔍 Search for '${searchQuery}' found ${filteredTranscripts.length} results`
         );
 
         if (filteredTranscripts.length === 0) {
@@ -540,7 +572,7 @@ export class FirefliesAdapter extends ServiceAdapter {
     private async handleGenerateSummary(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { transcriptId, format = "bullet_points" } = params as {
             transcriptId: string;
             format?: string;
@@ -568,7 +600,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                 title: string;
                 summary?: {
                     overview?: string;
-                    action_items?: string;
+                    action_items?: string; // API returns formatted string, not array
                     outline?: string;
                     shorthand_bullet?: string;
                     keywords?: string[];
@@ -584,7 +616,9 @@ export class FirefliesAdapter extends ServiceAdapter {
             );
         }
 
-        this.logInfo(`Generated summary for: ${transcript.title}`);
+        this.logInfo(
+            `[FIREFLIES ADAPTER] 📝 Generated summary for: ${transcript.title}`
+        );
 
         let formattedSummary: string[] | string;
 
@@ -644,7 +678,7 @@ export class FirefliesAdapter extends ServiceAdapter {
     async executeRawAPI(
         params: RawAPIParams,
         userId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         // For Fireflies, raw_api accepts GraphQL queries
         // Note: We use 'query' field for the GraphQL query string (not REST endpoint)
         // and accept variables from either 'body' or a custom 'variables' field
@@ -662,7 +696,7 @@ export class FirefliesAdapter extends ServiceAdapter {
         if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
             return this.createErrorResponse("Invalid credentials");
         }
-        if (!connectionCreds.credentials.apiKey) {
+        if (!isApiKeyCredentials(connectionCreds.credentials)) {
             return this.createErrorResponse("Invalid credential format");
         }
 
@@ -682,11 +716,14 @@ export class FirefliesAdapter extends ServiceAdapter {
 
             return this.createJSONResponse(data);
         } catch (error) {
-            this.logError("Raw API request failed", {
-                error: error instanceof Error ? error.message : String(error),
-                userId,
-            });
+            this.logError(
+                `[FIREFLIES ADAPTER] ❌ Raw API request failed for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action: "raw_api",
                 params: {

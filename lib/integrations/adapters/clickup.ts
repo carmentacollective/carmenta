@@ -13,15 +13,78 @@
  * - Statuses are case-sensitive and list-specific (no universal status enum)
  */
 
-import { ServiceAdapter } from "./base";
-import { getCredentials, nangoProxyRequest } from "../connection-manager";
-import type { HelpResponse, AdapterResponse, RawAPIParams } from "../types";
+import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { httpClient } from "@/lib/http-client";
+import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
-const PROVIDER_CONFIG_KEY = "clickup";
+/** Get and validate Nango secret key */
+function getNangoSecretKey(): string {
+    if (!env.NANGO_SECRET_KEY) {
+        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
+    }
+    return env.NANGO_SECRET_KEY;
+}
 
 export class ClickUpAdapter extends ServiceAdapter {
     serviceName = "clickup";
     serviceDisplayName = "ClickUp";
+
+    private getNangoUrl(): string {
+        if (!env.NANGO_API_URL) {
+            throw new Error("Missing required environment variable: NANGO_API_URL");
+        }
+        return env.NANGO_API_URL;
+    }
+
+    /**
+     * Fetch the ClickUp account information
+     * Used to populate accountIdentifier and accountDisplayName after OAuth
+     */
+    async fetchAccountInfo(userId: string): Promise<{
+        identifier: string;
+        displayName: string;
+    }> {
+        const credentials = await getCredentials(userId, this.serviceName);
+
+        if (!credentials.connectionId) {
+            throw new ValidationError(
+                `No Nango connection ID found for ${this.serviceDisplayName}. ` +
+                    `Please reconnect your account at /integrations/${this.serviceName}`
+            );
+        }
+
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            const response = await httpClient
+                .get(`${nangoUrl}/proxy/api/v2/user`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": credentials.connectionId,
+                        "Provider-Config-Key": "clickup",
+                    },
+                })
+                .json<{
+                    user: {
+                        id: number;
+                        username: string;
+                        email: string;
+                    };
+                }>();
+
+            return {
+                identifier: response.user.email,
+                displayName: response.user.username || response.user.email,
+            };
+        } catch (error) {
+            logger.error({ error, userId }, "📋 Failed to fetch ClickUp account info");
+            throw new ValidationError("Failed to fetch ClickUp account information");
+        }
+    }
 
     getHelp(): HelpResponse {
         return {
@@ -450,38 +513,37 @@ export class ClickUpAdapter extends ServiceAdapter {
         params: unknown,
         userId: string,
         accountId?: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
-            this.logError("Validation failed", {
-                action,
-                errors: validation.errors,
-            });
+            this.logError(
+                `📋 [CLICKUP ADAPTER] Validation failed for action '${action}':`,
+                validation.errors
+            );
             return this.createErrorResponse(
                 `Validation errors:\n${validation.errors.join("\n")}`
             );
         }
 
-        // Get user's ClickUp connection
+        // Get user's ClickUp credentials via connection manager
         let connectionId: string;
         try {
-            const connectionCreds = await getCredentials(
+            const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-
-            if (connectionCreds.type !== "oauth" || !connectionCreds.connectionId) {
+            if (!credentials.connectionId) {
                 return this.createErrorResponse(
-                    "Invalid credentials type for ClickUp service. Expected OAuth connection."
+                    `No connection ID found for ClickUp. Please reconnect at: ` +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/clickup`
                 );
             }
-
-            connectionId = connectionCreds.connectionId;
+            connectionId = credentials.connectionId;
         } catch (error) {
-            if (error instanceof Error && error.message.includes("No")) {
-                return this.createErrorResponse(this.createNotConnectedError());
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
             }
             throw error;
         }
@@ -518,62 +580,84 @@ export class ClickUpAdapter extends ServiceAdapter {
                         accountId
                     );
                 default:
+                    this.logError(
+                        `📋 [CLICKUP ADAPTER] Unknown action '${action}' requested by user ${userId}`
+                    );
                     return this.createErrorResponse(
                         `Unknown action: ${action}. Use action='describe' to see available operations.`
                     );
             }
         } catch (error) {
-            this.logError(`Failed to execute ${action}`, {
-                error: error instanceof Error ? error.message : String(error),
-                userId,
-            });
+            // Comprehensive error logging
+            this.logError(
+                `📋 [CLICKUP ADAPTER] Failed to execute ${action} for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                    params,
+                    connectionId,
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action,
                 params: params as Record<string, unknown>,
                 userId,
             });
 
-            return this.createErrorResponse(this.handleCommonAPIError(error, action));
-        }
-    }
-
-    private async makeRequest<T>(
-        connectionId: string,
-        endpoint: string,
-        options: {
-            method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-            body?: Record<string, unknown>;
-            query?: Record<string, unknown>;
-        } = {}
-    ): Promise<T> {
-        const response = await nangoProxyRequest(
-            connectionId,
-            PROVIDER_CONFIG_KEY,
-            endpoint,
-            {
-                method: options.method,
-                body: options.body,
+            // User-friendly error message
+            let errorMessage = `Failed to ${action}: `;
+            if (error instanceof Error) {
+                // Parse common error types
+                if (error.message.includes("404")) {
+                    errorMessage +=
+                        "The requested resource was not found. Please check the ID and try again.";
+                } else if (
+                    error.message.includes("401") ||
+                    error.message.includes("403")
+                ) {
+                    errorMessage +=
+                        "Authentication failed. Your ClickUp connection may have expired. Please reconnect at: " +
+                        `${process.env.NEXT_PUBLIC_APP_URL}/integrations/clickup`;
+                } else if (error.message.includes("429")) {
+                    errorMessage +=
+                        "Rate limit exceeded. Please try again in a few moments.";
+                } else if (
+                    error.message.includes("500") ||
+                    error.message.includes("503")
+                ) {
+                    errorMessage +=
+                        "ClickUp service is temporarily unavailable. Please try again later.";
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
             }
-        );
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`ClickUp API error ${response.status}: ${errorText}`);
+            return this.createErrorResponse(errorMessage);
         }
-
-        return response.json() as Promise<T>;
     }
 
-    private async handleListTeams(connectionId: string): Promise<AdapterResponse> {
-        const response = await this.makeRequest<{
-            teams: Array<{
-                id: string;
-                name: string;
-                color: string;
-                avatar?: string;
-            }>;
-        }>(connectionId, "/api/v2/team");
+    private async handleListTeams(connectionId: string): Promise<MCPToolResponse> {
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}/proxy/api/v2/team`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+            })
+            .json<{
+                teams: Array<{
+                    id: string;
+                    name: string;
+                    color: string;
+                    avatar?: string;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             teams: response.teams.map((team) => ({
@@ -587,17 +671,29 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleListSpaces(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { team_id } = params as { team_id: string };
 
-        const response = await this.makeRequest<{
-            spaces: Array<{
-                id: string;
-                name: string;
-                private: boolean;
-                statuses: Array<{ status: string; type: string; color: string }>;
-            }>;
-        }>(connectionId, `/api/v2/team/${team_id}/space?archived=false`);
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}/proxy/api/v2/team/${team_id}/space`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+                searchParams: {
+                    archived: "false",
+                },
+            })
+            .json<{
+                spaces: Array<{
+                    id: string;
+                    name: string;
+                    private: boolean;
+                    statuses: Array<{ status: string; type: string; color: string }>;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             spaces: response.spaces.map((space) => ({
@@ -611,30 +707,42 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleListLists(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { space_id, folder_id } = params as {
             space_id?: string;
             folder_id?: string;
         };
 
         if (!space_id && !folder_id) {
-            return this.createErrorResponse(
+            throw new ValidationError(
                 "Either space_id or folder_id is required for list_lists"
             );
         }
 
         const endpoint = folder_id
-            ? `/api/v2/folder/${folder_id}/list?archived=false`
-            : `/api/v2/space/${space_id}/list?archived=false`;
+            ? `/proxy/api/v2/folder/${folder_id}/list`
+            : `/proxy/api/v2/space/${space_id}/list`;
 
-        const response = await this.makeRequest<{
-            lists: Array<{
-                id: string;
-                name: string;
-                orderindex: number;
-                content: string;
-            }>;
-        }>(connectionId, endpoint);
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}${endpoint}`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+                searchParams: {
+                    archived: "false",
+                },
+            })
+            .json<{
+                lists: Array<{
+                    id: string;
+                    name: string;
+                    orderindex: number;
+                    content: string;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             lists: response.lists.map((list) => ({
@@ -647,7 +755,7 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleListTasks(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             list_id,
             team_id,
@@ -685,56 +793,65 @@ export class ClickUpAdapter extends ServiceAdapter {
         };
 
         if (!list_id && !team_id) {
-            return this.createErrorResponse(
+            throw new ValidationError(
                 "Either list_id or team_id is required for list_tasks"
             );
         }
 
-        const baseEndpoint = list_id
-            ? `/api/v2/list/${list_id}/task`
-            : `/api/v2/team/${team_id}/task`;
+        const endpoint = list_id
+            ? `/proxy/api/v2/list/${list_id}/task`
+            : `/proxy/api/v2/team/${team_id}/task`;
 
         // Build query parameters
-        const queryParams: string[] = [];
-        if (archived !== undefined) queryParams.push(`archived=${archived}`);
-        if (page !== undefined) queryParams.push(`page=${page}`);
-        if (order_by) queryParams.push(`order_by=${order_by}`);
-        if (reverse !== undefined) queryParams.push(`reverse=${reverse}`);
-        if (subtasks !== undefined) queryParams.push(`subtasks=${subtasks}`);
+        const searchParams = new URLSearchParams();
+        if (archived !== undefined) searchParams.set("archived", String(archived));
+        if (page !== undefined) searchParams.set("page", String(page));
+        if (order_by) searchParams.set("order_by", order_by);
+        if (reverse !== undefined) searchParams.set("reverse", String(reverse));
+        if (subtasks !== undefined) searchParams.set("subtasks", String(subtasks));
         if (statuses && statuses.length > 0) {
-            statuses.forEach((status) => queryParams.push(`statuses[]=${status}`));
+            statuses.forEach((status) => searchParams.append("statuses[]", status));
         }
         if (include_closed !== undefined)
-            queryParams.push(`include_closed=${include_closed}`);
+            searchParams.set("include_closed", String(include_closed));
         if (assignees && assignees.length > 0) {
             assignees.forEach((assignee) =>
-                queryParams.push(`assignees[]=${assignee}`)
+                searchParams.append("assignees[]", assignee)
             );
         }
-        if (due_date_gt) queryParams.push(`due_date_gt=${due_date_gt}`);
-        if (due_date_lt) queryParams.push(`due_date_lt=${due_date_lt}`);
-        if (date_created_gt) queryParams.push(`date_created_gt=${date_created_gt}`);
-        if (date_created_lt) queryParams.push(`date_created_lt=${date_created_lt}`);
-        if (date_updated_gt) queryParams.push(`date_updated_gt=${date_updated_gt}`);
-        if (date_updated_lt) queryParams.push(`date_updated_lt=${date_updated_lt}`);
+        if (due_date_gt) searchParams.set("due_date_gt", String(due_date_gt));
+        if (due_date_lt) searchParams.set("due_date_lt", String(due_date_lt));
+        if (date_created_gt)
+            searchParams.set("date_created_gt", String(date_created_gt));
+        if (date_created_lt)
+            searchParams.set("date_created_lt", String(date_created_lt));
+        if (date_updated_gt)
+            searchParams.set("date_updated_gt", String(date_updated_gt));
+        if (date_updated_lt)
+            searchParams.set("date_updated_lt", String(date_updated_lt));
 
-        const endpoint =
-            queryParams.length > 0
-                ? `${baseEndpoint}?${queryParams.join("&")}`
-                : baseEndpoint;
-
-        const response = await this.makeRequest<{
-            tasks: Array<{
-                id: string;
-                name: string;
-                status: { status: string };
-                description?: string;
-                assignees: Array<{ id: number; username: string }>;
-                priority?: { priority: string };
-                due_date?: string;
-                url: string;
-            }>;
-        }>(connectionId, endpoint);
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}${endpoint}`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+                searchParams,
+            })
+            .json<{
+                tasks: Array<{
+                    id: string;
+                    name: string;
+                    status: { status: string };
+                    description?: string;
+                    assignees: Array<{ id: number; username: string }>;
+                    priority?: { priority: string };
+                    due_date?: string;
+                    url: string;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             tasks: response.tasks.map((task) => ({
@@ -752,26 +869,35 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleGetTask(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const response = await this.makeRequest<{
-            id: string;
-            name: string;
-            description: string;
-            status: { status: string };
-            assignees: Array<{ id: number; username: string; email: string }>;
-            priority?: { id: string; priority: string };
-            due_date?: string;
-            start_date?: string;
-            tags: Array<{ name: string }>;
-            url: string;
-            custom_fields?: Array<{
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+            })
+            .json<{
                 id: string;
                 name: string;
-                value: unknown;
-            }>;
-        }>(connectionId, `/api/v2/task/${task_id}`);
+                description: string;
+                status: { status: string };
+                assignees: Array<{ id: number; username: string; email: string }>;
+                priority?: { id: string; priority: string };
+                due_date?: string;
+                start_date?: string;
+                tags: Array<{ name: string }>;
+                url: string;
+                custom_fields?: Array<{
+                    id: string;
+                    name: string;
+                    value: unknown;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             id: response.id,
@@ -794,7 +920,7 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleCreateTask(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             list_id,
             name,
@@ -829,15 +955,23 @@ export class ClickUpAdapter extends ServiceAdapter {
         if (start_date) body.start_date = start_date;
         if (tags) body.tags = tags;
 
-        const response = await this.makeRequest<{
-            id: string;
-            name: string;
-            status: { status: string };
-            url: string;
-        }>(connectionId, `/api/v2/list/${list_id}/task`, {
-            method: "POST",
-            body,
-        });
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/api/v2/list/${list_id}/task`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                    "Content-Type": "application/json",
+                },
+                json: body,
+            })
+            .json<{
+                id: string;
+                name: string;
+                status: { status: string };
+                url: string;
+            }>();
 
         return this.createJSONResponse({
             success: true,
@@ -851,7 +985,7 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleUpdateTask(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id, name, description, status, priority, assignees, due_date } =
             params as {
                 task_id: string;
@@ -872,14 +1006,22 @@ export class ClickUpAdapter extends ServiceAdapter {
         if (assignees !== undefined) body.assignees = assignees;
         if (due_date !== undefined) body.due_date = due_date;
 
-        const response = await this.makeRequest<{
-            id: string;
-            name: string;
-            status: { status: string };
-        }>(connectionId, `/api/v2/task/${task_id}`, {
-            method: "PUT",
-            body,
-        });
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .put(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                    "Content-Type": "application/json",
+                },
+                json: body,
+            })
+            .json<{
+                id: string;
+                name: string;
+                status: { status: string };
+            }>();
 
         return this.createJSONResponse({
             success: true,
@@ -892,11 +1034,15 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleDeleteTask(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        await this.makeRequest(connectionId, `/api/v2/task/${task_id}`, {
-            method: "DELETE",
+        await httpClient.delete(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
+            headers: {
+                Authorization: `Bearer ${env.NANGO_SECRET_KEY}`,
+                "Connection-Id": connectionId,
+                "Provider-Config-Key": "clickup",
+            },
         });
 
         return this.createJSONResponse({
@@ -908,24 +1054,32 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleCreateComment(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id, comment_text, notify_all } = params as {
             task_id: string;
             comment_text: string;
             notify_all?: boolean;
         };
 
-        const response = await this.makeRequest<{
-            id: number | string;
-            hist_id?: string;
-            date: number;
-        }>(connectionId, `/api/v2/task/${task_id}/comment`, {
-            method: "POST",
-            body: {
-                comment_text,
-                notify_all: notify_all ?? false,
-            },
-        });
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/comment`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    comment_text,
+                    notify_all: notify_all ?? false,
+                },
+            })
+            .json<{
+                id: number | string;
+                hist_id?: string;
+                date: number;
+            }>();
 
         return this.createJSONResponse({
             success: true,
@@ -937,17 +1091,26 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleListComments(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const response = await this.makeRequest<{
-            comments: Array<{
-                id: string;
-                comment: Array<{ text: string }>;
-                user: { username: string };
-                date: string;
-            }>;
-        }>(connectionId, `/api/v2/task/${task_id}/comment`);
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/comment`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+            })
+            .json<{
+                comments: Array<{
+                    id: string;
+                    comment: Array<{ text: string }>;
+                    user: { username: string };
+                    date: string;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             comments: response.comments.map((c) => ({
@@ -962,19 +1125,28 @@ export class ClickUpAdapter extends ServiceAdapter {
     private async handleListTimeEntries(
         params: unknown,
         connectionId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const response = await this.makeRequest<{
-            data: Array<{
-                id: string;
-                user: { username: string };
-                duration: number;
-                start: string;
-                end?: string;
-                description?: string;
-            }>;
-        }>(connectionId, `/api/v2/task/${task_id}/time`);
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/time`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "clickup",
+                },
+            })
+            .json<{
+                data: Array<{
+                    id: string;
+                    user: { username: string };
+                    duration: number;
+                    start: string;
+                    end?: string;
+                    description?: string;
+                }>;
+            }>();
 
         return this.createJSONResponse({
             time_entries: response.data.map((entry) => ({
@@ -988,13 +1160,18 @@ export class ClickUpAdapter extends ServiceAdapter {
         });
     }
 
+    /**
+     * Execute a raw ClickUp API request
+     * This provides an escape hatch for operations not covered by standard actions
+     */
     async executeRawAPI(
         params: RawAPIParams,
         userId: string,
         accountId?: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { endpoint, method, body, query } = params;
 
+        // Validate parameters
         if (!endpoint || typeof endpoint !== "string") {
             return this.createErrorResponse(
                 "raw_api requires 'endpoint' parameter (string)"
@@ -1015,83 +1192,101 @@ export class ClickUpAdapter extends ServiceAdapter {
             );
         }
 
-        // Get connection
+        // Get user credentials via connection manager
         let connectionId: string;
         try {
-            const connectionCreds = await getCredentials(
+            const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-
-            if (connectionCreds.type !== "oauth" || !connectionCreds.connectionId) {
-                return this.createErrorResponse("Invalid credentials");
+            if (!credentials.connectionId) {
+                return this.createErrorResponse(
+                    `No connection ID found for ClickUp. Please reconnect at: ` +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/clickup`
+                );
             }
-
-            connectionId = connectionCreds.connectionId;
+            connectionId = credentials.connectionId;
         } catch (error) {
-            if (error instanceof Error && error.message.includes("No")) {
-                return this.createErrorResponse(this.createNotConnectedError());
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
             }
             throw error;
         }
 
-        const allowedMethods = ["GET", "POST", "PUT", "DELETE", "PATCH"];
-        const upperMethod = method.toUpperCase();
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
 
-        if (!allowedMethods.includes(upperMethod)) {
-            return this.createErrorResponse(
-                `Unsupported HTTP method: ${method}. Allowed methods: ${allowedMethods.join(", ")}`
+        // Build request options
+        const requestOptions: {
+            headers: Record<string, string>;
+            searchParams?: Record<string, string>;
+            json?: Record<string, unknown>;
+        } = {
+            headers: {
+                Authorization: `Bearer ${nangoSecretKey}`,
+                "Connection-Id": connectionId,
+                "Provider-Config-Key": "clickup",
+            },
+        };
+
+        // Add query parameters if provided
+        if (query && typeof query === "object") {
+            requestOptions.searchParams = Object.fromEntries(
+                Object.entries(query).map(([k, v]) => [k, String(v)])
             );
         }
 
-        this.logInfo(`Raw API call: ${upperMethod} ${endpoint}`);
+        // Add body for POST/PUT/PATCH
+        if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
+            requestOptions.json = body;
+        }
 
         try {
-            // Build query string if provided (using URLSearchParams for proper encoding)
-            let fullEndpoint = endpoint;
-            if (query && typeof query === "object") {
-                const searchParams = new URLSearchParams();
-                for (const [k, v] of Object.entries(query)) {
-                    searchParams.append(k, String(v));
-                }
-                fullEndpoint = `${endpoint}${endpoint.includes("?") ? "&" : "?"}${searchParams.toString()}`;
-            }
+            const httpMethod = method.toLowerCase() as
+                | "get"
+                | "post"
+                | "put"
+                | "delete"
+                | "patch";
+            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
 
-            const response = await this.makeRequest<Record<string, unknown>>(
-                connectionId,
-                fullEndpoint,
-                {
-                    method: upperMethod as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
-                    body: body as Record<string, unknown>,
-                }
-            );
+            const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
+                Record<string, unknown>
+            >();
 
             return this.createJSONResponse(response);
         } catch (error) {
-            this.logError("Raw API request failed", {
-                endpoint,
-                method,
-                error: error instanceof Error ? error.message : String(error),
-            });
+            logger.error(
+                {
+                    endpoint,
+                    method,
+                    userId,
+                    error: error instanceof Error ? error.message : String(error),
+                },
+                "📋 [CLICKUP ADAPTER] Raw API request failed"
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
-            let errorMessage = "Raw API request failed: ";
+            let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
                     errorMessage +=
-                        "Endpoint not found. Check the ClickUp API documentation: " +
+                        "Endpoint not found. Check the ClickUp API documentation for the correct endpoint path: " +
                         "https://clickup.com/api";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
-                    errorMessage += `Authentication failed. ${this.createNotConnectedError()}`;
+                    errorMessage +=
+                        "Authentication failed. Your ClickUp connection may have expired. Please reconnect at: " +
+                        `${process.env.NEXT_PUBLIC_APP_URL}/integrations/clickup`;
                 } else {
                     errorMessage += error.message;
                 }

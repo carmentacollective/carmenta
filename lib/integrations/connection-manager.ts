@@ -1,108 +1,211 @@
 /**
- * Connection Manager
+ * Connection Manager - Unified Credential Access Layer
  *
- * Unified layer for accessing credentials from both OAuth (Nango) and API key services.
- * Handles multi-account selection, credential decryption, and connection status.
+ * Single interface for both OAuth (via Nango) and API key credentials. Callers don't
+ * need to know which auth method a service uses - just call getCredentials().
+ *
+ * ## Two Credential Types
+ *
+ * **OAuth services** (Notion, ClickUp, etc.): Return connectionId for Nango proxy.
+ * Nango handles token storage, refresh, and retries automatically. We never see
+ * the actual access tokens - just pass connectionId to Nango API calls.
+ *
+ * **API key services** (Giphy, Fireflies, Limitless, etc.): Return decrypted credentials.
+ * Keys stored encrypted with AES-256-GCM (@47ng/simple-e2ee). Decrypted on-demand,
+ * never logged or cached in memory beyond the request.
+ *
+ * ## Multi-Account Strategy
+ *
+ * Users can connect multiple accounts per service (e.g., work + personal Notion).
+ * Account selection priority when accountId not specified:
+ * 1. Account marked isDefault=true (user's explicit choice in UI)
+ * 2. Oldest connected account (connectedAt ascending)
+ *
+ * ## Connection States
+ *
+ * - connected: Ready to use
+ * - expired: OAuth token expired, needs reconnection (Nango refresh failed)
+ * - error: Last operation failed, may need reconnection
+ * - disconnected: User explicitly disconnected
  */
 
-import { db } from "@/lib/db";
-import { integrations } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
-import { env, assertEnv } from "@/lib/env";
-import { decryptCredentials, isApiKeyCredentials } from "./encryption";
-import { getServiceById } from "./services";
+import { db, schema } from "@/lib/db";
+import { isOAuthService, isApiKeyService } from "./services";
+import { decryptCredentials, type Credentials } from "./encryption";
+import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import type { ConnectionCredentials, IntegrationStatus } from "./types";
+import { eq, and, desc, asc } from "drizzle-orm";
+
+export interface ConnectionCredentials {
+    type: "oauth" | "api_key";
+    // For OAuth
+    connectionId?: string;
+    // For API keys
+    credentials?: Credentials;
+    // Account information
+    accountId: string;
+    accountDisplayName?: string;
+    isDefault: boolean;
+}
 
 /**
- * Get credentials for a service
- *
- * For OAuth: Returns connectionId for Nango proxy calls
- * For API Key: Returns decrypted API key
- *
- * @param userId - User's ID
- * @param service - Service identifier
- * @param accountId - Optional specific account (uses default if not specified)
+ * Get credentials for a service connection.
+ * Returns connectionId (OAuth) or decrypted credentials (API key).
  */
 export async function getCredentials(
     userId: string,
     service: string,
     accountId?: string
 ): Promise<ConnectionCredentials> {
-    const serviceDefinition = getServiceById(service);
-    if (!serviceDefinition) {
-        throw new Error(`Unknown service: ${service}`);
-    }
-
-    // Find the integration
     let integration;
+
     if (accountId) {
         // Specific account requested
-        [integration] = await db
+        const results = await db
             .select()
-            .from(integrations)
+            .from(schema.integrations)
             .where(
                 and(
-                    eq(integrations.userId, userId),
-                    eq(integrations.service, service),
-                    eq(integrations.accountId, accountId)
+                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.accountId, accountId)
                 )
             )
             .limit(1);
+
+        integration = results[0];
+
+        if (!integration) {
+            throw new ValidationError(
+                `Account '${accountId}' is not connected for ${service}. Connect it in your hub to use this account.`
+            );
+        }
     } else {
-        // Find default account, or oldest connected account
-        [integration] = await db
+        // No specific account - use default or oldest connected account.
+        // Order: isDefault DESC (true first), then connectedAt ASC (oldest first).
+        const integrations = await db
             .select()
-            .from(integrations)
+            .from(schema.integrations)
             .where(
                 and(
-                    eq(integrations.userId, userId),
-                    eq(integrations.service, service),
-                    eq(integrations.status, "connected")
+                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.status, "connected")
                 )
             )
-            .orderBy(desc(integrations.isDefault), integrations.connectedAt)
-            .limit(1);
+            .orderBy(
+                desc(schema.integrations.isDefault),
+                asc(schema.integrations.connectedAt)
+            );
+
+        if (integrations.length === 0) {
+            throw new ValidationError(
+                `${service} is not connected. Connect it in your hub to use this service.`
+            );
+        }
+
+        // Use first integration (which will be default if one exists, otherwise oldest)
+        integration = integrations[0];
     }
 
     if (!integration) {
-        throw new Error(
-            `No ${serviceDefinition.name} connection found. Please connect at /integrations`
+        throw new ValidationError(
+            `${service} is not connected. Connect it in your hub to use this service.`
+        );
+    }
+
+    // Provide helpful error messages based on integration status
+    if (integration.status === "expired") {
+        const errorDetails = integration.errorMessage
+            ? ` Details: ${integration.errorMessage}`
+            : "";
+        throw new ValidationError(
+            `Your ${service} access token has expired. Reconnect it in your hub to continue.${errorDetails}`
+        );
+    }
+
+    if (integration.status === "error") {
+        const errorDetails = integration.errorMessage
+            ? ` Error: ${integration.errorMessage}`
+            : "";
+        throw new ValidationError(
+            `Your ${service} connection has an error. Reconnect it in your hub to resolve.${errorDetails}`
+        );
+    }
+
+    if (integration.status === "disconnected") {
+        throw new ValidationError(
+            `${service} is disconnected. Connect it in your hub to use this service.`
         );
     }
 
     if (integration.status !== "connected") {
-        throw new Error(
-            `${serviceDefinition.name} connection is ${integration.status}. Please reconnect at /integrations`
+        throw new ValidationError(
+            `${service} connection is not available (status: ${integration.status}). Check your hub for details.`
         );
     }
 
-    // Return credentials based on type
-    if (integration.credentialType === "oauth") {
+    // OAuth service - return connectionId
+    if (isOAuthService(service)) {
         if (!integration.connectionId) {
-            throw new Error(`Invalid OAuth connection for ${serviceDefinition.name}`);
+            throw new ValidationError(
+                `OAuth service ${service} is missing connectionId for user ${userId}`
+            );
         }
+
         return {
             type: "oauth",
-            credentials: null,
             connectionId: integration.connectionId,
-        };
-    } else {
-        if (!integration.encryptedCredentials) {
-            throw new Error(`Invalid API key connection for ${serviceDefinition.name}`);
-        }
-        const credentials = decryptCredentials(integration.encryptedCredentials);
-        return {
-            type: "api_key",
-            credentials: isApiKeyCredentials(credentials)
-                ? { apiKey: credentials.apiKey }
-                : { token: credentials.token },
+            accountId: integration.accountId,
+            accountDisplayName: integration.accountDisplayName || undefined,
+            isDefault: integration.isDefault,
         };
     }
+
+    // API key service - decrypt and return credentials
+    if (isApiKeyService(service)) {
+        if (!integration.encryptedCredentials) {
+            throw new ValidationError(
+                `API key service ${service} is missing credentials for user ${userId}`
+            );
+        }
+
+        try {
+            const credentials = decryptCredentials(integration.encryptedCredentials);
+            return {
+                type: "api_key",
+                credentials,
+                accountId: integration.accountId,
+                accountDisplayName: integration.accountDisplayName || undefined,
+                isDefault: integration.isDefault,
+            };
+        } catch (error) {
+            logger.error(
+                {
+                    service,
+                    userId,
+                    error: error instanceof Error ? error.message : String(error),
+                },
+                `Failed to decrypt credentials for ${service}`
+            );
+            throw new ValidationError(
+                `Failed to decrypt credentials for ${service}. Please reconnect the service.`
+            );
+        }
+    }
+
+    throw new ValidationError(`Unknown service configuration: ${service}`);
 }
+
+/** Integration status type */
+type IntegrationStatus = "connected" | "error" | "expired" | "disconnected";
 
 /**
  * List all accounts for a service
+ *
+ * Returns all accounts (regardless of status) that the user has connected for a given service.
+ * Results are sorted by default status (descending) then connection time (ascending),
+ * so the default account appears first, followed by other accounts in chronological order.
  */
 export async function listServiceAccounts(
     userId: string,
@@ -110,174 +213,287 @@ export async function listServiceAccounts(
 ): Promise<
     Array<{
         accountId: string;
-        accountDisplayName: string | null;
+        accountDisplayName?: string;
         isDefault: boolean;
         status: IntegrationStatus;
         connectedAt: Date;
     }>
 > {
-    const accounts = await db
-        .select({
-            accountId: integrations.accountId,
-            accountDisplayName: integrations.accountDisplayName,
-            isDefault: integrations.isDefault,
-            status: integrations.status,
-            connectedAt: integrations.connectedAt,
-        })
-        .from(integrations)
-        .where(and(eq(integrations.userId, userId), eq(integrations.service, service)))
-        .orderBy(desc(integrations.isDefault), integrations.connectedAt);
+    const integrations = await db
+        .select()
+        .from(schema.integrations)
+        .where(
+            and(
+                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.service, service)
+            )
+        )
+        .orderBy(
+            desc(schema.integrations.isDefault),
+            asc(schema.integrations.connectedAt)
+        );
 
-    return accounts;
+    return integrations.map((integration) => ({
+        accountId: integration.accountId,
+        accountDisplayName: integration.accountDisplayName || undefined,
+        isDefault: integration.isDefault,
+        status: integration.status,
+        connectedAt: integration.connectedAt,
+    }));
 }
 
 /**
- * Get connection status for a service
+ * Get the default account for a service
+ * Returns the accountId of the default account, or undefined if none set
+ */
+export async function getDefaultAccount(
+    userId: string,
+    service: string
+): Promise<string | undefined> {
+    const results = await db
+        .select()
+        .from(schema.integrations)
+        .where(
+            and(
+                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.service, service),
+                eq(schema.integrations.isDefault, true),
+                eq(schema.integrations.status, "connected")
+            )
+        )
+        .limit(1);
+
+    return results[0]?.accountId;
+}
+
+/**
+ * Check if user has a service connected
+ */
+export async function hasConnection(userId: string, service: string): Promise<boolean> {
+    const results = await db
+        .select()
+        .from(schema.integrations)
+        .where(
+            and(
+                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.service, service),
+                eq(schema.integrations.status, "connected")
+            )
+        )
+        .limit(1);
+
+    return results.length > 0;
+}
+
+/**
+ * Get connection status
+ * For multi-account services, returns the status of the default account or first account
  */
 export async function getConnectionStatus(
     userId: string,
-    service: string
-): Promise<"CONNECTED" | "DISCONNECTED" | "ERROR" | "EXPIRED" | "NOT_FOUND"> {
-    const [integration] = await db
-        .select({ status: integrations.status })
-        .from(integrations)
-        .where(and(eq(integrations.userId, userId), eq(integrations.service, service)))
-        .orderBy(desc(integrations.isDefault))
+    service: string,
+    accountId?: string
+): Promise<"connected" | "disconnected" | "error" | "expired" | "not_found"> {
+    if (accountId) {
+        const results = await db
+            .select()
+            .from(schema.integrations)
+            .where(
+                and(
+                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.accountId, accountId)
+                )
+            )
+            .limit(1);
+
+        if (results.length === 0) {
+            return "not_found";
+        }
+
+        return results[0].status;
+    }
+
+    // Get default or first integration
+    const results = await db
+        .select()
+        .from(schema.integrations)
+        .where(
+            and(
+                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.service, service)
+            )
+        )
+        .orderBy(
+            desc(schema.integrations.isDefault),
+            asc(schema.integrations.connectedAt)
+        )
         .limit(1);
 
-    if (!integration) return "NOT_FOUND";
-
-    switch (integration.status) {
-        case "connected":
-            return "CONNECTED";
-        case "error":
-            return "ERROR";
-        case "expired":
-            return "EXPIRED";
-        case "disconnected":
-            return "DISCONNECTED";
-        default:
-            return "NOT_FOUND";
+    if (results.length === 0) {
+        return "not_found";
     }
+
+    return results[0].status;
+}
+
+/**
+ * Get list of connected service IDs for a user
+ */
+export async function getConnectedServices(userId: string): Promise<string[]> {
+    const integrations = await db
+        .select({ service: schema.integrations.service })
+        .from(schema.integrations)
+        .where(
+            and(
+                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.status, "connected")
+            )
+        );
+
+    // Return unique service IDs
+    return [...new Set(integrations.map((i) => i.service))];
 }
 
 /**
  * Disconnect a service
+ * For OAuth: mark as disconnected (Nango handles the actual deletion)
+ * For API keys: delete encrypted credentials
  */
 export async function disconnectService(
     userId: string,
     service: string,
     accountId?: string
 ): Promise<void> {
-    const conditions = [
-        eq(integrations.userId, userId),
-        eq(integrations.service, service),
-    ];
-
     if (accountId) {
-        conditions.push(eq(integrations.accountId, accountId));
-    }
-
-    await db
-        .update(integrations)
-        .set({
-            status: "disconnected",
-            updatedAt: new Date(),
-        })
-        .where(and(...conditions));
-
-    logger.info({ userId, service, accountId }, "Service disconnected");
-}
-
-/**
- * Set default account for a service
- */
-export async function setDefaultAccount(
-    userId: string,
-    service: string,
-    accountId: string
-): Promise<void> {
-    // Use transaction to prevent race condition where concurrent requests
-    // could both unset defaults and both set their own account as default
-    await db.transaction(async (tx) => {
-        // Unset all defaults for this service
-        await tx
-            .update(integrations)
-            .set({ isDefault: false, updatedAt: new Date() })
-            .where(
-                and(eq(integrations.userId, userId), eq(integrations.service, service))
-            );
-
-        // Set the new default
-        await tx
-            .update(integrations)
-            .set({ isDefault: true, updatedAt: new Date() })
+        // Disconnect specific account
+        const results = await db
+            .select()
+            .from(schema.integrations)
             .where(
                 and(
-                    eq(integrations.userId, userId),
-                    eq(integrations.service, service),
-                    eq(integrations.accountId, accountId)
+                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.accountId, accountId)
+                )
+            )
+            .limit(1);
+
+        const integration = results[0];
+
+        if (!integration) {
+            throw new ValidationError(
+                `Account '${accountId}' is not connected for ${service}`
+            );
+        }
+
+        const wasDefault = integration.isDefault;
+
+        if (isApiKeyService(service)) {
+            // For API key services, clear credentials immediately
+            await db
+                .update(schema.integrations)
+                .set({
+                    status: "disconnected",
+                    encryptedCredentials: null,
+                    errorMessage: null,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.service, service),
+                        eq(schema.integrations.accountId, accountId)
+                    )
+                );
+        } else {
+            // For OAuth services, mark as disconnected
+            // Actual Nango deletion happens through their API
+            await db
+                .update(schema.integrations)
+                .set({
+                    status: "disconnected",
+                    errorMessage: null,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.service, service),
+                        eq(schema.integrations.accountId, accountId)
+                    )
+                );
+        }
+
+        // Auto-promote oldest remaining account to default when default is disconnected.
+        if (wasDefault) {
+            const remainingAccounts = await db
+                .select()
+                .from(schema.integrations)
+                .where(
+                    and(
+                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.service, service),
+                        eq(schema.integrations.status, "connected")
+                    )
+                )
+                .orderBy(asc(schema.integrations.connectedAt))
+                .limit(1);
+
+            if (remainingAccounts.length > 0) {
+                await db
+                    .update(schema.integrations)
+                    .set({ isDefault: true, updatedAt: new Date() })
+                    .where(eq(schema.integrations.id, remainingAccounts[0].id));
+            }
+        }
+    } else {
+        // Disconnect all accounts for this service
+        const integrations = await db
+            .select()
+            .from(schema.integrations)
+            .where(
+                and(
+                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.service, service)
                 )
             );
-    });
 
-    logger.info({ userId, service, accountId }, "Default account updated");
-}
+        if (integrations.length === 0) {
+            throw new ValidationError(`${service} is not connected for this user`);
+        }
 
-/**
- * Get all connected services for a user
- */
-export async function getConnectedServices(userId: string): Promise<string[]> {
-    const results = await db
-        .selectDistinct({ service: integrations.service })
-        .from(integrations)
-        .where(
-            and(eq(integrations.userId, userId), eq(integrations.status, "connected"))
-        );
-
-    return results.map((r) => r.service);
-}
-
-/**
- * Make a proxied API call through Nango
- *
- * For OAuth services, this handles token management automatically.
- */
-export async function nangoProxyRequest(
-    connectionId: string,
-    providerConfigKey: string,
-    endpoint: string,
-    options: {
-        method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-        body?: Record<string, unknown>;
-        headers?: Record<string, string>;
-    } = {}
-): Promise<Response> {
-    assertEnv(env.NANGO_API_URL, "NANGO_API_URL");
-    assertEnv(env.NANGO_SECRET_KEY, "NANGO_SECRET_KEY");
-
-    const nangoUrl = env.NANGO_API_URL;
-    const nangoSecretKey = env.NANGO_SECRET_KEY;
-
-    const url = `${nangoUrl}/proxy${endpoint}`;
-    const method = options.method || "GET";
-
-    const headers: Record<string, string> = {
-        Authorization: `Bearer ${nangoSecretKey}`,
-        "Connection-Id": connectionId,
-        "Provider-Config-Key": providerConfigKey,
-        "Content-Type": "application/json",
-        ...options.headers,
-    };
-
-    const fetchOptions: RequestInit = {
-        method,
-        headers,
-    };
-
-    if (options.body && ["POST", "PUT", "PATCH"].includes(method)) {
-        fetchOptions.body = JSON.stringify(options.body);
+        if (isApiKeyService(service)) {
+            // For API key services, clear credentials immediately
+            await db
+                .update(schema.integrations)
+                .set({
+                    status: "disconnected",
+                    encryptedCredentials: null,
+                    errorMessage: null,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.service, service)
+                    )
+                );
+        } else {
+            // For OAuth services, mark as disconnected
+            await db
+                .update(schema.integrations)
+                .set({
+                    status: "disconnected",
+                    errorMessage: null,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.service, service)
+                    )
+                );
+        }
     }
-
-    return fetch(url, fetchOptions);
 }

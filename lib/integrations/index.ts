@@ -17,9 +17,9 @@ export {
     listServiceAccounts,
     getConnectionStatus,
     disconnectService,
-    setDefaultAccount,
+    getDefaultAccount,
+    hasConnection,
     getConnectedServices,
-    nangoProxyRequest,
 } from "./connection-manager";
 
 // Service registry

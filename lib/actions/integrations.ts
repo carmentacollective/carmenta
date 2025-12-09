@@ -94,8 +94,8 @@ export async function getServicesWithStatus(): Promise<{
             for (const account of connectedAccounts) {
                 connected.push({
                     service,
-                    status: account.status,
-                    accountDisplayName: account.accountDisplayName,
+                    status: account.status as IntegrationStatus,
+                    accountDisplayName: account.accountDisplayName ?? null,
                     accountId: account.accountId,
                     isDefault: account.isDefault,
                     connectedAt: account.connectedAt,
@@ -320,7 +320,7 @@ export async function testIntegration(
         // For now, just check that credentials exist and are valid
         const status = await getConnectionStatus(dbUser.id, serviceId);
 
-        if (status === "CONNECTED") {
+        if (status === "connected") {
             return { success: true };
         } else {
             return {

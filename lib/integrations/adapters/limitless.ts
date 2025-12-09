@@ -9,9 +9,12 @@
  * - download_audio requires ISO 8601 timestamps with timezone
  */
 
-import { ServiceAdapter } from "./base";
-import { getCredentials } from "../connection-manager";
-import type { HelpResponse, AdapterResponse, RawAPIParams } from "../types";
+import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { isApiKeyCredentials } from "@/lib/integrations/encryption";
+import { httpClient } from "@/lib/http-client";
+import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
 
 const LIMITLESS_API_BASE = "https://api.limitless.ai/v1";
 
@@ -297,15 +300,15 @@ export class LimitlessAdapter extends ServiceAdapter {
         action: string,
         params: unknown,
         userId: string,
-        _accountId?: string
-    ): Promise<AdapterResponse> {
+        _accountId?: string // Multi-account support not yet implemented
+    ): Promise<MCPToolResponse> {
         // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
-            this.logError("Validation failed", {
-                action,
-                errors: validation.errors,
-            });
+            this.logError(
+                `[LIMITLESS ADAPTER] Validation failed for action '${action}':`,
+                validation.errors
+            );
             return this.createErrorResponse(
                 `Validation errors:\n${validation.errors.join("\n")}`
             );
@@ -322,7 +325,7 @@ export class LimitlessAdapter extends ServiceAdapter {
                 );
             }
 
-            if (!connectionCreds.credentials.apiKey) {
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
                 return this.createErrorResponse(
                     "Invalid credential format for Limitless service"
                 );
@@ -330,8 +333,15 @@ export class LimitlessAdapter extends ServiceAdapter {
 
             apiKey = connectionCreds.credentials.apiKey;
         } catch (error) {
-            if (error instanceof Error && error.message.includes("No")) {
-                return this.createErrorResponse(this.createNotConnectedError());
+            if (error instanceof ValidationError) {
+                const errorMsg = [
+                    "❌ Limitless is not connected to your account.",
+                    "",
+                    `Please connect Limitless at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/limitless`,
+                    "",
+                    "Once connected, try your request again.",
+                ].join("\n");
+                return this.createErrorResponse(errorMsg);
             }
             throw error;
         }
@@ -365,25 +375,48 @@ export class LimitlessAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            this.logError(`Failed to execute ${action}`, {
-                error: error instanceof Error ? error.message : String(error),
-                userId,
-            });
+            this.logError(
+                `[LIMITLESS ADAPTER] Failed to execute ${action} for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                    params,
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action,
                 params: params as Record<string, unknown>,
                 userId,
             });
 
-            return this.createErrorResponse(this.handleCommonAPIError(error, action));
+            let errorMessage = `Failed to ${action}: `;
+            if (error instanceof Error) {
+                if (error.message.includes("401")) {
+                    errorMessage +=
+                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
+                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/limitless`;
+                } else if (error.message.includes("404")) {
+                    errorMessage += "Resource not found.";
+                } else if (error.message.includes("429")) {
+                    errorMessage +=
+                        "Rate limit exceeded. Please try again in a few moments.";
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
+            }
+
+            return this.createErrorResponse(errorMessage);
         }
     }
 
     private async handleSearch(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             query,
             limit = 50,
@@ -394,47 +427,42 @@ export class LimitlessAdapter extends ServiceAdapter {
             date?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             search: query,
             limit: Math.min(limit, 100).toString(),
-        });
-
-        if (date) {
-            searchParams.set("date", date);
-        }
-
-        this.logInfo(`Searching Lifelogs: "${query}"`);
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/lifelogs?${searchParams}`, {
-            headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                lifelogs: Array<{
-                    id: string;
-                    summary?: string;
-                    startedAt: string;
-                    endedAt: string;
-                    markdown?: string;
-                }>;
-            };
-            meta?: {
-                lifelogs?: {
-                    count: number;
-                    nextCursor?: string;
-                };
-            };
         };
 
-        const lifelogs = data.data?.lifelogs || [];
+        if (date) {
+            searchParams.date = date;
+        }
+
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/lifelogs`, {
+                headers: {
+                    "X-API-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+                searchParams,
+            })
+            .json<{
+                data: {
+                    lifelogs: Array<{
+                        id: string;
+                        summary?: string;
+                        startedAt: string;
+                        endedAt: string;
+                        markdown?: string;
+                    }>;
+                };
+                meta?: {
+                    lifelogs?: {
+                        count: number;
+                        nextCursor?: string;
+                    };
+                };
+            }>();
+
+        const lifelogs = response.data?.lifelogs || [];
 
         if (lifelogs.length === 0) {
             return this.createJSONResponse({
@@ -445,11 +473,9 @@ export class LimitlessAdapter extends ServiceAdapter {
             });
         }
 
-        this.logInfo(`Found ${lifelogs.length} Lifelogs`);
-
         return this.createJSONResponse({
             query,
-            totalCount: data.meta?.lifelogs?.count || lifelogs.length,
+            totalCount: response.meta?.lifelogs?.count || lifelogs.length,
             results: lifelogs.map((log) => ({
                 id: log.id,
                 summary: log.summary || "No summary available",
@@ -457,50 +483,42 @@ export class LimitlessAdapter extends ServiceAdapter {
                 endedAt: log.endedAt,
                 preview: log.markdown?.substring(0, 200),
             })),
-            nextCursor: data.meta?.lifelogs?.nextCursor,
+            nextCursor: response.meta?.lifelogs?.nextCursor,
         });
     }
 
     private async handleGetLifelog(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { lifelogId } = params as { lifelogId: string };
 
-        this.logInfo(`Getting Lifelog: ${lifelogId}`);
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/lifelogs/${lifelogId}`, {
-            headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                lifelog: {
-                    id: string;
-                    summary?: string;
-                    startedAt: string;
-                    endedAt: string;
-                    markdown?: string;
-                    transcript?: string;
-                    headings?: Array<{
-                        title: string;
-                        startMs: number;
-                        endMs: number;
-                    }>;
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/lifelogs/${lifelogId}`, {
+                headers: {
+                    "X-API-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+            })
+            .json<{
+                data: {
+                    lifelog: {
+                        id: string;
+                        summary?: string;
+                        startedAt: string;
+                        endedAt: string;
+                        markdown?: string;
+                        transcript?: string;
+                        headings?: Array<{
+                            title: string;
+                            startMs: number;
+                            endMs: number;
+                        }>;
+                    };
                 };
-            };
-        };
+            }>();
 
-        const lifelog = data.data.lifelog;
-
-        this.logInfo("Retrieved Lifelog details");
+        const lifelog = response.data.lifelog;
 
         return this.createJSONResponse({
             id: lifelog.id,
@@ -516,7 +534,7 @@ export class LimitlessAdapter extends ServiceAdapter {
     private async handleListRecordings(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             limit = 50,
             date,
@@ -529,115 +547,96 @@ export class LimitlessAdapter extends ServiceAdapter {
             end?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             limit: Math.min(limit, 100).toString(),
             direction: "desc",
-        });
-
-        if (date) {
-            searchParams.set("date", date);
-        }
-        if (start) {
-            searchParams.set("start", start);
-        }
-        if (end) {
-            searchParams.set("end", end);
-        }
-
-        this.logInfo("Listing recordings");
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/lifelogs?${searchParams}`, {
-            headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                lifelogs: Array<{
-                    id: string;
-                    summary?: string;
-                    startedAt: string;
-                    endedAt: string;
-                    markdown?: string;
-                }>;
-            };
-            meta?: {
-                lifelogs?: {
-                    count: number;
-                    nextCursor?: string;
-                };
-            };
         };
 
-        const lifelogs = data.data?.lifelogs || [];
+        if (date) {
+            searchParams.date = date;
+        }
+        if (start) {
+            searchParams.start = start;
+        }
+        if (end) {
+            searchParams.end = end;
+        }
 
-        this.logInfo(`Found ${lifelogs.length} recordings`);
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/lifelogs`, {
+                headers: {
+                    "X-API-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+                searchParams,
+            })
+            .json<{
+                data: {
+                    lifelogs: Array<{
+                        id: string;
+                        summary?: string;
+                        startedAt: string;
+                        endedAt: string;
+                        markdown?: string;
+                    }>;
+                };
+                meta?: {
+                    lifelogs?: {
+                        count: number;
+                        nextCursor?: string;
+                    };
+                };
+            }>();
+
+        const lifelogs = response.data?.lifelogs || [];
 
         return this.createJSONResponse({
-            totalCount: data.meta?.lifelogs?.count || lifelogs.length,
+            totalCount: response.meta?.lifelogs?.count || lifelogs.length,
             lifelogs: lifelogs.map((log) => ({
                 id: log.id,
                 summary: log.summary || "No summary available",
                 startedAt: log.startedAt,
                 endedAt: log.endedAt,
             })),
-            nextCursor: data.meta?.lifelogs?.nextCursor,
+            nextCursor: response.meta?.lifelogs?.nextCursor,
         });
     }
 
     private async handleGetTranscript(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { lifelogId } = params as { lifelogId: string };
 
-        this.logInfo(`Getting transcript: ${lifelogId}`);
-
-        const searchParams = new URLSearchParams({
-            includeTranscript: "true",
-        });
-
-        const response = await fetch(
-            `${LIMITLESS_API_BASE}/lifelogs/${lifelogId}?${searchParams}`,
-            {
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/lifelogs/${lifelogId}`, {
                 headers: {
                     "X-API-Key": apiKey,
                     "Content-Type": "application/json",
                 },
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                lifelog: {
-                    id: string;
-                    transcript?: string;
-                    summary?: string;
-                    startedAt: string;
-                    endedAt: string;
+                searchParams: {
+                    includeTranscript: "true",
+                },
+            })
+            .json<{
+                data: {
+                    lifelog: {
+                        id: string;
+                        transcript?: string;
+                        summary?: string;
+                        startedAt: string;
+                        endedAt: string;
+                    };
                 };
-            };
-        };
+            }>();
 
-        const lifelog = data.data.lifelog;
+        const lifelog = response.data.lifelog;
 
         if (!lifelog.transcript) {
             return this.createErrorResponse(
                 "No transcript available for this Lifelog. The transcript may still be processing."
             );
         }
-
-        this.logInfo("Retrieved transcript");
 
         return this.createSuccessResponse(
             `**Lifelog Transcript**\n\n` +
@@ -651,57 +650,50 @@ export class LimitlessAdapter extends ServiceAdapter {
     private async handleListChats(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { limit = 50, cursor } = params as {
             limit?: number;
             cursor?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             limit: limit.toString(),
-        });
-
-        if (cursor) {
-            searchParams.set("cursor", cursor);
-        }
-
-        this.logInfo("Listing chats");
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/chats?${searchParams}`, {
-            headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                chats: Array<{
-                    id: string;
-                    title?: string;
-                    createdAt: string;
-                    updatedAt: string;
-                    messageCount?: number;
-                }>;
-            };
-            meta?: {
-                chats?: {
-                    count: number;
-                    nextCursor?: string;
-                };
-            };
         };
 
-        const chats = data.data?.chats || [];
+        if (cursor) {
+            searchParams.cursor = cursor;
+        }
 
-        this.logInfo(`Found ${chats.length} chats`);
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/chats`, {
+                headers: {
+                    "X-API-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+                searchParams,
+            })
+            .json<{
+                data: {
+                    chats: Array<{
+                        id: string;
+                        title?: string;
+                        createdAt: string;
+                        updatedAt: string;
+                        messageCount?: number;
+                    }>;
+                };
+                meta?: {
+                    chats?: {
+                        count: number;
+                        nextCursor?: string;
+                    };
+                };
+            }>();
+
+        const chats = response.data?.chats || [];
 
         return this.createJSONResponse({
-            totalCount: data.meta?.chats?.count || chats.length,
+            totalCount: response.meta?.chats?.count || chats.length,
             chats: chats.map((chat) => ({
                 id: chat.id,
                 title: chat.title || "Untitled Chat",
@@ -709,52 +701,44 @@ export class LimitlessAdapter extends ServiceAdapter {
                 updatedAt: chat.updatedAt,
                 messageCount: chat.messageCount || 0,
             })),
-            nextCursor: data.meta?.chats?.nextCursor,
+            nextCursor: response.meta?.chats?.nextCursor,
         });
     }
 
     private async handleGetChat(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { chatId } = params as { chatId: string };
 
-        this.logInfo(`Getting chat: ${chatId}`);
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/chats/${chatId}`, {
-            headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data: {
-                chat: {
-                    id: string;
-                    title?: string;
-                    createdAt: string;
-                    updatedAt: string;
-                    messages?: Array<{
-                        role: string;
-                        content: string;
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/chats/${chatId}`, {
+                headers: {
+                    "X-API-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+            })
+            .json<{
+                data: {
+                    chat: {
+                        id: string;
+                        title?: string;
                         createdAt: string;
-                    }>;
-                    context?: Array<{
-                        lifelogId: string;
-                        snippet: string;
-                    }>;
+                        updatedAt: string;
+                        messages?: Array<{
+                            role: string;
+                            content: string;
+                            createdAt: string;
+                        }>;
+                        context?: Array<{
+                            lifelogId: string;
+                            snippet: string;
+                        }>;
+                    };
                 };
-            };
-        };
+            }>();
 
-        const chat = data.data.chat;
-
-        this.logInfo("Retrieved chat details");
+        const chat = response.data.chat;
 
         return this.createJSONResponse({
             id: chat.id,
@@ -769,24 +753,15 @@ export class LimitlessAdapter extends ServiceAdapter {
     private async handleDeleteLifelog(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { lifelogId } = params as { lifelogId: string };
 
-        this.logInfo(`Deleting Lifelog: ${lifelogId}`);
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/lifelogs/${lifelogId}`, {
-            method: "DELETE",
+        await httpClient.delete(`${LIMITLESS_API_BASE}/lifelogs/${lifelogId}`, {
             headers: {
                 "X-API-Key": apiKey,
                 "Content-Type": "application/json",
             },
         });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        this.logInfo("Lifelog deleted");
 
         return this.createSuccessResponse(
             `Successfully deleted Lifelog with ID: ${lifelogId}`
@@ -796,24 +771,15 @@ export class LimitlessAdapter extends ServiceAdapter {
     private async handleDeleteChat(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { chatId } = params as { chatId: string };
 
-        this.logInfo(`Deleting chat: ${chatId}`);
-
-        const response = await fetch(`${LIMITLESS_API_BASE}/chats/${chatId}`, {
-            method: "DELETE",
+        await httpClient.delete(`${LIMITLESS_API_BASE}/chats/${chatId}`, {
             headers: {
                 "X-API-Key": apiKey,
                 "Content-Type": "application/json",
             },
         });
-
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        this.logInfo("Chat deleted");
 
         return this.createSuccessResponse(
             `Successfully deleted chat with ID: ${chatId}`
@@ -823,44 +789,36 @@ export class LimitlessAdapter extends ServiceAdapter {
     private async handleDownloadAudio(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { startTime, endTime } = params as {
             startTime: string;
             endTime: string;
         };
 
-        this.logInfo(`Downloading audio: ${startTime} to ${endTime}`);
-
-        const searchParams = new URLSearchParams({
-            startTime,
-            endTime,
-        });
-
-        const response = await fetch(
-            `${LIMITLESS_API_BASE}/download-audio?${searchParams}`,
-            {
+        // The download-audio endpoint uses query parameters for the time range
+        const response = await httpClient
+            .get(`${LIMITLESS_API_BASE}/download-audio`, {
                 headers: {
                     "X-API-Key": apiKey,
                     "Content-Type": "application/json",
                 },
-            }
-        );
+                searchParams: {
+                    startTime,
+                    endTime,
+                },
+            })
+            .json<{
+                data?: {
+                    downloadUrl?: string;
+                    expiresAt?: string;
+                    format?: string;
+                    duration?: number;
+                };
+                url?: string; // Some APIs return the URL directly
+            }>();
 
-        if (!response.ok) {
-            throw new Error(`Limitless API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-            data?: {
-                downloadUrl?: string;
-                expiresAt?: string;
-                format?: string;
-                duration?: number;
-            };
-            url?: string;
-        };
-
-        const downloadUrl = data.data?.downloadUrl || data.url;
+        // Handle different possible response formats
+        const downloadUrl = response.data?.downloadUrl || response.url;
 
         if (!downloadUrl) {
             return this.createErrorResponse(
@@ -868,13 +826,11 @@ export class LimitlessAdapter extends ServiceAdapter {
             );
         }
 
-        this.logInfo("Audio download URL generated");
-
         return this.createJSONResponse({
             downloadUrl,
-            expiresAt: data.data?.expiresAt || "Check URL for expiration",
-            format: data.data?.format || "Ogg Opus",
-            duration: data.data?.duration,
+            expiresAt: response.data?.expiresAt || "Check URL for expiration",
+            format: response.data?.format || "Ogg Opus",
+            duration: response.data?.duration,
             note: "Audio file is in Ogg Opus format. Use the download URL to retrieve the audio file.",
         });
     }
@@ -882,7 +838,7 @@ export class LimitlessAdapter extends ServiceAdapter {
     async executeRawAPI(
         params: RawAPIParams,
         userId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { endpoint, method, body, query } = params;
 
         // Validate parameters
@@ -902,7 +858,7 @@ export class LimitlessAdapter extends ServiceAdapter {
             return this.createErrorResponse(
                 "Invalid endpoint: must start with '/v1/'. " +
                     `Got: ${endpoint}. ` +
-                    "Example: '/v1/lifelogs'"
+                    "Example: '/v1/memories/search'"
             );
         }
 
@@ -911,65 +867,65 @@ export class LimitlessAdapter extends ServiceAdapter {
         if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
             return this.createErrorResponse("Invalid credentials");
         }
-        if (!connectionCreds.credentials.apiKey) {
+        if (!isApiKeyCredentials(connectionCreds.credentials)) {
             return this.createErrorResponse("Invalid credential format");
         }
 
         const apiKey = connectionCreds.credentials.apiKey;
 
         // Build request options
-        const searchParams = new URLSearchParams();
-
-        if (query && typeof query === "object") {
-            for (const [key, value] of Object.entries(query)) {
-                searchParams.set(key, String(value));
-            }
-        }
-
-        const requestInit: RequestInit = {
-            method: method.toUpperCase(),
+        const requestOptions: {
+            headers: Record<string, string>;
+            searchParams?: Record<string, string>;
+            json?: Record<string, unknown>;
+        } = {
             headers: {
                 "X-API-Key": apiKey,
                 "Content-Type": "application/json",
             },
         };
 
+        if (query && typeof query === "object") {
+            requestOptions.searchParams = Object.fromEntries(
+                Object.entries(query).map(([k, v]) => [k, String(v)])
+            );
+        }
+
         if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
-            requestInit.body = JSON.stringify(body);
+            requestOptions.json = body;
         }
 
         try {
+            const httpMethod = method.toLowerCase() as "get" | "post" | "delete";
+
+            // Build full URL - endpoint should already include /v1 prefix
             const fullUrl = endpoint.startsWith("/v1")
-                ? `https://api.limitless.ai${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`
-                : `${LIMITLESS_API_BASE}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
+                ? `https://api.limitless.ai${endpoint}`
+                : `${LIMITLESS_API_BASE}${endpoint}`;
 
-            this.logInfo(`Raw API call: ${method} ${endpoint}`);
+            const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
+                Record<string, unknown>
+            >();
 
-            const response = await fetch(fullUrl, requestInit);
-
-            if (!response.ok) {
-                throw new Error(`Limitless API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            this.logInfo("Raw API call successful");
-
-            return this.createJSONResponse(data as Record<string, unknown>);
+            return this.createJSONResponse(response);
         } catch (error) {
-            this.logError("Raw API request failed", {
-                endpoint,
-                method,
-                error: error instanceof Error ? error.message : String(error),
-            });
+            this.logError(
+                `[LIMITLESS ADAPTER] Raw API request failed for user ${userId}:`,
+                {
+                    endpoint,
+                    method,
+                    error: error instanceof Error ? error.message : String(error),
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
-            let errorMessage = "Raw API request failed: ";
+            let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
                     errorMessage += "Endpoint not found. Check the API documentation.";

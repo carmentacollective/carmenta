@@ -3,23 +3,101 @@
  *
  * All service adapters extend this base class to provide consistent
  * error handling, validation, and help documentation.
- *
- * Progressive disclosure pattern:
- * - Each service exposes ONE tool with action-based routing
- * - action='describe' returns full operation documentation
- * - Specific actions execute operations
- * - Reduces initial token usage by ~95%
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import type {
-    HelpResponse,
-    HelpOperation,
-    AdapterResponse,
-    RawAPIParams,
-    ValidationResult,
-} from "../types";
+
+/**
+ * MCP Tool Annotations (MCP 2025-03-26 spec)
+ *
+ * Hints for agent auto-approval and risk assessment. Enables smart defaults
+ * in agents like Goose and Claude Code.
+ *
+ * Usage:
+ * - Read-only (search, list, get): { readOnlyHint: true }
+ * - Create: { readOnlyHint: false, destructiveHint: false }
+ * - Update: { readOnlyHint: false, destructiveHint: false, idempotentHint: true }
+ * - Delete: { readOnlyHint: false, destructiveHint: true }
+ * - raw_api: omit annotations (requires approval)
+ */
+export interface ToolAnnotations {
+    /** If true, tool does not modify state - safe to auto-approve */
+    readOnlyHint?: boolean;
+    /** If true, tool may delete/destroy. Only meaningful when readOnlyHint=false */
+    destructiveHint?: boolean;
+    /** If true, safe to retry. Only meaningful when readOnlyHint=false */
+    idempotentHint?: boolean;
+}
+
+export interface HelpOperation {
+    name: string;
+    description: string;
+    parameters: Array<{
+        name: string;
+        type: string;
+        required: boolean;
+        description: string;
+        example?: string;
+    }>;
+    returns: string;
+    example?: string;
+    /** MCP tool annotations for agent auto-approval and risk assessment */
+    annotations?: ToolAnnotations;
+}
+
+export interface HelpResponse {
+    service: string;
+    description?: string; // Optional service-level description with notes about capabilities/limitations
+    operations: HelpOperation[];
+    commonOperations?: string[]; // Optional: Explicitly define 2-3 most-used operation names (e.g., ["search", "create_playlist", "play"])
+    docsUrl?: string;
+}
+
+export interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+/**
+ * MCP Tool Response - MCP 2025-06-18 Compliant
+ *
+ * Supports structured content and metadata as per the latest MCP specification.
+ * Both structuredContent and _meta are optional for backward compatibility.
+ */
+export interface MCPToolResponse {
+    content: Array<{
+        type: "text" | "image" | "resource";
+        text?: string;
+        data?: string | Record<string, unknown>; // Allow structured data (content-block level)
+        mimeType?: string;
+    }>;
+    isError: boolean;
+    /**
+     * Structured content (MCP 2025-06-18)
+     * Machine-readable JSON object that conforms to tool's output schema.
+     * For backward compatibility, SHOULD also include serialized JSON in content[].text
+     */
+    structuredContent?: Record<string, unknown>;
+    /**
+     * Metadata (MCP 2025-06-18)
+     * Extensible field for server-specific metadata like request tracking,
+     * performance metrics, version information, etc.
+     */
+    _meta?: Record<string, unknown>;
+}
+
+/**
+ * Parameters for raw API requests
+ */
+export interface RawAPIParams {
+    endpoint: string;
+    method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+    body?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+    headers?: Record<string, string>;
+}
 
 /**
  * Base class for all service adapters
@@ -29,21 +107,35 @@ export abstract class ServiceAdapter {
     abstract serviceDisplayName: string;
 
     /**
-     * Log error message with context
+     * Log error message with optional context data
+     * Uses pino logger for structured logging with automatic test silencing
      */
-    protected logError(message: string, context?: Record<string, unknown>) {
-        logger.error({ service: this.serviceName, ...context }, message);
+    protected logError(...args: unknown[]) {
+        // First arg is typically the message, rest is context
+        const message = typeof args[0] === "string" ? args[0] : "Error";
+        const contextData = args.length > 1 ? { data: args.slice(1) } : {};
+        logger.error(contextData, message);
     }
 
     /**
-     * Log info message with context
+     * Log info message with optional context data
+     * Uses pino logger for structured logging with automatic test silencing
      */
-    protected logInfo(message: string, context?: Record<string, unknown>) {
-        logger.info({ service: this.serviceName, ...context }, message);
+    protected logInfo(...args: unknown[]) {
+        // First arg is typically the message, rest is context
+        const message = typeof args[0] === "string" ? args[0] : "Info";
+        const contextData = args.length > 1 ? { data: args.slice(1) } : {};
+        logger.info(contextData, message);
     }
 
     /**
      * Capture an error to Sentry for monitoring
+     *
+     * Use this in catch blocks when handling adapter errors to ensure
+     * errors are tracked in Sentry for alerting and monitoring.
+     *
+     * @param error The error to capture
+     * @param context Additional context about the error
      */
     protected captureError(
         error: unknown,
@@ -53,7 +145,10 @@ export abstract class ServiceAdapter {
             userId?: string;
         }
     ) {
-        if (process.env.NODE_ENV === "test") return;
+        // Don't capture in test environments
+        if (process.env.NODE_ENV === "test") {
+            return;
+        }
 
         Sentry.captureException(error, {
             tags: {
@@ -75,16 +170,21 @@ export abstract class ServiceAdapter {
     abstract getHelp(): HelpResponse;
 
     /**
-     * Get documentation for a specific operation
+     * Get documentation for a specific operation (tool)
+     * Returns detailed docs for one operation instead of all operations
+     * This dramatically reduces token usage for targeted describe calls
+     *
+     * @param toolName - The operation name to get docs for
+     * @returns Help for the specific operation, or error if not found
      */
-    getOperationHelp(operationName: string): HelpOperation | { error: string } {
+    getOperationHelp(toolName: string): HelpOperation | { error: string } {
         const help = this.getHelp();
-        const operation = help.operations.find((op) => op.name === operationName);
+        const operation = help.operations.find((op) => op.name === toolName);
 
         if (!operation) {
             const availableOps = help.operations.map((op) => op.name).join(", ");
             return {
-                error: `Unknown operation '${operationName}' for ${this.serviceDisplayName}. Available: ${availableOps}`,
+                error: `Unknown operation '${toolName}' for ${this.serviceDisplayName}. Available operations: ${availableOps}`,
             };
         }
 
@@ -96,27 +196,32 @@ export abstract class ServiceAdapter {
      *
      * @param action - The operation to execute
      * @param params - Parameters for the operation
-     * @param userId - User's ID
+     * @param userEmail - User's email address
      * @param accountId - Optional account ID for multi-account services
      */
     abstract execute(
         action: string,
         params: unknown,
-        userId: string,
+        userEmail: string,
         accountId?: string
-    ): Promise<AdapterResponse>;
+    ): Promise<MCPToolResponse>;
 
     /**
      * Execute a raw API request (optional, can be overridden)
+     * This provides an escape hatch for LLMs to make direct API calls
+     *
+     * @param _params - Raw API request parameters
+     * @param _userEmail - User's email address
+     * @param _accountId - Optional account ID for multi-account services
      */
     async executeRawAPI(
         _params: RawAPIParams,
-        _userId: string,
+        _userEmail: string,
         _accountId?: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         return this.createErrorResponse(
             `Raw API access not implemented for ${this.serviceDisplayName}. ` +
-                `Use action='describe' to see available operations.`
+                `Please use the standard operations. Use action='describe' to see available operations.`
         );
     }
 
@@ -136,6 +241,7 @@ export abstract class ServiceAdapter {
 
         const errors: string[] = [];
 
+        // Ensure params is actually an object before using 'in' operator
         if (typeof params !== "object" || params === null || Array.isArray(params)) {
             return {
                 valid: false,
@@ -178,6 +284,10 @@ export abstract class ServiceAdapter {
 
     /**
      * Format help text for a single operation
+     * Used for targeted describe calls to reduce token usage
+     *
+     * @param operation - The operation to format
+     * @returns Formatted help text for the operation
      */
     formatOperationHelp(operation: HelpOperation): string {
         let text = `**${operation.name}**\n`;
@@ -207,9 +317,11 @@ export abstract class ServiceAdapter {
 
     /**
      * Get the integration URL for this service
+     * Uses the correct env variable that works in all contexts
      */
     protected getIntegrationUrl(): string {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        // Remove trailing slash if present to avoid double slashes
         const cleanBaseUrl = baseUrl.replace(/\/$/, "");
         return `${cleanBaseUrl}/integrations/${this.serviceName}`;
     }
@@ -219,7 +331,7 @@ export abstract class ServiceAdapter {
      */
     protected createNotConnectedError(): string {
         return [
-            `${this.serviceDisplayName} is not connected to your account.`,
+            `❌ ${this.serviceDisplayName} is not connected to your account.`,
             "",
             `Please connect ${this.serviceDisplayName} at: ${this.getIntegrationUrl()}`,
             "",
@@ -228,7 +340,19 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Create a standardized "invalid connection" error message
+     */
+    protected createInvalidConnectionError(): string {
+        return `${this.serviceDisplayName} connection is invalid. Please reconnect at: ${this.getIntegrationUrl()}`;
+    }
+
+    /**
      * Handle common API errors with smart error messages
+     * This provides consistent error handling across all adapters
+     *
+     * @param error The error object
+     * @param action The action that failed
+     * @returns User-friendly error message
      */
     protected handleCommonAPIError(error: unknown, action: string): string {
         const errorMessage = `Failed to ${action}: `;
@@ -239,6 +363,15 @@ export abstract class ServiceAdapter {
 
         const errMsg = error.message;
 
+        // API not enabled errors (Google APIs) - show full helpful message
+        if (
+            errMsg.includes("API has not been used") ||
+            errMsg.includes("Enable it by visiting")
+        ) {
+            return errorMessage + errMsg;
+        }
+
+        // 404 errors
         if (errMsg.includes("404")) {
             return (
                 errorMessage +
@@ -246,6 +379,7 @@ export abstract class ServiceAdapter {
             );
         }
 
+        // 401 errors - definitely authentication
         if (errMsg.includes("401")) {
             return (
                 errorMessage +
@@ -254,6 +388,7 @@ export abstract class ServiceAdapter {
             );
         }
 
+        // 403 errors - could be many things, show actual message + reconnect suggestion
         if (errMsg.includes("403")) {
             return (
                 errorMessage +
@@ -262,12 +397,14 @@ export abstract class ServiceAdapter {
             );
         }
 
+        // 429 rate limit
         if (errMsg.includes("429")) {
             return (
                 errorMessage + "Rate limit exceeded. Please try again in a few moments."
             );
         }
 
+        // 500/503 service errors
         if (errMsg.includes("500") || errMsg.includes("503")) {
             return (
                 errorMessage +
@@ -275,15 +412,91 @@ export abstract class ServiceAdapter {
             );
         }
 
+        // Default: show the actual error message
         return errorMessage + errMsg;
     }
 
     /**
      * Create error response
      */
-    protected createErrorResponse(message: string): AdapterResponse {
+    protected createErrorResponse(message: string): MCPToolResponse {
         return {
-            content: [{ type: "text", text: message }],
+            content: [
+                {
+                    type: "text",
+                    text: message,
+                },
+            ],
+            isError: true,
+        };
+    }
+
+    /**
+     * Create a smart error response with inline hints
+     * Includes minimal operation docs to help LLM correct the error without requiring a describe call
+     *
+     * @param message - The error message
+     * @param action - The action that failed (optional, will include operation hints)
+     * @returns Error response with hints
+     */
+    async createSmartErrorResponse(
+        message: string,
+        action?: string
+    ): Promise<MCPToolResponse> {
+        let errorText = message;
+
+        // If action provided, try to add inline hints
+        if (action) {
+            try {
+                // Get full operations list to find the requested one
+                const help = await this.getHelp();
+                const operation = help.operations.find((op) => op.name === action);
+
+                if (operation) {
+                    // Add quick reference for the operation
+                    const requiredParams = operation.parameters
+                        .filter((p) => p.required)
+                        .map((p) => `${p.name} (${p.type})`)
+                        .join(", ");
+
+                    const optionalParams = operation.parameters
+                        .filter((p) => !p.required)
+                        .map((p) => `${p.name} (${p.type})`)
+                        .join(", ");
+
+                    errorText += `\n\nOperation '${action}' requires:`;
+                    if (requiredParams) {
+                        errorText += `\n  Required: ${requiredParams}`;
+                    } else {
+                        errorText += `\n  Required: (none)`;
+                    }
+                    if (optionalParams) {
+                        errorText += `\n  Optional: ${optionalParams}`;
+                    }
+
+                    if (operation.example) {
+                        errorText += `\n\nExample: ${operation.example}`;
+                    }
+                } else {
+                    // Unknown operation - suggest using describe
+                    errorText += `\n\nUse action='describe' to see all available operations for ${this.serviceDisplayName}.`;
+                }
+            } catch (error) {
+                // If we can't get operation help, just return the basic error
+                logger.debug(
+                    { error, action },
+                    "Failed to get operation help for smart error"
+                );
+            }
+        }
+
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: errorText,
+                },
+            ],
             isError: true,
         };
     }
@@ -291,15 +504,25 @@ export abstract class ServiceAdapter {
     /**
      * Create success response
      */
-    protected createSuccessResponse(text: string): AdapterResponse {
+    protected createSuccessResponse(text: string): MCPToolResponse {
         return {
-            content: [{ type: "text", text }],
+            content: [
+                {
+                    type: "text",
+                    text,
+                },
+            ],
             isError: false,
         };
     }
 
     /**
      * Create JSON response (structured data)
+     * MCP 2025-06-18: Automatically populates structuredContent field
+     *
+     * @param data - The structured data to return
+     * @param options - Optional metadata and configuration
+     * @returns MCPToolResponse with both human-readable text and machine-readable structuredContent
      */
     protected createJSONResponse(
         data: Record<string, unknown>,
@@ -307,33 +530,40 @@ export abstract class ServiceAdapter {
             meta?: Record<string, unknown>;
             action?: string;
         }
-    ): AdapterResponse {
+    ): MCPToolResponse {
         return {
             content: [
                 {
                     type: "text",
                     text: JSON.stringify(data, null, 2),
-                    data,
+                    data, // Keep for backward compat
                 },
             ],
             isError: false,
+            // MCP 2025-06-18: Structured content at response level
             structuredContent: data,
+            // MCP 2025-06-18: Metadata for observability
             _meta: this.buildMeta(options?.meta, options?.action),
         };
     }
 
     /**
      * Create a response with full control over all fields
+     * Use this when you need custom content blocks or metadata
+     *
+     * @param content - Content blocks to return
+     * @param options - Response configuration
+     * @returns MCPToolResponse with optional structuredContent and metadata
      */
     protected createResponse(
-        content: AdapterResponse["content"],
+        content: MCPToolResponse["content"],
         options?: {
             isError?: boolean;
             structuredContent?: Record<string, unknown>;
             meta?: Record<string, unknown>;
             action?: string;
         }
-    ): AdapterResponse {
+    ): MCPToolResponse {
         return {
             content,
             isError: options?.isError ?? false,
@@ -343,12 +573,39 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Add metadata to an existing response
+     * Useful for adding tracking info after response creation
+     *
+     * @param response - Existing response
+     * @param meta - Metadata to add/merge
+     * @returns Response with updated metadata
+     */
+    protected withMeta(
+        response: MCPToolResponse,
+        meta: Record<string, unknown>
+    ): MCPToolResponse {
+        return {
+            ...response,
+            _meta: {
+                ...(response._meta || {}),
+                ...meta,
+            },
+        };
+    }
+
+    /**
      * Build metadata object with standard fields
+     * Private helper for consistent metadata structure
+     *
+     * @param customMeta - Custom metadata to include
+     * @param action - Action being performed (optional)
+     * @returns Metadata object or undefined if no metadata
      */
     private buildMeta(
         customMeta?: Record<string, unknown>,
         action?: string
     ): Record<string, unknown> | undefined {
+        // Only include _meta if we have something to put in it
         const hasCustomMeta = customMeta && Object.keys(customMeta).length > 0;
         const hasAction = !!action;
 

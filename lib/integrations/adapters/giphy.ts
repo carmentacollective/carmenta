@@ -8,9 +8,12 @@
  * - Rating param filters content (g, pg, pg-13, r) - default is unfiltered
  */
 
-import { ServiceAdapter } from "./base";
-import { getCredentials } from "../connection-manager";
-import type { HelpResponse, AdapterResponse, RawAPIParams } from "../types";
+import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { isApiKeyCredentials } from "@/lib/integrations/encryption";
+import { httpClient } from "@/lib/http-client";
+import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
 
 const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 
@@ -133,7 +136,7 @@ export class GiphyAdapter extends ServiceAdapter {
                         "Use this operation when the user requests functionality that doesn't have a dedicated operation listed above. " +
                         "This gives you direct access to the full Giphy API - you can perform nearly any operation supported by Giphy. " +
                         "If you're familiar with the Giphy API structure, construct the request directly. " +
-                        "Fallback to https://developers.giphy.com/docs/api for reference.",
+                        "If unsure/errors: try context7 docs (search_libraries('giphy'), get_docs(id)) or fallback to https://developers.giphy.com/docs/api",
                     parameters: [
                         {
                             name: "endpoint",
@@ -168,15 +171,15 @@ export class GiphyAdapter extends ServiceAdapter {
         action: string,
         params: unknown,
         userId: string,
-        _accountId?: string
-    ): Promise<AdapterResponse> {
+        _accountId?: string // Multi-account support not yet implemented
+    ): Promise<MCPToolResponse> {
         // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
-            this.logError("Validation failed", {
-                action,
-                errors: validation.errors,
-            });
+            this.logError(
+                `📥 [GIPHY ADAPTER] Validation failed for action '${action}':`,
+                validation.errors
+            );
             return this.createErrorResponse(
                 `Validation errors:\n${validation.errors.join("\n")}`
             );
@@ -193,7 +196,7 @@ export class GiphyAdapter extends ServiceAdapter {
                 );
             }
 
-            if (!connectionCreds.credentials.apiKey) {
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
                 return this.createErrorResponse(
                     "Invalid credential format for Giphy service"
                 );
@@ -201,8 +204,15 @@ export class GiphyAdapter extends ServiceAdapter {
 
             apiKey = connectionCreds.credentials.apiKey;
         } catch (error) {
-            if (error instanceof Error && error.message.includes("No")) {
-                return this.createErrorResponse(this.createNotConnectedError());
+            if (error instanceof ValidationError) {
+                const errorMsg = [
+                    "❌ Giphy is not connected to your account.",
+                    "",
+                    `Please connect Giphy at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/giphy`,
+                    "",
+                    "Once connected, try your request again.",
+                ].join("\n");
+                return this.createErrorResponse(errorMsg);
             }
             throw error;
         }
@@ -224,25 +234,48 @@ export class GiphyAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            this.logError(`Failed to execute ${action}`, {
-                error: error instanceof Error ? error.message : String(error),
-                userId,
-            });
+            this.logError(
+                `❌ [GIPHY ADAPTER] Failed to execute ${action} for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                    params,
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action,
                 params: params as Record<string, unknown>,
                 userId,
             });
 
-            return this.createErrorResponse(this.handleCommonAPIError(error, action));
+            let errorMessage = `Failed to ${action}: `;
+            if (error instanceof Error) {
+                if (error.message.includes("401") || error.message.includes("403")) {
+                    errorMessage +=
+                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
+                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/giphy`;
+                } else if (error.message.includes("404")) {
+                    errorMessage += "Resource not found.";
+                } else if (error.message.includes("429")) {
+                    errorMessage +=
+                        "Rate limit exceeded. Please try again in a few moments.";
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
+            }
+
+            return this.createErrorResponse(errorMessage);
         }
     }
 
     private async handleSearch(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             query,
             limit = 10,
@@ -257,29 +290,38 @@ export class GiphyAdapter extends ServiceAdapter {
             lang?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             api_key: apiKey,
             q: query,
             limit: Math.min(limit, 50).toString(),
             offset: offset.toString(),
             lang,
-        });
+        };
 
         if (rating) {
-            searchParams.set("rating", rating);
+            searchParams.rating = rating;
         }
 
-        this.logInfo(`Searching for GIFs: "${query}"`);
+        this.logInfo(`🔍 [GIPHY ADAPTER] Searching for GIFs: "${query}"`);
 
-        const response = await fetch(`${GIPHY_API_BASE}/search?${searchParams}`);
+        const response = await httpClient
+            .get(`${GIPHY_API_BASE}/search`, {
+                searchParams,
+            })
+            .json<{
+                data: Array<GiphyGIF>;
+                pagination: {
+                    total_count: number;
+                    count: number;
+                    offset: number;
+                };
+                meta: {
+                    status: number;
+                    msg: string;
+                };
+            }>();
 
-        if (!response.ok) {
-            throw new Error(`Giphy API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as GiphySearchResponse;
-
-        if (data.data.length === 0) {
+        if (response.data.length === 0) {
             return this.createJSONResponse({
                 query,
                 totalCount: 0,
@@ -288,58 +330,64 @@ export class GiphyAdapter extends ServiceAdapter {
             });
         }
 
-        this.logInfo(`Found ${data.data.length} GIFs`);
+        this.logInfo(`✅ [GIPHY ADAPTER] Found ${response.data.length} GIFs`);
 
         return this.createJSONResponse({
             query,
-            totalCount: data.pagination.total_count,
-            count: data.pagination.count,
-            offset: data.pagination.offset,
-            results: data.data.map(this.formatGIF),
+            totalCount: response.pagination.total_count,
+            count: response.pagination.count,
+            offset: response.pagination.offset,
+            results: response.data.map(this.formatGIF),
         });
     }
 
     private async handleGetRandom(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { tag, rating } = params as {
             tag?: string;
             rating?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             api_key: apiKey,
-        });
+        };
 
         if (tag) {
-            searchParams.set("tag", tag);
+            searchParams.tag = tag;
         }
         if (rating) {
-            searchParams.set("rating", rating);
+            searchParams.rating = rating;
         }
 
-        this.logInfo(`Getting random GIF${tag ? ` with tag: ${tag}` : ""}`);
+        this.logInfo(
+            `🎲 [GIPHY ADAPTER] Getting random GIF${tag ? ` with tag: ${tag}` : ""}`
+        );
 
-        const response = await fetch(`${GIPHY_API_BASE}/random?${searchParams}`);
+        const response = await httpClient
+            .get(`${GIPHY_API_BASE}/random`, {
+                searchParams,
+            })
+            .json<{
+                data: GiphyGIF;
+                meta: {
+                    status: number;
+                    msg: string;
+                };
+            }>();
 
-        if (!response.ok) {
-            throw new Error(`Giphy API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as GiphyRandomResponse;
-
-        this.logInfo("Retrieved random GIF");
+        this.logInfo(`✅ [GIPHY ADAPTER] Retrieved random GIF`);
 
         return this.createJSONResponse({
-            result: this.formatGIF(data.data),
+            result: this.formatGIF(response.data),
         });
     }
 
     private async handleGetTrending(
         params: unknown,
         apiKey: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const {
             limit = 10,
             offset = 0,
@@ -350,33 +398,42 @@ export class GiphyAdapter extends ServiceAdapter {
             rating?: string;
         };
 
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             api_key: apiKey,
             limit: Math.min(limit, 50).toString(),
             offset: offset.toString(),
-        });
+        };
 
         if (rating) {
-            searchParams.set("rating", rating);
+            searchParams.rating = rating;
         }
 
-        this.logInfo("Getting trending GIFs");
+        this.logInfo(`🔥 [GIPHY ADAPTER] Getting trending GIFs`);
 
-        const response = await fetch(`${GIPHY_API_BASE}/trending?${searchParams}`);
+        const response = await httpClient
+            .get(`${GIPHY_API_BASE}/trending`, {
+                searchParams,
+            })
+            .json<{
+                data: Array<GiphyGIF>;
+                pagination: {
+                    total_count: number;
+                    count: number;
+                    offset: number;
+                };
+                meta: {
+                    status: number;
+                    msg: string;
+                };
+            }>();
 
-        if (!response.ok) {
-            throw new Error(`Giphy API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as GiphySearchResponse;
-
-        this.logInfo(`Found ${data.data.length} trending GIFs`);
+        this.logInfo(`✅ [GIPHY ADAPTER] Found ${response.data.length} trending GIFs`);
 
         return this.createJSONResponse({
-            totalCount: data.pagination.total_count,
-            count: data.pagination.count,
-            offset: data.pagination.offset,
-            results: data.data.map(this.formatGIF),
+            totalCount: response.pagination.total_count,
+            count: response.pagination.count,
+            offset: response.pagination.offset,
+            results: response.data.map(this.formatGIF),
         });
     }
 
@@ -410,7 +467,7 @@ export class GiphyAdapter extends ServiceAdapter {
     async executeRawAPI(
         params: RawAPIParams,
         userId: string
-    ): Promise<AdapterResponse> {
+    ): Promise<MCPToolResponse> {
         const { endpoint, method, query } = params;
 
         // Validate parameters
@@ -439,55 +496,64 @@ export class GiphyAdapter extends ServiceAdapter {
         if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
             return this.createErrorResponse("Invalid credentials");
         }
-        if (!connectionCreds.credentials.apiKey) {
+        if (!isApiKeyCredentials(connectionCreds.credentials)) {
             return this.createErrorResponse("Invalid credential format");
         }
 
         const apiKey = connectionCreds.credentials.apiKey;
 
         // Build request options
-        const searchParams = new URLSearchParams({
+        const searchParams: Record<string, string> = {
             api_key: apiKey,
-        });
+        };
 
         if (query && typeof query === "object") {
-            for (const [key, value] of Object.entries(query)) {
-                searchParams.set(key, String(value));
-            }
+            Object.assign(
+                searchParams,
+                Object.fromEntries(
+                    Object.entries(query).map(([k, v]) => [k, String(v)])
+                )
+            );
         }
 
         try {
-            const fullUrl = `https://api.giphy.com${endpoint}?${searchParams}`;
+            const httpMethod = method.toLowerCase() as
+                | "get"
+                | "post"
+                | "put"
+                | "patch"
+                | "delete";
 
-            this.logInfo(`Raw API call: ${method} ${endpoint}`);
+            // Build full URL
+            const fullUrl = `https://api.giphy.com${endpoint}`;
 
-            const response = await fetch(fullUrl, {
-                method: method.toUpperCase(),
-            });
+            this.logInfo(`🔧 [GIPHY ADAPTER] Raw API call: ${method} ${endpoint}`);
 
-            if (!response.ok) {
-                throw new Error(`Giphy API error: ${response.status}`);
-            }
+            const response = await httpClient[httpMethod](fullUrl, {
+                searchParams,
+            }).json<Record<string, unknown>>();
 
-            const data = await response.json();
+            this.logInfo(`✅ [GIPHY ADAPTER] Raw API call successful`);
 
-            this.logInfo("Raw API call successful");
-
-            return this.createJSONResponse(data as Record<string, unknown>);
+            return this.createJSONResponse(response);
         } catch (error) {
-            this.logError("Raw API request failed", {
-                endpoint,
-                method,
-                error: error instanceof Error ? error.message : String(error),
-            });
+            this.logError(
+                `❌ [GIPHY ADAPTER] Raw API request failed for user ${userId}:`,
+                {
+                    endpoint,
+                    method,
+                    error: error instanceof Error ? error.message : String(error),
+                }
+            );
 
+            // Capture error to Sentry for monitoring and alerting
             this.captureError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
-            let errorMessage = "Raw API request failed: ";
+            let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
                     errorMessage += "Endpoint not found. Check the API documentation.";
@@ -550,25 +616,4 @@ interface FormattedGIF {
         };
     };
     attribution: string;
-}
-
-interface GiphySearchResponse {
-    data: GiphyGIF[];
-    pagination: {
-        total_count: number;
-        count: number;
-        offset: number;
-    };
-    meta: {
-        status: number;
-        msg: string;
-    };
-}
-
-interface GiphyRandomResponse {
-    data: GiphyGIF;
-    meta: {
-        status: number;
-        msg: string;
-    };
 }
