@@ -41,14 +41,44 @@ export default function IntegrationsPage() {
         loadServices();
     }, [loadServices]);
 
-    const handleConnectClick = (service: ServiceDefinition) => {
+    const handleConnectClick = async (service: ServiceDefinition) => {
         if (service.authMethod === "api_key") {
             setSelectedService(service);
             setModalOpen(true);
         } else if (service.authMethod === "oauth") {
-            // OAuth flow - redirect to Nango
-            // TODO: Implement OAuth flow
-            alert("OAuth integrations coming soon!");
+            // OAuth flow - create Nango session and open modal
+            try {
+                const response = await fetch("/api/connect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ service: service.id }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(
+                        `Failed to initiate OAuth: ${error.error || "Unknown error"}`
+                    );
+                    return;
+                }
+
+                const { sessionToken } = await response.json();
+
+                // Open Nango connect modal
+                // Nango modal will handle the OAuth flow and redirect
+                const nangoPublicKey = process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY;
+                if (!nangoPublicKey) {
+                    alert("Nango is not configured. Please contact support.");
+                    return;
+                }
+
+                // Redirect to Nango connect page with session token
+                const nangoConnectUrl = `https://api.nango.dev/connect/${sessionToken}`;
+                window.location.href = nangoConnectUrl;
+            } catch (error) {
+                console.error("OAuth initiation failed:", error);
+                alert("Failed to initiate OAuth connection. Please try again.");
+            }
         }
     };
 
