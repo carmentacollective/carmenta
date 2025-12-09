@@ -34,6 +34,24 @@ export function Footer() {
                         <Github className="h-3.5 w-3.5" />
                         <span>Source</span>
                     </Link>
+                    <Link
+                        href="/privacy"
+                        className="transition-colors hover:text-foreground/90"
+                    >
+                        Privacy
+                    </Link>
+                    <Link
+                        href="/security"
+                        className="transition-colors hover:text-foreground/90"
+                    >
+                        Security
+                    </Link>
+                    <Link
+                        href="/terms"
+                        className="transition-colors hover:text-foreground/90"
+                    >
+                        Terms
+                    </Link>
                     {/* Theme switcher */}
                     <ThemeSwitcher />
                 </nav>
