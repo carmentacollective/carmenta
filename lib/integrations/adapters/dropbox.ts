@@ -664,7 +664,8 @@ export class DropboxAdapter extends ServiceAdapter {
         // Detect if file is binary or text
         // Binary files contain null bytes or excessive control characters
         const isBinary =
-            buffer.includes(0) || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(buffer.toString("binary"));
+            buffer.includes(0) ||
+            /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(buffer.toString("binary"));
 
         if (isBinary) {
             // Binary file - return as base64 (preserves original bytes)
