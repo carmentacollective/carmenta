@@ -64,7 +64,7 @@ export default function TermsPage() {
                             </li>
                             <li>Provide accurate and complete information</li>
                             <li>Keep our account credentials secure</li>
-                            <li>Notify ourselves immediately of any unauthorized access</li>
+                            <li>Notify Carmenta immediately if we detect unauthorized access</li>
                         </ul>
 
                         <h3 className="mt-6 text-xl font-semibold">
@@ -282,7 +282,7 @@ export default function TermsPage() {
                             <li>At our discretion, with or without notice</li>
                         </ul>
                         <p className="mt-4">
-                            We may terminate our account at any time by contacting ourselves.
+                            We can terminate our account at any time through Carmenta.
                             Upon termination:
                         </p>
                         <ul className="mt-2 list-disc space-y-2 pl-6">
