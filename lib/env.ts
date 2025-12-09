@@ -30,15 +30,24 @@ export const env = createEnv({
         CLERK_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
+        // Nango OAuth management
+        NANGO_API_URL: z.string().url().optional(),
+        NANGO_SECRET_KEY: z.string().min(1).optional(),
+        // Credential encryption for API key integrations
+        ENCRYPTION_KEY: z.string().min(32).optional(),
         // PostgreSQL connection string
         // Defaults to Mac Homebrew PostgreSQL localhost
         DATABASE_URL: z.string().url().default("postgresql://localhost:5432/carmenta"),
     },
     client: {
+        // App URL for generating integration URLs
+        NEXT_PUBLIC_APP_URL: z.string().url().optional(),
         // Client-side Sentry DSN (same value as server, exposed to browser)
         NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
         // Clerk publishable key for client-side auth
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),
+        // Nango public key for OAuth flows
+        NEXT_PUBLIC_NANGO_PUBLIC_KEY: z.string().min(1).optional(),
         // Supabase URL for file storage
         NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
         // Supabase publishable key for client-side uploads (sb_publishable_...)
@@ -49,12 +58,17 @@ export const env = createEnv({
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
         SENTRY_DSN: process.env.SENTRY_DSN,
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+        NEXT_PUBLIC_NANGO_PUBLIC_KEY: process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY,
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
+        NANGO_API_URL: process.env.NANGO_API_URL,
+        NANGO_SECRET_KEY: process.env.NANGO_SECRET_KEY,
+        ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
         DATABASE_URL: process.env.DATABASE_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
