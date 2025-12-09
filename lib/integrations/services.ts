@@ -4,7 +4,7 @@
  * All external integrations are defined here. This registry controls:
  * - Which services are available in the UI
  * - Auth method (OAuth via Nango or API key)
- * - Rollout status (available, beta, internal, coming_soon)
+ * - Rollout status (available, beta, internal)
  * - Service metadata (logos, descriptions, docs)
  */
 
@@ -12,9 +12,8 @@ export type AuthMethod = "oauth" | "api_key";
 
 export type RolloutStatus =
     | "available" // Visible and usable by all users
-    | "beta" // Visible but marked as beta, available to all
-    | "internal" // Only visible to internal/admin users
-    | "coming_soon"; // Visible but not connectable
+    | "beta" // Only visible to users with showBetaIntegrations permission
+    | "internal"; // Only visible to users with showInternalIntegrations permission
 
 export interface ServiceDefinition {
     /** Unique service identifier (e.g., "notion", "giphy") */
@@ -67,7 +66,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         description: "Search, read, and manage your Notion workspace",
         logo: "/logos/notion.svg",
         authMethod: "oauth",
-        status: "coming_soon", // Needs Nango setup
+        status: "beta",
         nangoIntegrationKey: "notion",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.notion.com/",
@@ -79,7 +78,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         description: "Manage tasks, projects, and workspaces",
         logo: "/logos/clickup.svg",
         authMethod: "oauth",
-        status: "coming_soon", // Needs Nango setup
+        status: "beta",
         nangoIntegrationKey: "clickup",
         supportsMultipleAccounts: true,
         docsUrl: "https://clickup.com/api",
@@ -146,11 +145,10 @@ export function getAvailableServices(includeInternal = false): ServiceDefinition
 }
 
 /**
- * Get services that can be connected (not coming_soon)
+ * Get services that can be connected
  */
 export function getConnectableServices(includeInternal = false): ServiceDefinition[] {
     return SERVICE_REGISTRY.filter((s) => {
-        if (s.status === "coming_soon") return false;
         if (s.status === "internal" && !includeInternal) return false;
         return true;
     });

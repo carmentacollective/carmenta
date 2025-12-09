@@ -69,14 +69,28 @@ async function getDbUser() {
 }
 
 /**
- * Check if current user is admin (can access internal/coming_soon services)
+ * Get user permissions from Clerk metadata
  */
-async function isUserAdmin(): Promise<boolean> {
+async function getUserPermissions(): Promise<{
+    isAdmin: boolean;
+    showBetaIntegrations: boolean;
+    showInternalIntegrations: boolean;
+}> {
     const user = await currentUser();
-    if (!user) return false;
+    if (!user) {
+        return {
+            isAdmin: false,
+            showBetaIntegrations: false,
+            showInternalIntegrations: false,
+        };
+    }
 
-    // Check Clerk public metadata for admin role
-    return user.publicMetadata?.role === "admin";
+    return {
+        isAdmin: user.publicMetadata?.role === "admin",
+        showBetaIntegrations: user.publicMetadata?.showBetaIntegrations === true,
+        showInternalIntegrations:
+            user.publicMetadata?.showInternalIntegrations === true,
+    };
 }
 
 /**
@@ -92,11 +106,21 @@ export async function getServicesWithStatus(): Promise<{
         return { connected: [], available: [] };
     }
 
+    const permissions = await getUserPermissions();
     const allServices = getAvailableServices();
+
+    // Filter services based on user permissions
+    const visibleServices = allServices.filter((service) => {
+        if (service.status === "available") return true;
+        if (service.status === "beta") return permissions.showBetaIntegrations;
+        if (service.status === "internal") return permissions.showInternalIntegrations;
+        return false;
+    });
+
     const connected: ConnectedService[] = [];
     const available: ServiceDefinition[] = [];
 
-    for (const service of allServices) {
+    for (const service of visibleServices) {
         const accounts = await listServiceAccounts(dbUser.id, service.id);
         const connectedAccounts = accounts.filter((a) => a.status === "connected");
 
@@ -147,12 +171,6 @@ export async function connectApiKeyService(
             success: false,
             error: "Service does not support API key authentication",
         };
-    }
-
-    // Allow admins to connect coming_soon services
-    const isAdmin = await isUserAdmin();
-    if (service.status === "coming_soon" && !isAdmin) {
-        return { success: false, error: "Service is not yet available" };
     }
 
     if (!apiKey || apiKey.trim().length === 0) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plug, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -13,7 +14,7 @@ import {
     type ConnectedService,
 } from "@/lib/actions/integrations";
 import type { ServiceDefinition } from "@/lib/integrations/services";
-import { useIsAdmin } from "@/lib/hooks/use-is-admin";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { logger } from "@/lib/client-logger";
 
 export default function IntegrationsPage() {
@@ -24,7 +25,7 @@ export default function IntegrationsPage() {
         null
     );
     const [modalOpen, setModalOpen] = useState(false);
-    const isAdmin = useIsAdmin();
+    const permissions = usePermissions();
 
     const loadServices = useCallback(async () => {
         try {
@@ -57,7 +58,7 @@ export default function IntegrationsPage() {
 
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(
+                    toast.error(
                         `Failed to initiate OAuth: ${error.error || "Unknown error"}`
                     );
                     return;
@@ -71,7 +72,7 @@ export default function IntegrationsPage() {
                 window.location.href = nangoConnectUrl;
             } catch (error) {
                 logger.error({ error, service: service.id }, "OAuth initiation failed");
-                alert("Failed to initiate OAuth connection. Please try again.");
+                toast.error("Failed to initiate OAuth connection. Please try again.");
             }
         }
     };
@@ -182,10 +183,6 @@ export default function IntegrationsPage() {
                                                     service={service}
                                                     onClick={() =>
                                                         handleConnectClick(service)
-                                                    }
-                                                    disabled={
-                                                        service.status ===
-                                                            "coming_soon" && !isAdmin
                                                     }
                                                 />
                                             ))}

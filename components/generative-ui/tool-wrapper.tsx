@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ToolStatusBadge } from "./tool-status-badge";
 import { ToolDebugPanel } from "./tool-debug-panel";
-import { useIsAdmin } from "@/lib/hooks/use-is-admin";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import {
     type ToolStatus,
     getToolConfig,
@@ -165,7 +165,7 @@ export function ToolWrapper({
     children,
     className,
 }: ToolWrapperProps) {
-    const isAdmin = useIsAdmin();
+    const permissions = usePermissions();
     const config = getToolConfig(toolName);
     const Icon = config.icon;
 
@@ -240,7 +240,7 @@ export function ToolWrapper({
                     {children}
 
                     {/* Admin debug panel */}
-                    {isAdmin && (
+                    {permissions.isAdmin && (
                         <div className="mt-4 border-t border-dashed border-white/10 pt-3">
                             <ToolDebugPanel
                                 toolName={toolName}
