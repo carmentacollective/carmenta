@@ -4,6 +4,19 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { useUserContext } from "@/lib/auth/user-context";
 
+/** Birthday config - month is 0-indexed (December = 11) */
+const BIRTHDAYS: Record<string, { month: number; day: number }> = {
+    Nick: { month: 11, day: 9 },
+};
+
+/** Check if today is someone's birthday */
+function isBirthday(firstName: string): boolean {
+    const config = BIRTHDAYS[firstName];
+    if (!config) return false;
+    const today = new Date();
+    return today.getMonth() === config.month && today.getDate() === config.day;
+}
+
 interface GreetingProps {
     className?: string;
     subtitleClassName?: string;
@@ -11,8 +24,9 @@ interface GreetingProps {
 }
 
 /**
- * Greeting that adapts to authentication state.
+ * Greeting that adapts to authentication state and special occasions.
  *
+ * Birthday: "Happy Birthday, Nick! 🎂" + celebratory subtitle
  * Logged in: "Hey, Nick" + "What are we creating together?"
  * Logged out: "Hey" + landing-appropriate subtitle
  *
@@ -35,16 +49,23 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
 
     const isLoggedIn = isLoaded && !!user;
     const firstName = user?.firstName;
+    const hasBirthday = firstName ? isBirthday(firstName) : false;
 
-    // Adapt subtitle based on auth state if not explicitly provided
-    const defaultSubtitle = isLoggedIn
-        ? "What are we creating together?"
-        : "AI that remembers you. Multi-model access. Your team.";
+    // Adapt subtitle based on auth state and special occasions
+    const defaultSubtitle = hasBirthday
+        ? "Today is YOUR day. Let's make it magical. ✨"
+        : isLoggedIn
+          ? "What are we creating together?"
+          : "AI that remembers you. Multi-model access. Your team.";
 
     const displaySubtitle = subtitle ?? defaultSubtitle;
 
     // Build the complete greeting text
-    const greetingText = firstName ? `Hey, ${firstName}` : "Hey";
+    const greetingText = hasBirthday
+        ? `Happy Birthday, ${firstName}! 🎂`
+        : firstName
+          ? `Hey, ${firstName}`
+          : "Hey";
 
     return (
         <AnimatePresence mode="wait">
