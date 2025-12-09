@@ -1,7 +1,7 @@
 {
   "name": "carmenta",
   "version": "0.1.0",
-  "description": "A heart-centered AI interface for builders who work at the speed of thought",
+  "description": "A heart-centered AI for creating at the speed of thought",
   "private": true,
   "repository": {
     "type": "git",

@@ -34,6 +34,74 @@ export default function BrandPage() {
                             </p>
                         </section>
 
+                        {/* Copy Library */}
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-foreground/90">
+                                Copy Library
+                            </h2>
+                            <p className="text-foreground/70">
+                                Approved brand messaging for consistent communication
+                                across all touchpoints.
+                            </p>
+
+                            <div className="glass-card space-y-8">
+                                {/* Tagline */}
+                                <div className="space-y-3 border-b border-foreground/10 pb-8">
+                                    <h3 className="text-lg font-medium text-foreground/90">
+                                        Primary Tagline
+                                    </h3>
+                                    <div className="rounded-lg bg-foreground/5 p-4">
+                                        <p className="text-2xl font-light text-foreground/90">
+                                            Create at the speed of thought.
+                                        </p>
+                                    </div>
+                                    <p className="text-sm text-foreground/60">
+                                        Use on all marketing materials, page titles, and
+                                        hero sections.
+                                    </p>
+                                </div>
+
+                                {/* Short Description */}
+                                <div className="space-y-3 border-b border-foreground/10 pb-8">
+                                    <h3 className="text-lg font-medium text-foreground/90">
+                                        Short Description
+                                    </h3>
+                                    <div className="rounded-lg bg-foreground/5 p-4">
+                                        <p className="text-lg text-foreground/90">
+                                            A heart-centered AI for creating at the
+                                            speed of thought.
+                                        </p>
+                                    </div>
+                                    <p className="text-sm text-foreground/60">
+                                        Use for page descriptions, social bios,
+                                        package.json, GitHub repo.
+                                    </p>
+                                </div>
+
+                                {/* Long Description */}
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-medium text-foreground/90">
+                                        Long Description
+                                    </h3>
+                                    <div className="rounded-lg bg-foreground/5 p-4">
+                                        <p className="leading-relaxed text-foreground/90">
+                                            Create at the speed of thought. One
+                                            subscription, every frontier model—Claude,
+                                            GPT, Gemini, Grok—unified. Memory that
+                                            persists across conversations. An AI team
+                                            that works alongside you. No more fragmented
+                                            tools. No more re-explaining yourself.
+                                            Partnership, not tool-use.
+                                        </p>
+                                    </div>
+                                    <p className="text-sm text-foreground/60">
+                                        Use for OG tags, Twitter cards, README intros,
+                                        and detailed meta descriptions.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
                         {/* Brand Story */}
                         <section className="space-y-6">
                             <h2 className="text-2xl font-semibold text-foreground/90">
