@@ -22,6 +22,7 @@ import {
     integer,
     serial,
     pgEnum,
+    boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -358,6 +359,7 @@ export const messageParts = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
     connections: many(connections),
+    integrations: many(integrations),
 }));
 
 export const connectionsRelations = relations(connections, ({ one, many }) => ({
@@ -384,6 +386,115 @@ export const messagePartsRelations = relations(messageParts, ({ one }) => ({
 }));
 
 // ============================================================================
+// INTEGRATIONS TABLES
+// ============================================================================
+
+/**
+ * Integration status enum
+ * - connected: Active and working
+ * - error: Connection has an error (e.g., invalid credentials)
+ * - expired: OAuth token expired, needs refresh
+ * - disconnected: Explicitly disconnected by user
+ */
+export const integrationStatusEnum = pgEnum("integration_status", [
+    "connected",
+    "error",
+    "expired",
+    "disconnected",
+]);
+
+/**
+ * Credential type enum
+ */
+export const credentialTypeEnum = pgEnum("credential_type", ["oauth", "api_key"]);
+
+/**
+ * External service integrations
+ *
+ * Stores user connections to external services like Notion, Giphy, etc.
+ * OAuth credentials are managed by Nango (we store connectionId).
+ * API key credentials are encrypted and stored directly.
+ *
+ * Multi-account support: users can connect multiple accounts per service
+ * (e.g., work and personal Notion). One account per service is marked default.
+ */
+export const integrations = pgTable(
+    "integrations",
+    {
+        id: serial("id").primaryKey(),
+
+        /** Owner of this integration */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Service identifier (e.g., "notion", "giphy") */
+        service: varchar("service", { length: 100 }).notNull(),
+
+        /** Nango connection ID for OAuth services */
+        connectionId: varchar("connection_id", { length: 255 }),
+
+        /** Encrypted credentials for API key services */
+        encryptedCredentials: text("encrypted_credentials"),
+
+        /** Credential type discriminator */
+        credentialType: credentialTypeEnum("credential_type").notNull(),
+
+        /**
+         * Account identifier within the service
+         * For OAuth: workspace ID, user ID, etc.
+         * For API key: "default" or user-provided label
+         */
+        accountId: varchar("account_id", { length: 255 }).notNull(),
+
+        /** Human-readable account name for UI */
+        accountDisplayName: varchar("account_display_name", { length: 255 }),
+
+        /** Whether this is the default account for this service */
+        isDefault: boolean("is_default").notNull().default(false),
+
+        /** Connection status */
+        status: integrationStatusEnum("status").notNull().default("connected"),
+
+        /** Error message if status is 'error' */
+        errorMessage: text("error_message"),
+
+        /** When the integration was connected */
+        connectedAt: timestamp("connected_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** Last update time */
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Primary query: user's integrations */
+        index("integrations_user_idx").on(table.userId),
+        /** Filter by service */
+        index("integrations_user_service_idx").on(table.userId, table.service),
+        /** Unique constraint: one account per user/service/accountId */
+        index("integrations_user_service_account_idx").on(
+            table.userId,
+            table.service,
+            table.accountId
+        ),
+    ]
+);
+
+// ============================================================================
+// INTEGRATIONS RELATIONS
+// ============================================================================
+
+export const integrationsRelations = relations(integrations, ({ one }) => ({
+    user: one(users, {
+        fields: [integrations.userId],
+        references: [users.id],
+    }),
+}));
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -398,3 +509,6 @@ export type NewMessage = typeof messages.$inferInsert;
 
 export type MessagePart = typeof messageParts.$inferSelect;
 export type NewMessagePart = typeof messageParts.$inferInsert;
+
+export type Integration = typeof integrations.$inferSelect;
+export type NewIntegration = typeof integrations.$inferInsert;
