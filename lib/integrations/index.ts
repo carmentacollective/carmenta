@@ -46,6 +46,9 @@ export {
     type BearerTokenCredentials,
 } from "./encryption";
 
+// Adapters
+export { ServiceAdapter, GiphyAdapter } from "./adapters";
+
 // Types
 export type {
     IntegrationStatus,
