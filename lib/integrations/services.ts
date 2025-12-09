@@ -79,7 +79,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         description: "Manage tasks, projects, and workspaces",
         logo: "/logos/clickup.svg",
         authMethod: "oauth",
-        status: "coming_soon", // Needs Nango setup
+        status: "beta",
         nangoIntegrationKey: "clickup",
         supportsMultipleAccounts: true,
         docsUrl: "https://clickup.com/api",

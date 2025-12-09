@@ -71,7 +71,6 @@ export function ServiceCard({
     disabled = false,
 }: ServiceCardProps) {
     const isConnected = status === "connected";
-    const isComingSoon = service.status === "coming_soon";
     // Allow clicks if onClick exists, not disabled, and either not coming_soon OR explicitly allowed (disabled=false for coming_soon = admin override)
     const isClickable = !disabled && !!onClick;
 
@@ -81,7 +80,6 @@ export function ServiceCard({
                 "glass-card group relative flex flex-col gap-4 transition-all duration-300",
                 isClickable && "cursor-pointer hover:scale-[1.02] hover:shadow-xl",
                 isConnected && "ring-2 ring-green-500/30",
-                isComingSoon && "opacity-60",
                 disabled && "cursor-not-allowed opacity-50"
             )}
             onClick={isClickable ? onClick : undefined}

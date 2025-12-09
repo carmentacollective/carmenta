@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 /**
@@ -119,6 +120,7 @@ export default function RootLayout({
                         <ThemeProvider>
                             <PWARegistration />
                             <StructuredData />
+                            <Toaster />
                             {children}
                         </ThemeProvider>
                     </body>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plug, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -57,7 +58,7 @@ export default function IntegrationsPage() {
 
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(
+                    toast.error(
                         `Failed to initiate OAuth: ${error.error || "Unknown error"}`
                     );
                     return;
@@ -71,7 +72,7 @@ export default function IntegrationsPage() {
                 window.location.href = nangoConnectUrl;
             } catch (error) {
                 logger.error({ error, service: service.id }, "OAuth initiation failed");
-                alert("Failed to initiate OAuth connection. Please try again.");
+                toast.error("Failed to initiate OAuth connection. Please try again.");
             }
         }
     };
