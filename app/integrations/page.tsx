@@ -13,6 +13,8 @@ import {
     type ConnectedService,
 } from "@/lib/actions/integrations";
 import type { ServiceDefinition } from "@/lib/integrations/services";
+import { useIsAdmin } from "@/lib/hooks/use-is-admin";
+import { logger } from "@/lib/client-logger";
 
 export default function IntegrationsPage() {
     const [connected, setConnected] = useState<ConnectedService[]>([]);
@@ -22,6 +24,7 @@ export default function IntegrationsPage() {
         null
     );
     const [modalOpen, setModalOpen] = useState(false);
+    const isAdmin = useIsAdmin();
 
     const loadServices = useCallback(async () => {
         try {
@@ -29,7 +32,7 @@ export default function IntegrationsPage() {
             setConnected(result.connected);
             setAvailable(result.available);
         } catch (error) {
-            console.error("Failed to load services:", error);
+            logger.error({ error }, "Failed to load services");
         } finally {
             setLoading(false);
         }
@@ -39,14 +42,37 @@ export default function IntegrationsPage() {
         loadServices();
     }, [loadServices]);
 
-    const handleConnectClick = (service: ServiceDefinition) => {
+    const handleConnectClick = async (service: ServiceDefinition) => {
         if (service.authMethod === "api_key") {
             setSelectedService(service);
             setModalOpen(true);
         } else if (service.authMethod === "oauth") {
-            // OAuth flow - redirect to Nango
-            // TODO: Implement OAuth flow
-            alert("OAuth integrations coming soon!");
+            // OAuth flow - create Nango session and open modal
+            try {
+                const response = await fetch("/api/connect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ service: service.id }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(
+                        `Failed to initiate OAuth: ${error.error || "Unknown error"}`
+                    );
+                    return;
+                }
+
+                const { sessionToken } = await response.json();
+
+                // Redirect to Nango connect page with session token
+                // Nango will handle the OAuth flow and redirect back via /oauth/callback
+                const nangoConnectUrl = `https://api.nango.dev/connect/${sessionToken}`;
+                window.location.href = nangoConnectUrl;
+            } catch (error) {
+                logger.error({ error, service: service.id }, "OAuth initiation failed");
+                alert("Failed to initiate OAuth connection. Please try again.");
+            }
         }
     };
 
@@ -158,7 +184,8 @@ export default function IntegrationsPage() {
                                                         handleConnectClick(service)
                                                     }
                                                     disabled={
-                                                        service.status === "coming_soon"
+                                                        service.status ===
+                                                            "coming_soon" && !isAdmin
                                                     }
                                                 />
                                             ))}

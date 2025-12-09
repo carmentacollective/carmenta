@@ -69,6 +69,17 @@ async function getDbUser() {
 }
 
 /**
+ * Check if current user is admin (can access internal/coming_soon services)
+ */
+async function isUserAdmin(): Promise<boolean> {
+    const user = await currentUser();
+    if (!user) return false;
+
+    // Check Clerk public metadata for admin role
+    return user.publicMetadata?.role === "admin";
+}
+
+/**
  * Get all available services with their connection status for the current user
  */
 export async function getServicesWithStatus(): Promise<{
@@ -138,7 +149,9 @@ export async function connectApiKeyService(
         };
     }
 
-    if (service.status === "coming_soon") {
+    // Allow admins to connect coming_soon services
+    const isAdmin = await isUserAdmin();
+    if (service.status === "coming_soon" && !isAdmin) {
         return { success: false, error: "Service is not yet available" };
     }
 

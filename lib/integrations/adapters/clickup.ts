@@ -42,20 +42,17 @@ export class ClickUpAdapter extends ServiceAdapter {
     /**
      * Fetch the ClickUp account information
      * Used to populate accountIdentifier and accountDisplayName after OAuth
+     *
+     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
+     * @param userId - User ID (optional, only used for logging)
      */
-    async fetchAccountInfo(userId: string): Promise<{
+    async fetchAccountInfo(
+        connectionId: string,
+        userId?: string
+    ): Promise<{
         identifier: string;
         displayName: string;
     }> {
-        const credentials = await getCredentials(userId, this.serviceName);
-
-        if (!credentials.connectionId) {
-            throw new ValidationError(
-                `No Nango connection ID found for ${this.serviceDisplayName}. ` +
-                    `Please reconnect your account at /integrations/${this.serviceName}`
-            );
-        }
-
         const nangoUrl = this.getNangoUrl();
         const nangoSecretKey = getNangoSecretKey();
 
@@ -64,7 +61,7 @@ export class ClickUpAdapter extends ServiceAdapter {
                 .get(`${nangoUrl}/proxy/api/v2/user`, {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": credentials.connectionId,
+                        "Connection-Id": connectionId,
                         "Provider-Config-Key": "clickup",
                     },
                 })
@@ -81,7 +78,10 @@ export class ClickUpAdapter extends ServiceAdapter {
                 displayName: response.user.username || response.user.email,
             };
         } catch (error) {
-            logger.error({ error, userId }, "📋 Failed to fetch ClickUp account info");
+            logger.error(
+                { error, userId, connectionId },
+                "📋 Failed to fetch ClickUp account info"
+            );
             throw new ValidationError("Failed to fetch ClickUp account information");
         }
     }
