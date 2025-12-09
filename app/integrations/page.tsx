@@ -14,6 +14,7 @@ import {
 } from "@/lib/actions/integrations";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import { useIsAdmin } from "@/lib/hooks/use-is-admin";
+import { logger } from "@/lib/client-logger";
 
 export default function IntegrationsPage() {
     const [connected, setConnected] = useState<ConnectedService[]>([]);
@@ -31,7 +32,7 @@ export default function IntegrationsPage() {
             setConnected(result.connected);
             setAvailable(result.available);
         } catch (error) {
-            console.error("Failed to load services:", error);
+            logger.error({ error }, "Failed to load services");
         } finally {
             setLoading(false);
         }
@@ -64,19 +65,12 @@ export default function IntegrationsPage() {
 
                 const { sessionToken } = await response.json();
 
-                // Open Nango connect modal
-                // Nango modal will handle the OAuth flow and redirect
-                const nangoPublicKey = process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY;
-                if (!nangoPublicKey) {
-                    alert("Nango is not configured. Please contact support.");
-                    return;
-                }
-
                 // Redirect to Nango connect page with session token
+                // Nango will handle the OAuth flow and redirect back via /oauth/callback
                 const nangoConnectUrl = `https://api.nango.dev/connect/${sessionToken}`;
                 window.location.href = nangoConnectUrl;
             } catch (error) {
-                console.error("OAuth initiation failed:", error);
+                logger.error({ error, service: service.id }, "OAuth initiation failed");
                 alert("Failed to initiate OAuth connection. Please try again.");
             }
         }

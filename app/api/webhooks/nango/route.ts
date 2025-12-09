@@ -173,7 +173,7 @@ async function storeSuccessfulConnection(
 
         if (service === "clickup") {
             const adapter = new ClickUpAdapter();
-            const accountInfo = await adapter.fetchAccountInfo(user.id);
+            const accountInfo = await adapter.fetchAccountInfo(connectionId, user.id);
             accountId = accountInfo.identifier;
             accountDisplayName = accountInfo.displayName;
         } else {
@@ -183,19 +183,18 @@ async function storeSuccessfulConnection(
             logger.warn({ service }, "Unknown service - using default account info");
         }
 
-        // Check if this is the first account for this service
-        const existingConnections = await db.query.integrations.findMany({
-            where: and(
-                eq(schema.integrations.userId, user.id),
-                eq(schema.integrations.service, service),
-                eq(schema.integrations.status, "connected")
-            ),
-        });
-
-        const isFirstAccount = existingConnections.length === 0;
-
         // Upsert integration record (idempotent for webhook retries)
         await db.transaction(async (tx) => {
+            // Check if this is the first account for this service (inside transaction to prevent race conditions)
+            const existingConnections = await tx.query.integrations.findMany({
+                where: and(
+                    eq(schema.integrations.userId, user.id),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.status, "connected")
+                ),
+            });
+
+            const isFirstAccount = existingConnections.length === 0;
             // Clean up any orphaned ERROR entries for this connectionId
             await tx
                 .delete(schema.integrations)
