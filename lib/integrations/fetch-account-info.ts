@@ -8,6 +8,7 @@
  */
 
 import { logger } from "@/lib/logger";
+import { ValidationError } from "@/lib/errors";
 
 interface AccountInfo {
     identifier: string;
@@ -33,21 +34,22 @@ export async function fetchAccountInfo(
             const { ClickUpAdapter } =
                 await import("@/lib/integrations/adapters/clickup");
             const adapter = new ClickUpAdapter();
+            // ClickUp adapter expects (connectionId, userId?)
             return await adapter.fetchAccountInfo(connectionId, userId);
         }
 
         case "notion": {
+            // Notion adapter expects (userId) only
+            // We need to get userId from the connection or throw error
+            if (!userId) {
+                throw new ValidationError(
+                    "User ID is required for fetching Notion account info"
+                );
+            }
             const { NotionAdapter } =
                 await import("@/lib/integrations/adapters/notion");
             const adapter = new NotionAdapter();
-            return await adapter.fetchAccountInfo(connectionId, userId);
-        }
-
-        case "dropbox": {
-            const { DropboxAdapter } =
-                await import("@/lib/integrations/adapters/dropbox");
-            const adapter = new DropboxAdapter();
-            return await adapter.fetchAccountInfo(connectionId, userId);
+            return await adapter.fetchAccountInfo(userId);
         }
 
         default:
