@@ -1,4 +1,11 @@
-import { Table, Search, type LucideIcon } from "lucide-react";
+import {
+    Table,
+    Search,
+    Globe,
+    BrainCircuit,
+    CloudSun,
+    type LucideIcon,
+} from "lucide-react";
 
 /**
  * Tool status states matching Vercel AI SDK's tool part states
@@ -57,6 +64,48 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick find!", "Speedy search"],
         },
     },
+    fetchPage: {
+        displayName: "Fetch Page",
+        icon: Globe,
+        messages: {
+            pending: "Preparing...",
+            running: "Fetching page content...",
+            completed: "Page fetched",
+            error: "Failed to fetch page",
+        },
+        delightMessages: {
+            completed: ["Got it", "Page loaded", "Content retrieved"],
+            fast: ["Quick fetch!", "Speedy load"],
+        },
+    },
+    deepResearch: {
+        displayName: "Deep Research",
+        icon: BrainCircuit,
+        messages: {
+            pending: "Preparing...",
+            running: "Researching...",
+            completed: "Research complete",
+            error: "Research failed",
+        },
+        delightMessages: {
+            completed: ["Found insights", "Discoveries made", "Research done"],
+            fast: ["Quick research!", "Fast findings"],
+        },
+    },
+    getWeather: {
+        displayName: "Weather",
+        icon: CloudSun,
+        messages: {
+            pending: "Preparing...",
+            running: "Getting weather...",
+            completed: "Weather retrieved",
+            error: "Failed to get weather",
+        },
+        delightMessages: {
+            completed: ["Forecast ready", "Weather check done", "Climate confirmed"],
+            fast: ["Quick forecast!", "Instant weather"],
+        },
+    },
 };
 
 /**
@@ -78,10 +127,41 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
 };
 
 /**
- * Get tool configuration, falling back to defaults for unknown tools
+ * Get tool configuration.
+ *
+ * @param toolName - Name of the tool
+ * @param options - Configuration options
+ * @param options.fallbackToDefault - If true, returns DEFAULT_TOOL_CONFIG for unknown tools instead of throwing.
+ *                                     Use this in UI rendering contexts where graceful degradation is preferred.
+ *                                     Defaults to false to enforce explicit tool configuration.
+ *
+ * @throws Error if tool is not configured and fallbackToDefault is false
  */
-export function getToolConfig(toolName: string): ToolConfig {
-    return TOOL_CONFIG[toolName] ?? DEFAULT_TOOL_CONFIG;
+export function getToolConfig(
+    toolName: string,
+    options: { fallbackToDefault?: boolean } = {}
+): ToolConfig {
+    const config = TOOL_CONFIG[toolName];
+
+    if (!config) {
+        if (options.fallbackToDefault) {
+            // Log warning in development to help catch missing configs
+            if (process.env.NODE_ENV === "development") {
+                console.warn(
+                    `Tool configuration missing for "${toolName}". Using default config. ` +
+                        `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`
+                );
+            }
+            return DEFAULT_TOOL_CONFIG;
+        }
+
+        throw new Error(
+            `Tool configuration missing for "${toolName}". ` +
+                `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`
+        );
+    }
+
+    return config;
 }
 
 // ============================================================================
