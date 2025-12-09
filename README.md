@@ -1,7 +1,9 @@
 # Carmenta
 
-Create at the speed of thought. A heart-centered AI interface with complete memory,
-multi-model access, and an AI team that works alongside you.
+Create at the speed of thought. One subscription, every frontier model—Claude, GPT,
+Gemini, Grok—unified. Memory that persists across conversations. An AI team that works
+alongside you. No more fragmented tools. No more re-explaining yourself. Partnership,
+not tool-use.
 
 ## Why Carmenta
 
