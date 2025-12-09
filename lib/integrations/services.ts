@@ -84,6 +84,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         docsUrl: "https://clickup.com/api",
         capabilities: ["list_tasks", "create_task", "update_task", "list_spaces"],
     },
+    {
+        id: "dropbox",
+        name: "Dropbox",
+        description: "Access files and folders in your Dropbox",
+        logo: "/logos/dropbox.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "dropbox",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://www.dropbox.com/developers/documentation",
+        capabilities: [
+            "list_folder",
+            "search_files",
+            "download_file",
+            "create_folder",
+            "move",
+            "delete",
+            "create_shared_link",
+        ],
+    },
 
     // API Key Services
     {

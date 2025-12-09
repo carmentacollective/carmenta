@@ -1,0 +1,1075 @@
+/**
+ * Dropbox Service Adapter
+ *
+ * File storage via Dropbox API through Nango proxy.
+ *
+ * ## File Uploads NOT Supported
+ * Upload endpoints use content.dropboxapi.com with binary bodies and custom headers -
+ * incompatible with Nango's JSON proxy. Users must upload via Dropbox UI.
+ *
+ * ## API Body Quirks (code workarounds in place)
+ * - No-param endpoints require body: "null" (literal string)
+ * - Download endpoints require empty body + Dropbox-API-Arg header
+ * - Shared link creation fails if link exists - code falls back to list_shared_links
+ */
+
+import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { httpClient } from "@/lib/http-client";
+import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
+
+// Constants for Dropbox API limits
+const MAX_SEARCH_RESULTS = 100;
+const MAX_LIST_RESULTS = 100;
+// Reserved for future file size validation
+const _MAX_FILE_DOWNLOAD_SIZE = 150 * 1024 * 1024; // 150MB - Dropbox API limit
+
+/** Get and validate Nango secret key */
+function getNangoSecretKey(): string {
+    if (!env.NANGO_SECRET_KEY) {
+        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
+    }
+    return env.NANGO_SECRET_KEY;
+}
+
+export class DropboxAdapter extends ServiceAdapter {
+    serviceName = "dropbox";
+    serviceDisplayName = "Dropbox";
+
+    private getNangoUrl(): string {
+        if (!env.NANGO_API_URL) {
+            throw new Error("Missing required environment variable: NANGO_API_URL");
+        }
+        return env.NANGO_API_URL;
+    }
+
+    /**
+     * Fetch the Dropbox account information
+     * Used to populate accountIdentifier and accountDisplayName after OAuth
+     */
+    async fetchAccountInfo(userId: string): Promise<{
+        identifier: string;
+        displayName: string;
+    }> {
+        const credentials = await getCredentials(userId, this.serviceName);
+
+        if (!credentials.connectionId) {
+            throw new ValidationError(
+                `No Nango connection ID found for ${this.serviceDisplayName}. ` +
+                    `Please reconnect your account at /integrations/${this.serviceName}`
+            );
+        }
+
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            const response = await httpClient
+                .post(`${nangoUrl}/proxy/2/users/get_current_account`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": credentials.connectionId,
+                        "Provider-Config-Key": "dropbox",
+                        "Content-Type": "application/json",
+                    },
+                    body: "null", // See "API Request Body Quirks" in file header
+                })
+                .json<{
+                    account_id: string;
+                    name: {
+                        display_name: string;
+                        given_name?: string;
+                        surname?: string;
+                    };
+                    email: string;
+                }>();
+
+            return {
+                identifier: response.account_id,
+                displayName: response.name.display_name || response.email,
+            };
+        } catch (error) {
+            this.logError("Failed to fetch Dropbox account info:", error);
+            throw new ValidationError("Failed to fetch Dropbox account information");
+        }
+    }
+
+    getHelp(): HelpResponse {
+        return {
+            service: this.serviceDisplayName,
+            description:
+                "Access Dropbox files and folders. Note: File uploads not currently supported.",
+            operations: [
+                {
+                    name: "list_folder",
+                    description:
+                        "List files and folders in a specific path. Use empty string for root.",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description:
+                                "Path to list (use '' for root, or '/folder/subfolder')",
+                            example: "",
+                        },
+                        {
+                            name: "recursive",
+                            type: "boolean",
+                            required: false,
+                            description: "List all files recursively (default: false)",
+                            example: "false",
+                        },
+                    ],
+                    returns: "List of files and folders with metadata",
+                    example: `list_folder({ path: "", recursive: false })`,
+                },
+                {
+                    name: "search_files",
+                    description: "Search for files and folders by name or content",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "query",
+                            type: "string",
+                            required: true,
+                            description: "Search query (file names or content)",
+                        },
+                        {
+                            name: "path",
+                            type: "string",
+                            required: false,
+                            description:
+                                "Limit search to specific folder (default: search all)",
+                            example: "/Documents",
+                        },
+                        {
+                            name: "maxResults",
+                            type: "number",
+                            required: false,
+                            description: "Maximum results to return (default: 20)",
+                            example: "10",
+                        },
+                    ],
+                    returns: "List of matching files and folders",
+                    example: `search_files({ query: "report", path: "/Documents" })`,
+                },
+                {
+                    name: "get_metadata",
+                    description: "Get detailed metadata for a file or folder",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description: "Path to file or folder",
+                            example: "/Documents/report.pdf",
+                        },
+                    ],
+                    returns: "Detailed metadata including size, dates, sharing info",
+                },
+                {
+                    name: "download_file",
+                    description:
+                        "Download and read file content (text files, documents, etc.)",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description: "Path to file to download",
+                            example: "/Documents/notes.txt",
+                        },
+                    ],
+                    returns:
+                        "File content as text (for text files) or base64 (for binary files)",
+                },
+                {
+                    name: "create_folder",
+                    description: "Create a new folder",
+                    annotations: { readOnlyHint: false, destructiveHint: false },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description: "Path for new folder",
+                            example: "/Projects/New Project",
+                        },
+                    ],
+                    returns: "Created folder metadata",
+                },
+                {
+                    name: "move",
+                    description: "Move or rename a file or folder",
+                    annotations: {
+                        readOnlyHint: false,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                    },
+                    parameters: [
+                        {
+                            name: "from_path",
+                            type: "string",
+                            required: true,
+                            description: "Current path",
+                            example: "/old-name.txt",
+                        },
+                        {
+                            name: "to_path",
+                            type: "string",
+                            required: true,
+                            description: "New path",
+                            example: "/Documents/new-name.txt",
+                        },
+                    ],
+                    returns: "Moved file/folder metadata",
+                },
+                {
+                    name: "delete",
+                    description: "Delete a file or folder",
+                    annotations: { readOnlyHint: false, destructiveHint: true },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description: "Path to delete",
+                            example: "/old-file.txt",
+                        },
+                    ],
+                    returns: "Deleted file/folder metadata",
+                },
+                {
+                    name: "create_shared_link",
+                    description: "Create a shareable link for a file or folder",
+                    annotations: { readOnlyHint: false, destructiveHint: false },
+                    parameters: [
+                        {
+                            name: "path",
+                            type: "string",
+                            required: true,
+                            description: "Path to share",
+                            example: "/Documents/presentation.pdf",
+                        },
+                    ],
+                    returns: "Shareable link URL and settings",
+                },
+                {
+                    name: "get_current_account",
+                    description: "Get information about the connected Dropbox account",
+                    annotations: { readOnlyHint: true },
+                    parameters: [],
+                    returns: "Account details including name, email, and usage",
+                },
+                {
+                    name: "raw_api",
+                    description:
+                        "Use this operation when the user requests functionality that doesn't have a dedicated operation listed above. " +
+                        "This gives you direct access to the full Dropbox API - you can perform nearly any operation supported by Dropbox. " +
+                        "If you're familiar with the Dropbox API structure, construct the request directly. " +
+                        "If unsure/errors: fallback to https://www.dropbox.com/developers/documentation/http/documentation",
+                    parameters: [
+                        {
+                            name: "endpoint",
+                            type: "string",
+                            required: true,
+                            description:
+                                "Dropbox API endpoint path (e.g., '/2/files/list_folder', '/2/files/upload', '/2/sharing/share_folder')",
+                            example: "/2/files/get_metadata",
+                        },
+                        {
+                            name: "method",
+                            type: "string",
+                            required: true,
+                            description: "HTTP method (GET, POST, PUT, DELETE, PATCH)",
+                            example: "POST",
+                        },
+                        {
+                            name: "body",
+                            type: "object",
+                            required: false,
+                            description:
+                                "Request body for POST/PUT/PATCH requests. Structure depends on the endpoint - " +
+                                "for example, listing a folder requires path and recursive fields. " +
+                                "Use the Dropbox API structure you're familiar with, or consult the documentation if needed.",
+                        },
+                        {
+                            name: "query",
+                            type: "object",
+                            required: false,
+                            description: "Query parameters as key-value pairs",
+                        },
+                    ],
+                    returns: "Raw Dropbox API response as JSON",
+                    example: `raw_api({ endpoint: "/2/files/get_metadata", method: "POST", body: { path: "/test.txt" } })`,
+                },
+            ],
+            commonOperations: [
+                "search_files",
+                "list_folder",
+                "download_file",
+                "create_shared_link",
+            ],
+            docsUrl:
+                "https://www.dropbox.com/developers/documentation/http/documentation",
+        };
+    }
+
+    async execute(
+        action: string,
+        params: unknown,
+        userId: string,
+        accountId?: string
+    ): Promise<MCPToolResponse> {
+        // Validate action and params
+        const validation = this.validate(action, params);
+        if (!validation.valid) {
+            this.logError(
+                `[DROPBOX ADAPTER] Validation failed for action '${action}':`,
+                validation.errors
+            );
+            return this.createErrorResponse(
+                `Validation errors:\n${validation.errors.join("\n")}`
+            );
+        }
+
+        // Get user's Dropbox credentials via connection manager
+        let connectionId: string;
+        try {
+            const credentials = await getCredentials(
+                userId,
+                this.serviceName,
+                accountId
+            );
+            if (!credentials.connectionId) {
+                return this.createErrorResponse(
+                    `No connection ID found for Dropbox. Please reconnect at: ` +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`
+                );
+            }
+            connectionId = credentials.connectionId;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
+            }
+            throw error;
+        }
+
+        // Route to appropriate handler
+        try {
+            switch (action) {
+                case "list_folder":
+                    return await this.handleListFolder(params, connectionId);
+                case "search_files":
+                    return await this.handleSearchFiles(params, connectionId);
+                case "get_metadata":
+                    return await this.handleGetMetadata(params, connectionId);
+                case "download_file":
+                    return await this.handleDownloadFile(params, connectionId);
+                case "create_folder":
+                    return await this.handleCreateFolder(params, connectionId);
+                case "move":
+                    return await this.handleMove(params, connectionId);
+                case "delete":
+                    return await this.handleDelete(params, connectionId);
+                case "create_shared_link":
+                    return await this.handleCreateSharedLink(params, connectionId);
+                case "get_current_account":
+                    return await this.handleGetCurrentAccount(connectionId);
+                case "raw_api":
+                    return await this.executeRawAPI(
+                        params as RawAPIParams,
+                        userId,
+                        accountId
+                    );
+                default:
+                    this.logError(
+                        `[DROPBOX ADAPTER] Unknown action '${action}' requested by user ${userId}`
+                    );
+                    return this.createErrorResponse(
+                        `Unknown action: ${action}. Use action='describe' to see available operations.`
+                    );
+            }
+        } catch (error) {
+            // Comprehensive error logging
+            this.logError(
+                `[DROPBOX ADAPTER] Failed to execute ${action} for user ${userId}:`,
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                    params,
+                    connectionId,
+                }
+            );
+
+            // Capture error to Sentry for monitoring and alerting
+            this.captureError(error, {
+                action,
+                params: params as Record<string, unknown>,
+                userId,
+            });
+
+            // User-friendly error message
+            let errorMessage = `Failed to ${action}: `;
+            if (error instanceof Error) {
+                // Parse common error types
+                if (
+                    error.message.includes("404") ||
+                    error.message.includes("not_found")
+                ) {
+                    errorMessage += "File or folder not found.";
+                } else if (
+                    error.message.includes("401") ||
+                    error.message.includes("403")
+                ) {
+                    errorMessage +=
+                        "Authentication failed. Your Dropbox connection may have expired. Please reconnect at: " +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`;
+                } else if (error.message.includes("429")) {
+                    errorMessage +=
+                        "Rate limit exceeded. Please try again in a few moments.";
+                } else if (
+                    error.message.includes("500") ||
+                    error.message.includes("503")
+                ) {
+                    errorMessage +=
+                        "Dropbox service is temporarily unavailable. Please try again later.";
+                } else if (error.message.includes("conflict")) {
+                    errorMessage +=
+                        "A file or folder with that name already exists at this location.";
+                } else if (error.message.includes("insufficient_space")) {
+                    errorMessage +=
+                        "Not enough space in your Dropbox account to complete this operation.";
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
+            }
+
+            return this.createErrorResponse(errorMessage);
+        }
+    }
+
+    private async handleListFolder(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path, recursive = false } = params as {
+            path: string;
+            recursive?: boolean;
+        };
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/list_folder`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    path: path === "" ? "" : path,
+                    recursive,
+                    include_deleted: false,
+                    include_has_explicit_shared_members: false,
+                    include_mounted_folders: true,
+                    limit: MAX_LIST_RESULTS,
+                },
+            })
+            .json<{
+                entries: Array<{
+                    ".tag": string;
+                    name: string;
+                    path_display: string;
+                    id: string;
+                    size?: number;
+                    client_modified?: string;
+                    server_modified?: string;
+                }>;
+                cursor: string;
+                has_more: boolean;
+            }>();
+
+        const formattedEntries = response.entries.map((entry) => {
+            const isFolder = entry[".tag"] === "folder";
+            return {
+                type: isFolder ? "folder" : "file",
+                name: entry.name,
+                path: entry.path_display,
+                id: entry.id,
+                size: entry.size,
+                modified: entry.server_modified || entry.client_modified,
+            };
+        });
+
+        return this.createJSONResponse({
+            path: path || "/",
+            count: formattedEntries.length,
+            hasMore: response.has_more,
+            entries: formattedEntries,
+        });
+    }
+
+    private async handleSearchFiles(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const {
+            query,
+            path = "",
+            maxResults = 20,
+        } = params as {
+            query: string;
+            path?: string;
+            maxResults?: number;
+        };
+
+        const cappedMaxResults = Math.min(
+            Math.max(1, Math.floor(maxResults || 20)),
+            MAX_SEARCH_RESULTS
+        );
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/search_v2`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    query,
+                    options: {
+                        path: path || "",
+                        max_results: cappedMaxResults,
+                        filename_only: false, // Search in content too
+                    },
+                },
+            })
+            .json<{
+                matches: Array<{
+                    metadata: {
+                        ".tag": string;
+                        metadata: {
+                            ".tag": string;
+                            name: string;
+                            path_display: string;
+                            id: string;
+                            size?: number;
+                            client_modified?: string;
+                            server_modified?: string;
+                        };
+                    };
+                }>;
+                has_more: boolean;
+            }>();
+
+        const formattedMatches = response.matches.map((match) => {
+            const metadata = match.metadata.metadata;
+            const isFolder = metadata[".tag"] === "folder";
+            return {
+                type: isFolder ? "folder" : "file",
+                name: metadata.name,
+                path: metadata.path_display,
+                id: metadata.id,
+                size: metadata.size,
+                modified: metadata.server_modified || metadata.client_modified,
+            };
+        });
+
+        return this.createJSONResponse({
+            query,
+            count: formattedMatches.length,
+            hasMore: response.has_more,
+            matches: formattedMatches,
+        });
+    }
+
+    private async handleGetMetadata(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path } = params as { path: string };
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/get_metadata`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    path,
+                    include_deleted: false,
+                },
+            })
+            .json<{
+                ".tag": string;
+                name: string;
+                path_display: string;
+                id: string;
+                size?: number;
+                client_modified?: string;
+                server_modified?: string;
+                rev?: string;
+                content_hash?: string;
+            }>();
+
+        const isFolder = response[".tag"] === "folder";
+
+        return this.createJSONResponse({
+            type: isFolder ? "folder" : "file",
+            name: response.name,
+            path: response.path_display,
+            id: response.id,
+            size: response.size,
+            modified: response.server_modified || response.client_modified,
+            rev: response.rev,
+            contentHash: response.content_hash,
+        });
+    }
+
+    private async handleDownloadFile(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path } = params as { path: string };
+
+        // Content endpoint - see "API Request Body Quirks" in file header
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/download`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Dropbox-API-Arg": JSON.stringify({ path }),
+                },
+                body: "", // See "Dropbox API Request Body Quirks" above
+            })
+            .text();
+
+        // Detect if file is binary or text
+        // Binary files contain null bytes or excessive control characters
+        const isBinary =
+            response.includes("\0") || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(response);
+
+        if (isBinary) {
+            // Binary file - return as base64
+            const base64Content = Buffer.from(response).toString("base64");
+            return this.createJSONResponse({
+                path,
+                contentType: "binary",
+                content: base64Content,
+                note: "Binary file returned as base64",
+            });
+        }
+
+        // Text file - return as readable text
+        return this.createSuccessResponse(`File: ${path}\n\nContent:\n${response}`);
+    }
+
+    private async handleCreateFolder(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path } = params as { path: string };
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/create_folder_v2`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    path,
+                    autorename: false,
+                },
+            })
+            .json<{
+                metadata: {
+                    name: string;
+                    path_display: string;
+                    id: string;
+                };
+            }>();
+
+        return this.createJSONResponse({
+            name: response.metadata.name,
+            path: response.metadata.path_display,
+            id: response.metadata.id,
+        });
+    }
+
+    private async handleMove(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { from_path, to_path } = params as {
+            from_path: string;
+            to_path: string;
+        };
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/move_v2`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    from_path,
+                    to_path,
+                    autorename: false,
+                    allow_shared_folder: false,
+                    allow_ownership_transfer: false,
+                },
+            })
+            .json<{
+                metadata: {
+                    ".tag": string;
+                    name: string;
+                    path_display: string;
+                    id: string;
+                };
+            }>();
+
+        return this.createJSONResponse({
+            type: response.metadata[".tag"],
+            name: response.metadata.name,
+            path: response.metadata.path_display,
+            id: response.metadata.id,
+        });
+    }
+
+    private async handleDelete(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path } = params as { path: string };
+
+        const nangoSecretKey = getNangoSecretKey();
+        const response = await httpClient
+            .post(`${this.getNangoUrl()}/proxy/2/files/delete_v2`, {
+                headers: {
+                    Authorization: `Bearer ${nangoSecretKey}`,
+                    "Connection-Id": connectionId,
+                    "Provider-Config-Key": "dropbox",
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    path,
+                },
+            })
+            .json<{
+                metadata: {
+                    ".tag": string;
+                    name: string;
+                    path_display: string;
+                };
+            }>();
+
+        return this.createSuccessResponse(
+            `✓ Deleted ${response.metadata[".tag"]}: ${response.metadata.path_display}`
+        );
+    }
+
+    private async handleCreateSharedLink(
+        params: unknown,
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const { path } = params as { path: string };
+
+        const nangoSecretKey = getNangoSecretKey();
+        try {
+            const response = await httpClient
+                .post(
+                    `${this.getNangoUrl()}/proxy/2/sharing/create_shared_link_with_settings`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${nangoSecretKey}`,
+                            "Connection-Id": connectionId,
+                            "Provider-Config-Key": "dropbox",
+                            "Content-Type": "application/json",
+                        },
+                        json: {
+                            path,
+                            settings: {
+                                requested_visibility: "public",
+                            },
+                        },
+                    }
+                )
+                .json<{
+                    url: string;
+                    name: string;
+                    path_lower: string;
+                }>();
+
+            return this.createJSONResponse({
+                url: response.url,
+                name: response.name,
+                path: response.path_lower,
+            });
+        } catch (error) {
+            // If link already exists, try to list existing links
+            if (
+                error instanceof Error &&
+                error.message.includes("shared_link_already_exists")
+            ) {
+                const listResponse = await httpClient
+                    .post(`${this.getNangoUrl()}/proxy/2/sharing/list_shared_links`, {
+                        headers: {
+                            Authorization: `Bearer ${nangoSecretKey}`,
+                            "Connection-Id": connectionId,
+                            "Provider-Config-Key": "dropbox",
+                            "Content-Type": "application/json",
+                        },
+                        json: {
+                            path,
+                        },
+                    })
+                    .json<{
+                        links: Array<{
+                            url: string;
+                            name: string;
+                            path_lower: string;
+                        }>;
+                    }>();
+
+                if (listResponse.links.length > 0) {
+                    const link = listResponse.links[0];
+                    // Note: Not capturing to Sentry here as this is an expected case (link already exists)
+                    return this.createJSONResponse({
+                        url: link.url,
+                        name: link.name,
+                        path: link.path_lower,
+                        note: "Using existing shared link",
+                    });
+                }
+            }
+            // Error will be caught and captured by the outer execute catch block
+            throw error;
+        }
+    }
+
+    private async handleGetCurrentAccount(
+        connectionId: string
+    ): Promise<MCPToolResponse> {
+        const nangoSecretKey = getNangoSecretKey();
+        const [accountResponse, spaceResponse] = await Promise.all([
+            httpClient
+                .post(`${this.getNangoUrl()}/proxy/2/users/get_current_account`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "dropbox",
+                        "Content-Type": "application/json",
+                    },
+                    body: "null", // See "API Request Body Quirks" in file header
+                })
+                .json<{
+                    account_id: string;
+                    name: {
+                        display_name: string;
+                        given_name?: string;
+                        surname?: string;
+                    };
+                    email: string;
+                    country?: string;
+                    account_type: {
+                        ".tag": string;
+                    };
+                }>(),
+            httpClient
+                .post(`${this.getNangoUrl()}/proxy/2/users/get_space_usage`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "dropbox",
+                        "Content-Type": "application/json",
+                    },
+                    body: "null", // See "API Request Body Quirks" in file header
+                })
+                .json<{
+                    used: number;
+                    allocation: {
+                        ".tag": string;
+                        allocated?: number;
+                    };
+                }>(),
+        ]);
+
+        const usedGB = (spaceResponse.used / (1024 * 1024 * 1024)).toFixed(2);
+        const allocatedGB = spaceResponse.allocation.allocated
+            ? (spaceResponse.allocation.allocated / (1024 * 1024 * 1024)).toFixed(2)
+            : "Unlimited";
+
+        return this.createJSONResponse({
+            accountId: accountResponse.account_id,
+            name: accountResponse.name.display_name,
+            email: accountResponse.email,
+            country: accountResponse.country,
+            accountType: accountResponse.account_type[".tag"],
+            storage: {
+                used: `${usedGB} GB`,
+                allocated: allocatedGB,
+                usedBytes: spaceResponse.used,
+                allocatedBytes: spaceResponse.allocation.allocated,
+            },
+        });
+    }
+
+    /**
+     * Execute a raw Dropbox API request
+     * This provides an escape hatch for operations not covered by standard actions
+     */
+    async executeRawAPI(
+        params: RawAPIParams,
+        userId: string,
+        accountId?: string
+    ): Promise<MCPToolResponse> {
+        const { endpoint, method, body, query } = params;
+
+        // Validate parameters
+        if (!endpoint || typeof endpoint !== "string") {
+            return this.createErrorResponse(
+                "raw_api requires 'endpoint' parameter (string)"
+            );
+        }
+        if (!method || typeof method !== "string") {
+            return this.createErrorResponse(
+                "raw_api requires 'method' parameter (GET, POST, PUT, DELETE, PATCH)"
+            );
+        }
+
+        // Security: validate endpoint starts with /2/ (Dropbox API v2)
+        if (!endpoint.startsWith("/2/")) {
+            return this.createErrorResponse(
+                "Invalid endpoint: must start with '/2/'. " +
+                    `Got: ${endpoint}. ` +
+                    "Example: '/2/files/get_metadata'"
+            );
+        }
+
+        // Get user credentials via connection manager
+        let connectionId: string;
+        try {
+            const credentials = await getCredentials(
+                userId,
+                this.serviceName,
+                accountId
+            );
+            if (!credentials.connectionId) {
+                return this.createErrorResponse(
+                    `No connection ID found for Dropbox. Please reconnect at: ` +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`
+                );
+            }
+            connectionId = credentials.connectionId;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
+            }
+            throw error;
+        }
+
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        // Build request options
+        const requestOptions: {
+            headers: Record<string, string>;
+            searchParams?: Record<string, string>;
+            json?: Record<string, unknown>;
+        } = {
+            headers: {
+                Authorization: `Bearer ${nangoSecretKey}`,
+                "Connection-Id": connectionId,
+                "Provider-Config-Key": "dropbox",
+                "Content-Type": "application/json",
+            },
+        };
+
+        // Add query parameters if provided
+        if (query && typeof query === "object") {
+            requestOptions.searchParams = Object.fromEntries(
+                Object.entries(query).map(([k, v]) => [k, String(v)])
+            );
+        }
+
+        // Add body for POST/PUT/PATCH
+        if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
+            requestOptions.json = body;
+        }
+
+        try {
+            const httpMethod = method.toLowerCase() as
+                | "get"
+                | "post"
+                | "put"
+                | "delete"
+                | "patch";
+            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
+
+            const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
+                Record<string, unknown>
+            >();
+
+            return this.createJSONResponse(response);
+        } catch (error) {
+            this.logError(
+                `[DROPBOX ADAPTER] Raw API request failed for user ${userId}:`,
+                {
+                    endpoint,
+                    method,
+                    error: error instanceof Error ? error.message : String(error),
+                }
+            );
+
+            // Capture error to Sentry for monitoring and alerting
+            this.captureError(error, {
+                action: "raw_api",
+                params: { endpoint, method },
+                userId,
+            });
+
+            let errorMessage = `Raw API request failed: `;
+            if (error instanceof Error) {
+                if (error.message.includes("404")) {
+                    errorMessage +=
+                        "Endpoint not found. Check the Dropbox API documentation for the correct endpoint path: " +
+                        "https://www.dropbox.com/developers/documentation/http/documentation";
+                } else if (
+                    error.message.includes("401") ||
+                    error.message.includes("403")
+                ) {
+                    errorMessage +=
+                        "Authentication failed. Your Dropbox connection may have expired. Please reconnect at: " +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`;
+                } else {
+                    errorMessage += error.message;
+                }
+            } else {
+                errorMessage += "Unknown error";
+            }
+
+            return this.createErrorResponse(errorMessage);
+        }
+    }
+}
