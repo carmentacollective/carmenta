@@ -51,6 +51,7 @@
     "framer-motion": "^12.23.25",
     "heart-centered-prompts": "^0.5.1",
     "import-in-the-middle": "^2.0.0",
+    "ky": "^1.14.1",
     "lucide-react": "^0.554.0",
     "marked": "^17.0.1",
     "nanoid": "^5.1.6",
