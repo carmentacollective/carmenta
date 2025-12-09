@@ -128,12 +128,33 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
 
 /**
  * Get tool configuration.
- * Throws an error if the tool is not configured - all tools must have explicit configuration.
+ *
+ * @param toolName - Name of the tool
+ * @param options - Configuration options
+ * @param options.fallbackToDefault - If true, returns DEFAULT_TOOL_CONFIG for unknown tools instead of throwing.
+ *                                     Use this in UI rendering contexts where graceful degradation is preferred.
+ *                                     Defaults to false to enforce explicit tool configuration.
+ *
+ * @throws Error if tool is not configured and fallbackToDefault is false
  */
-export function getToolConfig(toolName: string): ToolConfig {
+export function getToolConfig(
+    toolName: string,
+    options: { fallbackToDefault?: boolean } = {}
+): ToolConfig {
     const config = TOOL_CONFIG[toolName];
 
     if (!config) {
+        if (options.fallbackToDefault) {
+            // Log warning in development to help catch missing configs
+            if (process.env.NODE_ENV === "development") {
+                console.warn(
+                    `Tool configuration missing for "${toolName}". Using default config. ` +
+                        `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`
+                );
+            }
+            return DEFAULT_TOOL_CONFIG;
+        }
+
         throw new Error(
             `Tool configuration missing for "${toolName}". ` +
                 `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`

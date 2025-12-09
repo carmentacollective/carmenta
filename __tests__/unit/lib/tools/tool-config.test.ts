@@ -38,10 +38,16 @@ describe("tool-config", () => {
             expect(config.displayName).toBe("Comparison");
         });
 
-        it("throws error for unknown tools", () => {
+        it("throws error for unknown tools by default", () => {
             expect(() => getToolConfig("unknownTool")).toThrow(
                 'Tool configuration missing for "unknownTool"'
             );
+        });
+
+        it("returns default config for unknown tools when fallback is enabled", () => {
+            const config = getToolConfig("unknownTool", { fallbackToDefault: true });
+            expect(config).toBe(DEFAULT_TOOL_CONFIG);
+            expect(config.displayName).toBe("Tool");
         });
     });
 

@@ -166,7 +166,8 @@ export function ToolWrapper({
     className,
 }: ToolWrapperProps) {
     const permissions = usePermissions();
-    const config = getToolConfig(toolName);
+    // Use fallback for UI rendering - gracefully handle unknown tools
+    const config = getToolConfig(toolName, { fallbackToDefault: true });
     const Icon = config.icon;
 
     // Track timing across status transitions
