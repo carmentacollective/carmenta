@@ -56,6 +56,9 @@ export {
     NotionAdapter,
 } from "./adapters";
 
+// Tools factory for Vercel AI SDK
+export { getIntegrationTools } from "./tools";
+
 // Types
 export type {
     IntegrationStatus,

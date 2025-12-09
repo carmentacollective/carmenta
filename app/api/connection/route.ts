@@ -29,6 +29,7 @@ import { logger } from "@/lib/logger";
 import { getModel } from "@/lib/models";
 import { SYSTEM_PROMPT } from "@/lib/prompts/system";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
+import { getIntegrationTools } from "@/lib/integrations/tools";
 
 /**
  * Route segment config for Vercel
@@ -374,6 +375,15 @@ export async function POST(req: Request) {
         const modelConfig = getModel(concierge.modelId);
         const modelSupportsTools = modelConfig?.supportsTools ?? false;
 
+        // Load integration tools for connected services
+        // These are merged with built-in tools for the request
+        const integrationTools = modelSupportsTools
+            ? await getIntegrationTools(dbUser.id)
+            : {};
+
+        // Merge built-in tools with integration tools
+        const allTools = { ...tools, ...integrationTools };
+
         logger.info(
             {
                 userEmail,
@@ -382,7 +392,8 @@ export async function POST(req: Request) {
                 temperature: concierge.temperature,
                 explanation: concierge.explanation,
                 reasoning: concierge.reasoning,
-                toolsAvailable: modelSupportsTools ? Object.keys(tools) : [],
+                toolsAvailable: modelSupportsTools ? Object.keys(allTools) : [],
+                integrationTools: Object.keys(integrationTools),
             },
             "Starting connect stream"
         );
@@ -482,7 +493,8 @@ export async function POST(req: Request) {
             system: SYSTEM_PROMPT,
             messages: convertToModelMessages(messagesWithoutReasoning),
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
-            ...(modelSupportsTools && { tools }),
+            // allTools includes both built-in tools and integration tools for connected services
+            ...(modelSupportsTools && { tools: allTools }),
             temperature: concierge.temperature,
             ...(modelSupportsTools && { stopWhen: stepCountIs(5) }), // Multi-step only with tools
             // Pass provider-specific reasoning configuration
