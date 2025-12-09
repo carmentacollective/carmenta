@@ -62,8 +62,14 @@ export function encryptCredentials(credentials: Credentials): string {
 
 export function decryptCredentials(encryptedData: string): Credentials {
     const key = getEncryptionKey();
-    const decrypted = decrypt(encryptedData, key);
-    return JSON.parse(decrypted as string) as Credentials;
+    try {
+        const decrypted = decrypt(encryptedData, key);
+        return JSON.parse(decrypted as string) as Credentials;
+    } catch (error) {
+        throw new Error(
+            "Failed to decrypt credentials. The encryption key may have changed or the data is corrupted."
+        );
+    }
 }
 
 export function isApiKeyCredentials(

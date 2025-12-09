@@ -1048,13 +1048,14 @@ export class ClickUpAdapter extends ServiceAdapter {
         this.logInfo(`Raw API call: ${upperMethod} ${endpoint}`);
 
         try {
-            // Build query string if provided
+            // Build query string if provided (using URLSearchParams for proper encoding)
             let fullEndpoint = endpoint;
             if (query && typeof query === "object") {
-                const queryParams = Object.entries(query)
-                    .map(([k, v]) => `${k}=${String(v)}`)
-                    .join("&");
-                fullEndpoint = `${endpoint}${endpoint.includes("?") ? "&" : "?"}${queryParams}`;
+                const searchParams = new URLSearchParams();
+                for (const [k, v] of Object.entries(query)) {
+                    searchParams.append(k, String(v));
+                }
+                fullEndpoint = `${endpoint}${endpoint.includes("?") ? "&" : "?"}${searchParams.toString()}`;
             }
 
             const response = await this.makeRequest<Record<string, unknown>>(

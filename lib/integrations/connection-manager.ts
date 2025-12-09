@@ -197,23 +197,29 @@ export async function setDefaultAccount(
     service: string,
     accountId: string
 ): Promise<void> {
-    // First, unset all defaults for this service
-    await db
-        .update(integrations)
-        .set({ isDefault: false, updatedAt: new Date() })
-        .where(and(eq(integrations.userId, userId), eq(integrations.service, service)));
+    // Use transaction to prevent race condition where concurrent requests
+    // could both unset defaults and both set their own account as default
+    await db.transaction(async (tx) => {
+        // Unset all defaults for this service
+        await tx
+            .update(integrations)
+            .set({ isDefault: false, updatedAt: new Date() })
+            .where(
+                and(eq(integrations.userId, userId), eq(integrations.service, service))
+            );
 
-    // Then set the new default
-    await db
-        .update(integrations)
-        .set({ isDefault: true, updatedAt: new Date() })
-        .where(
-            and(
-                eq(integrations.userId, userId),
-                eq(integrations.service, service),
-                eq(integrations.accountId, accountId)
-            )
-        );
+        // Set the new default
+        await tx
+            .update(integrations)
+            .set({ isDefault: true, updatedAt: new Date() })
+            .where(
+                and(
+                    eq(integrations.userId, userId),
+                    eq(integrations.service, service),
+                    eq(integrations.accountId, accountId)
+                )
+            );
+    });
 
     logger.info({ userId, service, accountId }, "Default account updated");
 }
