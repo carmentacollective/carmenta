@@ -14,6 +14,34 @@ Observability makes the invisible visible. Traces capture the full journey of a 
 through the system. Developers can debug issues, identify patterns, and understand model
 behavior. This is table stakes for building reliable AI products.
 
+## The Prompt is Not an Observability Sink
+
+**Common pitfall**: Sticking debug logs, error messages, and giant tool outputs into the
+prompt. This pollutes attention and degrades agent performance.
+
+**Humans need observability**. Agents drown in it.
+
+What NOT to do:
+
+- ❌ Adding debug logs to the context window
+- ❌ Injecting error messages meant for developers
+- ❌ Including giant tool outputs in full
+- ❌ Using the prompt to track internal state
+
+Instead:
+
+- ✅ Log to structured logging system (Pino)
+- ✅ Store tool outputs to disk, pass pointers/handles
+- ✅ Keep prompt focused on what the agent needs to act
+- ✅ Build observability views for humans separately
+
+A well-constructed context engineering system IS observable - you can trace session
+logs, compaction events, memory updates. But this tracing happens **outside** the
+agent's working context.
+
+The separation is critical: observability for developers happens in Sentry, logs, and
+traces. Context for agents stays minimal and action-focused.
+
 ## Technology Choice: Sentry AI Monitoring
 
 We use Sentry for LLM observability, unified with error tracking. Decision rationale:

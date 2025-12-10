@@ -1,8 +1,56 @@
-# Context Retrieval
+# Conversation Context Engineering
 
 How the [Knowledge Librarian](./knowledge-librarian.md) retrieves relevant context from
 the [Knowledge Base](./knowledge-base.md) and injects it into conversations. This is the
 intelligence layer that makes Carmenta feel like she "knows" you.
+
+## Context Engineering is the System
+
+The context window is not the agent. The LLM by itself is not the agent. **The state** -
+how actions are stored, transformed, filtered, reused, evolved - that's the entire
+difference between a toy demo and something that handles real work.
+
+Context engineering isn't about bigger context windows. Longer context actually
+intensified the memory problem - attention becomes scarce, logs balloon, irrelevant
+history drowns out critical signals. Performance often _degrades_ as tasks get longer
+when context isn't engineered properly.
+
+We need to engineer context as a first-class runtime environment. Treat context as a
+**compiled view** - a dynamically computed projection against durable state, not an
+accumulated transcript.
+
+Every LLM call should receive:
+
+- What's relevant **now**
+- What instructions apply **now**
+- Which artifacts matter **now**
+- Which memories should surface **now**
+
+This prevents signal dilution. Instead of dragging 500 turns of conversation history
+into every call, we rebuild the minimal, highly relevant slice that preserves task
+continuity without flooding the LLM's attention.
+
+## Scope by Default
+
+**Default context should contain nearly nothing.**
+
+This principle is counter-intuitive but critical for long-running conversations and
+autonomous agents. The agent pulls context when needed rather than inheriting
+everything.
+
+What this means in practice:
+
+- Default context contains only profile (who you are)
+- Retrieval becomes an active decision, not passive accumulation
+- Agent chooses when to recall past steps
+- Agent chooses when to fetch artifacts
+- Agent chooses when to load additional details
+
+This keeps attention focused, avoids context rot, makes long-horizon tasks feasible
+because old information is never passively carried forward.
+
+Retrieval beats pinning. Long-term memory should be searchable and pulled on-demand with
+clear relevance ranking, not permanently pinned in the context window.
 
 ## Why This Exists
 
