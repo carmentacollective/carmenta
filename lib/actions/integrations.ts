@@ -5,13 +5,15 @@
  *
  * Server actions for managing external service integrations.
  * Handles connecting API key services and managing OAuth flows.
+ *
+ * Uses userEmail as the primary key for all integration lookups,
+ * eliminating the need for UUID lookups. This matches mcp-hubby's
+ * proven pattern.
  */
 
 import { currentUser } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { integrations } from "@/lib/db/schema";
+import { db, schema } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
-import { getOrCreateUser } from "@/lib/db";
 import { encryptCredentials } from "@/lib/integrations/encryption";
 import {
     getServiceById,
@@ -23,6 +25,7 @@ import {
     disconnectService as dbDisconnectService,
     listServiceAccounts,
 } from "@/lib/integrations/connection-manager";
+import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
 import { logger } from "@/lib/logger";
 import type { IntegrationStatus } from "@/lib/integrations/types";
 
@@ -47,25 +50,22 @@ export interface ConnectResult {
 }
 
 /**
- * Gets or creates the database user for the current session.
+ * Get current user's email from Clerk session.
+ * Returns null if not authenticated or no valid email.
  */
-async function getDbUser() {
+async function getUserEmail(): Promise<string | null> {
     const user = await currentUser();
 
     if (!user) {
         return null;
     }
 
-    const email = user.emailAddresses[0]?.emailAddress;
-    if (!email) {
+    const email = user.emailAddresses[0]?.emailAddress?.toLowerCase();
+    if (!email || !email.includes("@")) {
         return null;
     }
 
-    return getOrCreateUser(user.id, email, {
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        imageUrl: user.imageUrl ?? undefined,
-    });
+    return email;
 }
 
 /**
@@ -100,9 +100,9 @@ export async function getServicesWithStatus(): Promise<{
     connected: ConnectedService[];
     available: ServiceDefinition[];
 }> {
-    const dbUser = await getDbUser();
+    const userEmail = await getUserEmail();
 
-    if (!dbUser) {
+    if (!userEmail) {
         return { connected: [], available: [] };
     }
 
@@ -121,7 +121,7 @@ export async function getServicesWithStatus(): Promise<{
     const available: ServiceDefinition[] = [];
 
     for (const service of visibleServices) {
-        const accounts = await listServiceAccounts(dbUser.id, service.id);
+        const accounts = await listServiceAccounts(userEmail, service.id);
         const connectedAccounts = accounts.filter((a) => a.status === "connected");
 
         if (connectedAccounts.length > 0) {
@@ -155,9 +155,9 @@ export async function connectApiKeyService(
     apiKey: string,
     accountLabel?: string
 ): Promise<ConnectResult> {
-    const dbUser = await getDbUser();
+    const userEmail = await getUserEmail();
 
-    if (!dbUser) {
+    if (!userEmail) {
         return { success: false, error: "Not authenticated" };
     }
 
@@ -188,49 +188,61 @@ export async function connectApiKeyService(
         // Check if this account already exists
         const [existing] = await db
             .select()
-            .from(integrations)
+            .from(schema.integrations)
             .where(
                 and(
-                    eq(integrations.userId, dbUser.id),
-                    eq(integrations.service, serviceId),
-                    eq(integrations.accountId, accountId)
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, serviceId),
+                    eq(schema.integrations.accountId, accountId)
                 )
             )
             .limit(1);
 
         if (existing) {
-            // Update existing integration
+            // Update existing integration (reconnection)
             await db
-                .update(integrations)
+                .update(schema.integrations)
                 .set({
                     encryptedCredentials,
                     status: "connected",
                     errorMessage: null,
                     updatedAt: new Date(),
                 })
-                .where(eq(integrations.id, existing.id));
+                .where(eq(schema.integrations.id, existing.id));
 
             logger.info(
-                { userId: dbUser.id, service: serviceId },
-                "Integration updated"
+                { userEmail, service: serviceId, accountId },
+                "API key integration updated"
             );
+
+            // Log reconnection event
+            await logIntegrationEvent({
+                userEmail,
+                service: serviceId,
+                accountId,
+                accountDisplayName,
+                eventType: "reconnected",
+                eventSource: "user",
+                metadata: { wasReconnection: true, previousStatus: existing.status },
+            });
         } else {
             // Check if this is the first account for this service (make it default)
             const existingAccounts = await db
                 .select()
-                .from(integrations)
+                .from(schema.integrations)
                 .where(
                     and(
-                        eq(integrations.userId, dbUser.id),
-                        eq(integrations.service, serviceId)
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId),
+                        eq(schema.integrations.status, "connected")
                     )
                 );
 
             const isDefault = existingAccounts.length === 0;
 
             // Create new integration
-            await db.insert(integrations).values({
-                userId: dbUser.id,
+            await db.insert(schema.integrations).values({
+                userEmail,
                 service: serviceId,
                 credentialType: "api_key",
                 accountId,
@@ -238,23 +250,37 @@ export async function connectApiKeyService(
                 encryptedCredentials,
                 isDefault,
                 status: "connected",
+                connectedAt: new Date(),
+                updatedAt: new Date(),
             });
 
             logger.info(
-                { userId: dbUser.id, service: serviceId },
-                "Integration created"
+                { userEmail, service: serviceId, accountId, isDefault },
+                "API key integration created"
             );
+
+            // Log connection event
+            await logIntegrationEvent({
+                userEmail,
+                service: serviceId,
+                accountId,
+                accountDisplayName,
+                eventType: "connected",
+                eventSource: "user",
+                metadata: { isFirstAccount: isDefault, isDefault },
+            });
         }
 
         return { success: true };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         logger.error(
-            { error, userId: dbUser.id, service: serviceId },
-            "Failed to connect service"
+            { err: error, errorMessage, userEmail, service: serviceId },
+            "Failed to connect API key service"
         );
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to connect service",
+            error: errorMessage,
         };
     }
 }
@@ -266,23 +292,34 @@ export async function disconnectService(
     serviceId: string,
     accountId?: string
 ): Promise<ConnectResult> {
-    const dbUser = await getDbUser();
+    const userEmail = await getUserEmail();
 
-    if (!dbUser) {
+    if (!userEmail) {
         return { success: false, error: "Not authenticated" };
     }
 
     try {
-        await dbDisconnectService(dbUser.id, serviceId, accountId);
+        await dbDisconnectService(userEmail, serviceId, accountId);
+
+        // Log disconnection event
+        await logIntegrationEvent({
+            userEmail,
+            service: serviceId,
+            accountId: accountId ?? undefined,
+            eventType: "disconnected",
+            eventSource: "user",
+        });
+
         return { success: true };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         logger.error(
-            { error, userId: dbUser.id, service: serviceId },
+            { err: error, errorMessage, userEmail, service: serviceId },
             "Failed to disconnect service"
         );
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to disconnect",
+            error: errorMessage,
         };
     }
 }
@@ -294,50 +331,62 @@ export async function deleteIntegration(
     serviceId: string,
     accountId: string
 ): Promise<ConnectResult> {
-    const dbUser = await getDbUser();
+    const userEmail = await getUserEmail();
 
-    if (!dbUser) {
+    if (!userEmail) {
         return { success: false, error: "Not authenticated" };
     }
 
     try {
         await db
-            .delete(integrations)
+            .delete(schema.integrations)
             .where(
                 and(
-                    eq(integrations.userId, dbUser.id),
-                    eq(integrations.service, serviceId),
-                    eq(integrations.accountId, accountId)
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, serviceId),
+                    eq(schema.integrations.accountId, accountId)
                 )
             );
 
         logger.info(
-            { userId: dbUser.id, service: serviceId, accountId },
+            { userEmail, service: serviceId, accountId },
             "Integration deleted"
         );
+
+        // Log deletion event (using disconnected as closest event type)
+        await logIntegrationEvent({
+            userEmail,
+            service: serviceId,
+            accountId,
+            eventType: "disconnected",
+            eventSource: "user",
+            metadata: { wasDeleted: true },
+        });
+
         return { success: true };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         logger.error(
-            { error, userId: dbUser.id, service: serviceId },
+            { err: error, errorMessage, userEmail, service: serviceId },
             "Failed to delete integration"
         );
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to delete",
+            error: errorMessage,
         };
     }
 }
 
 /**
- * Test an integration by making a simple API call
+ * Test an integration by checking connection status
  */
 export async function testIntegration(
     serviceId: string,
     _accountId?: string
 ): Promise<ConnectResult> {
-    const dbUser = await getDbUser();
+    const userEmail = await getUserEmail();
 
-    if (!dbUser) {
+    if (!userEmail) {
         return { success: false, error: "Not authenticated" };
     }
 
@@ -347,9 +396,7 @@ export async function testIntegration(
     }
 
     try {
-        // Import the adapter dynamically based on service
-        // For now, just check that credentials exist and are valid
-        const status = await getConnectionStatus(dbUser.id, serviceId);
+        const status = await getConnectionStatus(userEmail, serviceId);
 
         if (status === "connected") {
             return { success: true };

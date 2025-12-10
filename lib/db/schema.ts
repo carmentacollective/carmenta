@@ -410,11 +410,44 @@ export const integrationStatusEnum = pgEnum("integration_status", [
 export const credentialTypeEnum = pgEnum("credential_type", ["oauth", "api_key"]);
 
 /**
+ * Connection event types for audit trail
+ */
+export const integrationEventTypeEnum = pgEnum("integration_event_type", [
+    // User actions
+    "connected",
+    "disconnected",
+    "reconnected",
+    // Nango webhook events
+    "nango_sync_success",
+    "nango_sync_error",
+    "nango_auth_error",
+    "nango_token_refresh",
+    "nango_connection_created",
+    "nango_connection_deleted",
+    // System events
+    "token_expired",
+    "connection_error",
+    "rate_limited",
+]);
+
+/**
+ * Connection event sources
+ */
+export const integrationEventSourceEnum = pgEnum("integration_event_source", [
+    "user",
+    "nango_webhook",
+    "system",
+]);
+
+/**
  * External service integrations
  *
  * Stores user connections to external services like Notion, Giphy, etc.
  * OAuth credentials are managed by Nango (we store connectionId).
  * API key credentials are encrypted and stored directly.
+ *
+ * Key change from v1: Uses userEmail as FK instead of userId (UUID).
+ * This simplifies lookups and matches mcp-hubby's proven pattern.
  *
  * Multi-account support: users can connect multiple accounts per service
  * (e.g., work and personal Notion). One account per service is marked default.
@@ -424,9 +457,9 @@ export const integrations = pgTable(
     {
         id: serial("id").primaryKey(),
 
-        /** Owner of this integration */
-        userId: uuid("user_id")
-            .references(() => users.id, { onDelete: "cascade" })
+        /** Owner's email - direct FK to users.email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
             .notNull(),
 
         /** Service identifier (e.g., "notion", "giphy") */
@@ -465,6 +498,9 @@ export const integrations = pgTable(
             .notNull()
             .defaultNow(),
 
+        /** Last sync time (for services with sync) */
+        lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+
         /** Last update time */
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
@@ -472,14 +508,89 @@ export const integrations = pgTable(
     },
     (table) => [
         /** Primary query: user's integrations */
-        index("integrations_user_idx").on(table.userId),
+        index("integrations_user_email_idx").on(table.userEmail),
         /** Filter by service */
-        index("integrations_user_service_idx").on(table.userId, table.service),
+        index("integrations_user_email_service_idx").on(table.userEmail, table.service),
         /** Unique constraint: one account per user/service/accountId */
-        uniqueIndex("integrations_user_service_account_idx").on(
-            table.userId,
+        uniqueIndex("integrations_user_email_service_account_idx").on(
+            table.userEmail,
             table.service,
             table.accountId
+        ),
+    ]
+);
+
+/**
+ * Integration history table - audit trail for all connection events
+ *
+ * Used for debugging, analytics, and compliance. Non-blocking writes
+ * ensure this doesn't affect critical user flows.
+ */
+export const integrationHistory = pgTable(
+    "integration_history",
+    {
+        id: serial("id").primaryKey(),
+
+        /** User's email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Service identifier */
+        service: varchar("service", { length: 100 }).notNull(),
+
+        /** Account identifier (may be null for some events) */
+        accountId: varchar("account_id", { length: 255 }),
+
+        /** Account display name at time of event */
+        accountDisplayName: varchar("account_display_name", { length: 255 }),
+
+        /** Event type */
+        eventType: integrationEventTypeEnum("event_type").notNull(),
+
+        /** Event source */
+        eventSource: integrationEventSourceEnum("event_source").notNull(),
+
+        /** When the event occurred */
+        occurredAt: timestamp("occurred_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** Nango connection ID (if applicable) */
+        connectionId: varchar("connection_id", { length: 255 }),
+
+        /** Nango provider config key (if applicable) */
+        nangoProviderConfigKey: varchar("nango_provider_config_key", { length: 255 }),
+
+        /** Error message (if applicable) */
+        errorMessage: text("error_message"),
+
+        /** Error code (if applicable) */
+        errorCode: varchar("error_code", { length: 100 }),
+
+        /** Additional metadata (webhook payloads, user_agent, etc.) */
+        metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("integration_history_user_email_occurred_at_idx").on(
+            table.userEmail,
+            table.occurredAt
+        ),
+        index("integration_history_service_occurred_at_idx").on(
+            table.service,
+            table.occurredAt
+        ),
+        index("integration_history_event_type_occurred_at_idx").on(
+            table.eventType,
+            table.occurredAt
+        ),
+        index("integration_history_user_email_service_idx").on(
+            table.userEmail,
+            table.service
         ),
     ]
 );
@@ -490,8 +601,15 @@ export const integrations = pgTable(
 
 export const integrationsRelations = relations(integrations, ({ one }) => ({
     user: one(users, {
-        fields: [integrations.userId],
-        references: [users.id],
+        fields: [integrations.userEmail],
+        references: [users.email],
+    }),
+}));
+
+export const integrationHistoryRelations = relations(integrationHistory, ({ one }) => ({
+    user: one(users, {
+        fields: [integrationHistory.userEmail],
+        references: [users.email],
     }),
 }));
 
@@ -513,3 +631,6 @@ export type NewMessagePart = typeof messageParts.$inferInsert;
 
 export type Integration = typeof integrations.$inferSelect;
 export type NewIntegration = typeof integrations.$inferInsert;
+
+export type IntegrationHistory = typeof integrationHistory.$inferSelect;
+export type NewIntegrationHistory = typeof integrationHistory.$inferInsert;
