@@ -18,6 +18,7 @@ import { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { useThemeVariant, type ThemeVariant } from "@/lib/hooks/use-theme-variant";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
@@ -44,6 +45,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { theme, setTheme } = useTheme();
+    const { themeVariant, setThemeVariant } = useThemeVariant();
 
     // Show nothing while loading to prevent flash
     if (!isLoaded) {
@@ -72,6 +74,38 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
         { value: "dark", label: "Dark", icon: Moon },
         { value: "system", label: "System", icon: Monitor },
     ] as const;
+
+    const themeVariants: Array<{
+        value: ThemeVariant;
+        label: string;
+        description: string;
+    }> = [
+        { value: "carmenta", label: "Carmenta", description: "Royal purple elegance" },
+        { value: "warm-earth", label: "Warm Earth", description: "Grounded, organic" },
+        {
+            value: "arctic-clarity",
+            label: "Arctic Clarity",
+            description: "Crystalline precision",
+        },
+        {
+            value: "forest-wisdom",
+            label: "Forest Wisdom",
+            description: "Natural intelligence",
+        },
+        { value: "sunset-coral", label: "Sunset Coral", description: "Warm, inviting" },
+        {
+            value: "deep-ocean",
+            label: "Deep Ocean",
+            description: "Sophisticated, calm",
+        },
+        { value: "monochrome", label: "Monochrome", description: "Minimal, precise" },
+        { value: "rose-garden", label: "Rose Garden", description: "Elegant, refined" },
+        {
+            value: "golden-hour",
+            label: "Golden Hour",
+            description: "Luxurious, radiant",
+        },
+    ];
 
     return (
         <div className={cn("relative", className)}>
@@ -158,12 +192,14 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         <span className="relative">Integrations</span>
                                     </Link>
 
-                                    {/* Theme selector */}
+                                    {/* Appearance section */}
                                     {isClient && (
                                         <div className="border-t border-foreground/10 py-1">
                                             <div className="px-3 py-2 text-xs font-medium text-foreground/50">
                                                 Appearance
                                             </div>
+
+                                            {/* Light/Dark/System mode */}
                                             {themeOptions.map((option) => {
                                                 const isSelected =
                                                     theme === option.value;
@@ -188,6 +224,49 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                     </button>
                                                 );
                                             })}
+
+                                            {/* Theme variant subsection */}
+                                            <div className="my-2 border-t border-foreground/10 pt-1">
+                                                <div className="px-3 py-2 text-xs font-medium text-foreground/50">
+                                                    Theme
+                                                </div>
+                                                <div className="max-h-[300px] overflow-y-auto">
+                                                    {themeVariants.map((variant) => {
+                                                        const isSelected =
+                                                            themeVariant ===
+                                                            variant.value;
+
+                                                        return (
+                                                            <button
+                                                                key={variant.value}
+                                                                onClick={() =>
+                                                                    setThemeVariant(
+                                                                        variant.value
+                                                                    )
+                                                                }
+                                                                className="group relative flex w-full items-start gap-3 px-4 py-2 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                                            >
+                                                                <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                                                <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                                                                    {isSelected && (
+                                                                        <Check className="h-4 w-4 text-primary" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="relative flex-1 text-left">
+                                                                    <div className="font-medium">
+                                                                        {variant.label}
+                                                                    </div>
+                                                                    <div className="text-xs text-foreground/60">
+                                                                        {
+                                                                            variant.description
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 

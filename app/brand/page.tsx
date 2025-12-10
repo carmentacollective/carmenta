@@ -19,7 +19,7 @@ export default function BrandPage() {
 
             {/* Content layer */}
             <div className="relative z-10">
-                <SiteHeader bordered showThemeSwitcher showThemeVariantSelector />
+                <SiteHeader bordered showThemeSwitcher />
 
                 <main className="py-12">
                     <div className="mx-auto max-w-6xl space-y-16 px-6">

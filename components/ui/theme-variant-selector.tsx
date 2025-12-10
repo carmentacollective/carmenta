@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Palette } from "lucide-react";
-import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-variant-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/hooks/use-theme-variant";
 import { cn } from "@/lib/utils";
 import * as Popover from "@radix-ui/react-popover";
 

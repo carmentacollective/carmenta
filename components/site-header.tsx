@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher, UserAuthButton } from "@/components/ui";
-import { ThemeVariantSelector } from "@/components/ui/theme-variant-selector";
 
 interface SiteHeaderProps {
     /**
@@ -18,10 +17,6 @@ interface SiteHeaderProps {
      * Show theme switcher. Defaults to true.
      */
     showThemeSwitcher?: boolean;
-    /**
-     * Show theme variant selector. Defaults to false.
-     */
-    showThemeVariantSelector?: boolean;
 }
 
 /**
@@ -32,7 +27,6 @@ export function SiteHeader({
     rightContent,
     bordered = false,
     showThemeSwitcher = true,
-    showThemeVariantSelector = false,
 }: SiteHeaderProps) {
     return (
         <header
@@ -59,7 +53,6 @@ export function SiteHeader({
                 </span>
             </Link>
             <div className="flex items-center gap-4">
-                {showThemeVariantSelector && <ThemeVariantSelector />}
                 {showThemeSwitcher && <ThemeSwitcher />}
                 <UserAuthButton />
                 {rightContent}

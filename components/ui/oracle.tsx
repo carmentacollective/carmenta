@@ -137,14 +137,14 @@ function BreathingEffect() {
             className="absolute inset-0 rounded-full"
             style={{
                 background:
-                    "radial-gradient(circle, rgba(200,180,220,0.35) 0%, transparent 70%)",
+                    "radial-gradient(circle, rgba(139,102,184,0.35) 0%, transparent 70%)",
             }}
         />
     );
 }
 
 /**
- * Working Effect - Holographic spinner with Carmenta brand colors
+ * Working Effect - Royal Purple spinner with brand colors
  */
 function WorkingEffect() {
     return (
@@ -156,7 +156,7 @@ function WorkingEffect() {
                 className="h-full w-full rounded-full p-[3px]"
                 style={{
                     background:
-                        "conic-gradient(from 0deg, #C4A3D4, #A3D4E8, #E8A3D4, #C4A3D4)",
+                        "conic-gradient(from 0deg, #8B66B8, #6694B8, #B88BB8, #8B66B8)",
                 }}
             >
                 <div className="h-full w-full rounded-full bg-background" />
@@ -177,7 +177,7 @@ function NotificationEffect() {
                 className="absolute inset-0 rounded-full"
                 style={{
                     background:
-                        "radial-gradient(circle, rgba(200,180,255,0.4) 0%, transparent 70%)",
+                        "radial-gradient(circle, rgba(139,102,184,0.4) 0%, transparent 70%)",
                 }}
             />
             {/* Icon badge */}

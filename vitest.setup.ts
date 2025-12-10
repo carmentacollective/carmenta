@@ -17,6 +17,16 @@ vi.mock("@clerk/nextjs", () => ({
     UserButton: () => null,
 }));
 
+/**
+ * Mock theme variant hook for component tests
+ */
+vi.mock("./lib/hooks/use-theme-variant", () => ({
+    useThemeVariant: () => ({
+        themeVariant: "carmenta",
+        setThemeVariant: vi.fn(),
+    }),
+}));
+
 // Mock window.matchMedia for components that use media queries
 Object.defineProperty(window, "matchMedia", {
     writable: true,

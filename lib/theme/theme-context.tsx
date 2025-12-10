@@ -8,16 +8,24 @@ interface ThemeProviderProps {
 }
 
 /**
- * Theme Provider - Wraps next-themes for Carmenta.
+ * Theme Provider - Uses TWO nested next-themes providers for Carmenta.
  *
- * Uses next-themes for robust theme switching with:
+ * Outer Provider (Light/Dark Mode):
+ * - Manages the "class" attribute for Tailwind dark mode
+ * - Supports system preference detection
+ * - Values: "light" | "dark" | "system"
+ *
+ * Inner Provider (Theme Variant):
+ * - Manages the "data-theme" attribute for color variants
+ * - Values: "carmenta" | "warm-earth" | "arctic-clarity" | etc.
+ *
+ * Both providers handle:
  * - Flash prevention via script injection
- * - System preference detection
  * - localStorage persistence
- * - SSR support
+ * - SSR support with proper hydration
  *
- * Themes are defined in globals.css using CSS custom properties.
- * The "dark" class triggers dark mode styles via Tailwind convention.
+ * This approach uses next-themes for everything instead of custom DOM manipulation,
+ * ensuring reliable theme switching with proper hydration.
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
     return (
@@ -27,7 +35,25 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
             enableSystem
             disableTransitionOnChange
         >
-            {children}
+            <NextThemesProvider
+                attribute="data-theme"
+                defaultTheme="carmenta"
+                storageKey="carmenta-theme-variant"
+                themes={[
+                    "carmenta",
+                    "warm-earth",
+                    "arctic-clarity",
+                    "forest-wisdom",
+                    "sunset-coral",
+                    "deep-ocean",
+                    "monochrome",
+                    "rose-garden",
+                    "golden-hour",
+                ]}
+                disableTransitionOnChange
+            >
+                {children}
+            </NextThemesProvider>
         </NextThemesProvider>
     );
 }
