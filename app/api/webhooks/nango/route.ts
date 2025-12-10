@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/nextjs";
 import { db, schema } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { ClickUpAdapter } from "@/lib/integrations/adapters/clickup";
+import { fetchAccountInfo } from "@/lib/integrations/fetch-account-info";
 
 /**
  * Nango webhook handler
@@ -167,21 +167,11 @@ async function storeSuccessfulConnection(
             return;
         }
 
-        // Fetch account info from the service (e.g., ClickUp username/email)
-        let accountId: string;
-        let accountDisplayName: string;
-
-        if (service === "clickup") {
-            const adapter = new ClickUpAdapter();
-            const accountInfo = await adapter.fetchAccountInfo(connectionId, user.id);
-            accountId = accountInfo.identifier;
-            accountDisplayName = accountInfo.displayName;
-        } else {
-            // Fallback for unknown services
-            accountId = "default";
-            accountDisplayName = service;
-            logger.warn({ service }, "Unknown service - using default account info");
-        }
+        // Fetch account info from the service using centralized function
+        // Errors bubble up - connection save fails if we can't identify the account
+        const accountInfo = await fetchAccountInfo(service, connectionId, user.id);
+        const accountId = accountInfo.identifier;
+        const accountDisplayName = accountInfo.displayName;
 
         // Upsert integration record (idempotent for webhook retries)
         await db.transaction(async (tx) => {

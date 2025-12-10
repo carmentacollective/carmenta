@@ -90,6 +90,8 @@ export default function ConnectServicePage() {
                                         { status: saveResponse.status },
                                         "Failed to save connection"
                                     );
+                                    setError("Failed to save connection");
+                                    return;
                                 }
 
                                 logger.info(

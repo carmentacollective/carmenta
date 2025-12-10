@@ -39,17 +39,11 @@ export async function fetchAccountInfo(
         }
 
         case "notion": {
-            // Notion adapter expects (userId) only
-            // We need to get userId from the connection or throw error
-            if (!userId) {
-                throw new ValidationError(
-                    "User ID is required for fetching Notion account info"
-                );
-            }
             const { NotionAdapter } =
                 await import("@/lib/integrations/adapters/notion");
             const adapter = new NotionAdapter();
-            return await adapter.fetchAccountInfo(userId);
+            // Notion adapter expects (connectionId, userId?)
+            return await adapter.fetchAccountInfo(connectionId, userId);
         }
 
         default:
