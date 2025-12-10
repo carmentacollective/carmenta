@@ -233,9 +233,8 @@ const greeting = "Hello, Markdown!";
 		});
 
 		it("renders with special characters", () => {
-			render(
-				<MarkdownRenderer content="Special chars: `<>&\"'`" />
-			);
+			const content = "Special chars: `<>&\"'`";
+			render(<MarkdownRenderer content={content} />);
 			expect(screen.getByText("Special chars:")).toBeInTheDocument();
 		});
 	});
