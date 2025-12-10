@@ -13,28 +13,28 @@ import { CodeBlock } from "@/components/ui/code-block";
  * with styled scrollbars for both horizontal and vertical overflow.
  */
 const TableWrapper = memo(({ children }: { children: React.ReactNode }) => (
-	<div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
-		<table
-			style={{
-				borderCollapse: "separate",
-				borderSpacing: 0,
-			}}
-		>
-			{children}
-		</table>
-	</div>
+    <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+        <table
+            style={{
+                borderCollapse: "separate",
+                borderSpacing: 0,
+            }}
+        >
+            {children}
+        </table>
+    </div>
 ));
 TableWrapper.displayName = "TableWrapper";
 
 interface MarkdownRendererProps {
-	/** The markdown content to render */
-	content: string;
-	/** Optional CSS class name for the container */
-	className?: string;
-	/** Customize markdown component rendering */
-	components?: Partial<Components>;
-	/** Inline mode - renders p as span, removes margins for compact display */
-	inline?: boolean;
+    /** The markdown content to render */
+    content: string;
+    /** Optional CSS class name for the container */
+    className?: string;
+    /** Customize markdown component rendering */
+    components?: Partial<Components>;
+    /** Inline mode - renders p as span, removes margins for compact display */
+    inline?: boolean;
 }
 
 /**
@@ -56,35 +56,35 @@ interface MarkdownRendererProps {
  * ```
  */
 export const MarkdownRenderer = memo(
-	({ content, className, components, inline = false }: MarkdownRendererProps) => {
-		const defaultComponents: Partial<Components> = useMemo(
-			() => ({
-				code: CodeBlock,
-				table: TableWrapper,
-				...(inline && { p: ({ children }) => <span>{children}</span> }),
-			}),
-			[inline]
-		);
+    ({ content, className, components, inline = false }: MarkdownRendererProps) => {
+        const defaultComponents = useMemo(
+            (): Partial<Components> => ({
+                code: CodeBlock,
+                table: TableWrapper,
+                ...(inline ? { p: ({ children }) => <span>{children}</span> } : {}),
+            }),
+            [inline]
+        );
 
-		return (
-			<div className={cn("holo-markdown", inline && "[&>*]:my-0", className)}>
-				<ReactMarkdown
-					remarkPlugins={[remarkGfm]}
-					components={{
-						...defaultComponents,
-						...components,
-					}}
-				>
-					{content}
-				</ReactMarkdown>
-			</div>
-		);
-	},
-	(prev, next) =>
-		prev.content === next.content &&
-		prev.className === next.className &&
-		prev.inline === next.inline &&
-		prev.components === next.components
+        return (
+            <div className={cn("holo-markdown", inline && "[&>*]:my-0", className)}>
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        ...defaultComponents,
+                        ...components,
+                    }}
+                >
+                    {content}
+                </ReactMarkdown>
+            </div>
+        );
+    },
+    (prev, next) =>
+        prev.content === next.content &&
+        prev.className === next.className &&
+        prev.inline === next.inline &&
+        prev.components === next.components
 );
 
 MarkdownRenderer.displayName = "MarkdownRenderer";
