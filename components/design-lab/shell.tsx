@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Code, Eye, Copy, Check } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Code,
+    Eye,
+    Copy,
+    Check,
+    Moon,
+    Sun,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { Button } from "@/components/ui/button";
@@ -49,6 +59,7 @@ export function DesignLabShell({
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showCode, setShowCode] = useState(false);
     const [copied, setCopied] = useState(false);
+    const { theme, setTheme } = useTheme();
 
     const currentOption = options[currentIndex];
     const totalOptions = options.length;
@@ -174,6 +185,21 @@ export function DesignLabShell({
                                     <Code className="h-4 w-4" />
                                 )}
                                 {showCode ? "Preview" : "Code"}
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                    setTheme(theme === "dark" ? "light" : "dark")
+                                }
+                                aria-label="Toggle theme"
+                            >
+                                {theme === "dark" ? (
+                                    <Sun className="h-5 w-5" />
+                                ) : (
+                                    <Moon className="h-5 w-5" />
+                                )}
                             </Button>
                         </div>
                     </div>
