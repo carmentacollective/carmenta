@@ -12,7 +12,7 @@ import { CodeBlock } from "@/components/ui/code-block";
  * Custom table component that wraps tables in a scrollable container
  * with styled scrollbars for both horizontal and vertical overflow.
  */
-const TableWrapper = memo(({ children }: { children: React.ReactNode }) => (
+const TableWrapper = memo(({ children }: { children?: React.ReactNode }) => (
     <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
         <table
             style={{
