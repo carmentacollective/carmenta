@@ -174,6 +174,7 @@ export function ModelSelectorPopover({
                     isOpen && "glass-bg-active ring-2 ring-primary/50",
                     disabled && "cursor-not-allowed opacity-50"
                 )}
+                aria-label="Model settings"
             >
                 {isOpen ? (
                     <X className="h-4 w-4 text-foreground/60" />

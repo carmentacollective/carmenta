@@ -116,6 +116,7 @@ function UploadItem({
                 type="button"
                 onClick={() => onRemove(id)}
                 className="shrink-0 rounded-full p-1 text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/80"
+                aria-label="Remove file"
             >
                 <X className="h-4 w-4" />
             </button>

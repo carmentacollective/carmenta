@@ -332,11 +332,18 @@ export function HolographicBackground({
     return (
         <>
             {/* Holographic blobs layer */}
-            <canvas ref={holoCanvasRef} className="fixed inset-0 z-0" />
+            <canvas
+                ref={holoCanvasRef}
+                className="fixed inset-0 z-0"
+                aria-hidden="true"
+            />
 
             {/* Logo watermark - subtle brand presence */}
             {!hideWatermark && (
-                <div className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden">
+                <div
+                    className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden"
+                    aria-hidden="true"
+                >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/logos/icon-transparent.png"
@@ -362,12 +369,14 @@ export function HolographicBackground({
                             rgba(255, 255, 255, 0.1) 100%
                         )`,
                 }}
+                aria-hidden="true"
             />
 
             {/* Shimmer particles layer */}
             <canvas
                 ref={shimmerCanvasRef}
                 className="pointer-events-none fixed inset-0 z-[3]"
+                aria-hidden="true"
             />
         </>
     );

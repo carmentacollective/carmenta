@@ -105,6 +105,8 @@ export function ExpandableText({
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? "Collapse message" : "Expand message"}
                 className={cn(
                     // Positioning - centered at bottom edge, overlapping content
                     "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",

@@ -99,6 +99,11 @@ interface CopyButtonProps {
     text: string;
 
     /**
+     * Accessible label for screen readers
+     */
+    ariaLabel?: string;
+
+    /**
      * Optional callback after successful copy
      */
     onCopySuccess?: () => void;
@@ -141,6 +146,7 @@ interface CopyButtonProps {
  */
 export function CopyButton({
     text,
+    ariaLabel = "Copy to clipboard",
     onCopySuccess,
     variant = "ghost",
     size = "md",
@@ -227,6 +233,7 @@ export function CopyButton({
         return (
             <motion.button
                 onClick={handleSimpleCopy}
+                aria-label={copied ? "Copied!" : ariaLabel}
                 layout
                 className={cn(
                     buttonClasses,
@@ -243,6 +250,7 @@ export function CopyButton({
                             animate={{ opacity: 1, width: "auto" }}
                             exit={{ opacity: 0, width: 0 }}
                             className="whitespace-nowrap text-xs font-medium"
+                            aria-live="polite"
                         >
                             {currentMessage || "Copied"}
                         </motion.span>
@@ -261,6 +269,7 @@ export function CopyButton({
                 {/* Main copy button */}
                 <motion.button
                     onClick={() => handleCopy("rich")}
+                    aria-label={copied ? "Copied!" : ariaLabel}
                     layout
                     className={cn(
                         buttonClasses,
@@ -276,6 +285,7 @@ export function CopyButton({
                                 animate={{ opacity: 1, width: "auto" }}
                                 exit={{ opacity: 0, width: 0 }}
                                 className="whitespace-nowrap text-xs font-medium"
+                                aria-live="polite"
                             >
                                 {currentMessage || "Copied"}
                             </motion.span>
@@ -288,6 +298,7 @@ export function CopyButton({
                 {/* Dropdown trigger */}
                 <DropdownMenuTrigger asChild>
                     <button
+                        aria-label="Copy options"
                         className={cn(
                             buttonClasses,
                             "rounded-r-md border-l border-white/20 px-1"

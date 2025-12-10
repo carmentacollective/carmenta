@@ -29,7 +29,12 @@ export function ThemeSwitcher() {
     // Show placeholder during SSR to avoid hydration mismatch
     if (!isClient) {
         return (
-            <Button variant="ghost" size="icon-sm" className="relative">
+            <Button
+                variant="ghost"
+                size="icon-sm"
+                className="relative"
+                aria-label="Toggle theme"
+            >
                 <Sun className="size-4 text-foreground/70" />
             </Button>
         );
@@ -43,6 +48,7 @@ export function ThemeSwitcher() {
             variant="ghost"
             size="icon-sm"
             className="relative"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
         >
             <Icon className="size-4 text-foreground/70" />

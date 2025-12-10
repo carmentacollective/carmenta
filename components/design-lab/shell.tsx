@@ -138,7 +138,12 @@ export function DesignLabShell({
 
                         {/* Navigation */}
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" onClick={goPrev}>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={goPrev}
+                                aria-label="Previous option"
+                            >
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
 
@@ -146,7 +151,12 @@ export function DesignLabShell({
                                 {currentIndex + 1} of {totalOptions}
                             </span>
 
-                            <Button variant="ghost" size="icon" onClick={goNext}>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={goNext}
+                                aria-label="Next option"
+                            >
                                 <ChevronRight className="h-5 w-5" />
                             </Button>
 
