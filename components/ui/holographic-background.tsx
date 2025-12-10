@@ -115,9 +115,9 @@ interface HolographicBackgroundProps {
     /** Hide the logo watermark (e.g., on homepage where logo is prominently displayed) */
     hideWatermark?: boolean;
     /** Custom color palette for light mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
-    lightColorPalette?: ColorPalette[];
+    lightColorPalette?: readonly ColorPalette[];
     /** Custom color palette for dark mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
-    darkColorPalette?: ColorPalette[];
+    darkColorPalette?: readonly ColorPalette[];
 }
 
 /**
@@ -143,7 +143,10 @@ export function HolographicBackground({
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
-    const themeColorsRef = useRef({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
+    const themeColorsRef = useRef<{
+        bg: string;
+        colors: readonly ColorPalette[];
+    }>({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
 
     // Update theme colors when theme changes
     useEffect(() => {

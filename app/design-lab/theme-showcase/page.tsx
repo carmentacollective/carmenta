@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { Mic, Send, Sparkles } from "lucide-react";
-import {
-    HolographicBackground,
-    type ColorPalette,
-} from "@/components/ui/holographic-background";
+import { HolographicBackground } from "@/components/ui/holographic-background";
 import { Oracle } from "@/components/ui/oracle";
 import { cn } from "@/lib/utils";
 
