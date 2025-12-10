@@ -142,12 +142,12 @@ describe("tool-config", () => {
     describe("getStatusMessage", () => {
         it("returns base message for pending status", () => {
             const message = getStatusMessage("compareOptions", "pending", "call-1");
-            expect(message).toBe("Preparing...");
+            expect(message).toBe("Getting ready...");
         });
 
         it("returns base message for running status", () => {
             const message = getStatusMessage("compareOptions", "running", "call-1");
-            expect(message).toBe("Building comparison...");
+            expect(message).toBe("Putting this together...");
         });
 
         it("returns non-empty message for error status", () => {
@@ -301,7 +301,7 @@ describe("tool-config", () => {
 
         it("uses tool-specific error without custom text", () => {
             const message = getErrorMessage("compareOptions");
-            expect(message).toBe("Comparison didn't work");
+            expect(message).toBe("We hit a snag with that");
         });
 
         it("throws error for unknown tools", () => {
