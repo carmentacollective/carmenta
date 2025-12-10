@@ -118,7 +118,8 @@ Researched 4 competitors on 2025-12-08 for markdown implementation patterns:
 
 ### Core Component
 
-The implementation follows a **CSS-first approach** where styling lives in `app/globals.css` rather than component overrides.
+The implementation follows a **CSS-first approach** where styling lives in
+`app/globals.css` rather than component overrides.
 
 **Location**: `components/ui/markdown-renderer.tsx`
 
@@ -196,9 +197,11 @@ MarkdownRenderer.displayName = "MarkdownRenderer";
 
 ### CSS Styling (Separated Concerns)
 
-All visual styling is handled through Tailwind classes in `app/globals.css`. The component stays minimal, delegating presentation to CSS.
+All visual styling is handled through Tailwind classes in `app/globals.css`. The
+component stays minimal, delegating presentation to CSS.
 
 **Markdown container styling**:
+
 ```css
 @layer components {
   .holo-markdown {
@@ -209,6 +212,7 @@ All visual styling is handled through Tailwind classes in `app/globals.css`. The
 ```
 
 **Table styling (CSS-first approach)**:
+
 ```css
 @layer components {
   .holo-markdown table {
@@ -250,6 +254,7 @@ All visual styling is handled through Tailwind classes in `app/globals.css`. The
 ```
 
 **Scrollbar styling (reusable utility)**:
+
 ```css
 @layer utilities {
   .scrollbar-holo {
@@ -296,6 +301,7 @@ All visual styling is handled through Tailwind classes in `app/globals.css`. The
 ### Integration
 
 Use in messages:
+
 ```typescript
 {content && <MarkdownRenderer content={content} />}
 ```
@@ -303,6 +309,7 @@ Use in messages:
 ### Performance Optimization
 
 **Memoization strategy**:
+
 1. Component wrapped with `memo()` prevents re-renders when parent changes
 2. `useMemo()` for markdown components ensures no recreationon render
 3. Result: Smooth streaming performance even with frequent updates
@@ -330,6 +337,7 @@ bun test components/ui/markdown-renderer.test.tsx
 ```
 
 **Test coverage**:
+
 - Basic markdown (paragraphs, headings, lists, links, blockquotes)
 - Code blocks with language support
 - GitHub Flavored Markdown (tables, strikethrough, task lists)
@@ -338,6 +346,7 @@ bun test components/ui/markdown-renderer.test.tsx
 - Edge cases (empty content, whitespace, special characters)
 
 **Manual testing checklist**:
+
 - [ ] Simple tables render correctly
 - [ ] Tables with alignment display properly
 - [ ] Wide tables scroll horizontally with visible scrollbar
