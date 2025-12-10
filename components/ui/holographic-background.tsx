@@ -105,9 +105,19 @@ function createParticle(width: number, height: number): Particle {
     };
 }
 
+export interface ColorPalette {
+    r: number;
+    g: number;
+    b: number;
+}
+
 interface HolographicBackgroundProps {
     /** Hide the logo watermark (e.g., on homepage where logo is prominently displayed) */
     hideWatermark?: boolean;
+    /** Custom color palette for light mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
+    lightColorPalette?: ColorPalette[];
+    /** Custom color palette for dark mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
+    darkColorPalette?: ColorPalette[];
 }
 
 /**
@@ -122,6 +132,8 @@ interface HolographicBackgroundProps {
  */
 export function HolographicBackground({
     hideWatermark = false,
+    lightColorPalette,
+    darkColorPalette,
 }: HolographicBackgroundProps) {
     const { resolvedTheme } = useTheme();
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,11 +149,17 @@ export function HolographicBackground({
     useEffect(() => {
         const isDark = resolvedTheme === "dark";
         if (isDark) {
-            themeColorsRef.current = { bg: DARK_BACKGROUND, colors: DARK_COLORS };
+            themeColorsRef.current = {
+                bg: DARK_BACKGROUND,
+                colors: darkColorPalette || DARK_COLORS,
+            };
         } else {
-            themeColorsRef.current = { bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS };
+            themeColorsRef.current = {
+                bg: LIGHT_BACKGROUND,
+                colors: lightColorPalette || LIGHT_COLORS,
+            };
         }
-    }, [resolvedTheme]);
+    }, [resolvedTheme, lightColorPalette, darkColorPalette]);
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
