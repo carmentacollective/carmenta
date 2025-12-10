@@ -34,15 +34,42 @@ class Violation(NamedTuple):
     suggestion: str
 
 
-def get_current_branch() -> str:
-    """Get the current git branch name."""
+def get_working_directory_from_command(command: str) -> str:
+    """
+    Extract the target directory if command starts with cd.
+    Returns None if no cd command is present.
+    """
+    try:
+        tokens = shlex.split(command)
+        # Look for pattern: cd <path> && ...
+        if len(tokens) >= 3 and tokens[0] == "cd" and tokens[2] == "&&":
+            return tokens[1]
+    except ValueError:
+        pass
+    return None
+
+
+def get_upstream_branch(cwd: str = None) -> str:
+    """
+    Get the upstream branch that will be pushed to.
+    Returns empty string if no upstream is configured.
+
+    Args:
+        cwd: Optional working directory to run the command in.
+    """
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            ["git", "rev-parse", "--abbrev-ref", "@{upstream}"],
             capture_output=True,
             text=True,
+            cwd=cwd,  # Run in specific directory if provided
         )
-        return result.stdout.strip() if result.returncode == 0 else ""
+        if result.returncode == 0:
+            # Returns something like "origin/main" or "origin/feature-branch"
+            upstream = result.stdout.strip()
+            if "/" in upstream:
+                return upstream.split("/", 1)[1]  # Extract branch name
+        return ""
     except (subprocess.SubprocessError, FileNotFoundError):
         return ""
 
@@ -109,10 +136,16 @@ def has_flag(flags: list[str], *names: str) -> bool:
     return False
 
 
-def check_git_push(flags: list[str], positional: list[str]) -> list[Violation]:
-    """Check git push for violations."""
+def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> list[Violation]:
+    """
+    Check git push for violations.
+
+    Args:
+        flags: Git push flags
+        positional: Positional arguments
+        cwd: Optional working directory (for worktree support)
+    """
     violations = []
-    current_branch = get_current_branch()
 
     # Check for --no-verify
     if has_flag(flags, "--no-verify"):
@@ -122,10 +155,11 @@ def check_git_push(flags: list[str], positional: list[str]) -> list[Violation]:
         ))
 
     # Check for push to main
-    # Patterns: "git push origin main", "git push main", or bare "git push" on main
+    # Patterns: "git push origin main", "git push main", or bare "git push" when upstream is main
     # Also check refspecs like "HEAD:main" or "feature:main"
     pushing_to_main = False
 
+    # Check for explicit pushes to main in command arguments
     for arg in positional:
         # Strip force push prefix (+) if present (e.g., +main or +feature:main)
         clean_arg = arg.lstrip("+")
@@ -144,12 +178,12 @@ def check_git_push(flags: list[str], positional: list[str]) -> list[Violation]:
                 pushing_to_main = True
                 break
 
-    # Bare "git push" while on main
-    if len(positional) == 0 and current_branch in ["main", "master"]:
-        pushing_to_main = True
-    # "git push origin" while on main
-    elif len(positional) == 1 and positional[0] == "origin" and current_branch in ["main", "master"]:
-        pushing_to_main = True
+    # For bare "git push" or "git push origin", check upstream tracking
+    # This handles worktrees correctly by checking where the branch actually pushes to
+    if not pushing_to_main and len(positional) <= 1:
+        upstream = get_upstream_branch(cwd)
+        if upstream in ["main", "master"]:
+            pushing_to_main = True
 
     if pushing_to_main:
         violations.append(Violation(
@@ -235,6 +269,9 @@ def check_command(command: str) -> list[Violation]:
     """Main entry point: check a command for all violations."""
     violations = []
 
+    # Extract working directory if present (for worktree support)
+    cwd = get_working_directory_from_command(command)
+
     # Check gh commands
     violations.extend(check_gh_command(command))
 
@@ -242,7 +279,7 @@ def check_command(command: str) -> list[Violation]:
     subcommand, flags, positional = parse_git_command(command)
 
     if subcommand == "push":
-        violations.extend(check_git_push(flags, positional))
+        violations.extend(check_git_push(flags, positional, cwd))
     elif subcommand == "add":
         violations.extend(check_git_add(flags, positional))
     elif subcommand == "commit":
