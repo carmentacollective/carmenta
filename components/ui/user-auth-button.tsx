@@ -1,16 +1,7 @@
 "use client";
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
-import {
-    User,
-    LogOut,
-    Moon,
-    Sun,
-    UserCircle2,
-    Monitor,
-    Check,
-    Plug,
-} from "lucide-react";
+import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Plug } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -43,9 +34,12 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const { user } = useUser();
     const { signOut, openUserProfile } = useClerk();
     const [isOpen, setIsOpen] = useState(false);
+    const [hoveredTheme, setHoveredTheme] = useState<ThemeVariant | null>(null);
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { theme, setTheme } = useTheme();
     const { themeVariant, setThemeVariant } = useThemeVariant();
+    // Track the "committed" theme (what user has actually selected, not just hovering)
+    const [committedTheme, setCommittedTheme] = useState<ThemeVariant>(themeVariant);
 
     // Show nothing while loading to prevent flash
     if (!isLoaded) {
@@ -75,25 +69,50 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
         { value: "system", label: "System", icon: Monitor },
     ] as const;
 
+    // Theme variants with primary color for swatch preview
+    // Colors derived from --primary HSL values in globals.css (light mode)
     const themeVariants: Array<{
         value: ThemeVariant;
         label: string;
         description: string;
+        color: string; // Primary color for the swatch
     }> = [
-        { value: "carmenta", label: "Carmenta", description: "Royal purple elegance" },
-        { value: "warm-earth", label: "Warm Earth", description: "Grounded, organic" },
+        {
+            value: "carmenta",
+            label: "Carmenta",
+            description: "Royal purple elegance",
+            color: "hsl(270 40% 56%)",
+        },
+        {
+            value: "warm-earth",
+            label: "Warm Earth",
+            description: "Grounded, organic",
+            color: "hsl(15 60% 60%)",
+        },
         {
             value: "arctic-clarity",
             label: "Arctic Clarity",
             description: "Crystalline precision",
+            color: "hsl(200 70% 55%)",
         },
         {
             value: "forest-wisdom",
             label: "Forest Wisdom",
             description: "Natural intelligence",
+            color: "hsl(140 45% 45%)",
         },
-        { value: "monochrome", label: "Monochrome", description: "Minimal, precise" },
+        {
+            value: "monochrome",
+            label: "Monochrome",
+            description: "Minimal, precise",
+            color: "hsl(0 0% 35%)",
+        },
     ];
+
+    // Show hovered theme info when hovering, otherwise selected theme
+    const displayTheme = themeVariants.find(
+        (v) => v.value === (hoveredTheme ?? themeVariant)
+    );
 
     return (
         <div className={cn("relative", className)}>
@@ -180,91 +199,99 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         <span className="relative">Integrations</span>
                                     </Link>
 
-                                    {/* Appearance section */}
+                                    {/* Appearance section - compact redesign */}
                                     {isClient && (
-                                        <div className="border-t border-foreground/10 py-1">
-                                            <div className="px-3 py-2 text-xs font-medium text-foreground/50">
-                                                Appearance
-                                            </div>
-
-                                            {/* Light/Dark/System mode */}
-                                            {themeOptions.map((option) => {
-                                                const isSelected =
-                                                    theme === option.value;
-                                                const Icon = option.icon;
-
-                                                return (
-                                                    <button
-                                                        key={option.value}
-                                                        onClick={() =>
-                                                            setTheme(option.value)
-                                                        }
-                                                        className="group relative flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground/80 transition-all hover:text-foreground"
-                                                    >
-                                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                                        <Icon className="relative h-4 w-4 text-foreground/60" />
-                                                        <span className="relative flex-1 text-left">
-                                                            {option.label}
-                                                        </span>
-                                                        {isSelected && (
-                                                            <Check className="relative h-4 w-4 text-primary" />
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-
-                                            {/* Theme variant subsection */}
-                                            <div className="my-2 border-t border-foreground/10 pt-1">
-                                                <div className="px-3 py-2 text-xs font-medium text-foreground/50">
+                                        <div className="border-t border-foreground/10 px-4 py-3">
+                                            {/* Header row: "Theme" label + Light/Dark/System segmented control */}
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <span className="text-xs font-medium text-foreground/50">
                                                     Theme
-                                                </div>
-                                                <div className="max-h-[300px] overflow-y-auto">
-                                                    {themeVariants.map((variant) => {
-                                                        const isSelected =
-                                                            themeVariant ===
-                                                            variant.value;
+                                                </span>
 
+                                                {/* Segmented control for light/dark/system */}
+                                                <div className="flex rounded-lg bg-foreground/5 p-0.5">
+                                                    {themeOptions.map((option) => {
+                                                        const isSelected =
+                                                            theme === option.value;
+                                                        const Icon = option.icon;
                                                         return (
                                                             <button
-                                                                key={variant.value}
+                                                                key={option.value}
                                                                 onClick={() =>
-                                                                    setThemeVariant(
-                                                                        variant.value
+                                                                    setTheme(
+                                                                        option.value
                                                                     )
                                                                 }
-                                                                onMouseEnter={() =>
-                                                                    document.documentElement.setAttribute(
-                                                                        "data-theme",
-                                                                        variant.value
-                                                                    )
-                                                                }
-                                                                onMouseLeave={() =>
-                                                                    document.documentElement.setAttribute(
-                                                                        "data-theme",
-                                                                        themeVariant
-                                                                    )
-                                                                }
-                                                                className="group relative flex w-full items-start gap-3 px-4 py-2 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                                                className={cn(
+                                                                    "flex items-center justify-center rounded-md px-2 py-1 transition-all",
+                                                                    isSelected
+                                                                        ? "bg-background text-foreground shadow-sm"
+                                                                        : "text-foreground/40 hover:text-foreground/70"
+                                                                )}
+                                                                title={option.label}
                                                             >
-                                                                <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                                                <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-                                                                    {isSelected && (
-                                                                        <Check className="h-4 w-4 text-primary" />
-                                                                    )}
-                                                                </div>
-                                                                <div className="relative flex-1 text-left">
-                                                                    <div className="font-medium">
-                                                                        {variant.label}
-                                                                    </div>
-                                                                    <div className="text-xs text-foreground/60">
-                                                                        {
-                                                                            variant.description
-                                                                        }
-                                                                    </div>
-                                                                </div>
+                                                                <Icon className="h-3.5 w-3.5" />
                                                             </button>
                                                         );
                                                     })}
+                                                </div>
+                                            </div>
+
+                                            {/* Theme swatches row */}
+                                            <div
+                                                className="flex items-center gap-2"
+                                                onMouseLeave={() => {
+                                                    // Restore to committed theme when leaving swatch area
+                                                    setHoveredTheme(null);
+                                                    setThemeVariant(committedTheme);
+                                                }}
+                                            >
+                                                {themeVariants.map((variant) => {
+                                                    const isCommitted =
+                                                        committedTheme ===
+                                                        variant.value;
+                                                    return (
+                                                        <button
+                                                            key={variant.value}
+                                                            onClick={() => {
+                                                                setCommittedTheme(
+                                                                    variant.value
+                                                                );
+                                                                setThemeVariant(
+                                                                    variant.value
+                                                                );
+                                                            }}
+                                                            onMouseEnter={() => {
+                                                                setHoveredTheme(
+                                                                    variant.value
+                                                                );
+                                                                setThemeVariant(
+                                                                    variant.value
+                                                                );
+                                                            }}
+                                                            className={cn(
+                                                                "h-6 w-6 rounded-full transition-all",
+                                                                isCommitted
+                                                                    ? "ring-2 ring-foreground/60 ring-offset-2 ring-offset-background"
+                                                                    : "opacity-60 hover:scale-110 hover:opacity-100"
+                                                            )}
+                                                            style={{
+                                                                backgroundColor:
+                                                                    variant.color,
+                                                            }}
+                                                            title={variant.label}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Theme label + description (updates on hover) */}
+                                            <div className="mt-3">
+                                                <div className="text-sm font-medium text-foreground/80">
+                                                    {displayTheme?.label}
+                                                </div>
+                                                <div className="text-xs text-foreground/50">
+                                                    {displayTheme?.description}
                                                 </div>
                                             </div>
                                         </div>

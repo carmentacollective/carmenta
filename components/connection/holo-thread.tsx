@@ -1066,8 +1066,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
                     variant === "ghost" &&
                         "bg-background/50 text-foreground/60 opacity-70 ring-border/40 hover:bg-background/80 hover:opacity-100",
-                    variant === "send" &&
-                        "bg-primary text-primary-foreground ring-transparent hover:bg-primary/90",
+                    variant === "send" && "btn-cta ring-transparent",
                     variant === "stop" &&
                         "bg-muted text-muted-foreground opacity-60 ring-muted/20 hover:bg-muted/90 hover:opacity-75",
                     disabled && "btn-disabled",
