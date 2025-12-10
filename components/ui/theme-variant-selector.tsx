@@ -23,29 +23,9 @@ const THEMES: Array<{ value: ThemeVariant; label: string; description: string }>
         description: "Natural green & amber",
     },
     {
-        value: "sunset-coral",
-        label: "Sunset Coral",
-        description: "Warm, inviting, energetic",
-    },
-    {
-        value: "deep-ocean",
-        label: "Deep Ocean",
-        description: "Sophisticated, deep, calm",
-    },
-    {
         value: "monochrome",
         label: "Monochrome",
         description: "Minimal, precise, professional",
-    },
-    {
-        value: "rose-garden",
-        label: "Rose Garden",
-        description: "Elegant, soft, refined",
-    },
-    {
-        value: "golden-hour",
-        label: "Golden Hour",
-        description: "Luxurious, warm, radiant",
     },
 ];
 

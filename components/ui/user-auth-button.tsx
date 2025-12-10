@@ -92,19 +92,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
             label: "Forest Wisdom",
             description: "Natural intelligence",
         },
-        { value: "sunset-coral", label: "Sunset Coral", description: "Warm, inviting" },
-        {
-            value: "deep-ocean",
-            label: "Deep Ocean",
-            description: "Sophisticated, calm",
-        },
         { value: "monochrome", label: "Monochrome", description: "Minimal, precise" },
-        { value: "rose-garden", label: "Rose Garden", description: "Elegant, refined" },
-        {
-            value: "golden-hour",
-            label: "Golden Hour",
-            description: "Luxurious, radiant",
-        },
     ];
 
     return (

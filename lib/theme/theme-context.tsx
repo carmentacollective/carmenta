@@ -10,17 +10,13 @@ import {
     type ReactNode,
 } from "react";
 
-// Theme variant types
+// Theme variant types (5 launch themes)
 export type ThemeVariant =
     | "carmenta"
     | "warm-earth"
     | "arctic-clarity"
     | "forest-wisdom"
-    | "sunset-coral"
-    | "deep-ocean"
-    | "monochrome"
-    | "rose-garden"
-    | "golden-hour";
+    | "monochrome";
 
 const STORAGE_KEY = "carmenta-theme-variant";
 const DEFAULT_THEME: ThemeVariant = "carmenta";

@@ -126,52 +126,6 @@ const THEME_PALETTES: Record<
         ],
         darkBg: "#0F1A12",
     },
-    "sunset-coral": {
-        light: [
-            { r: 255, g: 180, b: 160 }, // Coral
-            { r: 255, g: 200, b: 180 }, // Peach
-            { r: 255, g: 160, b: 140 }, // Salmon
-            { r: 255, g: 220, b: 200 }, // Blush
-            { r: 255, g: 200, b: 160 }, // Apricot
-            { r: 255, g: 180, b: 180 }, // Rose
-            { r: 255, g: 210, b: 190 }, // Shell
-            { r: 255, g: 190, b: 170 }, // Flamingo
-        ],
-        dark: [
-            { r: 180, g: 100, b: 80 }, // Deep Coral
-            { r: 200, g: 120, b: 100 }, // Rust Rose
-            { r: 160, g: 80, b: 60 }, // Brick
-            { r: 190, g: 130, b: 110 }, // Dusty Rose
-            { r: 200, g: 110, b: 70 }, // Burnt Orange
-            { r: 170, g: 90, b: 90 }, // Burgundy
-            { r: 190, g: 120, b: 100 }, // Terracotta
-            { r: 180, g: 100, b: 90 }, // Sienna
-        ],
-        darkBg: "#1A1210",
-    },
-    "deep-ocean": {
-        light: [
-            { r: 160, g: 200, b: 220 }, // Ocean
-            { r: 180, g: 210, b: 230 }, // Sky Blue
-            { r: 140, g: 180, b: 210 }, // Sea
-            { r: 170, g: 220, b: 220 }, // Aqua
-            { r: 150, g: 190, b: 220 }, // Marine
-            { r: 180, g: 200, b: 210 }, // Mist
-            { r: 160, g: 210, b: 220 }, // Lagoon
-            { r: 170, g: 200, b: 220 }, // Wave
-        ],
-        dark: [
-            { r: 40, g: 80, b: 120 }, // Deep Navy
-            { r: 60, g: 100, b: 140 }, // Midnight
-            { r: 30, g: 70, b: 110 }, // Abyss
-            { r: 50, g: 110, b: 130 }, // Deep Teal
-            { r: 40, g: 90, b: 130 }, // Ocean Floor
-            { r: 60, g: 90, b: 120 }, // Storm
-            { r: 50, g: 100, b: 130 }, // Depth
-            { r: 45, g: 85, b: 125 }, // Marine
-        ],
-        darkBg: "#0A1520",
-    },
     monochrome: {
         light: [
             { r: 200, g: 200, b: 200 }, // Silver
@@ -194,52 +148,6 @@ const THEME_PALETTES: Record<
             { r: 85, g: 85, b: 95 }, // Pewter
         ],
         darkBg: "#121214",
-    },
-    "rose-garden": {
-        light: [
-            { r: 240, g: 200, b: 210 }, // Dusty Rose
-            { r: 250, g: 220, b: 225 }, // Blush
-            { r: 230, g: 190, b: 200 }, // Mauve
-            { r: 255, g: 230, b: 235 }, // Champagne
-            { r: 245, g: 210, b: 220 }, // Pink Pearl
-            { r: 235, g: 200, b: 215 }, // Rose Quartz
-            { r: 250, g: 225, b: 230 }, // Petal
-            { r: 240, g: 205, b: 215 }, // Rosewood
-        ],
-        dark: [
-            { r: 140, g: 90, b: 110 }, // Deep Rose
-            { r: 160, g: 110, b: 125 }, // Mulberry
-            { r: 120, g: 80, b: 100 }, // Burgundy
-            { r: 170, g: 130, b: 145 }, // Dusty Mauve
-            { r: 150, g: 100, b: 120 }, // Wine
-            { r: 130, g: 90, b: 110 }, // Plum
-            { r: 155, g: 115, b: 130 }, // Antique Rose
-            { r: 145, g: 95, b: 115 }, // Berry
-        ],
-        darkBg: "#1A1215",
-    },
-    "golden-hour": {
-        light: [
-            { r: 255, g: 220, b: 160 }, // Gold
-            { r: 255, g: 230, b: 180 }, // Honey
-            { r: 255, g: 200, b: 140 }, // Amber
-            { r: 255, g: 240, b: 200 }, // Cream
-            { r: 255, g: 210, b: 150 }, // Sunset
-            { r: 255, g: 225, b: 170 }, // Warm Yellow
-            { r: 255, g: 235, b: 190 }, // Butter
-            { r: 255, g: 215, b: 160 }, // Marigold
-        ],
-        dark: [
-            { r: 180, g: 140, b: 60 }, // Deep Gold
-            { r: 200, g: 160, b: 80 }, // Bronze
-            { r: 160, g: 120, b: 40 }, // Antique Gold
-            { r: 190, g: 150, b: 90 }, // Brass
-            { r: 170, g: 130, b: 50 }, // Ochre
-            { r: 185, g: 145, b: 70 }, // Amber
-            { r: 195, g: 155, b: 85 }, // Harvest
-            { r: 175, g: 135, b: 55 }, // Caramel
-        ],
-        darkBg: "#1A1510",
     },
 };
 

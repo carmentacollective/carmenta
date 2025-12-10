@@ -371,7 +371,7 @@ export function ModelSelectorPopover({
                                         })
                                     }
                                     presets={REASONING_SLIDER_PRESETS}
-                                    theme="secondary"
+                                    theme="cyan"
                                     disabled={disabled}
                                     progressMode={true}
                                 />
