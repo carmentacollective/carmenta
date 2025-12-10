@@ -118,9 +118,10 @@ async function handleAuthEvent(event: NangoWebhookEvent) {
         return;
     }
 
-    // We pass email as ID in createConnectSession
+    // We pass email as ID in createConnectSession, so endUser.id is our trusted value
+    // Don't use endUser.email as it could come from OAuth provider (different account)
     // Normalize to lowercase to match storage format
-    const userEmail = (endUser.email || endUser.id).toLowerCase();
+    const userEmail = endUser.id.toLowerCase();
 
     Sentry.setUser({ email: userEmail });
 
