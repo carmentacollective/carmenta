@@ -22,8 +22,6 @@ import {
 } from "react";
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
@@ -32,13 +30,13 @@ import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/models";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { Greeting } from "@/components/ui/greeting";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorPopover } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
-import { CodeBlock } from "@/components/ui/code-block";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
@@ -539,28 +537,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                     {/* Text content with expansion for long messages */}
                     {content && (
                         <ExpandableText>
-                            <div className="holo-markdown">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        code: CodeBlock,
-                                        table: ({ children }) => (
-                                            <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
-                                                <table
-                                                    style={{
-                                                        borderCollapse: "separate",
-                                                        borderSpacing: 0,
-                                                    }}
-                                                >
-                                                    {children}
-                                                </table>
-                                            </div>
-                                        ),
-                                    }}
-                                >
-                                    {content}
-                                </ReactMarkdown>
-                            </div>
+                            <MarkdownRenderer content={content} />
                         </ExpandableText>
                     )}
                 </div>
@@ -651,28 +628,7 @@ function AssistantMessage({
             {hasContent && (
                 <div className="group max-w-full sm:max-w-[85%]">
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
-                        <div className="holo-markdown">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={{
-                                    code: CodeBlock,
-                                    table: ({ children }) => (
-                                        <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
-                                            <table
-                                                style={{
-                                                    borderCollapse: "separate",
-                                                    borderSpacing: 0,
-                                                }}
-                                            >
-                                                {children}
-                                            </table>
-                                        </div>
-                                    ),
-                                }}
-                            >
-                                {content}
-                            </ReactMarkdown>
-                        </div>
+                        <MarkdownRenderer content={content} />
                     </div>
                     <MessageActions
                         content={content}

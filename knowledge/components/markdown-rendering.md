@@ -114,96 +114,149 @@ Researched 4 competitors on 2025-12-08 for markdown implementation patterns:
 - Composable, testable, maintainable
 - GFM support (tables, strikethrough, task lists) via single plugin
 
-## Implementation Plan
+## Implementation: CSS-First Architecture
 
 ### Core Component
 
-```typescript
-// components/markdown-renderer.tsx
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { memo } from 'react';
-import { cn } from '@/lib/utils';
+The implementation follows a **CSS-first approach** where styling lives in
+`app/globals.css` rather than component overrides.
 
-const MarkdownRenderer = memo(({
-  content,
-  className
-}: {
+**Location**: `components/ui/markdown-renderer.tsx`
+
+```typescript
+"use client";
+
+import { memo, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { ReactMarkdownOptions } from "react-markdown";
+
+import { cn } from "@/lib/utils";
+import { CodeBlock } from "./code-block";
+
+/**
+ * Custom table component that wraps tables in a scrollable container
+ * with styled scrollbars for both horizontal and vertical overflow.
+ */
+const TableWrapper = memo(({ children }: { children: React.ReactNode }) => (
+  <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
+    <table
+      style={{
+        borderCollapse: "separate",
+        borderSpacing: 0,
+      }}
+    >
+      {children}
+    </table>
+  </div>
+));
+TableWrapper.displayName = "TableWrapper";
+
+/**
+ * Markdown components configuration with memoized overrides.
+ * Prevents unnecessary re-renders during streaming updates.
+ */
+const createMarkdownComponents = (): ReactMarkdownOptions["components"] => ({
+  code: CodeBlock,
+  table: TableWrapper,
+});
+
+/**
+ * MarkdownRenderer - Reusable markdown rendering component
+ *
+ * Features:
+ * - GitHub Flavored Markdown (tables, strikethrough, task lists)
+ * - Memoized to prevent re-renders during streaming
+ * - Custom code block and table styling
+ */
+interface MarkdownRendererProps {
   content: string;
   className?: string;
-}) => {
+}
+
+export const MarkdownRenderer = memo(function MarkdownRenderer({
+  content,
+  className,
+}: MarkdownRendererProps) {
+  const components = useMemo(() => createMarkdownComponents(), []);
+
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      className={cn('prose prose-neutral dark:prose-invert max-w-none', className)}
-      components={markdownComponents}
-    >
-      {content}
-    </ReactMarkdown>
+    <div className={cn("holo-markdown", className)}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={components}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 });
 
-MarkdownRenderer.displayName = 'MarkdownRenderer';
+MarkdownRenderer.displayName = "MarkdownRenderer";
 ```
 
-### Table Styling (from assistant-ui)
+### CSS Styling (Separated Concerns)
 
-```typescript
-const markdownComponents = {
-  table: ({ className, ...props }) => (
-    <div className="my-5 overflow-x-auto scrollbar-holo">
-      <table
-        className={cn(
-          'w-full border-separate border-spacing-0',
-          className
-        )}
-        {...props}
-      />
-    </div>
-  ),
+All visual styling is handled through Tailwind classes in `app/globals.css`. The
+component stays minimal, delegating presentation to CSS.
 
-  th: ({ className, ...props }) => (
-    <th
-      className={cn(
-        'bg-muted px-4 py-2 text-left font-semibold',
-        'first:rounded-tl-lg last:rounded-tr-lg',
-        'border-b-2 border-border',
-        className
-      )}
-      {...props}
-    />
-  ),
+**Markdown container styling**:
 
-  td: ({ className, ...props }) => (
-    <td
-      className={cn(
-        'px-4 py-2 text-left',
-        'border-b border-border',
-        className
-      )}
-      {...props}
-    />
-  ),
-
-  tr: ({ className, ...props }) => (
-    <tr
-      className={cn(
-        'hover:bg-muted/50 transition-colors',
-        className
-      )}
-      {...props}
-    />
-  ),
-};
+```css
+@layer components {
+  .holo-markdown {
+    @apply text-foreground/90;
+  }
+  /* ... p, h1-h6, lists, code, blockquotes, links, etc. ... */
+}
 ```
 
-### Enhanced Scrollbar Styling
+**Table styling (CSS-first approach)**:
 
-Update `app/globals.css` to improve scrollbar on tables and main chat area:
+```css
+@layer components {
+  .holo-markdown table {
+    @apply w-full text-sm;
+  }
+
+  .holo-markdown th {
+    @apply border-b border-foreground/15 px-3 py-2 text-left font-semibold;
+  }
+
+  .holo-markdown th:first-child {
+    @apply rounded-tl-lg;
+  }
+
+  .holo-markdown th:last-child {
+    @apply rounded-tr-lg;
+  }
+
+  .holo-markdown tbody tr {
+    @apply transition-colors hover:bg-foreground/[0.02];
+  }
+
+  .holo-markdown td {
+    @apply border-b border-foreground/10 px-3 py-2;
+  }
+
+  .holo-markdown tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .holo-markdown tbody tr:last-child td:first-child {
+    @apply rounded-bl-lg;
+  }
+
+  .holo-markdown tbody tr:last-child td:last-child {
+    @apply rounded-br-lg;
+  }
+}
+```
+
+**Scrollbar styling (reusable utility)**:
 
 ```css
 @layer utilities {
-  /* Enhanced custom scrollbar - inspired by HuggingFace Chat UI */
   .scrollbar-holo {
     scrollbar-width: thin;
     scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
@@ -213,10 +266,9 @@ Update `app/globals.css` to improve scrollbar on tables and main chat area:
     scrollbar-color: rgba(200, 160, 180, 0.3) transparent;
   }
 
-  /* Webkit browsers (Chrome, Safari, Edge) */
   .scrollbar-holo::-webkit-scrollbar {
     width: 8px;
-    height: 8px; /* For horizontal scrollbars */
+    height: 8px;
   }
 
   .scrollbar-holo::-webkit-scrollbar-track {
@@ -240,77 +292,69 @@ Update `app/globals.css` to improve scrollbar on tables and main chat area:
     background: rgba(200, 160, 180, 0.5);
   }
 
-  /* Corner where horizontal and vertical scrollbars meet */
   .scrollbar-holo::-webkit-scrollbar-corner {
     background: transparent;
   }
 }
 ```
 
-Apply `.scrollbar-holo` to:
+### Integration
 
-1. Table wrapper divs (for horizontal scroll on wide tables)
-2. Main chat viewport (for vertical scroll)
-3. Any overflow containers
-
-### Performance: Memoization
+Use in messages:
 
 ```typescript
-import { memo } from 'react';
-
-const memoizeMarkdownComponents = (components: Components) => {
-  return Object.fromEntries(
-    Object.entries(components).map(([key, Component]) => {
-      const Memoized = memo(
-        ({ node, ...props }: any) => <Component {...props} />,
-        (prev, next) => {
-          // Shallow comparison for props
-          const prevKeys = Object.keys(prev);
-          const nextKeys = Object.keys(next);
-
-          if (prevKeys.length !== nextKeys.length) return false;
-
-          return prevKeys.every(key => prev[key] === next[key]);
-        }
-      );
-      return [key, Memoized];
-    })
-  );
-};
-
-// Usage
-const memoizedComponents = memoizeMarkdownComponents(markdownComponents);
+{content && <MarkdownRenderer content={content} />}
 ```
 
-## Dependencies to Add
+### Performance Optimization
+
+**Memoization strategy**:
+
+1. Component wrapped with `memo()` prevents re-renders when parent changes
+2. `useMemo()` for markdown components ensures no recreationon render
+3. Result: Smooth streaming performance even with frequent updates
+
+## Dependencies
+
+- `remark-gfm: ^4.0.1` - Already added to package.json
+- Total bundle impact: ~2.5KB gzipped
+
+## Migration Path (Completed)
+
+1. ✅ Create `components/ui/markdown-renderer.tsx`
+2. ✅ Implement CSS-first styling in `app/globals.css`
+3. ✅ Add memoization for streaming performance
+4. ✅ Update `components/connection/holo-thread.tsx` to use new component
+5. ✅ Add comprehensive unit tests
+6. ✅ Update specification with actual architecture
+
+## Testing
+
+Unit tests cover all major functionality:
 
 ```bash
-bun add remark-gfm
+bun test components/ui/markdown-renderer.test.tsx
 ```
 
-**Total bundle impact**: ~2.5KB gzipped (remark-gfm is tiny)
+**Test coverage**:
 
-## Migration Path
+- Basic markdown (paragraphs, headings, lists, links, blockquotes)
+- Code blocks with language support
+- GitHub Flavored Markdown (tables, strikethrough, task lists)
+- Table styling and scrollable containers
+- Memoization behavior during re-renders
+- Edge cases (empty content, whitespace, special characters)
 
-1. ✅ Create `components/markdown-renderer.tsx` with react-markdown + remark-gfm
-2. ✅ Add component overrides for table styling (assistant-ui pattern)
-3. ✅ Update scrollbar CSS in `app/globals.css` (add horizontal support)
-4. ✅ Apply `.scrollbar-holo` to main chat viewport
-5. ✅ Replace existing markdown rendering with new component
-6. ✅ Test with various table formats (alignment, nested content, wide tables)
-7. ✅ Verify streaming performance (memoization prevents re-renders)
-
-## Testing Checklist
+**Manual testing checklist**:
 
 - [ ] Simple tables render correctly
-- [ ] Tables with alignment (left, center, right) display properly
+- [ ] Tables with alignment display properly
 - [ ] Wide tables scroll horizontally with visible scrollbar
 - [ ] Nested markdown in table cells renders (links, code, bold)
 - [ ] Dark mode table styling looks good
-- [ ] Main chat area scrollbar improved
-- [ ] Streaming updates don't cause excessive re-renders
 - [ ] Code blocks with syntax highlighting work
 - [ ] Links, bold, italic, lists all render correctly
+- [ ] Streaming updates render smoothly (memoization working)
 
 ## Future Considerations
 
