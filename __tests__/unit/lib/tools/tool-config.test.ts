@@ -301,7 +301,7 @@ describe("tool-config", () => {
 
         it("uses tool-specific error without custom text", () => {
             const message = getErrorMessage("compareOptions");
-            expect(message).toBe("We hit a snag with that");
+            expect(message).toBe("We couldn't build that comparison");
         });
 
         it("throws error for unknown tools", () => {

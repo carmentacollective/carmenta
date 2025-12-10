@@ -6,6 +6,7 @@ import {
     CloudSun,
     type LucideIcon,
 } from "lucide-react";
+import { logger } from "@/lib/client-logger";
 
 /**
  * Tool status states matching Vercel AI SDK's tool part states
@@ -43,7 +44,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Putting this together...",
             completed: "Comparison ready",
-            error: "We hit a snag with that",
+            error: "We couldn't build that comparison",
         },
         delightMessages: {
             completed: ["All lined up", "Side by side", "Here's the breakdown"],
@@ -85,7 +86,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Diving into this...",
             completed: "Research complete",
-            error: "Research hit a wall",
+            error: "We couldn't complete that research",
         },
         delightMessages: {
             completed: ["Found insights", "Discoveries made", "Research done"],
@@ -118,7 +119,7 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
         pending: "Getting ready...",
         running: "Working through this...",
         completed: "All set",
-        error: "We hit a snag with that",
+        error: "That didn't work out",
     },
     delightMessages: {
         completed: ["Got it", "Here you go", "All done"],
@@ -147,9 +148,13 @@ export function getToolConfig(
         if (options.fallbackToDefault) {
             // Log warning in development to help catch missing configs
             if (process.env.NODE_ENV === "development") {
-                console.warn(
-                    `Tool configuration missing for "${toolName}". Using default config. ` +
-                        `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`
+                logger.warn(
+                    {
+                        toolName,
+                        fallback: true,
+                        location: "lib/tools/tool-config.ts",
+                    },
+                    `Tool configuration missing for "${toolName}". Add to TOOL_CONFIG.`
                 );
             }
             return DEFAULT_TOOL_CONFIG;
