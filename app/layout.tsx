@@ -4,6 +4,7 @@ import { Outfit, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { ThemeProvider } from "@/lib/theme";
+import { ThemeVariantProvider } from "@/lib/theme/theme-variant-context";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
@@ -118,10 +119,12 @@ export default function RootLayout({
                 >
                     <body className="min-h-screen bg-background font-sans antialiased">
                         <ThemeProvider>
-                            <PWARegistration />
-                            <StructuredData />
-                            <Toaster />
-                            {children}
+                            <ThemeVariantProvider>
+                                <PWARegistration />
+                                <StructuredData />
+                                <Toaster />
+                                {children}
+                            </ThemeVariantProvider>
                         </ThemeProvider>
                     </body>
                 </html>
