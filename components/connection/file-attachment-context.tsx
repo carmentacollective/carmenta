@@ -96,7 +96,11 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
             const userEmail = user?.primaryEmailAddress?.emailAddress;
             if (!userEmail) {
                 logger.error({}, "Cannot upload file: user not authenticated");
-                dispatch({ type: "ERROR", id: upload.id, error: "Not authenticated" });
+                dispatch({
+                    type: "ERROR",
+                    id: upload.id,
+                    error: "We need you to sign in",
+                });
                 return;
             }
 
@@ -112,7 +116,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
                 dispatch({ type: "COMPLETE", id: upload.id, result });
             } catch (error) {
                 const errorMessage =
-                    error instanceof Error ? error.message : "Upload failed";
+                    error instanceof Error ? error.message : "Upload didn't work";
                 logger.error(
                     { error: errorMessage, filename: upload.file.name },
                     "Upload failed"
