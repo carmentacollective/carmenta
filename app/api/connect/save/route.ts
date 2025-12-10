@@ -32,13 +32,16 @@ export async function POST(req: Request) {
         // Authenticate
         const user = await currentUser();
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: "We need you to sign in first" },
+                { status: 401 }
+            );
         }
 
         const userEmail = user.emailAddresses[0]?.emailAddress;
         if (!userEmail) {
             return NextResponse.json(
-                { error: "User email not found" },
+                { error: "We couldn't find your account email" },
                 { status: 400 }
             );
         }
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
             );
             return NextResponse.json(
                 {
-                    error: "Invalid request",
+                    error: "Something's off with that request",
                     details: parseResult.error.flatten(),
                 },
                 { status: 400 }
@@ -165,7 +168,7 @@ export async function POST(req: Request) {
     } catch (error) {
         logger.error({ error }, "Failed to save connection");
         return NextResponse.json(
-            { error: "Failed to save connection" },
+            { error: "We couldn't save that connection" },
             { status: 500 }
         );
     }
