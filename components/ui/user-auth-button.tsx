@@ -18,7 +18,7 @@ import { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { useThemeVariant, type ThemeVariant } from "@/lib/hooks/use-theme-variant";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
@@ -242,6 +242,18 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                                 onClick={() =>
                                                                     setThemeVariant(
                                                                         variant.value
+                                                                    )
+                                                                }
+                                                                onMouseEnter={() =>
+                                                                    document.documentElement.setAttribute(
+                                                                        "data-theme",
+                                                                        variant.value
+                                                                    )
+                                                                }
+                                                                onMouseLeave={() =>
+                                                                    document.documentElement.setAttribute(
+                                                                        "data-theme",
+                                                                        themeVariant
                                                                     )
                                                                 }
                                                                 className="group relative flex w-full items-start gap-3 px-4 py-2 text-sm text-foreground/80 transition-all hover:text-foreground"

@@ -106,7 +106,7 @@
 
     /* ===== WARM EARTH THEME ===== */
     /* Terracotta, sage, and gold - warm and grounded */
-    [data-theme="warm-earth"] {
+    :root[data-theme="warm-earth"] {
         --background: 30 25% 95%;
         --foreground: 25 35% 25%;
 
@@ -142,7 +142,7 @@
         --glass-shadow: 0 4px 16px rgba(200, 120, 80, 0.15);
     }
 
-    [data-theme="warm-earth"].dark {
+    :root[data-theme="warm-earth"].dark {
         --background: 25 30% 10%;
         --foreground: 30 20% 88%;
 
@@ -180,7 +180,7 @@
 
     /* ===== ARCTIC CLARITY THEME ===== */
     /* Ice blue precision - cool and clear */
-    [data-theme="arctic-clarity"] {
+    :root[data-theme="arctic-clarity"] {
         --background: 200 30% 96%;
         --foreground: 210 30% 25%;
 
@@ -216,7 +216,7 @@
         --glass-shadow: 0 4px 16px rgba(100, 180, 220, 0.15);
     }
 
-    [data-theme="arctic-clarity"].dark {
+    :root[data-theme="arctic-clarity"].dark {
         --background: 210 40% 8%;
         --foreground: 200 25% 88%;
 
@@ -254,7 +254,7 @@
 
     /* ===== FOREST WISDOM THEME ===== */
     /* Natural green and amber - organic and grounded */
-    [data-theme="forest-wisdom"] {
+    :root[data-theme="forest-wisdom"] {
         --background: 80 20% 95%;
         --foreground: 140 30% 22%;
 
@@ -290,7 +290,7 @@
         --glass-shadow: 0 4px 16px rgba(100, 160, 120, 0.15);
     }
 
-    [data-theme="forest-wisdom"].dark {
+    :root[data-theme="forest-wisdom"].dark {
         --background: 140 25% 10%;
         --foreground: 80 22% 88%;
 
@@ -328,7 +328,7 @@
 
     /* ===== SUNSET CORAL THEME ===== */
     /* Coral, peach, and amber - warm and energetic */
-    [data-theme="sunset-coral"] {
+    :root[data-theme="sunset-coral"] {
         --background: 20 35% 96%;
         --foreground: 15 30% 28%;
 
@@ -364,7 +364,7 @@
         --glass-shadow: 0 4px 16px rgba(255, 154, 123, 0.2);
     }
 
-    [data-theme="sunset-coral"].dark {
+    :root[data-theme="sunset-coral"].dark {
         --background: 15 35% 9%;
         --foreground: 25 25% 88%;
 
@@ -402,7 +402,7 @@
 
     /* ===== DEEP OCEAN THEME ===== */
     /* Navy, teal, and aqua - sophisticated and calm */
-    [data-theme="deep-ocean"] {
+    :root[data-theme="deep-ocean"] {
         --background: 210 25% 96%;
         --foreground: 220 35% 25%;
 
@@ -438,7 +438,7 @@
         --glass-shadow: 0 4px 16px rgba(75, 120, 180, 0.15);
     }
 
-    [data-theme="deep-ocean"].dark {
+    :root[data-theme="deep-ocean"].dark {
         --background: 220 40% 8%;
         --foreground: 210 25% 88%;
 
@@ -476,7 +476,7 @@
 
     /* ===== MONOCHROME THEME ===== */
     /* Charcoal, silver, and cyan accent - minimal and precise */
-    [data-theme="monochrome"] {
+    :root[data-theme="monochrome"] {
         --background: 0 0% 98%;
         --foreground: 0 0% 23%;
 
@@ -512,7 +512,7 @@
         --glass-shadow: 0 4px 16px rgba(100, 100, 100, 0.12);
     }
 
-    [data-theme="monochrome"].dark {
+    :root[data-theme="monochrome"].dark {
         --background: 0 0% 8%;
         --foreground: 0 0% 88%;
 
@@ -550,7 +550,7 @@
 
     /* ===== ROSE GARDEN THEME ===== */
     /* Dusty rose, champagne, and blush - elegant and soft */
-    [data-theme="rose-garden"] {
+    :root[data-theme="rose-garden"] {
         --background: 25 30% 96%;
         --foreground: 340 25% 28%;
 
@@ -586,7 +586,7 @@
         --glass-shadow: 0 4px 16px rgba(200, 140, 160, 0.15);
     }
 
-    [data-theme="rose-garden"].dark {
+    :root[data-theme="rose-garden"].dark {
         --background: 340 28% 10%;
         --foreground: 25 25% 88%;
 
@@ -624,7 +624,7 @@
 
     /* ===== GOLDEN HOUR THEME ===== */
     /* Amber, gold, and cream - luxurious and warm */
-    [data-theme="golden-hour"] {
+    :root[data-theme="golden-hour"] {
         --background: 40 30% 96%;
         --foreground: 35 35% 25%;
 
@@ -660,7 +660,7 @@
         --glass-shadow: 0 4px 16px rgba(212, 164, 73, 0.2);
     }
 
-    [data-theme="golden-hour"].dark {
+    :root[data-theme="golden-hour"].dark {
         --background: 35 32% 9%;
         --foreground: 42 28% 88%;
 
@@ -736,25 +736,25 @@
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         box-shadow:
-            0 8px 32px rgba(139, 102, 184, 0.2),
+            0 8px 32px hsl(var(--primary) / 0.2),
             0 0 0 1px rgba(255, 255, 255, 0.6),
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
     .dark .glass-card {
-        background: rgba(40, 30, 50, 0.6);
+        background: hsl(var(--card) / 0.6);
         box-shadow:
-            0 8px 32px rgba(100, 80, 120, 0.3),
+            0 8px 32px hsl(var(--primary) / 0.3),
             0 0 0 1px rgba(255, 255, 255, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    /* User message bubble with Royal Purple → Royal Blue gradient */
+    /* User message bubble - uses theme primary color */
     .user-message-bubble {
         background: linear-gradient(
             135deg,
-            rgba(139, 102, 184, 0.3),
-            rgba(102, 148, 184, 0.3)
+            hsl(var(--primary) / 0.25),
+            hsl(var(--accent) / 0.2)
         );
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -763,8 +763,8 @@
     .dark .user-message-bubble {
         background: linear-gradient(
             135deg,
-            rgba(139, 102, 184, 0.4),
-            rgba(102, 148, 184, 0.4)
+            hsl(var(--primary) / 0.35),
+            hsl(var(--accent) / 0.25)
         );
     }
 
@@ -790,41 +790,41 @@
         background: rgba(180, 30, 30, 0.2);
     }
 
-    /* Glassmorphism input dock */
+    /* Glassmorphism input dock - uses theme primary color for glow */
     .glass-input-dock {
         @apply rounded-3xl p-1.5 sm:p-2;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         box-shadow:
-            0 8px 32px rgba(139, 102, 184, 0.25),
+            0 8px 32px hsl(var(--primary) / 0.25),
             0 0 0 1px rgba(255, 255, 255, 0.7),
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
     .dark .glass-input-dock {
-        background: rgba(40, 30, 50, 0.85);
+        background: hsl(var(--card) / 0.85);
         box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.4),
             0 0 0 1px rgba(255, 255, 255, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    /* Royal Purple gradient button */
+    /* Theme-aware gradient button */
     .btn-holo {
-        @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-all;
+        @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-primary-foreground transition-all;
         background: linear-gradient(
             135deg,
-            rgba(139, 102, 184, 0.9) 0%,
-            rgba(102, 148, 184, 0.9) 50%,
-            rgba(184, 139, 184, 0.9) 100%
+            hsl(var(--primary) / 0.9) 0%,
+            hsl(var(--accent) / 0.85) 50%,
+            hsl(var(--primary) / 0.85) 100%
         );
-        box-shadow: 0 4px 16px rgba(139, 102, 184, 0.3);
+        box-shadow: 0 4px 16px hsl(var(--primary) / 0.3);
     }
 
     .btn-holo:hover {
         @apply scale-105;
-        box-shadow: 0 8px 24px rgba(139, 102, 184, 0.4);
+        box-shadow: 0 8px 24px hsl(var(--primary) / 0.4);
     }
 
     /* Greeting text styles */

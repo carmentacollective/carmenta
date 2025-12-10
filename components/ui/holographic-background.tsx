@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
 // Track whether we're on the client to avoid hydration mismatch
 const subscribe = () => () => {};
@@ -42,6 +43,205 @@ const DARK_COLORS = [
 ];
 
 const DARK_BACKGROUND = "#1F120F"; // Dark with warm red undertone
+
+/**
+ * Theme-specific color palettes for holographic backgrounds.
+ * Each theme has distinct light and dark mode colors.
+ */
+const THEME_PALETTES: Record<
+    ThemeVariant,
+    { light: readonly ColorPalette[]; dark: readonly ColorPalette[]; darkBg: string }
+> = {
+    carmenta: {
+        light: LIGHT_COLORS,
+        dark: DARK_COLORS,
+        darkBg: DARK_BACKGROUND,
+    },
+    "warm-earth": {
+        light: [
+            { r: 220, g: 180, b: 150 }, // Terracotta
+            { r: 200, g: 170, b: 140 }, // Clay
+            { r: 180, g: 200, b: 160 }, // Sage
+            { r: 200, g: 190, b: 150 }, // Sand
+            { r: 230, g: 200, b: 140 }, // Gold
+            { r: 210, g: 180, b: 160 }, // Warm Beige
+            { r: 190, g: 210, b: 170 }, // Moss
+            { r: 220, g: 190, b: 160 }, // Cream
+        ],
+        dark: [
+            { r: 160, g: 100, b: 70 }, // Deep Terracotta
+            { r: 140, g: 90, b: 60 }, // Rust
+            { r: 100, g: 120, b: 80 }, // Dark Sage
+            { r: 140, g: 110, b: 70 }, // Amber
+            { r: 180, g: 140, b: 60 }, // Bronze
+            { r: 150, g: 100, b: 80 }, // Sienna
+            { r: 110, g: 130, b: 90 }, // Forest
+            { r: 160, g: 120, b: 90 }, // Copper
+        ],
+        darkBg: "#1A1512",
+    },
+    "arctic-clarity": {
+        light: [
+            { r: 200, g: 230, b: 255 }, // Ice Blue
+            { r: 220, g: 240, b: 255 }, // Frost
+            { r: 180, g: 220, b: 250 }, // Sky
+            { r: 200, g: 200, b: 230 }, // Mist
+            { r: 230, g: 240, b: 250 }, // Snow
+            { r: 190, g: 210, b: 240 }, // Glacier
+            { r: 210, g: 230, b: 255 }, // Crystal
+            { r: 200, g: 220, b: 245 }, // Pale Azure
+        ],
+        dark: [
+            { r: 80, g: 120, b: 160 }, // Deep Ice
+            { r: 100, g: 140, b: 180 }, // Steel Blue
+            { r: 60, g: 100, b: 140 }, // Midnight Ice
+            { r: 90, g: 110, b: 140 }, // Slate
+            { r: 110, g: 150, b: 190 }, // Arctic
+            { r: 70, g: 110, b: 150 }, // Deep Ocean
+            { r: 100, g: 130, b: 170 }, // Twilight
+            { r: 80, g: 120, b: 160 }, // Storm
+        ],
+        darkBg: "#0D1520",
+    },
+    "forest-wisdom": {
+        light: [
+            { r: 160, g: 200, b: 160 }, // Sage
+            { r: 180, g: 210, b: 170 }, // Moss
+            { r: 140, g: 190, b: 150 }, // Fern
+            { r: 200, g: 200, b: 140 }, // Lichen
+            { r: 220, g: 200, b: 140 }, // Amber
+            { r: 170, g: 210, b: 180 }, // Mint
+            { r: 190, g: 190, b: 150 }, // Olive
+            { r: 180, g: 200, b: 160 }, // Leaf
+        ],
+        dark: [
+            { r: 80, g: 120, b: 80 }, // Deep Forest
+            { r: 100, g: 130, b: 90 }, // Pine
+            { r: 60, g: 100, b: 70 }, // Evergreen
+            { r: 120, g: 120, b: 60 }, // Moss
+            { r: 150, g: 130, b: 50 }, // Bronze Amber
+            { r: 90, g: 130, b: 100 }, // Spruce
+            { r: 110, g: 110, b: 70 }, // Dark Olive
+            { r: 100, g: 120, b: 80 }, // Woodland
+        ],
+        darkBg: "#0F1A12",
+    },
+    "sunset-coral": {
+        light: [
+            { r: 255, g: 180, b: 160 }, // Coral
+            { r: 255, g: 200, b: 180 }, // Peach
+            { r: 255, g: 160, b: 140 }, // Salmon
+            { r: 255, g: 220, b: 200 }, // Blush
+            { r: 255, g: 200, b: 160 }, // Apricot
+            { r: 255, g: 180, b: 180 }, // Rose
+            { r: 255, g: 210, b: 190 }, // Shell
+            { r: 255, g: 190, b: 170 }, // Flamingo
+        ],
+        dark: [
+            { r: 180, g: 100, b: 80 }, // Deep Coral
+            { r: 200, g: 120, b: 100 }, // Rust Rose
+            { r: 160, g: 80, b: 60 }, // Brick
+            { r: 190, g: 130, b: 110 }, // Dusty Rose
+            { r: 200, g: 110, b: 70 }, // Burnt Orange
+            { r: 170, g: 90, b: 90 }, // Burgundy
+            { r: 190, g: 120, b: 100 }, // Terracotta
+            { r: 180, g: 100, b: 90 }, // Sienna
+        ],
+        darkBg: "#1A1210",
+    },
+    "deep-ocean": {
+        light: [
+            { r: 160, g: 200, b: 220 }, // Ocean
+            { r: 180, g: 210, b: 230 }, // Sky Blue
+            { r: 140, g: 180, b: 210 }, // Sea
+            { r: 170, g: 220, b: 220 }, // Aqua
+            { r: 150, g: 190, b: 220 }, // Marine
+            { r: 180, g: 200, b: 210 }, // Mist
+            { r: 160, g: 210, b: 220 }, // Lagoon
+            { r: 170, g: 200, b: 220 }, // Wave
+        ],
+        dark: [
+            { r: 40, g: 80, b: 120 }, // Deep Navy
+            { r: 60, g: 100, b: 140 }, // Midnight
+            { r: 30, g: 70, b: 110 }, // Abyss
+            { r: 50, g: 110, b: 130 }, // Deep Teal
+            { r: 40, g: 90, b: 130 }, // Ocean Floor
+            { r: 60, g: 90, b: 120 }, // Storm
+            { r: 50, g: 100, b: 130 }, // Depth
+            { r: 45, g: 85, b: 125 }, // Marine
+        ],
+        darkBg: "#0A1520",
+    },
+    monochrome: {
+        light: [
+            { r: 200, g: 200, b: 200 }, // Silver
+            { r: 180, g: 180, b: 180 }, // Gray
+            { r: 220, g: 220, b: 220 }, // Light Gray
+            { r: 190, g: 190, b: 200 }, // Cool Gray
+            { r: 210, g: 210, b: 210 }, // Platinum
+            { r: 185, g: 185, b: 190 }, // Steel
+            { r: 205, g: 205, b: 215 }, // Pearl
+            { r: 195, g: 195, b: 195 }, // Smoke
+        ],
+        dark: [
+            { r: 80, g: 80, b: 90 }, // Charcoal
+            { r: 100, g: 100, b: 110 }, // Graphite
+            { r: 60, g: 60, b: 70 }, // Onyx
+            { r: 90, g: 90, b: 100 }, // Slate
+            { r: 110, g: 110, b: 120 }, // Steel
+            { r: 70, g: 70, b: 80 }, // Carbon
+            { r: 95, g: 95, b: 105 }, // Iron
+            { r: 85, g: 85, b: 95 }, // Pewter
+        ],
+        darkBg: "#121214",
+    },
+    "rose-garden": {
+        light: [
+            { r: 240, g: 200, b: 210 }, // Dusty Rose
+            { r: 250, g: 220, b: 225 }, // Blush
+            { r: 230, g: 190, b: 200 }, // Mauve
+            { r: 255, g: 230, b: 235 }, // Champagne
+            { r: 245, g: 210, b: 220 }, // Pink Pearl
+            { r: 235, g: 200, b: 215 }, // Rose Quartz
+            { r: 250, g: 225, b: 230 }, // Petal
+            { r: 240, g: 205, b: 215 }, // Rosewood
+        ],
+        dark: [
+            { r: 140, g: 90, b: 110 }, // Deep Rose
+            { r: 160, g: 110, b: 125 }, // Mulberry
+            { r: 120, g: 80, b: 100 }, // Burgundy
+            { r: 170, g: 130, b: 145 }, // Dusty Mauve
+            { r: 150, g: 100, b: 120 }, // Wine
+            { r: 130, g: 90, b: 110 }, // Plum
+            { r: 155, g: 115, b: 130 }, // Antique Rose
+            { r: 145, g: 95, b: 115 }, // Berry
+        ],
+        darkBg: "#1A1215",
+    },
+    "golden-hour": {
+        light: [
+            { r: 255, g: 220, b: 160 }, // Gold
+            { r: 255, g: 230, b: 180 }, // Honey
+            { r: 255, g: 200, b: 140 }, // Amber
+            { r: 255, g: 240, b: 200 }, // Cream
+            { r: 255, g: 210, b: 150 }, // Sunset
+            { r: 255, g: 225, b: 170 }, // Warm Yellow
+            { r: 255, g: 235, b: 190 }, // Butter
+            { r: 255, g: 215, b: 160 }, // Marigold
+        ],
+        dark: [
+            { r: 180, g: 140, b: 60 }, // Deep Gold
+            { r: 200, g: 160, b: 80 }, // Bronze
+            { r: 160, g: 120, b: 40 }, // Antique Gold
+            { r: 190, g: 150, b: 90 }, // Brass
+            { r: 170, g: 130, b: 50 }, // Ochre
+            { r: 185, g: 145, b: 70 }, // Amber
+            { r: 195, g: 155, b: 85 }, // Harvest
+            { r: 175, g: 135, b: 55 }, // Caramel
+        ],
+        darkBg: "#1A1510",
+    },
+};
 
 const BLOB_COUNT = 12;
 const PARTICLE_COUNT = 35; // Reduced from 80 for subtler effect
@@ -136,6 +336,7 @@ export function HolographicBackground({
     darkColorPalette,
 }: HolographicBackgroundProps) {
     const { resolvedTheme } = useTheme();
+    const { themeVariant } = useThemeVariant();
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
@@ -148,21 +349,23 @@ export function HolographicBackground({
         colors: readonly ColorPalette[];
     }>({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
 
-    // Update theme colors when theme changes
+    // Update theme colors when theme or theme variant changes
     useEffect(() => {
         const isDark = resolvedTheme === "dark";
+        const palette = THEME_PALETTES[themeVariant] || THEME_PALETTES.carmenta;
+
         if (isDark) {
             themeColorsRef.current = {
-                bg: DARK_BACKGROUND,
-                colors: darkColorPalette || DARK_COLORS,
+                bg: darkColorPalette ? DARK_BACKGROUND : palette.darkBg,
+                colors: darkColorPalette || palette.dark,
             };
         } else {
             themeColorsRef.current = {
                 bg: LIGHT_BACKGROUND,
-                colors: lightColorPalette || LIGHT_COLORS,
+                colors: lightColorPalette || palette.light,
             };
         }
-    }, [resolvedTheme, lightColorPalette, darkColorPalette]);
+    }, [resolvedTheme, themeVariant, lightColorPalette, darkColorPalette]);
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
