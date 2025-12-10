@@ -76,27 +76,11 @@ export async function POST(req: Request) {
             imageUrl: user.imageUrl ?? null,
         });
 
-        // Fetch account info
-        let accountId: string;
-        let accountDisplayName: string;
-
-        try {
-            const accountInfo = await fetchAccountInfo(
-                service,
-                connectionId,
-                dbUser.id
-            );
-            accountId = accountInfo.identifier;
-            accountDisplayName = accountInfo.displayName;
-        } catch (error) {
-            logger.error(
-                { error, service, connectionId, userId: dbUser.id },
-                "Failed to fetch account info in save endpoint"
-            );
-            // Use defaults
-            accountId = connectionId;
-            accountDisplayName = service;
-        }
+        // Fetch account info to get the actual identifier
+        // Errors bubble up to route error handler - no silent failures
+        const accountInfo = await fetchAccountInfo(service, connectionId, dbUser.id);
+        const accountId = accountInfo.identifier;
+        const accountDisplayName = accountInfo.displayName;
 
         // Upsert integration (idempotent)
         await db.transaction(async (tx) => {
