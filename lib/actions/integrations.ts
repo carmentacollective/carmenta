@@ -185,91 +185,98 @@ export async function connectApiKeyService(
         const accountId = accountLabel?.trim() || "default";
         const accountDisplayName = accountLabel?.trim() || service.name;
 
-        // Check if this account already exists
-        const [existing] = await db
-            .select()
-            .from(schema.integrations)
-            .where(
-                and(
-                    eq(schema.integrations.userEmail, userEmail),
-                    eq(schema.integrations.service, serviceId),
-                    eq(schema.integrations.accountId, accountId)
-                )
-            )
-            .limit(1);
-
-        if (existing) {
-            // Update existing integration (reconnection)
-            await db
-                .update(schema.integrations)
-                .set({
-                    encryptedCredentials,
-                    status: "connected",
-                    errorMessage: null,
-                    updatedAt: new Date(),
-                })
-                .where(eq(schema.integrations.id, existing.id));
-
-            logger.info(
-                { userEmail, service: serviceId, accountId },
-                "API key integration updated"
-            );
-
-            // Log reconnection event
-            await logIntegrationEvent({
-                userEmail,
-                service: serviceId,
-                accountId,
-                accountDisplayName,
-                eventType: "reconnected",
-                eventSource: "user",
-                metadata: { wasReconnection: true, previousStatus: existing.status },
-            });
-        } else {
-            // Check if this is the first account for this service (make it default)
-            const existingAccounts = await db
+        // Create or update integration in database (transaction for atomicity)
+        const result = await db.transaction(async (tx) => {
+            // Check if this account already exists
+            const [existing] = await tx
                 .select()
                 .from(schema.integrations)
                 .where(
                     and(
                         eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, serviceId),
-                        eq(schema.integrations.status, "connected")
+                        eq(schema.integrations.accountId, accountId)
                     )
+                )
+                .limit(1);
+
+            if (existing) {
+                // Update existing integration (reconnection)
+                await tx
+                    .update(schema.integrations)
+                    .set({
+                        encryptedCredentials,
+                        status: "connected",
+                        errorMessage: null,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(schema.integrations.id, existing.id));
+
+                logger.info(
+                    { userEmail, service: serviceId, accountId },
+                    "API key integration updated"
                 );
 
-            const isDefault = existingAccounts.length === 0;
+                return {
+                    eventType: "reconnected" as const,
+                    isDefault: existing.isDefault,
+                    previousStatus: existing.status,
+                };
+            } else {
+                // Check if this is the first account for this service (make it default)
+                const existingAccounts = await tx
+                    .select()
+                    .from(schema.integrations)
+                    .where(
+                        and(
+                            eq(schema.integrations.userEmail, userEmail),
+                            eq(schema.integrations.service, serviceId),
+                            eq(schema.integrations.status, "connected")
+                        )
+                    );
 
-            // Create new integration
-            await db.insert(schema.integrations).values({
-                userEmail,
-                service: serviceId,
-                credentialType: "api_key",
-                accountId,
-                accountDisplayName,
-                encryptedCredentials,
-                isDefault,
-                status: "connected",
-                connectedAt: new Date(),
-                updatedAt: new Date(),
-            });
+                const isDefault = existingAccounts.length === 0;
 
-            logger.info(
-                { userEmail, service: serviceId, accountId, isDefault },
-                "API key integration created"
-            );
+                // Create new integration
+                await tx.insert(schema.integrations).values({
+                    userEmail,
+                    service: serviceId,
+                    credentialType: "api_key",
+                    accountId,
+                    accountDisplayName,
+                    encryptedCredentials,
+                    isDefault,
+                    status: "connected",
+                    connectedAt: new Date(),
+                    updatedAt: new Date(),
+                });
 
-            // Log connection event
-            await logIntegrationEvent({
-                userEmail,
-                service: serviceId,
-                accountId,
-                accountDisplayName,
-                eventType: "connected",
-                eventSource: "user",
-                metadata: { isFirstAccount: isDefault, isDefault },
-            });
-        }
+                logger.info(
+                    { userEmail, service: serviceId, accountId, isDefault },
+                    "API key integration created"
+                );
+
+                return {
+                    eventType: "connected" as const,
+                    isDefault,
+                    previousStatus: undefined,
+                };
+            }
+        });
+
+        // Log event to audit trail (outside transaction, non-blocking)
+        await logIntegrationEvent({
+            userEmail,
+            service: serviceId,
+            accountId,
+            accountDisplayName,
+            eventType: result.eventType,
+            eventSource: "user",
+            metadata:
+                result.eventType === "reconnected"
+                    ? { wasReconnection: true, previousStatus: result.previousStatus }
+                    : { isFirstAccount: result.isDefault, isDefault: result.isDefault },
+        });
 
         return { success: true };
     } catch (error) {
