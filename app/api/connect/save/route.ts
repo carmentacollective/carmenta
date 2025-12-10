@@ -85,82 +85,87 @@ export async function POST(req: Request) {
         const accountId = accountInfo.identifier;
         const accountDisplayName = accountInfo.displayName;
 
-        // 5. Check if this is the first account for this service
-        const existingConnections = await db.query.integrations.findMany({
-            where: and(
-                eq(schema.integrations.userEmail, userEmail),
-                eq(schema.integrations.service, service),
-                eq(schema.integrations.status, "connected")
-            ),
-        });
-        const isFirstAccount = existingConnections.length === 0;
+        // 5. Create or update integration in database (transaction for atomicity)
+        const result = await db.transaction(async (tx) => {
+            // Check if this is the first account for this service
+            const existingConnections = await tx.query.integrations.findMany({
+                where: and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.status, "connected")
+                ),
+            });
+            const isFirstAccount = existingConnections.length === 0;
 
-        // 6. Create or update integration in database
-        const existing = await db.query.integrations.findFirst({
-            where: and(
-                eq(schema.integrations.userEmail, userEmail),
-                eq(schema.integrations.service, service),
-                eq(schema.integrations.accountId, accountId)
-            ),
-        });
+            // Check if this specific account already exists
+            const existing = await tx.query.integrations.findFirst({
+                where: and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.accountId, accountId)
+                ),
+            });
 
-        let eventType: IntegrationEventType;
+            let eventType: IntegrationEventType;
 
-        if (existing) {
-            // Update existing integration (reconnection)
-            await db
-                .update(schema.integrations)
-                .set({
+            if (existing) {
+                // Update existing integration (reconnection)
+                await tx
+                    .update(schema.integrations)
+                    .set({
+                        connectionId: connectionId,
+                        accountDisplayName,
+                        isDefault: isFirstAccount,
+                        status: "connected",
+                        errorMessage: null,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(schema.integrations.id, existing.id));
+
+                eventType = "reconnected";
+                logger.info(
+                    { userEmail, service, accountId },
+                    "Updated existing integration"
+                );
+            } else {
+                // Create new integration
+                await tx.insert(schema.integrations).values({
+                    userEmail,
+                    service,
                     connectionId: connectionId,
+                    credentialType: "oauth",
+                    accountId,
                     accountDisplayName,
                     isDefault: isFirstAccount,
                     status: "connected",
-                    errorMessage: null,
+                    connectedAt: new Date(),
                     updatedAt: new Date(),
-                })
-                .where(eq(schema.integrations.id, existing.id));
+                });
 
-            eventType = "reconnected";
-            logger.info(
-                { userEmail, service, accountId },
-                "Updated existing integration"
-            );
-        } else {
-            // Create new integration
-            await db.insert(schema.integrations).values({
-                userEmail,
-                service,
-                connectionId: connectionId,
-                credentialType: "oauth",
-                accountId,
-                accountDisplayName,
-                isDefault: isFirstAccount,
-                status: "connected",
-                connectedAt: new Date(),
-                updatedAt: new Date(),
-            });
+                eventType = "connected";
+                logger.info(
+                    { userEmail, service, accountId, isDefault: isFirstAccount },
+                    "Created new integration"
+                );
+            }
 
-            eventType = "connected";
-            logger.info(
-                { userEmail, service, accountId, isDefault: isFirstAccount },
-                "Created new integration"
-            );
-        }
+            return { eventType, isFirstAccount, previousStatus: existing?.status };
+        });
 
-        // 7. Log event to audit trail (non-blocking)
+        // 6. Log event to audit trail (outside transaction, non-blocking)
         await logIntegrationEvent({
             userEmail,
             service,
             accountId,
             accountDisplayName: accountDisplayName ?? undefined,
-            eventType,
+            eventType: result.eventType,
             eventSource: "user",
             connectionId,
             metadata: {
-                wasReconnection: eventType === "reconnected",
-                isFirstAccount,
-                isDefault: isFirstAccount,
-                previousStatus: existing?.status,
+                wasReconnection: result.eventType === "reconnected",
+                isFirstAccount: result.isFirstAccount,
+                isDefault: result.isFirstAccount,
+                previousStatus: result.previousStatus,
             },
         });
 
