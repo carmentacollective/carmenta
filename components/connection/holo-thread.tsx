@@ -119,7 +119,6 @@ function HoloThreadInner() {
                         <button
                             onClick={scrollToBottom}
                             className="btn-glass-interactive absolute -top-12 p-3 sm:-top-10 sm:p-2"
-                            aria-label="Scroll to bottom"
                         >
                             <ArrowDown className="h-5 w-5 text-foreground/70 sm:h-4 sm:w-4" />
                         </button>
@@ -497,13 +496,7 @@ function MessageActions({
                 align === "right" && "justify-end"
             )}
         >
-            <CopyButton
-                text={content}
-                ariaLabel="Copy message"
-                variant="ghost"
-                size="sm"
-                showMenu={true}
-            />
+            <CopyButton text={content} variant="ghost" size="sm" showMenu={true} />
         </div>
     );
 }
@@ -1009,7 +1002,6 @@ function Composer({ isNewConversation }: ComposerProps) {
                         <ComposerButton
                             type="button"
                             variant="stop"
-                            aria-label="Stop generation"
                             onClick={handleStop}
                             data-testid="stop-button"
                         >
@@ -1019,7 +1011,6 @@ function Composer({ isNewConversation }: ComposerProps) {
                         <ComposerButton
                             type="submit"
                             variant="send"
-                            aria-label="Send message"
                             disabled={isUploading}
                             data-testid="send-button"
                         >

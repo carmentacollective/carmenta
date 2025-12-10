@@ -47,7 +47,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
     // Show nothing while loading to prevent flash
     if (!isLoaded) {
-        return <div className={cn("h-10 w-10", className)} aria-hidden="true" />;
+        return <div className={cn("h-10 w-10", className)} />;
     }
 
     // Not signed in - show Sign In button
@@ -79,7 +79,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="btn-icon-glass group relative"
-                aria-label="User menu"
             >
                 <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7 md:h-8 md:w-8" />
             </button>

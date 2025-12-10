@@ -203,7 +203,6 @@ function RuntimeErrorBanner({
                 "border border-red-200/50",
                 "duration-300 animate-in fade-in slide-in-from-bottom-4"
             )}
-            role="alert"
         >
             <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
             <div className="flex-1">
@@ -214,14 +213,12 @@ function RuntimeErrorBanner({
                 <button
                     onClick={onRetry}
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
-                    aria-label="Retry"
                 >
                     <RefreshCw className="h-4 w-4" />
                 </button>
                 <button
                     onClick={onDismiss}
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
-                    aria-label="Dismiss"
                 >
                     <X className="h-4 w-4" />
                 </button>

@@ -37,7 +37,6 @@ export function FilePickerButton() {
                 type="button"
                 onClick={handleClick}
                 className="btn-icon-glass group"
-                aria-label="Attach file"
             >
                 <Paperclip className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7" />
             </button>
@@ -48,7 +47,6 @@ export function FilePickerButton() {
                 accept={accept}
                 onChange={handleChange}
                 className="hidden"
-                aria-hidden="true"
             />
         </>
     );
