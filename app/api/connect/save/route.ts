@@ -147,9 +147,14 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        logger.error({ error }, "Failed to save connection");
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        logger.error(
+            { err: error, errorMessage, errorStack },
+            "Failed to save connection"
+        );
         return NextResponse.json(
-            { error: "Failed to save connection" },
+            { error: "Failed to save connection", details: errorMessage },
             { status: 500 }
         );
     }

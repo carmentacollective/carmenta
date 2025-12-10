@@ -86,11 +86,18 @@ export default function ConnectServicePage() {
                                 });
 
                                 if (!saveResponse.ok) {
+                                    const errorData = await saveResponse
+                                        .json()
+                                        .catch(() => ({}));
                                     logger.error(
-                                        { status: saveResponse.status },
+                                        { status: saveResponse.status, errorData },
                                         "Failed to save connection"
                                     );
-                                    setError("Failed to save connection");
+                                    setError(
+                                        errorData.details ||
+                                            errorData.error ||
+                                            `Failed to save connection (${saveResponse.status})`
+                                    );
                                     return;
                                 }
 
