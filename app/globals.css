@@ -22,8 +22,8 @@
         --popover: 0 0% 100%;
         --popover-foreground: 285 25% 31%;
 
-        /* Primary - Holographic accent */
-        --primary: 280 40% 75%;
+        /* Primary - Royal Purple */
+        --primary: 270 40% 56%;
         --primary-foreground: 0 0% 100%;
 
         /* Secondary */
@@ -45,7 +45,7 @@
         /* Borders & Inputs */
         --border: 280 20% 85%;
         --input: 280 20% 90%;
-        --ring: 280 40% 75%;
+        --ring: 270 40% 56%;
 
         /* Border radius */
         --radius: 0.75rem;
@@ -56,7 +56,7 @@
         --glass-bg-hover: rgba(255, 255, 255, 0.7);
         --glass-bg-active: rgba(255, 255, 255, 0.8);
         --glass-surface: rgba(255, 255, 255, 0.9);
-        --glass-shadow: 0 4px 16px rgba(180, 140, 200, 0.15);
+        --glass-shadow: 0 4px 16px rgba(139, 102, 184, 0.15);
 
         /* Chat viewport fade - Apple-level subtle fades
          * Uses fixed pixels, not percentages, for consistent subtlety
@@ -77,7 +77,7 @@
         --popover: 280 30% 10%;
         --popover-foreground: 280 20% 90%;
 
-        --primary: 280 50% 65%;
+        --primary: 270 50% 65%;
         --primary-foreground: 280 30% 8%;
 
         --secondary: 280 20% 20%;
@@ -94,12 +94,12 @@
 
         --border: 280 20% 25%;
         --input: 280 20% 20%;
-        --ring: 280 50% 65%;
+        --ring: 270 50% 65%;
 
-        /* Warm purple glassmorphism for dark mode */
-        --glass-bg: rgba(180, 140, 200, 0.15);
-        --glass-bg-hover: rgba(180, 140, 200, 0.25);
-        --glass-bg-active: rgba(180, 140, 200, 0.3);
+        /* Royal purple glassmorphism for dark mode */
+        --glass-bg: rgba(139, 102, 184, 0.15);
+        --glass-bg-hover: rgba(139, 102, 184, 0.25);
+        --glass-bg-active: rgba(139, 102, 184, 0.3);
         --glass-surface: rgba(30, 20, 35, 0.95);
         --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
@@ -144,7 +144,7 @@
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         box-shadow:
-            0 8px 32px rgba(180, 140, 200, 0.2),
+            0 8px 32px rgba(139, 102, 184, 0.2),
             0 0 0 1px rgba(255, 255, 255, 0.6),
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
@@ -157,12 +157,12 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    /* User message bubble with holographic gradient */
+    /* User message bubble with Royal Purple → Royal Blue gradient */
     .user-message-bubble {
         background: linear-gradient(
             135deg,
-            rgba(200, 160, 220, 0.3),
-            rgba(160, 200, 220, 0.3)
+            rgba(139, 102, 184, 0.3),
+            rgba(102, 148, 184, 0.3)
         );
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -171,8 +171,8 @@
     .dark .user-message-bubble {
         background: linear-gradient(
             135deg,
-            rgba(160, 120, 180, 0.4),
-            rgba(120, 160, 180, 0.4)
+            rgba(139, 102, 184, 0.4),
+            rgba(102, 148, 184, 0.4)
         );
     }
 
@@ -205,7 +205,7 @@
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         box-shadow:
-            0 8px 32px rgba(180, 140, 200, 0.25),
+            0 8px 32px rgba(139, 102, 184, 0.25),
             0 0 0 1px rgba(255, 255, 255, 0.7),
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
@@ -218,21 +218,20 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    /* Holographic gradient button */
+    /* Royal Purple gradient button */
     .btn-holo {
         @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-all;
         background: linear-gradient(
             135deg,
-            rgba(200, 160, 220, 0.9) 0%,
-            rgba(160, 200, 220, 0.9) 50%,
-            rgba(220, 180, 200, 0.9) 100%
+            rgba(139, 102, 184, 0.9) 0%,
+            rgba(102, 148, 184, 0.9) 100%
         );
-        box-shadow: 0 4px 16px rgba(180, 140, 200, 0.3);
+        box-shadow: 0 4px 16px rgba(139, 102, 184, 0.3);
     }
 
     .btn-holo:hover {
         @apply scale-105;
-        box-shadow: 0 8px 24px rgba(180, 140, 200, 0.4);
+        box-shadow: 0 8px 24px rgba(139, 102, 184, 0.4);
     }
 
     /* Greeting text styles */
@@ -394,11 +393,11 @@
     /* Custom scrollbar - supports both vertical and horizontal scrolling */
     .scrollbar-holo {
         scrollbar-width: thin;
-        scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
+        scrollbar-color: rgba(139, 102, 184, 0.3) transparent;
     }
 
     .dark .scrollbar-holo {
-        scrollbar-color: rgba(200, 160, 180, 0.3) transparent;
+        scrollbar-color: rgba(139, 102, 184, 0.3) transparent;
     }
 
     .scrollbar-holo::-webkit-scrollbar {
@@ -411,20 +410,20 @@
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(180, 140, 200, 0.3);
+        background: rgba(139, 102, 184, 0.3);
         border-radius: 4px;
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(200, 160, 180, 0.3);
+        background: rgba(139, 102, 184, 0.3);
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(180, 140, 200, 0.5);
+        background: rgba(139, 102, 184, 0.5);
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(200, 160, 180, 0.5);
+        background: rgba(139, 102, 184, 0.5);
     }
 
     .scrollbar-holo::-webkit-scrollbar-corner {
@@ -485,7 +484,7 @@
     /* Dashed frame for expandable text (optional, per spec) */
     .expandable-text-frame {
         @apply rounded-lg border-2 border-dashed p-4;
-        border-color: hsl(280 40% 75% / 0.4); /* purple-300 at 40% opacity */
+        border-color: hsl(270 40% 56% / 0.4); /* Royal Purple at 40% opacity */
     }
 
     /* Gentle rotating animation for loading spinner */
