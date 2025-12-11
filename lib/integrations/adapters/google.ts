@@ -74,7 +74,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google",
+                        "Provider-Config-Key": "google-calendar",
                     },
                     searchParams: {
                         personFields: "names,emailAddresses",
@@ -803,7 +803,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            calendars: response.items.map((cal) => ({
+            calendars: (response.items || []).map((cal) => ({
                 id: cal.id,
                 name: cal.summary,
                 description: cal.description,
@@ -877,7 +877,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            events: response.items.map((event) => ({
+            events: (response.items || []).map((event) => ({
                 id: event.id,
                 summary: event.summary || "(No title)",
                 description: event.description,
@@ -1461,7 +1461,10 @@ export class GoogleAdapter extends ServiceAdapter {
         };
 
         if (given_name !== undefined || family_name !== undefined) {
-            body.names = [{ givenName: given_name, familyName: family_name }];
+            const nameObj: { givenName?: string; familyName?: string } = {};
+            if (given_name !== undefined) nameObj.givenName = given_name;
+            if (family_name !== undefined) nameObj.familyName = family_name;
+            body.names = [nameObj];
             updateFields.push("names");
         }
         if (emails !== undefined) {
@@ -1475,6 +1478,12 @@ export class GoogleAdapter extends ServiceAdapter {
         if (organizations !== undefined) {
             body.organizations = organizations;
             updateFields.push("organizations");
+        }
+
+        if (updateFields.length === 0) {
+            throw new ValidationError(
+                "At least one field must be provided to update contact"
+            );
         }
 
         const response = await httpClient
@@ -1556,7 +1565,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            groups: response.contactGroups.map((group) => ({
+            groups: (response.contactGroups || []).map((group) => ({
                 resourceName: group.resourceName,
                 name: group.formattedName || group.name,
                 memberCount: group.memberCount || 0,
