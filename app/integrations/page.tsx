@@ -33,7 +33,18 @@ export default function IntegrationsPage() {
             setConnected(result.connected);
             setAvailable(result.available);
         } catch (error) {
+            // Logger now automatically reports to Sentry
             logger.error({ error }, "Failed to load services");
+
+            // Show user-facing error with retry option
+            toast.error("Failed to load integrations", {
+                description:
+                    "Please try again or contact support if the issue persists",
+                action: {
+                    label: "Retry",
+                    onClick: () => loadServices(),
+                },
+            });
         } finally {
             setLoading(false);
         }

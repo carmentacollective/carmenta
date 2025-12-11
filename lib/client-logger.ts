@@ -2,16 +2,18 @@
  * Client-side logger for browser environments
  *
  * Mirrors the server logger API but works in browsers.
- * Structured JSON logging that can be sent to a logging service.
+ * Structured JSON logging with Sentry integration for production monitoring.
  *
  * Usage:
  * ```ts
  * import { logger } from "@/lib/client-logger";
  *
  * logger.info({ component: "Chat" }, "Message sent");
- * logger.error({ error, context }, "Request failed");
+ * logger.error({ error, context }, "Request failed"); // Auto-reports to Sentry
  * ```
  */
+
+import * as Sentry from "@sentry/nextjs";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -45,8 +47,26 @@ function log(level: LogLevel, context: LogContext, message: string) {
 
     const formatted = formatLog(level, context, message);
 
-    // In production, could send to a logging service
-    // For now, use console with structured data
+    // Report errors and warnings to Sentry for production monitoring
+    if (level === "error" || level === "warn") {
+        const { error, ...extra } = context;
+
+        if (error instanceof Error) {
+            // Report actual Error objects to Sentry
+            Sentry.captureException(error, {
+                level: level === "error" ? "error" : "warning",
+                extra: { message, ...extra },
+            });
+        } else {
+            // Report error/warning messages without Error objects
+            Sentry.captureMessage(message, {
+                level: level === "error" ? "error" : "warning",
+                extra: context,
+            });
+        }
+    }
+
+    // Also log to console
     const consoleFn =
         level === "error"
             ? console.error
