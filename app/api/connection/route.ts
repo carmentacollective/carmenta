@@ -27,7 +27,7 @@ import { assertEnv, env } from "@/lib/env";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { getModel } from "@/lib/models";
-import { buildSystemPrompt } from "@/lib/prompts/system-messages";
+import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 
@@ -490,8 +490,10 @@ export async function POST(req: Request) {
             return filtered;
         });
 
-        // Build system prompt with static + dynamic content
-        const systemPrompt = buildSystemPrompt({
+        // Build system messages with Anthropic prompt caching on static content.
+        // These are prepended to messages array (not via `system` param) so we can
+        // use providerOptions for cache_control.
+        const systemMessages = buildSystemMessages({
             user,
             userEmail,
             timezone: undefined, // TODO: Get from client in future
@@ -499,8 +501,11 @@ export async function POST(req: Request) {
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
-            system: systemPrompt,
-            messages: convertToModelMessages(messagesWithoutReasoning),
+            // System messages are in the messages array with providerOptions for caching
+            messages: [
+                ...systemMessages,
+                ...convertToModelMessages(messagesWithoutReasoning),
+            ],
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),
@@ -536,15 +541,24 @@ export async function POST(req: Request) {
                 providerMetadata,
             }) => {
                 try {
-                    // Log OpenRouter response metadata to verify cache behavior
-                    logger.info(
-                        {
-                            usage,
-                            providerMetadata,
-                            model: concierge.modelId,
-                        },
-                        "OpenRouter response metadata - checking for cache info"
-                    );
+                    // Log cache performance metrics (only when caching is active)
+                    const cachedTokens = usage?.cachedInputTokens ?? 0;
+                    if (cachedTokens > 0 || env.NODE_ENV === "development") {
+                        logger.debug(
+                            {
+                                inputTokens: usage?.inputTokens,
+                                cachedInputTokens: cachedTokens,
+                                outputTokens: usage?.outputTokens,
+                                cacheHitRate: usage?.inputTokens
+                                    ? `${Math.round((cachedTokens / usage.inputTokens) * 100)}%`
+                                    : "N/A",
+                                model: concierge.modelId,
+                            },
+                            cachedTokens > 0
+                                ? "Prompt cache hit - cost savings active"
+                                : "No cache hit (expected on first request or cache expiry)"
+                        );
+                    }
 
                     // Build UI message parts from the step result
                     const parts: UIMessageLike["parts"] = [];

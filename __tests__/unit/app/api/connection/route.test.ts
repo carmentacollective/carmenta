@@ -170,16 +170,6 @@ describe("POST /api/connection", () => {
 
         const response = await POST(request);
 
-        if (response.status !== 200) {
-            const errorBody = await response.text();
-            console.error(
-                "Test failed with status",
-                response.status,
-                "Body:",
-                errorBody
-            );
-        }
-
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toContain("text/event-stream");
 
