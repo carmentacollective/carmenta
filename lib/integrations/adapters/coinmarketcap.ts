@@ -388,14 +388,9 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             apiKey = connectionCreds.credentials.apiKey;
         } catch (error) {
             if (error instanceof ValidationError) {
-                const errorMsg = [
-                    "❌ CoinMarketCap is not connected to your account.",
-                    "",
-                    `Please connect CoinMarketCap at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/coinmarketcap`,
-                    "",
-                    "Once connected, try your request again.",
-                ].join("\n");
-                return this.createErrorResponse(errorMsg);
+                return this.createErrorResponse(
+                    "CoinMarketCap isn't connected yet. Connect it in Integrations to use crypto market data."
+                );
             }
             throw error;
         }
@@ -451,8 +446,7 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             if (error instanceof Error) {
                 if (error.message.includes("401") || error.message.includes("1002")) {
                     errorMessage +=
-                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/coinmarketcap`;
+                        "Authentication failed. Your API key may be invalid - try reconnecting in Integrations.";
                 } else if (
                     error.message.includes("429") ||
                     error.message.includes("1008")
@@ -980,14 +974,9 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             apiKey = connectionCreds.credentials.apiKey;
         } catch (error) {
             if (error instanceof ValidationError) {
-                const errorMsg = [
-                    "❌ CoinMarketCap is not connected to your account.",
-                    "",
-                    `Please connect CoinMarketCap at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/coinmarketcap`,
-                    "",
-                    "Once connected, try your request again.",
-                ].join("\n");
-                return this.createErrorResponse(errorMsg);
+                return this.createErrorResponse(
+                    "CoinMarketCap isn't connected yet. Connect it in Integrations to use crypto market data."
+                );
             }
             throw error;
         }
