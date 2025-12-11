@@ -9,7 +9,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { categorizeService, type ServiceAccount } from "@/lib/actions/integrations";
+import {
+    categorizeService,
+    type ServiceAccount,
+} from "@/lib/actions/integration-utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 
 const mockService: ServiceDefinition = {
