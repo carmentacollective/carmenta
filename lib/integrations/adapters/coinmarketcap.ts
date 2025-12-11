@@ -848,7 +848,7 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
         if (!symbol && !id) {
             return this.createErrorResponse("Either symbol or id is required");
         }
-        if (!amount || !convert) {
+        if (typeof amount !== "number" || !convert) {
             return this.createErrorResponse("amount and convert are required");
         }
 
@@ -968,15 +968,29 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
         }
 
         // Get API key
-        const connectionCreds = await getCredentials(userId, this.serviceName);
-        if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-            return this.createErrorResponse("Invalid credentials");
+        let apiKey: string;
+        try {
+            const connectionCreds = await getCredentials(userId, this.serviceName);
+            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
+                return this.createErrorResponse("Invalid credentials");
+            }
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
+                return this.createErrorResponse("Invalid credential format");
+            }
+            apiKey = connectionCreds.credentials.apiKey;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                const errorMsg = [
+                    "❌ CoinMarketCap is not connected to your account.",
+                    "",
+                    `Please connect CoinMarketCap at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/coinmarketcap`,
+                    "",
+                    "Once connected, try your request again.",
+                ].join("\n");
+                return this.createErrorResponse(errorMsg);
+            }
+            throw error;
         }
-        if (!isApiKeyCredentials(connectionCreds.credentials)) {
-            return this.createErrorResponse("Invalid credential format");
-        }
-
-        const apiKey = connectionCreds.credentials.apiKey;
 
         // Build request options
         const requestOptions: {
