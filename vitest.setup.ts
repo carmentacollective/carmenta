@@ -190,6 +190,15 @@ async function createFreshTestDb() {
  * setupTestDb();
  */
 export function setupTestDb() {
+    // Defense in depth: this file truncates tables, so ensure we're in test env
+    if (process.env.NODE_ENV !== "test") {
+        throw new Error(
+            "setupTestDb() called outside test environment. " +
+                `NODE_ENV is "${process.env.NODE_ENV}", expected "test". ` +
+                "This function truncates all tables and must never run in production."
+        );
+    }
+
     beforeAll(async () => {
         await createFreshTestDb();
 
