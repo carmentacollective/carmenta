@@ -55,6 +55,14 @@ function toAIMessage(msg: UIMessageLike): UIMessage {
                     // providerMetadata is optional - omit if not present
                 };
             }
+            if (part.type === "file") {
+                return {
+                    type: "file" as const,
+                    url: String(part.url || ""),
+                    mediaType: String(part.mediaType || part.mimeType || ""),
+                    name: String(part.name || "file"),
+                };
+            }
             // Default to text for any unknown types
             return { type: "text" as const, text: String(part.text || "") };
         }),
