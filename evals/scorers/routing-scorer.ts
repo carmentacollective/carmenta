@@ -87,13 +87,15 @@ export function RoutingScorer({ output, expected }: ScorerArgs): Score[] {
 
     // Reasoning score
     if (expected.reasoningEnabled !== undefined && expected.reasoningEnabled !== null) {
-        const reasoningMatch = output.reasoning?.enabled === expected.reasoningEnabled;
+        // Treat undefined/missing reasoning header as reasoning disabled
+        const actualReasoning = output.reasoning?.enabled ?? false;
+        const reasoningMatch = actualReasoning === expected.reasoningEnabled;
         scores.push({
             name: "Reasoning",
             score: reasoningMatch ? 1 : 0,
             metadata: {
                 expected: expected.reasoningEnabled,
-                actual: output.reasoning?.enabled ?? false,
+                actual: actualReasoning,
             },
         });
     }
