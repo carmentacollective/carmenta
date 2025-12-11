@@ -72,6 +72,8 @@ export function useDragDrop({
 }: UseDragDropOptions): UseDragDropReturn {
     const [isDraggingInternal, setIsDragging] = useState(false);
     const dragCounterRef = useRef(0);
+    // Tracks whether state needs reset after disabled toggle (avoids setState in effect)
+    const needsResetRef = useRef(false);
 
     // Derive the exposed state: always false when disabled
     const isDragging = disabled ? false : isDraggingInternal;
@@ -83,6 +85,12 @@ export function useDragDrop({
 
             if (disabled) return;
             if (!hasFiles(e.dataTransfer)) return;
+
+            // Reset stale state if flagged by effect (called from handler, not effect body)
+            if (needsResetRef.current) {
+                needsResetRef.current = false;
+                setIsDragging(false);
+            }
 
             dragCounterRef.current++;
             if (dragCounterRef.current === 1) {
@@ -99,7 +107,10 @@ export function useDragDrop({
 
             if (disabled) return;
 
-            dragCounterRef.current--;
+            // Only decrement if we have a positive count (prevents negative from non-file drags)
+            if (dragCounterRef.current > 0) {
+                dragCounterRef.current--;
+            }
             if (dragCounterRef.current === 0) {
                 setIsDragging(false);
             }
@@ -165,6 +176,12 @@ export function useDragDrop({
 
     // Attach listeners to window for viewport-wide detection
     useEffect(() => {
+        // Reset counter and flag that state needs clearing on next interaction
+        // (We can't call setState directly in effect - ESLint rule)
+        // The flag is consumed by handleDragEnter to reset stale isDragging state
+        dragCounterRef.current = 0;
+        needsResetRef.current = true;
+
         if (disabled) return;
 
         window.addEventListener("dragenter", handleDragEnter);
