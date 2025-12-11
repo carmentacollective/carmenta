@@ -154,38 +154,32 @@ async function pushSchema(client: PGlite) {
     return db;
 }
 
-async function createTestDb() {
-    const { PGlite } = await import("@electric-sql/pglite");
-    const schema = await import("./lib/db/schema");
-
-    testClient = new PGlite();
-    testDb = await pushSchema(testClient);
-
-    return { db: testDb, schema, client: testClient };
-}
-
+/**
+ * Get the test database, creating it if needed.
+ */
 async function getTestDb() {
     if (!testDb || !testClient) {
-        await createTestDb();
+        await createFreshTestDb();
     }
     return { db: testDb!, client: testClient! };
 }
 
-async function resetDatabase() {
-    const { sql } = await import("drizzle-orm");
-    const { db } = await getTestDb();
-
-    // Drop and recreate public schema to clear all data
-    await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
-    await db.execute(sql`CREATE SCHEMA public`);
-
-    // Re-apply schema
-    const statements = await getMigrationStatements();
-    if (statements) {
-        for (const statement of statements) {
-            await db.execute(statement);
-        }
+/**
+ * Create a fresh ephemeral PGlite instance.
+ * Only called when a test actually needs the database.
+ * Migration statements are cached per worker thread.
+ */
+async function createFreshTestDb() {
+    // Close previous instance if exists
+    if (testClient) {
+        await testClient.close();
+        testClient = null;
+        testDb = null;
     }
+
+    const { PGlite } = await import("@electric-sql/pglite");
+    testClient = new PGlite();
+    testDb = await pushSchema(testClient);
 }
 
 /**
@@ -330,25 +324,38 @@ vi.mock("./lib/db/users", async () => {
 // which will use the real PGlite database through the mocked "@/lib/db" module.
 
 /**
- * Initialize database once before all tests
+ * Create database once per test FILE (not per test).
+ * Tests within a file run sequentially and share the DB instance.
+ * This is the recommended pattern from:
+ * https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres-pglite-drizzle-vitest/
  */
 beforeAll(async () => {
-    await createTestDb();
+    await createFreshTestDb();
 });
 
 /**
- * Reset database to clean state before each test
+ * Truncate all tables between tests for isolation.
+ * Much faster than recreating the DB (~10x faster than DROP SCHEMA).
  */
 beforeEach(async () => {
-    await resetDatabase();
+    if (testDb) {
+        const { sql } = await import("drizzle-orm");
+        // TRUNCATE with CASCADE handles foreign key relationships
+        await testDb.execute(sql`
+            TRUNCATE TABLE message_parts, messages, integration_history,
+            integrations, connections, users CASCADE
+        `);
+    }
 });
 
 /**
- * Close database connection after all tests
+ * Final cleanup after all tests in this file
  */
 afterAll(async () => {
     if (testClient) {
         await testClient.close();
+        testClient = null;
+        testDb = null;
     }
 });
 
