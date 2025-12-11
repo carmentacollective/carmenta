@@ -12,7 +12,7 @@ Blocks:
 - gh pr merge (use GitHub web interface)
 - git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
-- Context drift: operating on main repo when in a worktree session
+- Context drift: operating on main repo (on any non-main branch) when worktrees exist
 
 Exit codes:
 - 0: Command is allowed
@@ -134,9 +134,10 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
     4. Operations accidentally affect main repo instead of worktree
 
     Detection strategy:
-    - If we're currently in main repo but recent context suggests we should be in worktree
     - Check for .gitworktrees/ directory existence (indicates worktree usage)
-    - Check current branch (feature/* branches suggest worktree work)
+    - Check if we're in main repo (not a worktree)
+    - Check current branch is NOT a protected branch (main, master)
+    - If all true: we're likely in the wrong place after context drift
     """
     try:
         current_path = Path(cwd).resolve()
@@ -157,19 +158,27 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
         # Check if we're in main repo (not in worktree)
         in_worktree = is_in_worktree(cwd)
 
-        # DRIFT DETECTED: We're in main repo, on a feature branch, and worktrees exist
+        # DRIFT DETECTED: We're in main repo, on a non-main branch, and worktrees exist
         # This strongly suggests Claude drifted from worktree to main repo
-        if not in_worktree and has_worktrees and current_branch.startswith("feature/"):
-            worktree_name = current_branch.replace("feature/", "")
+        protected_branches = {"main", "master"}
+        if not in_worktree and has_worktrees and current_branch and current_branch not in protected_branches:
+            # Try to find matching worktree directory
+            # Strip common prefixes to guess worktree name
+            worktree_name = current_branch
+            for prefix in ("feature/", "fix/", "chore/", "hotfix/", "refactor/", "test/"):
+                if current_branch.startswith(prefix):
+                    worktree_name = current_branch[len(prefix):]
+                    break
+
             expected_path = gitworktrees_dir / worktree_name
+            worktree_hint = f"cd {expected_path}" if expected_path.exists() else f"Check .gitworktrees/ for your worktree"
 
             return Violation(
-                f"⚠️  CONTEXT DRIFT DETECTED: Working in main repo on feature branch '{current_branch}'",
-                f"You should be in the worktree: cd {expected_path}\n"
+                f"⚠️  CONTEXT DRIFT DETECTED: Working in main repo on branch '{current_branch}'",
+                f"You're likely in the wrong directory after context compaction.\n"
                 f"  Current location: {current_path}\n"
-                f"  Expected location: {expected_path}\n"
-                f"  After context compaction, you may have forgotten you're working in a worktree.\n"
-                f"  Run: cd {expected_path}"
+                f"  Expected: a worktree in .gitworktrees/\n"
+                f"  {worktree_hint}"
             )
 
         return None

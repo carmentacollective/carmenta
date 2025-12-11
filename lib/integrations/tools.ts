@@ -22,6 +22,7 @@ import {
     GoogleAdapter,
     LimitlessAdapter,
     NotionAdapter,
+    SlackAdapter,
 } from "./adapters";
 import type { ServiceAdapter } from "./adapters/base";
 import { logger } from "@/lib/logger";
@@ -38,6 +39,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     google: new GoogleAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
+    slack: new SlackAdapter(),
 };
 
 /**

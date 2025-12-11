@@ -11,8 +11,8 @@ import {
     getServicesWithStatus,
     connectApiKeyService,
     disconnectService,
-    type ConnectedService,
 } from "@/lib/actions/integrations";
+import type { ConnectedService } from "@/lib/actions/integration-utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { logger } from "@/lib/client-logger";

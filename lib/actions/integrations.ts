@@ -28,18 +28,11 @@ import {
 import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
 import { logger } from "@/lib/logger";
 import type { IntegrationStatus } from "@/lib/integrations/types";
-
-/**
- * Connected service with status and account info
- */
-export interface ConnectedService {
-    service: ServiceDefinition;
-    status: IntegrationStatus;
-    accountDisplayName: string | null;
-    accountId: string;
-    isDefault: boolean;
-    connectedAt: Date;
-}
+import {
+    categorizeService,
+    type ServiceAccount,
+    type ConnectedService,
+} from "./integration-utils";
 
 /**
  * Result from connect action
@@ -122,21 +115,10 @@ export async function getServicesWithStatus(): Promise<{
 
     for (const service of visibleServices) {
         const accounts = await listServiceAccounts(userEmail, service.id);
-        const connectedAccounts = accounts.filter((a) => a.status === "connected");
+        const result = categorizeService(service, accounts);
 
-        if (connectedAccounts.length > 0) {
-            // Add each connected account
-            for (const account of connectedAccounts) {
-                connected.push({
-                    service,
-                    status: account.status as IntegrationStatus,
-                    accountDisplayName: account.accountDisplayName ?? null,
-                    accountId: account.accountId,
-                    isDefault: account.isDefault,
-                    connectedAt: account.connectedAt,
-                });
-            }
-        } else {
+        connected.push(...result.connected);
+        if (result.isAvailable) {
             available.push(service);
         }
     }

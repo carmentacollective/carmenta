@@ -23,3 +23,4 @@ export { GiphyAdapter } from "./giphy";
 export { GoogleAdapter } from "./google";
 export { LimitlessAdapter } from "./limitless";
 export { NotionAdapter } from "./notion";
+export { SlackAdapter } from "./slack";

@@ -27,3 +27,7 @@ prisma/migrations
 # IDE
 .vscode
 .idea
+
+# Claude Code workflows - managed by claude-code CLI
+# These files should not be modified by prettier as claude-code requires specific formatting
+.github/workflows/claude*
