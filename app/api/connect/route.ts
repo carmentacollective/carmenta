@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
 import { z } from "zod";
+import * as Sentry from "@sentry/nextjs";
 
 import { getOrCreateUser } from "@/lib/db";
 import { env, assertEnv } from "@/lib/env";
@@ -123,6 +124,15 @@ export async function POST(req: Request) {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error({ error: errorMessage }, "Failed to create connect session");
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "api",
+                route: "connect",
+                action: "create_session",
+            },
+            extra: { service },
+        });
 
         return NextResponse.json(
             { error: "We couldn't start that connection" },
