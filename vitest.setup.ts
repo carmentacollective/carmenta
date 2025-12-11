@@ -96,25 +96,29 @@ vi.mock("./lib/env", () => ({
 /**
  * PGlite Database Setup for Testing
  *
- * Creates an in-memory PostgreSQL instance using PGlite (WASM).
- * Uses drizzle-kit/api to push schema dynamically from lib/db/schema.ts.
+ * Database initialization is OPT-IN. Tests that need a database should call:
+ *
+ *   import { setupTestDb } from "@tests/helpers/db";
+ *   setupTestDb();
+ *
+ * Tests that don't call setupTestDb() get zero database overhead.
+ *
+ * The vi.mock below provides the @/lib/db mock that returns the test db
+ * instance when it exists. The actual PGlite creation happens in the helper.
  *
  * Pattern based on:
  * - https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres-pglite-drizzle-vitest/
- * - https://github.com/rphlmr/drizzle-vitest-pg
+ * - https://github.com/vitest-dev/vitest/discussions/5673
  */
 
 import type { PGlite } from "@electric-sql/pglite";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
 import type * as schema from "./lib/db/schema";
 
+// Shared state - set by setupTestDb() helper, read by vi.mock
 let testClient: PGlite | null = null;
 let testDb: PgliteDatabase<typeof schema> | null = null;
-
-// Cache the generated migration statements to avoid regenerating each test
 let cachedMigrationStatements: string[] | null = null;
-
-// Cache table names for truncation
 let cachedTableNames: string[] | null = null;
 
 /**
@@ -126,13 +130,18 @@ async function getMigrationStatements() {
         return cachedMigrationStatements;
     }
 
-    const schema = await import("./lib/db/schema");
+    const schemaModule = await import("./lib/db/schema");
     const { createRequire } = await import("node:module");
     const require = createRequire(import.meta.url);
     const { generateDrizzleJson, generateMigration } = require("drizzle-kit/api");
 
     const prevJson = generateDrizzleJson({});
-    const curJson = generateDrizzleJson(schema, prevJson.id, undefined, "snake_case");
+    const curJson = generateDrizzleJson(
+        schemaModule,
+        prevJson.id,
+        undefined,
+        "snake_case"
+    );
     cachedMigrationStatements = await generateMigration(prevJson, curJson);
 
     return cachedMigrationStatements;
@@ -140,12 +149,11 @@ async function getMigrationStatements() {
 
 /**
  * Push schema to PGlite using drizzle-kit API
- * This generates the SQL from lib/db/schema.ts dynamically - no hardcoded tables!
  */
 async function pushSchema(client: PGlite) {
     const { drizzle } = await import("drizzle-orm/pglite");
-    const schema = await import("./lib/db/schema");
-    const db = drizzle(client, { schema });
+    const schemaModule = await import("./lib/db/schema");
+    const db = drizzle(client, { schema: schemaModule });
 
     const statements = await getMigrationStatements();
     if (statements) {
@@ -158,22 +166,10 @@ async function pushSchema(client: PGlite) {
 }
 
 /**
- * Get the test database, creating it if needed.
- */
-async function getTestDb() {
-    if (!testDb || !testClient) {
-        await createFreshTestDb();
-    }
-    return { db: testDb!, client: testClient! };
-}
-
-/**
  * Create a fresh ephemeral PGlite instance.
- * Only called when a test actually needs the database.
- * Migration statements are cached per worker thread.
+ * Called by setupTestDb() helper.
  */
 async function createFreshTestDb() {
-    // Close previous instance if exists
     if (testClient) {
         await testClient.close();
         testClient = null;
@@ -183,6 +179,62 @@ async function createFreshTestDb() {
     const { PGlite } = await import("@electric-sql/pglite");
     testClient = new PGlite();
     testDb = await pushSchema(testClient);
+}
+
+/**
+ * OPT-IN database setup for test files.
+ * Call this at the top of test files that need database access.
+ *
+ * @example
+ * import { setupTestDb } from "vitest.setup";
+ * setupTestDb();
+ */
+export function setupTestDb() {
+    beforeAll(async () => {
+        await createFreshTestDb();
+
+        // Cache table names for truncation (only compute once)
+        if (!cachedTableNames) {
+            const { getTableName } = await import("drizzle-orm");
+            const schemaModule = await import("./lib/db/schema");
+
+            cachedTableNames = Object.values(schemaModule)
+                .filter(
+                    (value): value is (typeof schemaModule)["users"] =>
+                        value !== null &&
+                        typeof value === "object" &&
+                        Symbol.for("drizzle:BaseName") in value
+                )
+                .map((table) => getTableName(table));
+        }
+    });
+
+    beforeEach(async () => {
+        if (testDb && cachedTableNames && cachedTableNames.length > 0) {
+            const { sql } = await import("drizzle-orm");
+            await testDb.execute(
+                sql.raw(`TRUNCATE TABLE ${cachedTableNames.join(", ")} CASCADE`)
+            );
+        }
+    });
+
+    afterAll(async () => {
+        if (testClient) {
+            await testClient.close();
+            testClient = null;
+            testDb = null;
+        }
+    });
+}
+
+/**
+ * Get the test database instance (for internal use by mock).
+ */
+async function getTestDb() {
+    if (!testDb || !testClient) {
+        await createFreshTestDb();
+    }
+    return { db: testDb!, client: testClient! };
 }
 
 /**
@@ -325,56 +377,6 @@ vi.mock("./lib/db/users", async () => {
 // It creates a circular dependency: connections → index → connections
 // Tests that need connection functions should import them directly from "@/lib/db/connections"
 // which will use the real PGlite database through the mocked "@/lib/db" module.
-
-/**
- * Create database once per test FILE (not per test).
- * Tests within a file run sequentially and share the DB instance.
- * This is the recommended pattern from:
- * https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres-pglite-drizzle-vitest/
- */
-beforeAll(async () => {
-    await createFreshTestDb();
-
-    // Cache table names for truncation (only compute once per file)
-    if (!cachedTableNames) {
-        const { getTableName } = await import("drizzle-orm");
-        const schema = await import("./lib/db/schema");
-
-        cachedTableNames = Object.values(schema)
-            .filter(
-                (value): value is (typeof schema)["users"] =>
-                    value !== null &&
-                    typeof value === "object" &&
-                    Symbol.for("drizzle:BaseName") in value
-            )
-            .map((table) => getTableName(table));
-    }
-});
-
-/**
- * Truncate all tables between tests for isolation.
- * Much faster than recreating the DB (~10x faster than DROP SCHEMA).
- */
-beforeEach(async () => {
-    if (testDb && cachedTableNames && cachedTableNames.length > 0) {
-        const { sql } = await import("drizzle-orm");
-        // TRUNCATE with CASCADE handles foreign key relationships
-        await testDb.execute(
-            sql.raw(`TRUNCATE TABLE ${cachedTableNames.join(", ")} CASCADE`)
-        );
-    }
-});
-
-/**
- * Final cleanup after all tests in this file
- */
-afterAll(async () => {
-    if (testClient) {
-        await testClient.close();
-        testClient = null;
-        testDb = null;
-    }
-});
 
 /**
  * Silence console output during tests unless debugging

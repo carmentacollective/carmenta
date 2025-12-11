@@ -9,7 +9,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+
+setupTestDb();
 
 import {
     createConnection,

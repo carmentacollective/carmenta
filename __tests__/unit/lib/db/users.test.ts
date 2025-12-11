@@ -6,8 +6,11 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 
 import { db, schema } from "@/lib/db";
+
+setupTestDb();
 import {
     findUserByEmail,
     findUserByClerkId,
