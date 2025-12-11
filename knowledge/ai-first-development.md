@@ -193,6 +193,70 @@ When working autonomously, decisions that would prompt questions become decision
 get documented. Flag what was decided and why, so the human can review judgment calls
 quickly.
 
+## Evolving Strategies
+
+Static prompts freeze agents at version one. Production agents need strategies,
+memories, and instructions that update through execution feedback.
+
+This is not fine-tuning with weights. This happens entirely in the memory and
+instruction layers when agents are clearly instructed to record and learn from what they
+did.
+
+### How Strategies Evolve
+
+Small structured increments that sharpen capabilities instead of overwriting them:
+
+- After completing a task, agent proposes refinements to its approach
+- Learnings stored as structured updates (not free-form notes)
+- Instructions sharpen based on what worked and what didn't
+- Agents learn from doing, not from human tinkering
+
+### What Gets Updated
+
+**Strategies**: Which approaches work for which scenarios. The agent accumulates
+pattern-matched solutions.
+
+**Heuristics**: Rules of thumb that improve over time. "When X happens, try Y first."
+
+**Domain knowledge**: Accumulated understanding of the product, codebase, user patterns,
+common edge cases.
+
+**Error patterns**: What failed before and how to avoid it. Self-debugging improves as
+the agent encounters and resolves issues.
+
+### Constraints
+
+Agents can update their:
+
+- Own approach within defined scope
+- Domain-specific knowledge
+- Tactical decision-making
+- Tool usage patterns
+
+Agents cannot update:
+
+- Core identity or values
+- Security constraints
+- Product boundaries or vision
+- Integration contracts
+- Approval boundaries
+
+The system learns your judgment over time - what to ask about, what to proceed with, how
+you prefer things done. This learning is scoped appropriately so agents don't drift into
+areas requiring human judgment.
+
+### Unlocked Capabilities
+
+Self-improving agents enable:
+
+- Agents that get better at their specific job over time
+- Reduced need for prompt engineering as agents tune themselves
+- Personalization that scales (agents learn your preferences through execution)
+- Cumulative knowledge that persists across sessions
+
+The agent working on task 100 is measurably better than the agent on task 1, without
+changing the underlying model weights.
+
 ## The 2027 View
 
 Products become organisms, not artifacts.

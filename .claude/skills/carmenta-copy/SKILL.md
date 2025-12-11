@@ -41,7 +41,6 @@ connections..."
 
 ```
 What are we creating together?
-We hit a snag.
 Give it a moment.
 Good morning, Nick. What are we creating together?
 ```
@@ -87,13 +86,22 @@ Voice transcription captures your thoughts at speaking speed. No typing, no fric
 just flow.
 ```
 
-Error messages help users fix problems:
+Error messages match what the user experienced—context-aware, not generic:
 
 ```
 Email must include an @ symbol.
-We hit a snag connecting. Check your network and try again.
+We couldn't reach that page. It may be unavailable or blocked.
 We couldn't find that connection. It may have been deleted.
+That didn't work out. (generic fallback when context is unknown)
+Search hit a wall. (search failed)
+We couldn't build that comparison. (comparison tool failed)
+We couldn't complete that research. (research was interrupted)
+Upload didn't work. (file upload failed)
 ```
+
+Variety over consistency: Pick the right language for what actually happened, not a
+one-size-fits-all error template. Boring consistency becomes invisible; specific
+language helps.
 
 Empty states invite action:
 
