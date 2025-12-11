@@ -1117,6 +1117,29 @@
         animation: ripple 0.6s ease-out;
     }
 
+    /* Breath-like transition for organic, calming movement
+     * Uses a custom cubic-bezier that mirrors natural breathing rhythm:
+     * slow start → accelerate → slow end (like exhale → pause → inhale) */
+    .transition-breathe {
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Exit animation: gentle upward drift like breath releasing */
+    .breathe-exit {
+        transition:
+            opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
+            transform 600ms cubic-bezier(0.4, 0, 0.2, 1),
+            filter 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Enter animation: settling down like breath arriving */
+    .breathe-enter {
+        transition:
+            opacity 500ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            filter 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
     /* Shake animation for errors */
     @keyframes shake {
         0%,

@@ -275,10 +275,10 @@ export default function HomePage() {
                     <div
                         onClick={() => setPaused((p) => !p)}
                         className={cn(
-                            "w-full max-w-2xl cursor-pointer transition-all duration-500",
+                            "w-full max-w-2xl cursor-pointer",
                             contentVisible
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-4 opacity-0"
+                                ? "breathe-enter translate-y-0 opacity-100"
+                                : "breathe-exit -translate-y-2 opacity-0"
                         )}
                     >
                         {/* Headline with typewriter effect - LEFT ALIGNED */}
@@ -293,12 +293,12 @@ export default function HomePage() {
                         {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
                         <p
                             className={cn(
-                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:min-h-[6rem] sm:text-xl",
+                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 sm:min-h-[6rem] sm:text-xl",
                                 phase === "description" ||
                                     phase === "hold" ||
                                     phase === "exit"
-                                    ? "translate-y-0 opacity-100 blur-0"
-                                    : "translate-y-3 opacity-0 blur-sm"
+                                    ? "breathe-enter translate-y-0 opacity-100 blur-0"
+                                    : "breathe-exit translate-y-3 opacity-0 blur-sm"
                             )}
                         >
                             {currentFeature.subheading}
