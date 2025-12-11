@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -339,33 +339,35 @@ export default function HomePage() {
                     </div>
 
                     {/* Progress dots */}
-                    <div className="mt-12 flex items-center gap-2">
+                    <div className="mt-12 flex items-center gap-3">
                         <button
                             onClick={goPrev}
-                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            className="rounded-full p-1.5 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Previous slide"
                         >
-                            ←
+                            <ChevronLeft className="h-5 w-5" />
                         </button>
-                        {shuffledFeatures.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => goToSlide(i)}
-                                className={cn(
-                                    "h-1.5 rounded-full transition-all duration-300",
-                                    activeSlide === i
-                                        ? "w-8 bg-primary/60"
-                                        : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
-                                )}
-                                aria-label={`Go to slide ${i + 1}`}
-                            />
-                        ))}
+                        <div className="flex items-center gap-2">
+                            {shuffledFeatures.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => goToSlide(i)}
+                                    className={cn(
+                                        "h-1.5 rounded-full transition-all duration-300",
+                                        activeSlide === i
+                                            ? "w-8 bg-primary/60"
+                                            : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
+                                    )}
+                                    aria-label={`Go to slide ${i + 1}`}
+                                />
+                            ))}
+                        </div>
                         <button
                             onClick={goNext}
-                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            className="rounded-full p-1.5 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Next slide"
                         >
-                            →
+                            <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
                 </main>
