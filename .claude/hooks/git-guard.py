@@ -46,16 +46,11 @@ def is_in_worktree(cwd: str) -> bool:
     """
     Check if the current directory is inside a git worktree.
 
-    Returns True if:
-    - We're in a .gitworktrees/ directory
-    - The .git is a file (not a directory), which points to the main repo
+    Returns True if .git is a file (not a directory), which points to the main repo.
+    Worktrees have a .git file containing "gitdir: /path/to/main/.git/worktrees/name".
     """
     try:
         path = Path(cwd).resolve()
-
-        # Check if we're in .gitworktrees/ directory
-        if ".gitworktrees" in path.parts:
-            return True
 
         # Check if .git is a file (worktrees have .git file, main repo has .git directory)
         git_path = path / ".git"
@@ -128,13 +123,13 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
     Detect if Claude has drifted from worktree context to main repo.
 
     This prevents the scenario where:
-    1. Claude starts working in a worktree (.gitworktrees/task-name)
+    1. Claude starts working in a worktree (sibling directory)
     2. Context gets compacted/summarized
     3. Claude forgets it's in a worktree and defaults to main repo
     4. Operations accidentally affect main repo instead of worktree
 
     Detection strategy:
-    - Check for .gitworktrees/ directory existence (indicates worktree usage)
+    - Check if worktrees exist (via git worktree list)
     - Check if we're in main repo (not a worktree)
     - Check current branch is NOT a protected branch (main, master)
     - If all true: we're likely in the wrong place after context drift
@@ -142,9 +137,19 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
     try:
         current_path = Path(cwd).resolve()
 
-        # Check if main repo has .gitworktrees directory (indicates worktree usage)
-        gitworktrees_dir = current_path / ".gitworktrees"
-        has_worktrees = gitworktrees_dir.exists() and gitworktrees_dir.is_dir()
+        # Check if any worktrees exist by running git worktree list
+        worktree_result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+        )
+        if worktree_result.returncode != 0:
+            return None
+
+        # Count worktrees (each worktree block is separated by blank line)
+        worktree_blocks = [b for b in worktree_result.stdout.strip().split("\n\n") if b]
+        has_worktrees = len(worktree_blocks) > 1  # More than just main repo
 
         # Get current branch
         branch_result = subprocess.run(
@@ -162,22 +167,25 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
         # This strongly suggests Claude drifted from worktree to main repo
         protected_branches = {"main", "master"}
         if not in_worktree and has_worktrees and current_branch and current_branch not in protected_branches:
-            # Try to find matching worktree directory
-            # Strip common prefixes to guess worktree name
-            worktree_name = current_branch
-            for prefix in ("feature/", "fix/", "chore/", "hotfix/", "refactor/", "test/"):
-                if current_branch.startswith(prefix):
-                    worktree_name = current_branch[len(prefix):]
+            # Try to find the worktree for this branch from git worktree list output
+            worktree_path = None
+            for block in worktree_blocks:
+                if f"branch refs/heads/{current_branch}" in block:
+                    for line in block.split("\n"):
+                        if line.startswith("worktree "):
+                            worktree_path = line[9:]  # Remove "worktree " prefix
+                            break
                     break
 
-            expected_path = gitworktrees_dir / worktree_name
-            worktree_hint = f"cd {expected_path}" if expected_path.exists() else f"Check .gitworktrees/ for your worktree"
+            if worktree_path:
+                worktree_hint = f"cd {worktree_path}"
+            else:
+                worktree_hint = "Run `git worktree list` to find your worktree"
 
             return Violation(
                 f"⚠️  CONTEXT DRIFT DETECTED: Working in main repo on branch '{current_branch}'",
                 f"You're likely in the wrong directory after context compaction.\n"
                 f"  Current location: {current_path}\n"
-                f"  Expected: a worktree in .gitworktrees/\n"
                 f"  {worktree_hint}"
             )
 

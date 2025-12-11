@@ -15,7 +15,24 @@ Worktrees isolate task branches in separate directories. Your main repo stays on
 
 <workspace-setup>
 Create git worktree as a sibling directory (not nested inside the repo). Sibling directories avoid module resolution issues with ESLint, monorepo tools, and symlinked dependencies that break when worktrees are nested.
+
+After creating the worktree, add it to your todo list with the full path:
+"Working in worktree: /path/to/project-task-name on branch task-name"
+
+This ensures the worktree location survives context compaction.
 </workspace-setup>
+
+<context-resilience>
+Long sessions and context compaction can cause drift back to the main repo. Before any git operation (commit, push, status), verify you're in the right place:
+
+1. Run `pwd` to confirm you're in the worktree directory
+2. Run `git branch --show-current` to confirm the branch
+3. If you're in the main repo on a feature branch, you've drifted - cd to the worktree
+
+Signs of drift: You're in the main repo path but on a non-main branch, or the todo list shows a different worktree path than your current directory.
+
+When in doubt, check. It's faster than fixing an accidental commit to the wrong location.
+</context-resilience>
 
 <port-isolation>
 Each worktree needs its own port for dev servers to avoid conflicts when running multiple tasks. Create a `.env.local` in the worktree with a unique PORT based on the task name (hash the name to a port offset from 3000, or use sequential assignment). This prevents "port already in use" errors and makes it clear which server belongs to which task.
