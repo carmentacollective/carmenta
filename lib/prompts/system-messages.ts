@@ -1,4 +1,3 @@
-import type { SystemModelMessage } from "ai";
 import type { User } from "@clerk/nextjs/server";
 import { SYSTEM_PROMPT } from "./system";
 
@@ -94,42 +93,18 @@ function buildUserContextMessage(context: UserContext): string {
 }
 
 /**
- * Build system messages array with Anthropic prompt caching support.
+ * Build complete system prompt with static and dynamic parts.
  *
- * Returns array of SystemModelMessage objects for use with streamText/generateText.
+ * Returns a single string combining:
+ * 1. Static system prompt
+ * 2. Dynamic user context
  *
- * Structure:
- * - First message: Static prompt with Anthropic cacheControl (cached)
- * - Second message: Dynamic user context (not cached, changes each request)
- *
- * For Anthropic models via OpenRouter:
- * - Caching reduces cost by ~90% on cache hits (after initial write)
- * - Cache persists for 5 minutes, refreshing on each use
- * - Requires >= 1024 tokens (our static prompt meets this)
- *
- * For non-Anthropic models:
- * - providerOptions are ignored, no caching behavior
- * - Functions as standard system message array
+ * Note: System message array with providerOptions causes AI SDK validation errors
+ * in v5.0.106. Keeping as string until we verify OpenRouter cache support empirically.
  *
  * @param context User and session context for dynamic message
  */
-export function buildSystemMessages(context: UserContext): SystemModelMessage[] {
+export function buildSystemPrompt(context: UserContext): string {
     const userContextText = buildUserContextMessage(context);
-
-    return [
-        {
-            role: "system",
-            content: SYSTEM_PROMPT,
-            providerOptions: {
-                anthropic: {
-                    cacheControl: { type: "ephemeral" },
-                },
-            },
-        },
-        {
-            role: "system",
-            content: userContextText,
-            // No cacheControl - this changes every request
-        },
-    ];
+    return `${SYSTEM_PROMPT}\n\n${userContextText}`;
 }

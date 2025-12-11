@@ -27,7 +27,7 @@ import { assertEnv, env } from "@/lib/env";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { getModel } from "@/lib/models";
-import { buildSystemMessages } from "@/lib/prompts/system-messages";
+import { buildSystemPrompt } from "@/lib/prompts/system-messages";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 
@@ -490,9 +490,8 @@ export async function POST(req: Request) {
             return filtered;
         });
 
-        // Build system messages with Anthropic caching support
-        // First message (static prompt) has cacheControl, second (dynamic context) does not
-        const systemMessages = buildSystemMessages({
+        // Build system prompt with static + dynamic content
+        const systemPrompt = buildSystemPrompt({
             user,
             userEmail,
             timezone: undefined, // TODO: Get from client in future
@@ -500,7 +499,7 @@ export async function POST(req: Request) {
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
-            system: systemMessages as any, // SystemModelMessage[] - TypeScript doesn't infer union type correctly
+            system: systemPrompt,
             messages: convertToModelMessages(messagesWithoutReasoning),
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services
@@ -527,8 +526,26 @@ export async function POST(req: Request) {
             // ================================================================
             // PERSISTENCE: Save assistant response when streaming completes
             // ================================================================
-            onFinish: async ({ text, toolCalls, toolResults, response, reasoning }) => {
+            onFinish: async ({
+                text,
+                toolCalls,
+                toolResults,
+                response,
+                reasoning,
+                usage,
+                providerMetadata,
+            }) => {
                 try {
+                    // Log OpenRouter response metadata to verify cache behavior
+                    logger.info(
+                        {
+                            usage,
+                            providerMetadata,
+                            model: concierge.modelId,
+                        },
+                        "OpenRouter response metadata - checking for cache info"
+                    );
+
                     // Build UI message parts from the step result
                     const parts: UIMessageLike["parts"] = [];
 
