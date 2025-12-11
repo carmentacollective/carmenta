@@ -21,6 +21,7 @@ import {
     forwardRef,
 } from "react";
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
+import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
 
@@ -29,6 +30,7 @@ import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/models";
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ThinkingIndicator } from "./thinking-indicator";
@@ -46,6 +48,7 @@ import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-co
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
 import { FilePreview } from "./file-preview";
+import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
 
@@ -59,8 +62,16 @@ export function HoloThread() {
 
 function HoloThreadInner() {
     const { messages, isLoading } = useChatContext();
+    const { addFiles, isUploading } = useFileAttachments();
     const viewportRef = useRef<HTMLDivElement>(null);
     const [isAtBottom, setIsAtBottom] = useState(true);
+
+    // Viewport-wide drag-drop for file uploads
+    const { isDragging } = useDragDrop({
+        onDrop: addFiles,
+        onError: (error) => toast.error(error),
+        disabled: isUploading,
+    });
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -90,6 +101,8 @@ function HoloThreadInner() {
 
     return (
         <div className="flex h-full flex-col bg-transparent">
+            {/* Full-viewport drag-drop overlay */}
+            <DragDropOverlay isActive={isDragging} />
             {/* Viewport with fade mask and mobile touch optimizations */}
             <div
                 ref={viewportRef}
@@ -684,9 +697,6 @@ function Composer({ isNewConversation }: ComposerProps) {
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
 
-    // Drag-drop state
-    const [isDragging, setIsDragging] = useState(false);
-
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     // Track if initial autofocus has been applied (prevents re-focus on resize)
@@ -768,35 +778,6 @@ function Composer({ isNewConversation }: ComposerProps) {
             }, 0);
         },
         [getTextContent, removeFile, setInput]
-    );
-
-    // Drag-drop handlers
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    }, []);
-
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Only set dragging to false if leaving the form entirely
-        if (e.currentTarget === formRef.current) {
-            setIsDragging(false);
-        }
-    }, []);
-
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsDragging(false);
-
-            if (e.dataTransfer?.files) {
-                addFiles(Array.from(e.dataTransfer.files));
-            }
-        },
-        [addFiles]
     );
 
     // Smart autofocus (runs once on initial mount):
@@ -969,24 +950,11 @@ function Composer({ isNewConversation }: ComposerProps) {
             <form
                 ref={formRef}
                 onSubmit={handleSubmit}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
                 className={cn(
                     "glass-input-dock relative flex w-full items-center transition-all",
-                    shouldFlash && "ring-2 ring-primary/40",
-                    isDragging && "bg-primary/5 ring-2 ring-primary/60"
+                    shouldFlash && "ring-2 ring-primary/40"
                 )}
             >
-                {/* Drag overlay */}
-                {isDragging && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/40 bg-primary/10">
-                        <div className="text-sm font-medium text-primary">
-                            Drop files to attach
-                        </div>
-                    </div>
-                )}
-
                 <textarea
                     ref={inputRef}
                     value={input}
