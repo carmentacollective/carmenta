@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 /**
  * Carmenta Routing Eval
  *
@@ -7,55 +6,34 @@
  *
  * Usage:
  *   bunx braintrust eval evals/routing.eval.ts
- *   bunx braintrust eval evals/routing.eval.ts --watch  # Re-run on file changes
  *
- * Requires:
+ * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
  *   - TEST_USER_TOKEN in .env.local (Clerk JWT for API auth)
+ *   - Carmenta server running at http://localhost:3000
+ *     Start with: npm run dev
  */
 
 import "dotenv/config";
 import { Eval } from "braintrust";
-import { logger } from "@/lib/logger";
 import {
     RoutingScorer,
     type RoutingExpectations,
     type RoutingOutput,
 } from "./scorers/routing-scorer";
+import { testData, type TestInput } from "./routing-test-data";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
 
 if (!JWT_TOKEN) {
-    logger.error(
-        { envVar: "TEST_USER_TOKEN" },
-        "Missing required environment variable"
-    );
-    logger.info("Create a long-lived JWT in Clerk Dashboard and add it to .env.local");
+    console.error("❌ Missing TEST_USER_TOKEN environment variable");
+    console.error("\n📋 Setup required:");
+    console.error("   1. Get a long-lived JWT from Clerk Dashboard");
+    console.error("   2. Add to .env.local: TEST_USER_TOKEN=<your_token>");
+    console.error("\n▶️  Then run: bunx braintrust eval evals/routing.eval.ts");
     process.exit(1);
-}
-
-// Types
-interface TestInput {
-    id: string;
-    description: string;
-    content: string | string[];
-    category: "routing" | "tools" | "reasoning" | "overrides" | "edge-cases";
-    overrides?: {
-        modelOverride?: string;
-        temperatureOverride?: number;
-        reasoningOverride?: "none" | "low" | "medium" | "high";
-    };
-    multiTurn?: boolean;
-    slow?: boolean;
-}
-
-interface TestCase {
-    input: TestInput;
-    expected: RoutingExpectations;
-    tags?: string[];
-    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -85,8 +63,7 @@ function parseHeaders(headers: Headers) {
         try {
             reasoning = JSON.parse(decodeURIComponent(reasoningRaw));
         } catch (error) {
-            // Expected in some test cases - log for debugging but don't fail
-            logger.debug({ error, reasoningRaw }, "Failed to parse reasoning header");
+            // Expected in some test cases - silently skip
         }
     }
 
@@ -142,10 +119,6 @@ async function consumeStream(
                         }
                     } catch (error) {
                         // SSE lines that aren't JSON are expected (comments, empty lines)
-                        logger.debug(
-                            { error, line: line.slice(0, 100) },
-                            "Non-JSON SSE line"
-                        );
                     }
                 }
 
@@ -157,10 +130,6 @@ async function consumeStream(
                             extractedText += JSON.parse(`"${match[1]}"`);
                         } catch (error) {
                             // Fallback to raw match if JSON parsing fails
-                            logger.debug(
-                                { error, match: match[1].slice(0, 50) },
-                                "Legacy format parse fallback"
-                            );
                             extractedText += match[1];
                         }
                     }
@@ -169,10 +138,6 @@ async function consumeStream(
         }
     } catch (error) {
         // Stream may have been closed early - return what we have
-        logger.debug(
-            { error, textLength: extractedText.length },
-            "Stream read ended early"
-        );
     }
 
     return { text: extractedText, toolsCalled };
@@ -184,29 +149,41 @@ async function consumeStream(
 async function executeTest(input: TestInput): Promise<RoutingOutput> {
     const content = Array.isArray(input.content) ? input.content[0] : input.content;
 
-    const response = await fetch(`${BASE_URL}/api/connection`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_TOKEN}`,
-        },
-        body: JSON.stringify({
-            messages: [buildMessage(content)],
-            ...input.overrides,
-        }),
-    });
+    try {
+        const response = await fetch(`${BASE_URL}/api/connection`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${JWT_TOKEN}`,
+            },
+            body: JSON.stringify({
+                messages: [buildMessage(content)],
+                ...input.overrides,
+            }),
+        });
 
-    const headers = parseHeaders(response.headers);
-    const { text, toolsCalled } = await consumeStream(response);
+        const headers = parseHeaders(response.headers);
+        const { text, toolsCalled } = await consumeStream(response);
 
-    return {
-        text,
-        model: headers.model,
-        temperature: headers.temperature,
-        reasoning: headers.reasoning,
-        toolsCalled,
-        status: response.status,
-    };
+        return {
+            text,
+            model: headers.model,
+            temperature: headers.temperature,
+            reasoning: headers.reasoning,
+            toolsCalled,
+            status: response.status,
+        };
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+
+        if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
+            throw new Error(
+                `Cannot connect to API at ${BASE_URL}. Make sure the server is running: npm run dev`
+            );
+        }
+
+        throw error;
+    }
 }
 
 /**
@@ -221,43 +198,55 @@ async function executeMultiTurnTest(input: TestInput): Promise<RoutingOutput> {
     let connectionId: string | undefined;
     let lastResult: RoutingOutput | null = null;
 
-    for (const content of input.content) {
-        messages.push(buildMessage(content));
+    try {
+        for (const content of input.content) {
+            messages.push(buildMessage(content));
 
-        const response = await fetch(`${BASE_URL}/api/connection`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${JWT_TOKEN}`,
-            },
-            body: JSON.stringify({
-                messages,
-                ...(connectionId && { connectionId }),
-                ...input.overrides,
-            }),
-        });
+            const response = await fetch(`${BASE_URL}/api/connection`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${JWT_TOKEN}`,
+                },
+                body: JSON.stringify({
+                    messages,
+                    ...(connectionId && { connectionId }),
+                    ...input.overrides,
+                }),
+            });
 
-        const headers = parseHeaders(response.headers);
-        connectionId = response.headers.get("X-Connection-Id") ?? connectionId;
+            const headers = parseHeaders(response.headers);
+            connectionId = response.headers.get("X-Connection-Id") ?? connectionId;
 
-        const { text, toolsCalled } = await consumeStream(response);
+            const { text, toolsCalled } = await consumeStream(response);
 
-        // Add assistant response to history
-        messages.push({
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: text,
-            parts: [{ type: "text", text }],
-        } as ReturnType<typeof buildMessage>);
+            // Add assistant response to history
+            messages.push({
+                id: `assistant-${Date.now()}`,
+                role: "assistant",
+                content: text,
+                parts: [{ type: "text", text }],
+            } as ReturnType<typeof buildMessage>);
 
-        lastResult = {
-            text,
-            model: headers.model,
-            temperature: headers.temperature,
-            reasoning: headers.reasoning,
-            toolsCalled,
-            status: response.status,
-        };
+            lastResult = {
+                text,
+                model: headers.model,
+                temperature: headers.temperature,
+                reasoning: headers.reasoning,
+                toolsCalled,
+                status: response.status,
+            };
+        }
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+
+        if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
+            throw new Error(
+                `Cannot connect to API at ${BASE_URL}. Make sure the server is running: npm run dev`
+            );
+        }
+
+        throw error;
     }
 
     if (!lastResult) {
@@ -267,339 +256,6 @@ async function executeMultiTurnTest(input: TestInput): Promise<RoutingOutput> {
     }
     return lastResult;
 }
-
-/**
- * Test dataset - converted from llm-routing-queries.ts
- */
-const testData: TestCase[] = [
-    // MODEL ROUTING TESTS
-    {
-        input: {
-            id: "route-simple-factual",
-            description: "Simple factual question should route to fast model",
-            content: "What year did World War 2 end?",
-            category: "routing",
-        },
-        expected: {
-            model: "haiku",
-            reasoningEnabled: false,
-            shouldSucceed: true,
-        },
-        tags: ["routing", "fast"],
-    },
-    {
-        input: {
-            id: "route-quick-signal",
-            description: "Quick question signal should route to Haiku",
-            content: "Quick question: what's the capital of France?",
-            category: "routing",
-        },
-        expected: {
-            model: "haiku",
-            reasoningEnabled: false,
-            shouldSucceed: true,
-        },
-        tags: ["routing", "fast"],
-    },
-    {
-        input: {
-            id: "route-code-task",
-            description: "Code task should route to Sonnet with lower temp",
-            content: "Write a TypeScript function that debounces another function",
-            category: "routing",
-        },
-        expected: {
-            model: "sonnet",
-            temperatureRange: [0.2, 0.5],
-            shouldSucceed: true,
-        },
-        tags: ["routing", "code"],
-    },
-    {
-        input: {
-            id: "route-creative",
-            description: "Creative writing should use higher temperature",
-            content: "Write a short poem about the ocean at sunset",
-            category: "routing",
-        },
-        expected: {
-            temperatureRange: [0.5, 1.0],
-            shouldSucceed: true,
-        },
-        tags: ["routing", "creative"],
-    },
-    {
-        input: {
-            id: "route-complex-analysis",
-            description: "Complex analysis should route to deeper model with reasoning",
-            content:
-                "Analyze the economic implications of universal basic income. Consider labor markets, inflation, government budgets, and social effects.",
-            category: "routing",
-        },
-        expected: {
-            model: "opus|sonnet",
-            reasoningEnabled: true,
-            shouldSucceed: true,
-        },
-        tags: ["routing", "complex"],
-    },
-    {
-        input: {
-            id: "route-casual-chat",
-            description: "Casual chat should route fast without reasoning",
-            content: "Hey, how's it going?",
-            category: "routing",
-        },
-        expected: {
-            model: "haiku",
-            reasoningEnabled: false,
-            shouldSucceed: true,
-        },
-        tags: ["routing", "chat"],
-    },
-
-    // TOOL INVOCATION TESTS
-    {
-        input: {
-            id: "tool-web-search",
-            description: "Current events query should invoke webSearch tool",
-            content: "What are the latest developments in AI regulation?",
-            category: "tools",
-        },
-        expected: {
-            toolCalled: "webSearch",
-            shouldSucceed: true,
-        },
-        tags: ["tools", "search"],
-    },
-    {
-        input: {
-            id: "tool-compare",
-            description: "Comparison request should invoke compareOptions tool",
-            content:
-                "Compare React, Vue, and Svelte for building web applications. Show pros and cons.",
-            category: "tools",
-        },
-        expected: {
-            toolCalled: "compareOptions",
-            shouldSucceed: true,
-        },
-        tags: ["tools", "compare"],
-    },
-    {
-        input: {
-            id: "tool-deep-research",
-            description: "Research request should invoke deepResearch tool",
-            content:
-                "Do deep research on the current state of quantum computing and its practical applications",
-            category: "tools",
-            slow: true,
-        },
-        expected: {
-            toolCalled: "deepResearch",
-            shouldSucceed: true,
-        },
-        tags: ["tools", "research", "slow"],
-    },
-
-    // REASONING TESTS
-    {
-        input: {
-            id: "reasoning-math-proof",
-            description: "Math proof should enable reasoning",
-            content: "Prove that the square root of 2 is irrational",
-            category: "reasoning",
-        },
-        expected: {
-            reasoningEnabled: true,
-            shouldSucceed: true,
-        },
-        tags: ["reasoning", "math"],
-    },
-    {
-        input: {
-            id: "reasoning-logic-puzzle",
-            description: "Logic puzzle should enable reasoning",
-            content:
-                "Three people are in a room. Alice says 'Bob is lying'. Bob says 'Carol is lying'. Carol says 'Both Alice and Bob are lying'. Who is telling the truth?",
-            category: "reasoning",
-        },
-        expected: {
-            reasoningEnabled: true,
-            shouldSucceed: true,
-        },
-        tags: ["reasoning", "logic"],
-    },
-    {
-        input: {
-            id: "reasoning-disabled-simple",
-            description: "Simple question should not enable reasoning",
-            content: "What color is the sky?",
-            category: "reasoning",
-        },
-        expected: {
-            reasoningEnabled: false,
-            shouldSucceed: true,
-        },
-        tags: ["reasoning", "simple"],
-    },
-    {
-        input: {
-            id: "reasoning-multi-turn",
-            description: "Multi-turn conversation with reasoning should not error",
-            content: [
-                "Solve this riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
-                "Now explain your reasoning process for solving that riddle",
-            ],
-            category: "reasoning",
-            overrides: {
-                reasoningOverride: "medium",
-            },
-            multiTurn: true,
-        },
-        expected: {
-            reasoningEnabled: true,
-            shouldSucceed: true,
-        },
-        tags: ["reasoning", "multi-turn"],
-    },
-
-    // OVERRIDE TESTS
-    {
-        input: {
-            id: "override-model-opus",
-            description: "Model override should force Opus",
-            content: "Hello, this is a simple test",
-            category: "overrides",
-            overrides: {
-                modelOverride: "anthropic/claude-opus-4.5",
-            },
-        },
-        expected: {
-            model: "opus",
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "model"],
-    },
-    {
-        input: {
-            id: "override-model-haiku",
-            description: "Model override should force Haiku",
-            content: "This complex analysis would normally go to a bigger model",
-            category: "overrides",
-            overrides: {
-                modelOverride: "anthropic/claude-haiku-4.5",
-            },
-        },
-        expected: {
-            model: "haiku",
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "model"],
-    },
-    {
-        input: {
-            id: "override-reasoning-high",
-            description: "Reasoning override should force high reasoning",
-            content: "What is 2 + 2?",
-            category: "overrides",
-            overrides: {
-                reasoningOverride: "high",
-            },
-        },
-        expected: {
-            reasoningEnabled: true,
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "reasoning"],
-    },
-    {
-        input: {
-            id: "override-reasoning-none",
-            description: "Reasoning override should disable reasoning",
-            content: "Prove that there are infinitely many prime numbers",
-            category: "overrides",
-            overrides: {
-                reasoningOverride: "none",
-            },
-        },
-        expected: {
-            reasoningEnabled: false,
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "reasoning"],
-    },
-    {
-        input: {
-            id: "override-temperature-low",
-            description: "Temperature override should force low temp",
-            content: "Write a creative story about a dragon",
-            category: "overrides",
-            overrides: {
-                temperatureOverride: 0.1,
-            },
-        },
-        expected: {
-            temperatureRange: [0.1, 0.1],
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "temperature"],
-    },
-    {
-        input: {
-            id: "override-temperature-high",
-            description: "Temperature override should force high temp",
-            content: "What is the exact syntax for a JavaScript arrow function?",
-            category: "overrides",
-            overrides: {
-                temperatureOverride: 0.9,
-            },
-        },
-        expected: {
-            temperatureRange: [0.9, 0.9],
-            shouldSucceed: true,
-        },
-        tags: ["overrides", "temperature"],
-    },
-
-    // EDGE CASES
-    {
-        input: {
-            id: "edge-empty-response",
-            description: "Should handle query that expects short response",
-            content: "Reply with just the word 'yes'",
-            category: "edge-cases",
-        },
-        expected: {
-            shouldSucceed: true,
-        },
-        tags: ["edge-cases"],
-    },
-    {
-        input: {
-            id: "edge-unicode",
-            description: "Should handle unicode characters",
-            content: "Translate 'hello world' to Japanese: こんにちは",
-            category: "edge-cases",
-        },
-        expected: {
-            shouldSucceed: true,
-        },
-        tags: ["edge-cases", "unicode"],
-    },
-    {
-        input: {
-            id: "edge-long-context",
-            description: "Should handle longer context",
-            content: `Here is a longer piece of text to process. ${Array(50).fill("This sentence is repeated to create more context.").join(" ")} Now summarize this in one sentence.`,
-            category: "edge-cases",
-        },
-        expected: {
-            shouldSucceed: true,
-        },
-        tags: ["edge-cases", "long-context"],
-    },
-];
 
 /**
  * Run the Braintrust eval

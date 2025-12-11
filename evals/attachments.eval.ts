@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 /**
  * Carmenta File Attachments Eval
  *
@@ -8,9 +7,11 @@
  * Usage:
  *   bunx braintrust eval evals/attachments.eval.ts
  *
- * Requires:
+ * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
  *   - TEST_USER_TOKEN in .env.local (Clerk JWT for API auth)
+ *   - Carmenta server running at http://localhost:3000
+ *     Start with: npm run dev
  *   - Fixture files in evals/fixtures/
  */
 
@@ -18,22 +19,18 @@ import "dotenv/config";
 import { Eval } from "braintrust";
 import * as fs from "fs";
 import * as path from "path";
-import { logger } from "@/lib/logger";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
-const FIXTURES_DIR = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    "fixtures"
-);
+const FIXTURES_DIR = path.join(process.cwd(), "evals", "fixtures");
 
 if (!JWT_TOKEN) {
-    logger.error(
-        { envVar: "TEST_USER_TOKEN" },
-        "Missing required environment variable"
-    );
-    logger.info("Create a long-lived JWT in Clerk Dashboard and add it to .env.local");
+    console.error("❌ Missing TEST_USER_TOKEN environment variable");
+    console.error("\n📋 Setup required:");
+    console.error("   1. Get a long-lived JWT from Clerk Dashboard");
+    console.error("   2. Add to .env.local: TEST_USER_TOKEN=<your_token>");
+    console.error("\n▶️  Then run: bunx braintrust eval evals/attachments.eval.ts");
     process.exit(1);
 }
 
@@ -141,20 +138,12 @@ async function consumeStream(response: Response): Promise<string> {
                         }
                     } catch (error) {
                         // SSE lines that aren't JSON are expected (comments, empty lines)
-                        logger.debug(
-                            { error, line: line.slice(0, 100) },
-                            "Non-JSON SSE line"
-                        );
                     }
                 }
             }
         }
     } catch (error) {
         // Stream may have been closed early - return what we have
-        logger.debug(
-            { error, textLength: extractedText.length },
-            "Stream read ended early"
-        );
     }
 
     return extractedText;
@@ -197,23 +186,39 @@ async function executeFileTest(input: FileTestInput): Promise<FileTestOutput> {
         );
     }
 
-    const response = await fetch(`${BASE_URL}/api/connection`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_TOKEN}`,
-        },
-        body: JSON.stringify({ messages: [message] }),
-    });
+    try {
+        const response = await fetch(`${BASE_URL}/api/connection`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${JWT_TOKEN}`,
+            },
+            body: JSON.stringify({ messages: [message] }),
+        });
 
-    const headers = parseHeaders(response.headers);
-    const text = await consumeStream(response);
+        const headers = parseHeaders(response.headers);
+        const text = await consumeStream(response);
 
-    return {
-        text,
-        model: headers.model,
-        status: response.status,
-    };
+        return {
+            text,
+            model: headers.model,
+            status: response.status,
+        };
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+
+        if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
+            return {
+                text: `Cannot connect to API at ${BASE_URL}. Start the server with: npm run dev`,
+                status: 0,
+            };
+        }
+
+        return {
+            text: `Error: ${errorMsg}`,
+            status: 0,
+        };
+    }
 }
 
 /**
