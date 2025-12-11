@@ -51,7 +51,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
         return (
             <Link
                 href="/sign-in"
-                className={cn("btn-holo px-4 py-2 text-sm", className)}
+                className={cn("btn-cta rounded-full px-4 py-2 text-sm", className)}
             >
                 Sign In
             </Link>

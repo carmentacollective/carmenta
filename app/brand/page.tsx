@@ -676,33 +676,180 @@ export default function BrandPage() {
                                         </p>
                                     </div>
 
-                                    {/* Holographic Button */}
+                                    {/* Text CTA Button */}
                                     <div className="space-y-4">
                                         <div>
                                             <h3 className="font-medium text-foreground/90">
-                                                Holographic
+                                                Text CTA
                                             </h3>
                                             <p className="text-sm text-foreground/60">
-                                                Signature branded style
+                                                Smaller text-based actions
                                             </p>
                                         </div>
                                         <div className="flex min-h-[80px] items-center justify-center rounded-lg bg-foreground/5 p-4">
-                                            <button className="btn-holo px-5 py-2.5 text-sm">
+                                            <button className="btn-cta rounded-full px-5 py-2.5 text-sm">
                                                 Connect
                                             </button>
                                         </div>
                                         <div className="rounded-lg bg-foreground/5 p-3">
                                             <code className="block text-xs text-foreground/70">
-                                                .btn-holo
+                                                .btn-cta
                                                 <br />
-                                                iridescent border
+                                                rounded-full px-5 py-2.5
                                                 <br />
-                                                subtle animation
+                                                text-sm
                                             </code>
                                         </div>
                                         <p className="text-xs text-foreground/60">
                                             Use for branded interactions like sign-in,
-                                            connection actions, and premium features.
+                                            connection actions, and secondary CTAs.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Button Background Showcase */}
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-foreground/90">
+                                Buttons on Different Backgrounds
+                            </h2>
+                            <p className="text-foreground/70">
+                                Testing button visibility and contrast across various
+                                background contexts. Icon buttons must read as
+                                interactive on all surfaces.
+                            </p>
+
+                            <div className="grid gap-6 lg:grid-cols-2">
+                                {/* Pure White Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Pure White
+                                    </h3>
+                                    <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Light Gray Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Light Gray (bg-foreground/5)
+                                    </h3>
+                                    <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-foreground/5 p-6">
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Glass Card Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Glass Card
+                                    </h3>
+                                    <div className="glass-card flex min-h-[120px] items-center justify-center gap-4 p-6">
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Dark Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Dark Surface
+                                    </h3>
+                                    <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-slate-800 p-6">
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-white/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-white/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Gradient Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Holographic Gradient
+                                    </h3>
+                                    <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-gradient-to-br from-primary/20 via-accent/20 to-primary/30 p-6">
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Image/Busy Background */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-foreground/70">
+                                        Busy Pattern
+                                    </h3>
+                                    <div
+                                        className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl p-6"
+                                        style={{
+                                            background:
+                                                "repeating-linear-gradient(45deg, #f0e6f4 0px, #f0e6f4 10px, #e6d4eb 10px, #e6d4eb 20px)",
+                                        }}
+                                    >
+                                        <button className="btn-icon-glass">
+                                            <Sparkles className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-icon-glass">
+                                            <Check className="h-5 w-5 text-foreground/60 sm:h-6 sm:w-6" />
+                                        </button>
+                                        <button className="btn-cta rounded-full px-5 py-2.5 text-sm font-medium">
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Issue callout */}
+                            <div className="rounded-lg border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-950/20">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+                                    <div className="space-y-1">
+                                        <p className="font-medium text-amber-800 dark:text-amber-200">
+                                            Known Issue
+                                        </p>
+                                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                                            Glass icon buttons lack sufficient contrast
+                                            on white backgrounds. They don't read as
+                                            interactive elements. Need to add a subtle
+                                            border or shadow to establish button
+                                            affordance.
                                         </p>
                                     </div>
                                 </div>

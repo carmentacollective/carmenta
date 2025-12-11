@@ -999,12 +999,12 @@ function Composer({ isNewConversation }: ComposerProps) {
                         setTimeout(() => setIsComposing(false), 0);
                     }}
                     placeholder="Message Carmenta..."
-                    className="max-h-32 min-h-[3rem] flex-1 resize-none border-none bg-transparent px-6 py-3 text-base leading-6 text-foreground/95 outline-none placeholder:text-foreground/40 md:max-h-40 md:min-h-[3.5rem]"
+                    className="max-h-32 min-h-[3rem] flex-1 resize-none border-none bg-transparent px-6 py-4 text-base leading-5 text-foreground/95 outline-none placeholder:text-foreground/40 md:max-h-40 md:min-h-[3.5rem]"
                     rows={1}
                     data-testid="composer-input"
                 />
 
-                <div className="flex items-center gap-2 pr-2">
+                <div className="flex items-center gap-1.5 pr-3 sm:gap-2 sm:pr-4">
                     {showStop ? (
                         <ComposerButton
                             type="button"

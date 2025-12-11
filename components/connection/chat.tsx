@@ -43,7 +43,7 @@ class ChatErrorBoundary extends Component<
                         </p>
                         <button
                             onClick={() => window.location.reload()}
-                            className="btn-holo"
+                            className="btn-cta rounded-full px-6 py-3"
                         >
                             Refresh Page
                         </button>

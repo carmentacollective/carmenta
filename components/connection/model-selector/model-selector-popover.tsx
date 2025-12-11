@@ -172,12 +172,12 @@ export function ModelSelectorPopover({
                 aria-label="Model settings"
             >
                 {isOpen ? (
-                    <X className="h-4 w-4 text-foreground/60 transition-colors group-hover:text-foreground/90" />
+                    <X className="h-5 w-5 text-foreground/60 transition-colors group-hover:text-foreground/90 sm:h-6 sm:w-6" />
                 ) : displayModel ? (
                     <ProviderIcon
                         provider={displayModel.provider}
                         className={cn(
-                            "h-5 w-5 transition-all duration-300",
+                            "h-5 w-5 transition-all duration-300 sm:h-6 sm:w-6",
                             disabled
                                 ? "text-foreground/30"
                                 : isAuto

@@ -50,11 +50,11 @@
         /* Border radius */
         --radius: 0.75rem;
 
-        /* Glassmorphism */
+        /* Glassmorphism - purple tinted for holo theme */
         --glass-blur: 24px;
-        --glass-bg: rgba(255, 255, 255, 0.6);
-        --glass-bg-hover: rgba(255, 255, 255, 0.7);
-        --glass-bg-active: rgba(255, 255, 255, 0.8);
+        --glass-bg: rgba(196, 163, 212, 0.25);
+        --glass-bg-hover: rgba(196, 163, 212, 0.35);
+        --glass-bg-active: rgba(196, 163, 212, 0.45);
         --glass-surface: rgba(255, 255, 255, 0.9);
         --glass-shadow: 0 4px 16px rgba(139, 102, 184, 0.15);
 
@@ -135,9 +135,10 @@
         --input: 30 20% 88%;
         --ring: 15 60% 60%;
 
-        --glass-bg: rgba(255, 250, 240, 0.65);
-        --glass-bg-hover: rgba(255, 250, 240, 0.75);
-        --glass-bg-active: rgba(255, 250, 240, 0.85);
+        /* Glassmorphism - terracotta tinted */
+        --glass-bg: rgba(200, 120, 80, 0.2);
+        --glass-bg-hover: rgba(200, 120, 80, 0.3);
+        --glass-bg-active: rgba(200, 120, 80, 0.4);
         --glass-surface: rgba(255, 250, 240, 0.9);
         --glass-shadow: 0 4px 16px rgba(200, 120, 80, 0.15);
     }
@@ -209,9 +210,10 @@
         --input: 200 20% 90%;
         --ring: 200 70% 55%;
 
-        --glass-bg: rgba(240, 250, 255, 0.65);
-        --glass-bg-hover: rgba(240, 250, 255, 0.75);
-        --glass-bg-active: rgba(240, 250, 255, 0.85);
+        /* Glassmorphism - ice blue tinted */
+        --glass-bg: rgba(100, 180, 220, 0.2);
+        --glass-bg-hover: rgba(100, 180, 220, 0.3);
+        --glass-bg-active: rgba(100, 180, 220, 0.4);
         --glass-surface: rgba(240, 250, 255, 0.9);
         --glass-shadow: 0 4px 16px rgba(100, 180, 220, 0.15);
     }
@@ -283,9 +285,10 @@
         --input: 80 20% 88%;
         --ring: 140 45% 45%;
 
-        --glass-bg: rgba(245, 250, 240, 0.65);
-        --glass-bg-hover: rgba(245, 250, 240, 0.75);
-        --glass-bg-active: rgba(245, 250, 240, 0.85);
+        /* Glassmorphism - forest green tinted */
+        --glass-bg: rgba(100, 160, 120, 0.2);
+        --glass-bg-hover: rgba(100, 160, 120, 0.3);
+        --glass-bg-active: rgba(100, 160, 120, 0.4);
         --glass-surface: rgba(245, 250, 240, 0.9);
         --glass-shadow: 0 4px 16px rgba(100, 160, 120, 0.15);
     }
@@ -357,9 +360,10 @@
         --input: 0 0% 90%;
         --ring: 0 0% 35%;
 
-        --glass-bg: rgba(255, 255, 255, 0.65);
-        --glass-bg-hover: rgba(255, 255, 255, 0.75);
-        --glass-bg-active: rgba(255, 255, 255, 0.85);
+        /* Glassmorphism - gray tinted */
+        --glass-bg: rgba(100, 100, 100, 0.15);
+        --glass-bg-hover: rgba(100, 100, 100, 0.22);
+        --glass-bg-active: rgba(100, 100, 100, 0.3);
         --glass-surface: rgba(255, 255, 255, 0.9);
         --glass-shadow: 0 4px 16px rgba(100, 100, 100, 0.12);
     }
@@ -512,23 +516,6 @@
             0 8px 32px rgba(0, 0, 0, 0.4),
             0 0 0 1px rgba(255, 255, 255, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-
-    /* Theme-aware gradient button */
-    .btn-holo {
-        @apply relative inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-primary-foreground transition-all;
-        background: linear-gradient(
-            135deg,
-            hsl(var(--primary) / 0.9) 0%,
-            hsl(var(--accent) / 0.85) 50%,
-            hsl(var(--primary) / 0.85) 100%
-        );
-        box-shadow: 0 4px 16px hsl(var(--primary) / 0.3);
-    }
-
-    .btn-holo:hover {
-        @apply scale-105;
-        box-shadow: 0 8px 24px hsl(var(--primary) / 0.4);
     }
 
     /* Call-to-action gradient button - high attention actions */
@@ -1160,13 +1147,18 @@
     .btn-glass {
         @apply flex items-center justify-center rounded-full;
         background: var(--glass-bg);
-        box-shadow: var(--glass-shadow);
-        @apply ring-1 ring-white/40 backdrop-blur-xl;
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.08);
+        @apply ring-1 ring-foreground/10 backdrop-blur-xl;
         @apply transition-all duration-300;
     }
 
     .dark .btn-glass {
         @apply ring-white/15;
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     /* Click state - Ripple + depth shift */
@@ -1200,7 +1192,7 @@
 
     /* Icon button variant */
     .btn-icon-glass {
-        @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14;
+        @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12;
     }
 
     /* Subtle buttons - for buttons inside glass containers */

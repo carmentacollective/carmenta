@@ -39,7 +39,7 @@ export function FilePickerButton() {
                 className="btn-icon-glass group"
                 aria-label="Attach file"
             >
-                <Paperclip className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7" />
+                <Paperclip className="h-5 w-5 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-6 sm:w-6" />
             </button>
             <input
                 ref={inputRef}
