@@ -6,8 +6,7 @@ import { getRecentConnections } from "@/lib/actions/connections";
 
 export const metadata: Metadata = {
     title: "Connect | Carmenta",
-    description:
-        "Connect with Carmenta - a heart-centered AI interface for thinking together.",
+    description: "Start a connection. We'll think through it together.",
 };
 
 /**

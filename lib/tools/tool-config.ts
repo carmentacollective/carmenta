@@ -6,6 +6,7 @@ import {
     CloudSun,
     type LucideIcon,
 } from "lucide-react";
+import { logger } from "@/lib/client-logger";
 
 /**
  * Tool status states matching Vercel AI SDK's tool part states
@@ -40,10 +41,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         displayName: "Comparison",
         icon: Table,
         messages: {
-            pending: "Preparing...",
-            running: "Building comparison...",
+            pending: "Getting ready...",
+            running: "Putting this together...",
             completed: "Comparison ready",
-            error: "Comparison didn't work",
+            error: "We couldn't build that comparison",
         },
         delightMessages: {
             completed: ["All lined up", "Side by side", "Here's the breakdown"],
@@ -54,10 +55,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         displayName: "Web Search",
         icon: Search,
         messages: {
-            pending: "Preparing...",
-            running: "Searching the web...",
+            pending: "Getting ready...",
+            running: "Searching together...",
             completed: "Search complete",
-            error: "Search didn't work",
+            error: "Search hit a wall",
         },
         delightMessages: {
             completed: ["Found some results", "Here's what we found", "Search done"],
@@ -68,10 +69,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         displayName: "Fetch Page",
         icon: Globe,
         messages: {
-            pending: "Preparing...",
-            running: "Fetching page content...",
+            pending: "Getting ready...",
+            running: "Reaching that page...",
             completed: "Page fetched",
-            error: "Failed to fetch page",
+            error: "Couldn't reach that page",
         },
         delightMessages: {
             completed: ["Got it", "Page loaded", "Content retrieved"],
@@ -82,10 +83,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         displayName: "Deep Research",
         icon: BrainCircuit,
         messages: {
-            pending: "Preparing...",
-            running: "Researching...",
+            pending: "Getting ready...",
+            running: "Diving into this...",
             completed: "Research complete",
-            error: "Research failed",
+            error: "We couldn't complete that research",
         },
         delightMessages: {
             completed: ["Found insights", "Discoveries made", "Research done"],
@@ -96,10 +97,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         displayName: "Weather",
         icon: CloudSun,
         messages: {
-            pending: "Preparing...",
-            running: "Getting weather...",
+            pending: "Getting ready...",
+            running: "Checking the weather...",
             completed: "Weather retrieved",
-            error: "Failed to get weather",
+            error: "Couldn't get the weather",
         },
         delightMessages: {
             completed: ["Forecast ready", "Weather check done", "Climate confirmed"],
@@ -115,10 +116,10 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     displayName: "Tool",
     icon: Search,
     messages: {
-        pending: "Preparing...",
-        running: "Working...",
-        completed: "Done",
-        error: "That didn't work",
+        pending: "Getting ready...",
+        running: "Working through this...",
+        completed: "All set",
+        error: "That didn't work out",
     },
     delightMessages: {
         completed: ["Got it", "Here you go", "All done"],
@@ -147,9 +148,13 @@ export function getToolConfig(
         if (options.fallbackToDefault) {
             // Log warning in development to help catch missing configs
             if (process.env.NODE_ENV === "development") {
-                console.warn(
-                    `Tool configuration missing for "${toolName}". Using default config. ` +
-                        `Add configuration to TOOL_CONFIG in lib/tools/tool-config.ts`
+                logger.warn(
+                    {
+                        toolName,
+                        fallback: true,
+                        location: "lib/tools/tool-config.ts",
+                    },
+                    `Tool configuration missing for "${toolName}". Add to TOOL_CONFIG.`
                 );
             }
             return DEFAULT_TOOL_CONFIG;

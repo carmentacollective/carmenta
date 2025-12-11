@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     metadataBase: new URL("https://carmenta.ai"),
     title: "Carmenta – Create at the Speed of Thought",
     description:
-        "Create at the speed of thought. One subscription, every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists across conversations. An AI team that works alongside you. No more fragmented tools. No more re-explaining yourself. Partnership, not tool-use.",
+        "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
 
     appleWebApp: {
         capable: true,
@@ -66,14 +66,14 @@ export const metadata: Metadata = {
         siteName: "Carmenta",
         title: "Carmenta – Create at the Speed of Thought",
         description:
-            "Create at the speed of thought. One subscription, every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists across conversations. An AI team that works alongside you. No more fragmented tools. No more re-explaining yourself. Partnership, not tool-use.",
+            "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
     },
 
     twitter: {
         card: "summary_large_image",
         title: "Carmenta – Create at the Speed of Thought",
         description:
-            "Create at the speed of thought. One subscription, every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists across conversations. An AI team that works alongside you. No more fragmented tools. No more re-explaining yourself. Partnership, not tool-use.",
+            "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
     },
 
     keywords: [

@@ -102,7 +102,7 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message: "Search failed. Please try again.",
+                    message: "Search didn't work out. Want to try again?",
                     results: [],
                 };
             }
@@ -135,7 +135,7 @@ const tools = {
                 return {
                     error: true,
                     message:
-                        "Failed to fetch page content. The page may be unavailable or blocked.",
+                        "We couldn't reach that page. It may be unavailable or blocked.",
                     title: "",
                     content: "",
                     url,
@@ -190,8 +190,7 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message:
-                        "Research failed. Please try again with a different query.",
+                    message: "Research hit a wall. Try a different angle?",
                     summary: "",
                     findings: [],
                     sources: [],
@@ -220,10 +219,13 @@ export async function POST(req: Request) {
         // This allows git worktrees, forks, and local dev without Clerk setup
         const user = await currentUser();
         if (!user && process.env.NODE_ENV === "production") {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" },
-            });
+            return new Response(
+                JSON.stringify({ error: "We need you to sign in first" }),
+                {
+                    status: 401,
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
         }
 
         // Use actual email if authenticated, fallback for development
@@ -296,7 +298,7 @@ export async function POST(req: Request) {
             connectionId = decodeConnectionId(existingConnectionId);
             if (connectionId === null) {
                 return new Response(
-                    JSON.stringify({ error: "Invalid connection ID" }),
+                    JSON.stringify({ error: "We couldn't find that connection" }),
                     { status: 400, headers: { "Content-Type": "application/json" } }
                 );
             }

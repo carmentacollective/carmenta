@@ -158,23 +158,23 @@ export async function connectApiKeyService(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "Not authenticated" };
+        return { success: false, error: "We need you to sign in" };
     }
 
     const service = getServiceById(serviceId);
     if (!service) {
-        return { success: false, error: "Unknown service" };
+        return { success: false, error: "We don't recognize that service" };
     }
 
     if (service.authMethod !== "api_key") {
         return {
             success: false,
-            error: "Service does not support API key authentication",
+            error: "This service connects differently—no API key needed",
         };
     }
 
     if (!apiKey || apiKey.trim().length === 0) {
-        return { success: false, error: "API key is required" };
+        return { success: false, error: "We need an API key to connect" };
     }
 
     try {
@@ -287,7 +287,10 @@ export async function connectApiKeyService(
         );
         return {
             success: false,
-            error: errorMessage,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We couldn't make that connection",
         };
     }
 }
@@ -302,7 +305,7 @@ export async function disconnectService(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "Not authenticated" };
+        return { success: false, error: "We need you to sign in" };
     }
 
     try {
@@ -326,7 +329,10 @@ export async function disconnectService(
         );
         return {
             success: false,
-            error: errorMessage,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We couldn't disconnect that service",
         };
     }
 }
@@ -341,7 +347,7 @@ export async function deleteIntegration(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "Not authenticated" };
+        return { success: false, error: "We need you to sign in" };
     }
 
     try {
@@ -379,7 +385,10 @@ export async function deleteIntegration(
         );
         return {
             success: false,
-            error: errorMessage,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We couldn't delete that integration",
         };
     }
 }
@@ -394,12 +403,12 @@ export async function testIntegration(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "Not authenticated" };
+        return { success: false, error: "We need you to sign in" };
     }
 
     const service = getServiceById(serviceId);
     if (!service) {
-        return { success: false, error: "Unknown service" };
+        return { success: false, error: "We don't recognize that service" };
     }
 
     try {
@@ -416,7 +425,7 @@ export async function testIntegration(
     } catch (error) {
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Test failed",
+            error: error instanceof Error ? error.message : "That test didn't work out",
         };
     }
 }

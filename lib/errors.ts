@@ -15,14 +15,17 @@ export class ApplicationError extends Error {
 }
 
 export class AuthenticationError extends ApplicationError {
-    constructor(message: string = "Authentication required", details?: unknown) {
+    constructor(message: string = "We need you to sign in", details?: unknown) {
         super(message, "AUTHENTICATION_ERROR", 401, details);
         this.name = "AuthenticationError";
     }
 }
 
 export class AuthorizationError extends ApplicationError {
-    constructor(message: string = "Insufficient permissions", details?: unknown) {
+    constructor(
+        message: string = "We don't have permission for that",
+        details?: unknown
+    ) {
         super(message, "AUTHORIZATION_ERROR", 403, details);
         this.name = "AuthorizationError";
     }
@@ -30,14 +33,14 @@ export class AuthorizationError extends ApplicationError {
 
 export class NotFoundError extends ApplicationError {
     constructor(resource: string, details?: unknown) {
-        super(`${resource} not found`, "NOT_FOUND", 404, details);
+        super(`We couldn't find that ${resource}`, "NOT_FOUND", 404, details);
         this.name = "NotFoundError";
     }
 }
 
 export class ServiceConnectionError extends ApplicationError {
     constructor(service: string, details?: Record<string, unknown>) {
-        super(`${service} is not connected`, "SERVICE_NOT_CONNECTED", 400, {
+        super(`${service} isn't connected yet`, "SERVICE_NOT_CONNECTED", 400, {
             service,
             ...(details || {}),
         });

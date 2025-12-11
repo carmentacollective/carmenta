@@ -40,7 +40,10 @@ export async function POST(req: Request) {
         const user = await currentUser();
         if (!user) {
             logger.error("Unauthorized request - no user session");
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: "We need you to sign in first" },
+                { status: 401 }
+            );
         }
 
         // 2. Get user email
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
         if (!userEmail || !userEmail.includes("@")) {
             logger.error({ clerkId: user.id, userEmail }, "Invalid email for user");
             return NextResponse.json(
-                { error: "Valid email address required" },
+                { error: "We couldn't find your account email" },
                 { status: 400 }
             );
         }
@@ -67,7 +70,10 @@ export async function POST(req: Request) {
                 "Connection save validation failed"
             );
             return NextResponse.json(
-                { error: "Invalid request", details: validation.error.issues },
+                {
+                    error: "Something's off with that request",
+                    details: validation.error.issues,
+                },
                 { status: 400 }
             );
         }
@@ -180,10 +186,7 @@ export async function POST(req: Request) {
         );
 
         return NextResponse.json(
-            {
-                error: "Failed to save connection",
-                details: errorMessage,
-            },
+            { error: "We couldn't save that connection" },
             { status: 500 }
         );
     }

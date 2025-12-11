@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "New Connection | Carmenta",
-    description:
-        "Start a new connection with Carmenta - a heart-centered AI interface for thinking together.",
+    description: "Start fresh. We're ready when you are.",
 };
 
 /**
