@@ -20,6 +20,7 @@ import {
     type ComponentProps,
     forwardRef,
 } from "react";
+import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
@@ -63,8 +64,11 @@ export function HoloThread() {
 function HoloThreadInner() {
     const { messages, isLoading } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    // Optimal chat scroll behavior
+    const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
+        isStreaming: isLoading,
+    });
 
     // Stable callback ref to prevent effect re-runs during drag
     const handleDragError = useCallback((error: string) => toast.error(error), []);
@@ -76,30 +80,6 @@ function HoloThreadInner() {
         disabled: isUploading,
     });
 
-    // Auto-scroll to bottom when new messages arrive
-    useEffect(() => {
-        if (isAtBottom && viewportRef.current) {
-            viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
-        }
-    }, [messages, isAtBottom]);
-
-    // Track scroll position
-    const handleScroll = useCallback(() => {
-        if (!viewportRef.current) return;
-        const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
-        const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
-        setIsAtBottom(nearBottom);
-    }, []);
-
-    const scrollToBottom = useCallback(() => {
-        if (viewportRef.current) {
-            viewportRef.current.scrollTo({
-                top: viewportRef.current.scrollHeight,
-                behavior: "smooth",
-            });
-        }
-    }, []);
-
     const isEmpty = messages.length === 0;
 
     return (
@@ -108,9 +88,8 @@ function HoloThreadInner() {
             <DragDropOverlay isActive={isDragging} />
             {/* Viewport with fade mask and mobile touch optimizations */}
             <div
-                ref={viewportRef}
-                onScroll={handleScroll}
-                className="scrollbar-holo chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain scroll-smooth bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
+                ref={containerRef}
+                className="scrollbar-holo chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
             >
                 {isEmpty ? (
                     <ThreadWelcome />
@@ -133,7 +112,7 @@ function HoloThreadInner() {
                 <div className="relative flex w-full max-w-4xl flex-col items-center">
                     {!isAtBottom && (
                         <button
-                            onClick={scrollToBottom}
+                            onClick={() => scrollToBottom("smooth")}
                             className="btn-glass-interactive absolute -top-12 p-3 sm:-top-10 sm:p-2"
                             aria-label="Scroll to bottom"
                         >
