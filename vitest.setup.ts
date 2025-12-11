@@ -68,6 +68,17 @@ Object.defineProperty(window, "matchMedia", {
     }),
 });
 
+// Mock IntersectionObserver for components that use scroll detection
+global.IntersectionObserver = class IntersectionObserver {
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    takeRecords() {
+        return [];
+    }
+    unobserve() {}
+} as unknown as typeof IntersectionObserver;
+
 /**
  * Mock the env module to avoid client/server separation issues in jsdom
  *
