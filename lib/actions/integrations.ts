@@ -30,6 +30,46 @@ import { logger } from "@/lib/logger";
 import type { IntegrationStatus } from "@/lib/integrations/types";
 
 /**
+ * Account info from listServiceAccounts
+ */
+export interface ServiceAccount {
+    accountId: string;
+    accountDisplayName?: string;
+    isDefault: boolean;
+    status: IntegrationStatus;
+    connectedAt: Date;
+}
+
+/**
+ * Categorize a service into connected or available based on its accounts.
+ *
+ * A service goes in "connected" if it has ANY accounts (regardless of status).
+ * Users need to see error/expired/disconnected accounts to manage them.
+ * A service only goes in "available" if it has NO accounts at all.
+ *
+ * @internal Exported for testing
+ */
+export function categorizeService(
+    service: ServiceDefinition,
+    accounts: ServiceAccount[]
+): { connected: ConnectedService[]; isAvailable: boolean } {
+    if (accounts.length === 0) {
+        return { connected: [], isAvailable: true };
+    }
+
+    const connected = accounts.map((account) => ({
+        service,
+        status: account.status,
+        accountDisplayName: account.accountDisplayName ?? null,
+        accountId: account.accountId,
+        isDefault: account.isDefault,
+        connectedAt: account.connectedAt,
+    }));
+
+    return { connected, isAvailable: false };
+}
+
+/**
  * Connected service with status and account info
  */
 export interface ConnectedService {
@@ -122,21 +162,10 @@ export async function getServicesWithStatus(): Promise<{
 
     for (const service of visibleServices) {
         const accounts = await listServiceAccounts(userEmail, service.id);
-        const connectedAccounts = accounts.filter((a) => a.status === "connected");
+        const result = categorizeService(service, accounts);
 
-        if (connectedAccounts.length > 0) {
-            // Add each connected account
-            for (const account of connectedAccounts) {
-                connected.push({
-                    service,
-                    status: account.status as IntegrationStatus,
-                    accountDisplayName: account.accountDisplayName ?? null,
-                    accountId: account.accountId,
-                    isDefault: account.isDefault,
-                    connectedAt: account.connectedAt,
-                });
-            }
-        } else {
+        connected.push(...result.connected);
+        if (result.isAvailable) {
             available.push(service);
         }
     }

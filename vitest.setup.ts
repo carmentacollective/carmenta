@@ -105,9 +105,11 @@ vi.mock("./lib/env", () => ({
  */
 
 import type { PGlite } from "@electric-sql/pglite";
+import type { PgliteDatabase } from "drizzle-orm/pglite";
+import type * as schema from "./lib/db/schema";
 
 let testClient: PGlite | null = null;
-let testDb: ReturnType<typeof import("drizzle-orm/pglite").drizzle> | null = null;
+let testDb: PgliteDatabase<typeof schema> | null = null;
 
 // Cache the generated migration statements to avoid regenerating each test
 let cachedMigrationStatements: string[] | null = null;
@@ -143,8 +145,10 @@ async function pushSchema(client: PGlite) {
     const db = drizzle(client, { schema });
 
     const statements = await getMigrationStatements();
-    for (const statement of statements) {
-        await db.execute(statement);
+    if (statements) {
+        for (const statement of statements) {
+            await db.execute(statement);
+        }
     }
 
     return db;
@@ -177,8 +181,10 @@ async function resetDatabase() {
 
     // Re-apply schema
     const statements = await getMigrationStatements();
-    for (const statement of statements) {
-        await db.execute(statement);
+    if (statements) {
+        for (const statement of statements) {
+            await db.execute(statement);
+        }
     }
 }
 
@@ -190,7 +196,8 @@ async function resetDatabase() {
  */
 vi.mock("./lib/db/index", async () => {
     const { db } = await getTestDb();
-    const schema = await import("./lib/db/schema");
+    const schema =
+        (await import("./lib/db/schema")) as typeof import("./lib/db/schema");
 
     // Create mock implementations of user functions that use the test db
     const { eq } = await import("drizzle-orm");
