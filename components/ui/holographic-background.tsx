@@ -431,7 +431,8 @@ export function HolographicBackground({
                 // Draw particle - theme-aware opacity
                 // Dark mode: subtler sparkles (max ~30% opacity)
                 // Light mode: even lighter (max ~20% opacity)
-                const isDarkTheme = bg === DARK_BACKGROUND;
+                // Compare to light background since all themes share the same light bg
+                const isDarkTheme = bg !== LIGHT_BACKGROUND;
                 const themeOpacityMultiplier = isDarkTheme ? 0.4 : 0.25;
                 const twinkleOpacity =
                     p.opacity *
