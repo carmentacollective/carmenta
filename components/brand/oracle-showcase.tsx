@@ -47,13 +47,13 @@ export function OracleShowcase() {
                         </div>
                     </div>
                     <div className="flex flex-col items-center gap-3">
-                        <Oracle state="notification" size="sm" />
+                        <Oracle state="idle" size="sm" />
                         <div className="text-center">
                             <span className="block text-xs font-medium text-foreground/70">
-                                Notification
+                                Idle
                             </span>
                             <span className="block text-xs text-foreground/40">
-                                Thinking
+                                Static
                             </span>
                         </div>
                     </div>
@@ -90,14 +90,14 @@ export function OracleShowcase() {
                 </h3>
                 <div className="space-y-2 text-sm text-foreground/70">
                     <p>
+                        <strong>Idle:</strong> Static, no animation
+                    </p>
+                    <p>
                         <strong>Breathing:</strong> Container scales 0.9 → 1.1 over 8s
                         (ease-in-out)
                     </p>
                     <p>
                         <strong>Working:</strong> Holographic ring spins over 2s
-                    </p>
-                    <p>
-                        <strong>Notification:</strong> Icon badge with subtle glow
                     </p>
                 </div>
             </div>
