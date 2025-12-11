@@ -17,12 +17,13 @@ CREATE TABLE "integration_history" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "integrations" RENAME COLUMN "user_id" TO "user_email";--> statement-breakpoint
 ALTER TABLE "integrations" DROP CONSTRAINT "integrations_user_id_users_id_fk";
 --> statement-breakpoint
 DROP INDEX "integrations_user_idx";--> statement-breakpoint
 DROP INDEX "integrations_user_service_idx";--> statement-breakpoint
 DROP INDEX "integrations_user_service_account_idx";--> statement-breakpoint
+ALTER TABLE "integrations" ALTER COLUMN "user_id" TYPE varchar(255) USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "integrations" RENAME COLUMN "user_id" TO "user_email";--> statement-breakpoint
 ALTER TABLE "integrations" ADD COLUMN "last_sync_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "integration_history" ADD CONSTRAINT "integration_history_user_email_users_email_fk" FOREIGN KEY ("user_email") REFERENCES "public"."users"("email") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "integration_history_user_email_occurred_at_idx" ON "integration_history" USING btree ("user_email","occurred_at");--> statement-breakpoint
