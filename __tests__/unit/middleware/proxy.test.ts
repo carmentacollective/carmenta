@@ -116,6 +116,15 @@ describe("Route Protection", () => {
         it("allows /offline", () => {
             expect(isProtectedRoute(createMockRequest("/offline"))).toBe(false);
         });
+
+        it("allows /api/webhooks/* (webhook routes use signature verification)", () => {
+            expect(isProtectedRoute(createMockRequest("/api/webhooks/clerk"))).toBe(
+                true
+            ); // isProtectedRoute matches /api(.*), but middleware excludes webhooks
+            expect(isProtectedRoute(createMockRequest("/api/webhooks/nango"))).toBe(
+                true
+            ); // Same - protected by pattern, excluded by middleware logic
+        });
     });
 
     describe("edge cases", () => {

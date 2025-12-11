@@ -10,7 +10,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * - /connection/* (all conversation routes)
  * - /integrations (service connections dashboard)
  * - /connect/* (OAuth connection flows)
- * - /api/* (all API routes)
+ * - /api/* (all API routes except webhooks)
+ *
+ * Public exceptions:
+ * - /api/webhooks/* (external services with signature verification)
  *
  * Unauthenticated users attempting to access protected routes are
  * automatically redirected to the sign-in page.
@@ -27,12 +30,19 @@ const isProtectedRoute = createRouteMatcher([
     "/api(.*)",
 ]);
 
+const isWebhookRoute = createRouteMatcher(["/api/webhooks(.*)"]);
+
 export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
 
     // Authenticated users on landing page → redirect to connection
     if (userId && req.nextUrl.pathname === "/") {
         return Response.redirect(new URL("/connection", req.url));
+    }
+
+    // Webhooks are public (use signature verification instead)
+    if (isWebhookRoute(req)) {
+        return;
     }
 
     // Protect explicitly protected routes
