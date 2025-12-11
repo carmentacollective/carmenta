@@ -42,12 +42,7 @@ def is_worktree(cwd: str) -> bool:
     """Check if we're in a git worktree (not the main repo)."""
     git_dir = Path(cwd) / ".git"
     # Worktrees have a .git file pointing to the main repo, not a .git directory
-    if git_dir.exists() and git_dir.is_file():
-        return True
-    # Also check if we're inside a .gitworktrees directory
-    if ".gitworktrees" in Path(cwd).resolve().parts:
-        return True
-    return False
+    return git_dir.exists() and git_dir.is_file()
 
 
 def get_main_repo_path(cwd: str) -> str:

@@ -16,7 +16,7 @@ def test_context_drift_detection():
     print("Testing context drift detection...")
 
     # Simulate being in main repo (/Users/nick/src/carmenta)
-    # with a feature branch, and .gitworktrees directory exists
+    # with a feature branch, when worktrees exist
     test_input = {
         "cwd": "/Users/nick/src/carmenta",
         "tool_input": {
@@ -60,8 +60,8 @@ def test_worktree_detection():
     print(f"Current directory: {cwd}")
     print(f"Is in worktree: {git_guard.is_in_worktree(str(cwd))}")
 
-    if ".gitworktrees" in str(cwd):
-        print("✅ Correctly detected worktree")
+    if git_guard.is_in_worktree(str(cwd)):
+        print("✅ Correctly detected worktree (based on .git file)")
         info = git_guard.get_worktree_info(str(cwd))
         if info:
             print(f"  Branch: {info['branch']}")
