@@ -784,7 +784,7 @@ export class SlackAdapter extends ServiceAdapter {
             }>();
 
         if (!response.ok || !response.members) {
-            throw new ValidationError(
+            return this.createErrorResponse(
                 `Failed to list users${response.error ? `: ${response.error}` : ""}`
             );
         }
@@ -893,7 +893,7 @@ export class SlackAdapter extends ServiceAdapter {
                 },
                 json: {
                     filename,
-                    length: content.length,
+                    length: Buffer.byteLength(content, "utf-8"),
                 },
             })
             .json<{
@@ -1035,12 +1035,19 @@ export class SlackAdapter extends ServiceAdapter {
         }
 
         try {
-            const httpMethod = method.toLowerCase() as "get" | "post";
+            const httpMethod = method.toLowerCase();
+            if (httpMethod !== "get" && httpMethod !== "post") {
+                return this.createErrorResponse(
+                    `Unsupported HTTP method: ${method}. Use GET or POST.`
+                );
+            }
+
             const fullUrl = `${nangoUrl}/proxy/${endpoint}`;
 
-            const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
-                Record<string, unknown>
-            >();
+            const response = await httpClient[httpMethod as "get" | "post"](
+                fullUrl,
+                requestOptions
+            ).json<Record<string, unknown>>();
 
             this.logInfo(`✅ [SLACK] Raw API call successful`);
 
