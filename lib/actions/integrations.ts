@@ -303,7 +303,7 @@ export async function connectApiKeyService(
                 component: "action",
                 action: "connect_api_key_service",
             },
-            extra: { userEmail, serviceId, accountId },
+            extra: { userEmail, serviceId },
         });
 
         return {

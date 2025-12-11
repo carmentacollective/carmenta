@@ -131,7 +131,6 @@ export async function POST(req: Request) {
                 route: "connect",
                 action: "create_session",
             },
-            extra: { service },
         });
 
         return NextResponse.json(

@@ -192,7 +192,6 @@ export async function POST(req: Request) {
                 route: "connect/save",
                 action: "save_connection",
             },
-            extra: { service, connectionId, providerConfigKey },
         });
 
         return NextResponse.json(
