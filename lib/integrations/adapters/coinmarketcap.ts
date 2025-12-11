@@ -22,6 +22,69 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
     serviceName = "coinmarketcap";
     serviceDisplayName = "CoinMarketCap";
 
+    /**
+     * Test the API key by making a lightweight API call
+     * Uses /v1/key/info endpoint which returns info about the key's plan and usage
+     */
+    async testConnection(
+        apiKey: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const response = await httpClient
+                .get(`${CMC_API_BASE}/v1/key/info`, {
+                    headers: {
+                        "X-CMC_PRO_API_KEY": apiKey,
+                        Accept: "application/json",
+                    },
+                })
+                .json<{
+                    data: {
+                        plan: {
+                            plan_name: string;
+                            credit_limit_monthly: number;
+                        };
+                    };
+                }>();
+
+            // If we got here, the API key is valid
+            const planName = response.data?.plan?.plan_name || "Unknown";
+            return {
+                success: true,
+                error: undefined,
+            };
+        } catch (error) {
+            // Parse the error to give helpful feedback
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
+                return {
+                    success: false,
+                    error: "Invalid API key. Please check your key and try again.",
+                };
+            }
+
+            if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
+                return {
+                    success: false,
+                    error: "API key doesn't have permission. Check your subscription plan.",
+                };
+            }
+
+            if (errorMessage.includes("429")) {
+                return {
+                    success: false,
+                    error: "Rate limit exceeded. Please wait a moment and try again.",
+                };
+            }
+
+            // Generic error
+            return {
+                success: false,
+                error: `Connection test failed: ${errorMessage}`,
+            };
+        }
+    }
+
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,
