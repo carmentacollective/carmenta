@@ -18,12 +18,10 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock Clerk authentication
-const mocks = vi.hoisted(() => ({
-    mockCurrentUser: vi.fn(),
-}));
+const mockCurrentUser = vi.fn();
 
 vi.mock("@clerk/nextjs/server", () => ({
-    currentUser: mocks.mockCurrentUser,
+    currentUser: mockCurrentUser,
 }));
 
 describe("/connection/new page", () => {
@@ -31,7 +29,7 @@ describe("/connection/new page", () => {
         vi.clearAllMocks();
 
         // Default: authenticated user
-        mocks.mockCurrentUser.mockResolvedValue({
+        mockCurrentUser.mockResolvedValue({
             id: "user_test123",
             emailAddresses: [{ emailAddress: "test@example.com" }],
         });

@@ -4,7 +4,7 @@ import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-    title: "Terms of Service",
+    title: "Our Partnership · Carmenta",
     description: "Carmenta Terms of Service - Guidelines for our partnership.",
 };
 

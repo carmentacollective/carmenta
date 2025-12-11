@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
-    title: "Sign Up | Carmenta",
+    title: "Welcome · Carmenta",
     description: "Start building together. Create your account.",
     robots: { index: false, follow: false },
 };

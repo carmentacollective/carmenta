@@ -25,7 +25,7 @@ function safeExtractId(slug: string): string | null {
 /**
  * Generate dynamic metadata for SEO.
  *
- * Page title format: "{Connection Title} | Carmenta" or "Connect | Carmenta" for untitled.
+ * Page title format: "{Connection Title} · Carmenta" or "Create · Carmenta" for untitled.
  */
 export async function generateMetadata({
     params,
@@ -34,20 +34,20 @@ export async function generateMetadata({
     const connectionId = safeExtractId(slug);
 
     if (!connectionId) {
-        return { title: "Not Found | Carmenta" };
+        return { title: "Lost · Carmenta" };
     }
 
     const result = await loadConnection(connectionId);
 
     if (!result) {
         return {
-            title: "Not Found | Carmenta",
+            title: "Lost · Carmenta",
         };
     }
 
     const title = result.connection.title
-        ? `${result.connection.title} | Carmenta`
-        : "Connect | Carmenta";
+        ? `${result.connection.title} · Carmenta`
+        : "Create · Carmenta";
 
     return {
         title,

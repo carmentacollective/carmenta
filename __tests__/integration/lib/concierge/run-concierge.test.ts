@@ -8,23 +8,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { UIMessage } from "ai";
 
 // Mock generateText before importing the module under test
-vi.mock("ai", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("ai")>();
+const mockGenerateText = vi.fn();
+vi.mock("ai", async () => {
+    const actual = await import("ai");
     return {
         ...actual,
-        generateText: vi.fn(),
+        generateText: mockGenerateText,
     };
 });
 
-// Mock fs/promises for rubric loading - use vi.hoisted() so it's available during hoisting
-const { mockReadFile } = vi.hoisted(() => ({
-    mockReadFile: vi.fn().mockResolvedValue(`# Test Rubric
+// Mock fs/promises for rubric loading
+const mockReadFile = vi.fn().mockResolvedValue(`# Test Rubric
 ## Primary Models
 ### anthropic/claude-sonnet-4.5
 Our default model.
 **Choose when**: Most requests
-`),
-}));
+`);
 
 vi.mock("node:fs/promises", () => ({
     default: { readFile: mockReadFile },

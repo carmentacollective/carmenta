@@ -4,7 +4,7 @@ import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-    title: "Privacy Policy",
+    title: "Your Privacy · Carmenta",
     description: "Carmenta Privacy Policy - How we collect, use, and protect our data.",
 };
 

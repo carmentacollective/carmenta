@@ -7,11 +7,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock generateText before importing the module under test
-vi.mock("ai", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("ai")>();
+const mockGenerateText = vi.fn();
+vi.mock("ai", async () => {
+    const actual = await import("ai");
     return {
         ...actual,
-        generateText: vi.fn(),
+        generateText: mockGenerateText,
     };
 });
 

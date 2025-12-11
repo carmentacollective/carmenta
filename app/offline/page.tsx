@@ -4,7 +4,7 @@ import Link from "next/link";
 import { OfflineRetryButton } from "@/components/offline-retry-button";
 
 export const metadata: Metadata = {
-    title: "Offline - Carmenta",
+    title: "Reconnecting · Carmenta",
     description:
         "You're currently offline. Carmenta will reconnect when your network is available.",
     robots: {
