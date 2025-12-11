@@ -16,6 +16,7 @@ import { getConnectedServices, getCredentials } from "./connection-manager";
 import { getServiceById, type ServiceDefinition } from "./services";
 import {
     ClickUpAdapter,
+    CoinMarketCapAdapter,
     DropboxAdapter,
     FirefliesAdapter,
     GiphyAdapter,
@@ -36,6 +37,7 @@ import { logger } from "@/lib/logger";
  */
 const adapterMap: Record<string, ServiceAdapter> = {
     clickup: new ClickUpAdapter(),
+    coinmarketcap: new CoinMarketCapAdapter(),
     dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
     giphy: new GiphyAdapter(),

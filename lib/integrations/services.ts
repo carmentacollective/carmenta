@@ -75,6 +75,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["list_tasks", "create_task", "update_task", "list_spaces"],
     },
 
+    // CoinMarketCap - API Key
+    {
+        id: "coinmarketcap",
+        name: "CoinMarketCap",
+        description: "Cryptocurrency market data and pricing",
+        logo: "/logos/coinmarketcap.svg",
+        authMethod: "api_key",
+        status: "available",
+        getApiKeyUrl: "https://coinmarketcap.com/api/",
+        apiKeyPlaceholder: "Enter your CoinMarketCap API key",
+        supportsMultipleAccounts: false,
+        docsUrl: "https://coinmarketcap.com/api/documentation/v1/",
+        capabilities: [
+            "get_listings",
+            "get_quotes",
+            "get_crypto_info",
+            "convert_price",
+        ],
+    },
+
     // Dropbox - OAuth (via Nango)
     {
         id: "dropbox",
