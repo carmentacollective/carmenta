@@ -877,7 +877,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            events: response.items.map((event) => ({
+            events: (response.items || []).map((event) => ({
                 id: event.id,
                 summary: event.summary || "(No title)",
                 description: event.description,
@@ -1475,6 +1475,12 @@ export class GoogleAdapter extends ServiceAdapter {
         if (organizations !== undefined) {
             body.organizations = organizations;
             updateFields.push("organizations");
+        }
+
+        if (updateFields.length === 0) {
+            throw new ValidationError(
+                "At least one field must be provided to update contact"
+            );
         }
 
         const response = await httpClient
