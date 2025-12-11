@@ -20,7 +20,7 @@ interface SteppedSliderProps {
     /** Presets with label and emoji */
     presets: readonly { label: string; emoji: string }[];
     /** Color theme */
-    theme?: "primary" | "cyan";
+    theme?: "primary" | "secondary";
     /** Label for the slider */
     label: string;
     /** Whether the slider is disabled */
@@ -54,7 +54,7 @@ export function SteppedSlider({
                         "rounded-full px-2 py-0.5 text-[10px] font-medium",
                         isPrimary
                             ? "bg-primary/10 text-primary"
-                            : "bg-cyan-500/10 text-cyan-600"
+                            : "bg-secondary text-secondary-foreground"
                     )}
                 >
                     {presets[value].emoji} {presets[value].label}
@@ -83,12 +83,12 @@ export function SteppedSlider({
                                         isSelected
                                             ? isPrimary
                                                 ? "scale-110 border-primary bg-primary shadow-md"
-                                                : "scale-110 border-cyan-500 bg-cyan-500 shadow-md"
+                                                : "scale-110 border-secondary bg-secondary shadow-md"
                                             : isActive && progressMode
                                               ? isPrimary
                                                   ? "border-primary/40 bg-primary/10"
-                                                  : "border-cyan-500/40 bg-cyan-500/10"
-                                              : "border-foreground/10 bg-white group-hover:border-foreground/20",
+                                                  : "border-secondary/40 bg-secondary/10"
+                                              : "border-foreground/10 bg-background group-hover:border-foreground/20",
                                         disabled && "cursor-not-allowed opacity-50"
                                     )}
                                 >
@@ -107,7 +107,7 @@ export function SteppedSlider({
                                         isSelected
                                             ? isPrimary
                                                 ? "font-semibold text-primary"
-                                                : "font-semibold text-cyan-600"
+                                                : "font-semibold text-secondary-foreground"
                                             : "text-foreground/30"
                                     )}
                                 >
@@ -124,7 +124,7 @@ export function SteppedSlider({
                                                 "h-full rounded-full transition-all",
                                                 isPrimary
                                                     ? "bg-primary/60"
-                                                    : "bg-cyan-500/60",
+                                                    : "bg-secondary/60",
                                                 isBeforeSelected ? "w-full" : "w-0"
                                             )}
                                         />

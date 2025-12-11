@@ -59,7 +59,7 @@ export function DesignLabShell({
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showCode, setShowCode] = useState(false);
     const [copied, setCopied] = useState(false);
-    const { theme, setTheme } = useTheme();
+    const { resolvedTheme, setTheme } = useTheme();
 
     const currentOption = options[currentIndex];
     const totalOptions = options.length;
@@ -191,11 +191,13 @@ export function DesignLabShell({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() =>
-                                    setTheme(theme === "dark" ? "light" : "dark")
+                                    setTheme(
+                                        resolvedTheme === "dark" ? "light" : "dark"
+                                    )
                                 }
                                 aria-label="Toggle theme"
                             >
-                                {theme === "dark" ? (
+                                {resolvedTheme === "dark" ? (
                                     <Sun className="h-5 w-5" />
                                 ) : (
                                     <Moon className="h-5 w-5" />
