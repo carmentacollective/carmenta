@@ -43,22 +43,18 @@ export interface UserContext {
 }
 
 /**
- * Build user context message with current date, time, and user info.
+ * Build user context message with guidance on how to use it.
  *
- * This content is NOT cached since it changes on every request.
- *
- * Time handling:
- * - If timezone is provided (from browser), show date AND time in user's timezone
- * - If no timezone, show only date (server-side) - time without timezone context is misleading
+ * This is NOT just data - it's instruction for the LLM on thoughtful usage.
+ * The goal is genuine connection, not performative personalization.
  */
 function buildUserContextContent(context: UserContext): string {
     const now = new Date();
     const parts: string[] = [];
 
-    parts.push(`## Current Context\n`);
-
+    // Format date (and time if we have timezone)
+    let dateInfo: string;
     if (context.timezone) {
-        // User timezone available - show both date and time in their timezone
         const dateTimeOptions: Intl.DateTimeFormatOptions = {
             weekday: "long",
             year: "numeric",
@@ -69,31 +65,46 @@ function buildUserContextContent(context: UserContext): string {
             hour12: true,
             timeZone: context.timezone,
         };
-        const formattedDateTime = now.toLocaleString("en-US", dateTimeOptions);
-        parts.push(`Date and time: ${formattedDateTime}`);
-        parts.push(`Timezone: ${context.timezone}`);
+        dateInfo = now.toLocaleString("en-US", dateTimeOptions);
     } else {
-        // No timezone - show only date to avoid confusion
         const dateOptions: Intl.DateTimeFormatOptions = {
             weekday: "long",
             year: "numeric",
             month: "long",
             day: "numeric",
         };
-        const formattedDate = now.toLocaleDateString("en-US", dateOptions);
-        parts.push(`Date: ${formattedDate}`);
+        dateInfo = now.toLocaleDateString("en-US", dateOptions);
     }
 
-    // User identification - use name if available, fallback to email
+    // Get user's name if available
     const userName = context.user
         ? context.user.fullName ||
           `${context.user.firstName || ""} ${context.user.lastName || ""}`.trim() ||
-          context.user.emailAddresses[0]?.emailAddress ||
-          context.userEmail
-        : context.userEmail;
+          null
+        : null;
 
-    if (userName && userName !== "dev-user@local") {
-        parts.push(`\nWe're working with ${userName}.`);
+    // Build the context message with guidance
+    parts.push(`## Session Context`);
+    parts.push(``);
+    parts.push(`Today is ${dateInfo}.`);
+    parts.push(``);
+    parts.push(
+        `Use this date to assess whether information from your training might be outdated. ` +
+            `When the question involves recent events, current versions, or time-sensitive information, ` +
+            `acknowledge temporality naturally ("as of my knowledge cutoff...") or use web search ` +
+            `to get current information.`
+    );
+
+    if (userName) {
+        parts.push(``);
+        parts.push(`We're working with ${userName}.`);
+        parts.push(``);
+        parts.push(
+            `Use their name naturally when it genuinely adds warmth or clarity - a greeting, ` +
+                `celebrating a win, or a moment of direct encouragement. ` +
+                `Avoid overusing it; that feels performative rather than genuine. ` +
+                `The "we" framing already establishes partnership.`
+        );
     }
 
     return parts.join("\n");

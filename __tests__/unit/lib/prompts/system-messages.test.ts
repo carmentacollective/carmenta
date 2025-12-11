@@ -52,7 +52,7 @@ describe("buildSystemMessages", () => {
             });
         });
 
-        it("second message contains dynamic content without cache control", () => {
+        it("second message contains session context without cache control", () => {
             const context: UserContext = {
                 user: null,
                 userEmail: "test@example.com",
@@ -60,13 +60,13 @@ describe("buildSystemMessages", () => {
 
             const messages = buildSystemMessages(context);
 
-            expect(messages[1].content).toContain("## Current Context");
+            expect(messages[1].content).toContain("## Session Context");
             expect(messages[1].providerOptions).toBeUndefined();
         });
     });
 
-    describe("date and time formatting", () => {
-        it("shows only date when timezone is not provided", () => {
+    describe("date formatting and guidance", () => {
+        it("includes date in natural sentence format", () => {
             const context: UserContext = {
                 user: null,
                 userEmail: "test@example.com",
@@ -76,26 +76,11 @@ describe("buildSystemMessages", () => {
             const messages = buildSystemMessages(context);
             const dynamicContent = messages[1].content;
 
-            expect(dynamicContent).toContain("Date:");
-            expect(dynamicContent).not.toContain("Time:");
-            expect(dynamicContent).not.toContain("Timezone:");
+            expect(dynamicContent).toContain("Today is");
+            expect(dynamicContent).toContain("Sunday, June 15, 2025");
         });
 
-        it("shows date, time, and timezone when timezone is provided", () => {
-            const context: UserContext = {
-                user: null,
-                userEmail: "test@example.com",
-                timezone: "America/New_York",
-            };
-
-            const messages = buildSystemMessages(context);
-            const dynamicContent = messages[1].content;
-
-            expect(dynamicContent).toContain("Date and time:");
-            expect(dynamicContent).toContain("Timezone: America/New_York");
-        });
-
-        it("formats date and time in user timezone when provided", () => {
+        it("includes time when timezone is provided", () => {
             const context: UserContext = {
                 user: null,
                 userEmail: "test@example.com",
@@ -108,9 +93,22 @@ describe("buildSystemMessages", () => {
             // 14:30 UTC = 7:30 AM Pacific (during daylight saving time in June)
             expect(dynamicContent).toContain("7:30 AM");
         });
+
+        it("includes guidance on temporal awareness", () => {
+            const context: UserContext = {
+                user: null,
+                userEmail: "test@example.com",
+            };
+
+            const messages = buildSystemMessages(context);
+            const dynamicContent = messages[1].content;
+
+            expect(dynamicContent).toContain("knowledge cutoff");
+            expect(dynamicContent).toContain("web search");
+        });
     });
 
-    describe("user identification", () => {
+    describe("user name handling", () => {
         it("uses fullName when available", () => {
             const context: UserContext = {
                 user: {
@@ -145,7 +143,7 @@ describe("buildSystemMessages", () => {
             expect(dynamicContent).toContain("We're working with Jane Smith.");
         });
 
-        it("uses email from user object when name is missing", () => {
+        it("omits name section when user has no name (not email fallback)", () => {
             const context: UserContext = {
                 user: {
                     fullName: null,
@@ -159,27 +157,15 @@ describe("buildSystemMessages", () => {
             const messages = buildSystemMessages(context);
             const dynamicContent = messages[1].content;
 
-            expect(dynamicContent).toContain("We're working with anon@example.com.");
+            // Should NOT include email as name - that's not genuine personalization
+            expect(dynamicContent).not.toContain("We're working with");
+            expect(dynamicContent).not.toContain("anon@example.com");
         });
 
-        it("uses userEmail when user is null", () => {
+        it("omits name section when user is null", () => {
             const context: UserContext = {
                 user: null,
-                userEmail: "fallback@example.com",
-            };
-
-            const messages = buildSystemMessages(context);
-            const dynamicContent = messages[1].content;
-
-            expect(dynamicContent).toContain(
-                "We're working with fallback@example.com."
-            );
-        });
-
-        it("skips user greeting for dev-user@local", () => {
-            const context: UserContext = {
-                user: null,
-                userEmail: "dev-user@local",
+                userEmail: "anonymous@example.com",
             };
 
             const messages = buildSystemMessages(context);
@@ -188,23 +174,35 @@ describe("buildSystemMessages", () => {
             expect(dynamicContent).not.toContain("We're working with");
         });
 
-        it("uses userEmail as final fallback when user has no identifiable info", () => {
+        it("includes guidance on thoughtful name usage when name is present", () => {
             const context: UserContext = {
                 user: {
-                    fullName: null,
-                    firstName: null,
-                    lastName: null,
+                    fullName: "Nick Sullivan",
+                    firstName: "Nick",
+                    lastName: "Sullivan",
                     emailAddresses: [],
                 } as unknown as User,
-                userEmail: "context-email@example.com",
+                userEmail: "nick@example.com",
             };
 
             const messages = buildSystemMessages(context);
             const dynamicContent = messages[1].content;
 
-            expect(dynamicContent).toContain(
-                "We're working with context-email@example.com."
-            );
+            expect(dynamicContent).toContain("Use their name naturally");
+            expect(dynamicContent).toContain("Avoid overusing");
+            expect(dynamicContent).toContain("performative");
+        });
+
+        it("does not include name guidance when no name is available", () => {
+            const context: UserContext = {
+                user: null,
+                userEmail: "test@example.com",
+            };
+
+            const messages = buildSystemMessages(context);
+            const dynamicContent = messages[1].content;
+
+            expect(dynamicContent).not.toContain("Use their name");
         });
     });
 
@@ -243,7 +241,7 @@ describe("buildSystemMessages", () => {
             expect(dynamicContent).toContain("We're working with Johnson.");
         });
 
-        it("handles empty string names gracefully", () => {
+        it("handles empty string names by omitting name section", () => {
             const context: UserContext = {
                 user: {
                     fullName: "",
@@ -257,7 +255,8 @@ describe("buildSystemMessages", () => {
             const messages = buildSystemMessages(context);
             const dynamicContent = messages[1].content;
 
-            expect(dynamicContent).toContain("We're working with empty@example.com.");
+            // Empty strings should not result in name being shown
+            expect(dynamicContent).not.toContain("We're working with");
         });
     });
 });
