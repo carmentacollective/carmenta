@@ -84,11 +84,16 @@ export default function HomePage() {
     const [phase, setPhase] = useState<Phase>("typing");
     const [paused, setPaused] = useState(false);
     const charIndex = useRef(0);
+    const [isClient, setIsClient] = useState(false);
 
     // Derive visibility from phase - content hidden during exit
     const contentVisible = phase !== "exit";
 
-    const shuffledFeatures = useMemo(() => shuffleArray(FEATURES), []);
+    // Only shuffle after client-side hydration to avoid SSR mismatch
+    const shuffledFeatures = useMemo(
+        () => (isClient ? shuffleArray(FEATURES) : FEATURES),
+        [isClient]
+    );
     const currentFeature = shuffledFeatures[activeSlide];
     const headline = currentFeature.headline;
 
@@ -115,6 +120,15 @@ export default function HomePage() {
             (activeSlide - 1 + shuffledFeatures.length) % shuffledFeatures.length
         );
     }, [activeSlide, shuffledFeatures.length, goToSlide]);
+
+    // Set isClient after mount to enable shuffle
+    // This intentional setState in effect fixes hydration mismatch:
+    // First render (SSR + client) uses unshuffled features (match guaranteed)
+    // Second render (client only) shuffles features for variety
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsClient(true);
+    }, []);
 
     // Keyboard navigation
     useEffect(() => {
