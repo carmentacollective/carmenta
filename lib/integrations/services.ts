@@ -56,22 +56,12 @@ export interface ServiceDefinition {
 /**
  * Service Registry
  *
- * Add new services here. The order determines display order in the UI.
+ * IMPORTANT: Services are sorted alphabetically by ID to minimize merge conflicts
+ * when multiple integrations are added concurrently. When adding a new service,
+ * insert it in alphabetical order rather than at the end.
  */
 export const SERVICE_REGISTRY: ServiceDefinition[] = [
-    // OAuth Services (via Nango)
-    {
-        id: "notion",
-        name: "Notion",
-        description: "Search, read, and manage your Notion workspace",
-        logo: "/logos/notion.svg",
-        authMethod: "oauth",
-        status: "beta",
-        nangoIntegrationKey: "notion",
-        supportsMultipleAccounts: true,
-        docsUrl: "https://developers.notion.com/",
-        capabilities: ["search_pages", "get_page", "create_page", "update_page"],
-    },
+    // ClickUp - OAuth (via Nango)
     {
         id: "clickup",
         name: "ClickUp",
@@ -84,6 +74,8 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         docsUrl: "https://clickup.com/api",
         capabilities: ["list_tasks", "create_task", "update_task", "list_spaces"],
     },
+
+    // Dropbox - OAuth (via Nango)
     {
         id: "dropbox",
         name: "Dropbox",
@@ -104,25 +96,38 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "create_shared_link",
         ],
     },
+
+    // Fireflies.ai - API Key
     {
-        id: "slack",
-        name: "Slack",
-        description: "Send messages and interact with your Slack workspace",
-        logo: "/logos/slack.svg",
-        authMethod: "oauth",
-        status: "beta",
-        nangoIntegrationKey: "slack",
-        supportsMultipleAccounts: true,
-        docsUrl: "https://api.slack.com/methods",
-        capabilities: [
-            "list_channels",
-            "get_channel_history",
-            "send_message",
-            "get_user_info",
-            "list_users",
-            "add_reaction",
-        ],
+        id: "fireflies",
+        name: "Fireflies.ai",
+        description: "Search and analyze meeting transcripts",
+        logo: "/logos/fireflies.svg",
+        authMethod: "api_key",
+        status: "available",
+        getApiKeyUrl: "https://app.fireflies.ai/integrations/custom/api",
+        apiKeyPlaceholder: "Enter your Fireflies API key",
+        supportsMultipleAccounts: false,
+        docsUrl: "https://docs.fireflies.ai/",
+        capabilities: ["list_transcripts", "search_transcripts", "get_transcript"],
     },
+
+    // Giphy - API Key
+    {
+        id: "giphy",
+        name: "Giphy",
+        description: "Search for GIFs and stickers",
+        logo: "/logos/giphy.svg",
+        authMethod: "api_key",
+        status: "available",
+        getApiKeyUrl: "https://developers.giphy.com/",
+        apiKeyPlaceholder: "Enter your Giphy API key",
+        supportsMultipleAccounts: false,
+        docsUrl: "https://developers.giphy.com/docs/api",
+        capabilities: ["search", "get_trending", "get_random"],
+    },
+
+    // Google - OAuth (via Nango)
     {
         id: "google",
         name: "Google",
@@ -141,33 +146,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
-    // API Key Services
-    {
-        id: "giphy",
-        name: "Giphy",
-        description: "Search for GIFs and stickers",
-        logo: "/logos/giphy.svg",
-        authMethod: "api_key",
-        status: "available",
-        getApiKeyUrl: "https://developers.giphy.com/",
-        apiKeyPlaceholder: "Enter your Giphy API key",
-        supportsMultipleAccounts: false,
-        docsUrl: "https://developers.giphy.com/docs/api",
-        capabilities: ["search", "get_trending", "get_random"],
-    },
-    {
-        id: "fireflies",
-        name: "Fireflies.ai",
-        description: "Search and analyze meeting transcripts",
-        logo: "/logos/fireflies.svg",
-        authMethod: "api_key",
-        status: "available",
-        getApiKeyUrl: "https://app.fireflies.ai/integrations/custom/api",
-        apiKeyPlaceholder: "Enter your Fireflies API key",
-        supportsMultipleAccounts: false,
-        docsUrl: "https://docs.fireflies.ai/",
-        capabilities: ["list_transcripts", "search_transcripts", "get_transcript"],
-    },
+    // Limitless - API Key
     {
         id: "limitless",
         name: "Limitless",
@@ -180,6 +159,41 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: false,
         docsUrl: "https://www.limitless.ai/developers",
         capabilities: ["search", "list_recordings", "get_transcript"],
+    },
+
+    // Notion - OAuth (via Nango)
+    {
+        id: "notion",
+        name: "Notion",
+        description: "Search, read, and manage your Notion workspace",
+        logo: "/logos/notion.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "notion",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.notion.com/",
+        capabilities: ["search_pages", "get_page", "create_page", "update_page"],
+    },
+
+    // Slack - OAuth (via Nango)
+    {
+        id: "slack",
+        name: "Slack",
+        description: "Send messages and interact with your Slack workspace",
+        logo: "/logos/slack.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "slack",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://api.slack.com/methods",
+        capabilities: [
+            "list_channels",
+            "get_channel_history",
+            "send_message",
+            "get_user_info",
+            "list_users",
+            "add_reaction",
+        ],
     },
 ];
 
