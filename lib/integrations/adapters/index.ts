@@ -22,3 +22,4 @@ export { FirefliesAdapter } from "./fireflies";
 export { GiphyAdapter } from "./giphy";
 export { LimitlessAdapter } from "./limitless";
 export { NotionAdapter } from "./notion";
+export { SlackAdapter } from "./slack";
