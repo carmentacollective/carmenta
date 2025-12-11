@@ -1,8 +1,29 @@
 import "@testing-library/jest-dom/vitest";
-import { vi, beforeEach, afterEach } from "vitest";
+import { vi, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
 
 // Environment is automatically set to "test" by vitest
 // env.ts skips validation when NODE_ENV === "test"
+
+/**
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │  🚨 HARDCODED MIGRATIONS DO NOT BELONG IN THIS FILE 🚨                 │
+ * │                                                                         │
+ * │  DO NOT add CREATE TABLE statements here.                               │
+ * │  DO NOT add CREATE TYPE statements here.                                │
+ * │  DO NOT add CREATE INDEX statements here.                               │
+ * │                                                                         │
+ * │  The schema is defined in lib/db/schema.ts                              │
+ * │  We use drizzle-kit/api to dynamically push the schema.                 │
+ * │                                                                         │
+ * │  If you need to add a new table:                                        │
+ * │  1. Add it to lib/db/schema.ts                                          │
+ * │  2. Run `bun run db:generate` to create a migration                     │
+ * │  3. Tests will automatically pick up the new schema                     │
+ * │                                                                         │
+ * │  Reference: https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres  │
+ * │             -pglite-drizzle-vitest/                                     │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ */
 
 /**
  * Mock Clerk client-side hooks for component tests
@@ -76,33 +97,89 @@ vi.mock("./lib/env", () => ({
  * PGlite Database Setup for Testing
  *
  * Creates an in-memory PostgreSQL instance using PGlite (WASM).
- * This allows tests to use real database operations without external dependencies.
+ * Uses drizzle-kit/api to push schema dynamically from lib/db/schema.ts.
  *
- * Pattern based on Drizzle's official Vitest + PGlite example:
- * https://github.com/drizzle-team/drizzle-orm/tree/main/examples/vitest-pg
- *
- * NOTE: PGlite setup is lazy-loaded to avoid initialization issues.
- * Tests that need the database should use the setupTestDatabase() helper.
+ * Pattern based on:
+ * - https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres-pglite-drizzle-vitest/
+ * - https://github.com/rphlmr/drizzle-vitest-pg
  */
 
-let testDbInstance: Awaited<ReturnType<typeof createTestDb>> | null = null;
+import type { PGlite } from "@electric-sql/pglite";
+
+let testClient: PGlite | null = null;
+let testDb: ReturnType<typeof import("drizzle-orm/pglite").drizzle> | null = null;
+
+// Cache the generated migration statements to avoid regenerating each test
+let cachedMigrationStatements: string[] | null = null;
+
+/**
+ * Generate migration SQL from schema using drizzle-kit API.
+ * Cached to avoid regenerating on each test.
+ */
+async function getMigrationStatements() {
+    if (cachedMigrationStatements) {
+        return cachedMigrationStatements;
+    }
+
+    const schema = await import("./lib/db/schema");
+    const { createRequire } = await import("node:module");
+    const require = createRequire(import.meta.url);
+    const { generateDrizzleJson, generateMigration } = require("drizzle-kit/api");
+
+    const prevJson = generateDrizzleJson({});
+    const curJson = generateDrizzleJson(schema, prevJson.id, undefined, "snake_case");
+    cachedMigrationStatements = await generateMigration(prevJson, curJson);
+
+    return cachedMigrationStatements;
+}
+
+/**
+ * Push schema to PGlite using drizzle-kit API
+ * This generates the SQL from lib/db/schema.ts dynamically - no hardcoded tables!
+ */
+async function pushSchema(client: PGlite) {
+    const { drizzle } = await import("drizzle-orm/pglite");
+    const schema = await import("./lib/db/schema");
+    const db = drizzle(client, { schema });
+
+    const statements = await getMigrationStatements();
+    for (const statement of statements) {
+        await db.execute(statement);
+    }
+
+    return db;
+}
 
 async function createTestDb() {
     const { PGlite } = await import("@electric-sql/pglite");
-    const { drizzle } = await import("drizzle-orm/pglite");
     const schema = await import("./lib/db/schema");
 
-    const client = new PGlite();
-    const db = drizzle(client, { schema });
+    testClient = new PGlite();
+    testDb = await pushSchema(testClient);
 
-    return { db, schema, client };
+    return { db: testDb, schema, client: testClient };
 }
 
 async function getTestDb() {
-    if (!testDbInstance) {
-        testDbInstance = await createTestDb();
+    if (!testDb || !testClient) {
+        await createTestDb();
     }
-    return testDbInstance;
+    return { db: testDb!, client: testClient! };
+}
+
+async function resetDatabase() {
+    const { sql } = await import("drizzle-orm");
+    const { db } = await getTestDb();
+
+    // Drop and recreate public schema to clear all data
+    await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
+    await db.execute(sql`CREATE SCHEMA public`);
+
+    // Re-apply schema
+    const statements = await getMigrationStatements();
+    for (const statement of statements) {
+        await db.execute(statement);
+    }
 }
 
 /**
@@ -112,20 +189,23 @@ async function getTestDb() {
  * The global mock provides everything you need.
  */
 vi.mock("./lib/db/index", async () => {
-    const { db, schema } = await getTestDb();
+    const { db } = await getTestDb();
+    const schema = await import("./lib/db/schema");
 
     // Create mock implementations of user functions that use the test db
     const { eq } = await import("drizzle-orm");
 
     const findUserByEmail = async (email: string) => {
-        const user = await db.query.users.findFirst({
+        const { db: currentDb } = await getTestDb();
+        const user = await currentDb.query.users.findFirst({
             where: eq(schema.users.email, email),
         });
         return user ?? null;
     };
 
     const findUserByClerkId = async (clerkId: string) => {
-        const user = await db.query.users.findFirst({
+        const { db: currentDb } = await getTestDb();
+        const user = await currentDb.query.users.findFirst({
             where: eq(schema.users.clerkId, clerkId),
         });
         return user ?? null;
@@ -141,9 +221,10 @@ vi.mock("./lib/db/index", async () => {
             imageUrl?: string | null;
         }
     ) => {
+        const { db: currentDb } = await getTestDb();
         // Pure upsert: single atomic operation eliminates race conditions
         // Email is the canonical identity - update clerk_id if it changed
-        const [user] = await db
+        const [user] = await currentDb
             .insert(schema.users)
             .values({
                 clerkId,
@@ -174,6 +255,7 @@ vi.mock("./lib/db/index", async () => {
         email: string,
         preferences: Record<string, unknown>
     ) => {
+        const { db: currentDb } = await getTestDb();
         const user = await findUserByEmail(email);
         if (!user) return null;
 
@@ -182,7 +264,7 @@ vi.mock("./lib/db/index", async () => {
             ...preferences,
         };
 
-        const [updatedUser] = await db
+        const [updatedUser] = await currentDb
             .update(schema.users)
             .set({
                 preferences: mergedPreferences,
@@ -195,7 +277,8 @@ vi.mock("./lib/db/index", async () => {
     };
 
     const updateLastSignedIn = async (email: string) => {
-        await db
+        const { db: currentDb } = await getTestDb();
+        await currentDb
             .update(schema.users)
             .set({
                 lastSignedInAt: new Date(),
@@ -208,8 +291,11 @@ vi.mock("./lib/db/index", async () => {
     // It creates a circular dependency: connections → index → connections
     // Tests should import connection functions directly from "@/lib/db/connections"
 
+    // Return a getter for db that always returns the current instance
     return {
-        db,
+        get db() {
+            return testDb;
+        },
         schema,
         findUserByEmail,
         findUserByClerkId,
@@ -237,163 +323,26 @@ vi.mock("./lib/db/users", async () => {
 // which will use the real PGlite database through the mocked "@/lib/db" module.
 
 /**
- * Create tables before each test
+ * Initialize database once before all tests
  */
-beforeEach(async () => {
-    const { db } = await getTestDb();
-    const { sql } = await import("drizzle-orm");
-
-    // Create enum types
-    await db.execute(sql`
-        DO $$ BEGIN
-            CREATE TYPE connection_status AS ENUM ('active', 'background', 'archived');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    `);
-    await db.execute(sql`
-        DO $$ BEGIN
-            CREATE TYPE streaming_status AS ENUM ('idle', 'streaming', 'completed', 'failed');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    `);
-    await db.execute(sql`
-        DO $$ BEGIN
-            CREATE TYPE message_role AS ENUM ('user', 'assistant', 'system');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    `);
-    await db.execute(sql`
-        DO $$ BEGIN
-            CREATE TYPE part_type AS ENUM ('text', 'reasoning', 'tool_call', 'file', 'data', 'step_start');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    `);
-    await db.execute(sql`
-        DO $$ BEGIN
-            CREATE TYPE tool_state AS ENUM ('input_streaming', 'input_available', 'output_available', 'output_error');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    `);
-
-    // Create users table
-    await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS users (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            clerk_id VARCHAR(255) NOT NULL UNIQUE,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            first_name VARCHAR(255),
-            last_name VARCHAR(255),
-            display_name VARCHAR(255),
-            image_url VARCHAR(2048),
-            preferences JSONB DEFAULT '{}',
-            last_signed_in_at TIMESTAMPTZ,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    // Create indexes for users
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS users_email_idx ON users(email)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS users_clerk_id_idx ON users(clerk_id)
-    `);
-
-    // Create connections table
-    // Note: id is SERIAL (auto-incrementing integer), encoded to Sqid at API boundary
-    await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS connections (
-            id SERIAL PRIMARY KEY,
-            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            title VARCHAR(500),
-            slug VARCHAR(255) NOT NULL,
-            status connection_status NOT NULL DEFAULT 'active',
-            streaming_status streaming_status NOT NULL DEFAULT 'idle',
-            model_id VARCHAR(255),
-            last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    // Create indexes for connections
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS connections_user_last_activity_idx ON connections(user_id, last_activity_at)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS connections_user_status_idx ON connections(user_id, status)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS connections_streaming_status_idx ON connections(streaming_status)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS connections_slug_idx ON connections(slug)
-    `);
-
-    // Create messages table
-    // Note: id is TEXT (not UUID) to accept nanoid-style IDs from AI SDK
-    // Note: connection_id is INTEGER referencing connections.id (SERIAL)
-    await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS messages (
-            id TEXT PRIMARY KEY,
-            connection_id INTEGER NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
-            role message_role NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    // Create indexes for messages
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS messages_connection_idx ON messages(connection_id)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS messages_connection_created_idx ON messages(connection_id, created_at)
-    `);
-
-    // Create message_parts table
-    // Note: message_id is TEXT to match messages.id
-    await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS message_parts (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-            type part_type NOT NULL,
-            "order" INTEGER NOT NULL DEFAULT 0,
-            text_content TEXT,
-            reasoning_content TEXT,
-            tool_call JSONB,
-            file_media_type VARCHAR(255),
-            file_name VARCHAR(1024),
-            file_url VARCHAR(4096),
-            data_content JSONB,
-            provider_metadata JSONB,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    // Create indexes for message_parts
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS message_parts_message_idx ON message_parts(message_id)
-    `);
-    await db.execute(sql`
-        CREATE INDEX IF NOT EXISTS message_parts_message_order_idx ON message_parts(message_id, "order")
-    `);
+beforeAll(async () => {
+    await createTestDb();
 });
 
 /**
- * Clean database between tests (Django-style isolation)
+ * Reset database to clean state before each test
  */
-afterEach(async () => {
-    const { db } = await getTestDb();
-    const { sql } = await import("drizzle-orm");
+beforeEach(async () => {
+    await resetDatabase();
+});
 
-    await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
-    await db.execute(sql`CREATE SCHEMA public`);
+/**
+ * Close database connection after all tests
+ */
+afterAll(async () => {
+    if (testClient) {
+        await testClient.close();
+    }
 });
 
 /**
