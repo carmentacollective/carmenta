@@ -619,7 +619,7 @@ export async function POST(req: Request) {
         // Get the stream response and add concierge headers
         // sendReasoning: true streams reasoning tokens to client when available
         const response = result.toUIMessageStreamResponse({
-            originalMessages: messages,
+            originalMessages: messagesWithoutReasoning,
             sendReasoning: concierge.reasoning.enabled,
         });
 
