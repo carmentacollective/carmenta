@@ -66,10 +66,13 @@ function HoloThreadInner() {
     const viewportRef = useRef<HTMLDivElement>(null);
     const [isAtBottom, setIsAtBottom] = useState(true);
 
+    // Stable callback ref to prevent effect re-runs during drag
+    const handleDragError = useCallback((error: string) => toast.error(error), []);
+
     // Viewport-wide drag-drop for file uploads
     const { isDragging } = useDragDrop({
         onDrop: addFiles,
-        onError: (error) => toast.error(error),
+        onError: handleDragError,
         disabled: isUploading,
     });
 
