@@ -12,8 +12,6 @@ Blocks:
 - gh pr merge (use GitHub web interface)
 - git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
-- Context drift: WRITE operations on main repo (on any non-main branch) when worktrees exist
-  (read operations like status, diff, log are still allowed during drift)
 
 Exit codes:
 - 0: Command is allowed
@@ -21,7 +19,6 @@ Exit codes:
 
 Allows:
 - git commit --amend (amend contains 'a' but is not the -a flag)
-- Read operations (status, diff, log, etc.) even during context drift
 - All other safe operations
 """
 
@@ -30,170 +27,12 @@ import os
 import shlex
 import subprocess
 import sys
-from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 
 class Violation(NamedTuple):
     message: str
     suggestion: str
-
-
-# ============================================================================
-# Worktree Detection & Context Drift Prevention
-# ============================================================================
-
-
-def is_in_worktree(cwd: str) -> bool:
-    """
-    Check if the current directory is inside a git worktree.
-
-    Returns True if .git is a file (not a directory), which points to the main repo.
-    Worktrees have a .git file containing "gitdir: /path/to/main/.git/worktrees/name".
-    """
-    try:
-        path = Path(cwd).resolve()
-
-        # Check if .git is a file (worktrees have .git file, main repo has .git directory)
-        git_path = path / ".git"
-        while not git_path.exists() and path.parent != path:
-            path = path.parent
-            git_path = path / ".git"
-
-        if git_path.exists() and git_path.is_file():
-            return True
-
-        return False
-    except (OSError, ValueError):
-        return False
-
-
-def get_main_repo_path(cwd: str) -> Optional[str]:
-    """
-    Get the main repository path from a worktree.
-    Returns None if not in a worktree or can't determine main repo.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--git-common-dir"],
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-        )
-        if result.returncode == 0:
-            git_common_dir = Path(result.stdout.strip()).resolve()
-            # git-common-dir returns the .git directory path
-            # Main repo is parent of .git
-            return str(git_common_dir.parent)
-        return None
-    except (subprocess.SubprocessError, FileNotFoundError):
-        return None
-
-
-def get_worktree_info(cwd: str) -> Optional[dict]:
-    """
-    Get information about the current worktree.
-    Returns dict with 'path', 'branch', 'main_repo' or None if not in worktree.
-    """
-    if not is_in_worktree(cwd):
-        return None
-
-    try:
-        # Get current branch
-        branch_result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-        )
-        branch = branch_result.stdout.strip() if branch_result.returncode == 0 else "unknown"
-
-        # Get main repo path
-        main_repo = get_main_repo_path(cwd)
-
-        return {
-            "path": str(Path(cwd).resolve()),
-            "branch": branch,
-            "main_repo": main_repo,
-        }
-    except (subprocess.SubprocessError, FileNotFoundError):
-        return None
-
-
-def check_context_drift(cwd: str) -> Optional[Violation]:
-    """
-    Detect if Claude has drifted from worktree context to main repo.
-
-    This prevents the scenario where:
-    1. Claude starts working in a worktree (sibling directory)
-    2. Context gets compacted/summarized
-    3. Claude forgets it's in a worktree and defaults to main repo
-    4. Operations accidentally affect main repo instead of worktree
-
-    Detection strategy:
-    - Check if worktrees exist (via git worktree list)
-    - Check if we're in main repo (not a worktree)
-    - Check current branch is NOT a protected branch (main, master)
-    - If all true: we're likely in the wrong place after context drift
-    """
-    try:
-        current_path = Path(cwd).resolve()
-
-        # Check if any worktrees exist by running git worktree list
-        worktree_result = subprocess.run(
-            ["git", "worktree", "list", "--porcelain"],
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-        )
-        if worktree_result.returncode != 0:
-            return None
-
-        # Count worktrees (each worktree block is separated by blank line)
-        worktree_blocks = [b for b in worktree_result.stdout.strip().split("\n\n") if b]
-        has_worktrees = len(worktree_blocks) > 1  # More than just main repo
-
-        # Get current branch
-        branch_result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-        )
-        current_branch = branch_result.stdout.strip() if branch_result.returncode == 0 else ""
-
-        # Check if we're in main repo (not in worktree)
-        in_worktree = is_in_worktree(cwd)
-
-        # DRIFT DETECTED: We're in main repo, on a non-main branch, and worktrees exist
-        # This strongly suggests Claude drifted from worktree to main repo
-        protected_branches = {"main", "master"}
-        if not in_worktree and has_worktrees and current_branch and current_branch not in protected_branches:
-            # Try to find the worktree for this branch from git worktree list output
-            worktree_path = None
-            for block in worktree_blocks:
-                if f"branch refs/heads/{current_branch}" in block:
-                    for line in block.split("\n"):
-                        if line.startswith("worktree "):
-                            worktree_path = line[9:]  # Remove "worktree " prefix
-                            break
-                    break
-
-            if worktree_path:
-                worktree_hint = f"cd {worktree_path}"
-            else:
-                worktree_hint = "Run `git worktree list` to find your worktree"
-
-            return Violation(
-                f"⚠️  CONTEXT DRIFT DETECTED: Working in main repo on branch '{current_branch}'",
-                f"You're likely in the wrong directory after context compaction.\n"
-                f"  Current location: {current_path}\n"
-                f"  {worktree_hint}"
-            )
-
-        return None
-    except (subprocess.SubprocessError, FileNotFoundError, OSError):
-        return None
 
 
 def get_working_directory_from_command(command: str) -> str:
@@ -427,32 +266,6 @@ def check_gh_command(command: str) -> list[Violation]:
     return violations
 
 
-def is_write_operation(command: str) -> bool:
-    """
-    Check if a command performs a write operation that modifies git state.
-
-    Read operations (status, diff, log, etc.) should be allowed even during context drift.
-    Write operations (commit, push, merge, etc.) should be blocked during drift.
-    """
-    subcommand, flags, positional = parse_git_command(command)
-
-    # Git write operations
-    write_subcommands = {
-        "commit", "push", "merge", "rebase", "cherry-pick",
-        "reset", "checkout", "switch", "branch", "tag",
-        "am", "apply", "stash", "clean", "rm", "mv"
-    }
-
-    if subcommand in write_subcommands:
-        return True
-
-    # Check gh commands
-    if "gh" in command and "pr merge" in command:
-        return True
-
-    return False
-
-
 def check_command(command: str, cwd: str) -> list[Violation]:
     """
     Main entry point: check a command for all violations.
@@ -463,13 +276,8 @@ def check_command(command: str, cwd: str) -> list[Violation]:
     """
     violations = []
 
-    # Check for context drift, but only block write operations
-    # Read operations (status, diff, log) should work even during drift
-    drift_violation = check_context_drift(cwd)
-    if drift_violation and is_write_operation(command):
-        violations.append(drift_violation)
-        # Return immediately - drift is critical and other checks may be misleading
-        return violations
+    # Context drift check removed - too aggressive for normal workflow
+    # Users can work in main repo even when worktrees exist
 
     # Extract working directory if present in command (for cd && git patterns)
     command_cwd = get_working_directory_from_command(command)
