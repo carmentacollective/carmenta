@@ -1,7 +1,14 @@
 /**
- * Google Service Adapter
+ * Google Calendar + Contacts Adapter
  *
- * Unified access to Google Calendar and Contacts (People API) via Nango proxy.
+ * Access to Google Calendar and Contacts (People API) via Nango proxy.
+ * Uses "sensitive" OAuth scopes (Calendar + Contacts).
+ *
+ * ## Scope Tier
+ * This is the "sensitive scopes" tier of Google OAuth:
+ * - Login (Clerk): basic profile/email
+ * - Sensitive (this): Calendar + Contacts
+ * - Restricted (future): Drive, Photos, etc.
  *
  * ## API Hierarchy
  * - Calendar: CalendarList → Calendar → Events
@@ -39,9 +46,9 @@ const CALENDAR_API_BASE = "/proxy/calendar/v3";
 // Google People API base URL (via Nango proxy)
 const PEOPLE_API_BASE = "/proxy/v1";
 
-export class GoogleAdapter extends ServiceAdapter {
-    serviceName = "google";
-    serviceDisplayName = "Google";
+export class GoogleCalendarContactsAdapter extends ServiceAdapter {
+    serviceName = "google-calendar-contacts";
+    serviceDisplayName = "Google Calendar & Contacts";
 
     private getNangoUrl(): string {
         if (!env.NANGO_API_URL) {
@@ -74,7 +81,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                     },
                     searchParams: {
                         personFields: "names,emailAddresses",
@@ -696,7 +703,7 @@ export class GoogleAdapter extends ServiceAdapter {
             if (!credentials.connectionId) {
                 return this.createErrorResponse(
                     `No connection ID found for Google. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google`
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google-calendar-contacts`
                 );
             }
             connectionId = credentials.connectionId;
@@ -788,7 +795,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
             })
             .json<{
@@ -855,7 +862,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                     },
                     searchParams,
                 }
@@ -914,7 +921,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                     },
                 }
             )
@@ -970,7 +977,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                         "Content-Type": "application/json",
                     },
                     searchParams: {
@@ -1032,7 +1039,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                     },
                 }
             )
@@ -1053,7 +1060,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                         "Content-Type": "application/json",
                     },
                     searchParams: {
@@ -1099,7 +1106,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
                 searchParams: {
                     sendUpdates: send_updates,
@@ -1132,7 +1139,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar",
+                        "Provider-Config-Key": "google-calendar-contacts",
                     },
                     searchParams: {
                         text,
@@ -1179,7 +1186,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                     "Content-Type": "application/json",
                 },
                 json: {
@@ -1237,7 +1244,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
                 searchParams,
             })
@@ -1300,7 +1307,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
                 searchParams: {
                     query,
@@ -1351,7 +1358,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
                 searchParams: {
                     personFields:
@@ -1409,7 +1416,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                     "Content-Type": "application/json",
                 },
                 json: body,
@@ -1491,7 +1498,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                     "Content-Type": "application/json",
                 },
                 searchParams: {
@@ -1528,7 +1535,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
             }
         );
@@ -1550,7 +1557,7 @@ export class GoogleAdapter extends ServiceAdapter {
                 headers: {
                     Authorization: `Bearer ${nangoSecretKey}`,
                     "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar",
+                    "Provider-Config-Key": "google-calendar-contacts",
                 },
             })
             .json<{
@@ -1612,7 +1619,7 @@ export class GoogleAdapter extends ServiceAdapter {
             if (!credentials.connectionId) {
                 return this.createErrorResponse(
                     `No connection ID found for Google. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google`
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google-calendar-contacts`
                 );
             }
             connectionId = credentials.connectionId;
@@ -1634,7 +1641,7 @@ export class GoogleAdapter extends ServiceAdapter {
             headers: {
                 Authorization: `Bearer ${nangoSecretKey}`,
                 "Connection-Id": connectionId,
-                "Provider-Config-Key": "google-calendar",
+                "Provider-Config-Key": "google-calendar-contacts",
             },
         };
 
