@@ -78,12 +78,11 @@ function formatDateInfo(timezone?: string): string {
 function getUserName(user: User | null): string | undefined {
     if (!user) return undefined;
 
-    const name =
+    return (
         user.fullName ||
         `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-        undefined;
-
-    return name || undefined;
+        undefined
+    );
 }
 
 /**
