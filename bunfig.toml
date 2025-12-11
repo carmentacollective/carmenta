@@ -1,0 +1,9 @@
+# Bun configuration
+# https://bun.sh/docs/runtime/bunfig
+
+# We use Vitest for testing, not Buntest
+# This configuration prevents `bun test` from accidentally running
+[test]
+# Point to directory with no tests, forcing immediate failure
+# Always use: bun run test (which runs Vitest)
+root = "./.vitest-only"

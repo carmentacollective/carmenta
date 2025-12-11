@@ -4,7 +4,7 @@
  * These tests make REAL API calls to Parallel's API.
  * They only run when PARALLEL_API_KEY is set in the environment.
  *
- * Run with: PARALLEL_API_KEY=your_key bun test -- --testPathPattern="integration"
+ * Run with: PARALLEL_API_KEY=your_key bun run test -- parallel.integration
  *
  * WARNING: These tests will consume API credits!
  */

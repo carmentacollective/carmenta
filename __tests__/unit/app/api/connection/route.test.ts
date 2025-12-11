@@ -117,9 +117,9 @@ describe("POST /api/connection", () => {
         vi.restoreAllMocks();
     });
 
-    it.skip("returns 401 when not authenticated in production", async () => {
-        // Note: This test is skipped because process.env.NODE_ENV is read-only in bun test
-        // The behavior is tested manually and in e2e tests
+    it("returns 401 when not authenticated in production", async () => {
+        // Mock production environment
+        vi.stubEnv("NODE_ENV", "production");
         mocks.mockCurrentUser.mockResolvedValue(null);
 
         const request = new Request("http://localhost/api/connection", {
@@ -140,7 +140,7 @@ describe("POST /api/connection", () => {
         expect(response.status).toBe(401);
 
         const body = await response.json();
-        expect(body.error).toBe("Unauthorized");
+        expect(body.error).toBe("We need you to sign in first");
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {

@@ -425,6 +425,46 @@ def check_gh_command(command: str) -> list[Violation]:
     return violations
 
 
+def is_dangerous_git_operation(command: str) -> bool:
+    """
+    Check if command contains dangerous git operations that modify state.
+
+    Dangerous operations that should be blocked when context drift detected:
+    - git add (stages files)
+    - git commit (creates commits)
+    - git push (pushes commits)
+    - git merge (merges branches)
+    - git rebase (rewrites history)
+    - git reset (moves HEAD)
+    - git checkout (switches branches/files)
+    - git switch (switches branches)
+    - git restore (restores files)
+    - git cherry-pick (applies commits)
+    - git stash pop/apply (modifies working directory)
+
+    Safe operations that should be allowed even with drift:
+    - git status, git log, git diff (read-only)
+    - git branch --show-current (read-only)
+    - git worktree list (read-only)
+    - Navigation commands: cd, pwd
+    - Non-git commands: gh, ls, cat, etc.
+    """
+    subcommand, _, _ = parse_git_command(command)
+
+    # List of dangerous git subcommands that modify repository state
+    DANGEROUS_SUBCOMMANDS = {
+        "add", "commit", "push", "merge", "rebase", "reset",
+        "checkout", "switch", "restore", "cherry-pick"
+    }
+
+    # Special case: "git stash pop" and "git stash apply" are dangerous
+    # but "git stash list" is safe
+    if subcommand == "stash":
+        return any(op in command for op in ["pop", "apply", "drop", "clear"])
+
+    return subcommand in DANGEROUS_SUBCOMMANDS
+
+
 def check_command(command: str, cwd: str) -> list[Violation]:
     """
     Main entry point: check a command for all violations.
@@ -435,13 +475,18 @@ def check_command(command: str, cwd: str) -> list[Violation]:
     """
     violations = []
 
-    # FIRST: Check for context drift before any other checks
-    # This catches the case where Claude drifted from worktree to main repo
+    # Check for context drift
     drift_violation = check_context_drift(cwd)
     if drift_violation:
-        violations.append(drift_violation)
-        # Return immediately - drift is critical and other checks may be misleading
-        return violations
+        # Only block if the command is a dangerous git operation
+        # Allow navigation commands (cd, pwd) and read-only operations
+        if is_dangerous_git_operation(command):
+            violations.append(drift_violation)
+            return violations
+        else:
+            # Just warn but don't block - this allows recovery from drift
+            print(f"\n⚠️  {drift_violation.message}", file=sys.stderr)
+            print(f"  {drift_violation.suggestion}\n", file=sys.stderr)
 
     # Extract working directory if present in command (for cd && git patterns)
     command_cwd = get_working_directory_from_command(command)
