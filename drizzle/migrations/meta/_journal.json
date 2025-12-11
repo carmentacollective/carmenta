@@ -15,6 +15,13 @@
       "when": 1765285879224,
       "tag": "0001_productive_red_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765418866895,
+      "tag": "0002_naive_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }
