@@ -10,11 +10,7 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
-import { isApiKeyCredentials } from "@/lib/integrations/encryption";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
 
 const CMC_API_BASE = "https://pro-api.coinmarketcap.com";
 
@@ -431,32 +427,10 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's API key credentials
-        let apiKey: string;
-        try {
-            const connectionCreds = await getCredentials(userId, this.serviceName);
-
-            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-                return this.createErrorResponse(
-                    "Invalid credentials type for CoinMarketCap service"
-                );
-            }
-
-            if (!isApiKeyCredentials(connectionCreds.credentials)) {
-                return this.createErrorResponse(
-                    "Invalid credential format for CoinMarketCap service"
-                );
-            }
-
-            apiKey = connectionCreds.credentials.apiKey;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(
-                    "CoinMarketCap isn't connected yet. Connect it in Integrations to use crypto market data."
-                );
-            }
-            throw error;
-        }
+        // Get user's API key credentials using base class helper
+        const result = await this.getApiKeyForExecution(userId);
+        if ("isError" in result) return result;
+        const { apiKey } = result;
 
         // Route to appropriate handler
         try {
@@ -505,28 +479,15 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Failed to ${action}: `;
+            // Use base class error handler with CMC-specific error codes
+            let errorMessage = this.handleCommonAPIError(error, action);
+
+            // Add CMC-specific subscription message for 403/1006 errors
             if (error instanceof Error) {
-                if (error.message.includes("401") || error.message.includes("1002")) {
+                if (error.message.includes("403") || error.message.includes("1006")) {
                     errorMessage +=
-                        "Authentication failed. Your API key may be invalid - try reconnecting in Integrations.";
-                } else if (
-                    error.message.includes("429") ||
-                    error.message.includes("1008")
-                ) {
-                    errorMessage +=
-                        "Rate limit exceeded. Please try again in a few moments.";
-                } else if (
-                    error.message.includes("403") ||
-                    error.message.includes("1006")
-                ) {
-                    errorMessage +=
-                        "Your API key subscription plan doesn't support this endpoint. Upgrade at https://coinmarketcap.com/api/pricing/";
-                } else {
-                    errorMessage += error.message;
+                        " Upgrade at https://coinmarketcap.com/api/pricing/";
                 }
-            } else {
-                errorMessage += "Unknown error";
             }
 
             return this.createErrorResponse(errorMessage);
@@ -1024,25 +985,10 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             );
         }
 
-        // Get API key
-        let apiKey: string;
-        try {
-            const connectionCreds = await getCredentials(userId, this.serviceName);
-            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-                return this.createErrorResponse("Invalid credentials");
-            }
-            if (!isApiKeyCredentials(connectionCreds.credentials)) {
-                return this.createErrorResponse("Invalid credential format");
-            }
-            apiKey = connectionCreds.credentials.apiKey;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(
-                    "CoinMarketCap isn't connected yet. Connect it in Integrations to use crypto market data."
-                );
-            }
-            throw error;
-        }
+        // Get API key using base class helper
+        const keyResult = await this.getApiKeyForExecution(userId);
+        if ("isError" in keyResult) return keyResult;
+        const { apiKey } = keyResult;
 
         // Build request options
         const requestOptions: {
@@ -1093,28 +1039,8 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Raw API request failed: `;
-            if (error instanceof Error) {
-                if (error.message.includes("404")) {
-                    errorMessage += "Endpoint not found. Check the API documentation.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("1002")
-                ) {
-                    errorMessage += "Authentication failed. Please check your API key.";
-                } else if (
-                    error.message.includes("403") ||
-                    error.message.includes("1006")
-                ) {
-                    errorMessage +=
-                        "Your subscription plan doesn't support this endpoint.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "Unknown error";
-            }
-
+            // Use base class error handler
+            const errorMessage = this.handleCommonAPIError(error, "raw_api");
             return this.createErrorResponse(errorMessage);
         }
     }
