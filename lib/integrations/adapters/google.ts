@@ -74,7 +74,7 @@ export class GoogleAdapter extends ServiceAdapter {
                     headers: {
                         Authorization: `Bearer ${nangoSecretKey}`,
                         "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google",
+                        "Provider-Config-Key": "google-calendar",
                     },
                     searchParams: {
                         personFields: "names,emailAddresses",
