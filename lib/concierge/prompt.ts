@@ -95,22 +95,7 @@ The explanation should feel friendly and collaborative:
 - "Complex analysis ahead - we'll think through this carefully 🧠"
 
 Use "we" language. Add an emoji when it fits the energy. Keep it to one sentence.
-
-Respond with valid JSON only. No markdown, no explanation outside the JSON.
 </instructions>
-
-<output-format>
-{
-  "modelId": "provider/model-name",
-  "temperature": 0.5,
-  "explanation": "One warm sentence explaining our choice.",
-  "reasoning": {
-    "enabled": true,
-    "effort": "medium"
-  },
-  "title": "Short title for this connection"
-}
-</output-format>
 
 <examples>
 Query: "What's the capital of France?"
