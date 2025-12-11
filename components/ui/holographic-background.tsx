@@ -469,7 +469,7 @@ export function HolographicBackground({
                 aria-hidden="true"
             />
 
-            {/* Logo watermark - subtle brand presence */}
+            {/* Logo watermark - subtle brand presence with gentle entrance */}
             {!hideWatermark && (
                 <div
                     className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden"
@@ -479,7 +479,7 @@ export function HolographicBackground({
                     <img
                         src="/logos/icon-transparent.png"
                         alt=""
-                        className="h-[80vh] w-[80vh] max-w-none object-contain opacity-[0.09] dark:opacity-[0.07]"
+                        className="animate-watermark-presence h-[80vh] w-[80vh] max-w-none object-contain"
                     />
                 </div>
             )}
