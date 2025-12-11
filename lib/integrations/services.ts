@@ -123,6 +123,23 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "add_reaction",
         ],
     },
+    {
+        id: "google",
+        name: "Google",
+        description: "Manage Google Calendar events and contacts",
+        logo: "/logos/google.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "google-calendar",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.google.com/workspace",
+        capabilities: [
+            "list_events",
+            "create_event",
+            "search_contacts",
+            "list_calendars",
+        ],
+    },
 
     // API Key Services
     {
