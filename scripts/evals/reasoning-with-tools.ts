@@ -172,12 +172,13 @@ Give me some ideas, do some research, how are other people solving this in parti
         console.log(`Duration: ${(duration / 1000).toFixed(1)}s`);
 
         if (!response.ok) {
+            const responseClone = response.clone();
             let errorText = "";
             try {
                 const errorBody = await response.json();
                 errorText = errorBody.error || JSON.stringify(errorBody);
             } catch {
-                errorText = await response.clone().text();
+                errorText = await responseClone.text();
             }
 
             console.log("\n\x1b[31m FAIL \x1b[0m Request failed");
