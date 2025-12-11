@@ -4,6 +4,9 @@
  * Single interface for both OAuth (via Nango) and API key credentials. Callers don't
  * need to know which auth method a service uses - just call getCredentials().
  *
+ * Key change: Uses userEmail as the lookup key instead of userId (UUID).
+ * This matches mcp-hubby's proven pattern and eliminates an extra DB lookup.
+ *
  * ## Two Credential Types
  *
  * **OAuth services** (Notion, ClickUp, etc.): Return connectionId for Nango proxy.
@@ -51,9 +54,13 @@ export interface ConnectionCredentials {
 /**
  * Get credentials for a service connection.
  * Returns connectionId (OAuth) or decrypted credentials (API key).
+ *
+ * @param userEmail - User's email address (primary lookup key)
+ * @param service - Service identifier (e.g., "notion", "giphy")
+ * @param accountId - Optional specific account ID
  */
 export async function getCredentials(
-    userId: string,
+    userEmail: string,
     service: string,
     accountId?: string
 ): Promise<ConnectionCredentials> {
@@ -66,7 +73,7 @@ export async function getCredentials(
             .from(schema.integrations)
             .where(
                 and(
-                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.accountId, accountId)
                 )
@@ -88,7 +95,7 @@ export async function getCredentials(
             .from(schema.integrations)
             .where(
                 and(
-                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.status, "connected")
                 )
@@ -149,7 +156,7 @@ export async function getCredentials(
     if (isOAuthService(service)) {
         if (!integration.connectionId) {
             throw new ValidationError(
-                `OAuth service ${service} is missing connectionId for user ${userId}`
+                `OAuth service ${service} is missing connectionId for user ${userEmail}`
             );
         }
 
@@ -166,7 +173,7 @@ export async function getCredentials(
     if (isApiKeyService(service)) {
         if (!integration.encryptedCredentials) {
             throw new ValidationError(
-                `API key service ${service} is missing credentials for user ${userId}`
+                `API key service ${service} is missing credentials for user ${userEmail}`
             );
         }
 
@@ -183,7 +190,7 @@ export async function getCredentials(
             logger.error(
                 {
                     service,
-                    userId,
+                    userEmail,
                     error: error instanceof Error ? error.message : String(error),
                 },
                 `Failed to decrypt credentials for ${service}`
@@ -208,7 +215,7 @@ type IntegrationStatus = "connected" | "error" | "expired" | "disconnected";
  * so the default account appears first, followed by other accounts in chronological order.
  */
 export async function listServiceAccounts(
-    userId: string,
+    userEmail: string,
     service: string
 ): Promise<
     Array<{
@@ -224,7 +231,7 @@ export async function listServiceAccounts(
         .from(schema.integrations)
         .where(
             and(
-                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.userEmail, userEmail),
                 eq(schema.integrations.service, service)
             )
         )
@@ -247,7 +254,7 @@ export async function listServiceAccounts(
  * Returns the accountId of the default account, or undefined if none set
  */
 export async function getDefaultAccount(
-    userId: string,
+    userEmail: string,
     service: string
 ): Promise<string | undefined> {
     const results = await db
@@ -255,7 +262,7 @@ export async function getDefaultAccount(
         .from(schema.integrations)
         .where(
             and(
-                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.userEmail, userEmail),
                 eq(schema.integrations.service, service),
                 eq(schema.integrations.isDefault, true),
                 eq(schema.integrations.status, "connected")
@@ -269,13 +276,16 @@ export async function getDefaultAccount(
 /**
  * Check if user has a service connected
  */
-export async function hasConnection(userId: string, service: string): Promise<boolean> {
+export async function hasConnection(
+    userEmail: string,
+    service: string
+): Promise<boolean> {
     const results = await db
         .select()
         .from(schema.integrations)
         .where(
             and(
-                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.userEmail, userEmail),
                 eq(schema.integrations.service, service),
                 eq(schema.integrations.status, "connected")
             )
@@ -290,7 +300,7 @@ export async function hasConnection(userId: string, service: string): Promise<bo
  * For multi-account services, returns the status of the default account or first account
  */
 export async function getConnectionStatus(
-    userId: string,
+    userEmail: string,
     service: string,
     accountId?: string
 ): Promise<"connected" | "disconnected" | "error" | "expired" | "not_found"> {
@@ -300,7 +310,7 @@ export async function getConnectionStatus(
             .from(schema.integrations)
             .where(
                 and(
-                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.accountId, accountId)
                 )
@@ -320,7 +330,7 @@ export async function getConnectionStatus(
         .from(schema.integrations)
         .where(
             and(
-                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.userEmail, userEmail),
                 eq(schema.integrations.service, service)
             )
         )
@@ -340,13 +350,13 @@ export async function getConnectionStatus(
 /**
  * Get list of connected service IDs for a user
  */
-export async function getConnectedServices(userId: string): Promise<string[]> {
+export async function getConnectedServices(userEmail: string): Promise<string[]> {
     const integrations = await db
         .select({ service: schema.integrations.service })
         .from(schema.integrations)
         .where(
             and(
-                eq(schema.integrations.userId, userId),
+                eq(schema.integrations.userEmail, userEmail),
                 eq(schema.integrations.status, "connected")
             )
         );
@@ -361,7 +371,7 @@ export async function getConnectedServices(userId: string): Promise<string[]> {
  * For API keys: delete encrypted credentials
  */
 export async function disconnectService(
-    userId: string,
+    userEmail: string,
     service: string,
     accountId?: string
 ): Promise<void> {
@@ -372,7 +382,7 @@ export async function disconnectService(
             .from(schema.integrations)
             .where(
                 and(
-                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.accountId, accountId)
                 )
@@ -402,7 +412,7 @@ export async function disconnectService(
                 })
                 .where(
                     and(
-                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service),
                         eq(schema.integrations.accountId, accountId)
                     )
@@ -420,7 +430,7 @@ export async function disconnectService(
                 })
                 .where(
                     and(
-                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service),
                         eq(schema.integrations.accountId, accountId)
                     )
@@ -434,7 +444,7 @@ export async function disconnectService(
                 .from(schema.integrations)
                 .where(
                     and(
-                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service),
                         eq(schema.integrations.status, "connected")
                     )
@@ -456,7 +466,7 @@ export async function disconnectService(
             .from(schema.integrations)
             .where(
                 and(
-                    eq(schema.integrations.userId, userId),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service)
                 )
             );
@@ -477,7 +487,7 @@ export async function disconnectService(
                 })
                 .where(
                     and(
-                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service)
                     )
                 );
@@ -492,7 +502,7 @@ export async function disconnectService(
                 })
                 .where(
                     and(
-                        eq(schema.integrations.userId, userId),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service)
                     )
                 );

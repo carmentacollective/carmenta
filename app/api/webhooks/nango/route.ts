@@ -1,3 +1,24 @@
+/**
+ * Nango Webhook Handler - OAuth Connection Lifecycle Events
+ *
+ * Receives notifications when OAuth connections are created, updated, or deleted.
+ * Ported from mcp-hubby's battle-tested implementation.
+ *
+ * Key changes from v1:
+ * - Uses userEmail directly as FK (no UUID lookup)
+ * - Logs to integration_history audit table
+ * - Handles token refresh failures with EXPIRED status
+ *
+ * Event types we care about:
+ * - auth (connection lifecycle): creation, deletion, refresh
+ *
+ * Event types we ignore:
+ * - sync (Nango sync jobs - not used)
+ * - forward (webhook forwarding - not used)
+ *
+ * Security: ALL webhooks MUST be signature-verified using HMAC-SHA256.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { eq, and } from "drizzle-orm";
@@ -7,28 +28,7 @@ import { db, schema } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { fetchAccountInfo } from "@/lib/integrations/fetch-account-info";
-
-/**
- * Nango webhook handler
- *
- * Receives notifications when OAuth connections are created, updated, or deleted.
- * Pattern from MCPHubby's battle-tested implementation.
- *
- * Security: ALL webhooks MUST be signature-verified using HMAC-SHA256.
- * Flow:
- * 1. User completes OAuth → ClickUp redirects to our callback
- * 2. Our callback redirects to Nango (308)
- * 3. Nango exchanges code for tokens, stores encrypted
- * 4. Nango sends webhook to this endpoint
- * 5. We verify signature, fetch account info, store in database
- *
- * Event types we care about:
- * - auth (connection lifecycle): creation, deletion, refresh
- *
- * Event types we ignore:
- * - sync (Nango sync jobs - not used)
- * - forward (webhook forwarding - not used)
- */
+import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
 
 interface NangoWebhookEvent {
     type: "auth" | "sync" | "forward";
@@ -37,7 +37,10 @@ interface NangoWebhookEvent {
     authMode: "OAUTH2" | "OAUTH1" | "API_KEY" | "APP";
     operation?: "creation" | "override" | "deletion" | "refresh";
     success: boolean;
-    error?: string;
+    error?: {
+        type: string;
+        description: string;
+    };
     endUser?: {
         id: string;
         email?: string;
@@ -83,7 +86,8 @@ function verifySignature(body: string, signature: string, secret: string): boole
  * Handle auth event - connection creation/deletion/refresh
  */
 async function handleAuthEvent(event: NangoWebhookEvent) {
-    const { connectionId, providerConfigKey, operation, success, endUser } = event;
+    const { connectionId, providerConfigKey, operation, success, endUser, error } =
+        event;
 
     if (!operation) {
         logger.warn({ event }, "Auth event missing operation field");
@@ -91,6 +95,7 @@ async function handleAuthEvent(event: NangoWebhookEvent) {
     }
 
     const service = getServiceFromProviderKey(providerConfigKey);
+    const errorMessage = error ? `${error.type}: ${error.description}` : null;
 
     logger.info(
         {
@@ -104,7 +109,7 @@ async function handleAuthEvent(event: NangoWebhookEvent) {
     );
 
     // Known issue from MCPHubby: Sometimes webhooks arrive without endUser.id
-    // When this happens, we can't match to a user. Log and return.
+    // When this happens, we can't match to a user. Frontend fallback handles it.
     if (!endUser?.id) {
         logger.warn(
             { event },
@@ -113,35 +118,47 @@ async function handleAuthEvent(event: NangoWebhookEvent) {
         return;
     }
 
-    const userEmail = endUser.id; // We pass email as ID in createConnectSession
+    // We pass email as ID in createConnectSession, so endUser.id is our trusted value
+    // Don't use endUser.email as it could come from OAuth provider (different account)
+    // Normalize to lowercase to match storage format
+    const userEmail = endUser.id.toLowerCase();
+
+    Sentry.setUser({ email: userEmail });
 
     switch (operation) {
         case "creation":
         case "override":
             if (!success) {
                 logger.error({ event }, "OAuth connection failed");
-                // Store ERROR status so UI can show reconnect button
-                await storeFailedConnection(
+                await handleConnectionFailed(
                     userEmail,
                     service,
                     connectionId,
-                    event.error
+                    errorMessage || "OAuth flow failed"
                 );
                 return;
             }
 
             // Fetch account info from the service to populate accountId/displayName
-            await storeSuccessfulConnection(userEmail, service, connectionId);
+            await handleConnectionCreated(userEmail, service, connectionId);
             break;
 
         case "deletion":
             // Mark connection as disconnected (don't delete - preserve history)
-            await markConnectionDisconnected(userEmail, service, connectionId);
+            await handleConnectionDeleted(userEmail, service, connectionId);
             break;
 
         case "refresh":
-            // Token was refreshed successfully - update timestamp
-            await updateConnectionTimestamp(userEmail, service, connectionId);
+            if (success) {
+                await handleTokenRefreshSuccess(userEmail, service, connectionId);
+            } else {
+                await handleTokenRefreshFailed(
+                    userEmail,
+                    service,
+                    connectionId,
+                    errorMessage || "Token refresh failed"
+                );
+            }
             break;
 
         default:
@@ -150,111 +167,144 @@ async function handleAuthEvent(event: NangoWebhookEvent) {
 }
 
 /**
- * Fetch account info and store successful OAuth connection
+ * Handle successful OAuth connection
  */
-async function storeSuccessfulConnection(
+async function handleConnectionCreated(
     userEmail: string,
     service: string,
     connectionId: string
 ) {
     try {
-        // Find user by email
+        // Verify user exists in our system
         const user = await db.query.users.findFirst({
             where: eq(schema.users.email, userEmail),
         });
 
         if (!user) {
-            logger.error({ userEmail }, "User not found for OAuth connection");
-            return;
+            logger.error(
+                { userEmail, service },
+                "Cannot create connection: User not found in database"
+            );
+            throw new Error(
+                `User ${userEmail} must be created before connecting services`
+            );
         }
 
         // Fetch account info from the service
         let accountId: string;
-        let accountDisplayName: string;
+        let accountDisplayName: string | null = null;
 
         try {
-            const accountInfo = await fetchAccountInfo(service, connectionId, user.id);
+            const accountInfo = await fetchAccountInfo(
+                service,
+                connectionId,
+                userEmail
+            );
             accountId = accountInfo.identifier;
             accountDisplayName = accountInfo.displayName;
         } catch (error) {
             logger.error(
-                { error, service, connectionId, userId: user.id },
-                "Failed to fetch account info, falling back to defaults"
+                { error, service, connectionId },
+                "Failed to fetch account info"
             );
-            accountId = "default";
-            accountDisplayName = service;
+
+            // Store as failed connection instead of silently falling back
+            await handleConnectionFailed(
+                userEmail,
+                service,
+                connectionId,
+                `Failed to fetch ${service} account information. Please try reconnecting.`
+            );
+            return;
         }
 
-        // Upsert integration record (idempotent for webhook retries)
-        await db.transaction(async (tx) => {
-            // Check if this is the first account for this service (inside transaction to prevent race conditions)
-            const existingConnections = await tx.query.integrations.findMany({
-                where: and(
-                    eq(schema.integrations.userId, user.id),
-                    eq(schema.integrations.service, service),
-                    eq(schema.integrations.status, "connected")
-                ),
-            });
-
-            const isFirstAccount = existingConnections.length === 0;
-            // Clean up any orphaned ERROR entries for this connectionId
+        // Upsert connection using userEmail directly (no UUID lookup needed)
+        const isFirstAccount = await db.transaction(async (tx) => {
+            // Clean up any orphaned ERROR entries
             await tx
                 .delete(schema.integrations)
                 .where(
                     and(
-                        eq(schema.integrations.userId, user.id),
+                        eq(schema.integrations.userEmail, userEmail),
                         eq(schema.integrations.service, service),
                         eq(schema.integrations.connectionId, connectionId),
                         eq(schema.integrations.status, "error")
                     )
                 );
 
-            // Check if integration already exists
+            const existingConnections = await tx.query.integrations.findMany({
+                where: and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.status, "connected")
+                ),
+            });
+
+            const isFirst = existingConnections.length === 0;
+
             const existing = await tx.query.integrations.findFirst({
                 where: and(
-                    eq(schema.integrations.userId, user.id),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.accountId, accountId)
                 ),
             });
 
             if (existing) {
-                // Update existing integration
                 await tx
                     .update(schema.integrations)
                     .set({
                         connectionId,
                         status: "connected",
-                        accountDisplayName,
                         errorMessage: null,
+                        accountDisplayName,
+                        isDefault: isFirst,
+                        lastSyncAt: new Date(),
                         updatedAt: new Date(),
                     })
                     .where(eq(schema.integrations.id, existing.id));
 
                 logger.info(
-                    { userId: user.id, service, accountId },
-                    "Updated existing integration"
+                    { userEmail, service, accountId },
+                    "Updated existing integration via webhook"
                 );
             } else {
-                // Create new integration
                 await tx.insert(schema.integrations).values({
-                    userId: user.id,
+                    userEmail,
                     service,
                     connectionId,
                     credentialType: "oauth",
                     accountId,
                     accountDisplayName,
-                    isDefault: isFirstAccount,
+                    isDefault: isFirst,
                     status: "connected",
                     connectedAt: new Date(),
+                    lastSyncAt: new Date(),
                     updatedAt: new Date(),
                 });
 
                 logger.info(
-                    { userId: user.id, service, accountId, isDefault: isFirstAccount },
-                    "Created new integration"
+                    { userEmail, service, accountId, isDefault: isFirst },
+                    "Created new integration via webhook"
                 );
             }
+
+            return isFirst;
+        });
+
+        // Log to audit trail
+        await logIntegrationEvent({
+            userEmail,
+            service,
+            eventType: "nango_connection_created",
+            eventSource: "nango_webhook",
+            accountId,
+            accountDisplayName: accountDisplayName ?? undefined,
+            connectionId,
+            metadata: {
+                isFirstAccount,
+                operation: "creation",
+            },
         });
     } catch (error) {
         logger.error(
@@ -279,13 +329,13 @@ async function storeSuccessfulConnection(
 }
 
 /**
- * Store failed OAuth connection attempt (for UI error handling)
+ * Handle failed OAuth connection attempt
  */
-async function storeFailedConnection(
+async function handleConnectionFailed(
     userEmail: string,
     service: string,
     connectionId: string,
-    errorMessage?: string
+    errorMessage: string
 ) {
     try {
         const user = await db.query.users.findFirst({
@@ -293,47 +343,79 @@ async function storeFailedConnection(
         });
 
         if (!user) {
-            logger.error({ userEmail }, "User not found for failed connection");
+            logger.error(
+                { userEmail, service },
+                "Cannot record connection error: User not found"
+            );
             return;
         }
 
-        await db.insert(schema.integrations).values({
-            userId: user.id,
-            service,
-            connectionId,
-            credentialType: "oauth",
-            accountId: "error",
-            status: "error",
-            errorMessage: errorMessage || "OAuth connection failed",
-            isDefault: false,
-            connectedAt: new Date(),
-            updatedAt: new Date(),
+        // Use connectionId as fallback accountId - can't fetch real one on failure
+        const accountId = connectionId;
+
+        const existing = await db.query.integrations.findFirst({
+            where: and(
+                eq(schema.integrations.userEmail, userEmail),
+                eq(schema.integrations.service, service),
+                eq(schema.integrations.accountId, accountId)
+            ),
         });
 
-        logger.info({ userId: user.id, service }, "Stored failed connection");
+        if (existing) {
+            await db
+                .update(schema.integrations)
+                .set({
+                    status: "error",
+                    errorMessage,
+                    updatedAt: new Date(),
+                })
+                .where(eq(schema.integrations.id, existing.id));
+        } else {
+            await db.insert(schema.integrations).values({
+                userEmail,
+                service,
+                connectionId,
+                credentialType: "oauth",
+                accountId,
+                isDefault: false,
+                status: "error",
+                errorMessage,
+                connectedAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        // Log to audit trail
+        await logIntegrationEvent({
+            userEmail,
+            service,
+            eventType: "connection_error",
+            eventSource: "nango_webhook",
+            errorMessage,
+            metadata: {
+                operation: "creation_failed",
+                connectionId,
+            },
+        });
+
+        logger.info({ userEmail, service, errorMessage }, "Recorded failed connection");
     } catch (error) {
-        logger.error({ error, userEmail, service }, "Failed to store error connection");
+        logger.error(
+            { error, userEmail, service },
+            "Failed to record connection error"
+        );
     }
 }
 
 /**
- * Mark connection as disconnected (preserve history, don't delete)
+ * Handle connection deletion
  */
-async function markConnectionDisconnected(
+async function handleConnectionDeleted(
     userEmail: string,
     service: string,
     connectionId: string
 ) {
     try {
-        const user = await db.query.users.findFirst({
-            where: eq(schema.users.email, userEmail),
-        });
-
-        if (!user) {
-            logger.error({ userEmail }, "User not found for disconnection");
-            return;
-        }
-
         await db
             .update(schema.integrations)
             .set({
@@ -342,52 +424,139 @@ async function markConnectionDisconnected(
             })
             .where(
                 and(
-                    eq(schema.integrations.userId, user.id),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
                     eq(schema.integrations.connectionId, connectionId)
                 )
             );
 
-        logger.info({ userId: user.id, service }, "Marked connection as disconnected");
+        // Log to audit trail
+        await logIntegrationEvent({
+            userEmail,
+            service,
+            eventType: "nango_connection_deleted",
+            eventSource: "nango_webhook",
+            connectionId,
+            metadata: {
+                operation: "deletion",
+            },
+        });
+
+        logger.info({ userEmail, service }, "Marked connection as disconnected");
     } catch (error) {
         logger.error({ error, userEmail, service }, "Failed to mark disconnected");
     }
 }
 
 /**
- * Update connection timestamp after token refresh
+ * Handle successful token refresh
  */
-async function updateConnectionTimestamp(
+async function handleTokenRefreshSuccess(
     userEmail: string,
     service: string,
     connectionId: string
 ) {
     try {
-        const user = await db.query.users.findFirst({
-            where: eq(schema.users.email, userEmail),
-        });
-
-        if (!user) {
-            logger.error({ userEmail }, "User not found for refresh");
-            return;
-        }
-
-        await db
+        const result = await db
             .update(schema.integrations)
             .set({
+                lastSyncAt: new Date(),
+                errorMessage: null,
                 updatedAt: new Date(),
             })
             .where(
                 and(
-                    eq(schema.integrations.userId, user.id),
+                    eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, service),
-                    eq(schema.integrations.connectionId, connectionId)
+                    eq(schema.integrations.connectionId, connectionId),
+                    eq(schema.integrations.status, "connected")
                 )
-            );
+            )
+            .returning({ id: schema.integrations.id });
 
-        logger.debug({ userId: user.id, service }, "Updated connection timestamp");
+        if (result.length > 0) {
+            // Log to audit trail
+            await logIntegrationEvent({
+                userEmail,
+                service,
+                eventType: "nango_token_refresh",
+                eventSource: "nango_webhook",
+                connectionId,
+                metadata: {
+                    operation: "refresh",
+                    success: true,
+                },
+            });
+
+            logger.info({ userEmail, service }, "Token refreshed successfully");
+        } else {
+            logger.debug(
+                { userEmail, service },
+                "No connected integration found to refresh"
+            );
+        }
     } catch (error) {
-        logger.error({ error, userEmail, service }, "Failed to update timestamp");
+        logger.error({ error, userEmail, service }, "Failed to record token refresh");
+    }
+}
+
+/**
+ * Handle token refresh failure - mark as EXPIRED (not ERROR)
+ * User sees "reconnect" prompt, prevents stale credential API errors
+ */
+async function handleTokenRefreshFailed(
+    userEmail: string,
+    service: string,
+    connectionId: string,
+    errorMessage: string
+) {
+    try {
+        const result = await db
+            .update(schema.integrations)
+            .set({
+                status: "expired",
+                errorMessage,
+                updatedAt: new Date(),
+            })
+            .where(
+                and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.connectionId, connectionId),
+                    eq(schema.integrations.status, "connected")
+                )
+            )
+            .returning({ id: schema.integrations.id });
+
+        if (result.length > 0) {
+            // Log to audit trail
+            await logIntegrationEvent({
+                userEmail,
+                service,
+                eventType: "nango_auth_error",
+                eventSource: "nango_webhook",
+                connectionId,
+                errorMessage,
+                metadata: {
+                    operation: "refresh_failed",
+                },
+            });
+
+            logger.info(
+                { userEmail, service, errorMessage },
+                "Token expired - needs reconnection"
+            );
+        } else {
+            logger.debug(
+                { userEmail, service },
+                "No connected integration found to mark as expired"
+            );
+        }
+    } catch (error) {
+        logger.error(
+            { error, userEmail, service },
+            "Failed to record token expiration"
+        );
     }
 }
 
@@ -398,62 +567,117 @@ async function updateConnectionTimestamp(
  * MUST verify signature to prevent spoofing.
  */
 export async function POST(req: NextRequest) {
-    try {
-        // Get signature from header
-        const signature = req.headers.get("x-nango-signature");
-        const webhookSecret = env.NANGO_WEBHOOK_SECRET;
+    return await Sentry.startSpan(
+        {
+            op: "webhook.nango",
+            name: "Nango Webhook Handler",
+        },
+        async (span) => {
+            try {
+                const signature = req.headers.get("x-nango-signature");
+                const webhookSecret = env.NANGO_WEBHOOK_SECRET;
 
-        // Verify signature if secret is configured
-        if (webhookSecret && signature) {
-            const body = await req.text();
+                const hasSignature = Boolean(signature && webhookSecret);
+                span.setAttribute("signature_verified", hasSignature);
 
-            if (!verifySignature(body, signature, webhookSecret)) {
-                logger.warn("Invalid webhook signature");
+                if (webhookSecret && signature) {
+                    const body = await req.text();
+
+                    if (!verifySignature(body, signature, webhookSecret)) {
+                        logger.error(
+                            {
+                                received: signature.substring(0, 10) + "...",
+                            },
+                            "Nango webhook signature verification failed"
+                        );
+
+                        span.setStatus({ code: 2, message: "Invalid signature" });
+                        Sentry.captureMessage(
+                            "Nango webhook signature verification failed",
+                            {
+                                level: "warning",
+                                tags: {
+                                    webhook: "nango",
+                                    security: "signature_mismatch",
+                                },
+                            }
+                        );
+
+                        return NextResponse.json(
+                            { error: "Invalid signature" },
+                            { status: 401 }
+                        );
+                    }
+
+                    const event = JSON.parse(body) as NangoWebhookEvent;
+                    span.setAttribute("event_type", event.type);
+
+                    if (event.type === "auth") {
+                        span.setAttribute("service", event.providerConfigKey);
+                        span.setAttribute("operation", event.operation || "unknown");
+                        span.setAttribute("success", event.success);
+                        await handleAuthEvent(event);
+                    } else {
+                        logger.debug({ type: event.type }, "Ignoring non-auth webhook");
+                    }
+                } else if (!webhookSecret) {
+                    // Development mode - no signature verification
+                    logger.warn(
+                        "Nango webhook signature not verified (development mode)"
+                    );
+
+                    Sentry.addBreadcrumb({
+                        category: "webhook",
+                        message: "Webhook signature not verified (development mode)",
+                        level: "warning",
+                    });
+
+                    const event = (await req.json()) as NangoWebhookEvent;
+                    span.setAttribute("event_type", event.type);
+
+                    if (event.type === "auth") {
+                        span.setAttribute("service", event.providerConfigKey);
+                        span.setAttribute("operation", event.operation || "unknown");
+                        span.setAttribute("success", event.success);
+                        await handleAuthEvent(event);
+                    }
+                } else {
+                    // Secret configured but no signature provided
+                    logger.warn("Webhook secret configured but no signature provided");
+                    return NextResponse.json(
+                        { error: "Missing signature" },
+                        { status: 401 }
+                    );
+                }
+
+                span.setStatus({ code: 1, message: "Success" });
+                return NextResponse.json({ success: true });
+            } catch (error) {
+                logger.error(
+                    {
+                        err: error,
+                        errorMessage:
+                            error instanceof Error ? error.message : String(error),
+                    },
+                    "Webhook processing failed"
+                );
+
+                span.setStatus({ code: 2, message: "Processing failed" });
+                Sentry.captureException(error, {
+                    tags: {
+                        webhook: "nango",
+                    },
+                });
+
                 return NextResponse.json(
-                    { error: "Invalid signature" },
-                    { status: 401 }
+                    {
+                        error: "Webhook processing failed",
+                        details:
+                            error instanceof Error ? error.message : "Unknown error",
+                    },
+                    { status: 500 }
                 );
             }
-
-            // Parse body after verification
-            const event = JSON.parse(body) as NangoWebhookEvent;
-
-            // Only handle auth events
-            if (event.type === "auth") {
-                await handleAuthEvent(event);
-            } else {
-                logger.debug({ type: event.type }, "Ignoring non-auth webhook event");
-            }
-
-            return NextResponse.json({ success: true });
-        } else if (!webhookSecret) {
-            // Development mode - no signature verification
-            logger.warn(
-                "No webhook secret configured - skipping signature verification"
-            );
-
-            const event = (await req.json()) as NangoWebhookEvent;
-
-            if (event.type === "auth") {
-                await handleAuthEvent(event);
-            }
-
-            return NextResponse.json({ success: true });
-        } else {
-            // Secret configured but no signature provided
-            logger.warn("Webhook secret configured but no signature provided");
-            return NextResponse.json({ error: "Missing signature" }, { status: 401 });
         }
-    } catch (error) {
-        logger.error({ error }, "Webhook processing failed");
-
-        Sentry.captureException(error, {
-            tags: {
-                component: "webhook",
-                action: "process",
-            },
-        });
-
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    );
 }

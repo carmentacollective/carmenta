@@ -48,13 +48,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const userEmail = user.emailAddresses[0]?.emailAddress;
-        if (!userEmail) {
+        const rawEmail = user.emailAddresses[0]?.emailAddress;
+        if (!rawEmail) {
             return NextResponse.json(
                 { error: "User email not found" },
                 { status: 400 }
             );
         }
+        // Normalize email to lowercase for consistent storage and lookups
+        const userEmail = rawEmail.toLowerCase();
 
         // Validate request body
         const body = await req.json();
