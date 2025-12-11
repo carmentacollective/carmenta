@@ -3,26 +3,27 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 /**
  * Route protection proxy using Clerk
  *
- * Public routes: Landing page, sign-in/sign-up, and static assets
- * Protected routes: /connection, /api/* (requires authentication)
+ * Public-by-default security model: All routes are public except those explicitly protected.
+ * This is more secure because new routes default to public, requiring explicit opt-in for protection.
+ *
+ * Protected routes (require authentication):
+ * - /connection/* (all conversation routes)
+ * - /integrations (service connections dashboard)
+ * - /connect/* (OAuth connection flows)
+ * - /api/* (all API routes)
  *
  * Unauthenticated users attempting to access protected routes are
  * automatically redirected to the sign-in page.
  *
+ * Authenticated users on landing page (/) are redirected to /connection.
+ *
  * Note: Next.js 16 renamed middleware.ts to proxy.ts
  * The clerkMiddleware helper name remains unchanged
  */
-const isPublicRoute = createRouteMatcher([
-    "/",
-    "/sign-in(.*)",
-    "/sign-up(.*)",
-    "/ai-first-development(.*)",
-    "/brand(.*)",
-    "/design-lab(.*)",
-    // Static assets and Next.js internals
-    "/favicon.ico",
-    "/robots.txt",
-    "/sitemap.xml",
+const isProtectedRoute = createRouteMatcher([
+    "/connection(.*)",
+    "/integrations(.*)",
+    "/connect(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -33,7 +34,8 @@ export default clerkMiddleware(async (auth, req) => {
         return Response.redirect(new URL("/connection", req.url));
     }
 
-    if (!isPublicRoute(req)) {
+    // Protect explicitly protected routes
+    if (isProtectedRoute(req)) {
         await auth.protect();
     }
 });
