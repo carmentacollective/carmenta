@@ -404,6 +404,15 @@ async function handleConnectionFailed(
             { error, userEmail, service },
             "Failed to record connection error"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "webhook",
+                route: "nango",
+                action: "record_connection_error",
+            },
+            extra: { userEmail, service, errorMessage },
+        });
     }
 }
 
@@ -445,6 +454,15 @@ async function handleConnectionDeleted(
         logger.info({ userEmail, service }, "Marked connection as disconnected");
     } catch (error) {
         logger.error({ error, userEmail, service }, "Failed to mark disconnected");
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "webhook",
+                route: "nango",
+                action: "mark_disconnected",
+            },
+            extra: { userEmail, service, connectionId },
+        });
     }
 }
 
@@ -557,6 +575,15 @@ async function handleTokenRefreshFailed(
             { error, userEmail, service },
             "Failed to record token expiration"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "webhook",
+                route: "nango",
+                action: "record_token_expiration",
+            },
+            extra: { userEmail, service, connectionId, errorMessage },
+        });
     }
 }
 

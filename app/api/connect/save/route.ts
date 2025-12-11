@@ -17,6 +17,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
+import * as Sentry from "@sentry/nextjs";
 
 import { db, schema } from "@/lib/db";
 import { fetchAccountInfo } from "@/lib/integrations/fetch-account-info";
@@ -184,6 +185,14 @@ export async function POST(req: Request) {
             { err: error, errorMessage, errorStack },
             "Failed to save connection"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "api",
+                route: "connect/save",
+                action: "save_connection",
+            },
+        });
 
         return NextResponse.json(
             { error: "We couldn't save that connection" },

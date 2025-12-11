@@ -12,6 +12,8 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
+
 import { db, schema } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { encryptCredentials } from "@/lib/integrations/encryption";
@@ -295,6 +297,15 @@ export async function connectApiKeyService(
             { err: error, errorMessage, userEmail, service: serviceId },
             "Failed to connect API key service"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "action",
+                action: "connect_api_key_service",
+            },
+            extra: { userEmail, serviceId },
+        });
+
         return {
             success: false,
             error:
@@ -337,6 +348,15 @@ export async function disconnectService(
             { err: error, errorMessage, userEmail, service: serviceId },
             "Failed to disconnect service"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "action",
+                action: "disconnect_service",
+            },
+            extra: { userEmail, serviceId, accountId },
+        });
+
         return {
             success: false,
             error:
@@ -393,6 +413,15 @@ export async function deleteIntegration(
             { err: error, errorMessage, userEmail, service: serviceId },
             "Failed to delete integration"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "action",
+                action: "delete_integration",
+            },
+            extra: { userEmail, serviceId, accountId },
+        });
+
         return {
             success: false,
             error:
