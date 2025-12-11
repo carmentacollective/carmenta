@@ -11,12 +11,11 @@ import sys
 from pathlib import Path
 
 
-def test_context_drift_detection():
-    """Test that drift is detected when in main repo with feature branch."""
-    print("Testing context drift detection...")
+def test_context_drift_read_allowed():
+    """Test that read operations are allowed during context drift."""
+    print("Testing context drift - read operations should be allowed...")
 
-    # Simulate being in main repo (/Users/nick/src/carmenta)
-    # with a feature branch, when worktrees exist
+    # Simulate being in main repo with a read operation (git status)
     test_input = {
         "cwd": "/Users/nick/src/carmenta",
         "tool_input": {
@@ -33,17 +32,50 @@ def test_context_drift_detection():
     )
 
     print(f"Exit code: {result.returncode}")
-    print(f"Stderr:\n{result.stderr}")
+    if result.stderr:
+        print(f"Stderr:\n{result.stderr}")
 
-    # Check if drift was detected
-    if result.returncode == 2 and "CONTEXT DRIFT DETECTED" in result.stderr:
-        print("\n✅ Context drift detection working!")
-        return True
-    elif result.returncode == 0:
-        print("\n⚠️  No drift detected (this is expected if not on a feature branch)")
+    # Read operations should always succeed, even during drift
+    if result.returncode == 0:
+        print("✅ Read operation allowed during drift (correct behavior)")
         return True
     else:
-        print("\n❌ Unexpected result")
+        print("❌ Read operation blocked during drift (wrong behavior)")
+        return False
+
+
+def test_context_drift_write_blocked():
+    """Test that write operations are blocked during context drift."""
+    print("\nTesting context drift - write operations should be blocked...")
+
+    # Simulate being in main repo with a write operation (git commit)
+    test_input = {
+        "cwd": "/Users/nick/src/carmenta",
+        "tool_input": {
+            "command": "git commit -m 'test'"
+        }
+    }
+
+    # Run the hook
+    result = subprocess.run(
+        ["python3", ".claude/hooks/git-guard.py"],
+        input=json.dumps(test_input),
+        capture_output=True,
+        text=True,
+    )
+
+    print(f"Exit code: {result.returncode}")
+    print(f"Stderr:\n{result.stderr}")
+
+    # Check if drift was detected and blocked the write operation
+    if result.returncode == 2 and "CONTEXT DRIFT DETECTED" in result.stderr:
+        print("✅ Write operation blocked during drift (correct behavior)")
+        return True
+    elif result.returncode == 0:
+        print("⚠️  No drift detected (this is expected if not on a feature branch)")
+        return True
+    else:
+        print("❌ Unexpected result")
         return False
 
 
@@ -51,9 +83,11 @@ def test_worktree_detection():
     """Test worktree detection functions."""
     print("\nTesting worktree detection...")
 
-    # Import the module
-    sys.path.insert(0, str(Path(__file__).parent))
-    import git_guard
+    # Import the module (file has hyphen so must use importlib)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("git_guard", Path(__file__).parent / "git-guard.py")
+    git_guard = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(git_guard)
 
     # Test with current directory
     cwd = Path.cwd()
@@ -77,7 +111,8 @@ if __name__ == "__main__":
     print("=" * 60)
 
     success = True
-    success &= test_context_drift_detection()
+    success &= test_context_drift_read_allowed()
+    success &= test_context_drift_write_blocked()
     success &= test_worktree_detection()
 
     print("\n" + "=" * 60)

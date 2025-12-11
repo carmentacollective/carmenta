@@ -12,7 +12,8 @@ Blocks:
 - gh pr merge (use GitHub web interface)
 - git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
-- Context drift: operating on main repo (on any non-main branch) when worktrees exist
+- Context drift: WRITE operations on main repo (on any non-main branch) when worktrees exist
+  (read operations like status, diff, log are still allowed during drift)
 
 Exit codes:
 - 0: Command is allowed
@@ -20,6 +21,7 @@ Exit codes:
 
 Allows:
 - git commit --amend (amend contains 'a' but is not the -a flag)
+- Read operations (status, diff, log, etc.) even during context drift
 - All other safe operations
 """
 
@@ -425,6 +427,32 @@ def check_gh_command(command: str) -> list[Violation]:
     return violations
 
 
+def is_write_operation(command: str) -> bool:
+    """
+    Check if a command performs a write operation that modifies git state.
+
+    Read operations (status, diff, log, etc.) should be allowed even during context drift.
+    Write operations (commit, push, merge, etc.) should be blocked during drift.
+    """
+    subcommand, flags, positional = parse_git_command(command)
+
+    # Git write operations
+    write_subcommands = {
+        "commit", "push", "merge", "rebase", "cherry-pick",
+        "reset", "checkout", "switch", "branch", "tag",
+        "am", "apply", "stash", "clean", "rm", "mv"
+    }
+
+    if subcommand in write_subcommands:
+        return True
+
+    # Check gh commands
+    if "gh" in command and "pr merge" in command:
+        return True
+
+    return False
+
+
 def check_command(command: str, cwd: str) -> list[Violation]:
     """
     Main entry point: check a command for all violations.
@@ -435,10 +463,10 @@ def check_command(command: str, cwd: str) -> list[Violation]:
     """
     violations = []
 
-    # FIRST: Check for context drift before any other checks
-    # This catches the case where Claude drifted from worktree to main repo
+    # Check for context drift, but only block write operations
+    # Read operations (status, diff, log) should work even during drift
     drift_violation = check_context_drift(cwd)
-    if drift_violation:
+    if drift_violation and is_write_operation(command):
         violations.append(drift_violation)
         # Return immediately - drift is critical and other checks may be misleading
         return violations
