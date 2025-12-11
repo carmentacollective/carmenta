@@ -203,3 +203,23 @@ export function isApiKeyService(serviceId: string): boolean {
     const service = getServiceById(serviceId);
     return service?.authMethod === "api_key";
 }
+
+/**
+ * Get all service IDs (for validation schemas)
+ * Include beta services by default since admin users may need them.
+ */
+export function getAvailableServiceIds(includeInternal = true): string[] {
+    return SERVICE_REGISTRY.filter((s) => {
+        if (s.status === "internal" && !includeInternal) return false;
+        return true;
+    }).map((s) => s.id);
+}
+
+/**
+ * Get Nango integration key for a service
+ * Falls back to service ID if no explicit mapping defined.
+ */
+export function getNangoIntegrationKey(serviceId: string): string {
+    const service = getServiceById(serviceId);
+    return service?.nangoIntegrationKey || serviceId;
+}

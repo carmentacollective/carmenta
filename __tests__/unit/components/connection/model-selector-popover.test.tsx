@@ -162,7 +162,7 @@ describe("ModelSelectorPopover", () => {
             // Find the Auto button (first button in the model list)
             const modelButtons = container.querySelectorAll(".max-h-44 button");
             const autoButton = modelButtons[0];
-            expect(autoButton).toHaveClass("bg-white");
+            expect(autoButton).toHaveClass("bg-background");
             expect(autoButton).toHaveClass("ring-1");
         });
 

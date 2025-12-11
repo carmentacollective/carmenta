@@ -51,13 +51,15 @@ export async function POST(req: Request) {
             );
         }
 
-        const userEmail = user.emailAddresses[0]?.emailAddress;
-        if (!userEmail) {
+        const rawEmail = user.emailAddresses[0]?.emailAddress;
+        if (!rawEmail) {
             return NextResponse.json(
                 { error: "We couldn't find your account email" },
                 { status: 400 }
             );
         }
+        // Normalize email to lowercase for consistent storage and lookups
+        const userEmail = rawEmail.toLowerCase();
 
         // Validate request body
         const body = await req.json();

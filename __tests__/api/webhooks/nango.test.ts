@@ -1,7 +1,8 @@
 /**
  * Nango Webhook Handler Tests
  *
- * Tests OAuth connection lifecycle via Nango webhooks
+ * Tests OAuth connection lifecycle via Nango webhooks.
+ * Uses userEmail as the primary key for all integration lookups.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -14,26 +15,24 @@ const TEST_USER_EMAIL = "test@example.com";
 const TEST_WEBHOOK_SECRET = "test_webhook_secret_123";
 
 describe("Nango Webhook Handler", () => {
-    let testUserId: string;
-
     beforeEach(async () => {
         // Create test user
-        const [user] = await db
+        await db
             .insert(users)
             .values({
                 clerkId: "test_clerk_id",
                 email: TEST_USER_EMAIL,
                 displayName: "Test User",
             })
-            .returning();
-
-        testUserId = user.id;
+            .onConflictDoNothing();
     });
 
     afterEach(async () => {
-        // Clean up
-        await db.delete(integrations).where(eq(integrations.userId, testUserId));
-        await db.delete(users).where(eq(users.id, testUserId));
+        // Clean up integrations first (FK constraint)
+        await db
+            .delete(integrations)
+            .where(eq(integrations.userEmail, TEST_USER_EMAIL));
+        await db.delete(users).where(eq(users.email, TEST_USER_EMAIL));
     });
 
     it("should create integration record when OAuth succeeds", async () => {
@@ -74,7 +73,7 @@ describe("Nango Webhook Handler", () => {
 
         // Check database - integration should be created
         const integration = await db.query.integrations.findFirst({
-            where: eq(integrations.userId, testUserId),
+            where: eq(integrations.userEmail, TEST_USER_EMAIL),
         });
 
         expect(integration).toBeDefined();
@@ -117,7 +116,7 @@ describe("Nango Webhook Handler", () => {
 
         // Check database
         const integration = await db.query.integrations.findFirst({
-            where: eq(integrations.userId, testUserId),
+            where: eq(integrations.userEmail, TEST_USER_EMAIL),
         });
 
         expect(integration).toBeDefined();
@@ -184,7 +183,7 @@ describe("Nango Webhook Handler", () => {
         expect(response.status).toBe(200);
 
         const integration = await db.query.integrations.findFirst({
-            where: eq(integrations.userId, testUserId),
+            where: eq(integrations.userEmail, TEST_USER_EMAIL),
         });
 
         expect(integration).toBeUndefined();

@@ -19,7 +19,7 @@ export default function BrandPage() {
 
             {/* Content layer */}
             <div className="relative z-10">
-                <SiteHeader bordered showThemeSwitcher={false} />
+                <SiteHeader bordered showThemeSwitcher />
 
                 <main className="py-12">
                     <div className="mx-auto max-w-6xl space-y-16 px-6">
@@ -597,6 +597,113 @@ export default function BrandPage() {
                                                 duration-300
                                             </code>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Button Types */}
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-foreground/90">
+                                Button Types
+                            </h2>
+                            <p className="text-foreground/70">
+                                Specialized button styles for different contexts and
+                                emphasis levels.
+                            </p>
+
+                            <div className="glass-card">
+                                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                                    {/* CTA Button */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="font-medium text-foreground/90">
+                                                Call to Action
+                                            </h3>
+                                            <p className="text-sm text-foreground/60">
+                                                High-attention gradient button
+                                            </p>
+                                        </div>
+                                        <div className="flex min-h-[80px] items-center justify-center rounded-lg bg-foreground/5 p-4">
+                                            <button className="btn-cta rounded-full px-6 py-3 font-medium">
+                                                Send Message
+                                            </button>
+                                        </div>
+                                        <div className="rounded-lg bg-foreground/5 p-3">
+                                            <code className="block text-xs text-foreground/70">
+                                                .btn-cta
+                                                <br />
+                                                primary→accent gradient
+                                                <br />
+                                                elevated shadow
+                                            </code>
+                                        </div>
+                                        <p className="text-xs text-foreground/60">
+                                            Use for primary actions that deserve extra
+                                            visual prominence—send buttons, submit
+                                            forms, key CTAs.
+                                        </p>
+                                    </div>
+
+                                    {/* Glass Button */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="font-medium text-foreground/90">
+                                                Glass
+                                            </h3>
+                                            <p className="text-sm text-foreground/60">
+                                                Transparent glassmorphism
+                                            </p>
+                                        </div>
+                                        <div className="flex min-h-[80px] items-center justify-center rounded-lg bg-foreground/5 p-4">
+                                            <button className="btn-icon-glass rounded-full p-3">
+                                                <Sparkles className="h-5 w-5 text-foreground/60" />
+                                            </button>
+                                        </div>
+                                        <div className="rounded-lg bg-foreground/5 p-3">
+                                            <code className="block text-xs text-foreground/70">
+                                                .btn-icon-glass
+                                                <br />
+                                                backdrop-blur-xl
+                                                <br />
+                                                white/50 background
+                                            </code>
+                                        </div>
+                                        <p className="text-xs text-foreground/60">
+                                            Use for secondary actions, icon buttons, and
+                                            controls that blend with the holographic
+                                            background.
+                                        </p>
+                                    </div>
+
+                                    {/* Holographic Button */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="font-medium text-foreground/90">
+                                                Holographic
+                                            </h3>
+                                            <p className="text-sm text-foreground/60">
+                                                Signature branded style
+                                            </p>
+                                        </div>
+                                        <div className="flex min-h-[80px] items-center justify-center rounded-lg bg-foreground/5 p-4">
+                                            <button className="btn-holo px-5 py-2.5 text-sm">
+                                                Connect
+                                            </button>
+                                        </div>
+                                        <div className="rounded-lg bg-foreground/5 p-3">
+                                            <code className="block text-xs text-foreground/70">
+                                                .btn-holo
+                                                <br />
+                                                iridescent border
+                                                <br />
+                                                subtle animation
+                                            </code>
+                                        </div>
+                                        <p className="text-xs text-foreground/60">
+                                            Use for branded interactions like sign-in,
+                                            connection actions, and premium features.
+                                        </p>
                                     </div>
                                 </div>
                             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
 // Track whether we're on the client to avoid hydration mismatch
 const subscribe = () => () => {};
@@ -42,6 +43,113 @@ const DARK_COLORS = [
 ];
 
 const DARK_BACKGROUND = "#1F120F"; // Dark with warm red undertone
+
+/**
+ * Theme-specific color palettes for holographic backgrounds.
+ * Each theme has distinct light and dark mode colors.
+ */
+const THEME_PALETTES: Record<
+    ThemeVariant,
+    { light: readonly ColorPalette[]; dark: readonly ColorPalette[]; darkBg: string }
+> = {
+    carmenta: {
+        light: LIGHT_COLORS,
+        dark: DARK_COLORS,
+        darkBg: DARK_BACKGROUND,
+    },
+    "warm-earth": {
+        light: [
+            { r: 220, g: 180, b: 150 }, // Terracotta
+            { r: 200, g: 170, b: 140 }, // Clay
+            { r: 180, g: 200, b: 160 }, // Sage
+            { r: 200, g: 190, b: 150 }, // Sand
+            { r: 230, g: 200, b: 140 }, // Gold
+            { r: 210, g: 180, b: 160 }, // Warm Beige
+            { r: 190, g: 210, b: 170 }, // Moss
+            { r: 220, g: 190, b: 160 }, // Cream
+        ],
+        dark: [
+            { r: 160, g: 100, b: 70 }, // Deep Terracotta
+            { r: 140, g: 90, b: 60 }, // Rust
+            { r: 100, g: 120, b: 80 }, // Dark Sage
+            { r: 140, g: 110, b: 70 }, // Amber
+            { r: 180, g: 140, b: 60 }, // Bronze
+            { r: 150, g: 100, b: 80 }, // Sienna
+            { r: 110, g: 130, b: 90 }, // Forest
+            { r: 160, g: 120, b: 90 }, // Copper
+        ],
+        darkBg: "#1A1512",
+    },
+    "arctic-clarity": {
+        light: [
+            { r: 200, g: 230, b: 255 }, // Ice Blue
+            { r: 220, g: 240, b: 255 }, // Frost
+            { r: 180, g: 220, b: 250 }, // Sky
+            { r: 200, g: 200, b: 230 }, // Mist
+            { r: 230, g: 240, b: 250 }, // Snow
+            { r: 190, g: 210, b: 240 }, // Glacier
+            { r: 210, g: 230, b: 255 }, // Crystal
+            { r: 200, g: 220, b: 245 }, // Pale Azure
+        ],
+        dark: [
+            { r: 80, g: 120, b: 160 }, // Deep Ice
+            { r: 100, g: 140, b: 180 }, // Steel Blue
+            { r: 60, g: 100, b: 140 }, // Midnight Ice
+            { r: 90, g: 110, b: 140 }, // Slate
+            { r: 110, g: 150, b: 190 }, // Arctic
+            { r: 70, g: 110, b: 150 }, // Deep Ocean
+            { r: 100, g: 130, b: 170 }, // Twilight
+            { r: 80, g: 120, b: 160 }, // Storm
+        ],
+        darkBg: "#0D1520",
+    },
+    "forest-wisdom": {
+        light: [
+            { r: 160, g: 200, b: 160 }, // Sage
+            { r: 180, g: 210, b: 170 }, // Moss
+            { r: 140, g: 190, b: 150 }, // Fern
+            { r: 200, g: 200, b: 140 }, // Lichen
+            { r: 220, g: 200, b: 140 }, // Amber
+            { r: 170, g: 210, b: 180 }, // Mint
+            { r: 190, g: 190, b: 150 }, // Olive
+            { r: 180, g: 200, b: 160 }, // Leaf
+        ],
+        dark: [
+            { r: 80, g: 120, b: 80 }, // Deep Forest
+            { r: 100, g: 130, b: 90 }, // Pine
+            { r: 60, g: 100, b: 70 }, // Evergreen
+            { r: 120, g: 120, b: 60 }, // Moss
+            { r: 150, g: 130, b: 50 }, // Bronze Amber
+            { r: 90, g: 130, b: 100 }, // Spruce
+            { r: 110, g: 110, b: 70 }, // Dark Olive
+            { r: 100, g: 120, b: 80 }, // Woodland
+        ],
+        darkBg: "#0F1A12",
+    },
+    monochrome: {
+        light: [
+            { r: 200, g: 200, b: 200 }, // Silver
+            { r: 180, g: 180, b: 180 }, // Gray
+            { r: 220, g: 220, b: 220 }, // Light Gray
+            { r: 190, g: 190, b: 200 }, // Cool Gray
+            { r: 210, g: 210, b: 210 }, // Platinum
+            { r: 185, g: 185, b: 190 }, // Steel
+            { r: 205, g: 205, b: 215 }, // Pearl
+            { r: 195, g: 195, b: 195 }, // Smoke
+        ],
+        dark: [
+            { r: 80, g: 80, b: 90 }, // Charcoal
+            { r: 100, g: 100, b: 110 }, // Graphite
+            { r: 60, g: 60, b: 70 }, // Onyx
+            { r: 90, g: 90, b: 100 }, // Slate
+            { r: 110, g: 110, b: 120 }, // Steel
+            { r: 70, g: 70, b: 80 }, // Carbon
+            { r: 95, g: 95, b: 105 }, // Iron
+            { r: 85, g: 85, b: 95 }, // Pewter
+        ],
+        darkBg: "#121214",
+    },
+};
 
 const BLOB_COUNT = 12;
 const PARTICLE_COUNT = 35; // Reduced from 80 for subtler effect
@@ -105,9 +213,19 @@ function createParticle(width: number, height: number): Particle {
     };
 }
 
+export interface ColorPalette {
+    r: number;
+    g: number;
+    b: number;
+}
+
 interface HolographicBackgroundProps {
     /** Hide the logo watermark (e.g., on homepage where logo is prominently displayed) */
     hideWatermark?: boolean;
+    /** Custom color palette for light mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
+    lightColorPalette?: readonly ColorPalette[];
+    /** Custom color palette for dark mode (8 colors for blob cycling). If not provided, uses default Carmenta colors. */
+    darkColorPalette?: readonly ColorPalette[];
 }
 
 /**
@@ -122,8 +240,11 @@ interface HolographicBackgroundProps {
  */
 export function HolographicBackground({
     hideWatermark = false,
+    lightColorPalette,
+    darkColorPalette,
 }: HolographicBackgroundProps) {
     const { resolvedTheme } = useTheme();
+    const { themeVariant } = useThemeVariant();
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
@@ -131,17 +252,28 @@ export function HolographicBackground({
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
-    const themeColorsRef = useRef({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
+    const themeColorsRef = useRef<{
+        bg: string;
+        colors: readonly ColorPalette[];
+    }>({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
 
-    // Update theme colors when theme changes
+    // Update theme colors when theme or theme variant changes
     useEffect(() => {
         const isDark = resolvedTheme === "dark";
+        const palette = THEME_PALETTES[themeVariant] || THEME_PALETTES.carmenta;
+
         if (isDark) {
-            themeColorsRef.current = { bg: DARK_BACKGROUND, colors: DARK_COLORS };
+            themeColorsRef.current = {
+                bg: darkColorPalette ? DARK_BACKGROUND : palette.darkBg,
+                colors: darkColorPalette || palette.dark,
+            };
         } else {
-            themeColorsRef.current = { bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS };
+            themeColorsRef.current = {
+                bg: LIGHT_BACKGROUND,
+                colors: lightColorPalette || palette.light,
+            };
         }
-    }, [resolvedTheme]);
+    }, [resolvedTheme, themeVariant, lightColorPalette, darkColorPalette]);
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
@@ -299,7 +431,8 @@ export function HolographicBackground({
                 // Draw particle - theme-aware opacity
                 // Dark mode: subtler sparkles (max ~30% opacity)
                 // Light mode: even lighter (max ~20% opacity)
-                const isDarkTheme = bg === DARK_BACKGROUND;
+                // Compare to light background since all themes share the same light bg
+                const isDarkTheme = bg !== LIGHT_BACKGROUND;
                 const themeOpacityMultiplier = isDarkTheme ? 0.4 : 0.25;
                 const twinkleOpacity =
                     p.opacity *

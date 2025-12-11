@@ -239,8 +239,8 @@ export function ModelSelectorPopover({
                                     className={cn(
                                         "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
                                         overrides.modelId === null
-                                            ? "bg-white shadow-sm ring-1 ring-primary/20 dark:bg-white/10"
-                                            : "hover:bg-white/50 dark:hover:bg-white/10"
+                                            ? "bg-background shadow-sm ring-1 ring-primary/20"
+                                            : "hover:bg-background/50"
                                     )}
                                 >
                                     <div className="flex items-center gap-2">
@@ -282,8 +282,8 @@ export function ModelSelectorPopover({
                                             className={cn(
                                                 "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
                                                 overrides.modelId === model.id
-                                                    ? "bg-white shadow-sm ring-1 ring-primary/20 dark:bg-white/10"
-                                                    : "hover:bg-white/50 dark:hover:bg-white/10"
+                                                    ? "bg-background shadow-sm ring-1 ring-primary/20"
+                                                    : "hover:bg-background/50"
                                             )}
                                         >
                                             <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export function ModelSelectorPopover({
                                         })
                                     }
                                     presets={REASONING_SLIDER_PRESETS}
-                                    theme="cyan"
+                                    theme="secondary"
                                     disabled={disabled}
                                     progressMode={true}
                                 />
@@ -387,7 +387,7 @@ export function ModelSelectorPopover({
                                         });
                                         setIsOpen(false);
                                     }}
-                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-white/50 hover:text-foreground/70 dark:hover:bg-white/10"
+                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-background/50 hover:text-foreground/70"
                                 >
                                     <Sparkles className="h-3 w-3" />
                                     Carmenta AI Concierge decides automagically
