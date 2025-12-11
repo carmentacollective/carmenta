@@ -114,6 +114,9 @@ let testDb: PgliteDatabase<typeof schema> | null = null;
 // Cache the generated migration statements to avoid regenerating each test
 let cachedMigrationStatements: string[] | null = null;
 
+// Cache table names for truncation
+let cachedTableNames: string[] | null = null;
+
 /**
  * Generate migration SQL from schema using drizzle-kit API.
  * Cached to avoid regenerating on each test.
@@ -331,6 +334,21 @@ vi.mock("./lib/db/users", async () => {
  */
 beforeAll(async () => {
     await createFreshTestDb();
+
+    // Cache table names for truncation (only compute once per file)
+    if (!cachedTableNames) {
+        const { getTableName } = await import("drizzle-orm");
+        const schema = await import("./lib/db/schema");
+
+        cachedTableNames = Object.values(schema)
+            .filter(
+                (value): value is (typeof schema)["users"] =>
+                    value !== null &&
+                    typeof value === "object" &&
+                    Symbol.for("drizzle:BaseName") in value
+            )
+            .map((table) => getTableName(table));
+    }
 });
 
 /**
@@ -338,13 +356,12 @@ beforeAll(async () => {
  * Much faster than recreating the DB (~10x faster than DROP SCHEMA).
  */
 beforeEach(async () => {
-    if (testDb) {
+    if (testDb && cachedTableNames && cachedTableNames.length > 0) {
         const { sql } = await import("drizzle-orm");
         // TRUNCATE with CASCADE handles foreign key relationships
-        await testDb.execute(sql`
-            TRUNCATE TABLE message_parts, messages, integration_history,
-            integrations, connections, users CASCADE
-        `);
+        await testDb.execute(
+            sql.raw(`TRUNCATE TABLE ${cachedTableNames.join(", ")} CASCADE`)
+        );
     }
 });
 
