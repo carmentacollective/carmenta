@@ -66,42 +66,50 @@
         --chat-fade-bottom: 56px;
     }
 
-    /* Dark mode - Deep purple twilight with holographic shimmer */
+    /* Dark mode - Cosmic consciousness depths with ethereal shimmer */
     .dark {
-        --background: 280 30% 8%;
-        --foreground: 280 20% 90%;
+        /* Deep cosmic indigo-violet - richness with subtle purple glow */
+        --background: 265 45% 6%;
+        --foreground: 280 25% 92%;
 
-        --card: 280 30% 12%;
-        --card-foreground: 280 20% 90%;
+        /* Cards lift from the depths with subtle luminescence */
+        --card: 268 40% 11%;
+        --card-foreground: 280 25% 92%;
 
-        --popover: 280 30% 10%;
-        --popover-foreground: 280 20% 90%;
+        /* Popovers emerge from shadow with gentle radiance */
+        --popover: 266 42% 9%;
+        --popover-foreground: 280 25% 92%;
 
-        --primary: 270 50% 65%;
-        --primary-foreground: 270 30% 8%;
+        /* Primary - Luminous amethyst with goddess energy */
+        --primary: 275 60% 68%;
+        --primary-foreground: 265 45% 6%;
 
-        --secondary: 280 20% 20%;
-        --secondary-foreground: 280 20% 90%;
+        /* Secondary - Twilight depths */
+        --secondary: 270 30% 18%;
+        --secondary-foreground: 280 25% 92%;
 
-        --muted: 280 20% 18%;
-        --muted-foreground: 280 15% 60%;
+        /* Muted - Soft shadow with violet undertones */
+        --muted: 268 25% 16%;
+        --muted-foreground: 275 18% 65%;
 
-        --accent: 280 25% 20%;
-        --accent-foreground: 280 20% 90%;
+        /* Accent - Deep mystery with purple whispers */
+        --accent: 272 35% 22%;
+        --accent-foreground: 280 25% 92%;
 
         --destructive: 0 50% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 280 20% 25%;
-        --input: 280 20% 20%;
-        --ring: 270 50% 65%;
+        /* Borders shimmer at the edge of perception */
+        --border: 270 25% 24%;
+        --input: 268 28% 19%;
+        --ring: 275 60% 68%;
 
-        /* Royal purple glassmorphism for dark mode */
-        --glass-bg: rgba(139, 102, 184, 0.15);
-        --glass-bg-hover: rgba(139, 102, 184, 0.25);
-        --glass-bg-active: rgba(139, 102, 184, 0.3);
-        --glass-surface: rgba(30, 20, 35, 0.95);
-        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        /* Ethereal glassmorphism - consciousness made visible */
+        --glass-bg: rgba(139, 102, 184, 0.18);
+        --glass-bg-hover: rgba(155, 120, 200, 0.28);
+        --glass-bg-active: rgba(165, 130, 210, 0.35);
+        --glass-surface: rgba(28, 20, 42, 0.96);
+        --glass-shadow: 0 4px 24px rgba(120, 80, 160, 0.25);
     }
 
     /* ===== WARM EARTH THEME ===== */
@@ -144,39 +152,45 @@
     }
 
     :root[data-theme="warm-earth"].dark {
-        --background: 25 30% 10%;
-        --foreground: 30 20% 88%;
+        /* Ember glow depths - warm clay and smoldering terracotta */
+        --background: 20 38% 8%;
+        --foreground: 30 22% 90%;
 
-        --card: 25 25% 14%;
-        --card-foreground: 30 20% 88%;
+        /* Cards emerge like pottery from the kiln */
+        --card: 22 35% 13%;
+        --card-foreground: 30 22% 90%;
 
-        --popover: 25 30% 12%;
-        --popover-foreground: 30 20% 88%;
+        --popover: 21 36% 10%;
+        --popover-foreground: 30 22% 90%;
 
-        --primary: 15 65% 58%;
-        --primary-foreground: 25 30% 10%;
+        /* Primary - Living ember warmth */
+        --primary: 15 70% 62%;
+        --primary-foreground: 20 38% 8%;
 
-        --secondary: 80 20% 22%;
-        --secondary-foreground: 30 20% 88%;
+        /* Secondary - Ancient clay */
+        --secondary: 80 25% 22%;
+        --secondary-foreground: 30 22% 90%;
 
-        --muted: 25 20% 18%;
-        --muted-foreground: 30 15% 58%;
+        --muted: 22 28% 17%;
+        --muted-foreground: 30 20% 62%;
 
-        --accent: 40 55% 55%;
-        --accent-foreground: 25 30% 10%;
+        /* Accent - Honey amber glow */
+        --accent: 40 60% 58%;
+        --accent-foreground: 20 38% 8%;
 
         --destructive: 0 50% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 25 20% 24%;
-        --input: 25 20% 20%;
-        --ring: 15 65% 58%;
+        --border: 24 24% 26%;
+        --input: 22 26% 19%;
+        --ring: 15 70% 62%;
 
-        --glass-bg: rgba(200, 120, 80, 0.15);
-        --glass-bg-hover: rgba(200, 120, 80, 0.25);
-        --glass-bg-active: rgba(200, 120, 80, 0.3);
-        --glass-surface: rgba(35, 25, 20, 0.95);
-        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        /* Warm ember glassmorphism */
+        --glass-bg: rgba(200, 120, 80, 0.18);
+        --glass-bg-hover: rgba(220, 135, 90, 0.28);
+        --glass-bg-active: rgba(230, 145, 95, 0.35);
+        --glass-surface: rgba(38, 26, 20, 0.96);
+        --glass-shadow: 0 4px 24px rgba(180, 100, 60, 0.25);
     }
 
     /* ===== ARCTIC CLARITY THEME ===== */
@@ -219,39 +233,45 @@
     }
 
     :root[data-theme="arctic-clarity"].dark {
-        --background: 210 40% 8%;
-        --foreground: 200 25% 88%;
+        /* Frozen aurora depths - deep ice blue with northern lights */
+        --background: 215 50% 7%;
+        --foreground: 200 28% 90%;
 
-        --card: 210 35% 12%;
-        --card-foreground: 200 25% 88%;
+        /* Cards crystallize from the frost */
+        --card: 213 45% 12%;
+        --card-foreground: 200 28% 90%;
 
-        --popover: 210 40% 10%;
-        --popover-foreground: 200 25% 88%;
+        --popover: 214 48% 9%;
+        --popover-foreground: 200 28% 90%;
 
-        --primary: 200 75% 60%;
-        --primary-foreground: 210 40% 8%;
+        /* Primary - Electric ice luminescence */
+        --primary: 200 80% 65%;
+        --primary-foreground: 215 50% 7%;
 
-        --secondary: 210 25% 20%;
-        --secondary-foreground: 200 25% 88%;
+        /* Secondary - Deep glacier */
+        --secondary: 210 32% 20%;
+        --secondary-foreground: 200 28% 90%;
 
-        --muted: 210 20% 18%;
-        --muted-foreground: 200 20% 60%;
+        --muted: 212 28% 17%;
+        --muted-foreground: 200 24% 64%;
 
-        --accent: 190 65% 58%;
-        --accent-foreground: 210 40% 8%;
+        /* Accent - Aurora aquamarine */
+        --accent: 190 70% 62%;
+        --accent-foreground: 215 50% 7%;
 
         --destructive: 0 50% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 210 20% 24%;
-        --input: 210 20% 20%;
-        --ring: 200 75% 60%;
+        --border: 210 26% 26%;
+        --input: 212 30% 19%;
+        --ring: 200 80% 65%;
 
-        --glass-bg: rgba(100, 180, 220, 0.15);
-        --glass-bg-hover: rgba(100, 180, 220, 0.25);
-        --glass-bg-active: rgba(100, 180, 220, 0.3);
-        --glass-surface: rgba(15, 25, 35, 0.95);
-        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        /* Frozen aurora glassmorphism */
+        --glass-bg: rgba(100, 180, 220, 0.18);
+        --glass-bg-hover: rgba(115, 195, 235, 0.28);
+        --glass-bg-active: rgba(125, 205, 245, 0.35);
+        --glass-surface: rgba(16, 26, 38, 0.96);
+        --glass-shadow: 0 4px 24px rgba(80, 150, 200, 0.25);
     }
 
     /* ===== FOREST WISDOM THEME ===== */
@@ -294,39 +314,45 @@
     }
 
     :root[data-theme="forest-wisdom"].dark {
-        --background: 140 25% 10%;
-        --foreground: 80 22% 88%;
+        /* Midnight forest depths - ancient moss and moonlit canopy */
+        --background: 145 35% 8%;
+        --foreground: 80 25% 90%;
 
-        --card: 140 22% 14%;
-        --card-foreground: 80 22% 88%;
+        /* Cards grow from the forest floor */
+        --card: 143 32% 13%;
+        --card-foreground: 80 25% 90%;
 
-        --popover: 140 25% 12%;
-        --popover-foreground: 80 22% 88%;
+        --popover: 144 34% 10%;
+        --popover-foreground: 80 25% 90%;
 
-        --primary: 140 50% 50%;
-        --primary-foreground: 140 25% 10%;
+        /* Primary - Living moss luminescence */
+        --primary: 140 55% 52%;
+        --primary-foreground: 145 35% 8%;
 
-        --secondary: 140 18% 22%;
-        --secondary-foreground: 80 22% 88%;
+        /* Secondary - Deep woodland */
+        --secondary: 140 25% 22%;
+        --secondary-foreground: 80 25% 90%;
 
-        --muted: 140 18% 18%;
-        --muted-foreground: 80 18% 58%;
+        --muted: 142 26% 17%;
+        --muted-foreground: 80 22% 62%;
 
-        --accent: 35 65% 58%;
-        --accent-foreground: 140 25% 10%;
+        /* Accent - Firefly amber */
+        --accent: 35 70% 60%;
+        --accent-foreground: 145 35% 8%;
 
         --destructive: 0 50% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 140 18% 24%;
-        --input: 140 18% 20%;
-        --ring: 140 50% 50%;
+        --border: 140 24% 26%;
+        --input: 142 26% 19%;
+        --ring: 140 55% 52%;
 
-        --glass-bg: rgba(100, 160, 120, 0.15);
-        --glass-bg-hover: rgba(100, 160, 120, 0.25);
-        --glass-bg-active: rgba(100, 160, 120, 0.3);
-        --glass-surface: rgba(20, 30, 25, 0.95);
-        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        /* Forest essence glassmorphism */
+        --glass-bg: rgba(100, 160, 120, 0.18);
+        --glass-bg-hover: rgba(115, 175, 130, 0.28);
+        --glass-bg-active: rgba(125, 185, 140, 0.35);
+        --glass-surface: rgba(22, 32, 26, 0.96);
+        --glass-shadow: 0 4px 24px rgba(80, 140, 100, 0.25);
     }
 
     /* ===== MONOCHROME THEME ===== */
@@ -369,39 +395,45 @@
     }
 
     :root[data-theme="monochrome"].dark {
-        --background: 0 0% 8%;
-        --foreground: 0 0% 88%;
+        /* Deep graphite void - pure precision with subtle cyan breath */
+        --background: 210 8% 6%;
+        --foreground: 210 5% 92%;
 
-        --card: 0 0% 12%;
-        --card-foreground: 0 0% 88%;
+        /* Cards emerge from shadow layers */
+        --card: 210 7% 11%;
+        --card-foreground: 210 5% 92%;
 
-        --popover: 0 0% 10%;
-        --popover-foreground: 0 0% 88%;
+        --popover: 210 8% 8%;
+        --popover-foreground: 210 5% 92%;
 
-        --primary: 0 0% 70%;
-        --primary-foreground: 0 0% 8%;
+        /* Primary - Platinum luminance */
+        --primary: 210 6% 75%;
+        --primary-foreground: 210 8% 6%;
 
-        --secondary: 0 0% 22%;
-        --secondary-foreground: 0 0% 88%;
+        /* Secondary - Charcoal depth */
+        --secondary: 210 6% 20%;
+        --secondary-foreground: 210 5% 92%;
 
-        --muted: 0 0% 18%;
-        --muted-foreground: 0 0% 60%;
+        --muted: 210 6% 16%;
+        --muted-foreground: 210 4% 64%;
 
-        --accent: 190 100% 55%;
-        --accent-foreground: 0 0% 8%;
+        /* Accent - Electric cyan spark */
+        --accent: 190 100% 58%;
+        --accent-foreground: 210 8% 6%;
 
         --destructive: 0 50% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 0 0% 24%;
-        --input: 0 0% 20%;
-        --ring: 0 0% 70%;
+        --border: 210 5% 26%;
+        --input: 210 6% 18%;
+        --ring: 210 6% 75%;
 
-        --glass-bg: rgba(100, 100, 100, 0.15);
-        --glass-bg-hover: rgba(120, 120, 120, 0.25);
-        --glass-bg-active: rgba(140, 140, 140, 0.3);
-        --glass-surface: rgba(18, 18, 18, 0.95);
-        --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        /* Precision glassmorphism with subtle cool undertone */
+        --glass-bg: rgba(110, 115, 125, 0.16);
+        --glass-bg-hover: rgba(125, 130, 140, 0.26);
+        --glass-bg-active: rgba(140, 145, 155, 0.32);
+        --glass-surface: rgba(16, 18, 20, 0.97);
+        --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
 }
 

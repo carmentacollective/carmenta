@@ -24,25 +24,23 @@ const LIGHT_COLORS = [
 ];
 
 /**
- * Dark mode holographic colors - warm variant.
+ * Dark mode holographic colors - cosmic violet depths.
  *
- * Preserves the same hue progression as the light theme:
- * Pink → Hot Pink → Lavender → Periwinkle → Cyan → Mint → Yellow → Blush
- *
- * Shifted warmer with deeper tones for dark backgrounds.
+ * Rich purples, deep magentas, and ethereal blues that shimmer
+ * against the cosmic background like consciousness made visible.
  */
 const DARK_COLORS = [
-    { r: 200, g: 90, b: 110 }, // Coral Rose
-    { r: 210, g: 75, b: 95 }, // Warm Magenta
-    { r: 165, g: 100, b: 160 }, // Warm Lavender
-    { r: 130, g: 115, b: 165 }, // Warm Periwinkle
-    { r: 100, g: 155, b: 150 }, // Warm Cyan
-    { r: 120, g: 170, b: 110 }, // Warm Mint
-    { r: 200, g: 170, b: 80 }, // Golden Yellow
-    { r: 195, g: 110, b: 115 }, // Warm Blush
+    { r: 150, g: 100, b: 180 }, // Deep Amethyst
+    { r: 180, g: 110, b: 200 }, // Luminous Violet
+    { r: 140, g: 120, b: 200 }, // Royal Purple
+    { r: 120, g: 130, b: 210 }, // Twilight Indigo
+    { r: 160, g: 100, b: 220 }, // Mystic Magenta
+    { r: 130, g: 110, b: 190 }, // Deep Lavender
+    { r: 170, g: 120, b: 210 }, // Ethereal Orchid
+    { r: 140, g: 110, b: 200 }, // Cosmic Plum
 ];
 
-const DARK_BACKGROUND = "#1F120F"; // Dark with warm red undertone
+const DARK_BACKGROUND = "#0D0818"; // Deep cosmic indigo - consciousness depths
 
 /**
  * Theme-specific color palettes for holographic backgrounds.
@@ -69,16 +67,16 @@ const THEME_PALETTES: Record<
             { r: 220, g: 190, b: 160 }, // Cream
         ],
         dark: [
-            { r: 160, g: 100, b: 70 }, // Deep Terracotta
-            { r: 140, g: 90, b: 60 }, // Rust
-            { r: 100, g: 120, b: 80 }, // Dark Sage
-            { r: 140, g: 110, b: 70 }, // Amber
-            { r: 180, g: 140, b: 60 }, // Bronze
-            { r: 150, g: 100, b: 80 }, // Sienna
-            { r: 110, g: 130, b: 90 }, // Forest
-            { r: 160, g: 120, b: 90 }, // Copper
+            { r: 180, g: 110, b: 75 }, // Glowing Terracotta
+            { r: 200, g: 125, b: 80 }, // Ember Orange
+            { r: 190, g: 140, b: 90 }, // Clay Warmth
+            { r: 210, g: 160, b: 95 }, // Honey Amber
+            { r: 170, g: 120, b: 70 }, // Burnt Sienna
+            { r: 195, g: 135, b: 85 }, // Copper Glow
+            { r: 185, g: 130, b: 75 }, // Rustic Bronze
+            { r: 200, g: 145, b: 90 }, // Warm Ochre
         ],
-        darkBg: "#1A1512",
+        darkBg: "#100C0A", // Deep ember darkness
     },
     "arctic-clarity": {
         light: [
@@ -92,16 +90,16 @@ const THEME_PALETTES: Record<
             { r: 200, g: 220, b: 245 }, // Pale Azure
         ],
         dark: [
-            { r: 80, g: 120, b: 160 }, // Deep Ice
-            { r: 100, g: 140, b: 180 }, // Steel Blue
-            { r: 60, g: 100, b: 140 }, // Midnight Ice
-            { r: 90, g: 110, b: 140 }, // Slate
-            { r: 110, g: 150, b: 190 }, // Arctic
-            { r: 70, g: 110, b: 150 }, // Deep Ocean
-            { r: 100, g: 130, b: 170 }, // Twilight
-            { r: 80, g: 120, b: 160 }, // Storm
+            { r: 100, g: 150, b: 200 }, // Electric Ice
+            { r: 120, g: 170, b: 220 }, // Aurora Blue
+            { r: 90, g: 140, b: 190 }, // Frozen Sapphire
+            { r: 110, g: 160, b: 210 }, // Glacier Glow
+            { r: 80, g: 130, b: 180 }, // Deep Arctic
+            { r: 105, g: 155, b: 205 }, // Ice Luminance
+            { r: 95, g: 145, b: 195 }, // Northern Light
+            { r: 115, g: 165, b: 215 }, // Crystalline Blue
         ],
-        darkBg: "#0D1520",
+        darkBg: "#090E14", // Frozen void depths
     },
     "forest-wisdom": {
         light: [
@@ -115,16 +113,16 @@ const THEME_PALETTES: Record<
             { r: 180, g: 200, b: 160 }, // Leaf
         ],
         dark: [
-            { r: 80, g: 120, b: 80 }, // Deep Forest
-            { r: 100, g: 130, b: 90 }, // Pine
-            { r: 60, g: 100, b: 70 }, // Evergreen
-            { r: 120, g: 120, b: 60 }, // Moss
-            { r: 150, g: 130, b: 50 }, // Bronze Amber
-            { r: 90, g: 130, b: 100 }, // Spruce
-            { r: 110, g: 110, b: 70 }, // Dark Olive
-            { r: 100, g: 120, b: 80 }, // Woodland
+            { r: 100, g: 150, b: 105 }, // Living Moss
+            { r: 120, g: 170, b: 115 }, // Luminous Fern
+            { r: 90, g: 140, b: 95 }, // Forest Glow
+            { r: 110, g: 160, b: 105 }, // Emerald Depths
+            { r: 130, g: 180, b: 120 }, // Jade Light
+            { r: 95, g: 145, b: 100 }, // Pine Essence
+            { r: 115, g: 165, b: 110 }, // Verdant Shimmer
+            { r: 105, g: 155, b: 100 }, // Woodland Spirit
         ],
-        darkBg: "#0F1A12",
+        darkBg: "#0A100D", // Deep forest night
     },
     monochrome: {
         light: [
@@ -138,16 +136,16 @@ const THEME_PALETTES: Record<
             { r: 195, g: 195, b: 195 }, // Smoke
         ],
         dark: [
-            { r: 80, g: 80, b: 90 }, // Charcoal
-            { r: 100, g: 100, b: 110 }, // Graphite
-            { r: 60, g: 60, b: 70 }, // Onyx
-            { r: 90, g: 90, b: 100 }, // Slate
-            { r: 110, g: 110, b: 120 }, // Steel
-            { r: 70, g: 70, b: 80 }, // Carbon
-            { r: 95, g: 95, b: 105 }, // Iron
-            { r: 85, g: 85, b: 95 }, // Pewter
+            { r: 110, g: 115, b: 130 }, // Silver Graphite
+            { r: 130, g: 135, b: 150 }, // Platinum Shimmer
+            { r: 100, g: 105, b: 120 }, // Steel Shadow
+            { r: 120, g: 125, b: 140 }, // Chrome Glow
+            { r: 105, g: 110, b: 125 }, // Titanium
+            { r: 125, g: 130, b: 145 }, // Mercury
+            { r: 115, g: 120, b: 135 }, // Pewter Light
+            { r: 110, g: 115, b: 130 }, // Iron Precision
         ],
-        darkBg: "#121214",
+        darkBg: "#0A0B0D", // Pure void with cyan whisper
     },
 };
 
@@ -428,15 +426,15 @@ export function HolographicBackground({
                 if (p.y < 0) p.y = shimmerCanvas.height;
                 if (p.y > shimmerCanvas.height) p.y = 0;
 
-                // Draw particle - theme-aware opacity
-                // Dark mode: subtler sparkles (max ~30% opacity)
-                // Light mode: even lighter (max ~20% opacity)
+                // Draw particle - theme-aware opacity with goddess presence
+                // Dark mode: visible shimmer against cosmic depths (max ~65% opacity)
+                // Light mode: delicate but present sparkle (max ~40% opacity)
                 // Compare to light background since all themes share the same light bg
                 const isDarkTheme = bg !== LIGHT_BACKGROUND;
-                const themeOpacityMultiplier = isDarkTheme ? 0.4 : 0.25;
+                const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.5;
                 const twinkleOpacity =
                     p.opacity *
-                    (0.3 + Math.sin(p.twinkle) * 0.5) *
+                    (0.4 + Math.sin(p.twinkle) * 0.6) *
                     themeOpacityMultiplier;
                 shimmerCtx.beginPath();
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -481,7 +479,7 @@ export function HolographicBackground({
                     <img
                         src="/logos/icon-transparent.png"
                         alt=""
-                        className="h-[120vh] w-[120vh] max-w-none object-contain opacity-[0.06] dark:opacity-[0.04]"
+                        className="h-[80vh] w-[80vh] max-w-none object-contain opacity-[0.09] dark:opacity-[0.07]"
                     />
                 </div>
             )}
