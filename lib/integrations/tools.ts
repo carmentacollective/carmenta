@@ -21,6 +21,7 @@ import {
     GiphyAdapter,
     LimitlessAdapter,
     NotionAdapter,
+    SlackAdapter,
 } from "./adapters";
 import type { ServiceAdapter } from "./adapters/base";
 import { logger } from "@/lib/logger";
@@ -36,6 +37,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     giphy: new GiphyAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
+    slack: new SlackAdapter(),
 };
 
 /**

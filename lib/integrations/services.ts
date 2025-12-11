@@ -104,6 +104,25 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "create_shared_link",
         ],
     },
+    {
+        id: "slack",
+        name: "Slack",
+        description: "Send messages and interact with your Slack workspace",
+        logo: "/logos/slack.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "slack",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://api.slack.com/methods",
+        capabilities: [
+            "list_channels",
+            "get_channel_history",
+            "send_message",
+            "get_user_info",
+            "list_users",
+            "add_reaction",
+        ],
+    },
 
     // API Key Services
     {
