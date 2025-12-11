@@ -19,6 +19,7 @@ import {
     DropboxAdapter,
     FirefliesAdapter,
     GiphyAdapter,
+    GoogleAdapter,
     LimitlessAdapter,
     NotionAdapter,
 } from "./adapters";
@@ -34,6 +35,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
     giphy: new GiphyAdapter(),
+    google: new GoogleAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
 };
