@@ -146,7 +146,7 @@ return because Carmenta knows them, not just because it's capable.
 | Component            | Status | Notes                                                   |
 | -------------------- | ------ | ------------------------------------------------------- |
 | **Auth**             | ✅     | Clerk integration complete, sessions, profiles          |
-| **Memory**           | 🔨     | Profile storage, conversation memory, basic retrieval   |
+| **Memory**           | 🔨     | Context compilation architecture (5 phases - see below) |
 | **Conversations**    | ✅     | History via Connection Chooser, search past             |
 | **Reasoning Tokens** | 🔨     | Extended thinking display, auto-collapse, warm messages |
 | **Model Selection**  | ✅     | User choice per conversation with stepped slider        |
@@ -155,16 +155,65 @@ return because Carmenta knows them, not just because it's capable.
 | **Analytics**        | ⏳     | PostHog integration - who uses what, retention          |
 | **Usage Metering**   | ⏳     | Token counting, cost attribution (no billing yet)       |
 
+### Memory Implementation Phases
+
+Memory is the access pattern for the Knowledge Base - how we compile context, retrieve
+on-demand, and compact over time. See [Memory Architecture](./components/memory.md) for
+complete spec.
+
+**Phase 1: Core Context Compilation** (Week 1)
+
+- Two-system-message pattern (static cached + dynamic computed)
+- `/profile/` folder in Knowledge Base (identity, preferences, goals, people)
+- `compileUserContext()` from profile documents
+- Static prefix versioning for cache stability
+- Measure cache hit rates (target: 85%+, 70%+ cost reduction)
+
+**Phase 2: Retrieval Tools** (Week 2)
+
+- `search_knowledge` tool (hybrid FTS + semantic via pgvector)
+- `read_document` tool (full content on-demand)
+- `search_conversation` tool (FTS on messages table)
+- Test retrieval quality, tune ranking
+
+**Phase 3: Session Compaction** (Week 3)
+
+- Event-structured message storage
+- Two-stage compaction (prune tool results → summarize)
+- Compaction triggers (token threshold, task boundary, conversation end)
+- Test multi-hour conversations
+
+**Phase 4: Knowledge Extraction** (Week 4)
+
+- Post-conversation extraction to Knowledge Base
+- Librarian path determination
+- Auto-update `/profile/` from learnings
+- Wire up extraction triggers
+
+**Phase 5: pgvector Semantic Search** (Week 5+)
+
+- Add embedding column to documents (Phase 2 from KB storage spec)
+- Generate embeddings for profile + key documents
+- Implement hybrid search (FTS + semantic)
+- A/B test, tune ranking weights
+
 ### Decisions Made
 
 - **Auth provider**: Clerk - best DX, beautiful components, already integrated
   ([infrastructure decision](./decisions/infrastructure-stack.md))
 - **Model selection UX**: Stepped slider with quality/speed/cost tradeoff visualization
+- **Memory architecture**: Context compilation pattern - static/dynamic system messages,
+  KB `/profile/` folder, on-demand retrieval tools
+  ([memory spec](./components/memory.md))
+- **Storage unified**: Knowledge Base (documents table) is storage, Memory is access
+  pattern - no separate memory tables
 
 ### Decisions To Make
 
-- **Memory architecture**: pgvector in Supabase? Memory service (Zep, Mem0)?
-- **Retrieval strategy**: Semantic search? Hybrid? What context gets injected?
+- **Profile document structure**: What goes in identity.txt vs preferences.txt?
+  Auto-update frequency?
+- **Compaction triggers**: Token threshold (100K?), task boundary detection, manual
+  trigger in UI?
 - **Onboarding flow**: Conversational vs. form? What's essential to collect?
 
 ### Enhancements to Existing
