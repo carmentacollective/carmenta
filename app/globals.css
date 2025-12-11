@@ -1184,19 +1184,22 @@
 
     /* Carmenta Button States - Centralized interaction patterns */
 
-    /* Glass button base - uses CSS variables */
+    /* Glass button base - uses CSS variables
+     * Light mode: enhanced contrast with stronger ring and shadow for affordance
+     * Dark mode: subtle glow effect */
     .btn-glass {
         @apply flex items-center justify-center rounded-full;
         background: var(--glass-bg);
         box-shadow:
             var(--glass-shadow),
-            0 2px 8px rgba(0, 0, 0, 0.08);
-        @apply ring-1 ring-foreground/10 backdrop-blur-xl;
+            0 2px 8px rgba(0, 0, 0, 0.12),
+            0 1px 2px rgba(0, 0, 0, 0.06);
+        @apply ring-1 ring-foreground/20 backdrop-blur-xl;
         @apply transition-all duration-300;
     }
 
     .dark .btn-glass {
-        @apply ring-white/15;
+        @apply ring-white/20;
         box-shadow:
             var(--glass-shadow),
             0 2px 8px rgba(0, 0, 0, 0.25);
