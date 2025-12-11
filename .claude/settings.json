@@ -10,6 +10,28 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/save-worktree-state.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/restore-worktree-context.py"
+          }
+        ]
+      }
     ]
   }
 }

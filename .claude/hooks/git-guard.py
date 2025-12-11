@@ -171,7 +171,7 @@ def check_context_drift(cwd: str) -> Optional[Violation]:
                     break
 
             expected_path = gitworktrees_dir / worktree_name
-            worktree_hint = f"cd {expected_path}" if expected_path.exists() else f"Check .gitworktrees/ for your worktree"
+            worktree_hint = f"cd {expected_path}" if expected_path.exists() else "Check .gitworktrees/ for your worktree"
 
             return Violation(
                 f"⚠️  CONTEXT DRIFT DETECTED: Working in main repo on branch '{current_branch}'",
