@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
+import { Oracle } from "@/components/ui/oracle";
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -85,6 +86,8 @@ export default function HomePage() {
     const [paused, setPaused] = useState(false);
     const charIndex = useRef(0);
     const [isClient, setIsClient] = useState(false);
+    const [showStickyOracle, setShowStickyOracle] = useState(false);
+    const heroLogoRef = useRef<HTMLDivElement>(null);
 
     // Derive visibility from phase - content hidden during exit
     const contentVisible = phase !== "exit";
@@ -128,6 +131,23 @@ export default function HomePage() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsClient(true);
+    }, []);
+
+    // Show sticky Oracle when hero logo scrolls out of view
+    useEffect(() => {
+        const heroLogo = heroLogoRef.current;
+        if (!heroLogo) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Show sticky header when hero logo is NOT visible
+                setShowStickyOracle(!entry.isIntersecting);
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(heroLogo);
+        return () => observer.disconnect();
     }, []);
 
     // Keyboard navigation
@@ -206,10 +226,22 @@ export default function HomePage() {
 
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
+                {/* Sticky header Oracle - appears on scroll */}
+                <header
+                    className={cn(
+                        "fixed left-0 right-0 top-0 z-50 flex justify-center py-3 transition-all duration-500",
+                        showStickyOracle
+                            ? "translate-y-0 opacity-100"
+                            : "-translate-y-full opacity-0"
+                    )}
+                >
+                    <Oracle href="/" size="sm" />
+                </header>
+
                 {/* Main content - centered */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
                     {/* Logo - breathing, no container */}
-                    <div className="mb-8 sm:mb-10">
+                    <div ref={heroLogoRef} className="mb-8 sm:mb-10">
                         <div className="relative">
                             {/* Breathing glow */}
                             <div
