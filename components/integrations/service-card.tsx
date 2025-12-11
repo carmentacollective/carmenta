@@ -43,6 +43,14 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
         );
     }
 
+    if (status === "disconnected") {
+        return (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-500/15 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-400">
+                Disconnected
+            </span>
+        );
+    }
+
     if (status === "beta") {
         return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
@@ -114,7 +122,7 @@ export function ServiceCard({
                         <h3 className="font-medium text-foreground/90">
                             {service.name}
                         </h3>
-                        {accountDisplayName && isConnected && (
+                        {accountDisplayName && status && (
                             <p className="text-sm text-foreground/60">
                                 {accountDisplayName}
                             </p>
@@ -131,8 +139,8 @@ export function ServiceCard({
                 {service.description}
             </p>
 
-            {/* Connected actions overlay */}
-            {isConnected && onDisconnect && (
+            {/* Disconnect action overlay - show for any account with a status */}
+            {status && onDisconnect && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
                     <button
                         onClick={(e) => {

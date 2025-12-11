@@ -122,11 +122,11 @@ export async function getServicesWithStatus(): Promise<{
 
     for (const service of visibleServices) {
         const accounts = await listServiceAccounts(userEmail, service.id);
-        const connectedAccounts = accounts.filter((a) => a.status === "connected");
 
-        if (connectedAccounts.length > 0) {
-            // Add each connected account
-            for (const account of connectedAccounts) {
+        if (accounts.length > 0) {
+            // Show ALL accounts (connected, error, expired, disconnected)
+            // This ensures users can see and fix problematic integrations
+            for (const account of accounts) {
                 connected.push({
                     service,
                     status: account.status as IntegrationStatus,
@@ -137,6 +137,7 @@ export async function getServicesWithStatus(): Promise<{
                 });
             }
         } else {
+            // Only show in "available" if user has NEVER connected this service
             available.push(service);
         }
     }
