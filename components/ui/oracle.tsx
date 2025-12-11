@@ -48,7 +48,7 @@ export function Oracle({
             className={cn(
                 // Glass appearance
                 "flex items-center justify-center rounded-full",
-                "glass-bg glass-shadow ring-1 ring-foreground/10 backdrop-blur-xl",
+                "glass-bg glass-shadow ring-1 ring-foreground/20 backdrop-blur-xl",
                 "dark:ring-white/15",
                 // Hover: shadow + ring only (no scale - let breathing handle transform)
                 "transition-[box-shadow,ring-color] duration-300",
