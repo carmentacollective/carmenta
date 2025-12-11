@@ -31,7 +31,7 @@ export const env = createEnv({
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
         // Nango OAuth management
-        NANGO_API_URL: z.string().url().optional(),
+        NANGO_API_URL: z.string().url().default("https://api.nango.dev"),
         NANGO_SECRET_KEY: z.string().min(1).optional(),
         NANGO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Credential encryption for API key integrations
