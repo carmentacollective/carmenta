@@ -192,6 +192,29 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Test connection with the provided API key
+     *
+     * API key services should implement this method to validate credentials
+     * during the connection flow. This method should make a lightweight API
+     * call to verify the key works.
+     *
+     * OAuth services don't need this - OAuth verification happens during the
+     * OAuth flow itself.
+     *
+     * @param apiKey - The API key to test
+     * @returns Promise that resolves with success/error result
+     */
+    async testConnection(
+        apiKey: string
+    ): Promise<{ success: boolean; error?: string }> {
+        // Default implementation - services can override
+        return {
+            success: false,
+            error: `Connection testing not implemented for ${this.serviceDisplayName}`,
+        };
+    }
+
+    /**
      * Execute an operation
      *
      * @param action - The operation to execute
