@@ -16,6 +16,7 @@
 
 import "dotenv/config";
 import { Eval } from "braintrust";
+import { logger } from "@/lib/logger";
 import {
     RoutingScorer,
     type RoutingExpectations,
@@ -27,10 +28,11 @@ const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
 
 if (!JWT_TOKEN) {
-    console.error("ERROR: TEST_USER_TOKEN not set in environment");
-    console.error(
-        "Create a long-lived JWT in Clerk Dashboard and add it to .env.local"
+    logger.error(
+        { envVar: "TEST_USER_TOKEN" },
+        "Missing required environment variable"
     );
+    logger.info("Create a long-lived JWT in Clerk Dashboard and add it to .env.local");
     process.exit(1);
 }
 
@@ -82,8 +84,9 @@ function parseHeaders(headers: Headers) {
     if (reasoningRaw) {
         try {
             reasoning = JSON.parse(decodeURIComponent(reasoningRaw));
-        } catch {
-            // Ignore parse errors
+        } catch (error) {
+            // Expected in some test cases - log for debugging but don't fail
+            logger.debug({ error, reasoningRaw }, "Failed to parse reasoning header");
         }
     }
 
@@ -137,8 +140,12 @@ async function consumeStream(
                         ) {
                             toolsCalled.push(data.toolName);
                         }
-                    } catch {
-                        // Ignore parse errors
+                    } catch (error) {
+                        // SSE lines that aren't JSON are expected (comments, empty lines)
+                        logger.debug(
+                            { error, line: line.slice(0, 100) },
+                            "Non-JSON SSE line"
+                        );
                     }
                 }
 
@@ -148,15 +155,24 @@ async function consumeStream(
                     if (match) {
                         try {
                             extractedText += JSON.parse(`"${match[1]}"`);
-                        } catch {
+                        } catch (error) {
+                            // Fallback to raw match if JSON parsing fails
+                            logger.debug(
+                                { error, match: match[1].slice(0, 50) },
+                                "Legacy format parse fallback"
+                            );
                             extractedText += match[1];
                         }
                     }
                 }
             }
         }
-    } catch {
-        // Stream read error - return what we have
+    } catch (error) {
+        // Stream may have been closed early - return what we have
+        logger.debug(
+            { error, textLength: extractedText.length },
+            "Stream read ended early"
+        );
     }
 
     return { text: extractedText, toolsCalled };
@@ -244,7 +260,12 @@ async function executeMultiTurnTest(input: TestInput): Promise<RoutingOutput> {
         };
     }
 
-    return lastResult!;
+    if (!lastResult) {
+        throw new Error(
+            "Multi-turn test produced no results - content array was empty"
+        );
+    }
+    return lastResult;
 }
 
 /**

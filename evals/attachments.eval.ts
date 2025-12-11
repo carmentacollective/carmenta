@@ -18,6 +18,7 @@ import "dotenv/config";
 import { Eval } from "braintrust";
 import * as fs from "fs";
 import * as path from "path";
+import { logger } from "@/lib/logger";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
@@ -28,10 +29,11 @@ const FIXTURES_DIR = path.join(
 );
 
 if (!JWT_TOKEN) {
-    console.error("ERROR: TEST_USER_TOKEN not set in environment");
-    console.error(
-        "Create a long-lived JWT in Clerk Dashboard and add it to .env.local"
+    logger.error(
+        { envVar: "TEST_USER_TOKEN" },
+        "Missing required environment variable"
     );
+    logger.info("Create a long-lived JWT in Clerk Dashboard and add it to .env.local");
     process.exit(1);
 }
 
@@ -137,14 +139,22 @@ async function consumeStream(response: Response): Promise<string> {
                         if (data.type === "text-delta" && data.delta) {
                             extractedText += data.delta;
                         }
-                    } catch {
-                        // Ignore parse errors
+                    } catch (error) {
+                        // SSE lines that aren't JSON are expected (comments, empty lines)
+                        logger.debug(
+                            { error, line: line.slice(0, 100) },
+                            "Non-JSON SSE line"
+                        );
                     }
                 }
             }
         }
-    } catch {
-        // Stream read error
+    } catch (error) {
+        // Stream may have been closed early - return what we have
+        logger.debug(
+            { error, textLength: extractedText.length },
+            "Stream read ended early"
+        );
     }
 
     return extractedText;
