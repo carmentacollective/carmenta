@@ -34,7 +34,6 @@ const entranceVariants = {
         transition: {
             duration: 0.5,
             delay,
-            ease: [0.16, 1, 0.3, 1], // expo-out for confident feel
         },
     }),
 };
@@ -46,7 +45,6 @@ const mainEntranceVariants = {
         transition: {
             duration: 0.6,
             delay: 0.2,
-            ease: "easeOut",
         },
     },
 };
