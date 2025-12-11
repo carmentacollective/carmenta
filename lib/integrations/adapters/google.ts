@@ -803,7 +803,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            calendars: response.items.map((cal) => ({
+            calendars: (response.items || []).map((cal) => ({
                 id: cal.id,
                 name: cal.summary,
                 description: cal.description,
@@ -1562,7 +1562,7 @@ export class GoogleAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            groups: response.contactGroups.map((group) => ({
+            groups: (response.contactGroups || []).map((group) => ({
                 resourceName: group.resourceName,
                 name: group.formattedName || group.name,
                 memberCount: group.memberCount || 0,
