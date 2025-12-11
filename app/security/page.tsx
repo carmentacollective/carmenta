@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { Footer } from "@/components/footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
     title: "Security",
@@ -131,8 +132,9 @@ function PartnerCard({ partner }: { partner: SecurityPartner }) {
 export default function SecurityPage() {
     return (
         <div className="min-h-screen bg-background">
+            <SiteHeader bordered />
             {/* Hero Section */}
-            <section className="relative mx-auto max-w-7xl px-6 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-36">
+            <section className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
                 <div className="text-center">
                     <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
                         <ShieldCheck className="h-8 w-8 text-primary" />

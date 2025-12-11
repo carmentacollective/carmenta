@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
+import { Oracle } from "@/components/ui/oracle";
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -85,6 +86,8 @@ export default function HomePage() {
     const [paused, setPaused] = useState(false);
     const charIndex = useRef(0);
     const [isClient, setIsClient] = useState(false);
+    const [showStickyOracle, setShowStickyOracle] = useState(false);
+    const heroLogoRef = useRef<HTMLDivElement>(null);
 
     // Derive visibility from phase - content hidden during exit
     const contentVisible = phase !== "exit";
@@ -128,6 +131,23 @@ export default function HomePage() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsClient(true);
+    }, []);
+
+    // Show sticky Oracle when hero logo scrolls out of view
+    useEffect(() => {
+        const heroLogo = heroLogoRef.current;
+        if (!heroLogo) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Show sticky header when hero logo is NOT visible
+                setShowStickyOracle(!entry.isIntersecting);
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(heroLogo);
+        return () => observer.disconnect();
     }, []);
 
     // Keyboard navigation
@@ -206,10 +226,22 @@ export default function HomePage() {
 
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
+                {/* Sticky header Oracle - appears on scroll */}
+                <header
+                    className={cn(
+                        "fixed left-0 right-0 top-0 z-50 flex justify-center py-3 transition-all duration-500",
+                        showStickyOracle
+                            ? "translate-y-0 opacity-100"
+                            : "-translate-y-full opacity-0"
+                    )}
+                >
+                    <Oracle href="/" size="sm" />
+                </header>
+
                 {/* Main content - centered */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
                     {/* Logo - breathing, no container */}
-                    <div className="mb-8 sm:mb-10">
+                    <div ref={heroLogoRef} className="mb-8 sm:mb-10">
                         <div className="relative">
                             {/* Breathing glow */}
                             <div
@@ -243,10 +275,10 @@ export default function HomePage() {
                     <div
                         onClick={() => setPaused((p) => !p)}
                         className={cn(
-                            "w-full max-w-2xl cursor-pointer transition-all duration-500",
+                            "w-full max-w-2xl cursor-pointer",
                             contentVisible
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-4 opacity-0"
+                                ? "breathe-enter translate-y-0 opacity-100"
+                                : "breathe-exit -translate-y-2 opacity-0"
                         )}
                     >
                         {/* Headline with typewriter effect - LEFT ALIGNED */}
@@ -261,12 +293,12 @@ export default function HomePage() {
                         {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
                         <p
                             className={cn(
-                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 transition-all duration-700 sm:min-h-[6rem] sm:text-xl",
+                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 sm:min-h-[6rem] sm:text-xl",
                                 phase === "description" ||
                                     phase === "hold" ||
                                     phase === "exit"
-                                    ? "translate-y-0 opacity-100 blur-0"
-                                    : "translate-y-3 opacity-0 blur-sm"
+                                    ? "breathe-enter translate-y-0 opacity-100 blur-0"
+                                    : "breathe-exit translate-y-3 opacity-0 blur-sm"
                             )}
                         >
                             {currentFeature.subheading}
@@ -307,33 +339,35 @@ export default function HomePage() {
                     </div>
 
                     {/* Progress dots */}
-                    <div className="mt-12 flex items-center gap-2">
+                    <div className="mt-12 flex items-center gap-3">
                         <button
                             onClick={goPrev}
-                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Previous slide"
                         >
-                            ←
+                            <ChevronLeft className="h-5 w-5" />
                         </button>
-                        {shuffledFeatures.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => goToSlide(i)}
-                                className={cn(
-                                    "h-1.5 rounded-full transition-all duration-300",
-                                    activeSlide === i
-                                        ? "w-8 bg-primary/60"
-                                        : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
-                                )}
-                                aria-label={`Go to slide ${i + 1}`}
-                            />
-                        ))}
+                        <div className="flex items-center gap-2">
+                            {shuffledFeatures.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => goToSlide(i)}
+                                    className={cn(
+                                        "h-1.5 rounded-full transition-all duration-300",
+                                        activeSlide === i
+                                            ? "w-8 bg-primary/60"
+                                            : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
+                                    )}
+                                    aria-label={`Go to slide ${i + 1}`}
+                                />
+                            ))}
+                        </div>
                         <button
                             onClick={goNext}
-                            className="p-2 text-foreground/30 transition-colors hover:text-foreground/60"
+                            className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Next slide"
                         >
-                            →
+                            <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
                 </main>
