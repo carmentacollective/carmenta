@@ -27,7 +27,7 @@ import { assertEnv, env } from "@/lib/env";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { getModel } from "@/lib/models";
-import { buildSystemPrompt } from "@/lib/prompts/system-messages";
+import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 
@@ -490,9 +490,9 @@ export async function POST(req: Request) {
             return filtered;
         });
 
-        // Build system prompt with static content + dynamic user context
-        // Anthropic automatically caches early tokens, so static content comes first
-        const systemPrompt = buildSystemPrompt({
+        // Build system messages with Anthropic caching support
+        // First message (static prompt) has cacheControl, second (dynamic context) does not
+        const systemMessages = buildSystemMessages({
             user,
             userEmail,
             timezone: undefined, // TODO: Get from client in future
@@ -500,7 +500,7 @@ export async function POST(req: Request) {
 
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
-            system: systemPrompt,
+            system: systemMessages as any, // SystemModelMessage[] - TypeScript doesn't infer union type correctly
             messages: convertToModelMessages(messagesWithoutReasoning),
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services

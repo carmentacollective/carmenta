@@ -1,16 +1,16 @@
-import type { CoreMessage } from "ai";
+import type { SystemModelMessage } from "ai";
 import type { User } from "@clerk/nextjs/server";
 import { SYSTEM_PROMPT } from "./system";
 
 /**
- * System message builder with Anthropic prompt caching support
+ * System message builder with Anthropic prompt caching support via OpenRouter
  *
  * Structure:
  * 1. Static system prompt (cached) - ~1000-2000 tokens
  *    - Heart-centered philosophy
  *    - Carmenta personality
  *    - Response patterns
- *    - Uses Anthropic cacheControl for ~90% cost reduction on repeated requests
+ *    - Uses Anthropic cacheControl for ~90% cost reduction on cache hits
  *
  * 2. Dynamic user context (not cached) - ~100-200 tokens
  *    - Current date/time and timezone
@@ -19,18 +19,20 @@ import { SYSTEM_PROMPT } from "./system";
  *
  * ## Caching Strategy
  *
- * Anthropic requires >= 1024 tokens for caching. Our static system prompt
- * meets this threshold. Cache hits reduce cost by ~90% and latency significantly.
- *
- * The cache is ephemeral (5 minutes) but refreshes on each use, making it
- * effectively permanent for active conversations.
+ * OpenRouter supports Anthropic's prompt caching when using explicit cache_control
+ * breakpoints. Requirements:
+ * - Minimum 1024 tokens for caching (our static prompt meets this)
+ * - Maximum 4 cache breakpoints per request (we use 1)
+ * - Cache expires after 5 minutes of inactivity but refreshes on use
+ * - Cache hits reduce cost by ~90% and latency significantly
  *
  * ## Why System Messages Array?
  *
- * Vercel AI SDK's `system` parameter doesn't support providerMetadata for
- * caching. We use the messages array with system role messages instead.
+ * Vercel AI SDK supports providerOptions on system messages when passed as an array.
+ * This enables Anthropic-specific cache_control while remaining compatible with
+ * non-Anthropic models (they simply ignore providerOptions).
  *
- * @see https://ai-sdk.dev/providers/ai-sdk-providers/anthropic
+ * @see https://openrouter.ai/docs/guides/best-practices/prompt-caching
  * @see https://github.com/vercel/ai/issues/7612
  */
 
@@ -92,33 +94,42 @@ function buildUserContextMessage(context: UserContext): string {
 }
 
 /**
- * Create system messages array with Anthropic prompt caching.
+ * Build system messages array with Anthropic prompt caching support.
  *
- * Returns array of CoreMessage objects suitable for streamText/generateText.
+ * Returns array of SystemModelMessage objects for use with streamText/generateText.
  *
- * For Anthropic models:
- * - First message has cacheControl metadata (static prompt, cacheable)
- * - Second message has dynamic user context (changes each request)
+ * Structure:
+ * - First message: Static prompt with Anthropic cacheControl (cached)
+ * - Second message: Dynamic user context (not cached, changes each request)
+ *
+ * For Anthropic models via OpenRouter:
+ * - Caching reduces cost by ~90% on cache hits (after initial write)
+ * - Cache persists for 5 minutes, refreshing on each use
+ * - Requires >= 1024 tokens (our static prompt meets this)
  *
  * For non-Anthropic models:
- * - Returns same structure but without cacheControl (no-op)
- *
- * @param context User and session context for dynamic message
- * @param enableCaching Whether to enable Anthropic caching (default: true)
- */
-/**
- * Build complete system prompt with static and dynamic parts.
- *
- * Returns a single string combining:
- * 1. Static system prompt (will be cached by Anthropic based on position)
- * 2. Dynamic user context
- *
- * Anthropic automatically caches early tokens in the prompt, so we place
- * the static content first to maximize cache hits.
+ * - providerOptions are ignored, no caching behavior
+ * - Functions as standard system message array
  *
  * @param context User and session context for dynamic message
  */
-export function buildSystemPrompt(context: UserContext): string {
+export function buildSystemMessages(context: UserContext): SystemModelMessage[] {
     const userContextText = buildUserContextMessage(context);
-    return `${SYSTEM_PROMPT}\n\n${userContextText}`;
+
+    return [
+        {
+            role: "system",
+            content: SYSTEM_PROMPT,
+            providerOptions: {
+                anthropic: {
+                    cacheControl: { type: "ephemeral" },
+                },
+            },
+        },
+        {
+            role: "system",
+            content: userContextText,
+            // No cacheControl - this changes every request
+        },
+    ];
 }
