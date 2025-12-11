@@ -1461,7 +1461,10 @@ export class GoogleAdapter extends ServiceAdapter {
         };
 
         if (given_name !== undefined || family_name !== undefined) {
-            body.names = [{ givenName: given_name, familyName: family_name }];
+            const nameObj: { givenName?: string; familyName?: string } = {};
+            if (given_name !== undefined) nameObj.givenName = given_name;
+            if (family_name !== undefined) nameObj.familyName = family_name;
+            body.names = [nameObj];
             updateFields.push("names");
         }
         if (emails !== undefined) {
