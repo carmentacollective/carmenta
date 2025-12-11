@@ -57,10 +57,10 @@ function log(level: LogLevel, context: LogContext, message: string) {
                 level: level === "error" ? "error" : "warning",
                 extra: { message, ...extra },
             });
-        } else if (level === "error") {
-            // Report error-level logs without Error objects as messages
+        } else {
+            // Report error/warning messages without Error objects
             Sentry.captureMessage(message, {
-                level: "error",
+                level: level === "error" ? "error" : "warning",
                 extra: context,
             });
         }

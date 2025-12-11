@@ -26,7 +26,21 @@ SET "user_email" = u."email"
 FROM "users" u
 WHERE i."user_id" = u."id";--> statement-breakpoint
 
--- Step 3: Make user_email NOT NULL (safe now that it's populated)
+-- Step 2.5: Validate no orphaned records before setting NOT NULL
+DO $$
+DECLARE
+  orphaned_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO orphaned_count
+  FROM "integrations"
+  WHERE "user_email" IS NULL;
+
+  IF orphaned_count > 0 THEN
+    RAISE EXCEPTION 'Migration aborted: % orphaned integration records found with no matching user. Clean up orphaned records before proceeding.', orphaned_count;
+  END IF;
+END $$;--> statement-breakpoint
+
+-- Step 3: Make user_email NOT NULL (safe now that it's populated and validated)
 ALTER TABLE "integrations" ALTER COLUMN "user_email" SET NOT NULL;--> statement-breakpoint
 
 -- Step 4: Drop old constraints and indexes

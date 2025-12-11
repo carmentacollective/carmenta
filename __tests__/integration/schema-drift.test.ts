@@ -15,7 +15,6 @@ import { describe, test, expect, beforeAll } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
 
 describe("Schema Drift Detection", () => {
     let db: ReturnType<typeof drizzle>;
