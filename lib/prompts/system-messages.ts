@@ -1,6 +1,7 @@
 import type { User } from "@clerk/nextjs/server";
 import type { SystemModelMessage } from "ai";
 import { SYSTEM_PROMPT } from "./system";
+import { renderSessionContext } from "./templates";
 
 /**
  * System message builder with Anthropic prompt caching via OpenRouter.
@@ -43,18 +44,12 @@ export interface UserContext {
 }
 
 /**
- * Build user context message with guidance on how to use it.
- *
- * This is NOT just data - it's instruction for the LLM on thoughtful usage.
- * The goal is genuine connection, not performative personalization.
+ * Format the current date (and time if timezone is available).
  */
-function buildUserContextContent(context: UserContext): string {
+function formatDateInfo(timezone?: string): string {
     const now = new Date();
-    const parts: string[] = [];
 
-    // Format date (and time if we have timezone)
-    let dateInfo: string;
-    if (context.timezone) {
+    if (timezone) {
         const dateTimeOptions: Intl.DateTimeFormatOptions = {
             weekday: "long",
             year: "numeric",
@@ -63,51 +58,44 @@ function buildUserContextContent(context: UserContext): string {
             hour: "numeric",
             minute: "2-digit",
             hour12: true,
-            timeZone: context.timezone,
+            timeZone: timezone,
         };
-        dateInfo = now.toLocaleString("en-US", dateTimeOptions);
-    } else {
-        const dateOptions: Intl.DateTimeFormatOptions = {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        };
-        dateInfo = now.toLocaleDateString("en-US", dateOptions);
+        return now.toLocaleString("en-US", dateTimeOptions);
     }
 
-    // Get user's name if available
-    const userName = context.user
-        ? context.user.fullName ||
-          `${context.user.firstName || ""} ${context.user.lastName || ""}`.trim() ||
-          null
-        : null;
+    const dateOptions: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    };
+    return now.toLocaleDateString("en-US", dateOptions);
+}
 
-    // Build the context message with guidance
-    parts.push(`## Session Context`);
-    parts.push(``);
-    parts.push(`Today is ${dateInfo}.`);
-    parts.push(``);
-    parts.push(
-        `Use this date to assess whether information from your training might be outdated. ` +
-            `When the question involves recent events, current versions, or time-sensitive information, ` +
-            `acknowledge temporality naturally ("as of my knowledge cutoff...") or use web search ` +
-            `to get current information.`
+/**
+ * Extract the user's display name from Clerk user object.
+ */
+function getUserName(user: User | null): string | undefined {
+    if (!user) return undefined;
+
+    return (
+        user.fullName ||
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+        undefined
     );
+}
 
-    if (userName) {
-        parts.push(``);
-        parts.push(`We're working with ${userName}.`);
-        parts.push(``);
-        parts.push(
-            `Use their name naturally when it genuinely adds warmth or clarity - a greeting, ` +
-                `celebrating a win, or a moment of direct encouragement. ` +
-                `Avoid overusing it; that feels performative rather than genuine. ` +
-                `The "we" framing already establishes partnership.`
-        );
-    }
+/**
+ * Build user context message using the session context template.
+ *
+ * This is NOT just data - it's instruction for the LLM on thoughtful usage.
+ * The goal is genuine connection, not performative personalization.
+ */
+function buildUserContextContent(context: UserContext): string {
+    const dateInfo = formatDateInfo(context.timezone);
+    const userName = getUserName(context.user);
 
-    return parts.join("\n");
+    return renderSessionContext({ dateInfo, userName });
 }
 
 /**

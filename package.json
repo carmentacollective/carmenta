@@ -51,6 +51,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "framer-motion": "^12.23.25",
+    "handlebars": "^4.7.8",
     "heart-centered-prompts": "^0.5.1",
     "import-in-the-middle": "^2.0.0",
     "ky": "^1.14.1",
