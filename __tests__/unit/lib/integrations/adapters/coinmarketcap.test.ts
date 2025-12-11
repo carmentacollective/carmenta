@@ -200,9 +200,9 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected yet"
+                "CoinMarketCap is not connected to your account"
             );
-            expect(result.content[0].text).toContain("Integrations");
+            expect(result.content[0].text).toContain("integrations/coinmarketcap");
         });
 
         it("proceeds with valid API key credentials", async () => {
@@ -273,7 +273,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected yet"
+                "CoinMarketCap is not connected to your account"
             );
         });
     });
@@ -481,7 +481,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("API key may be invalid");
+            expect(result.content[0].text).toContain("connection may have expired");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -515,7 +515,8 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("subscription plan");
+            expect(result.content[0].text).toContain("Forbidden");
+            expect(result.content[0].text).toContain("coinmarketcap.com/api/pricing");
         });
     });
 });

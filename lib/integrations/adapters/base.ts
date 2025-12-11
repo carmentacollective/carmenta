@@ -215,6 +215,114 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Helper for testing API keys with a simple HTTP request
+     * Provides standard error parsing for common HTTP status codes
+     *
+     * @param apiKey - The API key to test
+     * @param testUrl - Full URL to test against
+     * @param headerName - Header name for the API key (default: 'Authorization')
+     * @param headerValue - Function to format the header value (default: Bearer token)
+     * @returns Promise with success/error result
+     */
+    protected async testApiKeyWithEndpoint(
+        apiKey: string,
+        testUrl: string,
+        headerName: string = "Authorization",
+        headerValue: (key: string) => string = (k) => `Bearer ${k}`
+    ): Promise<{ success: boolean; error?: string }> {
+        const { httpClient } = await import("@/lib/http-client");
+
+        try {
+            await httpClient
+                .get(testUrl, {
+                    headers: { [headerName]: headerValue(apiKey) },
+                })
+                .json();
+            return { success: true };
+        } catch (error) {
+            return this.parseTestConnectionError(error);
+        }
+    }
+
+    /**
+     * Parse common test connection errors into user-friendly messages
+     *
+     * @param error - The error from the test connection attempt
+     * @returns Structured error result
+     */
+    protected parseTestConnectionError(error: unknown): {
+        success: false;
+        error: string;
+    } {
+        const msg = error instanceof Error ? error.message : String(error);
+
+        if (msg.includes("401") || msg.includes("Unauthorized")) {
+            return {
+                success: false,
+                error: "Invalid API key. Please check your key and try again.",
+            };
+        }
+
+        if (msg.includes("403") || msg.includes("Forbidden")) {
+            return {
+                success: false,
+                error: "API key doesn't have permission. Check your subscription plan.",
+            };
+        }
+
+        if (msg.includes("429")) {
+            return {
+                success: false,
+                error: "Rate limit exceeded. Please wait a moment and try again.",
+            };
+        }
+
+        return {
+            success: false,
+            error: `Connection test failed: ${msg}`,
+        };
+    }
+
+    /**
+     * Get API key credentials for execution
+     * Consolidates the repeated credential retrieval pattern from all adapters
+     *
+     * @param userId - User's email address
+     * @returns API key string or error response if credentials invalid/missing
+     */
+    protected async getApiKeyForExecution(
+        userId: string
+    ): Promise<{ apiKey: string } | MCPToolResponse> {
+        const { getCredentials } =
+            await import("@/lib/integrations/connection-manager");
+        const { isApiKeyCredentials } = await import("@/lib/integrations/encryption");
+        const { ValidationError } = await import("@/lib/errors");
+
+        try {
+            const connectionCreds = await getCredentials(userId, this.serviceName);
+
+            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
+                return this.createErrorResponse(
+                    `Invalid credentials type for ${this.serviceDisplayName} service`
+                );
+            }
+
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
+                return this.createErrorResponse(
+                    `Invalid credential format for ${this.serviceDisplayName} service`
+                );
+            }
+
+            return { apiKey: connectionCreds.credentials.apiKey };
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(this.createNotConnectedError());
+            }
+            throw error;
+        }
+    }
+
+    /**
      * Execute an operation
      *
      * @param action - The operation to execute

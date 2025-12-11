@@ -9,17 +9,28 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
-import { isApiKeyCredentials } from "@/lib/integrations/encryption";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
 
 const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 
 export class GiphyAdapter extends ServiceAdapter {
     serviceName = "giphy";
     serviceDisplayName = "Giphy";
+
+    /**
+     * Test the API key by making a lightweight API call
+     * Uses the random endpoint to verify the key works
+     */
+    async testConnection(
+        apiKey: string
+    ): Promise<{ success: boolean; error?: string }> {
+        return await this.testApiKeyWithEndpoint(
+            apiKey,
+            `${GIPHY_API_BASE}/random?api_key=${apiKey}&tag=hello`,
+            "skip", // We pass api_key as query param, not header
+            () => "" // No header value needed
+        );
+    }
 
     getHelp(): HelpResponse {
         return {
@@ -185,37 +196,10 @@ export class GiphyAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's API key credentials
-        let apiKey: string;
-        try {
-            const connectionCreds = await getCredentials(userId, this.serviceName);
-
-            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-                return this.createErrorResponse(
-                    "Invalid credentials type for Giphy service"
-                );
-            }
-
-            if (!isApiKeyCredentials(connectionCreds.credentials)) {
-                return this.createErrorResponse(
-                    "Invalid credential format for Giphy service"
-                );
-            }
-
-            apiKey = connectionCreds.credentials.apiKey;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                const errorMsg = [
-                    "❌ Giphy is not connected to your account.",
-                    "",
-                    `Please connect Giphy at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/giphy`,
-                    "",
-                    "Once connected, try your request again.",
-                ].join("\n");
-                return this.createErrorResponse(errorMsg);
-            }
-            throw error;
-        }
+        // Get user's API key credentials using base class helper
+        const result = await this.getApiKeyForExecution(userId);
+        if ("isError" in result) return result;
+        const { apiKey } = result;
 
         // Route to appropriate handler
         try {
@@ -250,24 +234,8 @@ export class GiphyAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Failed to ${action}: `;
-            if (error instanceof Error) {
-                if (error.message.includes("401") || error.message.includes("403")) {
-                    errorMessage +=
-                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/giphy`;
-                } else if (error.message.includes("404")) {
-                    errorMessage += "Resource not found.";
-                } else if (error.message.includes("429")) {
-                    errorMessage +=
-                        "Rate limit exceeded. Please try again in a few moments.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "Unknown error";
-            }
-
+            // Use base class error handler
+            const errorMessage = this.handleCommonAPIError(error, action);
             return this.createErrorResponse(errorMessage);
         }
     }
@@ -491,16 +459,10 @@ export class GiphyAdapter extends ServiceAdapter {
             );
         }
 
-        // Get API key
-        const connectionCreds = await getCredentials(userId, this.serviceName);
-        if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-            return this.createErrorResponse("Invalid credentials");
-        }
-        if (!isApiKeyCredentials(connectionCreds.credentials)) {
-            return this.createErrorResponse("Invalid credential format");
-        }
-
-        const apiKey = connectionCreds.credentials.apiKey;
+        // Get API key using base class helper
+        const keyResult = await this.getApiKeyForExecution(userId);
+        if ("isError" in keyResult) return keyResult;
+        const { apiKey } = keyResult;
 
         // Build request options
         const searchParams: Record<string, string> = {
@@ -553,22 +515,8 @@ export class GiphyAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Raw API request failed: `;
-            if (error instanceof Error) {
-                if (error.message.includes("404")) {
-                    errorMessage += "Endpoint not found. Check the API documentation.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage += "Authentication failed. Please check your API key.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "Unknown error";
-            }
-
+            // Use base class error handler
+            const errorMessage = this.handleCommonAPIError(error, "raw_api");
             return this.createErrorResponse(errorMessage);
         }
     }
