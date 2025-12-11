@@ -11,11 +11,14 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 
 // Use native crypto.randomUUID() instead of uuid package
 const uuid = () => crypto.randomUUID();
 
 import { db, schema } from "@/lib/db";
+
+setupTestDb();
 import {
     createConnection,
     getConnectionWithMessages,

@@ -6,9 +6,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+
+setupTestDb();
 import {
     upsertMessage,
     createConnection,
