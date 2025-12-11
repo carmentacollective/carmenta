@@ -186,7 +186,7 @@ async function executeQuery(query: CompetitiveQuery): Promise<CompetitiveOutput>
 
         if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
             throw new Error(
-                `Cannot connect to API at ${BASE_URL}. Start the server with: npm run dev`
+                `Cannot connect to API at ${BASE_URL}. Start the server with: bun run dev`
             );
         }
 
@@ -218,6 +218,7 @@ function CompetitiveScorer({
     });
 
     // Response Length - penalize empty or very short responses
+    // 50 words minimum ensures response actually addresses the query
     const wordCount = output.text.split(/\s+/).filter(Boolean).length;
     const hasSubstantialResponse = wordCount >= 50;
     scores.push({
@@ -254,10 +255,10 @@ function CompetitiveScorer({
         });
     }
 
-    // Latency - track but don't penalize (informational)
+    // Latency - 30s threshold allows for web search + reasoning; mild penalty beyond
     scores.push({
         name: "Latency (ms)",
-        score: output.latencyMs < 30000 ? 1 : 0.5, // Mild penalty for very slow
+        score: output.latencyMs < 30000 ? 1 : 0.5,
         metadata: { latencyMs: output.latencyMs },
     });
 
