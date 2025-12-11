@@ -3,180 +3,185 @@
 ## What This Is
 
 A systematic approach to measuring, tracking, and improving the quality of Carmenta's
-responses—and comparing that quality against competitors.
+responses—powered by Braintrust for experiment tracking and production observability.
 
 Four interconnected capabilities:
 
 1. **LLM Routing Tests** - Validate Concierge model/temperature/reasoning selection
 2. **File Attachment Tests** - Validate file handling across models
-3. **Quality Scoring** - Measure how good responses actually are
-4. **Competitive Benchmarking** - Compare against ChatGPT, Perplexity, Claude.ai
+3. **Quality Scoring** - Measure how good responses actually are (via autoevals)
+4. **Production Tracing** - Monitor live requests and export to datasets
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Evals Runner                                               │
-│  ┌──────────────┐                                           │
-│  │ Test Queries │──▶ Carmenta API ──▶ Responses             │
-│  └──────────────┘                                           │
-│         │                              │                    │
-│         │                              ▼                    │
-│         │                    ┌─────────────────┐            │
-│         │                    │ LLM-as-Judge    │            │
-│         │                    │ (correctness,   │            │
-│         │                    │  helpfulness,   │            │
-│         │                    │  relevance)     │            │
-│         │                    └─────────────────┘            │
-│         │                              │                    │
-│         ▼                              ▼                    │
-│    ┌──────────┐                ┌─────────────┐              │
-│    │ Results  │                │ Quality     │              │
-│    │ (JSON)   │                │ Scores      │              │
-│    └──────────┘                └─────────────┘              │
+│  Braintrust Platform                                        │
+│  ┌──────────────┐     ┌──────────────┐     ┌─────────────┐  │
+│  │ Experiments  │     │ Datasets     │     │ Tracing     │  │
+│  │ (eval runs)  │ ←── │ (test cases) │ ←── │ (prod logs) │  │
+│  └──────────────┘     └──────────────┘     └─────────────┘  │
+│         │                                        ↑          │
+│         ↓                                        │          │
+│  ┌─────────────────┐                   ┌─────────────────┐  │
+│  │ Dashboard UI    │                   │ /api/connection │  │
+│  │ - Comparisons   │                   │ - Span logging  │  │
+│  │ - Regressions   │                   │ - Metadata      │  │
+│  └─────────────────┘                   └─────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Scripts
+## Directory Structure
 
 ```
-scripts/evals/
-├── llm-routing-queries.ts       # Test queries for model routing
-├── quality-evaluators.ts        # LLM-as-judge scoring
-├── run-llm-routing-tests.ts     # Model routing test runner
-├── file-attachment-queries.ts   # Test queries for file handling
-├── run-file-attachment-tests.ts # File attachment test runner
-├── fixtures/                    # Sample files for attachment tests
-│   ├── sample.pdf
-│   ├── sample.png
-│   ├── sample.mp3
-│   └── sample.txt
-└── results/                     # Test output (gitignored)
+evals/                        # Top-level, first-class concern
+├── routing.eval.ts           # Concierge routing decisions
+├── attachments.eval.ts       # File handling across models
+├── scorers/
+│   └── routing-scorer.ts     # Custom validation scorer
+└── fixtures/                 # Sample files for tests
+    ├── sample.pdf, .png, .jpg, .mp3
+    ├── sample.txt, .md
+    └── README.md
 ```
 
-## LLM Routing Tests
-
-**Goal:** Validate that the Concierge routes queries to appropriate models.
-
-Categories:
-
-- **Routing** - Model selection based on query complexity
-- **Tools** - Search, research invocation
-- **Reasoning** - When enabled/disabled and at what level
-- **Overrides** - User preference handling
-- **Edge cases** - Unicode, long context, etc.
-
-Run tests:
+## Running Evals
 
 ```bash
-bun scripts/evals/run-llm-routing-tests.ts --fast  # Skip slow tests
-bun scripts/evals/run-llm-routing-tests.ts         # All tests
-bun scripts/evals/run-llm-routing-tests.ts --test=route-simple-factual  # Single test
+# Run routing evals
+bunx braintrust eval evals/routing.eval.ts
+
+# Run attachment evals
+bunx braintrust eval evals/attachments.eval.ts
+
+# Watch mode - re-run on file changes
+bunx braintrust eval evals/routing.eval.ts --watch
+
+# Run locally without sending to Braintrust
+BRAINTRUST_NO_SEND_LOGS=1 bunx braintrust eval evals/routing.eval.ts
 ```
 
-Requires `TEST_USER_TOKEN` in `.env.local` (long-lived Clerk JWT).
+Requires:
 
-## File Attachment Tests
+- `BRAINTRUST_API_KEY` in `.env.local`
+- `TEST_USER_TOKEN` in `.env.local` (long-lived Clerk JWT)
 
-**Goal:** Smoke tests for file handling across different models.
+## Test Categories
 
-What we test:
+### Routing Tests
 
-- **Model Routing** - Audio → Gemini (only option), PDF/Images → Claude (preferred)
-- **File Processing** - LLM can actually read/describe the file content
-- **Error Handling** - Graceful failures for unsupported types
+| Category   | What it tests                                      |
+| ---------- | -------------------------------------------------- |
+| routing    | Model selection (Haiku/Sonnet/Opus) based on query |
+| tools      | Tool invocation (webSearch, compareOptions, etc.)  |
+| reasoning  | When reasoning is enabled/disabled                 |
+| overrides  | User preference handling                           |
+| edge-cases | Unicode, long context, short responses             |
 
-Run tests:
+### Attachment Tests
 
-```bash
-bun scripts/evals/run-file-attachment-tests.ts           # All file tests
-bun scripts/evals/run-file-attachment-tests.ts --type=image  # Just images
-bun scripts/evals/run-file-attachment-tests.ts --type=audio  # Just audio
+| File Type | Expected Model | What it tests                  |
+| --------- | -------------- | ------------------------------ |
+| image     | Claude         | PNG/JPEG description           |
+| pdf       | Claude         | Document text extraction       |
+| audio     | Gemini         | Audio transcription            |
+| text      | Claude         | Inline text content processing |
+
+## Scoring
+
+The routing scorer validates multiple dimensions per test:
+
+- **Model Selection** - Did Concierge pick the right model?
+- **Temperature** - Is it within expected range?
+- **Reasoning** - Was reasoning enabled/disabled correctly?
+- **Tool Invocation** - Was the expected tool called?
+- **HTTP Success** - Did the request succeed?
+
+Each dimension is scored 0 or 1, with metadata showing expected vs actual values.
+
+## Production Tracing
+
+The `/api/connection` route logs to Braintrust when `BRAINTRUST_API_KEY` is set:
+
+**What's captured:**
+
+- Input: message count, last message preview
+- Metadata: model, temperature, reasoning config, explanation
+- Output: response text (truncated), tools called
+- Metrics: token usage (input, output, cached)
+
+This enables:
+
+- Monitoring production quality
+- Exporting interesting traces to datasets
+- Comparing production behavior to eval expectations
+
+## Braintrust Dashboard
+
+View results at [braintrust.dev](https://www.braintrust.dev):
+
+- **Experiments** - Each eval run creates an experiment with scores
+- **Comparisons** - Side-by-side diffs between runs
+- **Datasets** - Test cases versioned and pinnable
+- **Traces** - Production request logs with full context
+
+## Configuration
+
+Environment variables:
+
+| Variable           | Required | Description                        |
+| ------------------ | -------- | ---------------------------------- |
+| BRAINTRUST_API_KEY | Yes      | API key from braintrust.dev        |
+| TEST_USER_TOKEN    | Yes      | Long-lived Clerk JWT for API auth  |
+| BASE_URL           | No       | API base URL (default: localhost)  |
+| COMMIT_SHA         | No       | Git commit for experiment metadata |
+
+## CI Integration
+
+Add to GitHub Actions for automated evals on PR:
+
+```yaml
+- name: Run evals
+  run: bunx braintrust eval evals/routing.eval.ts
+  env:
+    BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+    TEST_USER_TOKEN: ${{ secrets.TEST_USER_TOKEN }}
 ```
 
-These tests require actual files in `scripts/evals/fixtures/` and make real API calls.
+The Braintrust GitHub Action can also post results as PR comments.
 
-## Quality Scoring
+## Adding New Tests
 
-**Goal:** Measure response quality with LLM-as-judge.
+1. Add test case to the `testData` array in the relevant eval file
+2. Specify `input` (test data) and `expected` (validation criteria)
+3. Add appropriate `tags` for filtering
+4. Run the eval to verify
 
-Three evaluators:
+Example:
 
-| Evaluator   | Measures          | Scores                                      |
-| ----------- | ----------------- | ------------------------------------------- |
-| Correctness | Factual accuracy  | correct, partially_correct, incorrect       |
-| Helpfulness | User value        | very_helpful, somewhat_helpful, not_helpful |
-| Relevance   | On-topic response | relevant, partially_relevant, irrelevant    |
-
-Each uses GPT-5.1 as judge with specific prompts. Overall score = average of three.
-
-## Competitive Benchmarking
-
-**Goal:** Compare Carmenta against competitors on same queries.
-
-Competitors:
-
-- **ChatGPT** (OpenAI API)
-- **Perplexity** (Perplexity API)
-- **Claude.ai** (Anthropic API, raw—no orchestration)
-
-Same evaluators score all responses → comparison matrix.
-
-## Test Query Design Principles
-
-**Coverage:** Test each major capability
-
-- Model routing (Haiku/Sonnet/Opus selection)
-- Temperature selection (creative vs precise)
-- Reasoning (when enabled, what level)
-- Tool invocation (search, research, comparison)
-- File attachment handling
-
-**Realism:** Queries should reflect actual user behavior
-
-**Edge cases:** Include adversarial and tricky queries as we discover them
-
-**Ground truth:** Where possible, include expected answers for factual queries
-
-## Evaluator Design Principles
-
-**Specific criteria:** Each evaluator measures one thing
-
-**Clear rubrics:** Judge prompt explains exactly what "good" means
-
-**Calibration:** Test evaluators against human judgment on sample set
-
-**Different judge:** Use a different model as judge than the one generating
-
-## Tracking Results Over Time
-
-Results are stored as JSON in `scripts/evals/results/` (gitignored). Format:
-
-```json
+```typescript
 {
-  "timestamp": "2025-12-06T19:04:43.369Z",
-  "summary": {
-    "evaluated": 1,
-    "avgOverall": 1
-  },
-  "results": [
-    {
-      "id": "route-simple-factual",
-      "category": "routing",
-      "query": "What year did World War 2 end?",
-      "scores": { ... }
-    }
-  ]
+    input: {
+        id: "new-test-id",
+        description: "What this tests",
+        content: "The query to send",
+        category: "routing",
+    },
+    expected: {
+        model: "sonnet",
+        reasoningEnabled: false,
+        shouldSucceed: true,
+    },
+    tags: ["routing", "new-feature"],
 }
 ```
 
-For persistent tracking across time, integrate with an evals platform (Braintrust,
-LangSmith, Arize, etc.) or build a simple dashboard from the JSON files.
+## Competitive Benchmarking
 
-## Open Questions
+Future: Create `competitive.eval.ts` to compare Carmenta against:
 
-1. **Judge model:** GPT-4o? Claude Opus? Panel of multiple judges?
-2. **How often to run competitor comparison?** Weekly? Monthly?
-3. **Public results:** Publish the comparison matrix? Where?
-4. **CI integration:** Run evals on every PR? Just before release?
-5. **Evals platform:** Which vendor for persistent tracking?
+- ChatGPT (OpenAI API)
+- Perplexity (Perplexity API)
+- Claude.ai (Anthropic API, raw—no orchestration)
+
+Same evaluators score all responses → comparison matrix in Braintrust.
