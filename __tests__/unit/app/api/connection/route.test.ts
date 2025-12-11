@@ -52,6 +52,11 @@ vi.mock("@/lib/env", () => ({
 // Mock concierge
 vi.mock("@/lib/concierge", () => ({
     runConcierge: mocks.mockRunConcierge,
+    CONCIERGE_DEFAULTS: {
+        modelId: "anthropic/claude-sonnet-4.5",
+        temperature: 0.5,
+        reasoning: { enabled: false },
+    },
 }));
 
 // Mock database functions for persistence
@@ -73,6 +78,10 @@ describe("POST /api/connection", () => {
         mocks.mockCurrentUser.mockResolvedValue({
             id: "test-user-123",
             emailAddresses: [{ emailAddress: "test@example.com" }],
+            firstName: "Test",
+            lastName: "User",
+            fullName: "Test User",
+            imageUrl: "https://example.com/avatar.jpg",
         });
 
         // Default concierge response with title
@@ -160,6 +169,16 @@ describe("POST /api/connection", () => {
         });
 
         const response = await POST(request);
+
+        if (response.status !== 200) {
+            const errorBody = await response.text();
+            console.error(
+                "Test failed with status",
+                response.status,
+                "Body:",
+                errorBody
+            );
+        }
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toContain("text/event-stream");
