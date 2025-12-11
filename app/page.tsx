@@ -342,7 +342,7 @@ export default function HomePage() {
                     <div className="mt-12 flex items-center gap-3">
                         <button
                             onClick={goPrev}
-                            className="rounded-full p-1.5 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
+                            className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Previous slide"
                         >
                             <ChevronLeft className="h-5 w-5" />
@@ -364,7 +364,7 @@ export default function HomePage() {
                         </div>
                         <button
                             onClick={goNext}
-                            className="rounded-full p-1.5 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
+                            className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
                             aria-label="Next slide"
                         >
                             <ChevronRight className="h-5 w-5" />

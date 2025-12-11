@@ -37,26 +37,24 @@ export function Footer() {
                     </Link>
 
                     {/* Secondary links - legal */}
-                    <div className="flex items-center gap-6">
-                        <Link
-                            href="/privacy"
-                            className="transition-all hover:scale-105 hover:text-foreground/90"
-                        >
-                            Privacy
-                        </Link>
-                        <Link
-                            href="/security"
-                            className="transition-all hover:scale-105 hover:text-foreground/90"
-                        >
-                            Security
-                        </Link>
-                        <Link
-                            href="/terms"
-                            className="transition-all hover:scale-105 hover:text-foreground/90"
-                        >
-                            Terms
-                        </Link>
-                    </div>
+                    <Link
+                        href="/privacy"
+                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                    >
+                        Privacy
+                    </Link>
+                    <Link
+                        href="/security"
+                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                    >
+                        Security
+                    </Link>
+                    <Link
+                        href="/terms"
+                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                    >
+                        Terms
+                    </Link>
 
                     {/* Theme switcher */}
                     <ThemeSwitcher />
