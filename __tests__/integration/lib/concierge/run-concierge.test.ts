@@ -8,31 +8,47 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { UIMessage } from "ai";
 
 // Mock generateText before importing the module under test
-const mockGenerateText = vi.fn();
 vi.mock("ai", async () => {
     const actual = await import("ai");
     return {
         ...actual,
-        generateText: mockGenerateText,
+        generateText: vi.fn(),
     };
 });
 
 // Mock fs/promises for rubric loading
-const mockReadFile = vi.fn().mockResolvedValue(`# Test Rubric
+vi.mock("node:fs/promises", () => ({
+    default: {
+        readFile: vi.fn().mockResolvedValue(`# Test Rubric
 ## Primary Models
 ### anthropic/claude-sonnet-4.5
 Our default model.
 **Choose when**: Most requests
-`);
-
-vi.mock("node:fs/promises", () => ({
-    default: { readFile: mockReadFile },
-    readFile: mockReadFile,
+`),
+    },
+    readFile: vi.fn().mockResolvedValue(`# Test Rubric
+## Primary Models
+### anthropic/claude-sonnet-4.5
+Our default model.
+**Choose when**: Most requests
+`),
 }));
 
 vi.mock("fs/promises", () => ({
-    default: { readFile: mockReadFile },
-    readFile: mockReadFile,
+    default: {
+        readFile: vi.fn().mockResolvedValue(`# Test Rubric
+## Primary Models
+### anthropic/claude-sonnet-4.5
+Our default model.
+**Choose when**: Most requests
+`),
+    },
+    readFile: vi.fn().mockResolvedValue(`# Test Rubric
+## Primary Models
+### anthropic/claude-sonnet-4.5
+Our default model.
+**Choose when**: Most requests
+`),
 }));
 
 // Mock Sentry to avoid errors

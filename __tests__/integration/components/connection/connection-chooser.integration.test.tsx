@@ -123,7 +123,7 @@ describe("ConnectionChooser Integration", () => {
             mockPathname.mockReturnValue(`/connection/${publicConn1.slug}`);
 
             // 2. Render with real provider
-            const { _rerender } = render(
+            render(
                 <ConnectionProvider
                     initialConnections={[publicConn1, publicConn2]}
                     activeConnection={publicConn1}

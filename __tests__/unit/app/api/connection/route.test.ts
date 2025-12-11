@@ -2,44 +2,39 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 import { encodeConnectionId } from "@/lib/sqids";
 
-// Define mock functions that can be referenced in vi.mock
-const mockCurrentUser = vi.fn();
-const mockRunConcierge = vi.fn();
-const mockGetOrCreateUser = vi.fn();
-const mockCreateConnection = vi.fn();
-const mockUpsertMessage = vi.fn();
-const mockUpdateStreamingStatus = vi.fn();
-
 // Mock Clerk currentUser
 vi.mock("@clerk/nextjs/server", () => ({
-    currentUser: mockCurrentUser,
+    currentUser: vi.fn(),
 }));
 
-// Mock the OpenRouter provider to use our mock model
-const mockModel = new MockLanguageModelV2({
-    doStream: async () => ({
-        stream: simulateReadableStream({
-            chunks: [
-                { type: "text-start", id: "text-1" },
-                { type: "text-delta", id: "text-1", delta: "Hello" },
-                { type: "text-delta", id: "text-1", delta: ", " },
-                { type: "text-delta", id: "text-1", delta: "friend!" },
-                { type: "text-end", id: "text-1" },
-                {
-                    type: "finish",
-                    finishReason: "stop",
-                    usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-                },
-            ],
+// Mock the OpenRouter provider to use a mock model
+vi.mock("@openrouter/ai-sdk-provider", async () => {
+    const { MockLanguageModelV2, simulateReadableStream } = await import("ai/test");
+    const mockModel = new MockLanguageModelV2({
+        doStream: async () => ({
+            stream: simulateReadableStream({
+                chunks: [
+                    { type: "text-start", id: "text-1" },
+                    { type: "text-delta", id: "text-1", delta: "Hello" },
+                    { type: "text-delta", id: "text-1", delta: ", " },
+                    { type: "text-delta", id: "text-1", delta: "friend!" },
+                    { type: "text-end", id: "text-1" },
+                    {
+                        type: "finish",
+                        finishReason: "stop",
+                        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+                    },
+                ],
+            }),
         }),
-    }),
-});
+    });
 
-vi.mock("@openrouter/ai-sdk-provider", () => ({
-    createOpenRouter: () => ({
-        chat: () => mockModel,
-    }),
-}));
+    return {
+        createOpenRouter: () => ({
+            chat: () => mockModel,
+        }),
+    };
+});
 
 // Mock env to provide API key
 vi.mock("@/lib/env", () => ({
@@ -49,7 +44,7 @@ vi.mock("@/lib/env", () => ({
 
 // Mock concierge
 vi.mock("@/lib/concierge", () => ({
-    runConcierge: mockRunConcierge,
+    runConcierge: vi.fn(),
     CONCIERGE_DEFAULTS: {
         modelId: "anthropic/claude-sonnet-4.5",
         temperature: 0.5,
@@ -59,31 +54,46 @@ vi.mock("@/lib/concierge", () => ({
 
 // Mock database functions for persistence
 vi.mock("@/lib/db", () => ({
-    getOrCreateUser: mockGetOrCreateUser,
-    createConnection: mockCreateConnection,
-    upsertMessage: mockUpsertMessage,
-    updateStreamingStatus: mockUpdateStreamingStatus,
+    getOrCreateUser: vi.fn(),
+    createConnection: vi.fn(),
+    upsertMessage: vi.fn(),
+    updateStreamingStatus: vi.fn(),
 }));
 
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
+import { currentUser } from "@clerk/nextjs/server";
+import { runConcierge } from "@/lib/concierge";
+import {
+    getOrCreateUser,
+    createConnection,
+    upsertMessage,
+    updateStreamingStatus,
+} from "@/lib/db";
 
 describe("POST /api/connection", () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
         // Reset to authenticated user by default
-        mockCurrentUser.mockResolvedValue({
+        vi.mocked(currentUser).mockResolvedValue({
             id: "test-user-123",
-            emailAddresses: [{ emailAddress: "test@example.com" }],
+            emailAddresses: [
+                {
+                    id: "email-1",
+                    emailAddress: "test@example.com",
+                    verification: null,
+                    linkedTo: [],
+                },
+            ],
             firstName: "Test",
             lastName: "User",
             fullName: "Test User",
             imageUrl: "https://example.com/avatar.jpg",
-        });
+        } as any);
 
         // Default concierge response with title
-        mockRunConcierge.mockResolvedValue({
+        vi.mocked(runConcierge).mockResolvedValue({
             modelId: "anthropic/claude-sonnet-4.5",
             temperature: 0.5,
             explanation: "Standard task.",
@@ -92,13 +102,21 @@ describe("POST /api/connection", () => {
         });
 
         // Default db mock responses
-        mockGetOrCreateUser.mockResolvedValue({
+        vi.mocked(getOrCreateUser).mockResolvedValue({
             id: "db-user-123",
             clerkId: "test-user-123",
             email: "test@example.com",
+            firstName: "Test",
+            lastName: "User",
+            displayName: "Test User",
+            imageUrl: "https://example.com/avatar.jpg",
+            preferences: null,
+            lastSignedInAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
         });
 
-        mockCreateConnection.mockImplementation((userId, title) => {
+        vi.mocked(createConnection).mockImplementation(async (userId, title) => {
             const id = 1; // Integer ID from database
             const publicId = encodeConnectionId(id);
             return {
@@ -108,16 +126,17 @@ describe("POST /api/connection", () => {
                 slug: title
                     ? `fix-authentication-bug-${publicId}`
                     : `connection-${publicId}`,
-                status: "active",
-                streamingStatus: "idle",
+                status: "active" as const,
+                streamingStatus: "idle" as const,
+                modelId: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 lastActivityAt: new Date(),
             };
         });
 
-        mockUpsertMessage.mockResolvedValue(undefined);
-        mockUpdateStreamingStatus.mockResolvedValue(undefined);
+        vi.mocked(upsertMessage).mockResolvedValue(undefined);
+        vi.mocked(updateStreamingStatus).mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -127,7 +146,7 @@ describe("POST /api/connection", () => {
     it.skip("returns 401 when not authenticated in production", async () => {
         // Note: This test is skipped because process.env.NODE_ENV is read-only in bun test
         // The behavior is tested manually and in e2e tests
-        mockCurrentUser.mockResolvedValue(null);
+        vi.mocked(currentUser).mockResolvedValue(null);
 
         const request = new Request("http://localhost/api/connection", {
             method: "POST",
@@ -225,12 +244,12 @@ describe("POST /api/connection", () => {
             expect(response.status).toBe(200);
 
             // Verify concierge was called to get model selection AND title
-            expect(mockRunConcierge).toHaveBeenCalledWith(
+            expect(vi.mocked(runConcierge)).toHaveBeenCalledWith(
                 expect.arrayContaining([expect.objectContaining({ role: "user" })])
             );
 
             // Verify connection was created with title from concierge
-            expect(mockCreateConnection).toHaveBeenCalledWith(
+            expect(vi.mocked(createConnection)).toHaveBeenCalledWith(
                 "db-user-123",
                 "Fix authentication bug", // Title from concierge mock
                 "anthropic/claude-sonnet-4.5" // Model from concierge mock
@@ -294,11 +313,11 @@ describe("POST /api/connection", () => {
             expect(response.headers.get("X-Connection-Slug")).toBeNull();
 
             // Should NOT create a new connection
-            expect(mockCreateConnection).not.toHaveBeenCalled();
+            expect(vi.mocked(createConnection)).not.toHaveBeenCalled();
         });
 
         it("generates slug with title when concierge provides title", async () => {
-            mockRunConcierge.mockResolvedValueOnce({
+            vi.mocked(runConcierge).mockResolvedValueOnce({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
                 explanation: "Test",
@@ -310,17 +329,20 @@ describe("POST /api/connection", () => {
             const testPublicId = encodeConnectionId(testId);
 
             // Update mock to reflect new title with integer ID
-            mockCreateConnection.mockImplementationOnce((userId, title) => ({
-                id: testId,
-                userId,
-                title,
-                slug: `debug-api-errors-${testPublicId}`,
-                status: "active",
-                streamingStatus: "idle",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                lastActivityAt: new Date(),
-            }));
+            vi.mocked(createConnection).mockImplementationOnce(
+                async (userId, title) => ({
+                    id: testId,
+                    userId,
+                    title: title ?? null,
+                    slug: `debug-api-errors-${testPublicId}`,
+                    status: "active" as const,
+                    streamingStatus: "idle" as const,
+                    modelId: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastActivityAt: new Date(),
+                })
+            );
 
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
@@ -344,7 +366,7 @@ describe("POST /api/connection", () => {
         });
 
         it("generates fallback slug when concierge provides no title", async () => {
-            mockRunConcierge.mockResolvedValueOnce({
+            vi.mocked(runConcierge).mockResolvedValueOnce({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
                 explanation: "Test",
@@ -355,17 +377,20 @@ describe("POST /api/connection", () => {
             const testId = 3;
             const testPublicId = encodeConnectionId(testId);
 
-            mockCreateConnection.mockImplementationOnce((userId, _title) => ({
-                id: testId,
-                userId,
-                title: null,
-                slug: `connection-${testPublicId}`, // Fallback slug
-                status: "active",
-                streamingStatus: "idle",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                lastActivityAt: new Date(),
-            }));
+            vi.mocked(createConnection).mockImplementationOnce(
+                async (userId, _title) => ({
+                    id: testId,
+                    userId,
+                    title: null,
+                    slug: `connection-${testPublicId}`, // Fallback slug
+                    status: "active" as const,
+                    streamingStatus: "idle" as const,
+                    modelId: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastActivityAt: new Date(),
+                })
+            );
 
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
