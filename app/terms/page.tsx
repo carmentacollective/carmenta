@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 
 import { Footer } from "@/components/footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
     title: "Terms of Service",
@@ -10,8 +11,9 @@ export const metadata: Metadata = {
 export default function TermsPage() {
     return (
         <div className="min-h-screen bg-background">
+            <SiteHeader bordered />
             {/* Content */}
-            <article className="mx-auto max-w-4xl px-6 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-36">
+            <article className="mx-auto max-w-4xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
                 <h1 className="text-4xl font-bold tracking-tight">Terms of Service</h1>
 
                 <div className="prose prose-lg dark:prose-invert mt-8 max-w-none">

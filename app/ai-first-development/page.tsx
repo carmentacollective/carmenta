@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { Footer } from "@/components/footer";
+import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
@@ -16,16 +17,11 @@ export default function AIFirstDevelopmentPage() {
             <HolographicBackground />
 
             <div className="relative z-10 flex min-h-screen flex-col">
-                <main className="flex flex-1 flex-col items-center px-6 py-16">
+                <SiteHeader bordered />
+                <main className="flex flex-1 flex-col items-center px-6 py-12">
                     <div className="mx-auto max-w-2xl space-y-12">
                         {/* Hero */}
                         <section className="space-y-6 text-center">
-                            <Link
-                                href="/"
-                                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                ← Back to Carmenta
-                            </Link>
                             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
                                 AI-First Development
                             </h1>
