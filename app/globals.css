@@ -530,24 +530,16 @@
         background: rgba(180, 30, 30, 0.2);
     }
 
-    /* Glassmorphism input dock - uses theme primary color for glow */
+    /* Glassmorphism input dock */
     .glass-input-dock {
         @apply rounded-3xl p-1.5 sm:p-2;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        box-shadow:
-            0 8px 32px hsl(var(--primary) / 0.25),
-            0 0 0 1px rgba(255, 255, 255, 0.7),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(32px);
+        -webkit-backdrop-filter: blur(32px);
     }
 
     .dark .glass-input-dock {
-        background: hsl(var(--card) / 0.85);
-        box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        background: hsl(var(--card) / 0.7);
     }
 
     /* Call-to-action gradient button - metallic sheen effect */

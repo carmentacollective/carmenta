@@ -109,17 +109,17 @@ function HoloThreadInner() {
             </div>
 
             {/* Input container with safe area for notched devices */}
-            <motion.div
-                className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3"
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                    duration: 0.6,
-                    delay: 0.25,
-                    ease: [0.16, 1, 0.3, 1],
-                }}
-            >
-                <div className="relative flex w-full max-w-4xl flex-col items-center">
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+                <motion.div
+                    className="relative flex w-full max-w-4xl flex-col items-center"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                        duration: 0.7,
+                        delay: 0.35,
+                        ease: [0.16, 1, 0.3, 1],
+                    }}
+                >
                     {!isAtBottom && (
                         <button
                             onClick={() => scrollToBottom("smooth")}
@@ -130,8 +130,8 @@ function HoloThreadInner() {
                         </button>
                     )}
                     <Composer isNewConversation={isEmpty} />
-                </div>
-            </motion.div>
+                </motion.div>
+            </div>
         </div>
     );
 }
