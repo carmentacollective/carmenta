@@ -5,6 +5,10 @@
  * - One tool per service
  * - action='describe' for full documentation
  * - Specific actions for operations
+ *
+ * IMPORTANT: Adapters are sorted alphabetically by service name to minimize merge conflicts
+ * when multiple integrations are added concurrently. When adding a new adapter export,
+ * insert it in alphabetical order rather than at the end.
  */
 
 export {

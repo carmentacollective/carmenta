@@ -29,7 +29,10 @@ import { logger } from "@/lib/logger";
 
 /**
  * Adapter instance registry
- * Maps service ID to adapter instance
+ *
+ * IMPORTANT: Adapters are sorted alphabetically by service ID to minimize merge conflicts
+ * when multiple integrations are added concurrently. When adding a new adapter,
+ * insert it in alphabetical order rather than at the end.
  */
 const adapterMap: Record<string, ServiceAdapter> = {
     clickup: new ClickUpAdapter(),
