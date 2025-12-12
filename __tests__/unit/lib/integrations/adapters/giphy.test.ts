@@ -92,7 +92,7 @@ describe("GiphyAdapter", () => {
                         url: "https://giphy.com/gifs/test",
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.testConnection("test-api-key");
 
@@ -108,7 +108,7 @@ describe("GiphyAdapter", () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.get as Mock).mockReturnValue({
                 json: vi.fn().mockRejectedValue(new Error("HTTP 401: Unauthorized")),
-            });
+            } as never);
 
             const result = await adapter.testConnection("invalid-key");
 
@@ -122,7 +122,7 @@ describe("GiphyAdapter", () => {
                 json: vi
                     .fn()
                     .mockRejectedValue(new Error("HTTP 429: Too Many Requests")),
-            });
+            } as never);
 
             const result = await adapter.testConnection("rate-limited-key");
 
@@ -325,7 +325,7 @@ describe("GiphyAdapter", () => {
 
             (httpClient.get as Mock).mockReturnValue({
                 json: vi.fn().mockResolvedValue({ data: {} }),
-            });
+            } as never);
 
             await adapter.execute("get_random", { tag: "excited" }, testUserEmail);
 
@@ -356,7 +356,7 @@ describe("GiphyAdapter", () => {
                     data: [],
                     pagination: { total_count: 0, count: 0, offset: 0 },
                 }),
-            });
+            } as never);
 
             const result = await adapter.execute("get_trending", {}, testUserEmail);
 
@@ -365,6 +365,67 @@ describe("GiphyAdapter", () => {
                 expect.stringContaining("api.giphy.com/v1/gifs/trending"),
                 expect.any(Object)
             );
+        });
+    });
+
+    describe("Error Handling", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "api_key",
+                credentials: { apiKey: "test-api-key" },
+            });
+        });
+
+        it("handles 401 authentication errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockRejectedValue(new Error("HTTP 401: Unauthorized")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Authentication failed");
+        });
+
+        it("handles 429 rate limit errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi
+                    .fn()
+                    .mockRejectedValue(new Error("HTTP 429: Too Many Requests")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Rate limit exceeded");
+        });
+
+        it("handles 403 permission errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockRejectedValue(new Error("HTTP 403: Forbidden")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Forbidden");
         });
     });
 });
