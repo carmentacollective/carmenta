@@ -36,38 +36,60 @@ class Violation(NamedTuple):
     suggestion: str
 
 
+def parse_test_command(command: str) -> tuple[str, list[str]]:
+    """
+    Parse a test command into program and arguments.
+
+    Returns:
+        (program, args) where program is bun/npm/pnpm and args are remaining tokens
+
+    Example:
+        "bun test --watch" -> ("bun", ["test", "--watch"])
+        "cd /path && bun test" -> ("bun", ["test"])
+        "ENV=value npm test" -> ("npm", ["test"])
+    """
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return ("", [])
+
+    # Find bun/npm/pnpm in tokens (might be after env vars, cd commands, etc.)
+    target_programs = {"bun", "npm", "pnpm"}
+
+    for i, token in enumerate(tokens):
+        if token in target_programs:
+            # Found a target program, return it and remaining args
+            return (token, tokens[i + 1:])
+
+    return ("", [])
+
+
 def check_test_command(command_str: str) -> Optional[Violation]:
     """
-    Check if command contains a blocked test invocation.
+    Check if command invokes a blocked test pattern.
 
-    Handles compound commands like "cd /path && bun test" by checking
-    if the full command string contains the blocked pattern.
+    Blocks: bun test, npm test, pnpm test
+    Allows: bun run test, bun run test:*, other commands
 
     Returns: Violation if command should be blocked, None if allowed
     """
-    # Parse all tokens to find bun/npm/pnpm followed by test
-    # This handles compound commands and environment variables
-    try:
-        tokens = shlex.split(command_str)
-    except ValueError:
-        # Can't parse, allow through to avoid blocking valid commands
+    program, args = parse_test_command(command_str)
+
+    if not program or not args:
         return None
 
-    # Look for "bun test", "npm test", or "pnpm test" anywhere in the command
-    for i, token in enumerate(tokens):
-        if token in ["bun", "npm", "pnpm"]:
-            # Check if next token is "test" (and not "test:" which is a script name)
-            if i + 1 < len(tokens) and tokens[i + 1] == "test":
-                if token == "bun":
-                    return Violation(
-                        message="Direct 'bun test' is not allowed in this project",
-                        suggestion="Use 'bun run test' instead. This ensures vitest is used with proper environment stubbing support."
-                    )
-                else:
-                    return Violation(
-                        message=f"'{token} test' is not allowed in this project",
-                        suggestion="Use 'bun run test' instead. This project uses bun as the package manager."
-                    )
+    # Check if first argument is "test" (not "run" or "test:something")
+    if args[0] == "test":
+        if program == "bun":
+            return Violation(
+                message="Direct 'bun test' is not allowed in this project",
+                suggestion="Use 'bun run test' instead. This ensures vitest is used with proper environment stubbing support."
+            )
+        else:
+            return Violation(
+                message=f"'{program} test' is not allowed in this project",
+                suggestion="Use 'bun run test' instead. This project uses bun as the package manager."
+            )
 
     return None
 
