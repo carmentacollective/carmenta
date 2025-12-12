@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plug, Sparkles } from "lucide-react";
-import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
-import { IntegrationCard, ApiKeyModal, UndoToast } from "@/components/integrations";
+import {
+    IntegrationCard,
+    ApiKeyModal,
+    type StatusMessage,
+} from "@/components/integrations";
 import {
     getServicesWithStatus,
     connectApiKeyService,
@@ -27,14 +30,6 @@ interface IntegrationItem {
     status?: "connected" | "error" | "expired" | "disconnected";
     accountId?: string;
     accountDisplayName?: string | null;
-}
-
-/**
- * Pending disconnect info for undo functionality
- */
-interface PendingDisconnect {
-    item: IntegrationItem;
-    timeoutId: NodeJS.Timeout;
 }
 
 export default function IntegrationsPage() {
@@ -57,15 +52,10 @@ export default function IntegrationsPage() {
         new Set()
     );
 
-    // Undo toast state
-    const [pendingDisconnect, setPendingDisconnect] =
-        useState<PendingDisconnect | null>(null);
-    const pendingDisconnectRef = useRef<PendingDisconnect | null>(null);
-
-    // Keep ref in sync for cleanup
-    useEffect(() => {
-        pendingDisconnectRef.current = pendingDisconnect;
-    }, [pendingDisconnect]);
+    // Status messages per service (for inline feedback)
+    const [statusMessages, setStatusMessages] = useState<Map<string, StatusMessage>>(
+        new Map()
+    );
 
     const loadServices = useCallback(async () => {
         try {
@@ -77,14 +67,7 @@ export default function IntegrationsPage() {
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "load_services" },
             });
-            toast.error("Failed to load integrations", {
-                description:
-                    "Please try again or contact support if the issue persists",
-                action: {
-                    label: "Retry",
-                    onClick: () => loadServices(),
-                },
-            });
+            // Error will be visible in empty state - no toast needed
         } finally {
             setLoading(false);
         }
@@ -113,18 +96,10 @@ export default function IntegrationsPage() {
         ),
     ];
 
-    // Sort: connected at top, needs-attention next, then available
-    const sortedList = [...unifiedList].sort((a, b) => {
-        const stateOrder = (status?: string) => {
-            if (status === "connected") return 0;
-            if (status === "error" || status === "expired") return 1;
-            return 2; // available
-        };
-        const orderDiff = stateOrder(a.status) - stateOrder(b.status);
-        if (orderDiff !== 0) return orderDiff;
-        // Secondary sort by name
-        return a.service.name.localeCompare(b.service.name);
-    });
+    // Sort alphabetically - keeps cards in predictable positions
+    const sortedList = [...unifiedList].sort((a, b) =>
+        a.service.name.localeCompare(b.service.name)
+    );
 
     const handleConnectClick = (service: ServiceDefinition) => {
         if (service.authMethod === "api_key") {
@@ -148,98 +123,47 @@ export default function IntegrationsPage() {
         return result;
     };
 
-    const handleDisconnect = (item: IntegrationItem) => {
-        // Clear any existing pending disconnect
-        if (pendingDisconnectRef.current) {
-            clearTimeout(pendingDisconnectRef.current.timeoutId);
-            // Execute the previous pending disconnect immediately (fire-and-forget with error handling)
-            const prev = pendingDisconnectRef.current;
-            if (prev.item.accountId) {
-                void deleteIntegration(prev.item.service.id, prev.item.accountId).catch(
-                    (error) => {
-                        logger.error(
-                            { error, serviceId: prev.item.service.id },
-                            "Failed to delete previous pending disconnect"
-                        );
-                        Sentry.captureException(error, {
-                            tags: {
-                                component: "integrations-page",
-                                action: "pending_disconnect_cleanup",
-                            },
-                        });
-                    }
-                );
-            }
+    const handleDisconnect = async (item: IntegrationItem) => {
+        if (!item.accountId) return;
+
+        try {
+            await deleteIntegration(item.service.id, item.accountId);
+
+            // Show success message
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(item.service.id, {
+                    type: "success",
+                    text: `Disconnected from ${item.service.name}`,
+                });
+                return next;
+            });
+
+            // Reload services to reflect the change
+            await loadServices();
+        } catch (error) {
+            logger.error(
+                { error, serviceId: item.service.id },
+                "Failed to disconnect integration"
+            );
+            Sentry.captureException(error, {
+                tags: {
+                    component: "integrations-page",
+                    action: "disconnect",
+                },
+                extra: { serviceId: item.service.id, accountId: item.accountId },
+            });
+
+            // Show error message
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(item.service.id, {
+                    type: "error",
+                    text: "Failed to disconnect. Please try again.",
+                });
+                return next;
+            });
         }
-
-        // Optimistically remove from UI and handle available list atomically
-        setConnected((prev) => {
-            const updated = prev.filter(
-                (c) =>
-                    !(
-                        c.service.id === item.service.id &&
-                        c.accountId === item.accountId
-                    )
-            );
-
-            // Check remaining accounts from the updated state (not stale closure)
-            const remainingAccounts = updated.filter(
-                (c) => c.service.id === item.service.id
-            );
-
-            if (remainingAccounts.length === 0) {
-                setAvailable((prevAvail) => {
-                    if (prevAvail.some((s) => s.id === item.service.id))
-                        return prevAvail;
-                    return [...prevAvail, item.service];
-                });
-            }
-
-            return updated;
-        });
-
-        // Set up undo timeout - actually delete after 5 seconds
-        const timeoutId = setTimeout(async () => {
-            // Check if this disconnect was cancelled (race condition with undo)
-            if (pendingDisconnectRef.current?.timeoutId !== timeoutId) {
-                return;
-            }
-
-            try {
-                if (item.accountId) {
-                    await deleteIntegration(item.service.id, item.accountId);
-                }
-            } catch (error) {
-                logger.error(
-                    { error, serviceId: item.service.id },
-                    "Failed to delete integration after timeout"
-                );
-                Sentry.captureException(error, {
-                    tags: {
-                        component: "integrations-page",
-                        action: "disconnect_timeout",
-                    },
-                    extra: { serviceId: item.service.id, accountId: item.accountId },
-                });
-                // Reload to resync state with server
-                await loadServices();
-            } finally {
-                setPendingDisconnect(null);
-            }
-        }, 5000);
-
-        setPendingDisconnect({ item, timeoutId });
-    };
-
-    const handleUndo = async () => {
-        if (!pendingDisconnect) return;
-
-        // Cancel the timeout
-        clearTimeout(pendingDisconnect.timeoutId);
-        setPendingDisconnect(null);
-
-        // Reload to restore the original state (it was never actually deleted)
-        await loadServices();
     };
 
     const handleTest = async (item: IntegrationItem) => {
@@ -248,10 +172,24 @@ export default function IntegrationsPage() {
         try {
             const result = await testIntegration(item.service.id, item.accountId);
             if (result.success) {
-                toast.success(`${item.service.name} is working`);
+                // Show inline success message
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(item.service.id, {
+                        type: "success",
+                        text: `Connection to ${item.service.name} verified`,
+                    });
+                    return next;
+                });
             } else {
-                toast.error(`${item.service.name} needs attention`, {
-                    description: result.error,
+                // Show inline error message
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(item.service.id, {
+                        type: "error",
+                        text: result.error || "Connection test failed",
+                    });
+                    return next;
                 });
                 // Reload to get updated status
                 await loadServices();
@@ -265,8 +203,13 @@ export default function IntegrationsPage() {
                 tags: { component: "integrations-page", action: "test_integration" },
                 extra: { serviceId: item.service.id, accountId: item.accountId },
             });
-            toast.error("Test failed", {
-                description: "We couldn't reach the service",
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(item.service.id, {
+                    type: "error",
+                    text: "We couldn't reach the service",
+                });
+                return next;
             });
         } finally {
             setTestingServices((prev) => {
@@ -358,6 +301,16 @@ export default function IntegrationsPage() {
                                             isTesting={testingServices.has(
                                                 item.service.id
                                             )}
+                                            statusMessage={statusMessages.get(
+                                                item.service.id
+                                            )}
+                                            onClearStatusMessage={() => {
+                                                setStatusMessages((prev) => {
+                                                    const next = new Map(prev);
+                                                    next.delete(item.service.id);
+                                                    return next;
+                                                });
+                                            }}
                                         />
                                     ))}
                                 </div>
@@ -402,14 +355,6 @@ export default function IntegrationsPage() {
                     }
                 }}
                 onSubmit={handleConnectSubmit}
-            />
-
-            {/* Undo Toast */}
-            <UndoToast
-                service={pendingDisconnect?.item.service ?? null}
-                accountId={pendingDisconnect?.item.accountId}
-                onUndo={handleUndo}
-                visible={!!pendingDisconnect}
             />
         </div>
     );
