@@ -22,7 +22,6 @@ import { buildConciergePrompt } from "./prompt";
 import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
-    CONCIERGE_MAX_OUTPUT_TOKENS,
     CONCIERGE_MODEL,
     MAX_EXPLANATION_LENGTH,
     MAX_TITLE_LENGTH,
@@ -39,11 +38,7 @@ export type {
     ReasoningEffort,
     OpenRouterEffort,
 } from "./types";
-export {
-    CONCIERGE_DEFAULTS,
-    REASONING_TOKEN_BUDGETS,
-    CONCIERGE_MAX_OUTPUT_TOKENS,
-} from "./types";
+export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
 
 // Re-export internal functions for testing
 export {
@@ -51,6 +46,7 @@ export {
     formatQueryForConcierge,
     detectAttachments,
     buildReasoningConfig,
+    conciergeSchema,
 };
 
 /** Cache for the rubric content to avoid repeated file reads */
@@ -234,9 +230,9 @@ const conciergeSchema = z.object({
         .describe("Extended reasoning configuration"),
     title: z
         .string()
+        .min(2, "Title must be at least 2 characters")
         .max(MAX_TITLE_LENGTH)
-        .optional()
-        .describe("Short title for the connection (max 50 chars)"),
+        .describe("Short title for the connection (2-50 chars, required)"),
 });
 
 /**
@@ -361,6 +357,9 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 );
 
                 // Run the concierge LLM with structured output
+                // Note: We don't set maxOutputTokens - let the SDK handle it automatically.
+                // Setting it too low (e.g., 250) causes AI_NoObjectGeneratedError when the
+                // schema requires more tokens than allocated.
                 const result = await generateObject({
                     model: openrouter.chat(CONCIERGE_MODEL),
                     schema: conciergeSchema,
@@ -370,7 +369,6 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
-                    maxOutputTokens: CONCIERGE_MAX_OUTPUT_TOKENS,
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",
@@ -408,14 +406,21 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
             } catch (error) {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
+                const errorName = error instanceof Error ? error.name : "UnknownError";
 
                 logger.error(
-                    { error: errorMessage },
+                    { error: errorMessage, errorType: errorName },
                     "Concierge failed, using defaults"
                 );
 
                 Sentry.captureException(error, {
-                    tags: { component: "concierge" },
+                    tags: {
+                        component: "concierge",
+                        error_type: errorName,
+                    },
+                    extra: {
+                        conciergeModel: CONCIERGE_MODEL,
+                    },
                 });
 
                 return CONCIERGE_DEFAULTS;

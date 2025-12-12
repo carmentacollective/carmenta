@@ -151,9 +151,11 @@ export const MAX_TITLE_LENGTH = 50;
 
 /**
  * Max output tokens for concierge LLM call.
- * Kept small since we only need a JSON routing decision.
+ * Must accommodate: modelId (~8), temperature (~2), explanation (~150 for 500 chars),
+ * reasoning (~10), title (~20), plus JSON structure overhead (~30).
+ * Total minimum: ~220 tokens. Using 400 for safety margin.
  */
-export const CONCIERGE_MAX_OUTPUT_TOKENS = 250;
+export const CONCIERGE_MAX_OUTPUT_TOKENS = 400;
 
 /**
  * OpenRouter reasoning effort levels (excludes "none" which disables reasoning).
