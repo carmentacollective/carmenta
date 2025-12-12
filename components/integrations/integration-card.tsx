@@ -84,51 +84,45 @@ export function IntegrationCard({
     return (
         <div
             className={cn(
-                "group relative overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-all duration-300",
+                "group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-all duration-300",
                 state === "needs_attention"
-                    ? "border-amber-400/60 bg-amber-50/5 shadow-amber-500/10 hover:shadow-amber-500/20 dark:bg-amber-950/20"
+                    ? "border-amber-400/80 bg-amber-50/5 shadow-amber-500/10 hover:shadow-amber-500/20 dark:bg-amber-950/20"
                     : state === "connected"
-                      ? "border-green-400/70 bg-gradient-to-br from-green-50/10 to-emerald-50/5 shadow-green-500/20 hover:shadow-green-500/30 dark:from-green-950/20 dark:to-emerald-950/10"
+                      ? "border-green-500/80 bg-gradient-to-br from-green-50/10 to-emerald-50/5 shadow-green-500/20 hover:shadow-green-500/30 dark:from-green-950/20 dark:to-emerald-950/10"
                       : "border-border/60 bg-card hover:border-border hover:shadow-lg"
             )}
         >
-            {/* Status indicator stripe */}
-            {state === "connected" && (
-                <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-green-400 to-emerald-500" />
-            )}
-            {state === "needs_attention" && (
-                <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-amber-400 to-orange-500" />
-            )}
-
             {/* Header: Logo, Name, Status Icon */}
-            <div className="flex items-start gap-4">
-                <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-border/40 bg-background p-3 shadow-sm">
-                    <Image
-                        src={service.logo}
-                        alt={service.name}
-                        fill
-                        className="object-contain p-1"
-                    />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5">
-                        <h3 className="text-lg font-semibold tracking-tight text-foreground">
-                            {service.name}
-                        </h3>
-                        {state === "connected" && (
-                            <div className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5">
-                                <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                            </div>
-                        )}
-                        {state === "needs_attention" && (
-                            <div className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5">
-                                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                            </div>
-                        )}
+            <div className="flex flex-1 flex-col">
+                <div className="flex items-start gap-4">
+                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-border/40 bg-white p-3 shadow-sm dark:bg-gray-50">
+                        <Image
+                            src={service.logo}
+                            alt={service.name}
+                            fill
+                            className="object-contain p-1"
+                        />
                     </div>
-                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {service.description}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2.5">
+                            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                                {service.name}
+                            </h3>
+                            {state === "connected" && (
+                                <div className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5">
+                                    <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                                </div>
+                            )}
+                            {state === "needs_attention" && (
+                                <div className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5">
+                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                            )}
+                        </div>
+                        <p className="mt-2 line-clamp-2 min-h-[2.8rem] text-sm leading-relaxed text-muted-foreground">
+                            {service.description}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -136,24 +130,46 @@ export function IntegrationCard({
             <div className="mt-5 flex items-center gap-3">
                 {state === "connected" && (
                     <>
-                        <button
-                            onClick={onTest}
-                            disabled={isLoading}
-                            className="rounded-xl border-2 border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
-                        >
-                            {isTesting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                "Test"
-                            )}
-                        </button>
-                        <button
-                            onClick={onDisconnect}
-                            disabled={isLoading}
-                            className="rounded-xl border-2 border-border px-4 py-2 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
-                        >
-                            Disconnect
-                        </button>
+                        {externalStatusMessage ? (
+                            <div
+                                className={cn(
+                                    "flex flex-1 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 animate-in slide-in-from-left-2",
+                                    externalStatusMessage.type === "success"
+                                        ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                                        : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                                )}
+                            >
+                                {externalStatusMessage.type === "success" ? (
+                                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                                ) : (
+                                    <XCircle className="h-4 w-4 flex-shrink-0" />
+                                )}
+                                <span className="flex-1">
+                                    {externalStatusMessage.text}
+                                </span>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={onTest}
+                                    disabled={isLoading}
+                                    className="rounded-xl border-2 border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
+                                >
+                                    {isTesting ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Verify"
+                                    )}
+                                </button>
+                                <button
+                                    onClick={onDisconnect}
+                                    disabled={isLoading}
+                                    className="rounded-xl border-2 border-border px-4 py-2 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
+                                >
+                                    Disconnect
+                                </button>
+                            </>
+                        )}
                     </>
                 )}
 
@@ -194,25 +210,6 @@ export function IntegrationCard({
                     </button>
                 )}
             </div>
-
-            {/* Inline status message */}
-            {externalStatusMessage && (
-                <div
-                    className={cn(
-                        "mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
-                        externalStatusMessage.type === "success"
-                            ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                            : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                    )}
-                >
-                    {externalStatusMessage.type === "success" ? (
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                    ) : (
-                        <XCircle className="h-4 w-4 flex-shrink-0" />
-                    )}
-                    <span>{externalStatusMessage.text}</span>
-                </div>
-            )}
         </div>
     );
 }

@@ -255,7 +255,7 @@ export default function IntegrationsPage() {
                     const next = new Map(prev);
                     next.set(item.service.id, {
                         type: "success",
-                        text: `${item.service.name} is working perfectly`,
+                        text: `Connection to ${item.service.name} verified`,
                     });
                     return next;
                 });
