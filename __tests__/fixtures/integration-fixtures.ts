@@ -119,11 +119,11 @@ export async function createTestApiKeyIntegration(
     options: Partial<TestIntegrationOptions> = {}
 ) {
     return createTestIntegration({
+        ...options,
         userEmail,
         service,
         credentialType: "api_key",
         apiKey,
-        ...options,
     });
 }
 
@@ -143,11 +143,11 @@ export async function createTestOAuthIntegration(
     options: Partial<TestIntegrationOptions> = {}
 ) {
     return createTestIntegration({
+        ...options,
         userEmail,
         service,
         credentialType: "oauth",
         connectionId,
-        ...options,
     });
 }
 
