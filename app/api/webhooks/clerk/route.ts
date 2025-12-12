@@ -19,6 +19,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { eq } from "drizzle-orm";
+import * as Sentry from "@sentry/nextjs";
 
 import { db, schema } from "@/lib/db";
 import { env, assertEnv } from "@/lib/env";
@@ -247,6 +248,16 @@ export async function POST(request: Request): Promise<NextResponse> {
             { error, eventType: event.type },
             "Failed to process Clerk webhook"
         );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "webhook",
+                route: "clerk",
+                action: "process_event",
+            },
+            extra: { eventType: event.type },
+        });
+
         return NextResponse.json({ error: "Processing failed" }, { status: 500 });
     }
 }

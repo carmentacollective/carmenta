@@ -1,22 +1,33 @@
 #!/bin/sh
 echo "🔄 Checking for updates after merge..."
 
+# Check if HEAD@{1} is valid (fails on initial clone or first commit)
+if ! git rev-parse HEAD@{1} > /dev/null 2>&1; then
+  echo "⚠️  Unable to check merge differences (fresh clone or first commit)"
+  exit 0
+fi
+
 # Check if package.json or lockfile changed
-if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD | grep -q "package.json\|bun.lockb"; then
+if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "package.json\|bun.lockb"; then
   echo "📦 Dependencies changed - running bun install..."
-  bun install --silent
+  if ! bun install --silent; then
+    echo "❌ bun install failed. Please run manually: bun install" >&2
+    exit 1
+  fi
   echo "✅ Dependencies updated"
 fi
 
 # Check if Drizzle schema changed
-if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD | grep -q "lib/db/schema.ts"; then
+if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "lib/db/schema.ts"; then
   echo "🗄️  Drizzle schema changed - regenerating migrations..."
-  bun run db:generate
+  if ! bun run db:generate; then
+    echo "❌ bun run db:generate failed. Please run manually: bun run db:generate" >&2
+    exit 1
+  fi
   echo "✅ Drizzle migrations regenerated"
   echo ""
   echo "⚠️  IMPORTANT: Review the generated migration in drizzle/migrations/"
   echo "   Then run: bun run db:push (or db:migrate)"
-  echo "   The migration will be run automatically on deploy via render-deploy.sh"
 fi
 
 echo "✅ Post-merge checks complete"

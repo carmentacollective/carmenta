@@ -88,7 +88,16 @@ export default function ConnectServicePage() {
                                 if (!saveResponse.ok) {
                                     const errorData = await saveResponse
                                         .json()
-                                        .catch(() => ({}));
+                                        .catch((parseError) => {
+                                            logger.warn(
+                                                {
+                                                    parseError,
+                                                    status: saveResponse.status,
+                                                },
+                                                "Failed to parse error response JSON"
+                                            );
+                                            return {};
+                                        });
                                     logger.error(
                                         { status: saveResponse.status, errorData },
                                         "Failed to save connection"

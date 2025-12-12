@@ -26,20 +26,18 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock Clerk authentication
-const mocks = vi.hoisted(() => ({
-    mockCurrentUser: vi.fn(),
-    mockLoadConnection: vi.fn(),
-    mockGetRecentConnections: vi.fn(),
-}));
+const mockCurrentUser = vi.fn();
+const mockLoadConnection = vi.fn();
+const mockGetRecentConnections = vi.fn();
 
 vi.mock("@clerk/nextjs/server", () => ({
-    currentUser: mocks.mockCurrentUser,
+    currentUser: mockCurrentUser,
 }));
 
 // Mock connections actions
 vi.mock("@/lib/actions/connections", () => ({
-    loadConnection: mocks.mockLoadConnection,
-    getRecentConnections: mocks.mockGetRecentConnections,
+    loadConnection: mockLoadConnection,
+    getRecentConnections: mockGetRecentConnections,
 }));
 
 // Mock sqids
@@ -69,13 +67,13 @@ describe("/connection/[slug] page", () => {
         vi.clearAllMocks();
 
         // Default: authenticated user
-        mocks.mockCurrentUser.mockResolvedValue({
+        mockCurrentUser.mockResolvedValue({
             id: "user_test123",
             emailAddresses: [{ emailAddress: "test@example.com" }],
         });
 
         // Default: some recent connections exist
-        mocks.mockGetRecentConnections.mockResolvedValue([
+        mockGetRecentConnections.mockResolvedValue([
             {
                 id: "conn1",
                 slug: "my-chat-abc123",
@@ -111,7 +109,7 @@ describe("/connection/[slug] page", () => {
             },
         ];
 
-        mocks.mockLoadConnection.mockResolvedValue({
+        mockLoadConnection.mockResolvedValue({
             connection,
             messages,
         });
@@ -122,7 +120,7 @@ describe("/connection/[slug] page", () => {
         });
 
         expect(result).toBeDefined();
-        expect(mocks.mockLoadConnection).toHaveBeenCalledWith("abc123");
+        expect(mockLoadConnection).toHaveBeenCalledWith("abc123");
 
         const { getByTestId } = render(result as ReactElement);
         expect(getByTestId("connect-layout")).toBeInTheDocument();
@@ -148,7 +146,7 @@ describe("/connection/[slug] page", () => {
     });
 
     it("returns 404 when connection does not exist", async () => {
-        mocks.mockLoadConnection.mockResolvedValue(null);
+        mockLoadConnection.mockResolvedValue(null);
 
         const ConnectionPage = (await import("@/app/connection/[slug]/page")).default;
 
@@ -175,7 +173,7 @@ describe("/connection/[slug] page", () => {
             lastActivityAt: new Date(),
         };
 
-        mocks.mockLoadConnection.mockResolvedValue({
+        mockLoadConnection.mockResolvedValue({
             connection,
             messages: [],
         });
@@ -206,7 +204,7 @@ describe("/connection/[slug] page", () => {
             lastActivityAt: new Date(),
         };
 
-        mocks.mockLoadConnection.mockResolvedValue({
+        mockLoadConnection.mockResolvedValue({
             connection,
             messages: [],
         });

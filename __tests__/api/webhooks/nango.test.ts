@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 import { db } from "@/lib/db";
+
+setupTestDb();
 import { users, integrations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";

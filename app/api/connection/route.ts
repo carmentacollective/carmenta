@@ -379,8 +379,9 @@ export async function POST(req: Request) {
 
         // Load integration tools for connected services
         // These are merged with built-in tools for the request
+        // CRITICAL: Pass userEmail, not dbUser.id (UUID) - connection-manager queries use email
         const integrationTools = modelSupportsTools
-            ? await getIntegrationTools(dbUser.id)
+            ? await getIntegrationTools(userEmail!)
             : {};
 
         // Merge built-in tools with integration tools

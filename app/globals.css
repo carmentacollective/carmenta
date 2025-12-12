@@ -530,24 +530,16 @@
         background: rgba(180, 30, 30, 0.2);
     }
 
-    /* Glassmorphism input dock - uses theme primary color for glow */
+    /* Glassmorphism input dock */
     .glass-input-dock {
         @apply rounded-3xl p-1.5 sm:p-2;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        box-shadow:
-            0 8px 32px hsl(var(--primary) / 0.25),
-            0 0 0 1px rgba(255, 255, 255, 0.7),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(32px);
+        -webkit-backdrop-filter: blur(32px);
     }
 
     .dark .glass-input-dock {
-        background: hsl(var(--card) / 0.85);
-        box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        background: hsl(var(--card) / 0.7);
     }
 
     /* Call-to-action gradient button - metallic sheen effect */
@@ -860,6 +852,59 @@
         );
         background-size: 200% 100%;
         animation: shimmer 2s ease-in-out infinite;
+    }
+
+    /*
+     * Watermark Presence Animation
+     *
+     * The background logo emerges from center, growing outward like
+     * consciousness expanding into the space. Starts small and blurred,
+     * resolving into its full presence with quiet confidence.
+     */
+    @keyframes watermark-presence {
+        0% {
+            opacity: 0;
+            transform: scale(0.7);
+            filter: blur(12px);
+        }
+        100% {
+            opacity: 0.09;
+            transform: scale(1);
+            filter: blur(0);
+        }
+    }
+
+    .dark .animate-watermark-presence {
+        animation: watermark-presence-dark 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes watermark-presence-dark {
+        0% {
+            opacity: 0;
+            transform: scale(0.7);
+            filter: blur(12px);
+        }
+        100% {
+            opacity: 0.07;
+            transform: scale(1);
+            filter: blur(0);
+        }
+    }
+
+    .animate-watermark-presence {
+        animation: watermark-presence 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+        .animate-watermark-presence {
+            animation: none;
+            opacity: 0.09;
+        }
+        .dark .animate-watermark-presence {
+            animation: none;
+            opacity: 0.07;
+        }
     }
 
     /*

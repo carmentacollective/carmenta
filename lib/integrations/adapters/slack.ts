@@ -343,59 +343,47 @@ export class SlackAdapter extends ServiceAdapter {
         }
 
         // Get user's Slack connection
-        const credentials = await getCredentials(
-            userEmail,
-            this.serviceName,
-            accountId
-        );
-
-        if (!credentials?.connectionId) {
-            this.logInfo(
-                `📝 [SLACK ADAPTER] User ${userEmail} attempted to use Slack but no connection found`
+        let connectionId: string;
+        try {
+            const credentials = await getCredentials(
+                userEmail,
+                this.serviceName,
+                accountId
             );
-            return this.createErrorResponse(this.createNotConnectedError());
+
+            if (!credentials?.connectionId) {
+                this.logInfo(
+                    `📝 [SLACK ADAPTER] User ${userEmail} attempted to use Slack but no connection found`
+                );
+                return this.createErrorResponse(this.createNotConnectedError());
+            }
+            connectionId = credentials.connectionId;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
+            }
+            throw error;
         }
 
         // Route to appropriate handler
         try {
             switch (action) {
                 case "list_channels":
-                    return await this.handleListChannels(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleListChannels(params, connectionId);
                 case "get_channel_history":
-                    return await this.handleGetChannelHistory(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleGetChannelHistory(params, connectionId);
                 case "get_thread_replies":
-                    return await this.handleGetThreadReplies(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleGetThreadReplies(params, connectionId);
                 case "send_message":
-                    return await this.handleSendMessage(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleSendMessage(params, connectionId);
                 case "get_user_info":
-                    return await this.handleGetUserInfo(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleGetUserInfo(params, connectionId);
                 case "list_users":
-                    return await this.handleListUsers(params, credentials.connectionId);
+                    return await this.handleListUsers(params, connectionId);
                 case "add_reaction":
-                    return await this.handleAddReaction(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleAddReaction(params, connectionId);
                 case "upload_file":
-                    return await this.handleUploadFile(
-                        params,
-                        credentials.connectionId
-                    );
+                    return await this.handleUploadFile(params, connectionId);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -418,7 +406,7 @@ export class SlackAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId: credentials.connectionId,
+                    connectionId,
                 }
             );
 

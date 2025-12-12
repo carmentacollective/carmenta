@@ -5,7 +5,7 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { getRecentConnections } from "@/lib/actions/connections";
 
 export const metadata: Metadata = {
-    title: "Connect | Carmenta",
+    title: "Create · Carmenta",
     description: "Start a connection. We'll think through it together.",
 };
 

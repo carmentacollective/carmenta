@@ -15,7 +15,7 @@ import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-    title: "Security",
+    title: "Our Security · Carmenta",
     description:
         "Carmenta Security - How we protect our data and conversations with industry-leading security practices.",
 };

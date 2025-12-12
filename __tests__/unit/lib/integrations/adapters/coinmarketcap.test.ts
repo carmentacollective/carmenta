@@ -30,7 +30,7 @@ vi.mock("@/lib/env", () => ({
 
 describe("CoinMarketCapAdapter", () => {
     let adapter: CoinMarketCapAdapter;
-    const testUserId = "test-user-123";
+    const testUserEmail = "test@example.com";
 
     beforeEach(() => {
         adapter = new CoinMarketCapAdapter();
@@ -195,14 +195,14 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected yet"
+                "CoinMarketCap is not connected to your account"
             );
-            expect(result.content[0].text).toContain("Integrations");
+            expect(result.content[0].text).toContain("integrations/coinmarketcap");
         });
 
         it("proceeds with valid API key credentials", async () => {
@@ -248,11 +248,11 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(false);
-            expect(getCredentials).toHaveBeenCalledWith(testUserId, "coinmarketcap");
+            expect(getCredentials).toHaveBeenCalledWith(testUserEmail, "coinmarketcap");
         });
 
         it("handles authentication errors in raw_api consistently", async () => {
@@ -268,12 +268,12 @@ describe("CoinMarketCapAdapter", () => {
                     endpoint: "/v1/cryptocurrency/listings/latest",
                     method: "GET",
                 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected yet"
+                "CoinMarketCap is not connected to your account"
             );
         });
     });
@@ -308,7 +308,7 @@ describe("CoinMarketCapAdapter", () => {
                 isDefault: true,
             });
 
-            const result = await adapter.execute("get_quotes", {}, testUserId);
+            const result = await adapter.execute("get_quotes", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
@@ -333,7 +333,7 @@ describe("CoinMarketCapAdapter", () => {
                     endpoint: "/invalid/endpoint",
                     method: "GET",
                 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
@@ -391,7 +391,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(false);
@@ -441,7 +441,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_quotes",
                 { symbol: "BTC" },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(false);
@@ -476,12 +476,12 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("API key may be invalid");
+            expect(result.content[0].text).toContain("connection may have expired");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -495,7 +495,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
@@ -511,11 +511,12 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute(
                 "get_listings",
                 { limit: 10 },
-                testUserId
+                testUserEmail
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("subscription plan");
+            expect(result.content[0].text).toContain("Forbidden");
+            expect(result.content[0].text).toContain("coinmarketcap.com/api/pricing");
         });
     });
 });

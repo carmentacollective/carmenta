@@ -9,11 +9,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { setupTestDb } from "@/vitest.setup";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+
+setupTestDb();
 
 import {
     createConnection,
-    deleteConnection as dbDeleteConnection,
+    deleteConnection as _dbDeleteConnection,
     getConnectionWithMessages,
 } from "@/lib/db/connections";
 import { getOrCreateUser } from "@/lib/db/users";
@@ -34,8 +37,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock server actions to bypass Clerk auth and use direct DB calls
-vi.mock("@/lib/actions/connections", async (importOriginal) => {
-    const original = await importOriginal<typeof import("@/lib/actions/connections")>();
+vi.mock("@/lib/actions/connections", async () => {
+    const original = await import("@/lib/actions/connections");
 
     return {
         ...original,
@@ -120,7 +123,7 @@ describe("ConnectionChooser Integration", () => {
             mockPathname.mockReturnValue(`/connection/${publicConn1.slug}`);
 
             // 2. Render with real provider
-            const { rerender } = render(
+            render(
                 <ConnectionProvider
                     initialConnections={[publicConn1, publicConn2]}
                     activeConnection={publicConn1}

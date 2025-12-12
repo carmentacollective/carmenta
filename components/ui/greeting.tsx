@@ -1,7 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-
 import { useUserContext } from "@/lib/auth/user-context";
 
 /** Birthday config - month is 0-indexed (December = 11) */
@@ -67,58 +65,12 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
           ? `Hey, ${firstName}`
           : "Hey";
 
+    if (!isLoaded) return null;
+
     return (
-        <AnimatePresence mode="wait">
-            {isLoaded && (
-                <motion.div
-                    key="greeting"
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        hidden: {},
-                        visible: {
-                            transition: {
-                                staggerChildren: 0.15,
-                            },
-                        },
-                    }}
-                >
-                    <motion.h1
-                        className={className}
-                        variants={{
-                            hidden: { opacity: 0, y: 12 },
-                            visible: {
-                                opacity: 1,
-                                y: 0,
-                                transition: {
-                                    duration: 0.5,
-                                    ease: [0.25, 0.46, 0.45, 0.94],
-                                },
-                            },
-                        }}
-                    >
-                        {greetingText}
-                    </motion.h1>
-                    {displaySubtitle && (
-                        <motion.p
-                            className={subtitleClassName}
-                            variants={{
-                                hidden: { opacity: 0, y: 8 },
-                                visible: {
-                                    opacity: 1,
-                                    y: 0,
-                                    transition: {
-                                        duration: 0.5,
-                                        ease: [0.25, 0.46, 0.45, 0.94],
-                                    },
-                                },
-                            }}
-                        >
-                            {displaySubtitle}
-                        </motion.p>
-                    )}
-                </motion.div>
-            )}
-        </AnimatePresence>
+        <div>
+            <h1 className={className}>{greetingText}</h1>
+            {displaySubtitle && <p className={subtitleClassName}>{displaySubtitle}</p>}
+        </div>
     );
 }

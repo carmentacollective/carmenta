@@ -20,6 +20,7 @@ import {
     type ComponentProps,
     forwardRef,
 } from "react";
+import { motion } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -109,7 +110,16 @@ function HoloThreadInner() {
 
             {/* Input container with safe area for notched devices */}
             <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
-                <div className="relative flex w-full max-w-4xl flex-col items-center">
+                <motion.div
+                    className="relative flex w-full max-w-4xl flex-col items-center"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                        duration: 0.7,
+                        delay: 0.35,
+                        ease: [0.16, 1, 0.3, 1],
+                    }}
+                >
                     {!isAtBottom && (
                         <button
                             onClick={() => scrollToBottom("smooth")}
@@ -120,7 +130,7 @@ function HoloThreadInner() {
                         </button>
                     )}
                     <Composer isNewConversation={isEmpty} />
-                </div>
+                </motion.div>
             </div>
         </div>
     );

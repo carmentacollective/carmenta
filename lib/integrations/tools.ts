@@ -20,7 +20,7 @@ import {
     DropboxAdapter,
     FirefliesAdapter,
     GiphyAdapter,
-    GoogleAdapter,
+    GoogleCalendarContactsAdapter,
     LimitlessAdapter,
     NotionAdapter,
     SlackAdapter,
@@ -41,7 +41,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
     giphy: new GiphyAdapter(),
-    google: new GoogleAdapter(),
+    "google-calendar-contacts": new GoogleCalendarContactsAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
     slack: new SlackAdapter(),
@@ -83,7 +83,7 @@ const integrationToolSchema = z.object({
 /**
  * Create a tool for a connected service
  */
-function createServiceTool(service: ServiceDefinition, userId: string) {
+function createServiceTool(service: ServiceDefinition, userEmail: string) {
     const adapter = getAdapter(service.id);
     if (!adapter) {
         throw new Error(`No adapter found for service: ${service.id}`);
@@ -94,7 +94,7 @@ function createServiceTool(service: ServiceDefinition, userId: string) {
         inputSchema: integrationToolSchema,
         execute: async ({ action, params }) => {
             logger.info(
-                { service: service.id, action, userId },
+                { service: service.id, action, userEmail },
                 "Executing integration tool"
             );
 
@@ -112,7 +112,7 @@ function createServiceTool(service: ServiceDefinition, userId: string) {
 
             // Execute the actual operation
             try {
-                const response = await adapter.execute(action, params ?? {}, userId);
+                const response = await adapter.execute(action, params ?? {}, userEmail);
 
                 // Return the response content
                 // The adapter returns MCPToolResponse format, extract relevant parts
@@ -139,7 +139,7 @@ function createServiceTool(service: ServiceDefinition, userId: string) {
                 return { result: "Operation completed successfully" };
             } catch (error) {
                 logger.error(
-                    { error, service: service.id, action, userId },
+                    { error, service: service.id, action, userEmail },
                     "Integration tool execution failed"
                 );
 
@@ -162,9 +162,11 @@ type IntegrationTool = ReturnType<typeof createServiceTool>;
  *
  * Returns a Record of tool name → tool that can be spread into streamText's tools option.
  *
+ * @param userEmail - User's email address (NOT userId UUID - database queries use email)
+ *
  * @example
  * ```ts
- * const integrationTools = await getIntegrationTools(userId);
+ * const integrationTools = await getIntegrationTools(userEmail);
  * const result = await streamText({
  *     model: openrouter.chat(modelId),
  *     tools: { ...builtInTools, ...integrationTools },
@@ -173,13 +175,13 @@ type IntegrationTool = ReturnType<typeof createServiceTool>;
  * ```
  */
 export async function getIntegrationTools(
-    userId: string
+    userEmail: string
 ): Promise<Record<string, IntegrationTool>> {
     const tools: Record<string, IntegrationTool> = {};
 
     try {
         // Get user's connected services
-        const connectedServiceIds = await getConnectedServices(userId);
+        const connectedServiceIds = await getConnectedServices(userEmail);
 
         if (connectedServiceIds.length === 0) {
             return tools;
@@ -202,7 +204,7 @@ export async function getIntegrationTools(
 
             // Verify credentials exist and are valid
             try {
-                await getCredentials(userId, serviceId);
+                await getCredentials(userEmail, serviceId);
             } catch (error) {
                 logger.warn(
                     {
@@ -215,12 +217,15 @@ export async function getIntegrationTools(
             }
 
             // Create the tool
-            tools[serviceId] = createServiceTool(service, userId);
+            tools[serviceId] = createServiceTool(service, userEmail);
         }
 
-        logger.info({ userId, tools: Object.keys(tools) }, "Integration tools loaded");
+        logger.info(
+            { userEmail, tools: Object.keys(tools) },
+            "Integration tools loaded"
+        );
     } catch (error) {
-        logger.error({ error, userId }, "Failed to load integration tools");
+        logger.error({ error, userEmail }, "Failed to load integration tools");
     }
 
     return tools;

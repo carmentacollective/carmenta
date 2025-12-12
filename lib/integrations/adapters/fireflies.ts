@@ -11,17 +11,55 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
-import { isApiKeyCredentials } from "@/lib/integrations/encryption";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
 
 const FIREFLIES_API_BASE = "https://api.fireflies.ai/graphql";
 
 export class FirefliesAdapter extends ServiceAdapter {
     serviceName = "fireflies";
     serviceDisplayName = "Fireflies.ai";
+
+    /**
+     * Test the API key by making a lightweight GraphQL query
+     * Uses a simple user info query to verify authentication
+     */
+    async testConnection(
+        apiKey: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const response = await httpClient
+                .post(FIREFLIES_API_BASE, {
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    json: {
+                        query: "{ user { user_id name email } }",
+                    },
+                })
+                .json<{
+                    data?: { user?: { user_id: string } };
+                    errors?: Array<{ message: string }>;
+                }>();
+
+            if (response.errors && response.errors.length > 0) {
+                return this.parseTestConnectionError(
+                    new Error(response.errors[0].message)
+                );
+            }
+
+            if (response.data?.user?.user_id) {
+                return { success: true };
+            }
+
+            return {
+                success: false,
+                error: "Unable to verify API key. Please check your credentials.",
+            };
+        } catch (error) {
+            return this.parseTestConnectionError(error);
+        }
+    }
 
     getHelp(): HelpResponse {
         return {
@@ -165,37 +203,10 @@ export class FirefliesAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's API key credentials
-        let apiKey: string;
-        try {
-            const connectionCreds = await getCredentials(userId, this.serviceName);
-
-            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-                return this.createErrorResponse(
-                    "Invalid credentials type for Fireflies service"
-                );
-            }
-
-            if (!isApiKeyCredentials(connectionCreds.credentials)) {
-                return this.createErrorResponse(
-                    "Invalid credential format for Fireflies service"
-                );
-            }
-
-            apiKey = connectionCreds.credentials.apiKey;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                const errorMsg = [
-                    "❌ Fireflies.ai is not connected to your account.",
-                    "",
-                    `Please connect Fireflies.ai at: ${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/fireflies`,
-                    "",
-                    "Once connected, try your request again.",
-                ].join("\n");
-                return this.createErrorResponse(errorMsg);
-            }
-            throw error;
-        }
+        // Get user's API key credentials using base class helper
+        const result = await this.getApiKeyForExecution(userId);
+        if ("isError" in result) return result;
+        const { apiKey } = result;
 
         // Route to appropriate handler
         try {
@@ -235,25 +246,10 @@ export class FirefliesAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Failed to ${action}: `;
-            if (error instanceof Error) {
-                if (
-                    error.message.includes("401") ||
-                    error.message.includes("Unauthorized")
-                ) {
-                    errorMessage +=
-                        "Authentication failed. Your API key may be invalid. Please reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/integrations/fireflies`;
-                } else if (error.message.includes("404")) {
-                    errorMessage += "Resource not found.";
-                } else if (error.message.includes("429")) {
-                    errorMessage +=
-                        "Rate limit exceeded (50 calls/day on free plan). Please try again later.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "Unknown error";
+            // Use base class error handler with Fireflies-specific rate limit message
+            let errorMessage = this.handleCommonAPIError(error, action);
+            if (error instanceof Error && error.message.includes("429")) {
+                errorMessage += " (50 calls/day on free plan).";
             }
 
             return this.createErrorResponse(errorMessage);
@@ -693,16 +689,10 @@ export class FirefliesAdapter extends ServiceAdapter {
 
         const body = params.body;
 
-        // Get API key
-        const connectionCreds = await getCredentials(userId, this.serviceName);
-        if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
-            return this.createErrorResponse("Invalid credentials");
-        }
-        if (!isApiKeyCredentials(connectionCreds.credentials)) {
-            return this.createErrorResponse("Invalid credential format");
-        }
-
-        const apiKey = connectionCreds.credentials.apiKey;
+        // Get API key using base class helper
+        const keyResult = await this.getApiKeyForExecution(userId);
+        if ("isError" in keyResult) return keyResult;
+        const { apiKey } = keyResult;
 
         try {
             // Accept variables from either 'variables' param (as documented) or 'body' param (for compatibility)
@@ -735,13 +725,8 @@ export class FirefliesAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Raw API request failed: `;
-            if (error instanceof Error) {
-                errorMessage += error.message;
-            } else {
-                errorMessage += "Unknown error";
-            }
-
+            // Use base class error handler
+            const errorMessage = this.handleCommonAPIError(error, "raw_api");
             return this.createErrorResponse(errorMessage);
         }
     }

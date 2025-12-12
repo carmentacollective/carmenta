@@ -5,17 +5,23 @@
 if [ "$3" = "1" ]; then
   echo "🔄 Branch switched - checking for differences..."
 
+  # Validate git refs are valid (prevents errors on initial clone or shallow repos)
+  if ! git rev-parse "$1" > /dev/null 2>&1 || ! git rev-parse "$2" > /dev/null 2>&1; then
+    echo "⚠️  Unable to validate branch differences (shallow clone or initial checkout)"
+    exit 0
+  fi
+
   CHANGED=0
 
-  # Check if dependencies changed
-  if git diff --name-only "$1" "$2" | grep -q "package.json\|bun.lockb"; then
+  # Check if dependencies changed (with error handling)
+  if git diff --name-only "$1" "$2" 2>/dev/null | grep -q "package.json\|bun.lockb"; then
     echo "⚠️  📦 Dependencies differ between branches"
     echo "   Run 'bun install' to update"
     CHANGED=1
   fi
 
-  # Check if Drizzle schema changed
-  if git diff --name-only "$1" "$2" | grep -q "lib/db/schema.ts"; then
+  # Check if Drizzle schema changed (with error handling)
+  if git diff --name-only "$1" "$2" 2>/dev/null | grep -q "lib/db/schema.ts"; then
     echo "⚠️  🗄️  Drizzle schema differs between branches"
     echo "   Run 'bun run db:generate' to regenerate migrations"
     echo "   Then check drizzle/migrations/ for new files"
