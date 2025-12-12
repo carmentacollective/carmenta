@@ -432,14 +432,29 @@ async function runDiagnostics() {
             if (result.failureType !== "none") {
                 infraFailures.push(result);
                 console.log(`💥 ${result.failureType}`);
-            } else if (result.wordCount < MIN_WORD_COUNT) {
-                qualityIssues.push(result);
-                console.log(`⚠️ ${result.wordCount} words`);
-            } else if (result.categoryIssues.length > 0) {
-                categoryIssues.push(result);
-                console.log(`⚠️ ${result.categoryIssues.join(", ")}`);
             } else {
-                console.log(`✅ ${result.wordCount} words`);
+                // Quality and category issues can co-occur
+                const hasQualityIssue = result.wordCount < MIN_WORD_COUNT;
+                const hasCategoryIssue = result.categoryIssues.length > 0;
+
+                if (hasQualityIssue) {
+                    qualityIssues.push(result);
+                }
+                if (hasCategoryIssue) {
+                    categoryIssues.push(result);
+                }
+
+                if (hasQualityIssue && hasCategoryIssue) {
+                    console.log(
+                        `⚠️ ${result.wordCount} words + ${result.categoryIssues.join(", ")}`
+                    );
+                } else if (hasQualityIssue) {
+                    console.log(`⚠️ ${result.wordCount} words`);
+                } else if (hasCategoryIssue) {
+                    console.log(`⚠️ ${result.categoryIssues.join(", ")}`);
+                } else {
+                    console.log(`✅ ${result.wordCount} words`);
+                }
             }
         } catch (error) {
             // Network errors (ECONNREFUSED, etc.) are infrastructure failures too
@@ -471,8 +486,13 @@ async function runDiagnostics() {
     console.log("📊 DIAGNOSTIC SUMMARY\n");
 
     const total = results.length;
-    const passed =
-        total - infraFailures.length - qualityIssues.length - categoryIssues.length;
+    // Count unique results with any issue (results can be in multiple arrays)
+    const resultsWithIssues = new Set([
+        ...infraFailures,
+        ...qualityIssues,
+        ...categoryIssues,
+    ]);
+    const passed = total - resultsWithIssues.size;
 
     console.log(`Total: ${total} queries`);
     console.log(`✅ Passed: ${passed}`);
