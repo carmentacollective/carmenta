@@ -433,7 +433,9 @@ export async function deleteIntegration(
 }
 
 /**
- * Test an integration by checking connection status
+ * Test an integration by actually testing the connection
+ * - API key services: Call adapter's testConnection method with actual API key
+ * - OAuth services: Verify Nango connection exists and credentials are valid
  */
 export async function testIntegration(
     serviceId: string,
@@ -451,6 +453,62 @@ export async function testIntegration(
     }
 
     try {
+        // For API key services, actually test the connection
+        if (service.authMethod === "api_key") {
+            const { getAdapter } = await import("@/lib/integrations/tools");
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            const { isApiKeyCredentials } =
+                await import("@/lib/integrations/encryption");
+
+            const adapter = getAdapter(serviceId);
+            if (!adapter) {
+                return {
+                    success: false,
+                    error: "Service adapter not found",
+                };
+            }
+
+            // Get the stored credentials
+            const connectionCreds = await getCredentials(userEmail, serviceId);
+
+            if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
+                return {
+                    success: false,
+                    error: "Invalid credentials type",
+                };
+            }
+
+            if (!isApiKeyCredentials(connectionCreds.credentials)) {
+                return {
+                    success: false,
+                    error: "Invalid credential format",
+                };
+            }
+
+            // Actually test the connection using the adapter
+            const result = await adapter.testConnection(
+                connectionCreds.credentials.apiKey
+            );
+
+            if (!result.success) {
+                // Update integration status to error
+                await db
+                    .update(schema.integrations)
+                    .set({ status: "error", updatedAt: new Date() })
+                    .where(
+                        and(
+                            eq(schema.integrations.userEmail, userEmail),
+                            eq(schema.integrations.service, serviceId)
+                        )
+                    );
+            }
+
+            return result;
+        }
+
+        // For OAuth services, check the database status
+        // (OAuth tokens are managed by Nango and testing requires actual API calls)
         const status = await getConnectionStatus(userEmail, serviceId);
 
         if (status === "connected") {
@@ -458,10 +516,23 @@ export async function testIntegration(
         } else {
             return {
                 success: false,
-                error: `Service status: ${status}`,
+                error: `Connection status: ${status}`,
             };
         }
     } catch (error) {
+        logger.error(
+            { err: error, userEmail, serviceId },
+            "Failed to test integration"
+        );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "action",
+                action: "test_integration",
+            },
+            extra: { userEmail, serviceId },
+        });
+
         return {
             success: false,
             error: error instanceof Error ? error.message : "That test didn't work out",

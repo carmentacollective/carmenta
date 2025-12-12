@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plug, Sparkles } from "lucide-react";
-import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
-import { IntegrationCard, ApiKeyModal, UndoToast } from "@/components/integrations";
+import {
+    IntegrationCard,
+    ApiKeyModal,
+    UndoToast,
+    type StatusMessage,
+} from "@/components/integrations";
 import {
     getServicesWithStatus,
     connectApiKeyService,
@@ -57,6 +61,11 @@ export default function IntegrationsPage() {
         new Set()
     );
 
+    // Status messages per service (for inline feedback)
+    const [statusMessages, setStatusMessages] = useState<Map<string, StatusMessage>>(
+        new Map()
+    );
+
     // Undo toast state
     const [pendingDisconnect, setPendingDisconnect] =
         useState<PendingDisconnect | null>(null);
@@ -77,14 +86,7 @@ export default function IntegrationsPage() {
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "load_services" },
             });
-            toast.error("Failed to load integrations", {
-                description:
-                    "Please try again or contact support if the issue persists",
-                action: {
-                    label: "Retry",
-                    onClick: () => loadServices(),
-                },
-            });
+            // Error will be visible in empty state - no toast needed
         } finally {
             setLoading(false);
         }
@@ -248,10 +250,24 @@ export default function IntegrationsPage() {
         try {
             const result = await testIntegration(item.service.id, item.accountId);
             if (result.success) {
-                toast.success(`${item.service.name} is working`);
+                // Show inline success message
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(item.service.id, {
+                        type: "success",
+                        text: `${item.service.name} is working perfectly`,
+                    });
+                    return next;
+                });
             } else {
-                toast.error(`${item.service.name} needs attention`, {
-                    description: result.error,
+                // Show inline error message
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(item.service.id, {
+                        type: "error",
+                        text: result.error || "Connection test failed",
+                    });
+                    return next;
                 });
                 // Reload to get updated status
                 await loadServices();
@@ -265,8 +281,13 @@ export default function IntegrationsPage() {
                 tags: { component: "integrations-page", action: "test_integration" },
                 extra: { serviceId: item.service.id, accountId: item.accountId },
             });
-            toast.error("Test failed", {
-                description: "We couldn't reach the service",
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(item.service.id, {
+                    type: "error",
+                    text: "We couldn't reach the service",
+                });
+                return next;
             });
         } finally {
             setTestingServices((prev) => {
@@ -358,6 +379,16 @@ export default function IntegrationsPage() {
                                             isTesting={testingServices.has(
                                                 item.service.id
                                             )}
+                                            statusMessage={statusMessages.get(
+                                                item.service.id
+                                            )}
+                                            onClearStatusMessage={() => {
+                                                setStatusMessages((prev) => {
+                                                    const next = new Map(prev);
+                                                    next.delete(item.service.id);
+                                                    return next;
+                                                });
+                                            }}
                                         />
                                     ))}
                                 </div>

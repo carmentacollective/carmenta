@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Check, AlertTriangle, Loader2 } from "lucide-react";
+import { Check, AlertTriangle, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -11,6 +12,14 @@ import type { IntegrationStatus } from "@/lib/integrations/types";
  * Maps the database status to what users actually care about.
  */
 export type IntegrationState = "connected" | "needs_attention" | "available";
+
+/**
+ * Inline status message shown in the card
+ */
+export interface StatusMessage {
+    type: "success" | "error";
+    text: string;
+}
 
 /**
  * Props for unified integration display
@@ -28,6 +37,10 @@ export interface IntegrationCardProps {
     isConnecting?: boolean;
     isReconnecting?: boolean;
     isTesting?: boolean;
+    /** Status message to display inline */
+    statusMessage?: StatusMessage | null;
+    /** Callback to clear status message */
+    onClearStatusMessage?: () => void;
 }
 
 /**
@@ -52,9 +65,21 @@ export function IntegrationCard({
     isConnecting = false,
     isReconnecting = false,
     isTesting = false,
+    statusMessage: externalStatusMessage,
+    onClearStatusMessage,
 }: IntegrationCardProps) {
     const state = getIntegrationState(status);
     const isLoading = isConnecting || isReconnecting || isTesting;
+
+    // Auto-dismiss success messages after 3 seconds
+    useEffect(() => {
+        if (externalStatusMessage?.type === "success" && onClearStatusMessage) {
+            const timer = setTimeout(() => {
+                onClearStatusMessage();
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [externalStatusMessage, onClearStatusMessage]);
 
     return (
         <div
@@ -169,6 +194,25 @@ export function IntegrationCard({
                     </button>
                 )}
             </div>
+
+            {/* Inline status message */}
+            {externalStatusMessage && (
+                <div
+                    className={cn(
+                        "mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+                        externalStatusMessage.type === "success"
+                            ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                            : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                    )}
+                >
+                    {externalStatusMessage.type === "success" ? (
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                    ) : (
+                        <XCircle className="h-4 w-4 flex-shrink-0" />
+                    )}
+                    <span>{externalStatusMessage.text}</span>
+                </div>
+            )}
         </div>
     );
 }

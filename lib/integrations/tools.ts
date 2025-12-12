@@ -50,7 +50,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
 /**
  * Get the adapter instance for a service
  */
-function getAdapter(serviceId: string): ServiceAdapter | null {
+export function getAdapter(serviceId: string): ServiceAdapter | null {
     return adapterMap[serviceId] ?? null;
 }
 
