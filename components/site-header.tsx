@@ -21,6 +21,7 @@ interface SiteHeaderProps {
 
 /**
  * Consistent site header across all pages.
+ * Transparent header with glassmorphism effect.
  * Maintains pixel-perfect alignment and spacing.
  */
 export function SiteHeader({
@@ -33,7 +34,7 @@ export function SiteHeader({
             className={cn(
                 "flex items-center justify-between px-6 py-4",
                 bordered &&
-                    "border-b border-foreground/10 bg-white/80 backdrop-blur-sm dark:bg-black/30"
+                    "border-b border-foreground/10 bg-background/30 backdrop-blur-md"
             )}
         >
             <Link
