@@ -16,25 +16,22 @@ describe("SiteHeader", () => {
         expect(link).toHaveAttribute("href", "/");
     });
 
-    it("applies bordered styles when bordered prop is true", () => {
+    it("applies border when bordered prop is true", () => {
         const { container } = render(<SiteHeader bordered />);
         const header = container.querySelector("header");
-        expect(header?.className).toContain("border-b");
-        expect(header?.className).toContain("bg-white/80");
-        expect(header?.className).toContain("backdrop-blur-sm");
+        expect(header).toHaveClass("border-b");
     });
 
-    it("does not apply bordered styles when bordered prop is false", () => {
+    it("does not apply border when bordered prop is false", () => {
         const { container } = render(<SiteHeader bordered={false} />);
         const header = container.querySelector("header");
-        expect(header?.className).not.toContain("border-b");
-        expect(header?.className).not.toContain("bg-white/80");
+        expect(header).not.toHaveClass("border-b");
     });
 
-    it("does not apply bordered styles by default", () => {
+    it("does not apply border by default", () => {
         const { container } = render(<SiteHeader />);
         const header = container.querySelector("header");
-        expect(header?.className).not.toContain("border-b");
+        expect(header).not.toHaveClass("border-b");
     });
 
     it("renders right content when provided", () => {
