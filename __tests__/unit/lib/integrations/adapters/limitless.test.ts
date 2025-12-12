@@ -104,7 +104,7 @@ describe("LimitlessAdapter", () => {
                         lifelogs: [],
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.testConnection("test-api-key");
 
@@ -124,7 +124,7 @@ describe("LimitlessAdapter", () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.get as Mock).mockReturnValue({
                 json: vi.fn().mockRejectedValue(new Error("HTTP 401: Unauthorized")),
-            });
+            } as never);
 
             const result = await adapter.testConnection("invalid-key");
 
@@ -138,7 +138,7 @@ describe("LimitlessAdapter", () => {
                 json: vi
                     .fn()
                     .mockRejectedValue(new Error("HTTP 429: Too Many Requests")),
-            });
+            } as never);
 
             const result = await adapter.testConnection("rate-limited-key");
 
@@ -202,7 +202,7 @@ describe("LimitlessAdapter", () => {
                         ],
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.execute(
                 "search",
@@ -238,7 +238,7 @@ describe("LimitlessAdapter", () => {
                 json: vi.fn().mockResolvedValue({
                     data: { lifelogs: [] },
                 }),
-            });
+            } as never);
 
             await adapter.execute(
                 "search",
@@ -303,7 +303,7 @@ describe("LimitlessAdapter", () => {
                 json: vi.fn().mockResolvedValue({
                     data: { lifelogs: [] },
                 }),
-            });
+            } as never);
 
             await adapter.execute("list_recordings", { limit: 20 }, testUserEmail);
 
@@ -355,7 +355,7 @@ describe("LimitlessAdapter", () => {
                         },
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.execute(
                 "get_lifelog",
@@ -373,6 +373,67 @@ describe("LimitlessAdapter", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("Error Handling", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "api_key",
+                credentials: { apiKey: "test-api-key" },
+            });
+        });
+
+        it("handles 401 authentication errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockRejectedValue(new Error("HTTP 401: Unauthorized")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Authentication failed");
+        });
+
+        it("handles 429 rate limit errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi
+                    .fn()
+                    .mockRejectedValue(new Error("HTTP 429: Too Many Requests")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Rate limit exceeded");
+        });
+
+        it("handles 403 permission errors", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockRejectedValue(new Error("HTTP 403: Forbidden")),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("Forbidden");
         });
     });
 });
