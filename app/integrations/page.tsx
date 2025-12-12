@@ -96,18 +96,10 @@ export default function IntegrationsPage() {
         ),
     ];
 
-    // Sort: connected at top, needs-attention next, then available
-    const sortedList = [...unifiedList].sort((a, b) => {
-        const stateOrder = (status?: string) => {
-            if (status === "connected") return 0;
-            if (status === "error" || status === "expired") return 1;
-            return 2; // available
-        };
-        const orderDiff = stateOrder(a.status) - stateOrder(b.status);
-        if (orderDiff !== 0) return orderDiff;
-        // Secondary sort by name
-        return a.service.name.localeCompare(b.service.name);
-    });
+    // Sort alphabetically - keeps cards in predictable positions
+    const sortedList = [...unifiedList].sort((a, b) =>
+        a.service.name.localeCompare(b.service.name)
+    );
 
     const handleConnectClick = (service: ServiceDefinition) => {
         if (service.authMethod === "api_key") {

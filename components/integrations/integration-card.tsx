@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check, AlertTriangle, Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -83,17 +82,7 @@ export function IntegrationCard({
     }, [externalStatusMessage, onClearStatusMessage]);
 
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{
-                layout: { duration: 0.3, type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 },
-                scale: { duration: 0.2 },
-                borderColor: { duration: 0.3 },
-            }}
+        <div
             className={cn(
                 "group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-colors duration-300",
                 state === "needs_attention"
@@ -144,7 +133,7 @@ export function IntegrationCard({
                         {externalStatusMessage ? (
                             <div
                                 className={cn(
-                                    "flex flex-1 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 animate-in slide-in-from-left-2",
+                                    "flex flex-1 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium",
                                     externalStatusMessage.type === "success"
                                         ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
                                         : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
@@ -221,6 +210,6 @@ export function IntegrationCard({
                     </button>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 }
