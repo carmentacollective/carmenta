@@ -208,7 +208,7 @@ describe("ClickUpAdapter", () => {
             );
         });
 
-        it.skip("executes list_tasks operation", async () => {
+        it("executes list_tasks operation", async () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.get as Mock).mockReturnValue({
                 json: vi.fn().mockResolvedValue({
@@ -217,6 +217,10 @@ describe("ClickUpAdapter", () => {
                             id: "task-123",
                             name: "Test Task",
                             status: { status: "open" },
+                            assignees: [{ id: 1, username: "testuser" }],
+                            priority: { priority: "normal" },
+                            due_date: "2025-01-01",
+                            url: "https://app.clickup.com/t/task-123",
                         },
                     ],
                 }),
