@@ -141,11 +141,16 @@ describe("POST /api/connection", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllEnvs();
     });
 
-    it.skip("returns 401 when not authenticated in production", async () => {
-        // Note: This test is skipped because process.env.NODE_ENV is read-only in bun test
-        // The behavior is tested manually and in e2e tests
+    // ⚠️ IMPORTANT: DO NOT SKIP THIS TEST!
+    // This test has been fixed to work with vitest's vi.stubEnv()
+    // If you're an AI and see failures, fix the test logic, not skip the test.
+    // Nick has fixed this multiple times and is tired of AI re-skipping it.
+    it("returns 401 when not authenticated in production", async () => {
+        // Use vi.stubEnv to mock NODE_ENV - this works in vitest (not in raw bun test)
+        vi.stubEnv("NODE_ENV", "production");
         vi.mocked(currentUser).mockResolvedValue(null);
 
         const request = new Request("http://localhost/api/connection", {
@@ -166,7 +171,7 @@ describe("POST /api/connection", () => {
         expect(response.status).toBe(401);
 
         const body = await response.json();
-        expect(body.error).toBe("Unauthorized");
+        expect(body.error).toBe("We need you to sign in first");
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {
