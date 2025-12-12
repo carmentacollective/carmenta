@@ -65,12 +65,22 @@ async function getUserEmail(): Promise<string | null> {
 
 /**
  * Get user permissions from Clerk metadata
+ * In development, show all integrations regardless of permissions
  */
 async function getUserPermissions(): Promise<{
     isAdmin: boolean;
     showBetaIntegrations: boolean;
     showInternalIntegrations: boolean;
 }> {
+    // In development, show all integrations
+    if (process.env.NODE_ENV === "development") {
+        return {
+            isAdmin: true,
+            showBetaIntegrations: true,
+            showInternalIntegrations: true,
+        };
+    }
+
     const user = await currentUser();
     if (!user) {
         return {
