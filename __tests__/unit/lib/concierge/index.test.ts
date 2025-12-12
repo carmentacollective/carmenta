@@ -76,7 +76,7 @@ describe("Concierge", () => {
         });
 
         it("keeps effort-only for Grok models", () => {
-            const result = buildReasoningConfig("x-ai/grok-4-fast", {
+            const result = buildReasoningConfig("x-ai/grok-4.1-fast", {
                 enabled: true,
                 effort: "high",
             });
@@ -310,7 +310,8 @@ describe("ConciergeDisplay component helpers", () => {
             "anthropic/claude-sonnet-4.5": "Claude Sonnet",
             "anthropic/claude-haiku-4.5": "Claude Haiku",
             "google/gemini-3-pro-preview": "Gemini Pro",
-            "x-ai/grok-4-fast": "Grok",
+            "x-ai/grok-4.1-fast": "Grok",
+            "openai/gpt-5.2": "ChatGPT",
         };
         return displayNames[modelId] ?? modelId.split("/").pop() ?? modelId;
     };
@@ -336,7 +337,8 @@ describe("ConciergeDisplay component helpers", () => {
             expect(getModelDisplayName("google/gemini-3-pro-preview")).toBe(
                 "Gemini Pro"
             );
-            expect(getModelDisplayName("x-ai/grok-4-fast")).toBe("Grok");
+            expect(getModelDisplayName("x-ai/grok-4.1-fast")).toBe("Grok");
+            expect(getModelDisplayName("openai/gpt-5.2")).toBe("ChatGPT");
         });
 
         it("extracts model name for unknown models", () => {
