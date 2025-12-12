@@ -511,7 +511,14 @@ export async function POST(req: Request) {
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),
             temperature: concierge.temperature,
-            ...(modelSupportsTools && { stopWhen: stepCountIs(5) }), // Multi-step only with tools
+            // Multi-step tool calling: Only enable when model supports tools AND reasoning is disabled.
+            // When reasoning is enabled, Anthropic includes thinking/redacted_thinking blocks in responses.
+            // These blocks cannot be modified in subsequent requests, causing step 2+ to fail with:
+            // "thinking blocks cannot be modified"
+            // The AI SDK's prepareStep callback cannot filter messages (only model/tools), so we must
+            // disable multi-step entirely when reasoning is active.
+            ...(modelSupportsTools &&
+                !concierge.reasoning.enabled && { stopWhen: stepCountIs(5) }),
             // Pass provider-specific reasoning configuration
             providerOptions,
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
