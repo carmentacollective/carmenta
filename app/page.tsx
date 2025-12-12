@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
+import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { Oracle } from "@/components/ui/oracle";
 
@@ -226,16 +227,16 @@ export default function HomePage() {
 
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
-                {/* Sticky header Oracle - appears on scroll */}
+                {/* Sticky header - appears on scroll */}
                 <header
                     className={cn(
-                        "fixed left-0 right-0 top-0 z-50 flex justify-center py-3 transition-all duration-500",
+                        "fixed left-0 right-0 top-0 z-50 transition-all duration-500",
                         showStickyOracle
                             ? "translate-y-0 opacity-100"
                             : "-translate-y-full opacity-0"
                     )}
                 >
-                    <Oracle href="/" size="sm" />
+                    <SiteHeader />
                 </header>
 
                 {/* Main content - centered */}
