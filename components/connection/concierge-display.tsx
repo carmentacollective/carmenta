@@ -9,6 +9,13 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getModel } from "@/lib/models";
 import type { ReasoningConfig } from "@/lib/concierge/types";
 
 /**
@@ -85,80 +92,99 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     const displayName = getModelDisplayName(modelId);
     const tempLabel = getTemperatureLabel(temperature);
     const reasoningLabel = reasoning ? getReasoningLabel(reasoning) : null;
+    const modelConfig = getModel(modelId);
 
     return (
-        <Collapsible
-            open={isOpen}
-            onOpenChange={setIsOpen}
-            className={cn("not-prose", className)}
-        >
-            <CollapsibleTrigger className="group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/5">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                <div className="min-w-0 flex-1">
-                    <span className="font-medium text-foreground/70">
-                        {displayName}
-                    </span>
-                    {reasoningLabel && (
-                        <>
-                            <span className="mx-1.5 text-foreground/30">·</span>
-                            <span className="inline-flex items-center gap-1 text-foreground/50">
-                                <Brain className="h-3 w-3" />
-                                {reasoningLabel}
-                            </span>
-                        </>
-                    )}
-                    <span className="mx-1.5 text-foreground/30">·</span>
-                    <span className="text-foreground/50">{explanation}</span>
-                </div>
-                <ChevronDown
-                    className={cn(
-                        "mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform duration-200",
-                        isOpen ? "rotate-180" : "rotate-0"
-                    )}
-                />
-            </CollapsibleTrigger>
-
-            <CollapsibleContent
-                className={cn(
-                    "overflow-hidden",
-                    "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
-                    "data-[state=open]:animate-in data-[state=open]:fade-in-0"
-                )}
+        <TooltipProvider delayDuration={300}>
+            <Collapsible
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                className={cn("not-prose", className)}
             >
-                <div className="ml-5 mt-1 space-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-foreground/40">Model</span>
-                        <code className="font-mono text-foreground/60">{modelId}</code>
+                <CollapsibleTrigger className="group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/5">
+                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                    <div className="min-w-0 flex-1">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="cursor-help font-medium text-foreground/70">
+                                    {displayName}
+                                </span>
+                            </TooltipTrigger>
+                            {modelConfig?.description && (
+                                <TooltipContent side="top" className="max-w-xs">
+                                    <p className="text-xs">{modelConfig.description}</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                        {reasoningLabel && (
+                            <>
+                                <span className="mx-1.5 text-foreground/30">·</span>
+                                <span className="inline-flex items-center gap-1 text-foreground/50">
+                                    <Brain className="h-3 w-3" />
+                                    {reasoningLabel}
+                                </span>
+                            </>
+                        )}
+                        <span className="mx-1.5 text-foreground/30">·</span>
+                        <span className="text-foreground/50">{explanation}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-foreground/40">Temperature</span>
-                        <span className="text-foreground/60">
-                            {temperature.toFixed(1)}{" "}
-                            <span className="text-foreground/40">({tempLabel})</span>
-                        </span>
-                    </div>
-                    {reasoning && (
+                    <ChevronDown
+                        className={cn(
+                            "mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform duration-200",
+                            isOpen ? "rotate-180" : "rotate-0"
+                        )}
+                    />
+                </CollapsibleTrigger>
+
+                <CollapsibleContent
+                    className={cn(
+                        "overflow-hidden",
+                        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+                        "data-[state=open]:animate-in data-[state=open]:fade-in-0"
+                    )}
+                >
+                    <div className="ml-5 mt-1 space-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
                         <div className="flex items-center justify-between">
-                            <span className="text-foreground/40">Reasoning</span>
+                            <span className="text-foreground/40">Model</span>
+                            <code className="font-mono text-foreground/60">
+                                {modelId}
+                            </code>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-foreground/40">Temperature</span>
                             <span className="text-foreground/60">
-                                {reasoning.enabled ? (
-                                    <>
-                                        {reasoning.effort ?? "medium"}
-                                        {reasoning.maxTokens && (
-                                            <span className="ml-1 text-foreground/40">
-                                                ({reasoning.maxTokens.toLocaleString()}{" "}
-                                                tokens)
-                                            </span>
-                                        )}
-                                    </>
-                                ) : (
-                                    <span className="text-foreground/40">disabled</span>
-                                )}
+                                {temperature.toFixed(1)}{" "}
+                                <span className="text-foreground/40">
+                                    ({tempLabel})
+                                </span>
                             </span>
                         </div>
-                    )}
-                </div>
-            </CollapsibleContent>
-        </Collapsible>
+                        {reasoning && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-foreground/40">Reasoning</span>
+                                <span className="text-foreground/60">
+                                    {reasoning.enabled ? (
+                                        <>
+                                            {reasoning.effort ?? "medium"}
+                                            {reasoning.maxTokens && (
+                                                <span className="ml-1 text-foreground/40">
+                                                    (
+                                                    {reasoning.maxTokens.toLocaleString()}{" "}
+                                                    tokens)
+                                                </span>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span className="text-foreground/40">
+                                            disabled
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
+        </TooltipProvider>
     );
 });

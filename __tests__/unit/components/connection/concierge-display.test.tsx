@@ -307,4 +307,24 @@ describe("ConciergeDisplay", () => {
             expect(container.firstChild).toHaveClass("not-prose");
         });
     });
+
+    describe("tooltip", () => {
+        it("model name has cursor-help to indicate tooltip", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            const modelName = within(trigger).getByText("Claude Sonnet");
+            expect(modelName).toHaveClass("cursor-help");
+        });
+
+        it("wraps model name in tooltip trigger", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            // Model name should be wrapped in a tooltip trigger span
+            const modelName = within(trigger).getByText("Claude Sonnet");
+            expect(modelName).toBeInTheDocument();
+            expect(modelName.tagName).toBe("SPAN");
+        });
+    });
 });
