@@ -51,8 +51,10 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
  * Note: Uses loose typing because the AI SDK's UIMessagePart type doesn't
  * accommodate all the part types we store (tool-*, data-*). The runtime
  * behavior is correct; TypeScript just can't express the full union.
+ *
+ * Exported for testing.
  */
-function toAIMessage(msg: UIMessageLike): UIMessage {
+export function toAIMessage(msg: UIMessageLike): UIMessage {
     // Map parts with loose typing - the AI SDK accepts these at runtime
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mappedParts: any[] = msg.parts.map((part) => {

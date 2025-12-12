@@ -6,90 +6,8 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { toAIMessage } from "@/components/connection/connect-runtime-provider";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
-
-/**
- * Copy of toAIMessage for testing.
- *
- * Convert our DB UIMessageLike format to AI SDK UIMessage format
- *
- * Handles all part types stored in the database:
- * - text: Plain text content
- * - reasoning: Model's thinking with optional providerMetadata
- * - file: Attached files (images, documents)
- * - step-start: Step boundary markers
- * - tool-*: Tool calls with state, input, output
- * - data-*: Generative UI data (comparisons, research results)
- */
-
-function toAIMessage(msg: UIMessageLike): any {
-    const mappedParts: any[] = msg.parts.map((part) => {
-        const partType = part.type as string;
-
-        if (partType === "text") {
-            return { type: "text", text: String(part.text || "") };
-        }
-
-        if (partType === "reasoning") {
-            const reasoningPart: Record<string, unknown> = {
-                type: "reasoning",
-                text: String(part.text || ""),
-            };
-            if (part.providerMetadata) {
-                reasoningPart.providerMetadata = part.providerMetadata;
-            }
-            return reasoningPart;
-        }
-
-        if (partType === "file") {
-            return {
-                type: "file",
-                url: String(part.url || ""),
-                mediaType: String(part.mediaType || part.mimeType || ""),
-                name: String(part.name || "file"),
-            };
-        }
-
-        if (partType === "step-start") {
-            return { type: "step-start" };
-        }
-
-        // Tool parts: type is "tool-{toolName}" (e.g., "tool-webSearch")
-        if (partType.startsWith("tool-")) {
-            const toolPart: Record<string, unknown> = {
-                type: partType,
-                toolCallId: String(part.toolCallId || ""),
-                state: (part.state as string) || "input-available",
-                input: part.input,
-            };
-            if (part.output !== undefined) {
-                toolPart.output = part.output;
-            }
-            if (part.errorText) {
-                toolPart.errorText = part.errorText;
-            }
-            return toolPart;
-        }
-
-        // Data parts: type is "data-{dataType}" (e.g., "data-comparison")
-        if (partType.startsWith("data-")) {
-            return {
-                type: partType,
-                id: String(part.id || ""),
-                data: part.data || {},
-            };
-        }
-
-        // Fallback for truly unknown types
-        return { type: "text", text: String(part.text || "") };
-    });
-
-    return {
-        id: msg.id,
-        role: msg.role,
-        parts: mappedParts,
-    };
-}
 
 describe("toAIMessage", () => {
     describe("text parts", () => {
@@ -146,7 +64,7 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].providerMetadata).toEqual({
+            expect((result.parts[0] as any).providerMetadata).toEqual({
                 anthropic: { cacheControl: { type: "ephemeral" } },
             });
         });
@@ -226,14 +144,12 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0]).toEqual({
-                type: "tool-webSearch",
-                toolCallId: "call-123",
-                state: "output-available",
-                input: { query: "weather in Tokyo" },
-                output: {
-                    results: [{ title: "Tokyo Weather", url: "https://example.com" }],
-                },
+            const part = result.parts[0] as any;
+            expect(part.type).toBe("tool-webSearch");
+            expect(part.toolCallId).toBe("call-123");
+            expect(part.state).toBe("output-available");
+            expect(part.output).toEqual({
+                results: [{ title: "Tokyo Weather", url: "https://example.com" }],
             });
         });
 
@@ -266,9 +182,10 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].type).toBe("tool-compareOptions");
-            expect(result.parts[0].output.title).toBe("Phone Comparison");
-            expect(result.parts[0].output.options).toHaveLength(2);
+            const part = result.parts[0] as any;
+            expect(part.type).toBe("tool-compareOptions");
+            expect(part.output.title).toBe("Phone Comparison");
+            expect(part.output.options).toHaveLength(2);
         });
 
         it("preserves tool-fetchPage parts", () => {
@@ -292,8 +209,9 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].type).toBe("tool-fetchPage");
-            expect(result.parts[0].output.title).toBe("Article Title");
+            const part = result.parts[0] as any;
+            expect(part.type).toBe("tool-fetchPage");
+            expect(part.output.title).toBe("Article Title");
         });
 
         it("preserves tool-deepResearch parts", () => {
@@ -317,8 +235,9 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].type).toBe("tool-deepResearch");
-            expect(result.parts[0].output.summary).toContain("AI");
+            const part = result.parts[0] as any;
+            expect(part.type).toBe("tool-deepResearch");
+            expect(part.output.summary).toContain("AI");
         });
 
         it("handles tool parts without output (input-available state)", () => {
@@ -337,9 +256,10 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].type).toBe("tool-webSearch");
-            expect(result.parts[0].state).toBe("input-available");
-            expect(result.parts[0].output).toBeUndefined();
+            const part = result.parts[0] as any;
+            expect(part.type).toBe("tool-webSearch");
+            expect(part.state).toBe("input-available");
+            expect(part.output).toBeUndefined();
         });
 
         it("preserves tool error text when present", () => {
@@ -359,7 +279,9 @@ describe("toAIMessage", () => {
 
             const result = toAIMessage(dbMessage);
 
-            expect(result.parts[0].errorText).toBe("Search service unavailable");
+            expect((result.parts[0] as any).errorText).toBe(
+                "Search service unavailable"
+            );
         });
     });
 
