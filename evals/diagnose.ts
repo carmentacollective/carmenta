@@ -442,7 +442,27 @@ async function runDiagnostics() {
                 console.log(`✅ ${result.wordCount} words`);
             }
         } catch (error) {
-            console.log(`💥 Error: ${error}`);
+            // Network errors (ECONNREFUSED, etc.) are infrastructure failures too
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.log(`💥 Network error: ${errorMessage}`);
+
+            // Create a synthetic result for the failed query so it counts
+            const errorResult: DiagnosticResult = {
+                query,
+                status: 0,
+                text: "",
+                wordCount: 0,
+                toolsCalled: [],
+                reasoningEnabled: false,
+                model: undefined,
+                failureType: "stream_crash",
+                failureReason: `Network error: ${errorMessage}`,
+                streamErrors: [],
+                latencyMs: 0,
+                categoryIssues: [],
+            };
+            results.push(errorResult);
+            infraFailures.push(errorResult);
         }
     }
 
