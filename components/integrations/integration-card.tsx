@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check, AlertTriangle, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -82,14 +83,24 @@ export function IntegrationCard({
     }, [externalStatusMessage, onClearStatusMessage]);
 
     return (
-        <div
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{
+                layout: { duration: 0.3, type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 },
+                scale: { duration: 0.2 },
+                borderColor: { duration: 0.3 },
+            }}
             className={cn(
-                "group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-all duration-300",
+                "group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-colors duration-300",
                 state === "needs_attention"
-                    ? "border-amber-400/80 bg-amber-50/5 shadow-amber-500/10 hover:shadow-amber-500/20 dark:bg-amber-950/20"
+                    ? "border-amber-400/80 hover:shadow-lg"
                     : state === "connected"
-                      ? "border-green-500/80 bg-gradient-to-br from-green-50/10 to-emerald-50/5 shadow-green-500/20 hover:shadow-green-500/30 dark:from-green-950/20 dark:to-emerald-950/10"
-                      : "border-border/60 bg-card hover:border-border hover:shadow-lg"
+                      ? "border-green-500/80 hover:shadow-lg"
+                      : "border-border/60 hover:border-border hover:shadow-lg"
             )}
         >
             {/* Header: Logo, Name, Status Icon */}
@@ -210,6 +221,6 @@ export function IntegrationCard({
                     </button>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 }
