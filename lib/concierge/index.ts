@@ -11,7 +11,8 @@ import { join } from "path";
 
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
-import { generateText, type UIMessage } from "ai";
+import { generateObject, type UIMessage } from "ai";
+import { z } from "zod";
 
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -46,7 +47,6 @@ export {
 
 // Re-export internal functions for testing
 export {
-    parseConciergeResponse,
     extractMessageText,
     formatQueryForConcierge,
     detectAttachments,
@@ -207,38 +207,46 @@ function parseEffortLevel(effort: unknown): ReasoningEffort {
 }
 
 /**
- * Parses the JSON response from the concierge LLM.
- * Validates model against whitelist and builds reasoning config.
+ * Zod schema for the concierge LLM response.
+ * Defines the expected structure for structured output generation.
  */
-function parseConciergeResponse(responseText: string): ConciergeResult {
-    // Clean up the response - remove markdown code blocks if present
-    let cleanedText = responseText.trim();
-    if (cleanedText.startsWith("```json")) {
-        cleanedText = cleanedText.slice(7);
-    }
-    if (cleanedText.startsWith("```")) {
-        cleanedText = cleanedText.slice(3);
-    }
-    if (cleanedText.endsWith("```")) {
-        cleanedText = cleanedText.slice(0, -3);
-    }
-    cleanedText = cleanedText.trim();
+const conciergeSchema = z.object({
+    modelId: z
+        .string()
+        .describe("The OpenRouter model ID (e.g., anthropic/claude-sonnet-4.5)"),
+    temperature: z
+        .number()
+        .min(0)
+        .max(1)
+        .describe("Temperature for the LLM call (0.0 to 1.0)"),
+    explanation: z
+        .string()
+        .max(MAX_EXPLANATION_LENGTH)
+        .describe("One warm sentence explaining the model choice - shown to the user"),
+    reasoning: z
+        .object({
+            enabled: z.boolean().describe("Whether to enable extended reasoning"),
+            effort: z
+                .enum(["high", "medium", "low", "none"])
+                .optional()
+                .describe("Reasoning effort level (only when enabled)"),
+        })
+        .describe("Extended reasoning configuration"),
+    title: z
+        .string()
+        .max(MAX_TITLE_LENGTH)
+        .optional()
+        .describe("Short title for the connection (max 50 chars)"),
+});
 
-    let parsed: Record<string, unknown>;
-    try {
-        parsed = JSON.parse(cleanedText);
-    } catch (error) {
-        throw new Error(
-            `Failed to parse concierge JSON: ${error instanceof Error ? error.message : String(error)}`
-        );
-    }
-
-    // Validate required fields
-    if (!parsed.modelId || parsed.temperature == null || !parsed.explanation) {
-        throw new Error("Missing required fields in concierge response");
-    }
-
-    const modelId = String(parsed.modelId);
+/**
+ * Validates and processes the raw concierge response.
+ * Checks model whitelist and builds reasoning config.
+ */
+function processConciergeResponse(
+    raw: z.infer<typeof conciergeSchema>
+): ConciergeResult {
+    const { modelId, temperature, explanation, reasoning: rawReasoning, title } = raw;
 
     // Validate model against whitelist
     if (!ALLOWED_MODELS.includes(modelId as (typeof ALLOWED_MODELS)[number])) {
@@ -246,39 +254,28 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
         return CONCIERGE_DEFAULTS;
     }
 
-    // Clamp temperature to valid range, default to 0.5 if NaN
-    const rawTemp = Number(parsed.temperature);
-    const temperature = Number.isNaN(rawTemp) ? 0.5 : Math.max(0, Math.min(1, rawTemp));
-
-    // Limit explanation length for security
-    const explanation = String(parsed.explanation).slice(0, MAX_EXPLANATION_LENGTH);
-
-    // Parse reasoning config
-    const rawReasoning = (parsed.reasoning ?? {}) as {
-        enabled?: boolean;
-        effort?: string;
-    };
+    // Build proper reasoning config based on model type
     const reasoning = buildReasoningConfig(modelId, rawReasoning);
 
-    // Parse and validate title (optional but expected)
-    let title: string | undefined;
-    if (parsed.title && typeof parsed.title === "string") {
-        title = parsed.title.trim();
+    // Clean up title if present
+    let cleanTitle: string | undefined;
+    if (title) {
+        cleanTitle = title.trim();
         // Remove quotes if the model wrapped the title
         if (
-            (title.startsWith('"') && title.endsWith('"')) ||
-            (title.startsWith("'") && title.endsWith("'"))
+            (cleanTitle.startsWith('"') && cleanTitle.endsWith('"')) ||
+            (cleanTitle.startsWith("'") && cleanTitle.endsWith("'"))
         ) {
-            title = title.slice(1, -1);
+            cleanTitle = cleanTitle.slice(1, -1);
         }
         // Enforce max length with unicode-safe truncation
-        // Using Array.from() to properly handle multi-byte characters (emoji, CJK)
-        if ([...title].length > MAX_TITLE_LENGTH) {
-            title = [...title].slice(0, MAX_TITLE_LENGTH - 3).join("") + "...";
+        if ([...cleanTitle].length > MAX_TITLE_LENGTH) {
+            cleanTitle =
+                [...cleanTitle].slice(0, MAX_TITLE_LENGTH - 3).join("") + "...";
         }
         // Ensure we have something useful
-        if (title.length < 2) {
-            title = undefined;
+        if (cleanTitle.length < 2) {
+            cleanTitle = undefined;
         }
     }
 
@@ -287,7 +284,7 @@ function parseConciergeResponse(responseText: string): ConciergeResult {
         temperature,
         explanation,
         reasoning,
-        title,
+        title: cleanTitle,
     };
 }
 
@@ -363,9 +360,13 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     "Running concierge"
                 );
 
-                // Run the concierge LLM
-                const result = await generateText({
+                // Run the concierge LLM with structured output
+                const result = await generateObject({
                     model: openrouter.chat(CONCIERGE_MODEL),
+                    schema: conciergeSchema,
+                    schemaName: "ConciergeResponse",
+                    schemaDescription:
+                        "Model selection, temperature, reasoning config, and explanation for the user",
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
@@ -376,8 +377,8 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     },
                 });
 
-                // Parse the response
-                const conciergeResult = parseConciergeResponse(result.text);
+                // Process and validate the structured response
+                const conciergeResult = processConciergeResponse(result.object);
 
                 span.setAttribute("selected_model", conciergeResult.modelId);
                 span.setAttribute("temperature", conciergeResult.temperature);

@@ -3,12 +3,12 @@ import { getPrompt } from "heart-centered-prompts";
 /**
  * Concierge prompt for model, temperature, and reasoning selection.
  *
- * This prompt is given the model rubric and user's query, and produces
+ * This prompt is given the model rubric and incoming request, and produces
  * a model selection, temperature, reasoning configuration, and one-sentence
  * explanation.
  *
  * Uses "terse" HCP (~200 tokens) because:
- * - The explanation field is shown to users, so it should feel warm
+ * - The explanation field appears in the interface, so it should feel warm
  * - Fast routing calls need minimal token overhead
  * - The philosophy shapes how the explanation is expressed
  *
@@ -34,7 +34,16 @@ ${rubricContent}
 </rubric>
 
 <instructions>
-Read the message and any attachments. Using the rubric:
+Read the message and any attachments. Using the rubric, provide these fields:
+
+**modelId** - Which model will serve this moment best (OpenRouter format: provider/model-name)
+**temperature** - How much creative variation we want (0.0 = precise, 1.0 = creative)
+**explanation** - One warm sentence shown in the interface explaining our choice
+**reasoning.enabled** - Whether to engage extended thinking for this request
+**reasoning.effort** - How deeply to think: high/medium/low/none (when enabled)
+**title** - Essence of this connection in ≤50 characters
+
+Selection approach:
 
 1. Select the best model for this request
    - If attachments include audio → MUST use google/gemini-3-pro-preview (only model with audio support)
@@ -42,12 +51,12 @@ Read the message and any attachments. Using the rubric:
    - If attachments include images → prefer anthropic/claude-sonnet-4.5 (excellent vision)
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
-4. Write one warm sentence explaining our choice - this will be shown to the user
-5. Generate a short title capturing the essence of the request (max 50 chars)
+4. Write one warm sentence explaining our choice (appears in the interface)
+5. Generate a short title capturing the essence of this request (max 50 chars)
 
 ### Title Generation
 
-Create a concise title that captures what the user wants to accomplish:
+Create a concise title that captures the essence of this request:
 - Maximum 50 characters (shorter is better)
 - Use present tense, active voice when possible
 - Add ONE emoji at the start ONLY when it genuinely captures the intent
@@ -69,7 +78,7 @@ Enable reasoning for complex tasks where quality matters more than speed. Disabl
 - Complex multi-step problems or analysis
 - Mathematical or logical reasoning
 - Research requiring deep synthesis
-- User explicitly asks for thorough thinking
+- The request explicitly calls for thorough thinking
 
 **Use "medium" reasoning when:**
 - Moderate complexity tasks
@@ -78,7 +87,7 @@ Enable reasoning for complex tasks where quality matters more than speed. Disabl
 
 **Use "low" reasoning when:**
 - Simpler questions that still benefit from some thinking
-- User signals they want something "quick but thoughtful"
+- The request suggests wanting something "quick but thoughtful"
 
 **Use "none" (disable reasoning) when:**
 - Quick lookups, simple facts, definitions
@@ -95,22 +104,7 @@ The explanation should feel friendly and collaborative:
 - "Complex analysis ahead - we'll think through this carefully 🧠"
 
 Use "we" language. Add an emoji when it fits the energy. Keep it to one sentence.
-
-Respond with valid JSON only. No markdown, no explanation outside the JSON.
 </instructions>
-
-<output-format>
-{
-  "modelId": "provider/model-name",
-  "temperature": 0.5,
-  "explanation": "One warm sentence explaining our choice.",
-  "reasoning": {
-    "enabled": true,
-    "effort": "medium"
-  },
-  "title": "Short title for this connection"
-}
-</output-format>
 
 <examples>
 Query: "What's the capital of France?"

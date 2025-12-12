@@ -1,55 +1,30 @@
 /**
  * Integration tests for runConcierge using mocked AI SDK.
  *
- * These tests mock the `generateText` function from the AI SDK to test
+ * These tests mock the `generateObject` function from the AI SDK to test
  * the full concierge flow without making actual API calls.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { UIMessage } from "ai";
 
-// Mock generateText before importing the module under test
-vi.mock("ai", async () => {
-    const actual = await import("ai");
-    return {
-        ...actual,
-        generateText: vi.fn(),
-    };
-});
+// Mock generateObject before importing the module under test
+vi.mock("ai", () => ({
+    generateObject: vi.fn(),
+}));
 
 // Mock fs/promises for rubric loading
-vi.mock("node:fs/promises", () => ({
-    default: {
-        readFile: vi.fn().mockResolvedValue(`# Test Rubric
+vi.mock("fs/promises", () => {
+    const mockReadFile = vi.fn().mockResolvedValue(`# Test Rubric
 ## Primary Models
 ### anthropic/claude-sonnet-4.5
 Our default model.
 **Choose when**: Most requests
-`),
-    },
-    readFile: vi.fn().mockResolvedValue(`# Test Rubric
-## Primary Models
-### anthropic/claude-sonnet-4.5
-Our default model.
-**Choose when**: Most requests
-`),
-}));
-
-vi.mock("fs/promises", () => ({
-    default: {
-        readFile: vi.fn().mockResolvedValue(`# Test Rubric
-## Primary Models
-### anthropic/claude-sonnet-4.5
-Our default model.
-**Choose when**: Most requests
-`),
-    },
-    readFile: vi.fn().mockResolvedValue(`# Test Rubric
-## Primary Models
-### anthropic/claude-sonnet-4.5
-Our default model.
-**Choose when**: Most requests
-`),
-}));
+`);
+    return {
+        default: { readFile: mockReadFile },
+        readFile: mockReadFile,
+    };
+});
 
 // Mock Sentry to avoid errors
 vi.mock("@sentry/nextjs", () => ({
@@ -73,7 +48,7 @@ vi.mock("@/lib/env", () => ({
     assertEnv: vi.fn(),
 }));
 
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import {
     runConcierge,
     clearRubricCache,
@@ -98,13 +73,13 @@ describe("runConcierge integration", () => {
     });
 
     it("returns parsed model selection from LLM response with reasoning config", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({
+        (generateObject as any).mockResolvedValueOnce({
+            object: {
                 modelId: "anthropic/claude-opus-4.5",
                 temperature: 0.6,
                 explanation: "Complex analysis needs deeper reasoning.",
                 reasoning: { enabled: true, effort: "high" },
-            }),
+            },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -122,13 +97,13 @@ describe("runConcierge integration", () => {
     });
 
     it("selects Sonnet for typical coding tasks", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({
+        (generateObject as any).mockResolvedValueOnce({
+            object: {
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.4,
                 explanation: "Code review is well-suited for our balanced default.",
                 reasoning: { enabled: true, effort: "medium" },
-            }),
+            },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -140,13 +115,13 @@ describe("runConcierge integration", () => {
     });
 
     it("selects Haiku for quick questions with reasoning disabled", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({
+        (generateObject as any).mockResolvedValueOnce({
+            object: {
                 modelId: "anthropic/claude-haiku-4.5",
                 temperature: 0.3,
                 explanation: "Simple factual lookup needs speed over depth.",
                 reasoning: { enabled: false },
-            }),
+            },
             usage: { promptTokens: 50, completionTokens: 30 },
             finishReason: "stop",
         } as any);
@@ -155,25 +130,6 @@ describe("runConcierge integration", () => {
 
         expect(result.modelId).toBe("anthropic/claude-haiku-4.5");
         expect(result.reasoning.enabled).toBe(false);
-    });
-
-    it("handles LLM response with markdown code blocks", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: `\`\`\`json
-{
-    "modelId": "anthropic/claude-sonnet-4.5",
-    "temperature": 0.5,
-    "explanation": "Standard task.",
-    "reasoning": { "enabled": false }
-}
-\`\`\``,
-            usage: { promptTokens: 100, completionTokens: 50 },
-            finishReason: "stop",
-        } as any);
-
-        const result = await runConcierge([createUserMessage("Help me")]);
-
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
     });
 
     it("returns defaults when no user message found", async () => {
@@ -188,35 +144,11 @@ describe("runConcierge integration", () => {
         const result = await runConcierge(assistantOnlyMessages);
 
         expect(result).toEqual(CONCIERGE_DEFAULTS);
-        expect(generateText).not.toHaveBeenCalled();
+        expect(generateObject).not.toHaveBeenCalled();
     });
 
     it("returns defaults when LLM call fails", async () => {
-        vi.mocked(generateText).mockRejectedValueOnce(new Error("API Error"));
-
-        const result = await runConcierge([createUserMessage("Test query")]);
-
-        expect(result).toEqual(CONCIERGE_DEFAULTS);
-    });
-
-    it("returns defaults when LLM returns invalid JSON", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: "I'm not sure, let me think about it...",
-            usage: { promptTokens: 100, completionTokens: 50 },
-            finishReason: "stop",
-        } as any);
-
-        const result = await runConcierge([createUserMessage("Test query")]);
-
-        expect(result).toEqual(CONCIERGE_DEFAULTS);
-    });
-
-    it("returns defaults when LLM response missing required fields", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({ modelId: "test" }), // missing temperature, explanation, reasoning
-            usage: { promptTokens: 100, completionTokens: 50 },
-            finishReason: "stop",
-        } as any);
+        (generateObject as any).mockRejectedValueOnce(new Error("API Error"));
 
         const result = await runConcierge([createUserMessage("Test query")]);
 
@@ -224,13 +156,13 @@ describe("runConcierge integration", () => {
     });
 
     it("uses last user message when multiple messages exist", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({
+        (generateObject as any).mockResolvedValueOnce({
+            object: {
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.7,
                 explanation: "Creative writing benefits from higher temperature.",
                 reasoning: { enabled: false },
-            }),
+            },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -251,30 +183,32 @@ describe("runConcierge integration", () => {
 
         await runConcierge(messages);
 
-        // Verify generateText was called with the last user message
-        expect(generateText).toHaveBeenCalledTimes(1);
-        const call = vi.mocked(generateText).mock.calls[0][0];
+        // Verify generateObject was called with the last user message
+        expect(generateObject).toHaveBeenCalledTimes(1);
+        const call = (generateObject as any).mock.calls[0][0];
         expect(call.prompt).toBe("Write a creative story");
     });
 
-    it("calls generateText with correct parameters", async () => {
-        vi.mocked(generateText).mockResolvedValueOnce({
-            text: JSON.stringify({
+    it("calls generateObject with correct parameters including schema", async () => {
+        (generateObject as any).mockResolvedValueOnce({
+            object: {
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
                 explanation: "Default choice.",
                 reasoning: { enabled: false },
-            }),
+            },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
 
         await runConcierge([createUserMessage("Test")]);
 
-        expect(generateText).toHaveBeenCalledWith(
+        expect(generateObject).toHaveBeenCalledWith(
             expect.objectContaining({
                 temperature: 0.1, // Low temperature for consistent routing
                 maxOutputTokens: CONCIERGE_MAX_OUTPUT_TOKENS,
+                schema: expect.any(Object), // Zod schema
+                schemaName: "ConciergeResponse",
             })
         );
     });
