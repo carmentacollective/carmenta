@@ -20,7 +20,8 @@ function getModelDisplayName(modelId: string): string {
         "anthropic/claude-sonnet-4.5": "Claude Sonnet",
         "anthropic/claude-haiku-4.5": "Claude Haiku",
         "google/gemini-3-pro-preview": "Gemini Pro",
-        "x-ai/grok-4-fast": "Grok",
+        "x-ai/grok-4.1-fast": "Grok",
+        "openai/gpt-5.2": "ChatGPT",
     };
 
     return displayNames[modelId] ?? modelId.split("/").pop() ?? modelId;

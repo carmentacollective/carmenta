@@ -195,7 +195,7 @@ describe("ConciergeDisplay", () => {
 
         it("displays Grok for grok model", () => {
             const { container } = render(
-                <ConciergeDisplay {...defaultProps} modelId="x-ai/grok-4-fast" />
+                <ConciergeDisplay {...defaultProps} modelId="x-ai/grok-4.1-fast" />
             );
 
             const trigger = container.querySelector("button")!;
