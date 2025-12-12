@@ -34,7 +34,20 @@ ${rubricContent}
 </rubric>
 
 <instructions>
-Read the message and any attachments. Using the rubric, return a JSON object with these routing fields (no additional text, only the JSON object):
+Your response is a JSON object matching this exact schema:
+
+{
+  "modelId": "provider/model-name",
+  "temperature": 0.0-1.0,
+  "explanation": "One sentence explaining our choice",
+  "reasoning": {
+    "enabled": true/false,
+    "effort": "high/medium/low/none"
+  },
+  "title": "Short title (≤50 chars)"
+}
+
+Read the message and any attachments. Using the rubric, select the routing configuration:
 
 **modelId** - Which model will serve this moment best (OpenRouter format: provider/model-name)
 **temperature** - How much creative variation we want (0.0 = precise, 1.0 = creative)
