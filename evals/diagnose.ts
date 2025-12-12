@@ -46,15 +46,24 @@ type FailureType =
     | "body_error";
 
 /**
- * Patterns that indicate the response was truncated mid-stream
+ * Patterns that indicate the response was truncated mid-stream.
+ * Conservative: only flag specific phrases indicating incomplete output.
  */
 const TRUNCATION_PATTERNS = [
     /I'll search for.*$/i,
     /Let me (look up|research|find|search).*$/i,
     /Searching for.*$/i,
     /I'll (check|look|find).*$/i,
-    /[a-z]{3,}\s*$/i, // Ends with word, no punctuation
+    /I need to (search|look|find).*$/i,
+    /Let me check.*$/i,
+    /\.{3}\s*$/, // Ellipsis at end without completion
 ];
+
+/**
+ * Minimum word count for a "substantial" response.
+ * Below this threshold, we flag as a quality issue (unless it's an infra failure).
+ */
+const MIN_WORD_COUNT = 50;
 
 /**
  * Patterns in response body that indicate an error even with 200 status
@@ -98,7 +107,7 @@ function parseHeaders(headers: Headers) {
 function detectTruncation(text: string): boolean {
     const trimmed = text.trim();
     if (!trimmed) return false;
-    if (trimmed.length < 100 && !/[.!?:]$/.test(trimmed)) return true;
+    // Conservative: only flag truncation for specific patterns
     return TRUNCATION_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
@@ -217,7 +226,7 @@ function classifyFailure(
         return { type: "body_error", reason: `Error in body: ${bodyError}` };
     }
     const wasTruncated = detectTruncation(text);
-    if (wasTruncated && text.split(/\s+/).filter(Boolean).length < 50) {
+    if (wasTruncated && text.split(/\s+/).filter(Boolean).length < MIN_WORD_COUNT) {
         return {
             type: "truncated",
             reason: `Response truncated after ${text.length} chars`,
@@ -301,7 +310,7 @@ async function runQuery(query: CompetitiveQuery): Promise<DiagnosticResult> {
 
 function printResult(result: DiagnosticResult) {
     const hasInfraFailure = result.failureType !== "none";
-    const hasQualityIssue = result.wordCount < 50 && !hasInfraFailure;
+    const hasQualityIssue = result.wordCount < MIN_WORD_COUNT && !hasInfraFailure;
     const hasCategoryIssue = result.categoryIssues.length > 0;
     const hasAnyIssue = hasInfraFailure || hasQualityIssue || hasCategoryIssue;
 
@@ -420,7 +429,7 @@ async function runDiagnostics() {
             if (result.failureType !== "none") {
                 infraFailures.push(result);
                 console.log(`💥 ${result.failureType}`);
-            } else if (result.wordCount < 50) {
+            } else if (result.wordCount < MIN_WORD_COUNT) {
                 qualityIssues.push(result);
                 console.log(`⚠️ ${result.wordCount} words`);
             } else if (result.categoryIssues.length > 0) {

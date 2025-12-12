@@ -118,16 +118,27 @@ interface StreamResult {
 }
 
 /**
- * Patterns that indicate the response was truncated mid-stream
+ * Patterns that indicate the response was truncated mid-stream.
+ * These are phrases that models say when starting a task before output is complete.
+ * Only use patterns that strongly indicate incomplete output - avoid false positives
+ * on legitimate short responses.
  */
 const TRUNCATION_PATTERNS = [
     /I'll search for.*$/i,
     /Let me (look up|research|find|search).*$/i,
     /Searching for.*$/i,
     /I'll (check|look|find).*$/i,
-    // Ends with incomplete sentence (no punctuation at end)
-    /[a-z]{3,}\s*$/i, // Ends with word, no punctuation
+    /I need to (search|look|find).*$/i,
+    /Let me check.*$/i,
+    // Ellipsis at end without completion
+    /\.{3}\s*$/,
 ];
+
+/**
+ * Minimum word count for a "substantial" response.
+ * Below this threshold, we flag as a quality issue (unless it's an infra failure).
+ */
+const MIN_WORD_COUNT = 50;
 
 /**
  * Patterns in response body that indicate an error even with 200 status
@@ -141,18 +152,18 @@ const BODY_ERROR_PATTERNS = [
 ];
 
 /**
- * Detect if response text appears to be truncated
+ * Detect if response text appears to be truncated mid-stream.
+ *
+ * Conservative detection: only flag truncation when we see specific patterns
+ * that indicate the model was cut off while announcing an action.
+ * This avoids false positives on legitimate short responses.
  */
 function detectTruncation(text: string): boolean {
     const trimmed = text.trim();
     if (!trimmed) return false;
 
-    // If text is very short and doesn't end with proper punctuation, likely truncated
-    if (trimmed.length < 100 && !/[.!?:]$/.test(trimmed)) {
-        return true;
-    }
-
-    // Check specific truncation patterns
+    // Only flag as truncated if we match a specific truncation pattern
+    // A short response without proper punctuation might just be a brief answer
     return TRUNCATION_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
@@ -306,7 +317,7 @@ function classifyFailure(
 
     // Response was truncated mid-stream
     const wasTruncated = detectTruncation(text);
-    if (wasTruncated && text.split(/\s+/).filter(Boolean).length < 50) {
+    if (wasTruncated && text.split(/\s+/).filter(Boolean).length < MIN_WORD_COUNT) {
         return {
             type: "truncated",
             reason: `Response truncated after ${text.length} chars`,
@@ -425,7 +436,7 @@ function CompetitiveScorer({
 
     if (infraPassed) {
         // Response Substance - only score if infra is healthy
-        const hasSubstantialResponse = wordCount >= 50;
+        const hasSubstantialResponse = wordCount >= MIN_WORD_COUNT;
         scores.push({
             name: "Response Substance",
             score: hasSubstantialResponse ? 1 : 0,
