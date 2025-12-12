@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { UIMessage } from "ai";
+import { z } from "zod";
 
 import { CONCIERGE_DEFAULTS } from "@/lib/concierge/types";
 import { buildConciergePrompt } from "@/lib/concierge/prompt";
@@ -8,6 +9,7 @@ import {
     formatQueryForConcierge,
     detectAttachments,
     buildReasoningConfig,
+    conciergeSchema,
 } from "@/lib/concierge";
 import { parseConciergeHeaders } from "@/lib/concierge/context";
 import { ALLOWED_MODELS } from "@/lib/concierge/types";
@@ -29,6 +31,67 @@ describe("Concierge", () => {
             expect(prompt).toContain("temperature");
             expect(prompt).toContain("explanation");
             expect(prompt).toContain("reasoning");
+        });
+    });
+
+    describe("conciergeSchema", () => {
+        const validResponse = {
+            modelId: "anthropic/claude-sonnet-4.5",
+            temperature: 0.5,
+            explanation: "Test explanation",
+            reasoning: { enabled: false },
+            title: "Test title",
+        };
+
+        it("requires title field - prevents untitled connections", () => {
+            // This test documents the bug fix: title must be required,
+            // not optional, to prevent LLMs from omitting it
+            const responseWithoutTitle = {
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Test explanation",
+                reasoning: { enabled: false },
+                // title intentionally omitted
+            };
+
+            const result = conciergeSchema.safeParse(responseWithoutTitle);
+
+            // Title should be required - omitting it should fail validation
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].path).toContain("title");
+            }
+        });
+
+        it("enforces minimum title length of 2 characters", () => {
+            const responseWithShortTitle = {
+                ...validResponse,
+                title: "X", // Too short
+            };
+
+            const result = conciergeSchema.safeParse(responseWithShortTitle);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].path).toContain("title");
+            }
+        });
+
+        it("enforces maximum title length of 50 characters", () => {
+            const responseWithLongTitle = {
+                ...validResponse,
+                title: "A".repeat(51), // Too long
+            };
+
+            const result = conciergeSchema.safeParse(responseWithLongTitle);
+
+            expect(result.success).toBe(false);
+        });
+
+        it("accepts valid title between 2-50 characters", () => {
+            const result = conciergeSchema.safeParse(validResponse);
+
+            expect(result.success).toBe(true);
         });
     });
 

@@ -49,12 +49,7 @@ vi.mock("@/lib/env", () => ({
 }));
 
 import { generateObject } from "ai";
-import {
-    runConcierge,
-    clearRubricCache,
-    CONCIERGE_DEFAULTS,
-    CONCIERGE_MAX_OUTPUT_TOKENS,
-} from "@/lib/concierge";
+import { runConcierge, clearRubricCache, CONCIERGE_DEFAULTS } from "@/lib/concierge";
 
 describe("runConcierge integration", () => {
     beforeEach(() => {
@@ -79,6 +74,7 @@ describe("runConcierge integration", () => {
                 temperature: 0.6,
                 explanation: "Complex analysis needs deeper reasoning.",
                 reasoning: { enabled: true, effort: "high" },
+                title: "🧠 Analyze complex problem",
             },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -103,6 +99,7 @@ describe("runConcierge integration", () => {
                 temperature: 0.4,
                 explanation: "Code review is well-suited for our balanced default.",
                 reasoning: { enabled: true, effort: "medium" },
+                title: "🔍 Code review",
             },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -121,6 +118,7 @@ describe("runConcierge integration", () => {
                 temperature: 0.3,
                 explanation: "Simple factual lookup needs speed over depth.",
                 reasoning: { enabled: false },
+                title: "TypeScript explanation",
             },
             usage: { promptTokens: 50, completionTokens: 30 },
             finishReason: "stop",
@@ -155,6 +153,34 @@ describe("runConcierge integration", () => {
         expect(result).toEqual(CONCIERGE_DEFAULTS);
     });
 
+    it("returns defaults and reports to Sentry when AI_NoObjectGeneratedError occurs", async () => {
+        // This error occurs when generateObject can't parse the LLM response
+        // Common causes: truncated output, model returns non-JSON, provider issues
+        const noObjectError = new Error(
+            "No object generated: could not parse the response."
+        );
+        noObjectError.name = "AI_NoObjectGeneratedError";
+        (generateObject as any).mockRejectedValueOnce(noObjectError);
+
+        const Sentry = await import("@sentry/nextjs");
+
+        const result = await runConcierge([createUserMessage("Test query")]);
+
+        // Should gracefully return defaults
+        expect(result).toEqual(CONCIERGE_DEFAULTS);
+
+        // Should report to Sentry for observability with error type tag
+        expect(Sentry.captureException).toHaveBeenCalledWith(
+            noObjectError,
+            expect.objectContaining({
+                tags: expect.objectContaining({
+                    component: "concierge",
+                    error_type: "AI_NoObjectGeneratedError",
+                }),
+            })
+        );
+    });
+
     it("uses last user message when multiple messages exist", async () => {
         (generateObject as any).mockResolvedValueOnce({
             object: {
@@ -162,6 +188,7 @@ describe("runConcierge integration", () => {
                 temperature: 0.7,
                 explanation: "Creative writing benefits from higher temperature.",
                 reasoning: { enabled: false },
+                title: "🎨 Creative story",
             },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -196,6 +223,7 @@ describe("runConcierge integration", () => {
                 temperature: 0.5,
                 explanation: "Default choice.",
                 reasoning: { enabled: false },
+                title: "Test query",
             },
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
@@ -206,10 +234,13 @@ describe("runConcierge integration", () => {
         expect(generateObject).toHaveBeenCalledWith(
             expect.objectContaining({
                 temperature: 0.1, // Low temperature for consistent routing
-                maxOutputTokens: CONCIERGE_MAX_OUTPUT_TOKENS,
                 schema: expect.any(Object), // Zod schema
                 schemaName: "ConciergeResponse",
             })
         );
+
+        // Verify we DON'T set maxOutputTokens - let the SDK handle it
+        const callArgs = (generateObject as any).mock.calls[0][0];
+        expect(callArgs.maxOutputTokens).toBeUndefined();
     });
 });

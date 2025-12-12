@@ -150,12 +150,6 @@ export const MAX_EXPLANATION_LENGTH = 500;
 export const MAX_TITLE_LENGTH = 50;
 
 /**
- * Max output tokens for concierge LLM call.
- * Kept small since we only need a JSON routing decision.
- */
-export const CONCIERGE_MAX_OUTPUT_TOKENS = 250;
-
-/**
  * OpenRouter reasoning effort levels (excludes "none" which disables reasoning).
  */
 export type OpenRouterEffort = "high" | "medium" | "low";
