@@ -515,8 +515,12 @@ export async function POST(req: Request) {
             // When reasoning is enabled, Anthropic includes thinking/redacted_thinking blocks in responses.
             // These blocks cannot be modified in subsequent requests, causing step 2+ to fail with:
             // "thinking blocks cannot be modified"
-            // The AI SDK's prepareStep callback cannot filter messages (only model/tools), so we must
-            // disable multi-step entirely when reasoning is active.
+            //
+            // We tried using prepareStep to filter thinking blocks from messages between steps,
+            // but the AI SDK has a bug where modified messages aren't used for subsequent steps.
+            // See: https://github.com/vercel/ai/issues/9631
+            //
+            // Until that's fixed, we must disable multi-step when reasoning is active.
             ...(modelSupportsTools &&
                 !concierge.reasoning.enabled && { stopWhen: stepCountIs(5) }),
             // Pass provider-specific reasoning configuration
