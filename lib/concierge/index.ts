@@ -420,6 +420,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     },
                     extra: {
                         conciergeModel: CONCIERGE_MODEL,
+                        messageCount: messages.length,
                     },
                 });
 
