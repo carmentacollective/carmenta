@@ -74,6 +74,9 @@ export default function IntegrationsPage() {
             setAvailable(result.available);
         } catch (error) {
             logger.error({ error }, "Failed to load services");
+            Sentry.captureException(error, {
+                tags: { component: "integrations-page", action: "load_services" },
+            });
             toast.error("Failed to load integrations", {
                 description:
                     "Please try again or contact support if the issue persists",
@@ -197,11 +200,32 @@ export default function IntegrationsPage() {
 
         // Set up undo timeout - actually delete after 5 seconds
         const timeoutId = setTimeout(async () => {
-            // Actually perform the delete
-            if (item.accountId) {
-                await deleteIntegration(item.service.id, item.accountId);
+            // Check if this disconnect was cancelled (race condition with undo)
+            if (pendingDisconnectRef.current?.timeoutId !== timeoutId) {
+                return;
             }
-            setPendingDisconnect(null);
+
+            try {
+                if (item.accountId) {
+                    await deleteIntegration(item.service.id, item.accountId);
+                }
+            } catch (error) {
+                logger.error(
+                    { error, serviceId: item.service.id },
+                    "Failed to delete integration after timeout"
+                );
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "integrations-page",
+                        action: "disconnect_timeout",
+                    },
+                    extra: { serviceId: item.service.id, accountId: item.accountId },
+                });
+                // Reload to resync state with server
+                await loadServices();
+            } finally {
+                setPendingDisconnect(null);
+            }
         }, 5000);
 
         setPendingDisconnect({ item, timeoutId });
