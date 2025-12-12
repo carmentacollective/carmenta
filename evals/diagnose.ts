@@ -187,7 +187,7 @@ async function consumeStream(response: Response): Promise<StreamResult> {
                         if (data.type === "error" || data.type === "tool-error") {
                             errors.push({
                                 type: data.type,
-                                message: data.message || data.error,
+                                message: data.message || data.error || data.errorText,
                                 code: data.code,
                                 raw: data,
                             });
