@@ -182,8 +182,11 @@ function detectBodyError(text: string): string | null {
                     ? parsed.error
                     : JSON.stringify(parsed.error);
             }
+            // Valid JSON without error field - not an error body
+            // Early return prevents regex from matching {"error":false,...}
+            return null;
         } catch {
-            // Not JSON, continue checking
+            // Not valid JSON, continue checking text patterns
         }
     }
 
