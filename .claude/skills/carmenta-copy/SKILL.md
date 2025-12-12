@@ -1,10 +1,6 @@
 ---
 name: carmenta-copy
-description:
-  "Use when writing user-facing content for Carmenta: landing pages, UI text, error
-  messages, documentation, marketing copy. Ensures voice consistency (we language,
-  heart-centered partnership), correct vocabulary (connection not chat, message not
-  prompt), and Apple-level quality where every word earns its place."
+description: "Invoke for Carmenta user-facing copy and voice review"
 ---
 
 <objective>
