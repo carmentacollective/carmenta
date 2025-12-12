@@ -228,7 +228,7 @@ export default function HomePage() {
             {/* Content layer */}
             <div className="relative z-10 flex min-h-screen flex-col">
                 {/* Sticky header - appears on scroll */}
-                <header
+                <div
                     className={cn(
                         "fixed left-0 right-0 top-0 z-50 transition-all duration-500",
                         showStickyOracle
@@ -237,7 +237,7 @@ export default function HomePage() {
                     )}
                 >
                     <SiteHeader />
-                </header>
+                </div>
 
                 {/* Main content - centered */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
