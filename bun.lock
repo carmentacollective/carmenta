@@ -60,6 +60,7 @@
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@types/remove-markdown": "^0.3.4",
+        "@types/uuid": "^11.0.0",
         "@vitejs/plugin-react": "^5.1.1",
         "@vitest/coverage-v8": "^4.0.15",
         "autoprefixer": "^10.4.22",
@@ -729,6 +730,8 @@
     "@types/tedious": ["@types/tedious@4.0.14", "", { "dependencies": { "@types/node": "24.10.1" } }, "sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw=="],
 
     "@types/unist": ["@types/unist@3.0.3", "", {}, "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="],
+
+    "@types/uuid": ["@types/uuid@11.0.0", "", { "dependencies": { "uuid": "*" } }, "sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA=="],
 
     "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
 

@@ -85,6 +85,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/remove-markdown": "^0.3.4",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.15",
     "autoprefixer": "^10.4.22",
