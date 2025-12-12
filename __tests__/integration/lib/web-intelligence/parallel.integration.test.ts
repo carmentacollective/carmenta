@@ -13,11 +13,9 @@
  */
 
 import { describe, it, expect, beforeAll, vi } from "vitest";
-
-import { ParallelProvider } from "@/lib/web-intelligence/parallel";
 import { logger } from "@/lib/logger";
 
-// Mock the actual Parallel API client
+// Mock the actual Parallel API client BEFORE importing it
 vi.mock("@/lib/web-intelligence/parallel", () => {
     class MockParallelProvider {
         search = vi.fn().mockResolvedValue({
@@ -73,6 +71,9 @@ vi.mock("@/lib/web-intelligence/parallel", () => {
         ParallelProvider: MockParallelProvider,
     };
 });
+
+// Import AFTER the mock is defined
+import { ParallelProvider } from "@/lib/web-intelligence/parallel";
 
 describe("ParallelProvider Tests", () => {
     let provider: ParallelProvider;
