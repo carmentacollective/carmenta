@@ -7,8 +7,31 @@ description: Create a new external service integration
 `/add-integration <service-name>`
 
 <objective>
-Build a complete service integration that works with Carmenta's chat interface. Study existing adapters, research the target service's API, and create an adapter that follows established patterns.
+Build a complete, tested service integration that works with Carmenta's chat interface.
+An integration is NOT complete without unit tests. Study existing adapters, research the
+target service's API, and create an adapter that follows established patterns.
 </objective>
+
+<definition-of-done>
+An integration is complete when ALL of these are done. Use TodoWrite to track progress.
+
+**Required for every integration:**
+
+- [ ] Service adapter implemented with all operations
+- [ ] Service registry entry added
+- [ ] Adapter exported and registered in tools.ts
+- [ ] Service logo added
+- [ ] Unit tests written and passing (REQUIRED - not optional)
+- [ ] All quality checks pass (type-check, lint, build, test)
+
+**For OAuth services, also:**
+
+- [ ] fetchAccountInfo() method implemented
+- [ ] Nango configuration documented
+
+**Create this todo list at the start of work.** Mark items complete as you go. The
+integration is not ready for review until every checkbox is checked.
+</definition-of-done>
 
 <context>
 Carmenta uses two authentication patterns:
@@ -87,6 +110,7 @@ Study these files to understand patterns:
 4. **Service logo** at `public/logos/[service].svg`
 
 5. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
+   - MANDATORY - integration is incomplete without tests
    - Test service configuration (name, display name)
    - Test help documentation structure
    - Test connection validation (testConnection method)
@@ -98,6 +122,31 @@ Study these files to understand patterns:
    - Add test fixtures to `__tests__/fixtures/integration-fixtures.ts` if needed
    - Test credential retrieval patterns if adding new auth types
    - Follow patterns in `__tests__/integration/lib/integrations/` </deliverables>
+
+<minimum-test-coverage>
+Every adapter MUST have tests covering:
+
+1. **Configuration tests** (2+ tests)
+   - serviceName and serviceDisplayName are correct
+   - getHelp() returns valid documentation structure
+
+2. **Connection test** (2+ tests)
+   - testConnection() succeeds with valid credentials
+   - testConnection() fails gracefully with invalid credentials
+
+3. **Operation tests** (2+ tests per operation)
+   - Each operation executes successfully with valid input
+   - Each operation handles errors appropriately
+
+4. **Error handling** (3+ tests)
+   - Authentication errors (401/403)
+   - Invalid input validation
+   - API errors (500, rate limits, timeouts)
+
+**Minimum total: 10-15 tests per adapter**, scaling with operation count.
+
+Adapters without tests will not be merged. This is non-negotiable.
+</minimum-test-coverage>
 
 <testing-guide>
 **Test Structure for Adapters:**
@@ -216,12 +265,15 @@ describe("YourAdapter", () => {
 - Import test fixtures from `@/__tests__/fixtures/integration-fixtures` </testing-guide>
 
 <quality-checks>
-Before committing:
-- `bun run type-check` passes
-- `bun run lint` passes
-- `bun run build` succeeds
-- `bun run test` passes (all adapter tests green)
-</quality-checks>
+Before marking complete, ALL must pass:
+
+1. `bun run type-check` - no TypeScript errors
+2. `bun run lint` - no linting errors
+3. `bun run build` - production build succeeds
+4. `bun run test` - all tests pass, including YOUR NEW ADAPTER TESTS
+
+If tests don't exist for the adapter, the integration is not complete. Go back and write
+them before proceeding. </quality-checks>
 
 <user-setup-instructions>
 After code is complete, provide manual setup instructions:
