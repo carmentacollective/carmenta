@@ -20,7 +20,7 @@ import {
     DropboxAdapter,
     FirefliesAdapter,
     GiphyAdapter,
-    GoogleAdapter,
+    GoogleCalendarContactsAdapter,
     LimitlessAdapter,
     NotionAdapter,
     SlackAdapter,
@@ -41,7 +41,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
     giphy: new GiphyAdapter(),
-    google: new GoogleAdapter(),
+    "google-calendar-contacts": new GoogleCalendarContactsAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
     slack: new SlackAdapter(),
@@ -162,7 +162,7 @@ type IntegrationTool = ReturnType<typeof createServiceTool>;
  *
  * Returns a Record of tool name → tool that can be spread into streamText's tools option.
  *
- * @param userEmail - The user's email address (not UUID)
+ * @param userEmail - User's email address (NOT userId UUID - database queries use email)
  *
  * @example
  * ```ts

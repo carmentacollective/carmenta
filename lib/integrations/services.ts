@@ -147,15 +147,15 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["search", "get_trending", "get_random"],
     },
 
-    // Google - OAuth (via Nango)
+    // Google Calendar + Contacts - OAuth (via Nango, "sensitive" scopes tier)
     {
-        id: "google",
-        name: "Google",
-        description: "Manage Google Calendar events and contacts",
-        logo: "/logos/google.svg",
+        id: "google-calendar-contacts",
+        name: "Google Calendar & Contacts",
+        description: "Manage calendar events and contacts via Google",
+        logo: "/logos/google-calendar-contacts.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "google-calendar",
+        nangoIntegrationKey: "google-calendar-contacts",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
         capabilities: [

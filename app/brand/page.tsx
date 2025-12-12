@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
 import { SiteHeader } from "@/components/site-header";
+import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { OracleShowcase } from "@/components/brand/oracle-showcase";
 import { cn } from "@/lib/utils";
@@ -1265,6 +1266,8 @@ export default function BrandPage() {
                             </div>
                         </section>
                     </div>
+
+                    <Footer />
 
                     {/* Social Previews - FULL WIDTH, outside container */}
                     <section className="space-y-6 py-16">
