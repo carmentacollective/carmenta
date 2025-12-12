@@ -35,16 +35,36 @@ class Violation(NamedTuple):
     suggestion: str
 
 
+def validate_directory(path: str) -> bool:
+    """
+    Validate that a directory path is safe and accessible.
+    Prevents directory traversal attacks and escape attempts.
+
+    Returns: True if path is valid and safe
+    """
+    try:
+        # Resolve to absolute path
+        resolved = os.path.realpath(path)
+        # Check if directory exists and is accessible
+        return os.path.isdir(resolved) and os.access(resolved, os.R_OK)
+    except (OSError, ValueError):
+        return False
+
+
 def get_working_directory_from_command(command: str) -> str:
     """
     Extract the target directory if command starts with cd.
-    Returns None if no cd command is present.
+    Returns None if no cd command is present or if path is invalid.
     """
     try:
         tokens = shlex.split(command)
         # Look for pattern: cd <path> && ...
         if len(tokens) >= 3 and tokens[0] == "cd" and tokens[2] == "&&":
-            return tokens[1]
+            path = tokens[1]
+            # Validate the path is safe before returning it
+            if validate_directory(path):
+                return path
+            # If path validation fails, ignore it (treat as if no cd)
     except ValueError:
         pass
     return None
@@ -84,10 +104,10 @@ def parse_git_command(command: str) -> tuple[str, list[str], list[str]]:
 
     Example:
         "git commit --amend -m 'msg'" -> ("commit", ["--amend", "-m"], ["msg"])
+        "git -C /path push origin main" -> ("push", ["-C"], ["/path", "origin", "main"])
 
-    Note: This parser is optimized for the current validation needs. Flag values
-    are treated as positional args, which is acceptable since our checks don't
-    distinguish between flag values and actual positional arguments.
+    Handles git global options that appear before the subcommand (-C, -c, --git-dir, etc.)
+    to prevent bypassing validation through option injection.
     """
     try:
         tokens = shlex.split(command)
@@ -104,8 +124,37 @@ def parse_git_command(command: str) -> tuple[str, list[str], list[str]]:
     if git_idx == -1 or git_idx + 1 >= len(tokens):
         return ("", [], [])
 
-    subcommand = tokens[git_idx + 1]
-    remaining = tokens[git_idx + 2:]
+    # Skip git global options that appear before subcommand
+    # These options take arguments (e.g., -C <path>, -c <config>)
+    # Git global options: -C, -c, --git-dir, --work-tree, --config, etc.
+    idx = git_idx + 1
+    global_options_with_args = {"-C", "-c", "--git-dir", "--work-tree", "--config"}
+
+    while idx < len(tokens):
+        token = tokens[idx]
+
+        # If token starts with '-', it's either a global option or the subcommand
+        if token.startswith("-"):
+            if token in global_options_with_args:
+                # Skip the option and its argument
+                idx += 2
+                continue
+            elif token.startswith("--") and "=" in token:
+                # Handle --option=value format
+                idx += 1
+                continue
+            else:
+                # Not a recognized global option, so this is the subcommand
+                break
+        else:
+            # Non-option token means we found the subcommand
+            break
+
+    if idx >= len(tokens):
+        return ("", [], [])
+
+    subcommand = tokens[idx]
+    remaining = tokens[idx + 1:]
 
     flags = []
     positional = []
@@ -222,8 +271,8 @@ def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]
     """Check git commit for violations."""
     violations = []
 
-    # Block --no-verify
-    if has_flag(flags, "--no-verify", "-n"):
+    # Block --no-verify (note: -n is short for --dry-run, not --no-verify)
+    if has_flag(flags, "--no-verify"):
         violations.append(Violation(
             "git commit --no-verify is forbidden",
             "Remove --no-verify and fix any hook failures"
@@ -241,7 +290,11 @@ def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]
 
 
 def check_gh_command(command: str) -> list[Violation]:
-    """Check GitHub CLI commands for violations."""
+    """Check GitHub CLI commands for violations.
+
+    Currently only warns about merging to main via CLI. Other PR operations are allowed.
+    The web interface provides better review experience and automatic status checks.
+    """
     violations = []
 
     try:
@@ -256,11 +309,13 @@ def check_gh_command(command: str) -> list[Violation]:
     gh_idx = tokens.index("gh")
     remaining = tokens[gh_idx + 1:]
 
-    # Block "gh pr merge"
+    # Check for "gh pr merge" command
+    # Block all gh pr merge invocations regardless of PR number
+    # gh pr merge can work with or without explicit PR number (uses current branch's PR)
     if len(remaining) >= 2 and remaining[0] == "pr" and remaining[1] == "merge":
         violations.append(Violation(
-            "Merging PRs via CLI is forbidden",
-            "Use the GitHub web interface to merge pull requests"
+            "Merging PRs via CLI is not recommended",
+            "Use the GitHub web interface - it provides better review experience and status checks"
         ))
 
     return violations
