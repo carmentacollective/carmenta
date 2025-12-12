@@ -380,7 +380,7 @@ export async function POST(req: Request) {
         // Load integration tools for connected services
         // These are merged with built-in tools for the request
         const integrationTools = modelSupportsTools
-            ? await getIntegrationTools(dbUser.id)
+            ? await getIntegrationTools(userEmail)
             : {};
 
         // Merge built-in tools with integration tools

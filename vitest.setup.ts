@@ -85,6 +85,7 @@ vi.mock("./lib/env", () => ({
         CLERK_WEBHOOK_SECRET: "test_webhook_secret",
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: undefined,
         PARALLEL_API_KEY: undefined,
+        ENCRYPTION_KEY: "test-encryption-key-min-32-chars-abcdefghijklmnopqrstuvwxyz",
     },
     assertEnv: (value: unknown, name: string) => {
         if (value === undefined || value === null || value === "") {
