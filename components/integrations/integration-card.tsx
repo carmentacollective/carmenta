@@ -19,8 +19,6 @@ export interface IntegrationCardProps {
     service: ServiceDefinition;
     /** Database status - undefined means not connected */
     status?: IntegrationStatus;
-    /** Account ID for connected services */
-    accountId?: string;
     /** Actions */
     onConnect?: () => void;
     onReconnect?: () => void;
@@ -47,7 +45,6 @@ function getIntegrationState(status?: IntegrationStatus): IntegrationState {
 export function IntegrationCard({
     service,
     status,
-    accountId: _accountId,
     onConnect,
     onReconnect,
     onTest,

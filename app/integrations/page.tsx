@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plug, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import * as Sentry from "@sentry/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -148,33 +149,51 @@ export default function IntegrationsPage() {
         // Clear any existing pending disconnect
         if (pendingDisconnectRef.current) {
             clearTimeout(pendingDisconnectRef.current.timeoutId);
-            // Execute the previous pending disconnect immediately
+            // Execute the previous pending disconnect immediately (fire-and-forget with error handling)
             const prev = pendingDisconnectRef.current;
             if (prev.item.accountId) {
-                deleteIntegration(prev.item.service.id, prev.item.accountId);
+                void deleteIntegration(prev.item.service.id, prev.item.accountId).catch(
+                    (error) => {
+                        logger.error(
+                            { error, serviceId: prev.item.service.id },
+                            "Failed to delete previous pending disconnect"
+                        );
+                        Sentry.captureException(error, {
+                            tags: {
+                                component: "integrations-page",
+                                action: "pending_disconnect_cleanup",
+                            },
+                        });
+                    }
+                );
             }
         }
 
-        // Optimistically remove from UI
-        setConnected((prev) =>
-            prev.filter(
+        // Optimistically remove from UI and handle available list atomically
+        setConnected((prev) => {
+            const updated = prev.filter(
                 (c) =>
                     !(
                         c.service.id === item.service.id &&
                         c.accountId === item.accountId
                     )
-            )
-        );
-        // Add back to available if this was the only account
-        const remainingAccounts = connected.filter(
-            (c) => c.service.id === item.service.id && c.accountId !== item.accountId
-        );
-        if (remainingAccounts.length === 0) {
-            setAvailable((prev) => {
-                if (prev.some((s) => s.id === item.service.id)) return prev;
-                return [...prev, item.service];
-            });
-        }
+            );
+
+            // Check remaining accounts from the updated state (not stale closure)
+            const remainingAccounts = updated.filter(
+                (c) => c.service.id === item.service.id
+            );
+
+            if (remainingAccounts.length === 0) {
+                setAvailable((prevAvail) => {
+                    if (prevAvail.some((s) => s.id === item.service.id))
+                        return prevAvail;
+                    return [...prevAvail, item.service];
+                });
+            }
+
+            return updated;
+        });
 
         // Set up undo timeout - actually delete after 5 seconds
         const timeoutId = setTimeout(async () => {
@@ -214,6 +233,14 @@ export default function IntegrationsPage() {
                 await loadServices();
             }
         } catch (error) {
+            logger.error(
+                { error, service: item.service.id },
+                "Integration test failed"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "integrations-page", action: "test_integration" },
+                extra: { serviceId: item.service.id, accountId: item.accountId },
+            });
             toast.error("Test failed", {
                 description: "We couldn't reach the service",
             });
@@ -292,7 +319,6 @@ export default function IntegrationsPage() {
                                             key={`${item.service.id}-${item.accountId ?? "available"}`}
                                             service={item.service}
                                             status={item.status}
-                                            accountId={item.accountId}
                                             onConnect={() =>
                                                 handleConnectClick(item.service)
                                             }
