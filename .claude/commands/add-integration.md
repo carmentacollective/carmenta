@@ -7,31 +7,24 @@ description: Create a new external service integration
 `/add-integration <service-name>`
 
 <objective>
-Build a complete, tested service integration that works with Carmenta's chat interface.
-An integration is NOT complete without unit tests. Study existing adapters, research the
-target service's API, and create an adapter that follows established patterns.
+Build a complete, tested service integration. Study existing adapters, research the
+target API, and follow established patterns.
 </objective>
 
 <definition-of-done>
-An integration is complete when ALL of these are done. Use TodoWrite to track progress.
+Use TodoWrite to track progress. An integration includes:
 
-**Required for every integration:**
-
-- [ ] Service adapter implemented with all operations
-- [ ] Service registry entry added
+- [ ] Service adapter with operations
+- [ ] Service registry entry
 - [ ] Adapter exported and registered in tools.ts
-- [ ] Service logo added
-- [ ] Unit tests written and passing (REQUIRED - not optional)
-- [ ] All quality checks pass (type-check, lint, build, test)
+- [ ] Service logo
+- [ ] Unit tests
+- [ ] Quality checks pass
 
-**For OAuth services, also:**
+For OAuth services:
 
-- [ ] fetchAccountInfo() method implemented
-- [ ] Nango configuration documented
-
-**Create this todo list at the start of work.** Mark items complete as you go. The
-integration is not ready for review until every checkbox is checked.
-</definition-of-done>
+- [ ] fetchAccountInfo() method
+- [ ] Nango configuration documented </definition-of-done>
 
 <context>
 Carmenta uses two authentication patterns:
@@ -110,12 +103,6 @@ Study these files to understand patterns:
 4. **Service logo** at `public/logos/[service].svg`
 
 5. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
-   - MANDATORY - integration is incomplete without tests
-   - Test service configuration (name, display name)
-   - Test help documentation structure
-   - Test connection validation (testConnection method)
-   - Test each operation with mocked HTTP responses
-   - Test error handling (auth errors, invalid inputs, API errors)
    - Use existing adapter tests as templates (giphy, limitless, coinmarketcap)
 
 6. **Integration tests** (if adding connection-manager features)
@@ -124,28 +111,13 @@ Study these files to understand patterns:
    - Follow patterns in `__tests__/integration/lib/integrations/` </deliverables>
 
 <minimum-test-coverage>
-Every adapter MUST have tests covering:
+Tests cover:
+- Service configuration and help documentation
+- Connection validation (success and failure)
+- Each operation (success and error paths)
+- Auth errors, invalid inputs, API failures
 
-1. **Configuration tests** (2+ tests)
-   - serviceName and serviceDisplayName are correct
-   - getHelp() returns valid documentation structure
-
-2. **Connection test** (2+ tests)
-   - testConnection() succeeds with valid credentials
-   - testConnection() fails gracefully with invalid credentials
-
-3. **Operation tests** (2+ tests per operation)
-   - Each operation executes successfully with valid input
-   - Each operation handles errors appropriately
-
-4. **Error handling** (3+ tests)
-   - Authentication errors (401/403)
-   - Invalid input validation
-   - API errors (500, rate limits, timeouts)
-
-**Minimum total: 10-15 tests per adapter**, scaling with operation count.
-
-Adapters without tests will not be merged. This is non-negotiable.
+Reference existing adapter tests (giphy, limitless, coinmarketcap) for patterns.
 </minimum-test-coverage>
 
 <testing-guide>
@@ -254,26 +226,15 @@ describe("YourAdapter", () => {
 });
 ```
 
-**Key Testing Requirements:**
+**Gotchas:**
 
-- Mock HTTP responses must match actual API response structure (check for nested data,
-  image objects, etc.)
-- Use `as never` type assertion for mocked HTTP client returns to satisfy TypeScript
-- Test both success and error paths for each operation
-- For limit/offset params: expect string values (adapters convert numbers to strings)
-- Use `setupTestDb()` for integration tests that need database access
-- Import test fixtures from `@/__tests__/fixtures/integration-fixtures` </testing-guide>
+- Mock HTTP responses must match actual API response structure exactly
+- Use `as never` type assertion for mocked httpClient returns
+- Limit/offset params become strings (adapters stringify numbers) </testing-guide>
 
 <quality-checks>
-Before marking complete, ALL must pass:
-
-1. `bun run type-check` - no TypeScript errors
-2. `bun run lint` - no linting errors
-3. `bun run build` - production build succeeds
-4. `bun run test` - all tests pass, including YOUR NEW ADAPTER TESTS
-
-If tests don't exist for the adapter, the integration is not complete. Go back and write
-them before proceeding. </quality-checks>
+Type-check, lint, build, and tests pass before marking complete.
+</quality-checks>
 
 <user-setup-instructions>
 After code is complete, provide manual setup instructions:
