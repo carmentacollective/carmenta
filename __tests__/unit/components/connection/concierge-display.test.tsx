@@ -309,7 +309,7 @@ describe("ConciergeDisplay", () => {
     });
 
     describe("tooltip", () => {
-        it("model name has cursor-help to indicate tooltip", () => {
+        it("model name has cursor-help when description exists", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
@@ -317,7 +317,7 @@ describe("ConciergeDisplay", () => {
             expect(modelName).toHaveClass("cursor-help");
         });
 
-        it("wraps model name in tooltip trigger", () => {
+        it("wraps model name in tooltip trigger when description exists", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
@@ -325,6 +325,20 @@ describe("ConciergeDisplay", () => {
             const modelName = within(trigger).getByText("Claude Sonnet");
             expect(modelName).toBeInTheDocument();
             expect(modelName.tagName).toBe("SPAN");
+        });
+
+        it("shows plain model name without cursor-help for unknown models", () => {
+            const { container } = render(
+                <ConciergeDisplay
+                    {...defaultProps}
+                    modelId="unknown-provider/unknown-model"
+                />
+            );
+
+            const trigger = container.querySelector("button")!;
+            const modelName = within(trigger).getByText("unknown-model");
+            expect(modelName).toBeInTheDocument();
+            expect(modelName).not.toHaveClass("cursor-help");
         });
     });
 });

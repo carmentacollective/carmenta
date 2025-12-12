@@ -104,18 +104,22 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                 <CollapsibleTrigger className="group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/5">
                     <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40" />
                     <div className="min-w-0 flex-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="cursor-help font-medium text-foreground/70">
-                                    {displayName}
-                                </span>
-                            </TooltipTrigger>
-                            {modelConfig?.description && (
+                        {modelConfig?.description ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="cursor-help font-medium text-foreground/70">
+                                        {displayName}
+                                    </span>
+                                </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-xs">
                                     <p className="text-xs">{modelConfig.description}</p>
                                 </TooltipContent>
-                            )}
-                        </Tooltip>
+                            </Tooltip>
+                        ) : (
+                            <span className="font-medium text-foreground/70">
+                                {displayName}
+                            </span>
+                        )}
                         {reasoningLabel && (
                             <>
                                 <span className="mx-1.5 text-foreground/30">·</span>
