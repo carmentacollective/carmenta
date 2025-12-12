@@ -573,9 +573,14 @@ export async function POST(req: Request) {
                     // Build UI message parts from the step result
                     const parts: UIMessageLike["parts"] = [];
 
-                    // Add reasoning part if present
+                    // Add reasoning part if present (with provider metadata for token counts)
                     if (reasoning) {
-                        parts.push({ type: "reasoning", text: reasoning });
+                        parts.push({
+                            type: "reasoning",
+                            text: reasoning,
+                            // Include provider metadata for reasoning tokens, cache info
+                            ...(providerMetadata && { providerMetadata }),
+                        });
                     }
 
                     // Add text part if present

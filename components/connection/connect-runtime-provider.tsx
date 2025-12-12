@@ -39,33 +39,90 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 /**
  * Convert our DB UIMessageLike format to AI SDK UIMessage format
+ *
+ * Handles all part types stored in the database:
+ * - text: Plain text content
+ * - reasoning: Model's thinking with optional providerMetadata
+ * - file: Attached files (images, documents)
+ * - step-start: Step boundary markers
+ * - tool-*: Tool calls with state, input, output
+ * - data-*: Generative UI data (comparisons, research results)
+ *
+ * Note: Uses loose typing because the AI SDK's UIMessagePart type doesn't
+ * accommodate all the part types we store (tool-*, data-*). The runtime
+ * behavior is correct; TypeScript just can't express the full union.
+ *
+ * Exported for testing.
  */
-function toAIMessage(msg: UIMessageLike): UIMessage {
+export function toAIMessage(msg: UIMessageLike): UIMessage {
+    // Map parts with loose typing - the AI SDK accepts these at runtime
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mappedParts: any[] = msg.parts.map((part) => {
+        const partType = part.type as string;
+
+        if (partType === "text") {
+            return { type: "text", text: String(part.text || "") };
+        }
+
+        if (partType === "reasoning") {
+            const reasoningPart: Record<string, unknown> = {
+                type: "reasoning",
+                text: String(part.text || ""),
+            };
+            // Include providerMetadata if present (for reasoning tokens, cache info)
+            if (part.providerMetadata) {
+                reasoningPart.providerMetadata = part.providerMetadata;
+            }
+            return reasoningPart;
+        }
+
+        if (partType === "file") {
+            return {
+                type: "file",
+                url: String(part.url || ""),
+                mediaType: String(part.mediaType || part.mimeType || ""),
+                name: String(part.name || "file"),
+            };
+        }
+
+        if (partType === "step-start") {
+            return { type: "step-start" };
+        }
+
+        // Tool parts: type is "tool-{toolName}" (e.g., "tool-webSearch")
+        if (partType.startsWith("tool-")) {
+            const toolPart: Record<string, unknown> = {
+                type: partType,
+                toolCallId: String(part.toolCallId || ""),
+                state: (part.state as string) || "input-available",
+                input: part.input,
+            };
+            if (part.output !== undefined) {
+                toolPart.output = part.output;
+            }
+            if (part.errorText) {
+                toolPart.errorText = part.errorText;
+            }
+            return toolPart;
+        }
+
+        // Data parts: type is "data-{dataType}" (e.g., "data-comparison")
+        if (partType.startsWith("data-")) {
+            return {
+                type: partType,
+                id: String(part.id || ""),
+                data: part.data || {},
+            };
+        }
+
+        // Fallback for truly unknown types - preserve as-is
+        return { type: "text", text: String(part.text || "") };
+    });
+
     return {
         id: msg.id,
         role: msg.role,
-        parts: msg.parts.map((part) => {
-            if (part.type === "text") {
-                return { type: "text" as const, text: String(part.text || "") };
-            }
-            if (part.type === "reasoning") {
-                return {
-                    type: "reasoning" as const,
-                    text: String(part.text || ""),
-                    // providerMetadata is optional - omit if not present
-                };
-            }
-            if (part.type === "file") {
-                return {
-                    type: "file" as const,
-                    url: String(part.url || ""),
-                    mediaType: String(part.mediaType || part.mimeType || ""),
-                    name: String(part.name || "file"),
-                };
-            }
-            // Default to text for any unknown types
-            return { type: "text" as const, text: String(part.text || "") };
-        }),
+        parts: mappedParts,
     };
 }
 
