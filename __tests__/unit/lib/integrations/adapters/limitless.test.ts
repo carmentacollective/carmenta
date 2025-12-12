@@ -250,7 +250,7 @@ describe("LimitlessAdapter", () => {
                 expect.any(String),
                 expect.objectContaining({
                     searchParams: expect.objectContaining({
-                        limit: 10,
+                        limit: "10",
                     }),
                 })
             );

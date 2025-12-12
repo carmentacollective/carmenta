@@ -181,9 +181,22 @@ describe("GiphyAdapter", () => {
                             id: "abc123",
                             title: "Funny Cat GIF",
                             url: "https://giphy.com/gifs/abc123",
+                            rating: "g",
                             images: {
+                                original: {
+                                    url: "https://media.giphy.com/media/abc123/giphy.gif",
+                                    width: 480,
+                                    height: 270,
+                                },
                                 fixed_height: {
                                     url: "https://media.giphy.com/media/abc123/200.gif",
+                                    width: 356,
+                                    height: 200,
+                                },
+                                fixed_width: {
+                                    url: "https://media.giphy.com/media/abc123/200w.gif",
+                                    width: 200,
+                                    height: 113,
                                 },
                             },
                         },
@@ -194,7 +207,7 @@ describe("GiphyAdapter", () => {
                         offset: 0,
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.execute(
                 "search",
@@ -229,7 +242,7 @@ describe("GiphyAdapter", () => {
                     data: [],
                     pagination: { total_count: 0, count: 0, offset: 0 },
                 }),
-            });
+            } as never);
 
             await adapter.execute(
                 "search",
@@ -241,7 +254,7 @@ describe("GiphyAdapter", () => {
                 expect.any(String),
                 expect.objectContaining({
                     searchParams: expect.objectContaining({
-                        limit: 25,
+                        limit: "25",
                     }),
                 })
             );
@@ -265,9 +278,27 @@ describe("GiphyAdapter", () => {
                         id: "xyz789",
                         title: "Random GIF",
                         url: "https://giphy.com/gifs/xyz789",
+                        rating: "g",
+                        images: {
+                            original: {
+                                url: "https://media.giphy.com/media/xyz789/giphy.gif",
+                                width: 480,
+                                height: 270,
+                            },
+                            fixed_height: {
+                                url: "https://media.giphy.com/media/xyz789/200.gif",
+                                width: 356,
+                                height: 200,
+                            },
+                            fixed_width: {
+                                url: "https://media.giphy.com/media/xyz789/200w.gif",
+                                width: 200,
+                                height: 113,
+                            },
+                        },
                     },
                 }),
-            });
+            } as never);
 
             const result = await adapter.execute("get_random", {}, testUserEmail);
 

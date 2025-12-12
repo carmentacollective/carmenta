@@ -5,8 +5,10 @@
  */
 
 import { db, schema } from "@/lib/db";
-import { encryptCredentials } from "@/lib/integrations/encryption";
-import type { ApiKeyCredentials } from "@/lib/integrations/types";
+import {
+    encryptCredentials,
+    type ApiKeyCredentials,
+} from "@/lib/integrations/encryption";
 import { v4 as uuid } from "uuid";
 
 /**

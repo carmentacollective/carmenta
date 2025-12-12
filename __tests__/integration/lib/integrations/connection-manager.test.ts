@@ -16,7 +16,8 @@ import {
     createTestApiKeyIntegration,
     createTestOAuthIntegration,
 } from "@/__tests__/fixtures/integration-fixtures";
-import { NotFoundError } from "@/lib/errors";
+import { ValidationError } from "@/lib/errors";
+import type { ApiKeyCredentials } from "@/lib/integrations/encryption";
 
 setupTestDb();
 
@@ -126,8 +127,10 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "giphy");
 
                 expect(creds.type).toBe("api_key");
-                if (creds.type === "api_key") {
-                    expect(creds.credentials.apiKey).toBe(apiKey);
+                if (creds.type === "api_key" && creds.credentials) {
+                    expect((creds.credentials as ApiKeyCredentials).apiKey).toBe(
+                        apiKey
+                    );
                 }
             });
 
@@ -140,9 +143,11 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "limitless");
 
                 expect(creds.type).toBe("api_key");
-                if (creds.type === "api_key") {
+                if (creds.type === "api_key" && creds.credentials) {
                     // Verify the key was encrypted and decrypted correctly
-                    expect(creds.credentials.apiKey).toBe(originalKey);
+                    expect((creds.credentials as ApiKeyCredentials).apiKey).toBe(
+                        originalKey
+                    );
                 }
             });
         });
@@ -180,8 +185,10 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "giphy");
 
                 expect(creds.type).toBe("api_key");
-                if (creds.type === "api_key") {
-                    expect(creds.credentials.apiKey).toBe("key2"); // Default account
+                if (creds.type === "api_key" && creds.credentials) {
+                    expect((creds.credentials as ApiKeyCredentials).apiKey).toBe(
+                        "key2"
+                    ); // Default account
                 }
             });
 
@@ -197,7 +204,7 @@ describe("Connection Manager", () => {
                         credentialType: "api_key",
                         encryptedCredentials:
                             await import("@/lib/integrations/encryption").then((m) =>
-                                m.encrypt({ apiKey: "oldest-key" })
+                                m.encryptCredentials({ apiKey: "oldest-key" })
                             ),
                         accountId: "account1",
                         isDefault: false,
@@ -216,8 +223,10 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "giphy");
 
                 expect(creds.type).toBe("api_key");
-                if (creds.type === "api_key") {
-                    expect(creds.credentials.apiKey).toBe("oldest-key");
+                if (creds.type === "api_key" && creds.credentials) {
+                    expect((creds.credentials as ApiKeyCredentials).apiKey).toBe(
+                        "oldest-key"
+                    );
                 }
             });
 
@@ -235,24 +244,26 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "giphy", "account1");
 
                 expect(creds.type).toBe("api_key");
-                if (creds.type === "api_key") {
-                    expect(creds.credentials.apiKey).toBe("key1"); // Specific account, not default
+                if (creds.type === "api_key" && creds.credentials) {
+                    expect((creds.credentials as ApiKeyCredentials).apiKey).toBe(
+                        "key1"
+                    ); // Specific account, not default
                 }
             });
         });
 
         describe("Error handling", () => {
-            it("throws NotFoundError when no integration exists", async () => {
+            it("throws ValidationError when no integration exists", async () => {
                 const user = await createTestUser({
                     email: "nointegration@example.com",
                 });
 
                 await expect(getCredentials(user.email, "nonexistent")).rejects.toThrow(
-                    NotFoundError
+                    ValidationError
                 );
             });
 
-            it("throws NotFoundError when integration is disconnected", async () => {
+            it("throws ValidationError when integration is disconnected", async () => {
                 const user = await createTestUser({
                     email: "disconnected@example.com",
                 });
@@ -262,11 +273,11 @@ describe("Connection Manager", () => {
                 });
 
                 await expect(getCredentials(user.email, "giphy")).rejects.toThrow(
-                    NotFoundError
+                    ValidationError
                 );
             });
 
-            it("throws NotFoundError for specific accountId that doesn't exist", async () => {
+            it("throws ValidationError for specific accountId that doesn't exist", async () => {
                 const user = await createTestUser({
                     email: "wrongaccount@example.com",
                 });
@@ -277,7 +288,7 @@ describe("Connection Manager", () => {
 
                 await expect(
                     getCredentials(user.email, "giphy", "nonexistent-account")
-                ).rejects.toThrow(NotFoundError);
+                ).rejects.toThrow(ValidationError);
             });
         });
     });

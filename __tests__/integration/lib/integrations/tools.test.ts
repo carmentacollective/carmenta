@@ -135,20 +135,24 @@ describe("Integration Tool Loading", () => {
             // Tool should have these properties (from ai sdk tool())
             expect(giphyTool).toBeDefined();
             expect(giphyTool.description).toBeDefined();
-            expect(giphyTool.parameters).toBeDefined();
+            expect(giphyTool.inputSchema).toBeDefined();
             expect(giphyTool.execute).toBeDefined();
             expect(typeof giphyTool.execute).toBe("function");
         });
 
-        it("tool description mentions the service", async () => {
+        it("tool description is well-formed", async () => {
             const user = await createTestUser({ email: "desc@example.com" });
             await createTestApiKeyIntegration(user.email, "giphy", "test-key");
 
             const tools = await getIntegrationTools(user.email);
             const giphyTool = tools.giphy;
 
-            // Description should mention the service name
-            expect(giphyTool.description.toLowerCase()).toContain("giphy");
+            // Description should be non-empty and mention actions
+            expect(giphyTool.description).toBeDefined();
+            if (giphyTool.description) {
+                expect(giphyTool.description.length).toBeGreaterThan(0);
+                expect(giphyTool.description.toLowerCase()).toContain("action");
+            }
         });
     });
 
