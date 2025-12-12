@@ -13,6 +13,7 @@ import {
 
 import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";
+import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
     title: "Our Security · Carmenta",
@@ -131,298 +132,313 @@ function PartnerCard({ partner }: { partner: SecurityPartner }) {
 
 export default function SecurityPage() {
     return (
-        <div className="min-h-screen bg-background">
-            <SiteHeader bordered />
-            {/* Hero Section */}
-            <section className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
-                <div className="text-center">
-                    <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
-                        <ShieldCheck className="h-8 w-8 text-primary" />
-                    </div>
-
-                    <h1 className="text-5xl font-bold tracking-tight">
-                        Security First, Always
-                    </h1>
-
-                    <p className="mx-auto mt-6 max-w-3xl text-xl text-muted-foreground">
-                        Your conversations are precious. We protect them with
-                        enterprise-grade security while making AI accessible and
-                        powerful.
-                    </p>
-
-                    {/* Trust Indicators */}
-                    <div className="mt-8 flex flex-wrap justify-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Lock className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <span>SSL/TLS Encrypted</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <span>SOC 2 Partners</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <span>Private by Default</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Core Security Promise */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 lg:p-12">
-                    <h2 className="mb-6 text-3xl font-bold">Our Security Promise</h2>
-
-                    <div className="grid gap-8 md:grid-cols-2">
-                        <div>
-                            <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                What We Protect
-                            </h3>
-                            <ul className="space-y-2 text-muted-foreground">
-                                <li>• Our conversations and message history</li>
-                                <li>• Files and attachments we share</li>
-                                <li>• Authentication credentials</li>
-                                <li>• Personal preferences and settings</li>
-                                <li>• All data transmission and storage</li>
-                            </ul>
+        <div className="relative min-h-screen bg-background">
+            <HolographicBackground />
+            <div className="relative z-10">
+                <SiteHeader bordered />
+                {/* Hero Section */}
+                <section className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
+                    <div className="text-center">
+                        <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
+                            <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
 
-                        <div>
-                            <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                What We Never Do
-                            </h3>
-                            <ul className="space-y-2 text-muted-foreground">
-                                <li>• Sell or share our conversations</li>
-                                <li>• Train models on our data without consent</li>
-                                <li>• Allow unauthorized human access</li>
-                                <li>• Store unencrypted sensitive data</li>
-                                <li>• Compromise on security for features</li>
-                            </ul>
+                        <h1 className="text-5xl font-bold tracking-tight">
+                            Security First, Always
+                        </h1>
+
+                        <p className="mx-auto mt-6 max-w-3xl text-xl text-muted-foreground">
+                            Your conversations are precious. We protect them with
+                            enterprise-grade security while making AI accessible and
+                            powerful.
+                        </p>
+
+                        {/* Trust Indicators */}
+                        <div className="mt-8 flex flex-wrap justify-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Lock className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span>SSL/TLS Encrypted</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span>SOC 2 Partners</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span>Private by Default</span>
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    <div className="mt-8 rounded-lg bg-background/50 p-4 backdrop-blur">
-                        <p className="text-sm">
-                            <strong>How it works:</strong> Our conversations are
-                            encrypted in transit and at rest. When we chat with AI
-                            models, we route requests securely to the appropriate model
-                            provider. Our data stays protected at every step.
+                {/* Core Security Promise */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 lg:p-12">
+                        <h2 className="mb-6 text-3xl font-bold">
+                            Our Security Promise
+                        </h2>
+
+                        <div className="grid gap-8 md:grid-cols-2">
+                            <div>
+                                <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
+                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                    What We Protect
+                                </h3>
+                                <ul className="space-y-2 text-muted-foreground">
+                                    <li>• Our conversations and message history</li>
+                                    <li>• Files and attachments we share</li>
+                                    <li>• Authentication credentials</li>
+                                    <li>• Personal preferences and settings</li>
+                                    <li>• All data transmission and storage</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
+                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                    What We Never Do
+                                </h3>
+                                <ul className="space-y-2 text-muted-foreground">
+                                    <li>• Sell or share our conversations</li>
+                                    <li>• Train models on our data without consent</li>
+                                    <li>• Allow unauthorized human access</li>
+                                    <li>• Store unencrypted sensitive data</li>
+                                    <li>• Compromise on security for features</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 rounded-lg bg-background/50 p-4 backdrop-blur">
+                            <p className="text-sm">
+                                <strong>How it works:</strong> Our conversations are
+                                encrypted in transit and at rest. When we chat with AI
+                                models, we route requests securely to the appropriate
+                                model provider. Our data stays protected at every step.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Security Features Grid */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="mb-12 text-center">
+                        <h2 className="text-3xl font-bold">
+                            Enterprise-Grade Security Features
+                        </h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            Built on industry-leading security infrastructure
                         </p>
                     </div>
-                </div>
-            </section>
 
-            {/* Security Features Grid */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="mb-12 text-center">
-                    <h2 className="text-3xl font-bold">
-                        Enterprise-Grade Security Features
-                    </h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Built on industry-leading security infrastructure
-                    </p>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {securityFeatures.map((feature) => {
-                        const Icon = feature.icon;
-                        return (
-                            <div
-                                key={feature.title}
-                                className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
-                            >
-                                <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-2">
-                                    <Icon className="h-6 w-6 text-primary" />
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {securityFeatures.map((feature) => {
+                            const Icon = feature.icon;
+                            return (
+                                <div
+                                    key={feature.title}
+                                    className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
+                                >
+                                    <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-2">
+                                        <Icon className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <h3 className="mb-2 text-lg font-semibold">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        {feature.description}
+                                    </p>
                                 </div>
-                                <h3 className="mb-2 text-lg font-semibold">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-muted-foreground">
-                                    {feature.description}
-                                </p>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                {/* Security Partners */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="mb-12 text-center">
+                        <h2 className="text-3xl font-bold">
+                            Trusted Security Partners
+                        </h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            We leverage the security certifications of industry leaders
+                        </p>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {securityPartners.map((partner) => (
+                            <PartnerCard key={partner.name} partner={partner} />
+                        ))}
+                    </div>
+
+                    <div className="mt-12 rounded-xl border bg-muted/50 p-6">
+                        <h3 className="mb-3 font-semibold">
+                            Compliance & Certifications We Inherit
+                        </h3>
+                        <div className="flex flex-wrap gap-3">
+                            <SecurityBadge certification="SOC 2 Type II" />
+                            <SecurityBadge certification="GDPR Compliant" />
+                            <SecurityBadge certification="CCPA Compliant" />
+                            <SecurityBadge certification="ISO 27001" />
+                        </div>
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            Through our security partners, Carmenta benefits from
+                            enterprise-grade compliance and certifications. Your data is
+                            protected by the same standards used by Fortune 500
+                            companies.
+                        </p>
+                    </div>
+                </section>
+
+                {/* Technical Security Details */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="rounded-xl border bg-card p-8">
+                        <h2 className="mb-6 text-2xl font-bold">
+                            Technical Security Implementation
+                        </h2>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="mb-2 font-semibold">Encryption</h3>
+                                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                                    <li>TLS 1.3 for all data in transit</li>
+                                    <li>AES-256 for data at rest</li>
+                                    <li>Encrypted database connections and backups</li>
+                                    <li>End-to-end encryption for file uploads</li>
+                                </ul>
                             </div>
-                        );
-                    })}
-                </div>
-            </section>
 
-            {/* Security Partners */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="mb-12 text-center">
-                    <h2 className="text-3xl font-bold">Trusted Security Partners</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        We leverage the security certifications of industry leaders
-                    </p>
-                </div>
+                            <div>
+                                <h3 className="mb-2 font-semibold">Access Control</h3>
+                                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                                    <li>
+                                        Strict user isolation - you can only access your
+                                        own data
+                                    </li>
+                                    <li>
+                                        JWT-based authentication with short-lived tokens
+                                    </li>
+                                    <li>Rate limiting on all API endpoints</li>
+                                    <li>IP-based blocking for suspicious activity</li>
+                                </ul>
+                            </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {securityPartners.map((partner) => (
-                        <PartnerCard key={partner.name} partner={partner} />
-                    ))}
-                </div>
+                            <div>
+                                <h3 className="mb-2 font-semibold">
+                                    Monitoring & Response
+                                </h3>
+                                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                                    <li>Real-time error tracking with Sentry</li>
+                                    <li>
+                                        Automated security scanning on all deployments
+                                    </li>
+                                    <li>24/7 infrastructure monitoring by Vercel</li>
+                                    <li>
+                                        Immediate session revocation on suspicious
+                                        activity
+                                    </li>
+                                </ul>
+                            </div>
 
-                <div className="mt-12 rounded-xl border bg-muted/50 p-6">
-                    <h3 className="mb-3 font-semibold">
-                        Compliance & Certifications We Inherit
-                    </h3>
-                    <div className="flex flex-wrap gap-3">
-                        <SecurityBadge certification="SOC 2 Type II" />
-                        <SecurityBadge certification="GDPR Compliant" />
-                        <SecurityBadge certification="CCPA Compliant" />
-                        <SecurityBadge certification="ISO 27001" />
+                            <div>
+                                <h3 className="mb-2 font-semibold">Data Handling</h3>
+                                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                                    <li>
+                                        Encrypted storage of conversations and files
+                                    </li>
+                                    <li>
+                                        Request logs retained for 90 days (metadata
+                                        only)
+                                    </li>
+                                    <li>Secure deletion on account termination</li>
+                                    <li>Regular security audits and updates</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <p className="mt-4 text-sm text-muted-foreground">
-                        Through our security partners, Carmenta benefits from
-                        enterprise-grade compliance and certifications. Your data is
-                        protected by the same standards used by Fortune 500 companies.
-                    </p>
-                </div>
-            </section>
+                </section>
 
-            {/* Technical Security Details */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="rounded-xl border bg-card p-8">
-                    <h2 className="mb-6 text-2xl font-bold">
-                        Technical Security Implementation
-                    </h2>
-
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="mb-2 font-semibold">Encryption</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-                                <li>TLS 1.3 for all data in transit</li>
-                                <li>AES-256 for data at rest</li>
-                                <li>Encrypted database connections and backups</li>
-                                <li>End-to-end encryption for file uploads</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="mb-2 font-semibold">Access Control</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-                                <li>
-                                    Strict user isolation - you can only access your own
-                                    data
-                                </li>
-                                <li>
-                                    JWT-based authentication with short-lived tokens
-                                </li>
-                                <li>Rate limiting on all API endpoints</li>
-                                <li>IP-based blocking for suspicious activity</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="mb-2 font-semibold">
-                                Monitoring & Response
+                {/* Security Practices */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="grid gap-8 lg:grid-cols-2">
+                        <div className="rounded-xl border border-green-200 bg-green-50 p-8 dark:border-green-800 dark:bg-green-950">
+                            <h3 className="mb-4 text-xl font-bold text-green-900 dark:text-green-100">
+                                What We Do
                             </h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-                                <li>Real-time error tracking with Sentry</li>
-                                <li>Automated security scanning on all deployments</li>
-                                <li>24/7 infrastructure monitoring by Vercel</li>
-                                <li>
-                                    Immediate session revocation on suspicious activity
-                                </li>
+                            <ul className="space-y-3">
+                                {[
+                                    "Encrypt all data in transit and at rest",
+                                    "Use industry-standard authentication",
+                                    "Implement rate limiting and DDoS protection",
+                                    "Monitor for security threats 24/7",
+                                    "Regular security audits and updates",
+                                    "Immediate session revocation on request",
+                                    "Transparent security practices",
+                                ].map((item) => (
+                                    <li key={item} className="flex items-start gap-2">
+                                        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
+                                        <span className="text-green-800 dark:text-green-200">
+                                            {item}
+                                        </span>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
 
-                        <div>
-                            <h3 className="mb-2 font-semibold">Data Handling</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-                                <li>Encrypted storage of conversations and files</li>
-                                <li>
-                                    Request logs retained for 90 days (metadata only)
-                                </li>
-                                <li>Secure deletion on account termination</li>
-                                <li>Regular security audits and updates</li>
+                        <div className="rounded-xl border border-red-200 bg-red-50 p-8 dark:border-red-800 dark:bg-red-950">
+                            <h3 className="mb-4 text-xl font-bold text-red-900 dark:text-red-100">
+                                What We Never Do
+                            </h3>
+                            <ul className="space-y-3">
+                                {[
+                                    "Store your data unencrypted",
+                                    "Share or sell your conversations",
+                                    "Train AI models on your data without consent",
+                                    "Allow unauthorized human access",
+                                    "Log sensitive conversation content",
+                                    "Keep data after account deletion",
+                                    "Compromise on security for convenience",
+                                ].map((item) => (
+                                    <li key={item} className="flex items-start gap-2">
+                                        <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+                                        <span className="text-red-800 dark:text-red-200">
+                                            {item}
+                                        </span>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            {/* Security Practices */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="grid gap-8 lg:grid-cols-2">
-                    <div className="rounded-xl border border-green-200 bg-green-50 p-8 dark:border-green-800 dark:bg-green-950">
-                        <h3 className="mb-4 text-xl font-bold text-green-900 dark:text-green-100">
-                            What We Do
-                        </h3>
-                        <ul className="space-y-3">
-                            {[
-                                "Encrypt all data in transit and at rest",
-                                "Use industry-standard authentication",
-                                "Implement rate limiting and DDoS protection",
-                                "Monitor for security threats 24/7",
-                                "Regular security audits and updates",
-                                "Immediate session revocation on request",
-                                "Transparent security practices",
-                            ].map((item) => (
-                                <li key={item} className="flex items-start gap-2">
-                                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                                    <span className="text-green-800 dark:text-green-200">
-                                        {item}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
+                {/* Contact Section */}
+                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                    <div className="rounded-xl bg-muted/50 p-8 text-center">
+                        <h2 className="mb-4 text-2xl font-bold">Security Questions?</h2>
+                        <p className="mb-6 text-muted-foreground">
+                            We take security seriously. If you have questions about our
+                            security practices, found a vulnerability, or need more
+                            information for your compliance requirements, please reach
+                            out.
+                        </p>
+                        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                            <a
+                                href="mailto:security@carmenta.ai"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                <Shield className="h-5 w-5" />
+                                security@carmenta.ai
+                            </a>
+                            <a
+                                href="/privacy"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border bg-background px-6 py-3 transition-colors hover:bg-muted"
+                            >
+                                View Privacy Policy
+                            </a>
+                        </div>
                     </div>
-
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-8 dark:border-red-800 dark:bg-red-950">
-                        <h3 className="mb-4 text-xl font-bold text-red-900 dark:text-red-100">
-                            What We Never Do
-                        </h3>
-                        <ul className="space-y-3">
-                            {[
-                                "Store your data unencrypted",
-                                "Share or sell your conversations",
-                                "Train AI models on your data without consent",
-                                "Allow unauthorized human access",
-                                "Log sensitive conversation content",
-                                "Keep data after account deletion",
-                                "Compromise on security for convenience",
-                            ].map((item) => (
-                                <li key={item} className="flex items-start gap-2">
-                                    <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
-                                    <span className="text-red-800 dark:text-red-200">
-                                        {item}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
-                <div className="rounded-xl bg-muted/50 p-8 text-center">
-                    <h2 className="mb-4 text-2xl font-bold">Security Questions?</h2>
-                    <p className="mb-6 text-muted-foreground">
-                        We take security seriously. If you have questions about our
-                        security practices, found a vulnerability, or need more
-                        information for your compliance requirements, please reach out.
-                    </p>
-                    <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                        <a
-                            href="mailto:security@carmenta.ai"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground transition-colors hover:bg-primary/90"
-                        >
-                            <Shield className="h-5 w-5" />
-                            security@carmenta.ai
-                        </a>
-                        <a
-                            href="/privacy"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border bg-background px-6 py-3 transition-colors hover:bg-muted"
-                        >
-                            View Privacy Policy
-                        </a>
-                    </div>
-                </div>
-            </section>
-            <Footer />
+                </section>
+                <Footer />
+            </div>
         </div>
     );
 }
