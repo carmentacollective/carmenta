@@ -149,7 +149,7 @@ describe("NotionAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("notion");
-            expect(result.content[0].text).toContain("");
+            expect(result.content[0].text).toMatch(/connect|integrations/i);
         });
 
         it("proceeds with valid OAuth credentials", async () => {

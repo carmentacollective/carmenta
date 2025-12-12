@@ -119,6 +119,9 @@ describe("SlackAdapter", () => {
                 new ValidationError("slack is not connected")
             );
 
+            // Note: Slack adapter throws ValidationError directly instead of
+            // catching and returning an error result like other OAuth adapters.
+            // This is the actual behavior of the Slack adapter.
             await expect(
                 adapter.execute("list_channels", {}, testUserEmail)
             ).rejects.toThrow("slack is not connected");

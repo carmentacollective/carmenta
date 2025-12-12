@@ -360,7 +360,7 @@ describe("FirefliesAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toMatch(
-                /403|Forbidden|Authentication failed/
+                /401|Unauthorized|Authentication failed/
             );
         });
 
