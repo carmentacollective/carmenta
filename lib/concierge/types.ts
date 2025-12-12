@@ -108,7 +108,8 @@ export const ALLOWED_MODELS = [
     "anthropic/claude-sonnet-4.5",
     "anthropic/claude-haiku-4.5",
     "google/gemini-3-pro-preview",
-    "x-ai/grok-4-fast",
+    "openai/gpt-5.2",
+    "x-ai/grok-4.1-fast",
 ] as const;
 
 /**
@@ -118,7 +119,8 @@ export const REASONING_CAPABLE_MODELS = [
     "anthropic/claude-opus-4.5",
     "anthropic/claude-sonnet-4.5",
     "anthropic/claude-haiku-4.5",
-    "x-ai/grok-4-fast",
+    "openai/gpt-5.2",
+    "x-ai/grok-4.1-fast",
 ] as const;
 
 /**
@@ -133,7 +135,7 @@ export const TOKEN_BUDGET_MODELS = [
 /**
  * Models that use effort-based reasoning (Grok, OpenAI).
  */
-export const EFFORT_BASED_MODELS = ["x-ai/grok-4-fast"] as const;
+export const EFFORT_BASED_MODELS = ["openai/gpt-5.2", "x-ai/grok-4.1-fast"] as const;
 
 /**
  * Maximum length for explanation text.

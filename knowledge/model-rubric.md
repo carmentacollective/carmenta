@@ -121,9 +121,10 @@ Full multimodal including video and audio.
 
 ---
 
-### x-ai/grok-4-fast
+### x-ai/grok-4.1-fast
 
-Massive context window.
+Best agentic tool calling model. Massive context window. Halves hallucinations vs
+4-fast.
 
 - **Context**: 2M tokens (largest available)
 - **Cost**: $0.20/$0.50 per million tokens
@@ -134,9 +135,31 @@ Massive context window.
 
 - Conversation is approaching or exceeds 200K tokens
 - Processing extremely long documents
+- Research/comparison queries needing reasoning + web search
+- Queries requiring extended thinking AND multi-step tool use
 - Context length is the primary constraint
 
 **Temperature guidance**: 0.4-0.6
+
+---
+
+### openai/gpt-5.2
+
+SOTA tool calling with adaptive reasoning. Preambles explain intent before each tool
+call.
+
+- **Context**: 400K tokens
+- **Cost**: $1.75/$14 per million tokens
+- **Attachments**: Text, images, files
+- **Reasoning**: Adaptive (auto-allocates based on complexity)
+
+**Choose when**:
+
+- Complex research requiring highest-quality tool orchestration
+- Multi-step tasks where accuracy matters more than cost
+- When you need the model to explain its tool-calling decisions
+
+**Temperature guidance**: 0.5-0.7
 
 ---
 
@@ -267,13 +290,14 @@ MUST route to Gemini regardless of other factors.
 
 ## Context Window Reference
 
-| Model                         | Max Context | Notes                                |
-| ----------------------------- | ----------- | ------------------------------------ |
-| `x-ai/grok-4-fast`            | 2M tokens   | Use when context is the constraint   |
-| `anthropic/claude-sonnet-4.5` | 1M tokens   | Best balance of capability + context |
-| `google/gemini-3-pro-preview` | 1M tokens   | Full multimodal at scale             |
-| `anthropic/claude-opus-4.5`   | 200K tokens | Deep reasoning, moderate context     |
-| `anthropic/claude-haiku-4.5`  | 200K tokens | Fast, moderate context               |
+| Model                         | Max Context | Notes                                 |
+| ----------------------------- | ----------- | ------------------------------------- |
+| `x-ai/grok-4.1-fast`          | 2M tokens   | Best agentic tool calling             |
+| `anthropic/claude-sonnet-4.5` | 1M tokens   | Best balance of capability + context  |
+| `google/gemini-3-pro-preview` | 1M tokens   | Full multimodal at scale              |
+| `openai/gpt-5.2`              | 400K tokens | SOTA tool calling, adaptive reasoning |
+| `anthropic/claude-opus-4.5`   | 200K tokens | Deep reasoning, moderate context      |
+| `anthropic/claude-haiku-4.5`  | 200K tokens | Fast, moderate context                |
 
 ---
 
