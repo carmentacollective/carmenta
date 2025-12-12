@@ -449,7 +449,7 @@ export async function deleteIntegration(
  */
 export async function testIntegration(
     serviceId: string,
-    _accountId?: string
+    accountId?: string
 ): Promise<ConnectResult> {
     const userEmail = await getUserEmail();
 
@@ -479,8 +479,12 @@ export async function testIntegration(
                 };
             }
 
-            // Get the stored credentials
-            const connectionCreds = await getCredentials(userEmail, serviceId);
+            // Get the stored credentials for the specific account
+            const connectionCreds = await getCredentials(
+                userEmail,
+                serviceId,
+                accountId
+            );
 
             if (connectionCreds.type !== "api_key" || !connectionCreds.credentials) {
                 return {
@@ -502,16 +506,19 @@ export async function testIntegration(
             );
 
             if (!result.success) {
-                // Update integration status to error
+                // Update integration status to error for this specific account
+                const whereConditions = [
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, serviceId),
+                ];
+                if (accountId) {
+                    whereConditions.push(eq(schema.integrations.accountId, accountId));
+                }
+
                 await db
                     .update(schema.integrations)
                     .set({ status: "error", updatedAt: new Date() })
-                    .where(
-                        and(
-                            eq(schema.integrations.userEmail, userEmail),
-                            eq(schema.integrations.service, serviceId)
-                        )
-                    );
+                    .where(and(...whereConditions));
             }
 
             return result;
