@@ -6,6 +6,11 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
  *
  * Lists active explorations and provides instructions for creating new ones.
  * Each exploration lives at /design-lab/[topic]
+ *
+ * NOTE: Intentionally omits SiteHeader and Footer - this is a design laboratory
+ * for exploring UI patterns. The centered layout with holographic background serves
+ * as the interface. Navigation back to the main site is provided through the
+ * design patterns being tested.
  */
 export default function DesignLabIndex() {
     return (

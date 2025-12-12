@@ -3,13 +3,17 @@
 /**
  * Connect Layout
  *
- * Full-page container for the connection experience.
- * ONE div contains everything at the same width:
- * - Header row (Oracle | Connection Chooser | Account)
- * - Chat messages
+ * Full-page container for the connection/chat experience.
+ * Intentionally excludes SiteHeader and Footer - this is a focused chat interface.
+ *
+ * Layout structure:
+ * - Header row: Oracle | Connection Chooser | Account
+ * - Chat messages area
  * - Chat input dock
  *
  * The container is transparent - just for layout/max-width containment.
+ * This specialized layout maximizes vertical space for conversation and provides
+ * context-specific navigation (connections, recent chats) rather than global site nav.
  */
 
 import { type ReactNode } from "react";

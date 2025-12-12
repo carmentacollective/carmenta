@@ -17,6 +17,11 @@ export const metadata: Metadata = {
  *
  * This is the canonical URL for starting a new conversation.
  * /connection/new redirects here for fresh page loads.
+ *
+ * NOTE: Intentionally uses ConnectLayout instead of standard SiteHeader/Footer.
+ * The chat interface has its own header (Oracle + Connection Chooser + Account)
+ * optimized for the conversational context. No footer in chat mode to maximize
+ * vertical space for messages. This is a focused, distraction-free interface.
  */
 export default async function ConnectionPage() {
     // Load recent connections for the header dropdown (auth protected by middleware)
