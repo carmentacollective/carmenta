@@ -88,6 +88,55 @@ export class SlackAdapter extends ServiceAdapter {
         }
     }
 
+    /**
+     * Test the OAuth connection by making a live API request
+     * Called when user clicks "Test" button to verify credentials are working
+     *
+     * @param connectionId - Nango connection ID
+     * @param userId - User ID (optional, only used for logging)
+     */
+    async testConnection(
+        connectionId: string,
+        userId?: string
+    ): Promise<{ success: boolean; error?: string }> {
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            // Make a simple auth test request - same as fetchAccountInfo but for verification
+            const response = await httpClient
+                .get(`${nangoUrl}/proxy/auth.test`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "slack",
+                    },
+                })
+                .json<{ ok: boolean; error?: string }>();
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    error: response.error || "Failed to verify Slack connection",
+                };
+            }
+
+            return { success: true };
+        } catch (error) {
+            logger.error(
+                { error, userId, connectionId },
+                "Failed to verify Slack connection"
+            );
+            return {
+                success: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Connection verification failed",
+            };
+        }
+    }
+
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,

@@ -86,6 +86,48 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
     }
 
+    /**
+     * Test the OAuth connection by making a live API request
+     * Called when user clicks "Test" button to verify credentials are working
+     *
+     * @param connectionId - Nango connection ID
+     * @param userId - User ID (optional, only used for logging)
+     */
+    async testConnection(
+        connectionId: string,
+        userId?: string
+    ): Promise<{ success: boolean; error?: string }> {
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            // Make the same request as fetchAccountInfo to verify connection
+            await httpClient
+                .get(`${nangoUrl}/proxy/api/v2/user`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "clickup",
+                    },
+                })
+                .json<Record<string, unknown>>();
+
+            return { success: true };
+        } catch (error) {
+            logger.error(
+                { error, userId, connectionId },
+                "Failed to verify ClickUp connection"
+            );
+            return {
+                success: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Connection verification failed",
+            };
+        }
+    }
+
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,
