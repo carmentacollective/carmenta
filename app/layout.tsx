@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -111,20 +112,22 @@ export default function RootLayout({
             appearance={clerkAppearance}
         >
             <UserProvider>
-                <html
-                    lang="en"
-                    className={`${outfit.variable} ${jetbrainsMono.variable}`}
-                    suppressHydrationWarning
-                >
-                    <body className="min-h-screen bg-background font-sans antialiased">
-                        <ThemeProvider>
-                            <PWARegistration />
-                            <StructuredData />
-                            <Toaster />
-                            {children}
-                        </ThemeProvider>
-                    </body>
-                </html>
+                <PostHogProvider>
+                    <html
+                        lang="en"
+                        className={`${outfit.variable} ${jetbrainsMono.variable}`}
+                        suppressHydrationWarning
+                    >
+                        <body className="min-h-screen bg-background font-sans antialiased">
+                            <ThemeProvider>
+                                <PWARegistration />
+                                <StructuredData />
+                                <Toaster />
+                                {children}
+                            </ThemeProvider>
+                        </body>
+                    </html>
+                </PostHogProvider>
             </UserProvider>
         </ClerkProvider>
     );
