@@ -20,9 +20,16 @@ import {
     type ComponentProps,
     forwardRef,
 } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
+import {
+    Square,
+    ArrowDown,
+    CornerDownLeft,
+    Sparkles,
+    PenLine,
+    Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -942,12 +949,34 @@ function Composer({ isNewConversation }: ComposerProps) {
     const showStop = isLoading;
     const hasPendingFiles = pendingFiles.length > 0;
 
+    // Track "complete" state for exhale animation
+    const wasLoadingRef = useRef(isLoading);
+    const [showComplete, setShowComplete] = useState(false);
+
+    // Detect loading → not loading transition and show complete briefly
+    useEffect(() => {
+        const wasLoading = wasLoadingRef.current;
+        wasLoadingRef.current = isLoading;
+
+        if (wasLoading && !isLoading) {
+            // Defer to next tick to avoid synchronous setState in effect
+            const startTimer = setTimeout(() => setShowComplete(true), 0);
+            const endTimer = setTimeout(() => setShowComplete(false), 400);
+            return () => {
+                clearTimeout(startTimer);
+                clearTimeout(endTimer);
+            };
+        }
+    }, [isLoading]);
+
     // Compute pipeline state for button styling
-    const pipelineState: PipelineState = isConciergeRunning
-        ? "concierge"
-        : isLoading
-          ? "streaming"
-          : "idle";
+    const pipelineState: PipelineState = showComplete
+        ? "complete"
+        : isConciergeRunning
+          ? "concierge"
+          : isLoading
+            ? "streaming"
+            : "idle";
 
     return (
         <div className="flex w-full max-w-4xl flex-col gap-2">
@@ -1019,65 +1048,237 @@ function Composer({ isNewConversation }: ComposerProps) {
 }
 
 /**
- * Composer button with variants and pipeline state awareness.
+ * Composer button with breathing animation and pipeline state awareness.
+ *
+ * Design choices (from design lab iteration 8):
+ * - Breathing: Inhale (scale 1.1) on click, exhale (scale 0.92→1) on return to ready
+ * - Icons: CornerDownLeft → Sparkles (concierge) → PenLine (streaming) → Check → CornerDownLeft
+ * - Sparkles: 3 cardinal points during concierge, button gradient colors
  *
  * Variants:
  * - ghost: Subtle background for secondary actions
- * - send: Vibrant Holo gradient (purple → cyan → pink)
+ * - send: Vibrant Holo gradient (purple → cyan → pink) with breathing
  * - stop: Muted slate for stop generation
- *
- * Pipeline states (for stop variant):
- * - concierge: Rainbow ring animation while selecting model
- * - streaming: Subtle ring glow while content streams
- * - complete: Brief success pulse on completion
  */
 type PipelineState = "idle" | "concierge" | "streaming" | "complete";
 
 interface ComposerButtonProps extends ComponentProps<"button"> {
     variant?: "ghost" | "send" | "stop";
     pipelineState?: PipelineState;
+    "data-testid"?: string;
 }
+
+// Breathing animation values (matching oracle pattern)
+const INHALE_SCALE = 1.1;
+const EXHALE_KEYFRAMES = [1, 0.92, 1];
+const INHALE_DURATION = 0.15;
+const EXHALE_DURATION = 0.5;
+
+// Sparkle positions - 3 cardinal points (top, right, bottom-left)
+const sparklePositions = [
+    { top: "-8px", left: "50%", transform: "translateX(-50%)" }, // Top
+    { top: "50%", right: "-8px", transform: "translateY(-50%)" }, // Right
+    { bottom: "-6px", left: "25%", transform: "translateX(-50%)" }, // Bottom-left
+];
+
+// Sparkle colors matching the button gradient
+const sparkleColors = [
+    "bg-purple-400/60 shadow-purple-400/40", // Purple from gradient
+    "bg-cyan-400/60 shadow-cyan-400/40", // Cyan from gradient
+    "bg-pink-400/60 shadow-pink-400/40", // Pink from gradient
+];
 
 const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
     (
-        { className, variant = "ghost", pipelineState = "idle", disabled, ...props },
+        {
+            className,
+            variant = "ghost",
+            pipelineState = "idle",
+            disabled,
+            children,
+            "data-testid": dataTestId,
+            ...props
+        },
         ref
     ) => {
-        return (
-            <button
-                ref={ref}
-                disabled={disabled}
-                className={cn(
-                    "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
-                    "shadow-xl ring-1 backdrop-blur-xl transition-all",
-                    "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
-                    "active:translate-y-0.5 active:shadow-sm",
-                    "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
-                    // Ghost variant
-                    variant === "ghost" &&
+        // Track state transitions for breathing animation
+        const [justCompleted, setJustCompleted] = useState(false);
+        const [isInhaling, setIsInhaling] = useState(false);
+        const prevStateRef = useRef<PipelineState>(pipelineState);
+
+        // Detect transitions and trigger animations inside effect
+        useEffect(() => {
+            const prevState = prevStateRef.current;
+            prevStateRef.current = pipelineState;
+
+            // Inhale: idle → active state
+            if (prevState === "idle" && pipelineState !== "idle") {
+                // Defer to next tick to avoid synchronous setState in effect
+                const startTimer = setTimeout(() => setIsInhaling(true), 0);
+                const endTimer = setTimeout(
+                    () => setIsInhaling(false),
+                    INHALE_DURATION * 1000
+                );
+                return () => {
+                    clearTimeout(startTimer);
+                    clearTimeout(endTimer);
+                };
+            }
+
+            // Exhale: complete → idle
+            if (prevState === "complete" && pipelineState === "idle") {
+                // Defer to next tick to avoid synchronous setState in effect
+                const startTimer = setTimeout(() => setJustCompleted(true), 0);
+                const endTimer = setTimeout(
+                    () => setJustCompleted(false),
+                    EXHALE_DURATION * 1000
+                );
+                return () => {
+                    clearTimeout(startTimer);
+                    clearTimeout(endTimer);
+                };
+            }
+        }, [pipelineState]);
+
+        // Determine which icon to show based on variant and state
+        const getIcon = () => {
+            if (variant === "stop") {
+                // Stop button shows state-aware icons
+                switch (pipelineState) {
+                    case "concierge":
+                        return <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />;
+                    case "streaming":
+                        return <PenLine className="h-4 w-4 sm:h-5 sm:w-5" />;
+                    case "complete":
+                        return <Check className="h-4 w-4 sm:h-5 sm:w-5" />;
+                    default:
+                        return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
+                }
+            }
+            // Send and ghost variants use children
+            return children;
+        };
+
+        // Calculate scale for breathing animation
+        const getScale = () => {
+            if (isInhaling) return INHALE_SCALE;
+            if (justCompleted) return EXHALE_KEYFRAMES;
+            return 1;
+        };
+
+        // For ghost variant, use simple button without animations
+        if (variant === "ghost") {
+            return (
+                <button
+                    ref={ref}
+                    disabled={disabled}
+                    className={cn(
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "shadow-xl ring-1 backdrop-blur-xl transition-all",
+                        "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                        "active:translate-y-0.5 active:shadow-sm",
+                        "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
                         "bg-background/50 text-foreground/60 opacity-70 ring-border/40 hover:bg-background/80 hover:opacity-100",
-                    // Send variant
-                    variant === "send" && "btn-cta ring-transparent",
-                    // Stop variant - base styles
-                    variant === "stop" &&
-                        "bg-muted text-muted-foreground ring-muted/20 hover:bg-muted/90",
-                    // Stop + concierge: rainbow ring animation
-                    variant === "stop" &&
+                        disabled && "btn-disabled",
+                        className
+                    )}
+                    {...props}
+                >
+                    {children}
+                </button>
+            );
+        }
+
+        // Send and stop variants get the full animated treatment
+        return (
+            <div className="relative">
+                {/* Sparkles during concierge - 3 cardinal points with button gradient colors */}
+                <AnimatePresence>
+                    {variant === "stop" &&
                         pipelineState === "concierge" &&
-                        "oracle-working-ring ring-2 ring-primary/50",
-                    // Stop + streaming: subtle glow
-                    variant === "stop" &&
-                        pipelineState === "streaming" &&
-                        "opacity-70 ring-2 ring-primary/30",
-                    // Stop + idle: default muted
-                    variant === "stop" && pipelineState === "idle" && "opacity-60",
-                    // Success pulse on complete
-                    pipelineState === "complete" && "animate-success-pulse",
-                    disabled && "btn-disabled",
-                    className
-                )}
-                {...props}
-            />
+                        sparklePositions.map((pos, i) => (
+                            <motion.div
+                                key={i}
+                                className={cn(
+                                    "absolute h-1.5 w-1.5 rounded-full shadow-[0_0_6px_2px]",
+                                    sparkleColors[i]
+                                )}
+                                style={pos}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{
+                                    opacity: [0.5, 1, 0.5],
+                                    scale: [0.8, 1.2, 0.8],
+                                }}
+                                exit={{ opacity: 0, scale: 0 }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    delay: i * 0.2,
+                                    ease: "easeInOut",
+                                }}
+                            />
+                        ))}
+                </AnimatePresence>
+
+                <motion.button
+                    ref={ref}
+                    type={props.type}
+                    disabled={disabled}
+                    onClick={props.onClick}
+                    aria-label={props["aria-label"]}
+                    data-testid={dataTestId}
+                    animate={{
+                        scale: getScale(),
+                    }}
+                    transition={{
+                        scale: isInhaling
+                            ? { duration: INHALE_DURATION, ease: "easeOut" }
+                            : justCompleted
+                              ? { duration: EXHALE_DURATION, ease: "easeInOut" }
+                              : { duration: 0.3 },
+                    }}
+                    className={cn(
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "shadow-xl ring-1 backdrop-blur-xl transition-[box-shadow,ring-color]",
+                        "hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                        "active:translate-y-0.5 active:shadow-sm",
+                        "focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                        // Send variant
+                        variant === "send" && "btn-cta ring-transparent",
+                        // Stop variant - base styles
+                        variant === "stop" &&
+                            "bg-muted text-muted-foreground ring-muted/20 hover:bg-muted/90",
+                        // Stop + concierge: rainbow ring animation
+                        variant === "stop" &&
+                            pipelineState === "concierge" &&
+                            "oracle-working-ring ring-2 ring-primary/50",
+                        // Stop + streaming: subtle glow
+                        variant === "stop" &&
+                            pipelineState === "streaming" &&
+                            "ring-2 ring-cyan-400/40",
+                        // Stop + complete: success state
+                        variant === "stop" &&
+                            pipelineState === "complete" &&
+                            "ring-2 ring-green-400/40",
+                        // Stop + idle: default muted
+                        variant === "stop" && pipelineState === "idle" && "opacity-60",
+                        disabled && "btn-disabled",
+                        className
+                    )}
+                >
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={`${variant}-${pipelineState}`}
+                            initial={{ opacity: 0, scale: 0.8, rotate: -15 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, rotate: 15 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {getIcon()}
+                        </motion.div>
+                    </AnimatePresence>
+                </motion.button>
+            </div>
         );
     }
 );
