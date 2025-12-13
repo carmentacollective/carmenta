@@ -50,6 +50,13 @@ export async function fetchAccountInfo(
             return await adapter.fetchAccountInfo(connectionId, userId);
         }
 
+        case "google-calendar-contacts": {
+            const { GoogleCalendarContactsAdapter } =
+                await import("@/lib/integrations/adapters/google-calendar-contacts");
+            const adapter = new GoogleCalendarContactsAdapter();
+            return await adapter.fetchAccountInfo(connectionId, userId);
+        }
+
         default:
             // For services without account info support, use connectionId as fallback
             logger.warn(

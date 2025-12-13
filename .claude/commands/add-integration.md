@@ -23,8 +23,8 @@ Use TodoWrite to track progress. An integration includes:
 
 For OAuth services:
 
-- [ ] fetchAccountInfo() method
-- [ ] Nango configuration documented </definition-of-done>
+- [ ] fetchAccountInfo() method implemented in adapter
+- [ ] Service registered in lib/integrations/fetch-account-info.ts</definition-of-done>
 
 <context>
 Carmenta uses two authentication patterns:
@@ -98,6 +98,7 @@ Study these files to understand patterns:
 3. **System registration**
    - Export adapter from `lib/integrations/adapters/index.ts`
    - Add to adapterMap in `lib/integrations/tools.ts`
+   - For OAuth: add service case in `lib/integrations/fetch-account-info.ts`
    - For OAuth: add service mapping in `app/api/connect/route.ts` if key differs
 
 4. **Service logo** at `public/logos/[service].svg`

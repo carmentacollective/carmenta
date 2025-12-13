@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Nango from "@nangohq/frontend";
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/client-logger";
 import { getServiceById } from "@/lib/integrations/services";
 import { Sparkles } from "lucide-react";
@@ -31,8 +32,22 @@ export default function ConnectServicePage() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    logger.error({ errorData }, "API Error");
-                    throw new Error(errorData.error || "Failed to connect");
+                    logger.error(
+                        { errorData, service },
+                        "Failed to create connect session"
+                    );
+
+                    const error = new Error(errorData.error || "Failed to connect");
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "connect",
+                            service,
+                            action: "create_session",
+                        },
+                        extra: { errorData, status: response.status },
+                    });
+
+                    throw error;
                 }
 
                 const responseData = await response.json();
@@ -98,15 +113,36 @@ export default function ConnectServicePage() {
                                             );
                                             return {};
                                         });
+
                                     logger.error(
-                                        { status: saveResponse.status, errorData },
+                                        {
+                                            status: saveResponse.status,
+                                            errorData,
+                                            service,
+                                        },
                                         "Failed to save connection"
                                     );
-                                    setError(
+
+                                    const error = new Error(
                                         errorData.details ||
                                             errorData.error ||
                                             `Failed to save connection (${saveResponse.status})`
                                     );
+
+                                    Sentry.captureException(error, {
+                                        tags: {
+                                            component: "connect",
+                                            service,
+                                            action: "save_connection",
+                                        },
+                                        extra: {
+                                            errorData,
+                                            status: saveResponse.status,
+                                            connectionId: event.payload?.connectionId,
+                                        },
+                                    });
+
+                                    setError(error.message);
                                     return;
                                 }
 
@@ -116,7 +152,24 @@ export default function ConnectServicePage() {
                                 );
                                 window.location.href = `/integrations?connected=${encodeURIComponent(service)}`;
                             } catch (err) {
-                                logger.error({ error: err }, "Error saving connection");
+                                logger.error(
+                                    { error: err, service },
+                                    "Error saving connection"
+                                );
+
+                                Sentry.captureException(err, {
+                                    tags: {
+                                        component: "connect",
+                                        service,
+                                        action: "save_connection_error",
+                                    },
+                                    extra: {
+                                        connectionId: event.payload?.connectionId,
+                                        providerConfigKey:
+                                            event.payload?.providerConfigKey,
+                                    },
+                                });
+
                                 setError(
                                     err instanceof Error
                                         ? err.message
@@ -128,7 +181,19 @@ export default function ConnectServicePage() {
                 });
             } catch (err) {
                 if (!cancelled) {
-                    logger.error({ error: err }, "Connection error");
+                    logger.error(
+                        { error: err, service },
+                        "Connection initialization error"
+                    );
+
+                    Sentry.captureException(err, {
+                        tags: {
+                            component: "connect",
+                            service,
+                            action: "initialize_connection",
+                        },
+                    });
+
                     setError(
                         err instanceof Error ? err.message : "Failed to connect service"
                     );
