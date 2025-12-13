@@ -27,16 +27,10 @@ interface SiteHeaderProps {
 export function SiteHeader({
     rightContent,
     bordered = false,
-    showThemeSwitcher = true,
+    showThemeSwitcher = false,
 }: SiteHeaderProps) {
     return (
-        <header
-            className={cn(
-                "flex items-center justify-between px-6 py-4",
-                bordered &&
-                    "border-b border-foreground/10 bg-background/30 backdrop-blur-md"
-            )}
-        >
+        <header className="flex items-center justify-between px-6 py-4">
             <Link
                 href="/"
                 className="flex items-center gap-3 transition-opacity hover:opacity-80"
