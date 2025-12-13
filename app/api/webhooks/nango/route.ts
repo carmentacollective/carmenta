@@ -208,6 +208,15 @@ async function handleConnectionCreated(
                 "Failed to fetch account info"
             );
 
+            Sentry.captureException(error, {
+                tags: {
+                    component: "webhook",
+                    action: "fetch_account_info",
+                    service,
+                },
+                extra: { userEmail, connectionId },
+            });
+
             // Store as failed connection instead of silently falling back
             await handleConnectionFailed(
                 userEmail,
@@ -515,6 +524,15 @@ async function handleTokenRefreshSuccess(
         }
     } catch (error) {
         logger.error({ error, userEmail, service }, "Failed to record token refresh");
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "webhook",
+                route: "nango",
+                action: "record_token_refresh",
+            },
+            extra: { userEmail, service, connectionId },
+        });
     }
 }
 
