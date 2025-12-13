@@ -109,6 +109,51 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         }
     }
 
+    /**
+     * Test the OAuth connection by making a live API request
+     * Called when user clicks "Test" button to verify credentials are working
+     *
+     * @param connectionId - Nango connection ID
+     * @param userId - User ID (optional, only used for logging)
+     */
+    async testConnection(
+        connectionId: string,
+        userId?: string
+    ): Promise<{ success: boolean; error?: string }> {
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            // Make a simple request to People API to verify connection
+            await httpClient
+                .get(`${nangoUrl}${PEOPLE_API_BASE}/people/me`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "google-calendar-contacts",
+                    },
+                    searchParams: {
+                        personFields: "names,emailAddresses",
+                    },
+                })
+                .json<Record<string, unknown>>();
+
+            return { success: true };
+        } catch (error) {
+            logger.error(
+                { error, userId, connectionId },
+                "Failed to verify Google connection"
+            );
+            return {
+                success: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Connection verification failed",
+            };
+        }
+    }
+
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,

@@ -524,18 +524,48 @@ export async function testIntegration(
             return result;
         }
 
-        // For OAuth services, check the database status
-        // (OAuth tokens are managed by Nango and testing requires actual API calls)
-        const status = await getConnectionStatus(userEmail, serviceId);
+        // For OAuth services, make a live test request to verify the connection is still working
+        // OAuth tokens are managed by Nango, but we verify they're valid by making an actual API call
+        const { getAdapter } = await import("@/lib/integrations/tools");
 
-        if (status === "connected") {
-            return { success: true };
-        } else {
+        const adapter = getAdapter(serviceId);
+        if (!adapter) {
+            // Fallback: check database status if no adapter
+            const status = await getConnectionStatus(userEmail, serviceId);
             return {
-                success: false,
-                error: `Connection status: ${status}`,
+                success: status === "connected",
+                ...(status !== "connected" && {
+                    error: `Connection status: ${status}`,
+                }),
             };
         }
+
+        // Get the integration record to find the Nango connection ID
+        const whereConditions: Array<ReturnType<typeof eq>> = [
+            eq(schema.integrations.userEmail, userEmail),
+            eq(schema.integrations.service, serviceId),
+        ];
+        if (accountId) {
+            whereConditions.push(eq(schema.integrations.accountId, accountId));
+        }
+
+        const integrations = await db
+            .select()
+            .from(schema.integrations)
+            .where(and(...whereConditions))
+            .limit(1);
+
+        const integration = integrations[0];
+        if (!integration) {
+            return { success: false, error: "Integration not found" };
+        }
+
+        // For OAuth, the accountId stored is the Nango connection ID
+        const connectionId = integration.accountId;
+
+        // Call the adapter's testConnection method
+        // OAuth adapters pass connectionId, API key adapters pass apiKey
+        return await adapter.testConnection(connectionId);
     } catch (error) {
         logger.error(
             { err: error, userEmail, serviceId },

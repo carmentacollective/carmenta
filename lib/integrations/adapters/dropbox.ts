@@ -18,6 +18,7 @@ import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 // Constants for Dropbox API limits
 const MAX_SEARCH_RESULTS = 100;
@@ -89,6 +90,50 @@ export class DropboxAdapter extends ServiceAdapter {
         } catch (error) {
             this.logError("Failed to fetch Dropbox account info:", error);
             throw new ValidationError("Failed to fetch Dropbox account information");
+        }
+    }
+
+    /**
+     * Test the OAuth connection by making a live API request
+     * Called when user clicks "Test" button to verify credentials are working
+     *
+     * @param connectionId - Nango connection ID
+     * @param userId - User ID (optional, only used for logging)
+     */
+    async testConnection(
+        connectionId: string,
+        userId?: string
+    ): Promise<{ success: boolean; error?: string }> {
+        const nangoUrl = this.getNangoUrl();
+        const nangoSecretKey = getNangoSecretKey();
+
+        try {
+            // Make the same request as fetchAccountInfo to verify connection
+            await httpClient
+                .post(`${nangoUrl}/proxy/2/users/get_current_account`, {
+                    headers: {
+                        Authorization: `Bearer ${nangoSecretKey}`,
+                        "Connection-Id": connectionId,
+                        "Provider-Config-Key": "dropbox",
+                        "Content-Type": "application/json",
+                    },
+                    body: "null",
+                })
+                .json<Record<string, unknown>>();
+
+            return { success: true };
+        } catch (error) {
+            logger.error(
+                { error, userId, connectionId },
+                "Failed to verify Dropbox connection"
+            );
+            return {
+                success: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Connection verification failed",
+            };
         }
     }
 
