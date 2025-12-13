@@ -71,6 +71,12 @@ const FEATURES = [
         available: false,
     },
     {
+        headline: "The product improves while we sleep.",
+        subheading:
+            "AI processes feedback into issues, implements fixes, submits PRs. You approve what ships. Simulated users test continuously. Real users never wait. The system builds itself—you provide the judgment.",
+        available: false,
+    },
+    {
         headline: "Beyond the chat window.",
         subheading:
             "Research produces reports. Scheduling shows calendars. Comparisons become tables. We respond with the interface the task deserves.",
