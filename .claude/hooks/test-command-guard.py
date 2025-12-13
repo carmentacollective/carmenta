@@ -87,11 +87,17 @@ def check_test_command(command_str: str) -> Optional[Violation]:
         )
 
     # Check for npm usage (should use pnpm)
-    if program == "npm" and args[0] in ("test", "run"):
-        return Violation(
-            message=f"'npm {args[0]}' is not the package manager for this project",
-            suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
-        )
+    if program == "npm":
+        if args[0] == "test":
+            return Violation(
+                message="'npm test' is not the package manager for this project",
+                suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
+            )
+        if args[0] == "run" and len(args) > 1 and args[1].startswith("test"):
+            return Violation(
+                message=f"'npm run {args[1]}' is not the package manager for this project",
+                suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
+            )
 
     return None
 
