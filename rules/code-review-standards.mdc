@@ -1,61 +1,42 @@
 ---
-description: When doing code reviews
+description: Standards for triaging code review feedback
 alwaysApply: false
 ---
 
 # Code Review Standards
 
-This rule defines what feedback is actionable based on project priorities. Use this to
-focus reviews on issues that actually get addressed.
+What this project prioritizes when triaging code review feedback.
 
-## Core Philosophy
+## Fix These
 
-We ship pragmatically. Fix critical bugs, ensure security, validate core behavior.
-Ignore theoretical edge cases, minor polish, and over-engineering. Trust runtime
-validation over compile-time perfection.
+Security vulnerabilities. Always in scope.
 
-## Skip These Issues
+Bugs that cause runtime failures - null dereferences, unhandled exceptions in critical
+paths, logic errors producing wrong results.
 
-Do not include them in reviews.
+Inconsistencies with established codebase patterns.
 
-### Transactions for Rare Race Conditions
+## Defer These
 
-Only flag race conditions you can demonstrate happen in practice. Theoretical edge cases
-requiring contrived timing are accepted as-is. Added complexity for extremely rare
-scenarios is not justified.
+Valid improvements that don't belong in the current PR. Out-of-scope changes become
+GitHub issues for future consideration rather than disappearing.
 
-### Magic Numbers and String Constants
+## Decline These
 
-Constants exist to stay DRY, not to avoid "magic strings." This isn't Java. If a value
-appears once and the meaning is clear from context, inline is better than indirection.
-Only flag repeated values that would require multiple updates to change. Extracting
-`METHOD_INITIALIZE = "initialize"` for a single use is cargo cult programming.
+This project explicitly deprioritizes:
 
-### Accessibility Improvements
+Single-use constants. Constants exist for DRY, not to avoid "magic strings." Inline
+values with clear meaning are better than indirection.
 
-ARIA labels, keyboard navigation, screen reader support, and prefers-reduced-motion are
-not current project priorities.
+Theoretical edge cases. Only problems demonstrable in practice. Race conditions requiring
+contrived timing, inputs that never occur.
 
-### Minor Type Safety Improvements
+Type safety refinements when runtime handles it. TypeScript serves the code.
 
-When runtime checks handle edge cases correctly, compile-time type refinement is
-optional. TypeScript serves the code, not vice versa. Working code takes priority over
-perfect types.
+Test coverage beyond core paths. Target 90% on user-facing functionality.
 
-### Test Edge Cases
+Performance without profiling. Optimize when metrics show problems.
 
-Core behavior receives test coverage. Edge cases including malformed API responses,
-empty arrays, and boundary conditions are deferred unless they cause production issues.
-Target is 90% coverage, not 100%. Focus on user-facing functionality.
+Accessibility. Not current priority.
 
-### Performance Micro-Optimizations
-
-Optimize when metrics show actual problems. Skipping unnecessary queries, adding
-theoretical indexes, or batching operations for minor latency gains without profiling
-data is premature optimization.
-
-### Documentation Enhancements
-
-Core documentation exists. Troubleshooting sections, rate limit documentation, and
-explanatory comments are iterative improvements based on user feedback. Perfect
-documentation delays shipping.
+Documentation polish. Core docs exist; refinements come from user feedback.
