@@ -113,7 +113,7 @@ export class TwitterAdapter extends ServiceAdapter {
                     });
 
                     throw new Error(
-                        "Connection to X API was closed unexpectedly. " +
+                        "X API response parsing failed due to connection interruption. " +
                             "This may be due to network issues or API rate limiting. Please try again."
                     );
                 }
