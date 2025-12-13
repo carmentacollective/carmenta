@@ -24,6 +24,7 @@ import {
     LimitlessAdapter,
     NotionAdapter,
     SlackAdapter,
+    TwitterAdapter,
 } from "./adapters";
 import type { ServiceAdapter } from "./adapters/base";
 import { logger } from "@/lib/logger";
@@ -45,6 +46,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
     slack: new SlackAdapter(),
+    twitter: new TwitterAdapter(),
 };
 
 /**
