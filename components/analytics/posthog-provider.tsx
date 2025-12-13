@@ -7,8 +7,10 @@
  * Only active in production to avoid tracking dev traffic.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import { logger } from "@/lib/client-logger";
 import { posthog } from "@/instrumentation-client";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
@@ -25,16 +27,27 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // Identify authenticated users
-        if (user) {
-            posthog.identify(user.id, {
-                email: user.emailAddresses[0]?.emailAddress,
-                name: user.fullName,
-                created_at: user.createdAt,
+        try {
+            // Identify authenticated users
+            if (user) {
+                posthog.identify(user.id, {
+                    email: user.emailAddresses[0]?.emailAddress,
+                    name: user.fullName,
+                    created_at: user.createdAt,
+                });
+            } else {
+                // Reset identity when user logs out
+                posthog.reset();
+            }
+        } catch (error) {
+            logger.error(
+                { error, userId: user?.id },
+                "Failed to identify user in PostHog"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "analytics", action: "identify" },
+                extra: { userId: user?.id },
             });
-        } else {
-            // Reset identity when user logs out
-            posthog.reset();
         }
     }, [user, isLoaded]);
 
