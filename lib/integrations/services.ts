@@ -215,6 +215,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "add_reaction",
         ],
     },
+
+    // Twitter/X - OAuth (via Nango)
+    {
+        id: "twitter",
+        name: "X (Twitter)",
+        description: "Post tweets and manage your X timeline",
+        logo: "/logos/twitter.svg",
+        authMethod: "oauth",
+        status: "beta",
+        nangoIntegrationKey: "twitter",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developer.twitter.com/en/docs/twitter-api",
+        capabilities: [
+            "post_tweet",
+            "get_user_timeline",
+            "search_tweets",
+            "like_tweet",
+            "retweet",
+        ],
+    },
 ];
 
 /**
