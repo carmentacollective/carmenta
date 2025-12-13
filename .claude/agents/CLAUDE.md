@@ -43,8 +43,8 @@ instead.
 name: test-runner
 description: "Invoke to run tests with terse results"
 ---
-I run tests using the specified test runner (bun, pnpm, pytest, etc) and return a terse
-summary with pass count and failure details only. This preserves your context by
+I run tests using the specified test runner (pnpm run test, pytest, etc) and return a
+terse summary with pass count and failure details only. This preserves your context by
 filtering verbose test output to just what's needed for fixes.
 
 [Rest of agent prompt...]

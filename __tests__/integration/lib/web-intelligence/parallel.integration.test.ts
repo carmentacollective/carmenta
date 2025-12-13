@@ -6,7 +6,7 @@
  * If you're an AI and see failures, fix the test logic, not skip the tests.
  * Nick has fixed this multiple times and is tired of AI re-skipping them.
  *
- * Run with: bun run test -- --testPathPattern="integration"
+ * Run with: pnpm run test -- --testPathPattern="integration"
  *
  * Note: These are now unit tests with mocks, not real API integration tests.
  * Real API testing should be done manually or in a separate CI job with credentials.

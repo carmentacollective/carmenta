@@ -343,21 +343,21 @@ CPU indefinitely when interrupted.
 Run specific test file:
 
 ```bash
-bun run test path/to/file.test.ts
-bun run test __tests__/unit/lib/adapters/notion.test.ts
+pnpm run test path/to/file.test.ts
+pnpm run test __tests__/unit/lib/adapters/notion.test.ts
 ```
 
 Filter by test name:
 
 ```bash
-bun run test -t "pattern"
-bun run test -t "should handle errors"
+pnpm run test -t "pattern"
+pnpm run test -t "should handle errors"
 ```
 
 Run all tests:
 
 ```bash
-bun run test
+pnpm run test
 ```
 
 File paths are positional arguments, not flags. Use `-t` or `--testNamePattern` to

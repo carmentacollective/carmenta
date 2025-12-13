@@ -33,7 +33,9 @@ Use "we" language throughout all interfaces, not "I" or "the user".
 
 ## Package Manager
 
-Use `bun` for all package management and script execution. Never use `npm` or `pnpm`.
+Use `pnpm` for all package management and script execution. Never use `npm` or `bun` for
+package management. Note: The project uses Bun as a runtime (via `bun --bun` flag in
+scripts) for faster dev/build/start, but pnpm handles dependencies.
 
 ## Git Workflow
 

@@ -1,8 +1,8 @@
 #!/bin/sh
 # Run full validation before pushing
 echo "🚀 Running full validation suite..."
-bun run pre-push || {
-  echo "❌ Pre-push validation failed. Run 'bun run pre-push' to see full output."
+pnpm run pre-push || {
+  echo "❌ Pre-push validation failed. Run 'pnpm run pre-push' to see full output."
   exit 1
 }
 echo "✅ All validations passed. Pushing..."

@@ -1,25 +1,26 @@
 #!/bin/bash
 # Render.com deployment script for Carmenta
-# This script orchestrates the full deployment process
-# Runtime: Bun (configured via .bun-version and BUN_VERSION env var)
+# Package management: pnpm
+# Runtime: Bun (configured via BUN_VERSION env var on Render)
 # Database: Supabase Postgres (external, not Render)
 
 set -e  # Exit on error
 
-echo "🚀 Starting Carmenta deployment with Bun..."
-echo "   Bun version: $(bun --version)"
+echo "🚀 Starting Carmenta deployment..."
+echo "   Bun version (runtime): $(bun --version)"
+echo "   pnpm version (packages): $(pnpm --version)"
 
-# Install dependencies with optimizations
+# Install dependencies with pnpm
 echo "📦 Installing dependencies..."
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 
 # Run database migrations (Supabase Postgres)
 echo "🗄️  Running database migrations..."
-bun run db:migrate
+pnpm run db:migrate
 
-# Build the application
+# Build the application (uses Bun runtime via package.json script)
 echo "🏗️  Building application..."
-bun run build
+pnpm run build
 
 # Copy static assets for standalone mode
 # In standalone mode, Next.js doesn't include public/ and .next/static/ automatically

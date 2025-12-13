@@ -128,26 +128,27 @@ Building in public.
 ### Prerequisites
 
 - Node.js 24+
-- bun 1.x+
+- pnpm 10.x+
+- Bun 1.x+ (for runtime)
 
 ### Setup
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
 # Start development server
-bun dev
+pnpm dev
 
 # Run tests
-bun run test
+pnpm run test
 
 # Type check
-bun type-check
+pnpm type-check
 
 # Lint and format
-bun lint
-bun format
+pnpm lint
+pnpm format
 ```
 
 ### Tech Stack

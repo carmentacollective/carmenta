@@ -90,8 +90,8 @@ services:
   - type: web
     name: carmenta
     runtime: node
-    buildCommand: bun install && bun build
-    startCommand: bun start
+    buildCommand: pnpm install && pnpm build
+    startCommand: bun .next/standalone/server.js
     envVars:
       - key: NODE_ENV
         value: production

@@ -122,8 +122,8 @@ Create `.husky/post-merge`:
 #!/bin/sh
 if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD | grep -q "lib/db/schema.ts"; then
   echo "🗄️  Schema changed - regenerating migrations..."
-  bun run db:generate
-  echo "⚠️  Remember to run: bun run db:push (or db:migrate)"
+  pnpm run db:generate
+  echo "⚠️  Remember to run: pnpm run db:push (or db:migrate)"
 fi
 ```
 
@@ -134,7 +134,7 @@ Create `.husky/post-checkout`:
 if [ "$3" = "1" ]; then
   if git diff --name-only "$1" "$2" | grep -q "lib/db/schema.ts"; then
     echo "⚠️  🗄️  Schema differs between branches"
-    echo "   Run 'bun run db:generate' and check migrations"
+    echo "   Run 'pnpm run db:generate' and check migrations"
   fi
 fi
 ```
@@ -147,12 +147,12 @@ Add to GitHub Actions:
 - name: 🗄️ Verify schema and migrations are in sync
   run: |
     # Generate migrations from current schema
-    bun run db:generate
+    pnpm run db:generate
 
     # Check if any new migration files were created
     if git status --porcelain | grep -q 'drizzle/migrations/'; then
       echo "❌ Schema changed but migrations not generated"
-      echo "Run 'bun run db:generate' and commit the migration"
+      echo "Run 'pnpm run db:generate' and commit the migration"
       exit 1
     fi
 ```
@@ -178,7 +178,7 @@ Update deployment process:
 ```bash
 # Before deploying new code
 echo "Running database migrations..."
-bun run db:migrate
+pnpm run db:migrate
 
 echo "Verifying migrations..."
 if [ $? -ne 0 ]; then

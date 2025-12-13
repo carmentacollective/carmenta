@@ -333,7 +333,7 @@ Use in messages:
 Unit tests cover all major functionality:
 
 ```bash
-bun run test components/ui/markdown-renderer.test.tsx
+pnpm run test components/ui/markdown-renderer.test.tsx
 ```
 
 **Test coverage**:

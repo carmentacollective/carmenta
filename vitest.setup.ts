@@ -17,7 +17,7 @@ import { vi, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
  * │                                                                         │
  * │  If you need to add a new table:                                        │
  * │  1. Add it to lib/db/schema.ts                                          │
- * │  2. Run `bun run db:generate` to create a migration                     │
+ * │  2. Run `pnpm run db:generate` to create a migration                    │
  * │  3. Tests will automatically pick up the new schema                     │
  * │                                                                         │
  * │  Reference: https://nikolamilovic.com/posts/fun-sane-node-tdd-postgres  │

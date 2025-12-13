@@ -8,10 +8,10 @@ if ! git rev-parse HEAD@{1} > /dev/null 2>&1; then
 fi
 
 # Check if package.json or lockfile changed
-if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "package.json\|bun.lockb"; then
-  echo "📦 Dependencies changed - running bun install..."
-  if ! bun install --silent; then
-    echo "❌ bun install failed. Please run manually: bun install" >&2
+if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "package.json\|pnpm-lock.yaml"; then
+  echo "📦 Dependencies changed - running pnpm install..."
+  if ! pnpm install --silent; then
+    echo "❌ pnpm install failed. Please run manually: pnpm install" >&2
     exit 1
   fi
   echo "✅ Dependencies updated"
@@ -20,14 +20,14 @@ fi
 # Check if Drizzle schema changed
 if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "lib/db/schema.ts"; then
   echo "🗄️  Drizzle schema changed - regenerating migrations..."
-  if ! bun run db:generate; then
-    echo "❌ bun run db:generate failed. Please run manually: bun run db:generate" >&2
+  if ! pnpm run db:generate; then
+    echo "❌ pnpm run db:generate failed. Please run manually: pnpm run db:generate" >&2
     exit 1
   fi
   echo "✅ Drizzle migrations regenerated"
   echo ""
   echo "⚠️  IMPORTANT: Review the generated migration in drizzle/migrations/"
-  echo "   Then run: bun run db:push (or db:migrate)"
+  echo "   Then run: pnpm run db:push (or db:migrate)"
 fi
 
 echo "✅ Post-merge checks complete"
