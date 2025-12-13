@@ -16,20 +16,10 @@ describe("SiteHeader", () => {
         expect(link).toHaveAttribute("href", "/");
     });
 
-    it("applies border when bordered prop is true", () => {
+    // Note: bordered prop exists but border styling was removed intentionally
+    // (see commit "Make header fully transparent and move theme controls to user menu")
+    it("header has transparent styling without borders", () => {
         const { container } = render(<SiteHeader bordered />);
-        const header = container.querySelector("header");
-        expect(header).toHaveClass("border-b");
-    });
-
-    it("does not apply border when bordered prop is false", () => {
-        const { container } = render(<SiteHeader bordered={false} />);
-        const header = container.querySelector("header");
-        expect(header).not.toHaveClass("border-b");
-    });
-
-    it("does not apply border by default", () => {
-        const { container } = render(<SiteHeader />);
         const header = container.querySelector("header");
         expect(header).not.toHaveClass("border-b");
     });
