@@ -1162,6 +1162,82 @@
         animation: ripple 0.6s ease-out;
     }
 
+    /*
+     * Pipeline Status Animations
+     *
+     * Visual feedback for LLM pipeline stages:
+     * - Concierge selecting (sparkle pulse)
+     * - Model selected (flash entrance)
+     * - Response complete (success pulse)
+     */
+
+    /* Sparkle pulse: gentle scale + rotation for concierge "selecting" state */
+    @keyframes sparkle-pulse {
+        0%,
+        100% {
+            opacity: 0.5;
+            transform: scale(1) rotate(0deg);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.15) rotate(15deg);
+        }
+    }
+
+    .animate-sparkle-pulse {
+        animation: sparkle-pulse 1.2s ease-in-out infinite;
+    }
+
+    /* Success pulse: brief glow ring on completion */
+    @keyframes success-pulse {
+        0% {
+            box-shadow: 0 0 0 0 hsl(var(--primary) / 0.6);
+        }
+        50% {
+            box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+        }
+    }
+
+    .animate-success-pulse {
+        animation: success-pulse 400ms ease-out;
+    }
+
+    /* Concierge selecting shimmer - horizontal sweep */
+    @keyframes selecting-shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .animate-selecting-shimmer {
+        background: linear-gradient(
+            90deg,
+            hsl(var(--primary) / 0.1) 0%,
+            hsl(var(--primary) / 0.3) 50%,
+            hsl(var(--primary) / 0.1) 100%
+        );
+        background-size: 200% 100%;
+        animation: selecting-shimmer 1.5s ease-in-out infinite;
+    }
+
+    /* Reduced motion: disable all pipeline animations */
+    @media (prefers-reduced-motion: reduce) {
+        .animate-sparkle-pulse,
+        .animate-success-pulse,
+        .animate-selecting-shimmer {
+            animation: none;
+        }
+        .animate-sparkle-pulse {
+            opacity: 1;
+        }
+    }
+
     /* Breath-like transition for organic, calming movement
      * Uses a custom cubic-bezier that mirrors natural breathing rhythm:
      * slow start → accelerate → slow end (like exhale → pause → inhale) */

@@ -39,6 +39,7 @@ import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
+import { useConnection } from "./connection-context";
 import { ModelSelectorPopover } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
@@ -566,11 +567,13 @@ function AssistantMessage({
     isStreaming: boolean;
 }) {
     const { concierge } = useConcierge();
+    const { isConciergeRunning } = useConnection();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
     // Show thinking indicator only when streaming AND no content yet AND this is the last message
-    const showThinking = isStreaming && !hasContent && isLast;
+    // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
+    const showThinking = isStreaming && !hasContent && isLast && !isConciergeRunning;
 
     // Check for reasoning in message parts
     const reasoning = getReasoningContent(message);
@@ -578,15 +581,21 @@ function AssistantMessage({
     // Extract tool parts for rendering
     const toolParts = getToolParts(message);
 
+    // Show concierge when: selecting (isConciergeRunning) OR selected (concierge data exists)
+    const showConcierge = isLast && (isConciergeRunning || concierge);
+    const isSelectingModel = isConciergeRunning && !concierge;
+
     return (
         <div className="my-4 flex w-full flex-col gap-2">
-            {/* Concierge display - shown for the most recent assistant message */}
-            {isLast && concierge && (
+            {/* Concierge display - shown during selection AND after selection */}
+            {showConcierge && (
                 <ConciergeDisplay
-                    modelId={concierge.modelId}
-                    temperature={concierge.temperature}
-                    explanation={concierge.explanation}
-                    reasoning={concierge.reasoning}
+                    modelId={concierge?.modelId}
+                    temperature={concierge?.temperature}
+                    explanation={concierge?.explanation}
+                    reasoning={concierge?.reasoning}
+                    isSelecting={isSelectingModel}
+                    messageSeed={message.id}
                     className="mb-2"
                 />
             )}
@@ -663,6 +672,7 @@ interface ComposerProps {
 function Composer({ isNewConversation }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge } = useConcierge();
+    const { isConciergeRunning } = useConnection();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const {
@@ -932,6 +942,13 @@ function Composer({ isNewConversation }: ComposerProps) {
     const showStop = isLoading;
     const hasPendingFiles = pendingFiles.length > 0;
 
+    // Compute pipeline state for button styling
+    const pipelineState: PipelineState = isConciergeRunning
+        ? "concierge"
+        : isLoading
+          ? "streaming"
+          : "idle";
+
     return (
         <div className="flex w-full max-w-4xl flex-col gap-2">
             {/* Upload progress display */}
@@ -969,6 +986,7 @@ function Composer({ isNewConversation }: ComposerProps) {
                         <ComposerButton
                             type="button"
                             variant="stop"
+                            pipelineState={pipelineState}
                             aria-label="Stop generation"
                             onClick={handleStop}
                             data-testid="stop-button"
@@ -1001,34 +1019,60 @@ function Composer({ isNewConversation }: ComposerProps) {
 }
 
 /**
- * Composer button with variants.
+ * Composer button with variants and pipeline state awareness.
  *
  * Variants:
  * - ghost: Subtle background for secondary actions
  * - send: Vibrant Holo gradient (purple → cyan → pink)
  * - stop: Muted slate for stop generation
+ *
+ * Pipeline states (for stop variant):
+ * - concierge: Rainbow ring animation while selecting model
+ * - streaming: Subtle ring glow while content streams
+ * - complete: Brief success pulse on completion
  */
+type PipelineState = "idle" | "concierge" | "streaming" | "complete";
+
 interface ComposerButtonProps extends ComponentProps<"button"> {
     variant?: "ghost" | "send" | "stop";
+    pipelineState?: PipelineState;
 }
 
 const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
-    ({ className, variant = "ghost", disabled, ...props }, ref) => {
+    (
+        { className, variant = "ghost", pipelineState = "idle", disabled, ...props },
+        ref
+    ) => {
         return (
             <button
                 ref={ref}
                 disabled={disabled}
                 className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                    "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                     "shadow-xl ring-1 backdrop-blur-xl transition-all",
                     "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
                     "active:translate-y-0.5 active:shadow-sm",
                     "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                    // Ghost variant
                     variant === "ghost" &&
                         "bg-background/50 text-foreground/60 opacity-70 ring-border/40 hover:bg-background/80 hover:opacity-100",
+                    // Send variant
                     variant === "send" && "btn-cta ring-transparent",
+                    // Stop variant - base styles
                     variant === "stop" &&
-                        "bg-muted text-muted-foreground opacity-60 ring-muted/20 hover:bg-muted/90 hover:opacity-75",
+                        "bg-muted text-muted-foreground ring-muted/20 hover:bg-muted/90",
+                    // Stop + concierge: rainbow ring animation
+                    variant === "stop" &&
+                        pipelineState === "concierge" &&
+                        "oracle-working-ring ring-2 ring-primary/50",
+                    // Stop + streaming: subtle glow
+                    variant === "stop" &&
+                        pipelineState === "streaming" &&
+                        "opacity-70 ring-2 ring-primary/30",
+                    // Stop + idle: default muted
+                    variant === "stop" && pipelineState === "idle" && "opacity-60",
+                    // Success pulse on complete
+                    pipelineState === "complete" && "animate-success-pulse",
                     disabled && "btn-disabled",
                     className
                 )}

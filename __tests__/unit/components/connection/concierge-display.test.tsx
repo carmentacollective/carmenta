@@ -37,7 +37,8 @@ describe("ConciergeDisplay", () => {
         it("starts with collapsible closed", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
-            const collapsible = container.firstChild;
+            // Collapsible is inside a motion.div wrapper
+            const collapsible = container.querySelector("[data-state]");
             expect(collapsible).toHaveAttribute("data-state", "closed");
         });
     });
@@ -49,7 +50,8 @@ describe("ConciergeDisplay", () => {
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            const collapsible = container.firstChild;
+            // Collapsible is inside a motion.div wrapper
+            const collapsible = container.querySelector("[data-state]");
             expect(collapsible).toHaveAttribute("data-state", "open");
         });
 
@@ -90,7 +92,8 @@ describe("ConciergeDisplay", () => {
             fireEvent.click(trigger); // open
             fireEvent.click(trigger); // close
 
-            const collapsible = container.firstChild;
+            // Collapsible is inside a motion.div wrapper
+            const collapsible = container.querySelector("[data-state]");
             expect(collapsible).toHaveAttribute("data-state", "closed");
         });
 
