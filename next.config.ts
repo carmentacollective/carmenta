@@ -134,7 +134,11 @@ const sentryConfig = {
     },
 
     // Automatically tree-shake Sentry SDK in production
-    disableLogger: true,
+    webpack: {
+        treeshake: {
+            removeDebugLogging: true,
+        },
+    },
 
     // Tunnel Sentry requests through our own domain to avoid ad blockers
     tunnelRoute: "/monitoring",
