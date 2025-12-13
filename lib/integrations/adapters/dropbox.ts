@@ -18,6 +18,7 @@ import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 // Constants for Dropbox API limits
 const MAX_SEARCH_RESULTS = 100;
@@ -122,7 +123,10 @@ export class DropboxAdapter extends ServiceAdapter {
 
             return { success: true };
         } catch (error) {
-            this.logError("Failed to verify Dropbox connection:", error);
+            logger.error(
+                { error, userId, connectionId },
+                "Failed to verify Dropbox connection"
+            );
             return {
                 success: false,
                 error:

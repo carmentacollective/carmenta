@@ -192,20 +192,19 @@ export abstract class ServiceAdapter {
     }
 
     /**
-     * Test connection with the provided API key
+     * Test connection with the provided credentials
      *
-     * API key services should implement this method to validate credentials
-     * during the connection flow. This method should make a lightweight API
-     * call to verify the key works.
+     * API key services should implement this to validate credentials during the
+     * connection flow. OAuth services should implement this to verify tokens are
+     * still valid by making a live API request.
      *
-     * OAuth services don't need this - OAuth verification happens during the
-     * OAuth flow itself.
-     *
-     * @param apiKey - The API key to test
+     * @param credentialOrConnectionId - API key for API key services, Nango connection ID for OAuth services
+     * @param userId - Optional user ID for logging (OAuth services)
      * @returns Promise that resolves with success/error result
      */
     async testConnection(
-        apiKey: string
+        credentialOrConnectionId: string,
+        userId?: string
     ): Promise<{ success: boolean; error?: string }> {
         // Default implementation - services can override
         return {
