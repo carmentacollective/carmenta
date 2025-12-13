@@ -360,6 +360,10 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 // Note: We don't set maxOutputTokens - let the SDK handle it automatically.
                 // Setting it too low (e.g., 250) causes AI_NoObjectGeneratedError when the
                 // schema requires more tokens than allocated.
+                //
+                // maxRetries: Automatically retries with validation error context when the model
+                // returns invalid JSON (like Pydantic/instructor pattern). Default is 2, we use 3
+                // for extra reliability with Haiku which occasionally returns non-JSON.
                 const result = await generateObject({
                     model: openrouter.chat(CONCIERGE_MODEL),
                     schema: conciergeSchema,
@@ -369,6 +373,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
+                    maxRetries: 3, // Auto-retry with validation errors (default: 2)
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",
