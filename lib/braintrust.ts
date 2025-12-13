@@ -10,8 +10,10 @@ import { initLogger, type Logger } from "braintrust";
 import { env } from "@/lib/env";
 import { logger as pino } from "@/lib/logger";
 
-let braintrustLogger: Logger | null = null;
-let initializationPromise: Promise<Logger | null> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let braintrustLogger: Logger<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let initializationPromise: Promise<Logger<any> | null> | null = null;
 
 /**
  * Check if Braintrust is configured and available
@@ -23,7 +25,8 @@ export function isBraintrustEnabled(): boolean {
 /**
  * Get the initialized Braintrust logger instance
  */
-export function getBraintrustLogger(): Logger | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getBraintrustLogger(): Logger<any> | null {
     return braintrustLogger;
 }
 
@@ -32,7 +35,8 @@ export function getBraintrustLogger(): Logger | null {
  * Call once at server startup to set up the logger
  * Uses a promise to ensure only one initialization happens
  */
-export async function initBraintrustLogger(): Promise<Logger | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function initBraintrustLogger(): Promise<Logger<any> | null> {
     if (!isBraintrustEnabled()) {
         return null;
     }

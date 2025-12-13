@@ -642,11 +642,13 @@ export async function POST(req: Request) {
                     const lastUserMessage = messages
                         .slice()
                         .reverse()
-                        .find((m) => m.role === "user");
+                        .find((m) => m.role === "user") as any;
                     const lastMessagePreview =
                         typeof lastUserMessage?.content === "string"
                             ? lastUserMessage.content.substring(0, 100)
-                            : "message";
+                            : typeof lastUserMessage?.text === "string"
+                              ? lastUserMessage.text.substring(0, 100)
+                              : "message";
 
                     // Extract tools called from the response
                     const toolsCalled = toolCalls.map((tc) => tc.toolName);
