@@ -145,6 +145,11 @@ export class GmailAdapter extends ServiceAdapter {
                 { error, userId, connectionId },
                 "Failed to fetch Gmail account info"
             );
+            this.captureError(error, {
+                action: "fetchAccountInfo",
+                params: { connectionId, userId },
+                userId,
+            });
             throw new ValidationError("Failed to fetch Gmail account information");
         }
     }
@@ -758,22 +763,33 @@ export class GmailAdapter extends ServiceAdapter {
 
         // Extract body content
         let bodyContent = "";
-        if (response.payload?.body?.data) {
-            bodyContent = Buffer.from(response.payload.body.data, "base64").toString(
-                "utf-8"
-            );
-        } else if (response.payload?.parts) {
-            // Multi-part message - prefer text/plain, fallback to text/html
-            const textPart = response.payload.parts.find(
-                (p) => p.mimeType === "text/plain"
-            );
-            const htmlPart = response.payload.parts.find(
-                (p) => p.mimeType === "text/html"
-            );
-            const part = textPart ?? htmlPart;
-            if (part?.body?.data) {
-                bodyContent = Buffer.from(part.body.data, "base64").toString("utf-8");
+        try {
+            if (response.payload?.body?.data) {
+                bodyContent = Buffer.from(
+                    response.payload.body.data,
+                    "base64"
+                ).toString("utf-8");
+            } else if (response.payload?.parts) {
+                // Multi-part message - prefer text/plain, fallback to text/html
+                const textPart = response.payload.parts.find(
+                    (p) => p.mimeType === "text/plain"
+                );
+                const htmlPart = response.payload.parts.find(
+                    (p) => p.mimeType === "text/html"
+                );
+                const part = textPart ?? htmlPart;
+                if (part?.body?.data) {
+                    bodyContent = Buffer.from(part.body.data, "base64").toString(
+                        "utf-8"
+                    );
+                }
             }
+        } catch (error) {
+            logger.warn(
+                { error, messageId: message_id },
+                "Failed to decode message body, using empty content"
+            );
+            bodyContent = "[Content could not be decoded]";
         }
 
         return this.createJSONResponse({
