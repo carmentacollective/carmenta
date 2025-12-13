@@ -380,7 +380,7 @@ async function executeQuery(query: CompetitiveQuery): Promise<CompetitiveOutput>
 
         if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
             throw new Error(
-                `Cannot connect to API at ${BASE_URL}. Start the server with: bun run dev`
+                `Cannot connect to API at ${BASE_URL}. Start the server with: pnpm dev`
             );
         }
 

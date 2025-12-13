@@ -19,9 +19,9 @@ created migrations will not be tracked and will silently fail to run in producti
 When you need a schema change:
 
 1. Edit the schema definition in `lib/db/schema.ts`
-2. Run `bun drizzle-kit generate` to create the migration
+2. Run `pnpm run db:generate` to create the migration
 3. Review the generated SQL in `drizzle/migrations/`
-4. Test locally with `bun drizzle-kit migrate`
+4. Test locally with `pnpm run db:migrate`
 
 The tool automatically:
 
@@ -65,9 +65,9 @@ export const connections = pgTable(
 ## Migration Workflow
 
 1. Make schema changes in `lib/db/schema.ts`
-2. Generate migration: `bun drizzle-kit generate`
+2. Generate migration: `pnpm run db:generate`
 3. Review the generated SQL carefully
-4. Test locally: `bun drizzle-kit migrate`
+4. Test locally: `pnpm run db:migrate`
 5. Commit both the schema changes AND the migration files
 6. Deploy - Render automatically runs migrations on deploy
 

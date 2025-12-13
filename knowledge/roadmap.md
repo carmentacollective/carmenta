@@ -28,13 +28,13 @@ Landing page with:
 
 | Component      | Status | Notes                                           |
 | -------------- | ------ | ----------------------------------------------- |
-| **Foundation** | ✅     | Next.js 15, TypeScript, bun, tooling, linting   |
+| **Foundation** | ✅     | Next.js 16, TypeScript, pnpm, tooling, linting  |
 | **Hosting**    | ✅     | Render deployment, CI/CD via GitHub Actions     |
 | **Testing**    | ✅     | Vitest + Playwright setup, patterns established |
 
 ### Decisions Made
 
-- **Package manager**: bun (fast, modern)
+- **Package manager**: pnpm (fast, strict dependency resolution)
 - **Hosting**: Render (simple, reliable)
 
 ---

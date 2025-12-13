@@ -3,5 +3,5 @@
 # Configuration:
 # - Build Command: ./scripts/render-deploy.sh
 # - Start Command: bun .next/standalone/server.js
-# - Runtime: Bun (auto-detected from bun.lock and .bun-version)
+# - Runtime: Bun for runtime (BUN_VERSION env var), pnpm for package management
 # - BUN_VERSION env var: 1.3.3

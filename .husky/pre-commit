@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run lint-staged to check and fix files before committing
 echo "🔍 Running pre-commit checks..."
-~/.bun/bin/bunx lint-staged || {
+pnpm exec lint-staged || {
   echo "❌ Pre-commit checks failed. Fix errors above and try again."
   exit 1
 }

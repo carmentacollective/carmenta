@@ -15,7 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: "1.3.3"
+  BUN_VERSION: "1.3.4"
+  PNPM_VERSION: "10"
 
 jobs:
   # Code Quality Checks (Lint, Format, Type Check)
@@ -28,22 +29,27 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🥟 Setup Bun
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🥟 Setup Bun (runtime)
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: 📚 Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: 🔎 Run ESLint
-        run: bun run lint
+        run: pnpm run lint
 
       - name: ✨ Check code formatting
-        run: bun run format:check
+        run: pnpm run format:check
 
       - name: 🔧 TypeScript type checking
-        run: bun run type-check
+        run: pnpm run type-check
 
   # Database Migration Tests
   # Tests migrations against real PostgreSQL to catch ordering/constraint issues
@@ -69,16 +75,16 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
 
       - name: 📚 Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: 🗄️ Run database migrations
-        run: bun run db:migrate
+        run: pnpm run db:migrate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
 
@@ -97,16 +103,16 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
 
       - name: 📚 Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: 🧪 Run test suite
-        run: bun run test
+        run: pnpm run test
         env:
           NODE_ENV: test
 
@@ -120,22 +126,27 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🥟 Setup Bun
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🥟 Setup Bun (runtime)
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: 📚 Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: 📦 Restore Next.js build cache
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: 🏗️ Build Next.js application
-        run: bun run build
+        run: pnpm run build
         env:
           # Dummy key for CI builds - Clerk requires a publishable key at build time for prerendering
           # This is not a real key, just satisfies Clerk's format validation (base64 encoded)

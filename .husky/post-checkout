@@ -14,16 +14,16 @@ if [ "$3" = "1" ]; then
   CHANGED=0
 
   # Check if dependencies changed (with error handling)
-  if git diff --name-only "$1" "$2" 2>/dev/null | grep -q "package.json\|bun.lockb"; then
+  if git diff --name-only "$1" "$2" 2>/dev/null | grep -q "package.json\|pnpm-lock.yaml"; then
     echo "⚠️  📦 Dependencies differ between branches"
-    echo "   Run 'bun install' to update"
+    echo "   Run 'pnpm install' to update"
     CHANGED=1
   fi
 
   # Check if Drizzle schema changed (with error handling)
   if git diff --name-only "$1" "$2" 2>/dev/null | grep -q "lib/db/schema.ts"; then
     echo "⚠️  🗄️  Drizzle schema differs between branches"
-    echo "   Run 'bun run db:generate' to regenerate migrations"
+    echo "   Run 'pnpm run db:generate' to regenerate migrations"
     echo "   Then check drizzle/migrations/ for new files"
     CHANGED=1
   fi

@@ -2,23 +2,24 @@
 """
 Claude Code Hook: Test Command Guard
 
-Prevents direct use of `bun test` and enforces `bun run test` instead.
+Prevents direct use of wrong package managers and enforces `pnpm run test` instead.
 
 Context:
-- `bun test` has different behavior than `bun run test` in this project
-- `bun test` runs tests with read-only process.env.NODE_ENV
-- `bun run test` uses vitest which allows vi.stubEnv() for environment mocking
-- Tests were previously skipped due to this limitation
+- This project uses pnpm for package management
+- `bun test` invokes Bun's native test runner, not Vitest
+- `npm test` should use pnpm instead
+- `pnpm test` and `pnpm run test` both correctly invoke Vitest
 
 Blocks:
-- bun test (direct test runner)
-- npm test (should use `bun run test`)
-- pnpm test (should use `bun run test`)
+- bun test (Bun's native test runner, not Vitest)
+- npm test (should use pnpm)
+- npm run test (should use pnpm)
 
 Allows:
-- bun run test (uses package.json script)
-- bun run test:*  (test script variants)
-- Other bun commands
+- pnpm test (runs package.json script)
+- pnpm run test (runs package.json script)
+- pnpm run test:* (test script variants)
+- Other pnpm/bun commands
 
 Exit codes:
 - 0: Command is allowed
@@ -44,7 +45,7 @@ def parse_test_command(command: str) -> tuple[str, list[str]]:
         (program, args) where program is bun/npm/pnpm and args are remaining tokens
 
     Example:
-        "bun test --watch" -> ("bun", ["test", "--watch"])
+        "pnpm test --watch" -> ("pnpm", ["test", "--watch"])
         "cd /path && bun test" -> ("bun", ["test"])
         "ENV=value npm test" -> ("npm", ["test"])
     """
@@ -68,8 +69,8 @@ def check_test_command(command_str: str) -> Optional[Violation]:
     """
     Check if command invokes a blocked test pattern.
 
-    Blocks: bun test, npm test, pnpm test
-    Allows: bun run test, bun run test:*, other commands
+    Blocks: bun test, npm test, npm run test
+    Allows: pnpm test, pnpm run test, pnpm run test:*, other commands
 
     Returns: Violation if command should be blocked, None if allowed
     """
@@ -78,17 +79,24 @@ def check_test_command(command_str: str) -> Optional[Violation]:
     if not program or not args:
         return None
 
-    # Check if first argument is "test" (not "run" or "test:something")
-    if args[0] == "test":
-        if program == "bun":
+    # Check for direct "bun test" (invokes Bun's test runner, not Vitest)
+    if program == "bun" and args[0] == "test":
+        return Violation(
+            message="Direct 'bun test' invokes Bun's test runner, not Vitest",
+            suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
+        )
+
+    # Check for npm usage (should use pnpm)
+    if program == "npm":
+        if args[0] == "test":
             return Violation(
-                message="Direct 'bun test' is not allowed in this project",
-                suggestion="Use 'bun run test' instead. This ensures vitest is used with proper environment stubbing support."
+                message="'npm test' is not the package manager for this project",
+                suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
             )
-        else:
+        if args[0] == "run" and len(args) > 1 and args[1].startswith("test"):
             return Violation(
-                message=f"'{program} test' is not allowed in this project",
-                suggestion="Use 'bun run test' instead. This project uses bun as the package manager."
+                message=f"'npm run {args[1]}' is not the package manager for this project",
+                suggestion="Use 'pnpm run test' instead. This project uses pnpm for package management."
             )
 
     return None
