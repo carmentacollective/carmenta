@@ -13,7 +13,7 @@ export type AuthMethod = "oauth" | "api_key";
 export type RolloutStatus =
     | "available" // Visible and usable by all users
     | "beta" // Only visible to users with showBetaIntegrations permission
-    | "internal"; // Only visible to users with showInternalIntegrations permission
+    | "internal"; // Only visible to users with showInternalIntegrations permission (Gmail, etc.)
 
 export interface ServiceDefinition {
     /** Unique service identifier (e.g., "notion", "giphy") */
@@ -145,6 +145,27 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: false,
         docsUrl: "https://developers.giphy.com/docs/api",
         capabilities: ["search", "get_trending", "get_random"],
+    },
+
+    // Gmail - OAuth (via Nango, "restricted" scopes tier - requires Google verification)
+    // Uses "internal" status because restricted Google scopes require special approval
+    {
+        id: "gmail",
+        name: "Gmail",
+        description: "Send emails and search your inbox",
+        logo: "/logos/gmail.svg",
+        authMethod: "oauth",
+        status: "internal",
+        nangoIntegrationKey: "gmail",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.google.com/gmail/api/guides",
+        capabilities: [
+            "send_message",
+            "search_messages",
+            "get_message",
+            "list_threads",
+            "create_draft",
+        ],
     },
 
     // Google Calendar + Contacts - OAuth (via Nango, "sensitive" scopes tier)
