@@ -33,21 +33,11 @@ export default function ConnectServicePage() {
                 if (!response.ok) {
                     const errorData = await response.json();
                     logger.error(
-                        { errorData, service },
+                        { errorData, service, status: response.status },
                         "Failed to create connect session"
                     );
 
-                    const error = new Error(errorData.error || "Failed to connect");
-                    Sentry.captureException(error, {
-                        tags: {
-                            component: "connect",
-                            service,
-                            action: "create_session",
-                        },
-                        extra: { errorData, status: response.status },
-                    });
-
-                    throw error;
+                    throw new Error(errorData.error || "Failed to connect");
                 }
 
                 const responseData = await response.json();
