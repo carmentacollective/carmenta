@@ -8,6 +8,14 @@ const config: NextConfig = {
 
     reactStrictMode: true,
 
+    // Force transpilation of ESM packages that have issues with pnpm + Turbopack
+    // See: property-information's boolean import gets dropped during bundling
+    transpilePackages: [
+        "property-information",
+        "hast-util-to-jsx-runtime",
+        "react-markdown",
+    ],
+
     // Type checking happens during build for safety
     // CI also runs type-check separately for faster feedback
 
