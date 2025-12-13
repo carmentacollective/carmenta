@@ -106,6 +106,12 @@ export class TwitterAdapter extends ServiceAdapter {
                             error: errorMessage,
                         }
                     );
+
+                    // Report to Sentry for observability
+                    this.captureError(jsonError, {
+                        action: `safeNangoRequest_json_parsing_${method}_${endpoint}`,
+                    });
+
                     throw new Error(
                         "Connection to X API was closed unexpectedly. " +
                             "This may be due to network issues or API rate limiting. Please try again."
@@ -130,6 +136,12 @@ export class TwitterAdapter extends ServiceAdapter {
                     method,
                     error: errorMessage,
                 });
+
+                // Report to Sentry for observability
+                this.captureError(error, {
+                    action: `safeNangoRequest_connection_${method}_${endpoint}`,
+                });
+
                 throw new Error(
                     "Lost connection to X API. This may be temporary. Please try again."
                 );
