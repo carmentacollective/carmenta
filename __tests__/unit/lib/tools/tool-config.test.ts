@@ -246,16 +246,16 @@ describe("tool-config", () => {
                 "Thought it through",
                 "Worked through it",
                 "Figured it out",
-                "Got there",
+                "Found clarity",
                 "All sorted",
-                "Clarity",
                 "Considered carefully",
                 "Explored this",
+                "Understood",
             ];
             const delightMessages = [
                 "Thought that through ✨",
                 "Figured it out 💡",
-                "Got there 🧠",
+                "Found clarity 🧠",
                 "All sorted 💭",
             ];
             const allPossible = [...standardMessages, ...delightMessages];
@@ -270,7 +270,7 @@ describe("tool-config", () => {
             const delightMessages = [
                 "Thought that through ✨",
                 "Figured it out 💡",
-                "Got there 🧠",
+                "Found clarity 🧠",
                 "All sorted 💭",
             ];
 

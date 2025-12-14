@@ -25,13 +25,15 @@ describe("ConciergeDisplay", () => {
             expect(within(trigger!).getByText("Claude Sonnet")).toBeInTheDocument();
         });
 
-        it("renders explanation text in trigger", () => {
+        it("does not show explanation in collapsed header (Split Identity design)", () => {
+            // The Split Identity design keeps the header clean - explanation
+            // only appears when expanded
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button");
             expect(
-                within(trigger!).getByText("Balanced default for general tasks.")
-            ).toBeInTheDocument();
+                within(trigger!).queryByText("Balanced default for general tasks.")
+            ).not.toBeInTheDocument();
         });
 
         it("starts with collapsible closed", () => {
@@ -285,7 +287,8 @@ describe("ConciergeDisplay", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
-            const chevron = trigger.querySelector("svg:last-child");
+            // Find chevron by its lucide class (not last-child since Check icon is also present)
+            const chevron = trigger.querySelector(".lucide-chevron-down");
 
             expect(chevron).toHaveClass("rotate-0");
 

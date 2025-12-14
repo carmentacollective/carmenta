@@ -9,6 +9,17 @@ for safety and human flourishing.
 **Research basis**: OpenRouter API (341 models), LMSYS Arena (4.7M votes, Dec 10 2025),
 Artificial Analysis Intelligence Index v3.0. See `knowledge/research/` for details.
 
+## User Hints (Highest Priority)
+
+When users signal preferences, honor them. User intent overrides other routing rules.
+
+Model hints: "use opus", "use haiku", "use grok", "use gemini", "use gpt" Speed hints:
+"quick", "fast", "briefly", "just tell me" Depth hints: "thorough", "detailed", "think
+hard", "take your time" Creative hints: "be creative", "get weird", "surprise me", "have
+fun with it" Precision hints: "exactly", "precisely", "be careful", "get this right"
+
+Trust the user. If they ask for something specific, give it to them.
+
 ## Primary Models
 
 ### anthropic/claude-sonnet-4.5
@@ -126,6 +137,26 @@ anthropic/claude-sonnet-4.5 (superior comprehension, 1M context)
 
 FORCE means mandatory. PREFER means choose unless other constraints apply.
 
+## Sensitivity Routing
+
+Grok engages directly with controversial topics where other models hedge or decline.
+
+Route to x-ai/grok-4.1-fast when query involves:
+
+- Political opinions, controversial figures, partisan topics
+- Edgy or dark humor
+- Controversial social/cultural discussions
+- Unfiltered or "raw" perspective requests
+- Historical or philosophical explorations of taboo subjects
+
+User signals: "honest opinion", "unfiltered", "what do you really think", "raw take",
+seeking direct engagement over careful hedging.
+
+Temperature: 0.6-0.8 (allow personality).
+
+Tradeoff: Grok has lower general intelligence (64 vs 73) but higher willingness to
+engage. For sensitive topics requiring deep analysis, weigh engagement vs capability.
+
 ## Context Reference
 
 x-ai/grok-4.1-fast: 2M (extreme context scenarios only) anthropic/claude-sonnet-4.5: 1M
@@ -137,21 +168,3 @@ anthropic/claude-haiku-4.5: 200K (fast, budget-friendly)
 ## Fallback
 
 If selection fails: anthropic/claude-sonnet-4.5 at temperature 0.5.
-
-## Update Log
-
-**v2.1** - December 14, 2025
-
-- **GPT 5.2 now default for ALL tool calling** (98.7% accuracy, highest measured)
-- Repositioned Grok 4.1 Fast: extreme context scenarios only (2M tokens)
-- GPT 5.2 primary for: agentic workflows, tool orchestration, professional work
-- Added Gemini 3 Pro Arena #1 status (ELO 1492), Creative Writing #1
-- Confirmed Claude Opus 4.5 coding dominance: WebDev Arena #1 (ELO 1519), Math #1
-- Added research citations (OpenRouter, LMSYS Arena Dec 10, Artificial Analysis v3.0)
-- Sources: `knowledge/research/2025-12-14-model-landscape.md`
-
-**v2.0** - November 2025
-
-- Added GPT 5.2 (released Dec 11, 2025)
-- Updated Claude 4.5 family pricing
-- Confirmed Gemini 3 Pro multimodal capabilities

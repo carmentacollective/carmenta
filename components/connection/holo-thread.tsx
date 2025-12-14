@@ -34,6 +34,8 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
 
+import * as Sentry from "@sentry/nextjs";
+
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
@@ -472,10 +474,17 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
 
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
-            // Log error and show error state to make missing renderers obvious.
+            // Log error and report to Sentry so we catch missing renderers in production.
             logger.error(
                 { toolName, toolCallId: part.toolCallId },
                 `Missing tool renderer for "${toolName}". Add a case to ToolPartRenderer.`
+            );
+            Sentry.captureException(
+                new Error(`Missing tool renderer for "${toolName}"`),
+                {
+                    tags: { component: "ToolPartRenderer", toolName },
+                    extra: { toolCallId: part.toolCallId, input },
+                }
             );
 
             return (
@@ -613,8 +622,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
 }
 
 /**
- * Assistant message bubble with glass effect.
- * Includes concierge display, thinking indicator, and markdown content.
+ * Assistant message with Split Identity layout.
+ *
+ * Two zones:
+ * 1. Concierge Zone (purple) - Carmenta's identity, appears immediately
+ * 2. LLM Zone (glass) - Model's output with nested reasoning, tools, content
+ *
+ * This design creates a clear visual hierarchy: Carmenta orchestrates,
+ * the LLM delivers.
  */
 function AssistantMessage({
     message,
@@ -630,23 +645,49 @@ function AssistantMessage({
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
-    // Show thinking indicator only when streaming AND no content yet AND this is the last message
-    // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
-    const showThinking = isStreaming && !hasContent && isLast && !isConciergeRunning;
-
     // Check for reasoning in message parts
     const reasoning = getReasoningContent(message);
 
     // Extract tool parts for rendering
     const toolParts = getToolParts(message);
 
-    // Show concierge when: selecting (isConciergeRunning) OR selected (concierge data exists)
-    const showConcierge = isLast && (isConciergeRunning || concierge);
-    const isSelectingModel = isConciergeRunning && !concierge;
+    // Extract file parts
+    const fileParts = getFileParts(message);
+
+    // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
+    // This eliminates the visual gap between user submit and Carmenta appearing.
+    // ALSO show for completed messages that have concierge data (last message after completion).
+    const showConcierge =
+        isLast && (isStreaming || isConciergeRunning || Boolean(concierge));
+
+    // We're in "selecting" state when streaming/running but don't have selection yet
+    const isSelectingModel = (isStreaming || isConciergeRunning) && !concierge;
+
+    // We've selected when concierge data exists
+    const hasSelected = Boolean(concierge);
+
+    // Derive avatar state for ConciergeDisplay
+    const avatarState = isSelectingModel
+        ? "thinking"
+        : hasSelected
+          ? "speaking"
+          : "idle";
+
+    // Show thinking indicator only when streaming AND no content yet AND this is the last message
+    // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
+    const showThinking = isStreaming && !hasContent && isLast && hasSelected;
+
+    // Determine if we have LLM output to show (any of: reasoning, tools, files, content, or thinking)
+    const hasLlmOutput =
+        reasoning ||
+        toolParts.length > 0 ||
+        fileParts.length > 0 ||
+        hasContent ||
+        showThinking;
 
     return (
-        <div className="my-4 flex w-full flex-col gap-2">
-            {/* Concierge display - shown during selection AND after selection */}
+        <div className="my-4 flex w-full flex-col gap-0">
+            {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
                 <ConciergeDisplay
                     modelId={concierge?.modelId}
@@ -654,51 +695,97 @@ function AssistantMessage({
                     explanation={concierge?.explanation}
                     reasoning={concierge?.reasoning}
                     isSelecting={isSelectingModel}
+                    avatarState={avatarState}
                     messageSeed={message.id}
-                    className="mb-2"
                 />
             )}
 
-            {/* Thinking indicator - shown while waiting for first content */}
-            {showThinking && <ThinkingIndicator className="mb-2" />}
+            {/* LLM ZONE - Model's output (neutral glass) */}
+            {/* Appears after concierge selection with smooth entrance */}
+            <AnimatePresence>
+                {hasSelected && hasLlmOutput && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{
+                            duration: 0.35,
+                            ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
+                        }}
+                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                    >
+                        {/* Reasoning - nested inside LLM zone */}
+                        {reasoning && (
+                            <div className="border-b border-foreground/10">
+                                <ReasoningDisplay
+                                    content={reasoning}
+                                    isStreaming={isStreaming}
+                                    variant="nested"
+                                />
+                            </div>
+                        )}
 
-            {/* Reasoning display if present */}
-            {reasoning && (
-                <ReasoningDisplay
-                    content={reasoning}
-                    isStreaming={isStreaming}
-                    className="mb-3"
-                />
-            )}
+                        {/* Tool UIs - nested inside LLM zone */}
+                        {toolParts.length > 0 && (
+                            <div className="overflow-x-auto border-b border-foreground/10">
+                                {toolParts.map((part, idx) => (
+                                    <div
+                                        key={part.toolCallId}
+                                        className={cn(
+                                            "max-w-full",
+                                            idx > 0 && "border-t border-foreground/5"
+                                        )}
+                                    >
+                                        <ToolPartRenderer part={part} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-            {/* Tool UIs - rendered before text content */}
-            {toolParts.length > 0 && (
-                <div className="flex flex-col gap-3">
-                    {toolParts.map((part) => (
-                        <ToolPartRenderer key={part.toolCallId} part={part} />
-                    ))}
-                </div>
-            )}
+                        {/* File previews */}
+                        {fileParts.length > 0 && (
+                            <div className="border-b border-foreground/10 p-4">
+                                <div className="flex flex-col gap-2">
+                                    {fileParts.map((file, idx) => (
+                                        <FilePreview
+                                            key={idx}
+                                            url={file.url}
+                                            mediaType={file.mediaType}
+                                            filename={file.name || "file"}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-            {/* File previews (rare but possible for assistant messages) */}
-            {(() => {
-                const fileParts = getFileParts(message);
-                return fileParts.length > 0 ? (
-                    <div className="mb-3 flex flex-col gap-2">
-                        {fileParts.map((file, idx) => (
-                            <FilePreview
-                                key={idx}
-                                url={file.url}
-                                mediaType={file.mediaType}
-                                filename={file.name || "file"}
-                            />
-                        ))}
-                    </div>
-                ) : null;
-            })()}
+                        {/* Thinking indicator - inside LLM zone while waiting for content */}
+                        {showThinking && (
+                            <div className="px-4 py-3">
+                                <ThinkingIndicator />
+                            </div>
+                        )}
 
-            {/* Message content */}
-            {hasContent && (
+                        {/* Message content - primary output */}
+                        {hasContent && (
+                            <div className="group">
+                                <div className="px-4 pb-2 pt-4">
+                                    <MarkdownRenderer content={content} />
+                                </div>
+                                <div className="px-4 pb-1">
+                                    <MessageActions
+                                        content={content}
+                                        isLast={isLast}
+                                        isStreaming={isStreaming}
+                                        align="left"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Fallback: Show content without LLM zone wrapper when no concierge (e.g., history messages) */}
+            {!showConcierge && hasContent && (
                 <div className="group max-w-full sm:max-w-[85%]">
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
                         <MarkdownRenderer content={content} />
@@ -709,6 +796,22 @@ function AssistantMessage({
                         isStreaming={isStreaming}
                         align="left"
                     />
+                </div>
+            )}
+
+            {/* Fallback: Show reasoning/tools without LLM zone wrapper when no concierge */}
+            {!showConcierge && (reasoning || toolParts.length > 0) && (
+                <div className="flex flex-col gap-3">
+                    {reasoning && (
+                        <ReasoningDisplay
+                            content={reasoning}
+                            isStreaming={isStreaming}
+                            className="mb-3"
+                        />
+                    )}
+                    {toolParts.map((part) => (
+                        <ToolPartRenderer key={part.toolCallId} part={part} />
+                    ))}
                 </div>
             )}
         </div>

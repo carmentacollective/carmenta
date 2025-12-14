@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: "*",
             allow: ["/", "/connection/"],
-            disallow: "/api/",
+            disallow: ["/api/", "/design-lab/"],
         },
         sitemap: "https://carmenta.ai/sitemap.xml",
     };

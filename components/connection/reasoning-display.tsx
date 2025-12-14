@@ -131,6 +131,12 @@ interface ReasoningDisplayProps {
     open?: boolean;
     /** Optional: callback when open state changes */
     onOpenChange?: (open: boolean) => void;
+    /**
+     * Variant controls the visual styling:
+     * - "default": Standalone appearance with border
+     * - "nested": For use inside LLM zone (no outer border, subtle background)
+     */
+    variant?: "default" | "nested";
     className?: string;
 }
 
@@ -154,22 +160,34 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
     isStreaming,
     open: controlledOpen,
     onOpenChange,
+    variant = "default",
     className,
 }: ReasoningDisplayProps) {
+    const isNested = variant === "nested";
     const reasoningId = useId();
 
     // Internal state for uncontrolled mode
     const [internalOpen, setInternalOpen] = useState(true);
-    const [hasAutoClosedOnce, setHasAutoClosedOnce] = useState(false);
     const [durationSeconds, setDurationSeconds] = useState(0);
 
     // Track timing with refs
     const startTimeRef = useRef<number | null>(null);
     const prevStreamingRef = useRef<boolean | null>(null);
+    // Track if user manually interacted - if so, don't auto-close on them
+    const userInteractedRef = useRef(false);
 
     // Use controlled or uncontrolled state
     const isOpen = controlledOpen ?? internalOpen;
-    const setIsOpen = onOpenChange ?? setInternalOpen;
+
+    // Wrap setIsOpen to track user interaction
+    const handleOpenChange = (open: boolean) => {
+        userInteractedRef.current = true;
+        if (onOpenChange) {
+            onOpenChange(open);
+        } else {
+            setInternalOpen(open);
+        }
+    };
 
     // Extract summary from content (memoized to avoid re-parsing on every render)
     const summary = useMemo(() => extractReasoningSummary(content), [content]);
@@ -194,17 +212,21 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
         prevStreamingRef.current = isNowStreaming;
     }, [isStreaming]);
 
-    // Auto-close after streaming ends (once only)
+    // Auto-close after streaming ends, but only if user hasn't manually interacted
     useEffect(() => {
-        if (!isStreaming && isOpen && !hasAutoClosedOnce) {
+        if (!isStreaming && isOpen && !userInteractedRef.current) {
             const timer = setTimeout(() => {
-                setIsOpen(false);
-                setHasAutoClosedOnce(true);
+                // Don't use handleOpenChange here - this is automatic, not user-initiated
+                if (onOpenChange) {
+                    onOpenChange(false);
+                } else {
+                    setInternalOpen(false);
+                }
             }, AUTO_CLOSE_DELAY_MS);
 
             return () => clearTimeout(timer);
         }
-    }, [isStreaming, isOpen, hasAutoClosedOnce, setIsOpen]);
+    }, [isStreaming, isOpen, onOpenChange]);
 
     // Build the status message
     const statusMessage = isStreaming
@@ -214,23 +236,36 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
     return (
         <Collapsible
             open={isOpen}
-            onOpenChange={setIsOpen}
-            className={cn("not-prose", className)}
+            onOpenChange={handleOpenChange}
+            className={cn("not-prose", isNested && "bg-blue-500/[0.03]", className)}
         >
             <CollapsibleTrigger
-                className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className={cn(
+                    "flex w-full items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+                    isNested ? "px-4 py-2.5 text-left hover:bg-foreground/5" : "gap-1.5"
+                )}
                 data-testid="reasoning-trigger"
             >
                 <Brain
-                    className={cn("h-4 w-4", isStreaming && "animate-pulse")}
+                    className={cn(
+                        "h-3.5 w-3.5 text-blue-500/70",
+                        isStreaming && "animate-pulse"
+                    )}
                     data-testid="reasoning-icon"
                 />
-                <span className="max-w-[400px] truncate" data-testid="reasoning-status">
+                <span
+                    className={cn(
+                        "truncate",
+                        isNested ? "flex-1 text-foreground/60" : "max-w-[400px]"
+                    )}
+                    data-testid="reasoning-status"
+                >
                     {statusMessage}
                 </span>
                 <ChevronDown
                     className={cn(
-                        "h-3 w-3 shrink-0 transition-transform duration-200",
+                        "h-4 w-4 shrink-0 transition-transform duration-200",
+                        isNested && "text-foreground/40",
                         isOpen ? "rotate-180" : "rotate-0"
                     )}
                 />
@@ -238,13 +273,21 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
 
             <CollapsibleContent
                 className={cn(
-                    "mt-2 overflow-hidden text-sm text-muted-foreground",
+                    "overflow-hidden text-sm text-muted-foreground",
+                    !isNested && "mt-2",
                     "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2",
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
                 )}
                 data-testid="reasoning-content"
             >
-                <div className="group relative max-h-[200px] overflow-y-auto rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm">
+                <div
+                    className={cn(
+                        "group relative max-h-[200px] overflow-y-auto",
+                        isNested
+                            ? "border-t border-foreground/5 bg-blue-500/[0.02] px-4 py-3"
+                            : "rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm"
+                    )}
+                >
                     <pre className="whitespace-pre-wrap font-sans leading-relaxed">
                         {content}
                     </pre>
