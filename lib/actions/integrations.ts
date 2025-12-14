@@ -560,12 +560,19 @@ export async function testIntegration(
             return { success: false, error: "Integration not found" };
         }
 
-        // For OAuth, the accountId stored is the Nango connection ID
-        const connectionId = integration.accountId;
+        // For OAuth, we need the Nango connectionId (not accountId which is the user's service identifier)
+        if (!integration.connectionId) {
+            return {
+                success: false,
+                error: "No Nango connection ID found for this integration",
+            };
+        }
+
+        const nangoConnectionId = integration.connectionId;
 
         // Call the adapter's testConnection method
-        // OAuth adapters pass connectionId, API key adapters pass apiKey
-        return await adapter.testConnection(connectionId);
+        // OAuth adapters pass Nango connectionId, API key adapters pass apiKey
+        return await adapter.testConnection(nangoConnectionId);
     } catch (error) {
         logger.error(
             { err: error, userEmail, serviceId },
