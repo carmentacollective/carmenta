@@ -93,7 +93,7 @@ export async function getCredentials(
 
         if (!integration) {
             throw new ValidationError(
-                `Account '${accountId}' is not connected for ${service}. Connect it in your hub to use this account.`
+                `We haven't connected that ${service} account yet. Let's add it.`
             );
         }
     } else {
@@ -116,7 +116,7 @@ export async function getCredentials(
 
         if (integrations.length === 0) {
             throw new ValidationError(
-                `${service} is not connected. Connect it in your hub to use this service.`
+                `We haven't connected ${service} yet. Let's set that up on the integrations page.`
             );
         }
 
@@ -126,38 +126,38 @@ export async function getCredentials(
 
     if (!integration) {
         throw new ValidationError(
-            `${service} is not connected. Connect it in your hub to use this service.`
+            `We need to connect ${service} first. Head to integrations to set it up.`
         );
     }
 
     // Provide helpful error messages based on integration status
     if (integration.status === "expired") {
         const errorDetails = integration.errorMessage
-            ? ` Details: ${integration.errorMessage}`
+            ? ` (${integration.errorMessage})`
             : "";
         throw new ValidationError(
-            `Your ${service} access token has expired. Reconnect it in your hub to continue.${errorDetails}`
+            `Our ${service} connection timed out. Quick reconnect and we're back.${errorDetails}`
         );
     }
 
     if (integration.status === "error") {
         const errorDetails = integration.errorMessage
-            ? ` Error: ${integration.errorMessage}`
+            ? ` (${integration.errorMessage})`
             : "";
         throw new ValidationError(
-            `Your ${service} connection has an error. Reconnect it in your hub to resolve.${errorDetails}`
+            `${service} hit an issue. Reconnecting will get us back on track.${errorDetails}`
         );
     }
 
     if (integration.status === "disconnected") {
         throw new ValidationError(
-            `${service} is disconnected. Connect it in your hub to use this service.`
+            `${service} isn't connected. Head to integrations to connect it.`
         );
     }
 
     if (integration.status !== "connected") {
         throw new ValidationError(
-            `${service} connection is not available (status: ${integration.status}). Check your hub for details.`
+            `${service} isn't available right now. Check integrations to see what's happening.`
         );
     }
 
@@ -185,7 +185,7 @@ export async function getCredentials(
                 "Failed to get OAuth access token"
             );
             throw new ValidationError(
-                `Failed to get ${service} access token. Please reconnect the service.`
+                `We couldn't reach ${service}. Let's reconnect it.`
             );
         }
     }
@@ -194,7 +194,7 @@ export async function getCredentials(
     if (isApiKeyService(service)) {
         if (!integration.encryptedCredentials) {
             throw new ValidationError(
-                `API key service ${service} is missing credentials for user ${userEmail}`
+                `${service} credentials are missing. Let's reconnect it.`
             );
         }
 
@@ -217,7 +217,7 @@ export async function getCredentials(
                 `Failed to decrypt credentials for ${service}`
             );
             throw new ValidationError(
-                `Failed to decrypt credentials for ${service}. Please reconnect the service.`
+                `We couldn't read ${service} credentials. Let's reconnect it.`
             );
         }
     }
@@ -413,9 +413,7 @@ export async function disconnectService(
         const integration = results[0];
 
         if (!integration) {
-            throw new ValidationError(
-                `Account '${accountId}' is not connected for ${service}`
-            );
+            throw new ValidationError(`That ${service} account isn't connected.`);
         }
 
         const wasDefault = integration.isDefault;
@@ -472,7 +470,7 @@ export async function disconnectService(
             );
 
         if (existingIntegrations.length === 0) {
-            throw new ValidationError(`${service} is not connected for this user`);
+            throw new ValidationError(`${service} isn't connected yet.`);
         }
 
         // Hard delete all accounts for this service

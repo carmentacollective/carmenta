@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             tags: { component: "oauth", route: "authorize" },
         });
         return NextResponse.json(
-            { error: "OAuth is not properly configured. Please contact support." },
+            { error: "We need to finish setting up OAuth. We're on it." },
             { status: 500 }
         );
     }
