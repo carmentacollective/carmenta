@@ -3,7 +3,7 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 
 import { ModelSelectorPopover } from "@/components/connect/model-selector/model-selector-popover";
 import { DEFAULT_OVERRIDES } from "@/components/connect/model-selector/types";
-import { MODELS, getModel } from "@/lib/models";
+import { MODELS, getModel } from "@/lib/model-config";
 
 describe("ModelSelectorPopover", () => {
     const defaultProps = {

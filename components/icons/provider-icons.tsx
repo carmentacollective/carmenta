@@ -3,7 +3,7 @@
  * Using inline SVGs for better control over styling.
  */
 
-import type { ModelProvider } from "@/lib/models";
+import type { ModelProvider } from "@/lib/model-config";
 import { cn } from "@/lib/utils";
 
 interface IconProps {
