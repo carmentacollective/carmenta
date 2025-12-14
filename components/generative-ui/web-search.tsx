@@ -38,7 +38,7 @@ export function WebSearchResults({
                 <div className="flex items-center gap-2">
                     <Search className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                        Searching for &quot;{query}&quot;...
+                        Exploring the web for &quot;{query}&quot;...
                     </span>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -58,7 +58,7 @@ export function WebSearchResults({
                     <AlertCircle className="h-4 w-4 text-destructive" />
                     <p className="text-sm text-destructive">
                         {error ||
-                            `Search for "${query}" didn't come through. Try again?`}
+                            `We couldn't reach the web for "${query}". Let's try that again.`}
                     </p>
                 </div>
             </div>
@@ -72,7 +72,8 @@ export function WebSearchResults({
                 <div className="flex items-center gap-2">
                     <Search className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                        No results found for &quot;{query}&quot;
+                        Nothing came up for &quot;{query}&quot;. Want to try a different
+                        search?
                     </span>
                 </div>
             </div>
@@ -85,7 +86,8 @@ export function WebSearchResults({
             <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                 <Search className="h-4 w-4" />
                 <span>
-                    {results.length} results for &quot;{query}&quot;
+                    Found {results.length} {results.length === 1 ? "result" : "results"}{" "}
+                    for &quot;{query}&quot;
                 </span>
             </div>
 
