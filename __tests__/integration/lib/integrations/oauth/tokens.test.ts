@@ -95,7 +95,9 @@ describe("OAuth Token Management", () => {
 
             // Should be decryptable
             const decrypted = decryptCredentials(integration!.encryptedCredentials!);
-            expect(decrypted.token).toBe(testTokens.accessToken);
+            expect("token" in decrypted && decrypted.token).toBe(
+                testTokens.accessToken
+            );
         });
 
         it("sets isDefault=true for first account of a service", async () => {
@@ -155,7 +157,7 @@ describe("OAuth Token Management", () => {
 
             // With updated token
             const decrypted = decryptCredentials(integrations[0].encryptedCredentials!);
-            expect(decrypted.token).toBe("new-refreshed-token");
+            expect("token" in decrypted && decrypted.token).toBe("new-refreshed-token");
         });
 
         it("clears error state on reconnection", async () => {

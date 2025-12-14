@@ -97,6 +97,10 @@ vi.mock("./lib/env", () => ({
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: undefined,
         PARALLEL_API_KEY: undefined,
         ENCRYPTION_KEY: "S0tXSmJVKHdxrV2xqxoqWY3XzPoNCtHo6HATTeFypvE=", // random 32 bytes
+        // OAuth provider credentials for testing
+        NOTION_CLIENT_ID: "test-notion-client-id",
+        NOTION_CLIENT_SECRET: "test-notion-client-secret",
+        NEXT_PUBLIC_APP_URL: "https://carmenta.app",
     },
     assertEnv: (value: unknown, name: string) => {
         if (value === undefined || value === null || value === "") {
