@@ -71,50 +71,6 @@ describe("DropboxAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches Dropbox account information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.post as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    account_id: "dbid:account-123",
-                    name: {
-                        display_name: "Test User",
-                        given_name: "Test",
-                        surname: "User",
-                    },
-                    email: "test@dropbox.com",
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("dbid:account-123");
-            expect(result.displayName).toBe("Test User");
-            expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/2/users/get_current_account"
-                ),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "dropbox",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.post as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =

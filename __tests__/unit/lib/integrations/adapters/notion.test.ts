@@ -85,8 +85,6 @@ describe("NotionAdapter", () => {
         });
     });
 
-    // Note: fetchAccountInfo tests removed - account info now extracted during OAuth flow
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =

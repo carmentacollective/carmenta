@@ -83,44 +83,6 @@ describe("GoogleCalendarContactsAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches Google account information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    resourceName: "people/123",
-                    names: [{ displayName: "Test User" }],
-                    emailAddresses: [{ value: "test@gmail.com" }],
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("test@gmail.com");
-            expect(result.displayName).toBe("Test User");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/v1/people/me"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =

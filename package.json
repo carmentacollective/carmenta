@@ -33,8 +33,6 @@
     "@47ng/simple-e2ee": "^1.1.0",
     "@ai-sdk/react": "^2.0.106",
     "@clerk/nextjs": "^6.35.6",
-    "@nangohq/frontend": "^0.69.14",
-    "@nangohq/node": "^0.69.14",
     "@openrouter/ai-sdk-provider": "^1.5.3",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",

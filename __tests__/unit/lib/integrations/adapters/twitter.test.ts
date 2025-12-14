@@ -145,37 +145,6 @@ describe("TwitterAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("returns account identifier and display name", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    data: {
-                        id: "12345",
-                        name: "Test User",
-                        username: "testuser",
-                    },
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo("nango-connection-id");
-
-            expect(result.identifier).toBe("@testuser");
-            expect(result.displayName).toBe("Test User");
-        });
-
-        it("throws ValidationError on failure", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Connection failed")),
-            } as never);
-
-            await expect(
-                adapter.fetchAccountInfo("invalid-connection")
-            ).rejects.toThrow(ValidationError);
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =

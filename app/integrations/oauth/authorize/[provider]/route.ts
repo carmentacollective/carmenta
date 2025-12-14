@@ -78,7 +78,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         userEmail,
         providerId,
         returnUrl,
-        provider.usePKCE
+        provider.requiresPKCE
     );
 
     // Build authorization URL

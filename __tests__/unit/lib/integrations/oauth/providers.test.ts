@@ -155,7 +155,7 @@ describe("OAuth Provider Registry", () => {
 
         it("does not use PKCE by default", () => {
             const provider = getProvider("notion");
-            expect(provider?.usePKCE).toBeFalsy();
+            expect(provider?.requiresPKCE).toBeFalsy();
         });
 
         it("has empty scopes array (access determined by user selection)", () => {
@@ -180,7 +180,7 @@ describe("OAuth Provider Registry", () => {
             });
         });
 
-        it("falls back to default display name if workspace_name missing", () => {
+        it("falls back to default display name if workspace_name missing", async () => {
             const provider = getProvider("notion");
 
             const mockResponse = {
@@ -189,7 +189,7 @@ describe("OAuth Provider Registry", () => {
                 // workspace_name is missing
             };
 
-            const accountInfo = provider?.extractAccountInfo?.(mockResponse);
+            const accountInfo = await provider?.extractAccountInfo?.(mockResponse);
 
             expect(accountInfo?.identifier).toBe("ws-123");
             expect(accountInfo?.displayName).toBe("Notion Workspace");

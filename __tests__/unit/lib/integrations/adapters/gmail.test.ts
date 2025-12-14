@@ -99,46 +99,6 @@ describe("GmailAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches Gmail account information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    emailAddress: "testuser@gmail.com",
-                    messagesTotal: 1000,
-                    threadsTotal: 500,
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("testuser@gmail.com");
-            expect(result.displayName).toBe("testuser@gmail.com");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/gmail/v1/users/me/profile"
-                ),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "gmail",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("testConnection", () => {
         it("validates connection using profile endpoint", async () => {
             const { httpClient } = await import("@/lib/http-client");

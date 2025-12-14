@@ -71,46 +71,6 @@ describe("SlackAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches Slack workspace information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    ok: true,
-                    user: "testuser",
-                    user_id: "U123456",
-                    team: "Test Workspace",
-                    team_id: "T123456",
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("Test Workspace (testuser)");
-            expect(result.displayName).toBe("Test Workspace workspace");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/auth.test"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "slack",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =

@@ -76,12 +76,12 @@ describe("OAuth State Management", () => {
             expect(record?.returnUrl).toBeNull();
         });
 
-        it("generates and stores PKCE code verifier when usePKCE is true", async () => {
+        it("generates and stores PKCE code verifier when requiresPKCE is true", async () => {
             const { state, codeVerifier, codeChallenge } = await generateState(
                 testUserEmail,
                 testProvider,
                 undefined,
-                true // usePKCE
+                true // requiresPKCE
             );
 
             expect(codeVerifier).toBeDefined();
@@ -95,7 +95,7 @@ describe("OAuth State Management", () => {
             expect(record?.codeVerifier).toBe(codeVerifier);
         });
 
-        it("does not generate PKCE when usePKCE is false", async () => {
+        it("does not generate PKCE when requiresPKCE is false", async () => {
             const { codeVerifier, codeChallenge } = await generateState(
                 testUserEmail,
                 testProvider,

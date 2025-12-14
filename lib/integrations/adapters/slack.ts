@@ -1,7 +1,7 @@
 /**
  * Slack Service Adapter
  *
- * Uses user tokens (xoxp-) via Nango proxy to post messages as the authenticated user.
+ * Uses user tokens (xoxp-) via in-house OAuth to post messages as the authenticated user.
  * Messages appear as coming from the user, not a bot. User must have access to channels
  * to read/write - "not_in_channel" errors mean the user isn't a channel member.
  */
@@ -9,108 +9,44 @@
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
 import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { SLACK_API_BASE } from "../oauth/providers/slack";
 
 // Constants for Slack API limits
 const MAX_MESSAGES_FETCH = 100;
 const MAX_CHANNELS_LIST = 200;
 
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
-
 export class SlackAdapter extends ServiceAdapter {
     serviceName = "slack";
     serviceDisplayName = "Slack";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
     /**
-     * Fetch the Slack workspace and user information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param userId - User ID (optional, only used for logging)
+     * Build headers for Slack API requests.
+     * Uses the access token from our in-house OAuth system.
      */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            // Get authenticated user info
-            const userResponse = await httpClient
-                .get(`${nangoUrl}/proxy/auth.test`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "slack",
-                    },
-                })
-                .json<{
-                    ok: boolean;
-                    user: string;
-                    user_id: string;
-                    team: string;
-                    team_id: string;
-                }>();
-
-            if (!userResponse.ok) {
-                throw new ValidationError("Failed to authenticate with Slack");
-            }
-
-            return {
-                identifier: `${userResponse.team} (${userResponse.user})`,
-                displayName: `${userResponse.team} workspace`,
-            };
-        } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "❌ Failed to fetch Slack account info"
-            );
-            throw new ValidationError("Failed to fetch Slack account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
-     * Test the OAuth connection by making a live API request
-     * Called when user clicks "Test" button to verify credentials are working
+     * Test the OAuth connection by making a live API request.
+     * Called when user clicks "Test" button to verify credentials are working.
      *
-     * @param connectionId - Nango connection ID
-     * @param userId - User ID (optional, only used for logging)
+     * For OAuth connections, the credentialOrToken is the actual credential to test.
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
-            // Make a simple auth test request - same as fetchAccountInfo but for verification
+            // Make a simple auth test request to verify connection
             const response = await httpClient
-                .get(`${nangoUrl}/proxy/auth.test`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "slack",
-                    },
+                .get(`${SLACK_API_BASE}/auth.test`, {
+                    headers: this.buildHeaders(credentialOrToken),
                 })
                 .json<{ ok: boolean; error?: string }>();
 
@@ -123,10 +59,7 @@ export class SlackAdapter extends ServiceAdapter {
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify Slack connection"
-            );
+            logger.error({ error, userId }, "Failed to verify Slack connection");
             return {
                 success: false,
                 error:
@@ -391,8 +324,8 @@ export class SlackAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's Slack connection
-        let connectionId: string;
+        // Get user's Slack credentials via connection manager
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userEmail,
@@ -400,13 +333,13 @@ export class SlackAdapter extends ServiceAdapter {
                 accountId
             );
 
-            if (!credentials?.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 this.logInfo(
                     `📝 [SLACK ADAPTER] User ${userEmail} attempted to use Slack but no connection found`
                 );
                 return this.createErrorResponse(this.createNotConnectedError());
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -418,21 +351,21 @@ export class SlackAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "list_channels":
-                    return await this.handleListChannels(params, connectionId);
+                    return await this.handleListChannels(params, accessToken);
                 case "get_channel_history":
-                    return await this.handleGetChannelHistory(params, connectionId);
+                    return await this.handleGetChannelHistory(params, accessToken);
                 case "get_thread_replies":
-                    return await this.handleGetThreadReplies(params, connectionId);
+                    return await this.handleGetThreadReplies(params, accessToken);
                 case "send_message":
-                    return await this.handleSendMessage(params, connectionId);
+                    return await this.handleSendMessage(params, accessToken);
                 case "get_user_info":
-                    return await this.handleGetUserInfo(params, connectionId);
+                    return await this.handleGetUserInfo(params, accessToken);
                 case "list_users":
-                    return await this.handleListUsers(params, connectionId);
+                    return await this.handleListUsers(params, accessToken);
                 case "add_reaction":
-                    return await this.handleAddReaction(params, connectionId);
+                    return await this.handleAddReaction(params, accessToken);
                 case "upload_file":
-                    return await this.handleUploadFile(params, connectionId);
+                    return await this.handleUploadFile(params, accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -455,7 +388,7 @@ export class SlackAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
+                    accessToken: accessToken ? "***" : undefined, // Redacted for security
                 }
             );
 
@@ -473,7 +406,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleListChannels(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { types = "public_channel", limit = 100 } = params as {
             types?: string;
@@ -484,14 +417,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         const cappedLimit = Math.min(Math.max(1, limit || 100), MAX_CHANNELS_LIST);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/conversations.list`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                },
+            .get(`${SLACK_API_BASE}/conversations.list`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     types,
                     limit: cappedLimit.toString(),
@@ -545,7 +473,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleGetChannelHistory(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { channel, limit = 50 } = params as {
             channel: string;
@@ -560,14 +488,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         const cappedLimit = Math.min(Math.max(1, limit || 50), MAX_MESSAGES_FETCH);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/conversations.history`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                },
+            .get(`${SLACK_API_BASE}/conversations.history`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     channel,
                     limit: cappedLimit.toString(),
@@ -605,7 +528,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleGetThreadReplies(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { channel, thread_ts } = params as {
             channel: string;
@@ -618,14 +541,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         this.logInfo(`🧵 [SLACK] Fetching thread ${thread_ts} in channel ${channel}`);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/conversations.replies`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                },
+            .get(`${SLACK_API_BASE}/conversations.replies`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     channel,
                     ts: thread_ts,
@@ -663,7 +581,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleSendMessage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { channel, text, thread_ts } = params as {
             channel: string;
@@ -686,15 +604,9 @@ export class SlackAdapter extends ServiceAdapter {
             body.thread_ts = thread_ts;
         }
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/chat.postMessage`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                    "Content-Type": "application/json; charset=utf-8",
-                },
+            .post(`${SLACK_API_BASE}/chat.postMessage`, {
+                headers: this.buildHeaders(accessToken),
                 json: body,
             })
             .json<{
@@ -725,7 +637,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleGetUserInfo(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { user } = params as { user: string };
 
@@ -735,14 +647,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         this.logInfo(`👤 [SLACK] Fetching user info for ${user}`);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/users.info`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                },
+            .get(`${SLACK_API_BASE}/users.info`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     user,
                 },
@@ -784,7 +691,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleListUsers(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { limit = 100 } = params as { limit?: number };
 
@@ -792,14 +699,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         const cappedLimit = Math.min(Math.max(1, limit || 100), 1000);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/users.list`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                },
+            .get(`${SLACK_API_BASE}/users.list`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     limit: cappedLimit.toString(),
                 },
@@ -849,7 +751,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleAddReaction(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { channel, timestamp, name } = params as {
             channel: string;
@@ -865,15 +767,9 @@ export class SlackAdapter extends ServiceAdapter {
 
         this.logInfo(`👍 [SLACK] Adding reaction :${name}: to message ${timestamp}`);
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/reactions.add`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                    "Content-Type": "application/json; charset=utf-8",
-                },
+            .post(`${SLACK_API_BASE}/reactions.add`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     channel,
                     timestamp,
@@ -899,7 +795,7 @@ export class SlackAdapter extends ServiceAdapter {
 
     private async handleUploadFile(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { channels, content, filename, title } = params as {
             channels: string;
@@ -914,20 +810,13 @@ export class SlackAdapter extends ServiceAdapter {
 
         this.logInfo(`📎 [SLACK] Uploading file ${filename} to ${channels}`);
 
-        const nangoSecretKey = getNangoSecretKey();
-
         // Slack's new file upload flow (files.upload is deprecated as of 2023).
         // 3-step process: get upload URL, upload content, complete upload
 
         // Step 1: Get upload URL
         const uploadUrlResponse = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/files.getUploadURLExternal`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                    "Content-Type": "application/json; charset=utf-8",
-                },
+            .post(`${SLACK_API_BASE}/files.getUploadURLExternal`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     filename,
                     length: Buffer.byteLength(content, "utf-8"),
@@ -962,13 +851,8 @@ export class SlackAdapter extends ServiceAdapter {
             throw new ValidationError("No file ID returned from Slack");
         }
         const completeResponse = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/files.completeUploadExternal`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "slack",
-                    "Content-Type": "application/json; charset=utf-8",
-                },
+            .post(`${SLACK_API_BASE}/files.completeUploadExternal`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     files: [
                         {
@@ -1027,19 +911,24 @@ export class SlackAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user connection
-        const credentials = await getCredentials(
-            userEmail,
-            this.serviceName,
-            accountId
-        );
-
-        if (!credentials?.connectionId) {
-            return this.createErrorResponse(this.createNotConnectedError());
+        // Get user credentials via connection manager
+        let accessToken: string;
+        try {
+            const credentials = await getCredentials(
+                userEmail,
+                this.serviceName,
+                accountId
+            );
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
+                return this.createErrorResponse(this.createNotConnectedError());
+            }
+            accessToken = credentials.accessToken;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
+            }
+            throw error;
         }
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         this.logInfo(`🔧 [SLACK] Raw API call: ${method} ${endpoint}`);
 
@@ -1049,11 +938,7 @@ export class SlackAdapter extends ServiceAdapter {
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": credentials.connectionId,
-                "Provider-Config-Key": "slack",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         // Add query parameters if provided
@@ -1064,11 +949,8 @@ export class SlackAdapter extends ServiceAdapter {
         }
 
         // Add body for POST
-        if (method.toUpperCase() === "POST") {
-            requestOptions.headers["Content-Type"] = "application/json; charset=utf-8";
-            if (body) {
-                requestOptions.json = body;
-            }
+        if (method.toUpperCase() === "POST" && body) {
+            requestOptions.json = body;
         }
 
         try {
@@ -1079,7 +961,7 @@ export class SlackAdapter extends ServiceAdapter {
                 );
             }
 
-            const fullUrl = `${nangoUrl}/proxy/${endpoint}`;
+            const fullUrl = `${SLACK_API_BASE}/${endpoint}`;
 
             const response = await httpClient[httpMethod as "get" | "post"](
                 fullUrl,

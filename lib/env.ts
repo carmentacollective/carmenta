@@ -36,9 +36,27 @@ export const env = createEnv({
         NANGO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Credential encryption for API key integrations
         ENCRYPTION_KEY: z.string().min(32).optional(),
-        // Notion OAuth credentials (for in-house OAuth)
+        // In-house OAuth credentials - Notion
         NOTION_CLIENT_ID: z.string().min(1).optional(),
         NOTION_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Slack
+        SLACK_CLIENT_ID: z.string().min(1).optional(),
+        SLACK_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - ClickUp
+        CLICKUP_CLIENT_ID: z.string().min(1).optional(),
+        CLICKUP_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Dropbox
+        DROPBOX_CLIENT_ID: z.string().min(1).optional(),
+        DROPBOX_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Google Sensitive (Calendar/Contacts)
+        GOOGLE_SENSITIVE_CLIENT_ID: z.string().min(1).optional(),
+        GOOGLE_SENSITIVE_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Google Restricted (Gmail)
+        GOOGLE_RESTRICTED_CLIENT_ID: z.string().min(1).optional(),
+        GOOGLE_RESTRICTED_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Twitter/X
+        TWITTER_CLIENT_ID: z.string().min(1).optional(),
+        TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
         // Braintrust API key for evals and production tracing
         BRAINTRUST_API_KEY: z.string().min(1).optional(),
         // PostgreSQL connection string
@@ -78,6 +96,18 @@ export const env = createEnv({
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
         NOTION_CLIENT_ID: process.env.NOTION_CLIENT_ID,
         NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET,
+        SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID,
+        SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
+        CLICKUP_CLIENT_ID: process.env.CLICKUP_CLIENT_ID,
+        CLICKUP_CLIENT_SECRET: process.env.CLICKUP_CLIENT_SECRET,
+        DROPBOX_CLIENT_ID: process.env.DROPBOX_CLIENT_ID,
+        DROPBOX_CLIENT_SECRET: process.env.DROPBOX_CLIENT_SECRET,
+        GOOGLE_SENSITIVE_CLIENT_ID: process.env.GOOGLE_SENSITIVE_CLIENT_ID,
+        GOOGLE_SENSITIVE_CLIENT_SECRET: process.env.GOOGLE_SENSITIVE_CLIENT_SECRET,
+        GOOGLE_RESTRICTED_CLIENT_ID: process.env.GOOGLE_RESTRICTED_CLIENT_ID,
+        GOOGLE_RESTRICTED_CLIENT_SECRET: process.env.GOOGLE_RESTRICTED_CLIENT_SECRET,
+        TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
+        TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
         DATABASE_URL: process.env.DATABASE_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

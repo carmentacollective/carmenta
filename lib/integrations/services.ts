@@ -65,7 +65,7 @@ export interface ServiceDefinition {
  * insert it in alphabetical order rather than at the end.
  */
 export const SERVICE_REGISTRY: ServiceDefinition[] = [
-    // ClickUp - OAuth (via Nango)
+    // ClickUp - OAuth (in-house)
     {
         id: "clickup",
         name: "ClickUp",
@@ -73,7 +73,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/clickup.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "clickup",
+        oauthProviderId: "clickup",
         supportsMultipleAccounts: true,
         docsUrl: "https://clickup.com/api",
         capabilities: ["list_tasks", "create_task", "update_task", "list_spaces"],
@@ -99,7 +99,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
-    // Dropbox - OAuth (via Nango)
+    // Dropbox - OAuth (in-house)
     {
         id: "dropbox",
         name: "Dropbox",
@@ -107,7 +107,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/dropbox.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "dropbox",
+        oauthProviderId: "dropbox",
         supportsMultipleAccounts: true,
         docsUrl: "https://www.dropbox.com/developers/documentation",
         capabilities: [
@@ -151,7 +151,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["search", "get_trending", "get_random"],
     },
 
-    // Gmail - OAuth (via Nango, "restricted" scopes tier - requires Google verification)
+    // Gmail - OAuth (in-house, "restricted" scopes tier - requires Google verification)
     // Uses "internal" status because restricted Google scopes require special approval
     {
         id: "gmail",
@@ -160,7 +160,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/gmail.svg",
         authMethod: "oauth",
         status: "internal",
-        nangoIntegrationKey: "gmail",
+        oauthProviderId: "gmail",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/gmail/api/guides",
         capabilities: [
@@ -172,7 +172,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
-    // Google Calendar + Contacts - OAuth (via Nango, "sensitive" scopes tier)
+    // Google Calendar + Contacts - OAuth (in-house, "sensitive" scopes tier)
     {
         id: "google-calendar-contacts",
         name: "Google Calendar & Contacts",
@@ -180,7 +180,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/google-calendar-contacts.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "google-calendar-contacts",
+        oauthProviderId: "google-calendar-contacts",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
         capabilities: [
@@ -220,7 +220,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["search_pages", "get_page", "create_page", "update_page"],
     },
 
-    // Slack - OAuth (via Nango)
+    // Slack - OAuth (in-house)
     {
         id: "slack",
         name: "Slack",
@@ -228,7 +228,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/slack.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "slack",
+        oauthProviderId: "slack",
         supportsMultipleAccounts: true,
         docsUrl: "https://api.slack.com/methods",
         capabilities: [
@@ -241,7 +241,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
-    // Twitter/X - OAuth (via Nango)
+    // Twitter/X - OAuth (in-house)
     {
         id: "twitter",
         name: "X (Twitter)",
@@ -249,7 +249,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/twitter.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "twitter",
+        oauthProviderId: "twitter",
         supportsMultipleAccounts: true,
         docsUrl: "https://developer.twitter.com/en/docs/twitter-api",
         capabilities: [

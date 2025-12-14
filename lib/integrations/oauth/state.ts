@@ -52,14 +52,14 @@ export function generateCodeChallenge(verifier: string): string {
  * @param userEmail - User initiating the OAuth flow
  * @param provider - OAuth provider (notion, slack, etc.)
  * @param returnUrl - Where to redirect after successful connection
- * @param usePKCE - Whether to generate PKCE code verifier
+ * @param requiresPKCE - Whether to generate PKCE code verifier
  * @returns The state token to include in authorization URL
  */
 export async function generateState(
     userEmail: string,
     provider: string,
     returnUrl?: string,
-    usePKCE?: boolean
+    requiresPKCE?: boolean
 ): Promise<{ state: string; codeVerifier?: string; codeChallenge?: string }> {
     const state = generateRandomState();
     const now = Date.now();
@@ -68,7 +68,7 @@ export async function generateState(
     let codeVerifier: string | undefined;
     let codeChallenge: string | undefined;
 
-    if (usePKCE) {
+    if (requiresPKCE) {
         codeVerifier = generateCodeVerifier();
         codeChallenge = generateCodeChallenge(codeVerifier);
     }
