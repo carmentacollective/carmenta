@@ -19,17 +19,51 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
+    // Check if this is a deployment mismatch error (happens during deploys)
+    const isDeploymentMismatch =
+        error.message?.includes("Failed to find Server Action") ||
+        error.message?.includes("immutable");
+
     useEffect(() => {
-        // Log to Sentry with additional context
-        Sentry.captureException(error, {
-            tags: {
-                errorBoundary: "app",
-            },
-            extra: {
-                digest: error.digest,
-            },
-        });
-    }, [error]);
+        // Only log non-deployment errors to Sentry
+        // Deployment mismatches are expected during deployments
+        if (!isDeploymentMismatch) {
+            Sentry.captureException(error, {
+                tags: {
+                    errorBoundary: "app",
+                },
+                extra: {
+                    digest: error.digest,
+                },
+            });
+        }
+    }, [error, isDeploymentMismatch]);
+
+    // For deployment mismatches, auto-reload to get the new version
+    useEffect(() => {
+        if (isDeploymentMismatch) {
+            const timer = setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isDeploymentMismatch]);
+
+    if (isDeploymentMismatch) {
+        return (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
+                <div className="max-w-md text-center">
+                    <h2 className="mb-4 text-xl font-bold text-foreground">
+                        Updating...
+                    </h2>
+                    <p className="mb-6 text-muted-foreground">
+                        We just deployed a new version. Refreshing to get the latest.
+                    </p>
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">

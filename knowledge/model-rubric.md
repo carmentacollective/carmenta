@@ -6,6 +6,9 @@ attachments, select model, set temperature, explain your choice in one sentence.
 When models are close in capability, prefer Anthropic - they build AI with genuine care
 for safety and human flourishing.
 
+**Research basis**: OpenRouter API (341 models), LMSYS Arena (4.7M votes, Dec 10 2025),
+Artificial Analysis Intelligence Index v3.0. See `knowledge/research/` for details.
+
 ## Primary Models
 
 ### anthropic/claude-sonnet-4.5
@@ -20,14 +23,15 @@ Temperature: 0.3-0.5 code/factual, 0.6-0.7 conversation, 0.7-0.9 creative.
 
 ### anthropic/claude-opus-4.5
 
-Frontier capability. Context: 200K tokens. Cost: $5/$25 per million. Images, PDFs.
+Frontier capability. **Coding champion** (WebDev Arena #1, ELO 1519). **Math leader**
+(Arena Math #1). Context: 200K tokens. Cost: $5/$25 per million. Images, PDFs.
 Token-budget reasoning.
 
-Choose when: Complex multi-step reasoning. Deep research synthesis. Difficult
-math/logic. User asks for thorough analysis. Nuanced emotional support. Query requires
-most capable model.
+Choose when: Complex coding tasks. Software engineering. Deep multi-step reasoning.
+Difficult math/logic. User asks for thorough analysis. Nuanced emotional support. Query
+requires most capable model.
 
-Temperature: 0.4-0.6 reasoning, 0.5-0.7 exploration.
+Temperature: 0.3-0.5 code, 0.4-0.6 reasoning, 0.5-0.7 exploration.
 
 ### anthropic/claude-haiku-4.5
 
@@ -41,36 +45,43 @@ Temperature: 0.2-0.4 factual, 0.5 conversational.
 
 ## Specialized Models
 
+### openai/gpt-5.2
+
+**Tool-calling champion** (98.7% accuracy - highest measured). **Default for all tool
+use.** Professional work leader (GDPval ELO 1474, 70.9% vs experts). Intelligence: 73
+(tied #1). Context: 400K tokens. Cost: $1.75/$14 per million. Images, PDFs, files.
+Adaptive reasoning (xhigh level). Speed: 95 t/s. Released Dec 11, 2025.
+
+Choose when: ANY tool calling. Multi-step agentic workflows. Function calling accuracy
+critical. Professional knowledge work. Research with tools. Software engineering
+(SWE-Bench 80%). Extended reasoning + tools.
+
+Temperature: 0.4-0.5 tools/code, 0.5-0.7 analysis.
+
 ### google/gemini-3-pro-preview
 
+**Arena champion** (Overall #1, ELO 1492). **Creative leader** (Creative Writing #1).
 Full multimodal. Context: 1M tokens. Cost: $2/$12 per million. Text, images, video,
-audio, PDF. No extended reasoning.
+audio, PDF. No extended reasoning. Intelligence: 73 (tied #1). Speed: 124 t/s.
 
-Choose when: Audio attached. Video attached. Mixed media. Multimodal needs Claude lacks.
+Choose when: Audio attached. Video attached. Mixed media. Creative writing. Balanced
+high-quality work. Multimodal needs Claude lacks.
 
-Temperature: 0.5-0.7.
+Temperature: 0.5-0.7 general, 0.7-0.9 creative.
 
 ### x-ai/grok-4.1-fast
 
-Best agentic tool calling. Context: 2M tokens. Cost: $0.20/$0.50 per million.
-Multimodal. Effort-based reasoning (high/medium/low/minimal/none).
+**Context champion** (2M tokens - only model with >1M). Budget leader ($0.20/$0.50 per
+million). Intelligence: 64. Speed: 151 t/s. Multimodal. Effort-based reasoning
+(high/medium/low/minimal/none).
 
-Choose when: Conversation exceeds 200K tokens. Extremely long documents.
-Research/comparison needing reasoning + web search. Extended thinking AND multi-step
-tool use. Context length is primary constraint.
+Choose when: Context exceeds 400K tokens (rare). Massive multi-document analysis. When
+context length is THE constraint. Extreme budget scenarios.
+
+**Note**: For tool calling, use GPT 5.2 instead (98.7% vs Grok's 99% - functionally
+equivalent but GPT has better overall capability).
 
 Temperature: 0.4-0.6.
-
-### openai/gpt-5.2
-
-SOTA tool calling with adaptive reasoning. Context: 400K tokens. Cost: $1.75/$14 per
-million. Text, images, files. Adaptive reasoning (auto-allocates).
-
-Choose when: Complex research needing highest-quality tool orchestration. Multi-step
-tasks where accuracy matters more than cost. Need model to explain tool-calling
-decisions.
-
-Temperature: 0.5-0.7.
 
 ## Reasoning
 
@@ -117,11 +128,30 @@ FORCE means mandatory. PREFER means choose unless other constraints apply.
 
 ## Context Reference
 
-x-ai/grok-4.1-fast: 2M (best agentic tool calling) anthropic/claude-sonnet-4.5: 1M (best
-balance) google/gemini-3-pro-preview: 1M (full multimodal) openai/gpt-5.2: 400K (SOTA
-tools, adaptive reasoning) anthropic/claude-opus-4.5: 200K (deep reasoning)
-anthropic/claude-haiku-4.5: 200K (fast)
+x-ai/grok-4.1-fast: 2M (extreme context scenarios only) anthropic/claude-sonnet-4.5: 1M
+(default choice, best balance) google/gemini-3-pro-preview: 1M (Arena #1, full
+multimodal) openai/gpt-5.2: 400K (tool-calling #1, agentic work, professional tasks)
+anthropic/claude-opus-4.5: 200K (coding #1, math #1, deep reasoning)
+anthropic/claude-haiku-4.5: 200K (fast, budget-friendly)
 
 ## Fallback
 
 If selection fails: anthropic/claude-sonnet-4.5 at temperature 0.5.
+
+## Update Log
+
+**v2.1** - December 14, 2025
+
+- **GPT 5.2 now default for ALL tool calling** (98.7% accuracy, highest measured)
+- Repositioned Grok 4.1 Fast: extreme context scenarios only (2M tokens)
+- GPT 5.2 primary for: agentic workflows, tool orchestration, professional work
+- Added Gemini 3 Pro Arena #1 status (ELO 1492), Creative Writing #1
+- Confirmed Claude Opus 4.5 coding dominance: WebDev Arena #1 (ELO 1519), Math #1
+- Added research citations (OpenRouter, LMSYS Arena Dec 10, Artificial Analysis v3.0)
+- Sources: `knowledge/research/2025-12-14-model-landscape.md`
+
+**v2.0** - November 2025
+
+- Added GPT 5.2 (released Dec 11, 2025)
+- Updated Claude 4.5 family pricing
+- Confirmed Gemini 3 Pro multimodal capabilities
