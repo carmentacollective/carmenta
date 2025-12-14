@@ -128,13 +128,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: "/logos/clickup.svg",
         messages: {
             pending: "Getting ready...",
-            running: "Accessing ClickUp...",
-            completed: "ClickUp operation complete",
-            error: "Couldn't complete ClickUp operation",
+            running: "Working with our tasks...",
+            completed: "ClickUp ready",
+            error: "Hit a snag with ClickUp",
         },
         delightMessages: {
-            completed: ["Task handled", "ClickUp updated", "All set"],
-            fast: ["Quick update!", "Done!"],
+            completed: [
+                "Tasks organized",
+                "All lined up",
+                "Work tracked",
+                "We're on it",
+            ],
+            fast: ["Quick check!", "Instant sync!", "Got it"],
         },
     },
     coinmarketcap: {
