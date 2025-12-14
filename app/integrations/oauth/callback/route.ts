@@ -24,6 +24,73 @@ import { validateState } from "@/lib/integrations/oauth/state";
 import { getProvider } from "@/lib/integrations/oauth/providers";
 import { exchangeCodeForTokens, storeTokens } from "@/lib/integrations/oauth/tokens";
 
+/**
+ * Returns an HTML page that performs a client-side redirect.
+ *
+ * We use client-side redirects instead of NextResponse.redirect() because:
+ * - After OAuth flows that redirect through external providers, Clerk's session
+ *   cookies may not be recognized on server-side redirects (307)
+ * - Client-side redirects preserve the browser's cookie context
+ * - JavaScript window.location navigations are same-origin and include all cookies
+ *
+ * Security: Validates URL protocol and origin to prevent XSS attacks
+ */
+function clientRedirect(url: string, baseUrl: string): NextResponse {
+    // Validate URL to prevent XSS attacks (e.g., javascript: protocol)
+    let validatedUrl: URL;
+    try {
+        // Parse URL with base for relative URLs
+        validatedUrl = new URL(url, baseUrl);
+        // Only allow HTTP/HTTPS protocols
+        if (validatedUrl.protocol !== "http:" && validatedUrl.protocol !== "https:") {
+            throw new Error("Invalid protocol");
+        }
+        // Ensure same-origin (prevent open redirect)
+        const baseOrigin = new URL(baseUrl).origin;
+        if (validatedUrl.origin !== baseOrigin) {
+            throw new Error("Cross-origin redirect not allowed");
+        }
+    } catch (error) {
+        logger.error({ error, url }, "Invalid redirect URL");
+        Sentry.captureException(error, {
+            tags: { component: "oauth", route: "callback" },
+            extra: { url },
+        });
+        // Fallback to safe default
+        validatedUrl = new URL("/integrations", baseUrl);
+    }
+
+    // URL is validated, escape for safe interpolation in different contexts
+    const urlString = validatedUrl.toString();
+    // For JavaScript context: JSON.stringify escapes quotes/backslashes,
+    // then we prevent </script> injection by escaping forward slashes
+    const jsUrl = JSON.stringify(urlString).replace(/</g, "\\u003c");
+    // For HTML attribute context: escape quotes and angle brackets
+    const htmlUrl = urlString
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0;url=${htmlUrl}">
+    <script>window.location.href=${jsUrl};</script>
+    <title>Redirecting...</title>
+</head>
+<body>
+    <p>Redirecting to integrations...</p>
+</body>
+</html>`;
+
+    return new NextResponse(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+}
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
 
@@ -43,7 +110,7 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "oauth_failed");
         errorUrl.searchParams.set("message", errorDescription ?? error);
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Get required params
@@ -54,7 +121,7 @@ export async function GET(request: NextRequest) {
         logger.warn("⚠️ OAuth callback missing required params");
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_callback");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Validate state (CSRF protection)
@@ -72,7 +139,7 @@ export async function GET(request: NextRequest) {
 
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_state");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Get provider config
@@ -84,7 +151,7 @@ export async function GET(request: NextRequest) {
         );
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "unknown_provider");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Build callback URL for token exchange (must match authorize)
@@ -99,7 +166,7 @@ export async function GET(request: NextRequest) {
         });
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "configuration_error");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
@@ -127,10 +194,14 @@ export async function GET(request: NextRequest) {
         );
 
         // Redirect to success page or custom return URL
-        const successUrl = new URL(state.returnUrl ?? "/integrations", request.url);
+        // returnUrl from state token (user-controlled) must be relative path to prevent open redirect
+        const returnPath = state.returnUrl ?? "/integrations";
+        // Ensure returnUrl is a relative path (starts with /)
+        const safePath = returnPath.startsWith("/") ? returnPath : "/integrations";
+        const successUrl = new URL(safePath, request.url);
         successUrl.searchParams.set("success", "connected");
         successUrl.searchParams.set("service", state.provider);
-        return NextResponse.redirect(successUrl);
+        return clientRedirect(successUrl.toString(), request.url);
     } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
 
@@ -147,6 +218,6 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "token_exchange_failed");
         errorUrl.searchParams.set("message", error.message);
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 }

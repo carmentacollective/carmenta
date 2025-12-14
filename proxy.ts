@@ -32,6 +32,7 @@ const isProtectedRoute = createRouteMatcher([
 
 const isWebhookRoute = createRouteMatcher(["/api/webhooks(.*)"]);
 const isHealthRoute = createRouteMatcher(["/healthz"]);
+const isOAuthCallbackRoute = createRouteMatcher(["/integrations/oauth/callback(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
@@ -44,6 +45,12 @@ export default clerkMiddleware(async (auth, req) => {
     // Health check is public (used by Render for zero-downtime deployments)
     // Uses /healthz (Kubernetes convention) to avoid /api route protection
     if (isHealthRoute(req)) {
+        return;
+    }
+
+    // OAuth callback is public (authenticated via state token)
+    // State token provides CSRF protection + user identity + one-time use
+    if (isOAuthCallbackRoute(req)) {
         return;
     }
 

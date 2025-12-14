@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Plug, Sparkles } from "lucide-react";
+import { Suspense, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { Plug, Sparkles, CheckCircle2, XCircle, X } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/actions/integrations";
 import type { ConnectedService } from "@/lib/actions/integration-utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
+import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -32,10 +34,21 @@ interface IntegrationItem {
     accountDisplayName?: string | null;
 }
 
-export default function IntegrationsPage() {
+/**
+ * IntegrationsContent - Component that uses useSearchParams()
+ * Extracted to allow Suspense boundary wrapping
+ */
+function IntegrationsContent() {
+    const searchParams = useSearchParams();
     const [connected, setConnected] = useState<ConnectedService[]>([]);
     const [available, setAvailable] = useState<ServiceDefinition[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Global status message (for OAuth callback results)
+    const [globalMessage, setGlobalMessage] = useState<{
+        type: "success" | "error";
+        text: string;
+    } | null>(null);
 
     // API key modal state
     const [selectedService, setSelectedService] = useState<ServiceDefinition | null>(
@@ -76,6 +89,44 @@ export default function IntegrationsPage() {
     useEffect(() => {
         loadServices();
     }, [loadServices]);
+
+    // Handle OAuth callback results from URL params
+    useEffect(() => {
+        if (!searchParams) return;
+
+        const success = searchParams.get("success");
+        const error = searchParams.get("error");
+        const service = searchParams.get("service");
+        const message = searchParams.get("message");
+
+        if (success === "connected" && service) {
+            const serviceDefinition = getServiceById(service);
+            const serviceName = serviceDefinition?.name ?? service;
+            setGlobalMessage({
+                type: "success",
+                text: `Successfully connected to ${serviceName}!`,
+            });
+            // Clear URL params without reload
+            window.history.replaceState({}, "", "/integrations");
+            // Reload services to show the new connection
+            loadServices();
+        } else if (error) {
+            const errorMessages: Record<string, string> = {
+                oauth_failed: message ?? "Authorization was denied or failed",
+                invalid_callback: "Invalid OAuth callback - please try again",
+                invalid_state: "Session expired - please try connecting again",
+                unknown_provider: "Unknown service provider",
+                token_exchange_failed: message ?? "Failed to complete connection",
+                configuration_error: "Service configuration error - we're on it",
+            };
+            setGlobalMessage({
+                type: "error",
+                text: errorMessages[error] ?? message ?? "Connection failed",
+            });
+            // Clear URL params without reload
+            window.history.replaceState({}, "", "/integrations");
+        }
+    }, [searchParams, loadServices]);
 
     // Build unified list: connected services first, then available services
     const unifiedList: IntegrationItem[] = [
@@ -259,6 +310,35 @@ export default function IntegrationsPage() {
                             </div>
                         </section>
 
+                        {/* Global status message (OAuth callback results) */}
+                        {globalMessage && (
+                            <div
+                                className={`flex items-center justify-between gap-3 rounded-xl p-4 ${
+                                    globalMessage.type === "success"
+                                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    {globalMessage.type === "success" ? (
+                                        <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                                    ) : (
+                                        <XCircle className="h-5 w-5 flex-shrink-0" />
+                                    )}
+                                    <span className="text-sm font-medium">
+                                        {globalMessage.text}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setGlobalMessage(null)}
+                                    className="rounded-lg p-1 hover:bg-foreground/10"
+                                    aria-label="Dismiss message"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        )}
+
                         {loading ? (
                             <div className="flex items-center justify-center py-24">
                                 <div className="flex flex-col items-center gap-4">
@@ -320,17 +400,8 @@ export default function IntegrationsPage() {
                         {/* Security Note */}
                         <section className="pt-4 text-center">
                             <p className="text-sm text-foreground/50">
-                                Credentials are encrypted with AES-256-GCM. OAuth tokens
-                                are managed by{" "}
-                                <a
-                                    href="https://nango.dev"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline decoration-primary/30 hover:decoration-primary"
-                                >
-                                    Nango
-                                </a>
-                                .
+                                All credentials and OAuth tokens are encrypted with
+                                AES-256-GCM and stored securely.
                             </p>
                         </section>
                     </div>
@@ -357,5 +428,38 @@ export default function IntegrationsPage() {
                 onSubmit={handleConnectSubmit}
             />
         </div>
+    );
+}
+
+/**
+ * IntegrationsPage - Wrapper with Suspense boundary
+ * Required for useSearchParams() in Next.js 16
+ */
+export default function IntegrationsPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="relative min-h-screen">
+                    <HolographicBackground />
+                    <div className="relative z-10">
+                        <SiteHeader bordered />
+                        <main className="py-12">
+                            <div className="mx-auto max-w-3xl px-6">
+                                <div className="flex items-center justify-center py-24">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                                        <p className="text-foreground/60">
+                                            Loading integrations...
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            }
+        >
+            <IntegrationsContent />
+        </Suspense>
     );
 }
