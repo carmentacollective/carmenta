@@ -38,13 +38,16 @@ async function importRoute() {
  */
 async function getClientSideRedirectUrl(response: Response): Promise<URL> {
     const html = await response.text();
-    const match = html.match(/window\.location\.href="([^"]+)"/);
+    // Match the JSON-stringified URL (includes quotes from JSON.stringify)
+    const match = html.match(/window\.location\.href=("[^"]+")/);
     if (!match) {
         throw new Error(
             `No client-side redirect found in HTML: ${html.substring(0, 200)}`
         );
     }
-    return new URL(match[1]);
+    // JSON.parse handles unicode escapes (e.g., \u003c becomes <)
+    const urlString = JSON.parse(match[1]);
+    return new URL(urlString);
 }
 
 describe("OAuth Callback Route", () => {
@@ -422,10 +425,12 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-
-            // TODO: When fixed, should reject javascript: URLs entirely
-            // and redirect to safe default (/integrations)
             expect(response.status).toBe(200);
+
+            // FIXED: javascript: URLs are rejected (invalid protocol) and fall back to /integrations
+            const location = await getClientSideRedirectUrl(response);
+            expect(location.pathname).toBe("/integrations");
+            expect(location.toString()).not.toContain("javascript:");
         });
 
         it("SECURITY: should block data: URLs in returnUrl", async () => {
@@ -439,9 +444,40 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-
-            // TODO: When fixed, should reject data: URLs entirely
             expect(response.status).toBe(200);
+
+            // FIXED: data: URLs are rejected (invalid protocol) and fall back to /integrations
+            const location = await getClientSideRedirectUrl(response);
+            expect(location.pathname).toBe("/integrations");
+            expect(location.toString()).not.toContain("data:");
+        });
+
+        it("SECURITY: should escape HTML/JS special characters in redirect URL", async () => {
+            // Verify that script injection via URL query params is blocked
+            // An attacker could try to break out of the <script> tag with </script>
+            const maliciousReturnUrl =
+                "/integrations?x=</script><script>alert(1)</script>";
+            const state = await createValidState({ returnUrl: maliciousReturnUrl });
+
+            const { GET } = await importRoute();
+            const request = new NextRequest(
+                `http://localhost/integrations/oauth/callback?code=code&state=${state}`
+            );
+
+            const response = await GET(request);
+            const html = await response.clone().text();
+
+            // Verify the raw </script> tag is NOT in the HTML (would break out of script)
+            // The URL class percent-encodes < as %3C, which is not interpreted as HTML
+            expect(html).not.toMatch(/<\/script>.*<script>alert/i);
+            // < should be percent-encoded as %3C in the URL
+            expect(html).toContain("%3C");
+
+            // The actual redirect should still work correctly
+            const location = await getClientSideRedirectUrl(response);
+            expect(location.pathname).toBe("/integrations");
+            // The decoded URL should have the original characters
+            expect(location.searchParams.get("x")).toContain("</script>");
         });
 
         it("correctly handles relative returnUrl paths", async () => {

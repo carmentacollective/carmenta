@@ -60,14 +60,24 @@ function clientRedirect(url: string, baseUrl: string): NextResponse {
         validatedUrl = new URL("/integrations", baseUrl);
     }
 
-    // URL is validated, safe to interpolate
-    const safeUrl = validatedUrl.toString();
+    // URL is validated, escape for safe interpolation in different contexts
+    const urlString = validatedUrl.toString();
+    // For JavaScript context: JSON.stringify escapes quotes/backslashes,
+    // then we prevent </script> injection by escaping forward slashes
+    const jsUrl = JSON.stringify(urlString).replace(/</g, "\\u003c");
+    // For HTML attribute context: escape quotes and angle brackets
+    const htmlUrl = urlString
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="refresh" content="0;url=${safeUrl}">
-    <script>window.location.href="${safeUrl}";</script>
+    <meta http-equiv="refresh" content="0;url=${htmlUrl}">
+    <script>window.location.href=${jsUrl};</script>
     <title>Redirecting...</title>
 </head>
 <body>
