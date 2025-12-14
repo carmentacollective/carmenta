@@ -296,49 +296,60 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 "data-[state=open]:animate-in data-[state=open]:fade-in-0"
                             )}
                         >
-                            <div className="mx-4 mt-2 space-y-1 rounded-lg border border-purple-500/10 bg-purple-500/5 px-3 py-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-foreground/40">Model</span>
-                                    <code className="font-mono text-foreground/60">
-                                        {modelId}
-                                    </code>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-foreground/40">
-                                        Temperature
-                                    </span>
-                                    <span className="text-foreground/60">
-                                        {temperature.toFixed(1)}{" "}
-                                        <span className="text-foreground/40">
-                                            ({tempLabel})
-                                        </span>
-                                    </span>
-                                </div>
-                                {reasoning && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-foreground/40">
-                                            Reasoning
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {reasoning.enabled ? (
-                                                <>
-                                                    {reasoning.effort ?? "medium"}
-                                                    {reasoning.maxTokens && (
-                                                        <span className="ml-1 text-foreground/40">
-                                                            (
-                                                            {reasoning.maxTokens.toLocaleString()}{" "}
-                                                            tokens)
-                                                        </span>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <span className="text-foreground/40">
-                                                    disabled
-                                                </span>
-                                            )}
-                                        </span>
+                            <div className="mx-4 mt-2 space-y-2 rounded-lg border border-purple-500/10 bg-purple-500/5 px-3 py-2 text-sm">
+                                {explanation && (
+                                    <div className="border-b border-purple-500/10 pb-2">
+                                        <p className="text-foreground/60">
+                                            {explanation}
+                                        </p>
                                     </div>
                                 )}
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-foreground/40">
+                                            Model
+                                        </span>
+                                        <code className="font-mono text-foreground/60">
+                                            {modelId}
+                                        </code>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-foreground/40">
+                                            Temperature
+                                        </span>
+                                        <span className="text-foreground/60">
+                                            {temperature.toFixed(1)}{" "}
+                                            <span className="text-foreground/40">
+                                                ({tempLabel})
+                                            </span>
+                                        </span>
+                                    </div>
+                                    {reasoning && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-foreground/40">
+                                                Reasoning
+                                            </span>
+                                            <span className="text-foreground/60">
+                                                {reasoning.enabled ? (
+                                                    <>
+                                                        {reasoning.effort ?? "medium"}
+                                                        {reasoning.maxTokens && (
+                                                            <span className="ml-1 text-foreground/40">
+                                                                (
+                                                                {reasoning.maxTokens.toLocaleString()}{" "}
+                                                                tokens)
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-foreground/40">
+                                                        disabled
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </CollapsibleContent>
                     )}
