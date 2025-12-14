@@ -39,6 +39,7 @@ import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
+import type { ConciergeResult } from "@/lib/concierge/types";
 import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
@@ -79,6 +80,8 @@ export function HoloThread() {
 function HoloThreadInner() {
     const { messages, isLoading } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
+    const { isConciergeRunning } = useConnection();
+    const { concierge } = useConcierge();
 
     // Optimal chat scroll behavior
     const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
@@ -97,6 +100,14 @@ function HoloThreadInner() {
 
     const isEmpty = messages.length === 0;
 
+    // Detect when we need to show a pending assistant response.
+    // This happens when:
+    // 1. isLoading is true (request in flight)
+    // 2. The last message is from the user (assistant hasn't streamed yet)
+    // This bridges the gap between user submit and first assistant token.
+    const lastMessage = messages[messages.length - 1];
+    const needsPendingAssistant = isLoading && lastMessage?.role === "user";
+
     return (
         <div className="flex h-full flex-col bg-transparent">
             {/* Full-viewport drag-drop overlay */}
@@ -114,10 +125,22 @@ function HoloThreadInner() {
                             <MessageBubble
                                 key={message.id}
                                 message={message}
-                                isLast={index === messages.length - 1}
+                                isLast={
+                                    index === messages.length - 1 &&
+                                    !needsPendingAssistant
+                                }
                                 isStreaming={isLoading && index === messages.length - 1}
                             />
                         ))}
+
+                        {/* Pending assistant response - shows immediately after user sends */}
+                        {needsPendingAssistant && (
+                            <PendingAssistantMessage
+                                isConciergeRunning={isConciergeRunning}
+                                concierge={concierge}
+                                messageSeed={lastMessage.id}
+                            />
+                        )}
                     </div>
                 )}
             </div>
@@ -814,6 +837,78 @@ function AssistantMessage({
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Pending assistant message - shown immediately after user sends.
+ *
+ * This bridges the gap between:
+ * 1. User sends message (appears instantly)
+ * 2. Assistant message appears (when streaming starts)
+ *
+ * Without this, users see nothing happening after they send - violating
+ * the "Trusted Presence" principle from users-should-feel.md.
+ *
+ * Shows:
+ * - ConciergeDisplay with "Finding our approach..." during routing
+ * - ThinkingIndicator after concierge selects model, while waiting for content
+ */
+interface PendingAssistantMessageProps {
+    isConciergeRunning: boolean;
+    concierge: ConciergeResult | null;
+    messageSeed: string;
+}
+
+function PendingAssistantMessage({
+    isConciergeRunning,
+    concierge,
+    messageSeed,
+}: PendingAssistantMessageProps) {
+    // During concierge phase: show "Finding our approach..."
+    // After concierge selects model: show thinking indicator while waiting for first token
+    const isSelectingModel = isConciergeRunning && !concierge;
+    const hasSelected = Boolean(concierge);
+
+    // Derive avatar state
+    const avatarState = isSelectingModel
+        ? "thinking"
+        : hasSelected
+          ? "speaking"
+          : "idle";
+
+    return (
+        <div className="my-4 flex w-full flex-col gap-0">
+            {/* CONCIERGE ZONE - Always show during pending state */}
+            <ConciergeDisplay
+                modelId={concierge?.modelId}
+                temperature={concierge?.temperature}
+                explanation={concierge?.explanation}
+                reasoning={concierge?.reasoning}
+                isSelecting={isSelectingModel}
+                avatarState={avatarState}
+                messageSeed={messageSeed}
+            />
+
+            {/* LLM ZONE - Show thinking indicator after model selected */}
+            <AnimatePresence>
+                {hasSelected && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{
+                            duration: 0.35,
+                            ease: [0.16, 1, 0.3, 1],
+                        }}
+                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                    >
+                        <div className="px-4 py-3">
+                            <ThinkingIndicator />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
