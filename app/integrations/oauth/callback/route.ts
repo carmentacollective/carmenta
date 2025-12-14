@@ -35,14 +35,20 @@ import { exchangeCodeForTokens, storeTokens } from "@/lib/integrations/oauth/tok
  *
  * Security: Validates URL protocol and origin to prevent XSS attacks
  */
-function clientRedirect(url: string): NextResponse {
+function clientRedirect(url: string, baseUrl: string): NextResponse {
     // Validate URL to prevent XSS attacks (e.g., javascript: protocol)
     let validatedUrl: URL;
     try {
-        validatedUrl = new URL(url);
+        // Parse URL with base for relative URLs
+        validatedUrl = new URL(url, baseUrl);
         // Only allow HTTP/HTTPS protocols
         if (validatedUrl.protocol !== "http:" && validatedUrl.protocol !== "https:") {
             throw new Error("Invalid protocol");
+        }
+        // Ensure same-origin (prevent open redirect)
+        const baseOrigin = new URL(baseUrl).origin;
+        if (validatedUrl.origin !== baseOrigin) {
+            throw new Error("Cross-origin redirect not allowed");
         }
     } catch (error) {
         logger.error({ error, url }, "Invalid redirect URL");
@@ -51,10 +57,7 @@ function clientRedirect(url: string): NextResponse {
             extra: { url },
         });
         // Fallback to safe default
-        validatedUrl = new URL(
-            "/integrations",
-            env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-        );
+        validatedUrl = new URL("/integrations", baseUrl);
     }
 
     // URL is validated, safe to interpolate
@@ -97,7 +100,7 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "oauth_failed");
         errorUrl.searchParams.set("message", errorDescription ?? error);
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Get required params
@@ -108,7 +111,7 @@ export async function GET(request: NextRequest) {
         logger.warn("⚠️ OAuth callback missing required params");
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_callback");
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Validate state (CSRF protection)
@@ -126,7 +129,7 @@ export async function GET(request: NextRequest) {
 
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_state");
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Get provider config
@@ -138,7 +141,7 @@ export async function GET(request: NextRequest) {
         );
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "unknown_provider");
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     // Build callback URL for token exchange (must match authorize)
@@ -153,7 +156,7 @@ export async function GET(request: NextRequest) {
         });
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "configuration_error");
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
@@ -188,7 +191,7 @@ export async function GET(request: NextRequest) {
         const successUrl = new URL(safePath, request.url);
         successUrl.searchParams.set("success", "connected");
         successUrl.searchParams.set("service", state.provider);
-        return clientRedirect(successUrl.toString());
+        return clientRedirect(successUrl.toString(), request.url);
     } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
 
@@ -205,6 +208,6 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "token_exchange_failed");
         errorUrl.searchParams.set("message", error.message);
-        return clientRedirect(errorUrl.toString());
+        return clientRedirect(errorUrl.toString(), request.url);
     }
 }
