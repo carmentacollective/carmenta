@@ -648,34 +648,33 @@ export class ClickUpAdapter extends ServiceAdapter {
                 userId,
             });
 
-            // User-friendly error message
-            let errorMessage = `Failed to ${action}: `;
+            // Warm, actionable error message
+            let errorMessage = "";
             if (error instanceof Error) {
                 // Parse common error types
                 if (error.message.includes("404")) {
-                    errorMessage +=
-                        "The requested resource was not found. Please check the ID and try again.";
+                    errorMessage =
+                        "We couldn't find that item. Double-check the ID - ClickUp may have moved or deleted it.";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
-                    errorMessage +=
-                        "Authentication failed. Your ClickUp connection may have expired. Please reconnect at: " +
-                        `${process.env.NEXT_PUBLIC_APP_URL}/integrations/clickup`;
+                    errorMessage =
+                        "Our connection to ClickUp needs a refresh. Head to integrations and reconnect - we'll be back in business.";
                 } else if (error.message.includes("429")) {
-                    errorMessage +=
-                        "Rate limit exceeded. Please try again in a few moments.";
+                    errorMessage =
+                        "We're moving too fast for ClickUp's rate limits. Let's take a breath and try again in a moment.";
                 } else if (
                     error.message.includes("500") ||
                     error.message.includes("503")
                 ) {
-                    errorMessage +=
-                        "ClickUp service is temporarily unavailable. Please try again later.";
+                    errorMessage =
+                        "ClickUp's having a moment. This happens sometimes - try again in a few minutes and we should be good.";
                 } else {
-                    errorMessage += error.message;
+                    errorMessage = `Something went wrong: ${error.message}`;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage = "Something unexpected happened. Try again?";
             }
 
             return this.createErrorResponse(errorMessage);
@@ -702,11 +701,13 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
+            totalCount: response.teams.length,
             teams: response.teams.map((team) => ({
                 id: team.id,
                 name: team.name,
                 color: team.color,
             })),
+            note: "Use team_id to explore spaces within each workspace.",
         });
     }
 
@@ -738,11 +739,13 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
+            totalCount: response.spaces.length,
             spaces: response.spaces.map((space) => ({
                 id: space.id,
                 name: space.name,
                 private: space.private,
             })),
+            note: "Next step: use space_id to get lists where tasks live.",
         });
     }
 
@@ -787,10 +790,12 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
+            totalCount: response.lists.length,
             lists: response.lists.map((list) => ({
                 id: list.id,
                 name: list.name,
             })),
+            note: "Use list_id to view or create tasks within each list.",
         });
     }
 
@@ -896,15 +901,17 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
+            totalCount: response.tasks.length,
             tasks: response.tasks.map((task) => ({
                 id: task.id,
-                name: task.name,
+                title: task.name,
                 status: task.status.status,
                 assignees: task.assignees.map((a) => a.username),
                 priority: task.priority?.priority,
-                due_date: task.due_date,
+                dueDate: task.due_date,
                 url: task.url,
             })),
+            note: "Tasks include status and priority. Use get_task for full details including description and custom fields.",
         });
     }
 
@@ -943,7 +950,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             id: response.id,
-            name: response.name,
+            title: response.name,
             description: response.description,
             status: response.status.status,
             assignees: response.assignees.map((a) => ({
@@ -951,11 +958,12 @@ export class ClickUpAdapter extends ServiceAdapter {
                 email: a.email,
             })),
             priority: response.priority?.priority,
-            due_date: response.due_date,
-            start_date: response.start_date,
+            dueDate: response.due_date,
+            startDate: response.start_date,
             tags: response.tags.map((t) => t.name),
             url: response.url,
-            custom_fields: response.custom_fields,
+            customFields: response.custom_fields,
+            note: "Full task details with description and custom fields. Use update_task to make changes.",
         });
     }
 
@@ -1017,10 +1025,11 @@ export class ClickUpAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             success: true,
-            task_id: response.id,
-            name: response.name,
+            taskId: response.id,
+            title: response.name,
             status: response.status.status,
             url: response.url,
+            note: "Task created successfully! Share the URL or use the task ID to update it.",
         });
     }
 
@@ -1067,9 +1076,10 @@ export class ClickUpAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             success: true,
-            task_id: response.id,
-            name: response.name,
+            taskId: response.id,
+            title: response.name,
             status: response.status.status,
+            note: "Task updated successfully! Changes are reflected in ClickUp.",
         });
     }
 
@@ -1090,7 +1100,8 @@ export class ClickUpAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             success: true,
-            message: `Task ${task_id} deleted successfully`,
+            taskId: task_id,
+            note: "Task deleted. This action can't be undone.",
         });
     }
 
@@ -1126,8 +1137,11 @@ export class ClickUpAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             success: true,
-            comment_id: String(response.id),
+            commentId: String(response.id),
             date: String(response.date),
+            note: notify_all
+                ? "Comment posted and team notified."
+                : "Comment posted successfully.",
         });
     }
 
@@ -1156,12 +1170,14 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
+            totalCount: response.comments.length,
             comments: response.comments.map((c) => ({
                 id: c.id,
                 text: c.comment.map((ct) => ct.text).join("\n"),
                 author: c.user.username,
                 date: c.date,
             })),
+            note: "Full comment history with authors and timestamps.",
         });
     }
 
@@ -1192,14 +1208,16 @@ export class ClickUpAdapter extends ServiceAdapter {
             }>();
 
         return this.createJSONResponse({
-            time_entries: response.data.map((entry) => ({
+            totalCount: response.data.length,
+            timeEntries: response.data.map((entry) => ({
                 id: entry.id,
                 user: entry.user.username,
-                duration_ms: entry.duration,
+                durationMs: entry.duration,
                 start: entry.start,
                 end: entry.end,
                 description: entry.description,
             })),
+            note: "Time tracking entries for this task. Duration is in milliseconds.",
         });
     }
 
@@ -1317,24 +1335,22 @@ export class ClickUpAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Raw API request failed: `;
+            let errorMessage = "";
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
-                    errorMessage +=
-                        "Endpoint not found. Check the ClickUp API documentation for the correct endpoint path: " +
-                        "https://clickup.com/api";
+                    errorMessage =
+                        "That endpoint doesn't exist. Check the ClickUp API docs at https://clickup.com/api for the right path.";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
-                    errorMessage +=
-                        "Authentication failed. Your ClickUp connection may have expired. Please reconnect at: " +
-                        `${process.env.NEXT_PUBLIC_APP_URL}/integrations/clickup`;
+                    errorMessage =
+                        "Our ClickUp connection needs a refresh. Reconnect through integrations and we'll be back on track.";
                 } else {
-                    errorMessage += error.message;
+                    errorMessage = `API request failed: ${error.message}`;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage = "Something went wrong with that API call.";
             }
 
             return this.createErrorResponse(errorMessage);

@@ -57,13 +57,13 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: Search,
         messages: {
             pending: "Getting ready...",
-            running: "Searching together...",
-            completed: "Search complete",
-            error: "Search hit a wall",
+            running: "Exploring the web together...",
+            completed: "Found what we were looking for",
+            error: "We couldn't reach the web",
         },
         delightMessages: {
-            completed: ["Found some results", "Here's what we found", "Search done"],
-            fast: ["Quick find!", "Speedy search"],
+            completed: ["Discovery made", "Here's what's out there", "Found it"],
+            fast: ["Quick discovery!", "Found that fast"],
         },
     },
     fetchPage: {
@@ -71,13 +71,13 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: Globe,
         messages: {
             pending: "Getting ready...",
-            running: "Reaching that page...",
-            completed: "Page fetched",
-            error: "Couldn't reach that page",
+            running: "Retrieving that page together...",
+            completed: "Page content ready",
+            error: "We couldn't reach that page",
         },
         delightMessages: {
-            completed: ["Got it", "Page loaded", "Content retrieved"],
-            fast: ["Quick fetch!", "Speedy load"],
+            completed: ["Content captured", "Page ready", "Got the details"],
+            fast: ["Quick retrieval!", "Got it instantly"],
         },
     },
     deepResearch: {
@@ -128,13 +128,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: "/logos/clickup.svg",
         messages: {
             pending: "Getting ready...",
-            running: "Accessing ClickUp...",
-            completed: "ClickUp operation complete",
-            error: "Couldn't complete ClickUp operation",
+            running: "Working with our tasks...",
+            completed: "ClickUp ready",
+            error: "Hit a snag with ClickUp",
         },
         delightMessages: {
-            completed: ["Task handled", "ClickUp updated", "All set"],
-            fast: ["Quick update!", "Done!"],
+            completed: [
+                "Tasks organized",
+                "All lined up",
+                "Work tracked",
+                "We're on it",
+            ],
+            fast: ["Quick check!", "Instant sync!", "Got it"],
         },
     },
     coinmarketcap: {
@@ -226,13 +231,13 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: "/logos/notion.svg",
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Notion...",
-            completed: "Notion operation complete",
-            error: "Couldn't complete Notion operation",
+            running: "Exploring Notion together...",
+            completed: "Found what we needed",
+            error: "We couldn't reach that Notion page",
         },
         delightMessages: {
-            completed: ["Page ready", "Notion updated", "Found it"],
-            fast: ["Quick access!", "Got it"],
+            completed: ["Page ready", "Discovered it", "Here's what we found"],
+            fast: ["Quick find!", "Got it"],
         },
     },
     slack: {

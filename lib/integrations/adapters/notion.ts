@@ -799,6 +799,7 @@ export class NotionAdapter extends ServiceAdapter {
                 query,
                 totalCount: 0,
                 results: [],
+                message: "No pages or databases found matching your search.",
             });
         }
 
@@ -840,6 +841,9 @@ export class NotionAdapter extends ServiceAdapter {
             totalCount: response.results.length,
             has_more: response.has_more,
             results: formattedResults,
+            note: response.has_more
+                ? "More results available - refine the search query or use pagination to see additional pages."
+                : "These are all matching results - use the URLs to reference specific pages.",
         });
     }
 
@@ -884,6 +888,9 @@ export class NotionAdapter extends ServiceAdapter {
             return this.createJSONResponse({
                 page,
                 blocks,
+                note: include_blocks
+                    ? "Page content included - properties show metadata, blocks contain the page content."
+                    : "Page metadata only - set include_blocks:true to see the page content.",
             });
         } catch (error) {
             // Handle 404 errors gracefully
@@ -1066,6 +1073,10 @@ export class NotionAdapter extends ServiceAdapter {
         return this.createJSONResponse({
             totalCount: databases.length,
             databases,
+            note:
+                databases.length === 0
+                    ? "No databases found in this workspace."
+                    : "These databases are available to explore - use get_database to see schemas or query_database to retrieve entries.",
         });
     }
 
@@ -1092,7 +1103,10 @@ export class NotionAdapter extends ServiceAdapter {
                     last_edited_time: string;
                 }>();
 
-            return this.createJSONResponse(response);
+            return this.createJSONResponse({
+                ...response,
+                note: "Database schema included - the 'properties' field shows column definitions. Use query_database to retrieve entries.",
+            });
         } catch (error) {
             // Handle 404 errors gracefully
             if (error instanceof Error && error.message.includes("404")) {
@@ -1278,6 +1292,11 @@ export class NotionAdapter extends ServiceAdapter {
                 totalCount: response.results.length,
                 has_more: response.has_more,
                 results: response.results,
+                note: response.has_more
+                    ? "More entries available - use pagination (start_cursor) to retrieve additional results."
+                    : response.results.length === 0
+                      ? "No entries match the filter criteria. Adjust filters or check the database."
+                      : "All matching entries included - entries contain full property values.",
             });
         } catch (error) {
             // Handle 404 errors gracefully
