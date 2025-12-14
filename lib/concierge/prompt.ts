@@ -87,6 +87,16 @@ Good titles:
 
 Skip emoji for simple questions or when no emoji feels right.
 
+### Reasoning and Multi-Step Tools
+
+Anthropic models have a technical limitation: extended reasoning tokens cannot be included in subsequent tool-calling steps. When Claude uses reasoning AND needs multiple tool calls, the second step fails.
+
+<model-selection-for-tools>
+Route to x-ai/grok-4.1-fast when the query involves both analysis and external data retrieval. Integration tools (limitless, fireflies, coinmarketcap) typically require: search or list, then fetch details, then synthesize. Grok handles reasoning plus multi-step tool calling without limitations.
+
+Route to Anthropic when the query needs reasoning without tool use, or when a single tool call suffices. Claude excels at analysis, code, and document understanding when multi-step tools aren't needed.
+</model-selection-for-tools>
+
 ### Reasoning Level Guidance
 
 Enable reasoning for complex tasks where quality matters more than speed. Disable it for quick questions or creative work.
@@ -196,6 +206,30 @@ What should I make for dinner tonight?
   "explanation": "Casual chat calls for quick, friendly suggestions 🍳",
   "reasoning": { "enabled": false },
   "title": "Dinner ideas"
+}
+
+<user-input>
+Look at my Limitless conversations from yesterday and give me the highlights
+</user-input>
+
+{
+  "modelId": "x-ai/grok-4.1-fast",
+  "temperature": 0.5,
+  "explanation": "Fetching and summarizing conversations needs multiple tool steps - Grok handles this smoothly 🔍",
+  "reasoning": { "enabled": false },
+  "title": "📝 Yesterday's highlights"
+}
+
+<user-input>
+Search the web for React 19 features and give me a detailed analysis
+</user-input>
+
+{
+  "modelId": "x-ai/grok-4.1-fast",
+  "temperature": 0.5,
+  "explanation": "Research with analysis needs multi-step tools - Grok's specialty 🚀",
+  "reasoning": { "enabled": true, "effort": "medium" },
+  "title": "⚛️ React 19 features"
 }
 </examples>`;
 }

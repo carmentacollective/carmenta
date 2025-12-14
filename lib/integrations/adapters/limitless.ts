@@ -36,12 +36,16 @@ export class LimitlessAdapter extends ServiceAdapter {
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,
-            description: "Search conversations recorded by Limitless Pendant wearable",
+            description:
+                "Access conversations recorded by Limitless Pendant. " +
+                "IMPORTANT: Use 'search' for topic-based queries (what did I discuss about X?). " +
+                "Use 'list_recordings' with date filter for time-based queries (what did I talk about yesterday?). " +
+                "Both return summaries - only use get_lifelog if you need the full transcript.",
             operations: [
                 {
                     name: "search",
                     description:
-                        "Search your Limitless Lifelogs with natural language queries",
+                        "Primary action for finding conversations by topic. Returns summaries - no need to fetch each recording.",
                     annotations: {
                         readOnlyHint: true,
                     },
@@ -59,60 +63,36 @@ export class LimitlessAdapter extends ServiceAdapter {
                             type: "number",
                             required: false,
                             description:
-                                "Maximum number of results (default: 50, max: 100)",
-                            example: "10",
+                                "Maximum results (default: 10). Keep low - summaries are included.",
+                            example: "5",
                         },
                         {
                             name: "date",
                             type: "string",
                             required: false,
                             description:
-                                "Filter to entries on a specific date (YYYY-MM-DD)",
+                                "Filter to a specific date (YYYY-MM-DD). Use for 'yesterday', 'last Monday', etc.",
                             example: "2024-01-15",
                         },
                     ],
                     returns:
-                        "List of relevant Lifelogs matching your query with summaries and timestamps",
-                    example: `search({ query: "meetings about project alpha", limit: 10 })`,
-                },
-                {
-                    name: "get_lifelog",
-                    description: "Get details of a specific Lifelog entry by ID",
-                    annotations: {
-                        readOnlyHint: true,
-                    },
-                    parameters: [
-                        {
-                            name: "lifelogId",
-                            type: "string",
-                            required: true,
-                            description: "The ID of the Lifelog to retrieve",
-                        },
-                    ],
-                    returns:
-                        "Lifelog details including summary, markdown content, transcript, and metadata",
+                        "Lifelogs with summaries and timestamps. Use these summaries directly - don't fetch each one.",
+                    example: `search({ query: "project updates", date: "2024-12-13", limit: 5 })`,
                 },
                 {
                     name: "list_recordings",
-                    description: "List recent Lifelogs from your Pendant",
+                    description:
+                        "List recordings for a time period. ALWAYS use date/start/end filters. Returns summaries.",
                     annotations: {
                         readOnlyHint: true,
                     },
                     parameters: [
-                        {
-                            name: "limit",
-                            type: "number",
-                            required: false,
-                            description:
-                                "Maximum number of Lifelogs to return (default: 50, max: 100)",
-                            example: "20",
-                        },
                         {
                             name: "date",
                             type: "string",
                             required: false,
                             description:
-                                "Filter to entries on a specific date (YYYY-MM-DD)",
+                                "Filter to a specific date (YYYY-MM-DD). RECOMMENDED for time-based queries.",
                             example: "2024-01-15",
                         },
                         {
@@ -131,9 +111,35 @@ export class LimitlessAdapter extends ServiceAdapter {
                                 "End datetime (YYYY-MM-DD or YYYY-MM-DD HH:mm:SS)",
                             example: "2024-01-01 17:00:00",
                         },
+                        {
+                            name: "limit",
+                            type: "number",
+                            required: false,
+                            description:
+                                "Maximum results (default: 10). Summaries included - keep low.",
+                            example: "10",
+                        },
                     ],
                     returns:
-                        "List of recent Lifelogs with metadata, summaries, and timestamps",
+                        "Lifelogs with summaries. Synthesize from these - don't fetch each individually.",
+                },
+                {
+                    name: "get_lifelog",
+                    description:
+                        "Get FULL content of ONE recording. Only use when user needs transcript/deep details on a specific conversation.",
+                    annotations: {
+                        readOnlyHint: true,
+                    },
+                    parameters: [
+                        {
+                            name: "lifelogId",
+                            type: "string",
+                            required: true,
+                            description: "The ID of the Lifelog to retrieve",
+                        },
+                    ],
+                    returns:
+                        "Full details: summary, markdown, transcript, headings. Use sparingly.",
                 },
                 {
                     name: "get_transcript",
@@ -297,12 +303,7 @@ export class LimitlessAdapter extends ServiceAdapter {
                     returns: "Raw Limitless API response as JSON",
                 },
             ],
-            commonOperations: [
-                "search",
-                "get_lifelog",
-                "get_transcript",
-                "list_recordings",
-            ],
+            commonOperations: ["search", "list_recordings"],
             docsUrl: "https://www.limitless.ai/developers",
         };
     }
@@ -387,7 +388,7 @@ export class LimitlessAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const {
             query,
-            limit = 50,
+            limit = 10, // Default to 10 for AI context - summaries are included
             date,
         } = params as {
             query: string;
@@ -446,12 +447,13 @@ export class LimitlessAdapter extends ServiceAdapter {
             totalCount: response.meta?.lifelogs?.count || lifelogs.length,
             results: lifelogs.map((log) => ({
                 id: log.id,
-                summary: log.summary || "No summary available",
+                title: log.summary || "Recording",
+                content: log.markdown || log.summary || "No content available",
                 startedAt: log.startedAt,
                 endedAt: log.endedAt,
-                preview: log.markdown?.substring(0, 200),
             })),
             nextCursor: response.meta?.lifelogs?.nextCursor,
+            note: "Full content included - synthesize directly from these results.",
         });
     }
 
@@ -504,7 +506,7 @@ export class LimitlessAdapter extends ServiceAdapter {
         apiKey: string
     ): Promise<MCPToolResponse> {
         const {
-            limit = 50,
+            limit = 10, // Default to 10 for AI context - use date/time filters for more
             date,
             start,
             end,
@@ -562,11 +564,13 @@ export class LimitlessAdapter extends ServiceAdapter {
             totalCount: response.meta?.lifelogs?.count || lifelogs.length,
             lifelogs: lifelogs.map((log) => ({
                 id: log.id,
-                summary: log.summary || "No summary available",
+                title: log.summary || "Recording",
+                content: log.markdown || log.summary || "No content available",
                 startedAt: log.startedAt,
                 endedAt: log.endedAt,
             })),
             nextCursor: response.meta?.lifelogs?.nextCursor,
+            note: "Use the content field directly - no need to fetch individual recordings.",
         });
     }
 

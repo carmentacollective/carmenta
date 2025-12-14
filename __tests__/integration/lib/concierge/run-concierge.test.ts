@@ -291,4 +291,74 @@ describe("runConcierge integration", () => {
             })
         );
     });
+
+    it("accepts Grok selection for integration tool queries", async () => {
+        // When concierge selects Grok for multi-step tool queries,
+        // the result should be properly processed
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-grok",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "x-ai/grok-4.1-fast",
+                        temperature: 0.5,
+                        explanation:
+                            "Fetching and summarizing conversations needs multiple tool steps",
+                        reasoning: { enabled: false },
+                        title: "📝 Yesterday's highlights",
+                    },
+                },
+            ],
+            usage: { promptTokens: 100, completionTokens: 50 },
+            finishReason: "stop",
+        } as any);
+
+        const result = await runConcierge([
+            createUserMessage(
+                "Look at my Limitless conversations from yesterday and give me the highlights"
+            ),
+        ]);
+
+        expect(result.modelId).toBe("x-ai/grok-4.1-fast");
+        expect(result.temperature).toBe(0.5);
+        expect(result.reasoning.enabled).toBe(false);
+        expect(result.title).toBe("📝 Yesterday's highlights");
+    });
+
+    it("accepts Grok selection for research queries needing multi-step tools", async () => {
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-grok-research",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "x-ai/grok-4.1-fast",
+                        temperature: 0.5,
+                        explanation: "Research with analysis needs multi-step tools",
+                        reasoning: { enabled: true, effort: "medium" },
+                        title: "⚛️ React 19 features",
+                    },
+                },
+            ],
+            usage: { promptTokens: 100, completionTokens: 50 },
+            finishReason: "stop",
+        } as any);
+
+        const result = await runConcierge([
+            createUserMessage(
+                "Search the web for React 19 features and give me a detailed analysis"
+            ),
+        ]);
+
+        expect(result.modelId).toBe("x-ai/grok-4.1-fast");
+        expect(result.reasoning.enabled).toBe(true);
+        expect(result.reasoning.effort).toBe("medium");
+        // Grok uses effort-based reasoning, not token budget
+        expect(result.reasoning.maxTokens).toBeUndefined();
+    });
 });
