@@ -469,18 +469,21 @@ export function HolographicBackground({
                 aria-hidden="true"
             />
 
-            {/* Logo watermark - subtle brand presence with gentle entrance */}
+            {/* Logo watermark - subtle brand presence with gentle entrance and breathing */}
             {!hideWatermark && (
                 <div
                     className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden"
                     aria-hidden="true"
                 >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                        src="/logos/icon-transparent.png"
-                        alt=""
-                        className="animate-watermark-presence h-[80vh] w-[80vh] max-w-none object-contain"
-                    />
+                    {/* Breathing wrapper - scales the entire watermark */}
+                    <div className="oracle-breathing">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src="/logos/icon-transparent.png"
+                            alt=""
+                            className="animate-watermark-presence h-[80vh] w-[80vh] max-w-none object-contain"
+                        />
+                    </div>
                 </div>
             )}
 
