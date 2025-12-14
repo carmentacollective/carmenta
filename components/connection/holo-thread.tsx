@@ -54,6 +54,7 @@ import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
+import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
@@ -416,6 +417,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 </ToolWrapper>
             );
         }
+
+        case "limitless":
+            return (
+                <LimitlessToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Limitless request failed")}
+                />
+            );
 
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.

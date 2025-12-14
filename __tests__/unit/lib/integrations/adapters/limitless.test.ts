@@ -71,15 +71,12 @@ describe("LimitlessAdapter", () => {
             expect(operationNames).toContain("raw_api");
         });
 
-        it("specifies common operations", () => {
+        it("specifies common operations (search and list_recordings for most use cases)", () => {
             const help = adapter.getHelp();
 
-            expect(help.commonOperations).toEqual([
-                "search",
-                "get_lifelog",
-                "get_transcript",
-                "list_recordings",
-            ]);
+            // Common operations are search and list_recordings which both return
+            // summaries - individual fetch operations are for specific transcript needs
+            expect(help.commonOperations).toEqual(["search", "list_recordings"]);
         });
 
         it("marks read-only operations with readOnlyHint annotation", () => {
