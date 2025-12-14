@@ -14,57 +14,48 @@ processes; users care about the synthesized response, not raw API dumps.
 </objective>
 
 <critical-lessons>
-**This is NOT just an MCP server that mirrors the API.**
+You're building high-value AI tools that return synthesis-ready data.
 
-You're building high-value AI tools, not REST API wrappers. The difference:
+What makes an excellent integration:
 
-| API Wrapper (Bad)                        | AI Tool (Good)                                       |
-| ---------------------------------------- | ---------------------------------------------------- |
-| Returns IDs, requires fetching each item | Returns rich content ready for synthesis             |
-| Mirrors API endpoints 1:1                | Provides convenience methods for common AI workflows |
-| Generic descriptions                     | Guidance that steers AI toward efficient patterns    |
-| Default limit: 50                        | Default limit: 10 (summaries included)               |
+- Returns rich content (summaries, full text) so the AI synthesizes in one call
+- Provides convenience methods for common AI workflows (search by topic, list recent)
+- Tool guidance steers AI toward efficient patterns
+- Default limit: 10 results with summaries included
 
-**Design for the AI's workflow, not the API's structure.** Ask: "What does the AI need
-to answer a user's question in one call?" If listing meetings returns just IDs and the
-AI has to fetch each one, that's 10+ API calls for one user question. Instead, return
-summaries/content inline so the AI can synthesize immediately.
+Design for the AI's workflow. Ask: "What does the AI need to answer a user's question in
+one call?" Return summaries/content inline so the AI synthesizes immediately.
 
-**Learn from Fireflies: Research the API FIRST**
-
-The original Fireflies adapter did client-side filtering because a code comment said
-"Fireflies GraphQL doesn't have server-side search." This was WRONG. The API had
-`keyword` and `scope` parameters all along that enable full-text transcript search.
-
-**Before writing any code:**
+Before writing any code:
 
 1. Read the official API documentation thoroughly
 2. Look for search/filter capabilities - most APIs have them
 3. Check what fields are returned in list/search responses
-4. Identify which endpoints return rich data vs. IDs that need fetching
-5. Find the highest-value convenience methods (not just CRUD operations)
+4. Identify which endpoints return rich data ready for synthesis
+5. Find the highest-value convenience methods
 
-**Don't trust existing code comments.** Verify against official docs. A wrong assumption
-can make the difference between a mediocre integration and an excellent one.
+Verify API capabilities against official docs. The Fireflies adapter originally did
+client-side search filtering because a code comment claimed the API lacked server-side
+search. The API actually had `keyword` and `scope` parameters for full-text search all
+along.
 
-**The quality checklist:**
+Quality checklist:
 
-- Does search actually search content, or just metadata/titles?
-- Do list/search results include enough data for AI to synthesize without fetching each
-  item individually?
-- Does the tool guidance tell the AI which operations to prefer and why?
-- Are defaults sensible (10 results, not 50)?
-- Does the description warn against inefficient patterns?
-- Would answering "What did I discuss about X?" require 1 call or 10?
+- Search queries full content (transcripts, bodies), not just titles/metadata
+- List/search results include enough data for AI to synthesize without fetching each
+  item
+- Tool guidance tells the AI which operations to prefer and why
+- Defaults are sensible (10 results with summaries included)
+- Answering "What did I discuss about X?" requires 1 call
 
-Compare your adapter against Limitless - that's the gold standard for AI-first design.
-</critical-lessons>
+Compare your adapter against `lib/integrations/adapters/limitless.ts` - that's the gold
+standard for AI-first design. </critical-lessons>
 
 <definition-of-done>
 Use TodoWrite to track progress. An integration includes:
 
-- [ ] **API research completed** - Read official docs, verified search/filter
-      capabilities, identified high-value endpoints
+- [ ] API research completed (read official docs, verified search/filter capabilities,
+      identified high-value endpoints)
 - [ ] Service adapter with operations that return synthesis-ready data
 - [ ] Tool guidance that steers AI toward efficient patterns
 - [ ] Service registry entry
