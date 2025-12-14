@@ -1,13 +1,13 @@
 #!/bin/bash
 # Render.com deployment script for Carmenta
 # Package management: pnpm
-# Runtime: Bun (configured via BUN_VERSION env var on Render)
+# Runtime: Node.js
 # Database: Supabase Postgres (external, not Render)
 
 set -e  # Exit on error
 
 echo "🚀 Starting Carmenta deployment..."
-echo "   Bun version (runtime): $(bun --version)"
+echo "   Node version (runtime): $(node --version)"
 echo "   pnpm version (packages): $(pnpm --version)"
 
 # Install dependencies with pnpm
@@ -18,7 +18,7 @@ pnpm install --frozen-lockfile
 echo "🗄️  Running database migrations..."
 pnpm run db:migrate
 
-# Build the application (uses Bun runtime via package.json script)
+# Build the application
 echo "🏗️  Building application..."
 pnpm run build
 
