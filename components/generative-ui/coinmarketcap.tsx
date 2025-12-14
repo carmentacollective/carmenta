@@ -1,0 +1,277 @@
+"use client";
+
+/**
+ * CoinMarketCap Tool UI - Compact Status Display
+ *
+ * Tool results are intermediate data the AI processes. The user cares about
+ * the AI's synthesized response, not raw API output. This component shows
+ * minimal status: what happened, with optional expansion for debugging.
+ */
+
+import { useState } from "react";
+import { TrendingUp, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+
+import type { ToolStatus } from "@/lib/tools/tool-config";
+
+interface CoinMarketCapToolResultProps {
+    toolCallId: string;
+    status: ToolStatus;
+    action: string;
+    input: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    error?: string;
+}
+
+/**
+ * Compact CoinMarketCap tool result.
+ * Shows a single line summary with optional raw data expansion.
+ */
+export function CoinMarketCapToolResult({
+    status,
+    action,
+    input,
+    output,
+    error,
+}: CoinMarketCapToolResultProps) {
+    const [expanded, setExpanded] = useState(false);
+
+    // Loading state - single line with pulse animation
+    if (status === "running") {
+        return (
+            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5 animate-pulse" />
+                <span>{getStatusMessage(action, input, "running")}</span>
+            </div>
+        );
+    }
+
+    // Error state - red text, clear message
+    if (status === "error" || error) {
+        return (
+            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                <span>{error || `CoinMarketCap ${action} failed`}</span>
+            </div>
+        );
+    }
+
+    // Success - compact summary with optional JSON expansion
+    const summary = getStatusMessage(action, input, "completed", output);
+
+    return (
+        <div className="py-1">
+            <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <TrendingUp className="h-3.5 w-3.5 text-primary/70" />
+                <span className="flex-1">{summary}</span>
+                {output &&
+                    (expanded ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                    ))}
+            </button>
+
+            {expanded && output && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
+                    {JSON.stringify(output, null, 2)}
+                </pre>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Generate a human-readable status message based on action and result.
+ * Uses crypto-aware language that feels natural for market data.
+ */
+function getStatusMessage(
+    action: string,
+    input: Record<string, unknown>,
+    status: "running" | "completed",
+    output?: Record<string, unknown>
+): string {
+    const isRunning = status === "running";
+
+    switch (action) {
+        case "get_listings": {
+            const limit = input.limit as number | undefined;
+            if (isRunning)
+                return limit ? `Loading top ${limit} coins...` : "Loading market...";
+            const count = (output?.results as unknown[])?.length ?? 0;
+            return `Loaded ${count} coins`;
+        }
+
+        case "get_quotes": {
+            const symbols = extractSymbols(input);
+            if (isRunning)
+                return symbols ? `Checking ${symbols}...` : "Getting quotes...";
+            const count = countQuotes(output);
+            return count === 1 ? `Got quote for ${symbols}` : `Got ${count} quotes`;
+        }
+
+        case "get_crypto_info": {
+            const symbols = extractSymbols(input);
+            if (isRunning)
+                return symbols ? `Looking up ${symbols}...` : "Loading crypto info...";
+            return symbols ? `Loaded ${symbols} info` : "Loaded crypto details";
+        }
+
+        case "get_global_metrics": {
+            if (isRunning) return "Checking global markets...";
+            return "Global metrics ready";
+        }
+
+        case "get_categories": {
+            if (isRunning) return "Loading categories...";
+            const data = output?.data as { data?: unknown[] } | unknown[];
+            const count = Array.isArray(data) ? data.length : 0;
+            return `Found ${count} categories`;
+        }
+
+        case "get_category": {
+            const categoryId = input.id as string | undefined;
+            if (isRunning)
+                return categoryId ? `Loading ${categoryId}...` : "Loading category...";
+            const name = extractCategoryName(output);
+            return name ? `Loaded: ${truncate(name, 40)}` : "Loaded category";
+        }
+
+        case "get_crypto_map": {
+            if (isRunning) return "Loading crypto map...";
+            const data = output?.data as unknown[];
+            const count = Array.isArray(data) ? data.length : 0;
+            return `Mapped ${count} tokens`;
+        }
+
+        case "convert_price": {
+            const amount = input.amount as number;
+            const symbols = extractSymbols(input);
+            const convert = input.convert as string;
+            if (isRunning) {
+                return `Converting ${amount} ${symbols} → ${convert}...`;
+            }
+            const converted = extractConvertedPrice(output, convert);
+            if (converted) {
+                return `${amount} ${symbols} = ${converted}`;
+            }
+            return "Conversion complete";
+        }
+
+        case "get_exchange_map": {
+            if (isRunning) return "Loading exchanges...";
+            const data = output?.data as unknown[];
+            const count = Array.isArray(data) ? data.length : 0;
+            return `Found ${count} exchanges`;
+        }
+
+        case "get_exchange_info": {
+            const slug = input.slug as string | undefined;
+            if (isRunning) return slug ? `Loading ${slug}...` : "Loading exchange...";
+            const name = extractExchangeName(output);
+            return name ? `Loaded: ${name}` : "Loaded exchange info";
+        }
+
+        case "raw_api": {
+            const endpoint = input.endpoint as string;
+            if (isRunning) return `Calling ${truncate(endpoint, 30)}...`;
+            return "API call complete";
+        }
+
+        case "describe":
+            return isRunning ? "Loading capabilities..." : "CoinMarketCap ready";
+
+        default:
+            return isRunning ? `Running ${action}...` : `Completed ${action}`;
+    }
+}
+
+/**
+ * Extract symbol(s) from input - checks symbol, id, or slug
+ */
+function extractSymbols(input: Record<string, unknown>): string | undefined {
+    if (input.symbol) return input.symbol as string;
+    if (input.slug) return input.slug as string;
+    if (input.id) return `ID:${input.id}`;
+    return undefined;
+}
+
+/**
+ * Count quotes in the response data
+ */
+function countQuotes(output?: Record<string, unknown>): number {
+    if (!output?.data) return 0;
+    const data = output.data as Record<string, unknown>;
+    return Object.keys(data).length;
+}
+
+/**
+ * Extract category name from response
+ */
+function extractCategoryName(output?: Record<string, unknown>): string | undefined {
+    const data = output?.data as { name?: string } | undefined;
+    return data?.name;
+}
+
+/**
+ * Extract exchange name from response
+ */
+function extractExchangeName(output?: Record<string, unknown>): string | undefined {
+    const data = output?.data as Record<string, { name?: string }> | undefined;
+    if (!data) return undefined;
+    const firstKey = Object.keys(data)[0];
+    return data[firstKey]?.name;
+}
+
+/**
+ * Extract converted price from conversion response
+ */
+function extractConvertedPrice(
+    output?: Record<string, unknown>,
+    targetCurrency?: string
+): string | undefined {
+    try {
+        const data = output?.data as
+            | { quote?: Record<string, { price?: number }> }
+            | undefined;
+        if (!data?.quote || !targetCurrency) return undefined;
+
+        const currency = targetCurrency.split(",")[0].toUpperCase();
+        const price = data.quote[currency]?.price;
+        if (typeof price !== "number") return undefined;
+
+        return formatPrice(price, currency);
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Format price with appropriate precision and currency symbol
+ */
+function formatPrice(price: number, currency: string): string {
+    const currencySymbols: Record<string, string> = {
+        USD: "$",
+        EUR: "€",
+        GBP: "£",
+        JPY: "¥",
+        BTC: "₿",
+        ETH: "Ξ",
+    };
+
+    const symbol = currencySymbols[currency] || "";
+    const formatted =
+        price >= 1
+            ? price.toLocaleString(undefined, { maximumFractionDigits: 2 })
+            : price.toPrecision(4);
+
+    return symbol ? `${symbol}${formatted}` : `${formatted} ${currency}`;
+}
+
+function truncate(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength - 1) + "…";
+}

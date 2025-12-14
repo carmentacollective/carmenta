@@ -55,8 +55,9 @@ import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
-import { LimitlessToolResult } from "@/components/generative-ui/limitless";
+import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
+import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
@@ -421,6 +422,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         // Integration tools - keep alphabetical to minimize merge conflicts
+        case "coinmarketcap":
+            return (
+                <CoinMarketCapToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "CoinMarketCap request failed")}
+                />
+            );
+
         case "fireflies":
             return (
                 <FirefliesToolResult
