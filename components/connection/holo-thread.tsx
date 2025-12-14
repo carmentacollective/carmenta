@@ -418,28 +418,27 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         default: {
-            // Unknown tools get a generic wrapper
-            const defaultError = getToolError(part, output, "Tool failed");
-            const statusText =
-                status === "running"
-                    ? "Processing..."
-                    : status === "error"
-                      ? (defaultError ?? "Tool failed")
-                      : "Complete";
+            // Unknown tool - this is a bug. Every tool needs an explicit renderer.
+            // Log error and show error state to make missing renderers obvious.
+            logger.error(
+                { toolName, toolCallId: part.toolCallId },
+                `Missing tool renderer for "${toolName}". Add a case to ToolPartRenderer.`
+            );
 
             return (
                 <ToolWrapper
                     toolName={toolName}
                     toolCallId={part.toolCallId}
-                    status={status}
+                    status="error"
                     input={input}
                     output={output}
-                    error={defaultError}
+                    error={`Tool "${toolName}" has no UI renderer. This is a bug.`}
                 >
-                    <div
-                        className={`text-sm ${status === "error" ? "text-destructive" : "text-muted-foreground"}`}
-                    >
-                        {statusText}
+                    <div className="text-sm text-destructive">
+                        Tool &quot;{toolName}&quot; is missing a display component.
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                            Add a case for this tool in ToolPartRenderer.
+                        </span>
                     </div>
                 </ToolWrapper>
             );

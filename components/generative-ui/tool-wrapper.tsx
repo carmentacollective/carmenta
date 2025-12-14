@@ -176,16 +176,29 @@ export function ToolWrapper({
     // First-use celebration (only shows once per tool per session)
     const celebrationMessage = useFirstUseCelebration(toolName, status);
 
-    // Default to open when running, closed when completed
+    // Track whether user has manually interacted with the collapsible
+    const [userInteracted, setUserInteracted] = useState(false);
+
+    // Default to open when running, closed when completed (unless user opened it)
     const [isOpen, setIsOpen] = useState(status !== "completed");
 
-    // Auto-collapse when completed (after a brief delay to show result)
+    // Auto-collapse only on initial completion, not when user re-opens
     useEffect(() => {
+        // Skip if user has manually interacted
+        if (userInteracted) return;
+
+        // When status transitions to completed, collapse after brief delay
         if (status === "completed" && isOpen) {
-            const timer = setTimeout(() => setIsOpen(false), 300);
+            const timer = setTimeout(() => setIsOpen(false), 800);
             return () => clearTimeout(timer);
         }
-    }, [status, isOpen]);
+    }, [status, isOpen, userInteracted]);
+
+    // Wrap setIsOpen to track user interaction
+    const handleOpenChange = (open: boolean) => {
+        setUserInteracted(true);
+        setIsOpen(open);
+    };
 
     // Get the appropriate status message (with potential delight)
     const statusLabel =
@@ -216,7 +229,7 @@ export function ToolWrapper({
     return (
         <Collapsible
             open={isOpen}
-            onOpenChange={setIsOpen}
+            onOpenChange={handleOpenChange}
             className={cn(
                 "not-prose mb-4 w-full rounded-lg border border-white/20",
                 "bg-white/30 backdrop-blur-sm",
