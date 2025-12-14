@@ -31,6 +31,22 @@ async function importRoute() {
     return import("@/app/integrations/oauth/callback/route");
 }
 
+/**
+ * Helper to parse client-side redirect URL from HTML response.
+ * The callback route returns 200 with HTML containing `window.location.href="URL"`
+ * for security (prevents XSS and open redirect attacks).
+ */
+async function getClientSideRedirectUrl(response: Response): Promise<URL> {
+    const html = await response.text();
+    const match = html.match(/window\.location\.href="([^"]+)"/);
+    if (!match) {
+        throw new Error(
+            `No client-side redirect found in HTML: ${html.substring(0, 200)}`
+        );
+    }
+    return new URL(match[1]);
+}
+
 describe("OAuth Callback Route", () => {
     const testUserEmail = "callback-test@example.com";
 
@@ -66,8 +82,8 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            expect(response.status).toBe(307);
-            const location = new URL(response.headers.get("location")!);
+            expect(response.status).toBe(200);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.pathname).toBe("/integrations");
             expect(location.searchParams.get("error")).toBe("oauth_failed");
             expect(location.searchParams.get("message")).toBe("User denied access");
@@ -81,7 +97,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("message")).toBe("server_error");
         });
     });
@@ -97,7 +113,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("invalid_callback");
         });
 
@@ -109,7 +125,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("invalid_callback");
         });
 
@@ -121,7 +137,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("invalid_callback");
         });
     });
@@ -135,7 +151,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("invalid_state");
         });
 
@@ -156,7 +172,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("invalid_state");
         });
 
@@ -188,7 +204,7 @@ describe("OAuth Callback Route", () => {
             );
             const response2 = await GET(request2);
 
-            const location = new URL(response2.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response2);
             expect(location.searchParams.get("error")).toBe("invalid_state");
         });
     });
@@ -214,8 +230,8 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            expect(response.status).toBe(307);
-            const location = new URL(response.headers.get("location")!);
+            expect(response.status).toBe(200);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("success")).toBe("connected");
             expect(location.searchParams.get("service")).toBe("notion");
         });
@@ -271,7 +287,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("error")).toBe("token_exchange_failed");
         });
 
@@ -327,7 +343,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.pathname).toBe("/settings/integrations");
         });
 
@@ -341,14 +357,14 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.pathname).toBe("/integrations");
         });
 
-        // SECURITY BUG TEST: Open Redirect Vulnerability
-        it("SECURITY BUG: Open redirect via absolute returnUrl", async () => {
-            // This test documents the Open Redirect vulnerability
-            // An attacker can set returnUrl to an external site
+        // SECURITY: Verify Open Redirect Protection
+        it("SECURITY: Blocks open redirect via absolute returnUrl", async () => {
+            // Verify that returnUrl parameter is properly validated
+            // An attacker trying to set returnUrl to an external site should be blocked
 
             const maliciousReturnUrl = "https://evil.com/phishing";
             const state = await createValidState({ returnUrl: maliciousReturnUrl });
@@ -360,16 +376,12 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = response.headers.get("location")!;
+            const location = (await getClientSideRedirectUrl(response)).toString();
 
-            // BUG: This redirects to evil.com!
-            // The new URL() constructor with an absolute URL ignores the base
-            expect(location).toContain("evil.com");
-
-            // TODO: When fixed, this test should verify:
-            // - returnUrl is validated as same-origin or relative path
-            // - Absolute URLs to other domains are rejected
-            // - User stays on carmenta.app
+            // FIXED: Now properly validates returnUrl is same-origin
+            // Absolute URLs to other domains are rejected and fallback to /integrations
+            expect(location).not.toContain("evil.com");
+            expect(location).toContain("/integrations");
         });
 
         // Additional open redirect attack vectors to block
@@ -389,13 +401,13 @@ describe("OAuth Callback Route", () => {
                 );
 
                 const response = await GET(request);
-                const location = response.headers.get("location")!;
+                const location = (await getClientSideRedirectUrl(response)).toString();
 
                 // TODO: When fixed, these should NOT redirect to evil.com
                 // For now, documenting that some of these may be exploitable
                 // The fix should validate returnUrl starts with "/" and doesn't
                 // contain "//" or "\" immediately after
-                expect(response.status).toBe(307);
+                expect(response.status).toBe(200);
             }
         );
 
@@ -413,7 +425,7 @@ describe("OAuth Callback Route", () => {
 
             // TODO: When fixed, should reject javascript: URLs entirely
             // and redirect to safe default (/integrations)
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
         });
 
         it("SECURITY: should block data: URLs in returnUrl", async () => {
@@ -429,7 +441,7 @@ describe("OAuth Callback Route", () => {
             const response = await GET(request);
 
             // TODO: When fixed, should reject data: URLs entirely
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
         });
 
         it("correctly handles relative returnUrl paths", async () => {
@@ -444,7 +456,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.pathname).toBe("/dashboard");
             expect(location.searchParams.get("tab")).toBe("integrations");
         });
@@ -473,7 +485,7 @@ describe("OAuth Callback Route", () => {
 
             const response = await GET(request);
 
-            const location = new URL(response.headers.get("location")!);
+            const location = await getClientSideRedirectUrl(response);
             expect(location.searchParams.get("success")).toBe("connected");
             expect(location.searchParams.get("service")).toBe("notion");
         });
@@ -505,10 +517,10 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-            const location = response.headers.get("location")!;
+            const location = (await getClientSideRedirectUrl(response)).toString();
 
             // Should succeed (data is stored, not rendered here)
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
             // XSS payload should not appear unescaped in redirect URL
             expect(location).not.toContain("<script>");
         });
@@ -534,7 +546,7 @@ describe("OAuth Callback Route", () => {
 
             // Should complete without SQL error (parameterized queries protect us)
             const response = await GET(request);
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
 
             // Verify integration was created with the weird ID
             const integration = await db.query.integrations.findFirst({
@@ -564,7 +576,7 @@ describe("OAuth Callback Route", () => {
 
             // Should handle gracefully (either truncate or store as-is)
             const response = await GET(request);
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
         });
 
         it("handles unicode and special characters in provider responses", async () => {
@@ -586,7 +598,7 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
 
             // Verify unicode was stored correctly
             const integration = await db.query.integrations.findFirst({
@@ -615,7 +627,7 @@ describe("OAuth Callback Route", () => {
 
             // Should handle gracefully without crashing
             const response = await GET(request);
-            expect(response.status).toBe(307);
+            expect(response.status).toBe(200);
         });
     });
 
@@ -640,7 +652,7 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-            const location = response.headers.get("location")!;
+            const location = (await getClientSideRedirectUrl(response)).toString();
 
             // Token should NEVER appear in URL (would be visible in logs, history, referrer)
             expect(location).not.toContain(secretToken);
@@ -667,7 +679,7 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-            const location = response.headers.get("location")!;
+            const location = (await getClientSideRedirectUrl(response)).toString();
 
             // Even in error cases, tokens must not leak
             expect(location).not.toContain(secretToken);
@@ -691,7 +703,7 @@ describe("OAuth Callback Route", () => {
             );
 
             const response = await GET(request);
-            const location = response.headers.get("location")!;
+            const location = (await getClientSideRedirectUrl(response)).toString();
 
             // Auth code should not appear in error redirect
             expect(location).not.toContain(sensitiveCode);
