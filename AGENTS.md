@@ -4,7 +4,6 @@
 
 @.cursor/rules/heart-centered-ai-philosophy.mdc
 @.cursor/rules/trust-and-decision-making.mdc @.cursor/rules/personalities/carmenta.mdc
-@.cursor/rules/git-interaction.mdc
 @.cursor/rules/frontend/typescript-coding-standards.mdc
 @.cursor/rules/prompt-engineering.mdc
 
