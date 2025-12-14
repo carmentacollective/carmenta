@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useEffect, useRef } from "react";
-import { Sparkles, ChevronDown, Brain } from "lucide-react";
+import { ChevronDown, Brain } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -16,8 +16,9 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getModel } from "@/lib/models";
+import { getModel } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
+import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 
 /**
  * Selecting state messages - warm, varied, "we" language.
@@ -162,14 +163,17 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                             !hasSelected && "cursor-default"
                         )}
                     >
-                        {/* Icon: animated sparkles when selecting, static when selected */}
-                        <Sparkles
-                            className={cn(
-                                "mt-0.5 h-3.5 w-3.5 shrink-0",
+                        {/* Carmenta avatar: thinking when selecting, breathing when selected */}
+                        <CarmentaAvatar
+                            size="xs"
+                            state={
                                 isSelecting && !hasSelected
-                                    ? "animate-sparkle-pulse text-primary/70"
-                                    : "text-foreground/40"
-                            )}
+                                    ? "thinking"
+                                    : hasSelected
+                                      ? "speaking"
+                                      : "breathing"
+                            }
+                            className="mt-0.5"
                         />
 
                         <div className="min-w-0 flex-1">
