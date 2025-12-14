@@ -1,15 +1,16 @@
 /**
  * Integration tests for runConcierge using mocked AI SDK.
  *
- * These tests mock the `generateObject` function from the AI SDK to test
+ * These tests mock the `generateText` and `tool` functions from the AI SDK to test
  * the full concierge flow without making actual API calls.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { UIMessage } from "ai";
 
-// Mock generateObject before importing the module under test
+// Mock generateText and tool before importing the module under test
 vi.mock("ai", () => ({
-    generateObject: vi.fn(),
+    generateText: vi.fn(),
+    tool: vi.fn((config) => config), // Pass-through mock for tool definition
 }));
 
 // Mock fs/promises for rubric loading
@@ -48,7 +49,7 @@ vi.mock("@/lib/env", () => ({
     assertEnv: vi.fn(),
 }));
 
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { runConcierge, clearRubricCache, CONCIERGE_DEFAULTS } from "@/lib/concierge";
 
 describe("runConcierge integration", () => {
@@ -68,14 +69,22 @@ describe("runConcierge integration", () => {
     });
 
     it("returns parsed model selection from LLM response with reasoning config", async () => {
-        (generateObject as any).mockResolvedValueOnce({
-            object: {
-                modelId: "anthropic/claude-opus-4.5",
-                temperature: 0.6,
-                explanation: "Complex analysis needs deeper reasoning.",
-                reasoning: { enabled: true, effort: "high" },
-                title: "🧠 Analyze complex problem",
-            },
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-1",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "anthropic/claude-opus-4.5",
+                        temperature: 0.6,
+                        explanation: "Complex analysis needs deeper reasoning.",
+                        reasoning: { enabled: true, effort: "high" },
+                        title: "🧠 Analyze complex problem",
+                    },
+                },
+            ],
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -93,14 +102,23 @@ describe("runConcierge integration", () => {
     });
 
     it("selects Sonnet for typical coding tasks", async () => {
-        (generateObject as any).mockResolvedValueOnce({
-            object: {
-                modelId: "anthropic/claude-sonnet-4.5",
-                temperature: 0.4,
-                explanation: "Code review is well-suited for our balanced default.",
-                reasoning: { enabled: true, effort: "medium" },
-                title: "🔍 Code review",
-            },
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-2",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "anthropic/claude-sonnet-4.5",
+                        temperature: 0.4,
+                        explanation:
+                            "Code review is well-suited for our balanced default.",
+                        reasoning: { enabled: true, effort: "medium" },
+                        title: "🔍 Code review",
+                    },
+                },
+            ],
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -112,14 +130,22 @@ describe("runConcierge integration", () => {
     });
 
     it("selects Haiku for quick questions with reasoning disabled", async () => {
-        (generateObject as any).mockResolvedValueOnce({
-            object: {
-                modelId: "anthropic/claude-haiku-4.5",
-                temperature: 0.3,
-                explanation: "Simple factual lookup needs speed over depth.",
-                reasoning: { enabled: false },
-                title: "TypeScript explanation",
-            },
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-3",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "anthropic/claude-haiku-4.5",
+                        temperature: 0.3,
+                        explanation: "Simple factual lookup needs speed over depth.",
+                        reasoning: { enabled: false },
+                        title: "TypeScript explanation",
+                    },
+                },
+            ],
             usage: { promptTokens: 50, completionTokens: 30 },
             finishReason: "stop",
         } as any);
@@ -142,25 +168,29 @@ describe("runConcierge integration", () => {
         const result = await runConcierge(assistantOnlyMessages);
 
         expect(result).toEqual(CONCIERGE_DEFAULTS);
-        expect(generateObject).not.toHaveBeenCalled();
+        expect(generateText).not.toHaveBeenCalled();
     });
 
     it("returns defaults when LLM call fails", async () => {
-        (generateObject as any).mockRejectedValueOnce(new Error("API Error"));
+        (generateText as any).mockRejectedValueOnce(new Error("API Error"));
 
         const result = await runConcierge([createUserMessage("Test query")]);
 
         expect(result).toEqual(CONCIERGE_DEFAULTS);
     });
 
-    it("returns defaults and reports to Sentry when AI_NoObjectGeneratedError occurs", async () => {
-        // This error occurs when generateObject can't parse the LLM response
-        // Common causes: truncated output, model returns non-JSON, provider issues
-        const noObjectError = new Error(
-            "No object generated: could not parse the response."
+    it("returns defaults and reports to Sentry when tool call fails", async () => {
+        // This error occurs when generateText fails or returns no tool calls
+        // Common causes: API errors, network issues, model doesn't call the tool
+        const toolCallError = new Error(
+            "No tool call generated - model did not select routing"
         );
-        noObjectError.name = "AI_NoObjectGeneratedError";
-        (generateObject as any).mockRejectedValueOnce(noObjectError);
+        (generateText as any).mockResolvedValueOnce({
+            text: "Some response without tool calls",
+            toolCalls: [], // No tool calls generated
+            usage: { promptTokens: 100, completionTokens: 50 },
+            finishReason: "stop",
+        } as any);
 
         const Sentry = await import("@sentry/nextjs");
 
@@ -171,25 +201,34 @@ describe("runConcierge integration", () => {
 
         // Should report to Sentry for observability with error type tag
         expect(Sentry.captureException).toHaveBeenCalledWith(
-            noObjectError,
+            expect.any(Error),
             expect.objectContaining({
                 tags: expect.objectContaining({
                     component: "concierge",
-                    error_type: "AI_NoObjectGeneratedError",
+                    error_type: "Error",
                 }),
             })
         );
     });
 
     it("uses last user message when multiple messages exist", async () => {
-        (generateObject as any).mockResolvedValueOnce({
-            object: {
-                modelId: "anthropic/claude-sonnet-4.5",
-                temperature: 0.7,
-                explanation: "Creative writing benefits from higher temperature.",
-                reasoning: { enabled: false },
-                title: "🎨 Creative story",
-            },
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-4",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "anthropic/claude-sonnet-4.5",
+                        temperature: 0.7,
+                        explanation:
+                            "Creative writing benefits from higher temperature.",
+                        reasoning: { enabled: false },
+                        title: "🎨 Creative story",
+                    },
+                },
+            ],
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
@@ -210,40 +249,46 @@ describe("runConcierge integration", () => {
 
         await runConcierge(messages);
 
-        // Verify generateObject was called with the last user message wrapped in our prompt structure
-        expect(generateObject).toHaveBeenCalledTimes(1);
-        const call = (generateObject as any).mock.calls[0][0];
+        // Verify generateText was called with the last user message wrapped in our prompt structure
+        expect(generateText).toHaveBeenCalledTimes(1);
+        const call = (generateText as any).mock.calls[0][0];
         expect(call.prompt).toContain("<user-message>");
         expect(call.prompt).toContain("Write a creative story");
         expect(call.prompt).toContain("</user-message>");
         expect(call.prompt).toContain("Do NOT answer the message");
     });
 
-    it("calls generateObject with correct parameters including schema", async () => {
-        (generateObject as any).mockResolvedValueOnce({
-            object: {
-                modelId: "anthropic/claude-sonnet-4.5",
-                temperature: 0.5,
-                explanation: "Default choice.",
-                reasoning: { enabled: false },
-                title: "Test query",
-            },
+    it("calls generateText with correct parameters including tool", async () => {
+        (generateText as any).mockResolvedValueOnce({
+            text: "Tool call response",
+            toolCalls: [
+                {
+                    type: "tool-call",
+                    toolCallId: "test-5",
+                    toolName: "selectModelTool",
+                    input: {
+                        modelId: "anthropic/claude-sonnet-4.5",
+                        temperature: 0.5,
+                        explanation: "Default choice.",
+                        reasoning: { enabled: false },
+                        title: "Test query",
+                    },
+                },
+            ],
             usage: { promptTokens: 100, completionTokens: 50 },
             finishReason: "stop",
         } as any);
 
         await runConcierge([createUserMessage("Test")]);
 
-        expect(generateObject).toHaveBeenCalledWith(
+        expect(generateText).toHaveBeenCalledWith(
             expect.objectContaining({
                 temperature: 0.1, // Low temperature for consistent routing
-                schema: expect.any(Object), // Zod schema
-                schemaName: "ConciergeResponse",
+                tools: expect.objectContaining({
+                    selectModelTool: expect.any(Object),
+                }),
+                toolChoice: "required", // Force the model to call the tool
             })
         );
-
-        // Verify we DON'T set maxOutputTokens - let the SDK handle it
-        const callArgs = (generateObject as any).mock.calls[0][0];
-        expect(callArgs.maxOutputTokens).toBeUndefined();
     });
 });
