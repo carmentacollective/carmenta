@@ -2,7 +2,7 @@
  * Types for the advanced model selector UI.
  */
 
-import type { ModelId, ReasoningPresetId } from "@/lib/models";
+import type { ModelId, ReasoningPresetId } from "@/lib/model-config";
 
 /**
  * Reasoning presets that can be stored as overrides.
