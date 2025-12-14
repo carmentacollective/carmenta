@@ -54,6 +54,7 @@ import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
+import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
@@ -440,6 +441,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "fireflies":
+            return (
+                <FirefliesToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Fireflies request failed")}
                 />
             );
 
