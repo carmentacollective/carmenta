@@ -681,7 +681,9 @@
 
     /* Tables - Enhanced with rounded borders and hover effects */
     .holo-markdown table {
-        @apply w-full text-sm;
+        @apply w-full max-w-full text-sm;
+        display: block;
+        overflow-x: auto;
     }
 
     .holo-markdown thead {

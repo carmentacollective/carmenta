@@ -645,14 +645,20 @@ function AssistantMessage({
     // Extract file parts
     const fileParts = getFileParts(message);
 
-    // Show concierge when: selecting (isConciergeRunning) OR selected (concierge data exists)
-    const showConcierge = isLast && (isConciergeRunning || concierge);
-    const isSelectingModel = isConciergeRunning && !concierge;
+    // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
+    // This eliminates the visual gap between user submit and Carmenta appearing.
+    const showConcierge =
+        isLast && (isStreaming || isConciergeRunning || Boolean(concierge));
+
+    // We're in "selecting" state when streaming/running but don't have selection yet
+    const isSelectingModel = (isStreaming || isConciergeRunning) && !concierge;
+
+    // We've selected when concierge data exists
     const hasSelected = Boolean(concierge);
 
     // Show thinking indicator only when streaming AND no content yet AND this is the last message
     // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
-    const showThinking = isStreaming && !hasContent && isLast && !isConciergeRunning;
+    const showThinking = isStreaming && !hasContent && isLast && hasSelected;
 
     // Determine if we have LLM output to show (any of: reasoning, tools, files, content, or thinking)
     const hasLlmOutput =
@@ -684,7 +690,7 @@ function AssistantMessage({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         transition={{ duration: 0.3, ease: "easeOut" as const }}
-                        className="mt-2 overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                     >
                         {/* Reasoning - nested inside LLM zone */}
                         {reasoning && (
@@ -699,11 +705,12 @@ function AssistantMessage({
 
                         {/* Tool UIs - nested inside LLM zone */}
                         {toolParts.length > 0 && (
-                            <div className="border-b border-foreground/10">
+                            <div className="overflow-x-auto border-b border-foreground/10">
                                 {toolParts.map((part, idx) => (
                                     <div
                                         key={part.toolCallId}
                                         className={cn(
+                                            "max-w-full",
                                             idx > 0 && "border-t border-foreground/5"
                                         )}
                                     >
@@ -739,10 +746,10 @@ function AssistantMessage({
                         {/* Message content - primary output */}
                         {hasContent && (
                             <div className="group">
-                                <div className="px-4 py-4">
+                                <div className="px-4 pb-2 pt-4">
                                     <MarkdownRenderer content={content} />
                                 </div>
-                                <div className="px-4 pb-2">
+                                <div className="px-4 pb-1">
                                     <MessageActions
                                         content={content}
                                         isLast={isLast}
