@@ -1,7 +1,7 @@
 "use client";
 
-import { memo, useState, useEffect, useRef } from "react";
-import { Sparkles, ChevronDown, Brain } from "lucide-react";
+import { memo, useState } from "react";
+import { ChevronDown, Brain, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/tooltip";
 import { getModel } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
+import {
+    CarmentaAvatar,
+    type CarmentaAvatarState,
+} from "@/components/ui/carmenta-avatar";
 
 /**
  * Selecting state messages - warm, varied, "we" language.
@@ -94,6 +98,10 @@ interface ConciergeDisplayProps {
     reasoning?: ReasoningConfig;
     /** True when concierge is actively selecting (before decision) */
     isSelecting?: boolean;
+    /** True when celebrating selection (brief animation state) */
+    isCelebrating?: boolean;
+    /** Avatar animation state - controls CarmentaAvatar directly */
+    avatarState?: CarmentaAvatarState;
     /** Seed for deterministic message selection */
     messageSeed?: string;
     /** Additional CSS classes */
@@ -103,9 +111,10 @@ interface ConciergeDisplayProps {
 /**
  * Displays the Concierge's model selection process and decision.
  *
- * Two visual states:
- * - Selecting: Sparkles icon with shimmer, "Finding our approach..."
- * - Selected: Provider icon, model name, explanation (current behavior)
+ * Three visual states:
+ * - Selecting: Avatar thinking, "Finding our approach..." with spinner
+ * - Celebrating: Avatar burst animation, check bounces in (brief)
+ * - Selected: Provider icon, model name, explanation (expandable)
  *
  * The component animates smoothly between states as the concierge
  * makes its decision in real-time.
@@ -116,20 +125,13 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     explanation,
     reasoning,
     isSelecting = false,
+    isCelebrating = false,
+    avatarState = "idle",
     messageSeed = "default",
     className,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
     const hasSelected = Boolean(modelId);
-    const prevHasSelected = useRef(hasSelected);
-
-    // Track transition from selecting to selected for animation
-    useEffect(() => {
-        if (hasSelected && !prevHasSelected.current) {
-            // Just selected - could trigger celebration animation here
-        }
-        prevHasSelected.current = hasSelected;
-    }, [hasSelected]);
 
     const displayName = modelId ? getModelDisplayName(modelId) : null;
     const tempLabel = getTemperatureLabel(temperature);
@@ -137,17 +139,24 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     const modelConfig = modelId ? getModel(modelId) : null;
     const selectingMessage = getSelectingMessage(messageSeed);
 
-    // Don't render if neither selecting nor selected
-    if (!isSelecting && !hasSelected) {
+    // Determine which text state to show
+    const showSelecting = isSelecting && !hasSelected;
+    const showSelected = hasSelected;
+
+    // Don't render if we have nothing to show
+    if (!isSelecting && !hasSelected && !isCelebrating) {
         return null;
     }
 
     return (
         <TooltipProvider delayDuration={300}>
             <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                    duration: 0.3,
+                    ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
+                }}
                 className={cn("not-prose", className)}
             >
                 <Collapsible
@@ -155,51 +164,65 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                     onOpenChange={setIsOpen}
                     disabled={!hasSelected}
                 >
+                    {/* CONCIERGE ZONE - Carmenta's identity (Split Identity design) */}
                     <CollapsibleTrigger
                         className={cn(
-                            "group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                            hasSelected && "hover:bg-white/5",
-                            !hasSelected && "cursor-default"
+                            "group flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-300",
+                            "bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-transparent",
+                            "border-purple-500/20",
+                            hasSelected && "hover:border-purple-500/30",
+                            !hasSelected && "cursor-default",
+                            // Subtle glow during celebrating
+                            isCelebrating && "shadow-[0_0_20px_rgba(168,85,247,0.15)]"
                         )}
                     >
-                        {/* Icon: animated sparkles when selecting, static when selected */}
-                        <Sparkles
-                            className={cn(
-                                "mt-0.5 h-3.5 w-3.5 shrink-0",
-                                isSelecting && !hasSelected
-                                    ? "animate-sparkle-pulse text-primary/70"
-                                    : "text-foreground/40"
-                            )}
-                        />
+                        {/* Carmenta avatar - delegates animation to CarmentaAvatar */}
+                        <div className="relative shrink-0">
+                            <CarmentaAvatar size="xs" state={avatarState} />
+                        </div>
 
+                        {/* Status text with smooth transitions */}
                         <div className="min-w-0 flex-1">
                             <AnimatePresence mode="wait">
-                                {isSelecting && !hasSelected ? (
+                                {showSelecting ? (
                                     /* Selecting state */
-                                    <motion.span
+                                    <motion.div
                                         key="selecting"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="text-foreground/50"
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 8 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        className="flex items-center gap-2"
                                     >
-                                        {selectingMessage}
-                                    </motion.span>
-                                ) : hasSelected ? (
+                                        <span className="text-sm text-purple-700 dark:text-purple-300">
+                                            {selectingMessage}
+                                        </span>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500/70" />
+                                    </motion.div>
+                                ) : showSelected ? (
                                     /* Selected state */
-                                    <motion.span
+                                    <motion.div
                                         key="selected"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.2 }}
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{
+                                            duration: 0.25,
+                                            ease: "easeOut",
+                                            // Stagger children for a nice reveal
+                                            staggerChildren: 0.05,
+                                        }}
+                                        className="flex items-center gap-2"
                                     >
                                         {modelConfig?.description ? (
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <span className="cursor-help font-medium text-foreground/70">
+                                                    <motion.span
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        className="cursor-help text-sm font-medium text-foreground/80"
+                                                    >
                                                         {displayName}
-                                                    </span>
+                                                    </motion.span>
                                                 </TooltipTrigger>
                                                 <TooltipContent
                                                     side="top"
@@ -211,47 +234,79 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                                 </TooltipContent>
                                             </Tooltip>
                                         ) : (
-                                            <span className="font-medium text-foreground/70">
+                                            <motion.span
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="text-sm font-medium text-foreground/80"
+                                            >
                                                 {displayName}
-                                            </span>
+                                            </motion.span>
                                         )}
                                         {reasoningLabel && (
                                             <>
-                                                <span className="mx-1.5 text-foreground/30">
+                                                <motion.span
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: 0.05 }}
+                                                    className="text-foreground/30"
+                                                >
                                                     ·
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 text-foreground/50">
+                                                </motion.span>
+                                                <motion.span
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: 0.1 }}
+                                                    className="flex items-center gap-1 text-sm text-purple-600/70 dark:text-purple-400/70"
+                                                >
                                                     <Brain className="h-3 w-3" />
                                                     {reasoningLabel}
-                                                </span>
+                                                </motion.span>
                                             </>
                                         )}
-                                        {explanation && (
-                                            <>
-                                                <span className="mx-1.5 text-foreground/30">
-                                                    ·
-                                                </span>
-                                                <span className="text-foreground/50">
-                                                    {explanation}
-                                                </span>
-                                            </>
-                                        )}
-                                    </motion.span>
+                                        {/* Check icon with satisfying bounce */}
+                                        <motion.div
+                                            initial={{
+                                                opacity: 0,
+                                                scale: 0,
+                                                rotate: -45,
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+                                                scale: 1,
+                                                rotate: 0,
+                                            }}
+                                            transition={{
+                                                delay: 0.15,
+                                                type: "spring",
+                                                stiffness: 400,
+                                                damping: 15,
+                                            }}
+                                        >
+                                            <Check className="h-3.5 w-3.5 text-green-500/70" />
+                                        </motion.div>
+                                    </motion.div>
                                 ) : null}
                             </AnimatePresence>
                         </div>
 
                         {/* Chevron only when expandable (selected state) */}
                         {hasSelected && (
-                            <ChevronDown
-                                className={cn(
-                                    "mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform duration-200",
-                                    isOpen ? "rotate-180" : "rotate-0"
-                                )}
-                            />
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <ChevronDown
+                                    className={cn(
+                                        "h-4 w-4 shrink-0 text-foreground/30 transition-transform duration-200",
+                                        isOpen ? "rotate-180" : "rotate-0"
+                                    )}
+                                />
+                            </motion.div>
                         )}
                     </CollapsibleTrigger>
 
+                    {/* Expanded details panel */}
                     {hasSelected && (
                         <CollapsibleContent
                             className={cn(
@@ -260,49 +315,60 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 "data-[state=open]:animate-in data-[state=open]:fade-in-0"
                             )}
                         >
-                            <div className="ml-5 mt-1 space-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-foreground/40">Model</span>
-                                    <code className="font-mono text-foreground/60">
-                                        {modelId}
-                                    </code>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-foreground/40">
-                                        Temperature
-                                    </span>
-                                    <span className="text-foreground/60">
-                                        {temperature.toFixed(1)}{" "}
-                                        <span className="text-foreground/40">
-                                            ({tempLabel})
-                                        </span>
-                                    </span>
-                                </div>
-                                {reasoning && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-foreground/40">
-                                            Reasoning
-                                        </span>
-                                        <span className="text-foreground/60">
-                                            {reasoning.enabled ? (
-                                                <>
-                                                    {reasoning.effort ?? "medium"}
-                                                    {reasoning.maxTokens && (
-                                                        <span className="ml-1 text-foreground/40">
-                                                            (
-                                                            {reasoning.maxTokens.toLocaleString()}{" "}
-                                                            tokens)
-                                                        </span>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <span className="text-foreground/40">
-                                                    disabled
-                                                </span>
-                                            )}
-                                        </span>
+                            <div className="mx-4 mt-2 space-y-2 rounded-lg border border-purple-500/10 bg-purple-500/5 px-3 py-2 text-sm">
+                                {explanation && (
+                                    <div className="border-b border-purple-500/10 pb-2">
+                                        <p className="text-foreground/60">
+                                            {explanation}
+                                        </p>
                                     </div>
                                 )}
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-foreground/40">
+                                            Model
+                                        </span>
+                                        <code className="font-mono text-foreground/60">
+                                            {modelId}
+                                        </code>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-foreground/40">
+                                            Temperature
+                                        </span>
+                                        <span className="text-foreground/60">
+                                            {temperature.toFixed(1)}{" "}
+                                            <span className="text-foreground/40">
+                                                ({tempLabel})
+                                            </span>
+                                        </span>
+                                    </div>
+                                    {reasoning && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-foreground/40">
+                                                Reasoning
+                                            </span>
+                                            <span className="text-foreground/60">
+                                                {reasoning.enabled ? (
+                                                    <>
+                                                        {reasoning.effort ?? "medium"}
+                                                        {reasoning.maxTokens && (
+                                                            <span className="ml-1 text-foreground/40">
+                                                                (
+                                                                {reasoning.maxTokens.toLocaleString()}{" "}
+                                                                tokens)
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-foreground/40">
+                                                        disabled
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </CollapsibleContent>
                     )}

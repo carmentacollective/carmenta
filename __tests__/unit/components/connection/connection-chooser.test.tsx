@@ -131,7 +131,10 @@ describe("ConnectionChooser", () => {
         it("displays active connection title", () => {
             render(<ConnectionChooser />);
 
-            expect(screen.getByText("First Conversation")).toBeInTheDocument();
+            // Title is animated with words in separate spans (visual spacing via CSS gap)
+            // So we check that each word appears in the document
+            expect(screen.getByText("First")).toBeInTheDocument();
+            expect(screen.getByText("Conversation")).toBeInTheDocument();
         });
 
         it("shows new connection button", () => {
@@ -170,8 +173,9 @@ describe("ConnectionChooser", () => {
         it("opens dropdown when title is clicked", () => {
             render(<ConnectionChooser />);
 
-            const title = screen.getByText("First Conversation");
-            fireEvent.click(title);
+            // Title is animated with words in separate spans - click on a word (bubbles to button)
+            const titleWord = screen.getByText("First");
+            fireEvent.click(titleWord);
 
             expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
         });

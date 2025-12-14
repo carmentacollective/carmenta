@@ -132,8 +132,10 @@ describe("ConnectionChooser Integration", () => {
                 </ConnectionProvider>
             );
 
-            // 3. Verify connection appears in UI
-            expect(screen.getByText("My First Chat")).toBeInTheDocument();
+            // 3. Verify connection appears in UI (title words are split into animated spans)
+            expect(screen.getByText("My")).toBeInTheDocument();
+            expect(screen.getByText("First")).toBeInTheDocument();
+            expect(screen.getByText("Chat")).toBeInTheDocument();
 
             // 4. Open dropdown and verify both connections are listed
             fireEvent.click(screen.getByTitle("Search connections"));

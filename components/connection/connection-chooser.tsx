@@ -15,16 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import {
-    Plus,
-    Search,
-    X,
-    Clock,
-    Trash2,
-    Loader2,
-    ChevronDown,
-    ArrowRight,
-} from "lucide-react";
+import { Plus, Search, X, Clock, Trash2, Loader2, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -68,6 +59,39 @@ function RunningIndicator() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
         </span>
+    );
+}
+
+/**
+ * Animated title with Slide Cascade effect.
+ *
+ * Each word slides up from below with staggered timing when the title changes.
+ * Using key={title} forces Framer Motion to replay the animation on title change.
+ * Creates a moment of delight: "Carmenta understood what we're doing."
+ */
+function AnimatedTitle({ title }: { title: string }) {
+    const words = title.split(" ");
+
+    return (
+        <motion.span
+            key={title}
+            className="flex flex-wrap gap-1 text-sm text-foreground/70"
+        >
+            {words.map((word, i) => (
+                <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                        duration: 0.4,
+                        delay: i * 0.08,
+                        ease: [0.16, 1, 0.3, 1],
+                    }}
+                >
+                    {word}
+                </motion.span>
+            ))}
+        </motion.span>
     );
 }
 
@@ -448,9 +472,7 @@ export function ConnectionChooser() {
                                 className="btn-subtle-text flex items-center gap-2"
                             >
                                 {isStreaming && <RunningIndicator />}
-                                <span className="text-sm text-foreground/70">
-                                    {title}
-                                </span>
+                                <AnimatedTitle title={title} />
                             </button>
 
                             {/* Divider */}

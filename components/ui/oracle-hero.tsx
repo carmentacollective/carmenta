@@ -23,7 +23,7 @@ export function OracleHero() {
                     style={{
                         background:
                             "radial-gradient(circle, rgba(200,180,220,0.4) 0%, transparent 70%)",
-                        animation: "oracle-breathe 8s ease-in-out infinite",
+                        animation: "oracle-breathe 8.8s ease-in-out infinite",
                     }}
                 />
 
@@ -33,7 +33,7 @@ export function OracleHero() {
                     style={{
                         background:
                             "radial-gradient(circle, rgba(180,200,255,0.3) 0%, transparent 60%)",
-                        animation: "oracle-breathe 8s ease-in-out infinite 1s",
+                        animation: "oracle-breathe 8.8s ease-in-out infinite 1s",
                     }}
                 />
 
