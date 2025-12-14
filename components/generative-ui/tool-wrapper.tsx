@@ -196,11 +196,11 @@ export function ToolWrapper({
     // Render icon: either a Lucide component or an SVG logo
     const renderIcon = () => {
         if (typeof config.icon === "string") {
-            // Logo path
+            // Logo path (decorative - display name is adjacent)
             return (
                 <Image
                     src={config.icon}
-                    alt={config.displayName}
+                    alt=""
                     width={16}
                     height={16}
                     className="h-4 w-4 shrink-0"
