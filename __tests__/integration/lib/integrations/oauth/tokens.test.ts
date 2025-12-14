@@ -490,4 +490,90 @@ describe("OAuth Token Management", () => {
             expect(tokenSet?.expiresAt).toBeUndefined();
         });
     });
+
+    describe("Security: Encryption Integrity", () => {
+        it("rejects tampered encrypted credentials", async () => {
+            const originalCredentials = { token: "valid-token" };
+            const encrypted = encryptCredentials(originalCredentials);
+
+            // Tamper with the ciphertext (flip some bits in the middle)
+            const tamperedChars = encrypted.split("");
+            const midpoint = Math.floor(tamperedChars.length / 2);
+            tamperedChars[midpoint] = tamperedChars[midpoint] === "a" ? "b" : "a";
+            const tampered = tamperedChars.join("");
+
+            // AES-GCM should detect tampering and throw
+            expect(() => decryptCredentials(tampered)).toThrow();
+        });
+
+        it("rejects truncated encrypted credentials", async () => {
+            const originalCredentials = { token: "valid-token" };
+            const encrypted = encryptCredentials(originalCredentials);
+
+            // Truncate the ciphertext
+            const truncated = encrypted.slice(0, encrypted.length - 10);
+
+            // Should fail to decrypt
+            expect(() => decryptCredentials(truncated)).toThrow();
+        });
+
+        it("rejects completely invalid ciphertext", async () => {
+            const invalidCiphertexts = [
+                "",
+                "not-valid-base64!!!",
+                "aGVsbG8=", // valid base64 but not valid encrypted data
+                "{}",
+                '{"token": "plaintext"}', // JSON but not encrypted
+            ];
+
+            for (const invalid of invalidCiphertexts) {
+                expect(
+                    () => decryptCredentials(invalid),
+                    `Should reject: ${invalid}`
+                ).toThrow();
+            }
+        });
+
+        it("encryption produces different ciphertext for same plaintext", async () => {
+            // AES-GCM uses random nonce, so same input should produce different output
+            const credentials = { token: "same-token" };
+
+            const encrypted1 = encryptCredentials(credentials);
+            const encrypted2 = encryptCredentials(credentials);
+
+            // Same plaintext should produce different ciphertext (random IV)
+            expect(encrypted1).not.toBe(encrypted2);
+
+            // But both should decrypt to same value
+            const decrypted1 = decryptCredentials(encrypted1);
+            const decrypted2 = decryptCredentials(encrypted2);
+            expect(decrypted1).toEqual(decrypted2);
+        });
+
+        it("stored tokens are not visible in database as plaintext", async () => {
+            const sensitiveToken = "super-secret-token-12345";
+            const testTokens: OAuthTokenSet = {
+                accessToken: sensitiveToken,
+                tokenType: "Bearer",
+            };
+
+            await storeTokens(testUserEmail, testProvider, testTokens, {
+                identifier: "account-1",
+                displayName: "Test",
+            });
+
+            // Query raw database value
+            const integration = await db.query.integrations.findFirst({
+                where: and(
+                    eq(schema.integrations.userEmail, testUserEmail),
+                    eq(schema.integrations.service, testProvider)
+                ),
+            });
+
+            // Token should NOT be visible in any field
+            const rawJson = JSON.stringify(integration);
+            expect(rawJson).not.toContain(sensitiveToken);
+            expect(rawJson).not.toContain("super-secret");
+        });
+    });
 });
