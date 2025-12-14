@@ -4,7 +4,7 @@
  * Unlike the Braintrust eval, this script outputs verbose failure details
  * to help debug infrastructure issues vs quality issues.
  *
- * Run with: bunx tsx evals/diagnose.ts [--category=reasoning] [--query=web-02]
+ * Run with: pnpm tsx evals/diagnose.ts [--category=reasoning] [--query=web-02]
  */
 
 import { config } from "dotenv";

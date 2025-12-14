@@ -5,7 +5,7 @@
  * and scores responses on multiple dimensions.
  *
  * Usage:
- *   bunx braintrust eval evals/competitive.eval.ts
+ *   pnpm braintrust eval evals/competitive.eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local

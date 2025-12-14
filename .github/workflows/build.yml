@@ -15,7 +15,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: "1.3.4"
   PNPM_VERSION: "10"
 
 jobs:
@@ -33,11 +32,6 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: 🥟 Setup Bun (runtime)
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
@@ -130,11 +124,6 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: 🥟 Setup Bun (runtime)
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile

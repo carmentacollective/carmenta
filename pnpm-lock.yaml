@@ -86,9 +86,6 @@ importers:
       heart-centered-prompts:
         specifier: ^0.5.1
         version: 0.5.1
-      import-in-the-middle:
-        specifier: ^2.0.0
-        version: 2.0.0
       ky:
         specifier: ^1.14.1
         version: 1.14.1
@@ -125,9 +122,6 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
-      require-in-the-middle:
-        specifier: ^8.0.1
-        version: 8.0.1
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -159,9 +153,6 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@types/browser-image-compression':
-        specifier: ^1.0.13
-        version: 1.0.13
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.3
@@ -174,9 +165,6 @@ importers:
       '@types/remove-markdown':
         specifier: ^0.3.4
         version: 0.3.4
-      '@types/uuid':
-        specifier: ^11.0.0
-        version: 11.0.0
       '@vitejs/plugin-react':
         specifier: ^5.1.1
         version: 5.1.2(vite@7.2.7(@types/node@24.10.3)(jiti@1.21.7)(terser@5.44.1)(yaml@2.8.2))
@@ -2240,10 +2228,6 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
-  '@types/browser-image-compression@1.0.13':
-    resolution: {integrity: sha512-S97bT2hBW/RPwFrB/tg62alucHzMJKgVCDFCHpTQkK4hS7OW9k5vOG1mvGBkc36OZVh9nHEATtysmw9MSRH1vQ==}
-    deprecated: This is a stub types definition. browser-image-compression provides its own type definitions, so you do not need this installed.
-
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -2326,10 +2310,6 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
-
-  '@types/uuid@11.0.0':
-    resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
-    deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -7864,10 +7844,6 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
-  '@types/browser-image-compression@1.0.13':
-    dependencies:
-      browser-image-compression: 2.0.2
-
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -7961,10 +7937,6 @@ snapshots:
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
-
-  '@types/uuid@11.0.0':
-    dependencies:
-      uuid: 13.0.0
 
   '@types/ws@8.18.1':
     dependencies:
