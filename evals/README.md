@@ -24,19 +24,19 @@ handling.
 
 ```bash
 # Run routing evaluation
-bunx braintrust eval evals/routing.eval.ts
+pnpm dlx braintrust eval evals/routing.eval.ts
 
 # Run attachment evaluation
-bunx braintrust eval evals/attachments.eval.ts
+pnpm dlx braintrust eval evals/attachments.eval.ts
 
 # Run both
-bunx braintrust eval evals/routing.eval.ts evals/attachments.eval.ts
+pnpm dlx braintrust eval evals/routing.eval.ts evals/attachments.eval.ts
 
 # Watch mode - re-run on file changes
-bunx braintrust eval evals/routing.eval.ts --watch
+pnpm dlx braintrust eval evals/routing.eval.ts --watch
 
 # Just list the tests without running
-bunx braintrust eval evals/routing.eval.ts --list
+pnpm dlx braintrust eval evals/routing.eval.ts --list
 
 # View results online
 # After running, visit the URL shown in terminal or:
@@ -94,7 +94,7 @@ The Carmenta server isn't running or isn't reachable.
 npm run dev
 
 # Then run the evals
-bunx braintrust eval evals/routing.eval.ts
+pnpm dlx braintrust eval evals/routing.eval.ts
 ```
 
 ### "fetch failed" Errors (All Tests Fail)
@@ -148,7 +148,7 @@ To add new routing test cases:
 
 1. Edit `routing-test-data.ts`
 2. Add a new test case object to the `testData` array
-3. Run `bunx braintrust eval evals/routing.eval.ts`
+3. Run `pnpm dlx braintrust eval evals/routing.eval.ts`
 
 Example test case:
 

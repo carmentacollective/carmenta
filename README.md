@@ -129,7 +129,6 @@ Building in public.
 
 - Node.js 24+
 - pnpm 10.x+
-- Bun 1.x+ (for runtime)
 
 ### Setup
 

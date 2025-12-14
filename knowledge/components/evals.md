@@ -49,16 +49,16 @@ evals/                        # Top-level, first-class concern
 
 ```bash
 # Run routing evals
-bunx braintrust eval evals/routing.eval.ts
+pnpm dlx braintrust eval evals/routing.eval.ts
 
 # Run attachment evals
-bunx braintrust eval evals/attachments.eval.ts
+pnpm dlx braintrust eval evals/attachments.eval.ts
 
 # Watch mode - re-run on file changes
-bunx braintrust eval evals/routing.eval.ts --watch
+pnpm dlx braintrust eval evals/routing.eval.ts --watch
 
 # Run locally without sending to Braintrust
-BRAINTRUST_NO_SEND_LOGS=1 bunx braintrust eval evals/routing.eval.ts
+BRAINTRUST_NO_SEND_LOGS=1 pnpm dlx braintrust eval evals/routing.eval.ts
 ```
 
 Requires:
@@ -142,7 +142,7 @@ Add to GitHub Actions for automated evals on PR:
 
 ```yaml
 - name: Run evals
-  run: bunx braintrust eval evals/routing.eval.ts
+  run: pnpm dlx braintrust eval evals/routing.eval.ts
   env:
     BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
     TEST_USER_TOKEN: ${{ secrets.TEST_USER_TOKEN }}
