@@ -32,9 +32,33 @@ import { exchangeCodeForTokens, storeTokens } from "@/lib/integrations/oauth/tok
  *   cookies may not be recognized on server-side redirects (307)
  * - Client-side redirects preserve the browser's cookie context
  * - JavaScript window.location navigations are same-origin and include all cookies
+ *
+ * Security: Validates URL protocol and origin to prevent XSS attacks
  */
 function clientRedirect(url: string): NextResponse {
-    const safeUrl = url.replace(/"/g, "&quot;");
+    // Validate URL to prevent XSS attacks (e.g., javascript: protocol)
+    let validatedUrl: URL;
+    try {
+        validatedUrl = new URL(url);
+        // Only allow HTTP/HTTPS protocols
+        if (validatedUrl.protocol !== "http:" && validatedUrl.protocol !== "https:") {
+            throw new Error("Invalid protocol");
+        }
+    } catch (error) {
+        logger.error({ error, url }, "Invalid redirect URL");
+        Sentry.captureException(error, {
+            tags: { component: "oauth", route: "callback" },
+            extra: { url },
+        });
+        // Fallback to safe default
+        validatedUrl = new URL(
+            "/integrations",
+            env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+        );
+    }
+
+    // URL is validated, safe to interpolate
+    const safeUrl = validatedUrl.toString();
     const html = `<!DOCTYPE html>
 <html>
 <head>

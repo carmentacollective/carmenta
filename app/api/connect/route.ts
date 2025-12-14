@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import * as Sentry from "@sentry/nextjs";
 
 import { logger } from "@/lib/logger";
 
@@ -27,6 +28,7 @@ const requestSchema = z.object({
  */
 export async function POST(req: Request) {
     let service: string | undefined;
+    let userEmail: string | undefined;
 
     try {
         // Authenticate user
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
             );
         }
         // Normalize email to lowercase for consistent storage and lookups
-        const userEmail = rawEmail.toLowerCase();
+        userEmail = rawEmail.toLowerCase();
 
         // Validate request body
         const body = await req.json();
@@ -86,6 +88,11 @@ export async function POST(req: Request) {
             },
             "Failed to initiate OAuth flow"
         );
+
+        Sentry.captureException(error, {
+            tags: { component: "api", route: "connect", service },
+            extra: { userEmail },
+        });
 
         return NextResponse.json(
             { error: "We couldn't start that connection" },
