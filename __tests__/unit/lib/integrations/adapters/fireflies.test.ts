@@ -72,9 +72,8 @@ describe("FirefliesAdapter", () => {
             const help = adapter.getHelp();
 
             expect(help.commonOperations).toEqual([
+                "list_transcripts",
                 "search_transcripts",
-                "get_transcript",
-                "generate_summary",
             ]);
         });
 

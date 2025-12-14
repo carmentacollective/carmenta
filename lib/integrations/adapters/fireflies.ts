@@ -4,8 +4,7 @@
  * Meeting transcripts and AI insights via GraphQL API (no REST endpoints).
  *
  * ## Code-Relevant Details
- * - Search is CLIENT-SIDE filtering (fetches transcripts then filters) because
- *   Fireflies GraphQL doesn't have server-side search
+ * - Search uses `keyword` param with `scope: "all"` to search titles + full transcript
  * - action_items returns formatted string, not array
  * - Duration in seconds, not minutes
  */
@@ -64,16 +63,17 @@ export class FirefliesAdapter extends ServiceAdapter {
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,
-            description: "Search and analyze meeting transcripts",
-            commonOperations: [
-                "search_transcripts",
-                "get_transcript",
-                "generate_summary",
-            ],
+            description:
+                "Access meeting transcripts from Fireflies.ai. " +
+                "Use 'search_transcripts' for topic queries - searches titles AND full transcript text. " +
+                "Use 'list_transcripts' for recent meetings. Both return summaries - synthesize directly. " +
+                "Only use 'get_transcript' when you need exact quotes.",
+            commonOperations: ["list_transcripts", "search_transcripts"],
             operations: [
                 {
                     name: "list_transcripts",
-                    description: "List recent meeting transcripts from your account",
+                    description:
+                        "List recent meetings with AI summaries. Returns overview, action items, and keywords - use these directly without fetching each transcript.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -81,18 +81,18 @@ export class FirefliesAdapter extends ServiceAdapter {
                             type: "number",
                             required: false,
                             description:
-                                "Maximum number of transcripts to return (default: 20, max: 50)",
-                            example: "10",
+                                "Maximum results (default: 10). Keep low - summaries are included.",
+                            example: "5",
                         },
                     ],
                     returns:
-                        "List of meeting transcripts with metadata (ID, title, date, participants)",
-                    example: `list_transcripts({ limit: 10 })`,
+                        "Transcripts with summaries, action items, keywords. Use these summaries directly.",
+                    example: `list_transcripts({ limit: 5 })`,
                 },
                 {
                     name: "get_transcript",
                     description:
-                        "Get full details of a specific meeting transcript including content, speakers, and summary",
+                        "Get full word-for-word transcript. Only use when you need exact quotes or the summary isn't enough.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -103,31 +103,35 @@ export class FirefliesAdapter extends ServiceAdapter {
                         },
                     ],
                     returns:
-                        "Complete transcript details including sentences, speakers, timestamps, summary, and action items",
+                        "Complete transcript with every sentence, speaker names, and timestamps",
                 },
                 {
                     name: "search_transcripts",
-                    description: "Search meeting transcripts by keywords or phrases",
+                    description:
+                        "Primary action for finding conversations by topic. " +
+                        "Searches meeting titles AND full transcript text. Returns summaries - no need to fetch each transcript.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
                             name: "query",
                             type: "string",
                             required: true,
-                            description: "Search query to find in transcripts",
+                            description:
+                                "Keywords to find in meeting titles and transcript content",
                             example: "project timeline",
                         },
                         {
                             name: "limit",
                             type: "number",
                             required: false,
-                            description: "Maximum number of results (default: 20)",
-                            example: "10",
+                            description:
+                                "Maximum results (default: 10). Keep low - summaries included.",
+                            example: "5",
                         },
                     ],
                     returns:
-                        "List of transcripts matching the search query with relevance scores",
-                    example: `search_transcripts({ query: "project timeline", limit: 10 })`,
+                        "Matching transcripts with summaries. Use summaries directly.",
+                    example: `search_transcripts({ query: "budget review", limit: 5 })`,
                 },
                 {
                     name: "generate_summary",
@@ -298,7 +302,7 @@ export class FirefliesAdapter extends ServiceAdapter {
         params: unknown,
         apiKey: string
     ): Promise<MCPToolResponse> {
-        const { limit = 20 } = params as { limit?: number };
+        const { limit = 10 } = params as { limit?: number };
         const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // API max is 50
 
         const query = `
@@ -486,17 +490,17 @@ export class FirefliesAdapter extends ServiceAdapter {
         params: unknown,
         apiKey: string
     ): Promise<MCPToolResponse> {
-        const { query: searchQuery, limit = 20 } = params as {
+        const { query: searchQuery, limit = 10 } = params as {
             query: string;
             limit?: number;
         };
 
         const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // API max is 50
 
-        // Use GraphQL query to search transcripts by title or content
+        // Use server-side keyword search with scope: "all" (searches title + full transcript)
         const query = `
-            query SearchTranscripts($limit: Int!) {
-                transcripts(limit: $limit) {
+            query SearchTranscripts($keyword: String!, $limit: Int!, $scope: TranscriptsQueryScope) {
+                transcripts(keyword: $keyword, limit: $limit, scope: $scope) {
                     id
                     title
                     date
@@ -504,6 +508,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                     organizer_email
                     summary {
                         overview
+                        action_items
                         keywords
                     }
                 }
@@ -519,29 +524,19 @@ export class FirefliesAdapter extends ServiceAdapter {
                 organizer_email: string;
                 summary?: {
                     overview?: string;
+                    action_items?: string;
                     keywords?: string[];
                 };
             }>;
-        }>(query, apiKey, { limit: cappedLimit * 2 }); // Get more to filter
+        }>(query, apiKey, { keyword: searchQuery, limit: cappedLimit, scope: "all" });
 
-        // Filter transcripts by search query (simple text matching)
-        const searchLower = searchQuery.toLowerCase();
-        const filteredTranscripts = (data.transcripts || [])
-            .filter(
-                (t) =>
-                    t.title.toLowerCase().includes(searchLower) ||
-                    t.summary?.overview?.toLowerCase().includes(searchLower) ||
-                    t.summary?.keywords?.some((k) =>
-                        k.toLowerCase().includes(searchLower)
-                    )
-            )
-            .slice(0, cappedLimit);
+        const transcripts = data.transcripts || [];
 
         this.logInfo(
-            `[FIREFLIES ADAPTER] 🔍 Search for '${searchQuery}' found ${filteredTranscripts.length} results`
+            `[FIREFLIES ADAPTER] 🔍 Search for '${searchQuery}' found ${transcripts.length} results`
         );
 
-        if (filteredTranscripts.length === 0) {
+        if (transcripts.length === 0) {
             return this.createJSONResponse({
                 query: searchQuery,
                 totalCount: 0,
@@ -552,14 +547,15 @@ export class FirefliesAdapter extends ServiceAdapter {
 
         return this.createJSONResponse({
             query: searchQuery,
-            totalCount: filteredTranscripts.length,
-            results: filteredTranscripts.map((t) => ({
+            totalCount: transcripts.length,
+            results: transcripts.map((t) => ({
                 id: t.id,
                 title: t.title,
                 date: t.date,
                 duration: t.duration,
                 organizer: t.organizer_email,
                 overview: t.summary?.overview || "No summary available",
+                actionItems: t.summary?.action_items || "",
                 keywords: t.summary?.keywords || [],
             })),
         });

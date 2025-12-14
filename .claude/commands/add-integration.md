@@ -13,10 +13,51 @@ integration should feel delightful to use - tool results are intermediate data t
 processes; users care about the synthesized response, not raw API dumps.
 </objective>
 
+<critical-lessons>
+You're building high-value AI tools that return synthesis-ready data.
+
+What makes an excellent integration:
+
+- Returns rich content (summaries, full text) so the AI synthesizes in one call
+- Provides convenience methods for common AI workflows (search by topic, list recent)
+- Tool guidance steers AI toward efficient patterns
+- Default limit: 10 results with summaries included
+
+Design for the AI's workflow. Ask: "What does the AI need to answer a user's question in
+one call?" Return summaries/content inline so the AI synthesizes immediately.
+
+Before writing any code:
+
+1. Read the official API documentation thoroughly
+2. Look for search/filter capabilities - most APIs have them
+3. Check what fields are returned in list/search responses
+4. Identify which endpoints return rich data ready for synthesis
+5. Find the highest-value convenience methods
+
+Verify API capabilities against official docs. The Fireflies adapter originally did
+client-side search filtering because a code comment claimed the API lacked server-side
+search. The API actually had `keyword` and `scope` parameters for full-text search all
+along.
+
+Quality checklist:
+
+- Search queries full content (transcripts, bodies), not just titles/metadata
+- List/search results include enough data for AI to synthesize without fetching each
+  item
+- Tool guidance tells the AI which operations to prefer and why
+- Defaults are sensible (10 results with summaries included)
+- Answering "What did I discuss about X?" requires 1 call
+
+Compare your adapter against `lib/integrations/adapters/limitless.ts` - that's the gold
+standard for AI-first design. </critical-lessons>
+
 <definition-of-done>
 Use TodoWrite to track progress. An integration includes:
 
-- [ ] Service adapter with operations
+- [ ] API research completed (read official docs, verified search/filter capabilities,
+      identified high-value endpoints)
+- [ ] Service adapter with operations that return synthesis-ready data
+- [ ] Tool guidance that steers AI toward efficient patterns
 - [ ] Service registry entry
 - [ ] Adapter exported and registered in tools.ts
 - [ ] Tool configuration added to lib/tools/tool-config.ts

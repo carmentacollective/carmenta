@@ -54,8 +54,10 @@ import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
-import { LimitlessToolResult } from "@/components/generative-ui/limitless";
+import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
 import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
+import { GiphyToolResult } from "@/components/generative-ui/giphy";
+import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
@@ -419,18 +421,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
-        case "limitless":
-            return (
-                <LimitlessToolResult
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    action={(input?.action as string) ?? "unknown"}
-                    input={input}
-                    output={output}
-                    error={getToolError(part, output, "Limitless request failed")}
-                />
-            );
-
+        // Integration tools - keep alphabetical to minimize merge conflicts
         case "coinmarketcap":
             return (
                 <CoinMarketCapToolResult
@@ -440,6 +431,42 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "CoinMarketCap request failed")}
+                />
+            );
+
+        case "fireflies":
+            return (
+                <FirefliesToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Fireflies request failed")}
+                />
+            );
+
+        case "giphy":
+            return (
+                <GiphyToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "limitless":
+            return (
+                <LimitlessToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Limitless request failed")}
                 />
             );
 
