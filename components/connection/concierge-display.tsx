@@ -16,7 +16,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getModel } from "@/lib/models";
+import { getModel } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
 
 /**

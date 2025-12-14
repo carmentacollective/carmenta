@@ -292,21 +292,21 @@ describe("runConcierge integration", () => {
         );
     });
 
-    it("accepts Grok selection for integration tool queries", async () => {
-        // When concierge selects Grok for multi-step tool queries,
+    it("accepts GPT 5.2 selection for integration tool queries", async () => {
+        // When concierge selects GPT 5.2 for multi-step tool queries,
         // the result should be properly processed
         (generateText as any).mockResolvedValueOnce({
             text: "Tool call response",
             toolCalls: [
                 {
                     type: "tool-call",
-                    toolCallId: "test-grok",
+                    toolCallId: "test-gpt52",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "x-ai/grok-4.1-fast",
+                        modelId: "openai/gpt-5.2",
                         temperature: 0.5,
                         explanation:
-                            "Fetching and summarizing conversations needs multiple tool steps",
+                            "Fetching and summarizing conversations needs tool-calling accuracy",
                         reasoning: { enabled: false },
                         title: "📝 Yesterday's highlights",
                     },
@@ -322,24 +322,25 @@ describe("runConcierge integration", () => {
             ),
         ]);
 
-        expect(result.modelId).toBe("x-ai/grok-4.1-fast");
+        expect(result.modelId).toBe("openai/gpt-5.2");
         expect(result.temperature).toBe(0.5);
         expect(result.reasoning.enabled).toBe(false);
         expect(result.title).toBe("📝 Yesterday's highlights");
     });
 
-    it("accepts Grok selection for research queries needing multi-step tools", async () => {
+    it("accepts GPT 5.2 selection for research queries needing multi-step tools", async () => {
         (generateText as any).mockResolvedValueOnce({
             text: "Tool call response",
             toolCalls: [
                 {
                     type: "tool-call",
-                    toolCallId: "test-grok-research",
+                    toolCallId: "test-research",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "x-ai/grok-4.1-fast",
+                        modelId: "openai/gpt-5.2",
                         temperature: 0.5,
-                        explanation: "Research with analysis needs multi-step tools",
+                        explanation:
+                            "Research with analysis needs accurate tool calling",
                         reasoning: { enabled: true, effort: "medium" },
                         title: "⚛️ React 19 features",
                     },
@@ -355,10 +356,10 @@ describe("runConcierge integration", () => {
             ),
         ]);
 
-        expect(result.modelId).toBe("x-ai/grok-4.1-fast");
+        expect(result.modelId).toBe("openai/gpt-5.2");
         expect(result.reasoning.enabled).toBe(true);
         expect(result.reasoning.effort).toBe("medium");
-        // Grok uses effort-based reasoning, not token budget
+        // GPT 5.2 uses effort-based reasoning, not token budget
         expect(result.reasoning.maxTokens).toBeUndefined();
     });
 });

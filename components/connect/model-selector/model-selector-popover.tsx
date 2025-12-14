@@ -22,7 +22,7 @@ import {
     type ModelConfig,
     type SpeedQuality,
     type ModelTag,
-} from "@/lib/models";
+} from "@/lib/model-config";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { cn } from "@/lib/utils";
 import { SteppedSlider } from "./stepped-slider";
