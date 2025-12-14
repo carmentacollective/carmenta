@@ -9,6 +9,22 @@ import { env, assertEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 /**
+ * Type guard for Axios errors (from Nango SDK)
+ */
+function isAxiosError(error: unknown): error is {
+    response?: { data: unknown; status: number };
+    config?: { url: string };
+    isAxiosError: true;
+} {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "isAxiosError" in error &&
+        error.isAxiosError === true
+    );
+}
+
+/**
  * Request body schema
  */
 const requestSchema = z.object({
@@ -127,16 +143,9 @@ export async function POST(req: Request) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
         // Extract Axios error details for better debugging
-        const isAxiosError =
-            error && typeof error === "object" && "isAxiosError" in error;
-        const responseData =
-            isAxiosError && "response" in error ? (error as any).response?.data : null;
-        const responseStatus =
-            isAxiosError && "response" in error
-                ? (error as any).response?.status
-                : null;
-        const requestUrl =
-            isAxiosError && "config" in error ? (error as any).config?.url : null;
+        const responseData = isAxiosError(error) ? error.response?.data : null;
+        const responseStatus = isAxiosError(error) ? error.response?.status : null;
+        const requestUrl = isAxiosError(error) ? error.config?.url : null;
 
         logger.error(
             {
