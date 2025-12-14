@@ -162,9 +162,7 @@ describe("Connection Manager", () => {
                 const creds = await getCredentials(user.email, "notion");
 
                 expect(creds.type).toBe("oauth");
-                if (creds.type === "oauth") {
-                    expect(creds.connectionId).toBe(connectionId);
-                }
+                expect(creds.accessToken).toBeDefined();
             });
         });
 

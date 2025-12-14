@@ -36,6 +36,9 @@ export const env = createEnv({
         NANGO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Credential encryption for API key integrations
         ENCRYPTION_KEY: z.string().min(32).optional(),
+        // Notion OAuth credentials (for in-house OAuth)
+        NOTION_CLIENT_ID: z.string().min(1).optional(),
+        NOTION_CLIENT_SECRET: z.string().min(1).optional(),
         // Braintrust API key for evals and production tracing
         BRAINTRUST_API_KEY: z.string().min(1).optional(),
         // PostgreSQL connection string
@@ -73,6 +76,8 @@ export const env = createEnv({
         NANGO_SECRET_KEY: process.env.NANGO_SECRET_KEY,
         NANGO_WEBHOOK_SECRET: process.env.NANGO_WEBHOOK_SECRET,
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+        NOTION_CLIENT_ID: process.env.NOTION_CLIENT_ID,
+        NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
         DATABASE_URL: process.env.DATABASE_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

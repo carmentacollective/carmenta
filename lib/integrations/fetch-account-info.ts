@@ -36,12 +36,7 @@ export async function fetchAccountInfo(
             return await adapter.fetchAccountInfo(connectionId, userId);
         }
 
-        case "notion": {
-            const { NotionAdapter } =
-                await import("@/lib/integrations/adapters/notion");
-            const adapter = new NotionAdapter();
-            return await adapter.fetchAccountInfo(connectionId, userId);
-        }
+        // Notion: Account info extracted during OAuth flow, no runtime fetch needed
 
         case "dropbox": {
             const { DropboxAdapter } =

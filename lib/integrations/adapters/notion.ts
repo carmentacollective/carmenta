@@ -1,7 +1,7 @@
 /**
  * Notion Service Adapter
  *
- * Provides Notion workspace operations through the Notion API via Nango proxy
+ * Provides Notion workspace operations through direct Notion API calls
  *
  * ## API Version and Terminology Note
  *
@@ -37,16 +37,9 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
 
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
-
 // Constants for Notion API
-const NOTION_API_VERSION = "2025-09-03";
+const NOTION_API_BASE = "https://api.notion.com";
+const NOTION_API_VERSION = "2022-06-28";
 const MAX_PAGE_SIZE = 100;
 
 /**
@@ -80,105 +73,39 @@ export class NotionAdapter extends ServiceAdapter {
     serviceName = "notion";
     serviceDisplayName = "Notion";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
     /**
-     * Fetch the Notion workspace information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param userId - User ID (optional, only used for logging)
+     * Build headers for Notion API requests.
+     * Uses the access token from our in-house OAuth system.
      */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            // Get bot user info to determine workspace
-            const response = await httpClient
-                .get(`${nangoUrl}/proxy/v1/users/me`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
-                    },
-                })
-                .json<{
-                    id: string;
-                    name?: string;
-                    type: string;
-                    bot?: {
-                        owner: {
-                            type: string;
-                            workspace?: boolean;
-                        };
-                        workspace_name?: string;
-                    };
-                }>();
-
-            // For bot users, try to get workspace name
-            const workspaceName =
-                response.bot?.workspace_name || response.name || "Notion Workspace";
-            const workspaceId = response.id;
-
-            return {
-                identifier: workspaceId,
-                displayName: workspaceName,
-            };
-        } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to fetch Notion account info"
-            );
-            throw new ValidationError("Failed to fetch Notion account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Notion-Version": NOTION_API_VERSION,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
-     * Test the OAuth connection by making a live API request
-     * Called when user clicks "Test" button to verify credentials are working
+     * Test the OAuth connection by making a live API request.
+     * Called when user clicks "Test" button to verify credentials are working.
      *
-     * @param connectionId - Nango connection ID
-     * @param userId - User ID (optional, only used for logging)
+     * For OAuth connections, the accessToken is the actual credential to test.
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
             // Make a simple request to /users/me to verify connection
             await httpClient
-                .get(`${nangoUrl}/proxy/v1/users/me`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
-                    },
+                .get(`${NOTION_API_BASE}/v1/users/me`, {
+                    headers: this.buildHeaders(credentialOrToken),
                 })
                 .json<Record<string, unknown>>();
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify Notion connection"
-            );
+            logger.error({ error, userId }, "Failed to verify Notion connection");
             return {
                 success: false,
                 error:
@@ -690,20 +617,20 @@ export class NotionAdapter extends ServiceAdapter {
         }
 
         // Get user's Notion credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (!credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Notion. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/notion`
+                    `No access token found for Notion. Please reconnect at: ` +
+                        `${env.NEXT_PUBLIC_APP_URL}/integrations`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -715,37 +642,37 @@ export class NotionAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "search":
-                    return await this.handleSearch(params, connectionId);
+                    return await this.handleSearch(params, accessToken);
                 case "get_page":
-                    return await this.handleGetPage(params, connectionId);
+                    return await this.handleGetPage(params, accessToken);
                 case "create_page":
-                    return await this.handleCreatePage(params, connectionId);
+                    return await this.handleCreatePage(params, accessToken);
                 case "update_page":
-                    return await this.handleUpdatePage(params, connectionId);
+                    return await this.handleUpdatePage(params, accessToken);
                 case "list_databases":
-                    return await this.handleListDatabases(connectionId);
+                    return await this.handleListDatabases(accessToken);
                 case "get_database":
-                    return await this.handleGetDatabase(params, connectionId);
+                    return await this.handleGetDatabase(params, accessToken);
                 case "create_database":
-                    return await this.handleCreateDatabase(params, connectionId);
+                    return await this.handleCreateDatabase(params, accessToken);
                 case "update_database":
-                    return await this.handleUpdateDatabase(params, connectionId);
+                    return await this.handleUpdateDatabase(params, accessToken);
                 case "query_database":
-                    return await this.handleQueryDatabase(params, connectionId);
+                    return await this.handleQueryDatabase(params, accessToken);
                 case "create_database_entry":
-                    return await this.handleCreateDatabaseEntry(params, connectionId);
+                    return await this.handleCreateDatabaseEntry(params, accessToken);
                 case "append_blocks":
-                    return await this.handleAppendBlocks(params, connectionId);
+                    return await this.handleAppendBlocks(params, accessToken);
                 case "get_block":
-                    return await this.handleGetBlock(params, connectionId);
+                    return await this.handleGetBlock(params, accessToken);
                 case "update_block":
-                    return await this.handleUpdateBlock(params, connectionId);
+                    return await this.handleUpdateBlock(params, accessToken);
                 case "get_child_blocks":
-                    return await this.handleGetChildBlocks(params, connectionId);
+                    return await this.handleGetChildBlocks(params, accessToken);
                 case "create_comment":
-                    return await this.handleCreateComment(params, connectionId);
+                    return await this.handleCreateComment(params, accessToken);
                 case "list_users":
-                    return await this.handleListUsers(connectionId);
+                    return await this.handleListUsers(accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -768,7 +695,7 @@ export class NotionAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
+                    accessToken: accessToken ? "***" : undefined, // Redacted for security
                 }
             );
 
@@ -814,7 +741,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleSearch(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             query,
@@ -827,9 +754,6 @@ export class NotionAdapter extends ServiceAdapter {
             sort?: { direction: string; timestamp: string };
             page_size?: number;
         };
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         // Cap page_size between 1 and MAX_PAGE_SIZE (100)
         const cappedPageSize = Math.min(Math.max(1, page_size), MAX_PAGE_SIZE);
@@ -852,14 +776,8 @@ export class NotionAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .post(`${nangoUrl}/proxy/v1/search`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .post(`${NOTION_API_BASE}/v1/search`, {
+                headers: this.buildHeaders(accessToken),
                 json: requestBody,
             })
             .json<{
@@ -927,7 +845,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleGetPage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { page_id, include_blocks = true } = params as {
             page_id: string;
@@ -937,19 +855,11 @@ export class NotionAdapter extends ServiceAdapter {
         // Normalize the page_id to ensure it has hyphens
         const normalizedPageId = normalizeNotionId(page_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
             // Get page metadata
             const page = await httpClient
-                .get(`${nangoUrl}/proxy/v1/pages/${normalizedPageId}`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
-                    },
+                .get(`${NOTION_API_BASE}/v1/pages/${normalizedPageId}`, {
+                    headers: this.buildHeaders(accessToken),
                 })
                 .json<{
                     id: string;
@@ -962,13 +872,8 @@ export class NotionAdapter extends ServiceAdapter {
             let blocks: Array<Record<string, unknown>> = [];
             if (include_blocks !== false) {
                 const blocksResponse = await httpClient
-                    .get(`${nangoUrl}/proxy/v1/blocks/${normalizedPageId}/children`, {
-                        headers: {
-                            Authorization: `Bearer ${nangoSecretKey}`,
-                            "Connection-Id": connectionId,
-                            "Provider-Config-Key": "notion",
-                            "Notion-Version": NOTION_API_VERSION,
-                        },
+                    .get(`${NOTION_API_BASE}/v1/blocks/${normalizedPageId}/children`, {
+                        headers: this.buildHeaders(accessToken),
                     })
                     .json<{
                         results: Array<Record<string, unknown>>;
@@ -994,7 +899,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleCreatePage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { parent, properties, children } = params as {
             parent: Record<string, string | boolean>;
@@ -1046,9 +951,6 @@ export class NotionAdapter extends ServiceAdapter {
             );
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         logger.debug(
             {
                 action: "create_page",
@@ -1073,14 +975,8 @@ export class NotionAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .post(`${nangoUrl}/proxy/v1/pages`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .post(`${NOTION_API_BASE}/v1/pages`, {
+                headers: this.buildHeaders(accessToken),
                 json: requestBody,
             })
             .json<{
@@ -1099,7 +995,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleUpdatePage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { page_id, properties, archived } = params as {
             page_id: string;
@@ -1109,9 +1005,6 @@ export class NotionAdapter extends ServiceAdapter {
 
         // Normalize the page_id to ensure it has hyphens
         const normalizedPageId = normalizeNotionId(page_id);
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         const requestBody: {
             properties?: Record<string, unknown>;
@@ -1126,14 +1019,8 @@ export class NotionAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .patch(`${nangoUrl}/proxy/v1/pages/${normalizedPageId}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .patch(`${NOTION_API_BASE}/v1/pages/${normalizedPageId}`, {
+                headers: this.buildHeaders(accessToken),
                 json: requestBody,
             })
             .json<{
@@ -1150,19 +1037,10 @@ export class NotionAdapter extends ServiceAdapter {
         });
     }
 
-    private async handleListDatabases(connectionId: string): Promise<MCPToolResponse> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
+    private async handleListDatabases(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
-            .post(`${nangoUrl}/proxy/v1/search`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .post(`${NOTION_API_BASE}/v1/search`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     filter: {
                         property: "object",
@@ -1193,25 +1071,17 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleGetDatabase(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { database_id } = params as { database_id: string };
 
         // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
             const response = await httpClient
-                .get(`${nangoUrl}/proxy/v1/databases/${normalizedDatabaseId}`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
-                    },
+                .get(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
+                    headers: this.buildHeaders(accessToken),
                 })
                 .json<{
                     id: string;
@@ -1237,16 +1107,13 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleCreateDatabase(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { parent, title, properties } = params as {
             parent: Record<string, string>;
             title: Array<Record<string, unknown>>;
             properties: Record<string, unknown>;
         };
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         const requestBody = {
             parent,
@@ -1255,14 +1122,8 @@ export class NotionAdapter extends ServiceAdapter {
         };
 
         const response = await httpClient
-            .post(`${nangoUrl}/proxy/v1/databases`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .post(`${NOTION_API_BASE}/v1/databases`, {
+                headers: this.buildHeaders(accessToken),
                 json: requestBody,
             })
             .json<{
@@ -1283,7 +1144,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleUpdateDatabase(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { database_id, title, properties, icon, cover } = params as {
             database_id: string;
@@ -1303,9 +1164,6 @@ export class NotionAdapter extends ServiceAdapter {
         // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         // Build request body with only provided parameters
         const requestBody: {
             title?: Array<Record<string, unknown>>;
@@ -1321,12 +1179,9 @@ export class NotionAdapter extends ServiceAdapter {
 
         try {
             const response = await httpClient
-                .patch(`${nangoUrl}/proxy/v1/databases/${normalizedDatabaseId}`, {
+                .patch(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
                     headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
+                        ...this.buildHeaders(accessToken),
                         "Content-Type": "application/json",
                     },
                     json: requestBody,
@@ -1359,7 +1214,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleQueryDatabase(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             database_id,
@@ -1375,9 +1230,6 @@ export class NotionAdapter extends ServiceAdapter {
 
         // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         const cappedPageSize = Math.min(Math.max(1, page_size), MAX_PAGE_SIZE);
 
@@ -1405,15 +1257,12 @@ export class NotionAdapter extends ServiceAdapter {
             //   ✅ POST /v1/databases/{id}/query → Works perfectly
             // The GET /v1/databases/{id} response also doesn't include the documented
             // `data_sources` array. This indicates the new endpoints aren't live yet,
-            // likely due to staged rollout or Nango proxy not being updated.
+            // likely due to staged rollout.
             // TODO: Migrate to /v1/data_sources/{id}/query once it's actually available.
             const response = await httpClient
-                .post(`${nangoUrl}/proxy/v1/databases/${normalizedDatabaseId}/query`, {
+                .post(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}/query`, {
                     headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
+                        ...this.buildHeaders(accessToken),
                         "Content-Type": "application/json",
                     },
                     json: requestBody,
@@ -1444,7 +1293,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleCreateDatabaseEntry(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { database_id, properties, children } = params as {
             database_id: string;
@@ -1454,9 +1303,6 @@ export class NotionAdapter extends ServiceAdapter {
 
         // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         const requestBody: {
             parent: { database_id: string };
@@ -1473,12 +1319,9 @@ export class NotionAdapter extends ServiceAdapter {
 
         try {
             const response = await httpClient
-                .post(`${nangoUrl}/proxy/v1/pages`, {
+                .post(`${NOTION_API_BASE}/v1/pages`, {
                     headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
+                        ...this.buildHeaders(accessToken),
                         "Content-Type": "application/json",
                     },
                     json: requestBody,
@@ -1518,7 +1361,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleAppendBlocks(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { block_id, children } = params as {
             block_id: string;
@@ -1528,18 +1371,9 @@ export class NotionAdapter extends ServiceAdapter {
         // Normalize the block_id to ensure it has hyphens
         const normalizedBlockId = normalizeNotionId(block_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .patch(`${nangoUrl}/proxy/v1/blocks/${normalizedBlockId}/children`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .patch(`${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}/children`, {
+                headers: this.buildHeaders(accessToken),
                 json: { children },
             })
             .json<{
@@ -1555,24 +1389,16 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleGetBlock(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { block_id } = params as { block_id: string };
 
         // Normalize the block_id to ensure it has hyphens
         const normalizedBlockId = normalizeNotionId(block_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .get(`${nangoUrl}/proxy/v1/blocks/${normalizedBlockId}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                },
+            .get(`${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<Record<string, unknown>>();
 
@@ -1581,7 +1407,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleUpdateBlock(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { block_id, block_type, content, archived } = params as {
             block_id: string;
@@ -1592,9 +1418,6 @@ export class NotionAdapter extends ServiceAdapter {
 
         // Normalize the block_id to ensure it has hyphens
         const normalizedBlockId = normalizeNotionId(block_id);
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         // Build request body based on what's being updated
         const requestBody: Record<string, unknown> = {};
@@ -1623,12 +1446,9 @@ export class NotionAdapter extends ServiceAdapter {
 
         try {
             const response = await httpClient
-                .patch(`${nangoUrl}/proxy/v1/blocks/${normalizedBlockId}`, {
+                .patch(`${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}`, {
                     headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": NOTION_API_VERSION,
+                        ...this.buildHeaders(accessToken),
                         "Content-Type": "application/json",
                     },
                     json: requestBody,
@@ -1652,7 +1472,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleGetChildBlocks(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             block_id,
@@ -1667,26 +1487,18 @@ export class NotionAdapter extends ServiceAdapter {
         // Normalize the block_id to ensure it has hyphens
         const normalizedBlockId = normalizeNotionId(block_id);
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         // Cap page_size between 1 and MAX_PAGE_SIZE (100)
         const cappedPageSize = Math.min(Math.max(1, page_size), MAX_PAGE_SIZE);
 
         // Build URL with query parameters
-        let url = `${nangoUrl}/proxy/v1/blocks/${normalizedBlockId}/children?page_size=${cappedPageSize}`;
+        let url = `${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}/children?page_size=${cappedPageSize}`;
         if (start_cursor) {
             url += `&start_cursor=${encodeURIComponent(start_cursor)}`;
         }
 
         const response = await httpClient
             .get(url, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                },
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 results: Array<Record<string, unknown>>;
@@ -1705,7 +1517,7 @@ export class NotionAdapter extends ServiceAdapter {
 
     private async handleCreateComment(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { page_id, rich_text } = params as {
             page_id: string;
@@ -1713,18 +1525,9 @@ export class NotionAdapter extends ServiceAdapter {
         };
 
         const normalizedPageId = normalizeNotionId(page_id);
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .post(`${nangoUrl}/proxy/v1/comments`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                    "Content-Type": "application/json",
-                },
+            .post(`${NOTION_API_BASE}/v1/comments`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     parent: { page_id: normalizedPageId },
                     rich_text,
@@ -1743,18 +1546,10 @@ export class NotionAdapter extends ServiceAdapter {
         });
     }
 
-    private async handleListUsers(connectionId: string): Promise<MCPToolResponse> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
+    private async handleListUsers(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
-            .get(`${nangoUrl}/proxy/v1/users`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "notion",
-                    "Notion-Version": NOTION_API_VERSION,
-                },
+            .get(`${NOTION_API_BASE}/v1/users`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 results: Array<{
@@ -1819,20 +1614,20 @@ export class NotionAdapter extends ServiceAdapter {
         );
 
         // Get user credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (!credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Notion. Please reconnect at: ` +
+                    `No access token found for Notion. Please reconnect at: ` +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/notion`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -1840,20 +1635,12 @@ export class NotionAdapter extends ServiceAdapter {
             throw error;
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         // Build request options
         const requestOptions: {
             headers: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "notion",
-                "Notion-Version": NOTION_API_VERSION,
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         // Add body for POST/PATCH
@@ -1872,7 +1659,7 @@ export class NotionAdapter extends ServiceAdapter {
                 );
             }
 
-            const fullUrl = `${nangoUrl}/proxy${normalizedEndpoint}`;
+            const fullUrl = `${NOTION_API_BASE}${normalizedEndpoint}`;
 
             const response = await httpClient[
                 httpMethod as "get" | "post" | "patch" | "delete"

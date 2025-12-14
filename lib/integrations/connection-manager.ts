@@ -1,7 +1,7 @@
 /**
  * Connection Manager - Unified Credential Access Layer
  *
- * Single interface for both OAuth (via Nango) and API key credentials. Callers don't
+ * Single interface for both OAuth and API key credentials. Callers don't
  * need to know which auth method a service uses - just call getCredentials().
  *
  * Key change: Uses userEmail as the lookup key instead of userId (UUID).
@@ -9,9 +9,9 @@
  *
  * ## Two Credential Types
  *
- * **OAuth services** (Notion, ClickUp, etc.): Return connectionId for Nango proxy.
- * Nango handles token storage, refresh, and retries automatically. We never see
- * the actual access tokens - just pass connectionId to Nango API calls.
+ * **OAuth services** (Notion, Slack, etc.): Return accessToken for direct API calls.
+ * Tokens stored encrypted (AES-256-GCM). Auto-refresh before expiry via getAccessToken().
+ * Adapters use the token directly in Authorization header.
  *
  * **API key services** (Giphy, Fireflies, Limitless, etc.): Return decrypted credentials.
  * Keys stored encrypted with AES-256-GCM (@47ng/simple-e2ee). Decrypted on-demand,
@@ -27,31 +27,24 @@
  * ## Connection States
  *
  * - connected: Ready to use
- * - expired: OAuth token expired, needs reconnection (Nango refresh failed)
+ * - expired: OAuth token expired, needs reconnection
  * - error: Last operation failed, may need reconnection
  * - disconnected: User explicitly disconnected
  */
 
 import { db, schema } from "@/lib/db";
-import {
-    isOAuthService,
-    isApiKeyService,
-    getServiceById,
-    getNangoIntegrationKey,
-} from "./services";
+import { isOAuthService, isApiKeyService } from "./services";
 import { decryptCredentials, type Credentials } from "./encryption";
+import { getAccessToken as getOAuthAccessToken } from "./oauth";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { env } from "@/lib/env";
 import { eq, and, desc, asc } from "drizzle-orm";
-import { Nango } from "@nangohq/node";
-import * as Sentry from "@sentry/nextjs";
 
 export interface ConnectionCredentials {
     type: "oauth" | "api_key";
-    // For OAuth
-    connectionId?: string;
-    // For API keys
+    // For OAuth - access token ready for Authorization header
+    accessToken?: string;
+    // For API keys - decrypted credentials
     credentials?: Credentials;
     // Account information
     accountId: string;
@@ -61,7 +54,10 @@ export interface ConnectionCredentials {
 
 /**
  * Get credentials for a service connection.
- * Returns connectionId (OAuth) or decrypted credentials (API key).
+ * Returns accessToken (OAuth) or decrypted credentials (API key).
+ *
+ * For OAuth: Automatically handles token refresh if needed.
+ * For API keys: Returns decrypted credentials.
  *
  * @param userEmail - User's email address (primary lookup key)
  * @param service - Service identifier (e.g., "notion", "giphy")
@@ -160,21 +156,32 @@ export async function getCredentials(
         );
     }
 
-    // OAuth service - return connectionId
+    // OAuth service - get access token (handles refresh automatically)
     if (isOAuthService(service)) {
-        if (!integration.connectionId) {
+        try {
+            const accessToken = await getOAuthAccessToken(
+                userEmail,
+                service,
+                accountId ?? integration.accountId
+            );
+
+            return {
+                type: "oauth",
+                accessToken,
+                accountId: integration.accountId,
+                accountDisplayName: integration.accountDisplayName || undefined,
+                isDefault: integration.isDefault,
+            };
+        } catch (error) {
+            // Token retrieval/refresh failed
+            logger.error(
+                { service, userEmail, error },
+                "Failed to get OAuth access token"
+            );
             throw new ValidationError(
-                `OAuth service ${service} is missing connectionId for user ${userEmail}`
+                `Failed to get ${service} access token. Please reconnect the service.`
             );
         }
-
-        return {
-            type: "oauth",
-            connectionId: integration.connectionId,
-            accountId: integration.accountId,
-            accountDisplayName: integration.accountDisplayName || undefined,
-            isDefault: integration.isDefault,
-        };
     }
 
     // API key service - decrypt and return credentials
@@ -407,82 +414,22 @@ export async function disconnectService(
 
         const wasDefault = integration.isDefault;
 
-        if (isApiKeyService(service)) {
-            // For API key services, clear credentials immediately
-            await db
-                .update(schema.integrations)
-                .set({
-                    status: "disconnected",
-                    encryptedCredentials: null,
-                    errorMessage: null,
-                    isDefault: false,
-                    updatedAt: new Date(),
-                })
-                .where(
-                    and(
-                        eq(schema.integrations.userEmail, userEmail),
-                        eq(schema.integrations.service, service),
-                        eq(schema.integrations.accountId, accountId)
-                    )
-                );
-        } else {
-            // For OAuth services, delete from Nango and mark as disconnected
-            if (integration.connectionId && env.NANGO_SECRET_KEY) {
-                try {
-                    const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
+        // For both API key and OAuth services: hard delete from database
+        // (Per UX spec: disconnect = hard delete, not soft delete)
+        await db
+            .delete(schema.integrations)
+            .where(
+                and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service),
+                    eq(schema.integrations.accountId, accountId)
+                )
+            );
 
-                    // Delete the OAuth connection from Nango
-                    await nango.deleteConnection(
-                        getNangoIntegrationKey(service),
-                        integration.connectionId
-                    );
-
-                    logger.info(
-                        { userEmail, service, connectionId: integration.connectionId },
-                        "Deleted OAuth connection from Nango"
-                    );
-                } catch (error) {
-                    // Log but don't fail - connection might already be deleted from Nango
-                    logger.warn(
-                        {
-                            error,
-                            userEmail,
-                            service,
-                            connectionId: integration.connectionId,
-                        },
-                        "Failed to delete from Nango (continuing with DB update)"
-                    );
-
-                    Sentry.captureException(error, {
-                        tags: {
-                            component: "connection-manager",
-                            action: "nango_delete",
-                        },
-                        extra: {
-                            userEmail,
-                            service,
-                            connectionId: integration.connectionId,
-                        },
-                    });
-                }
-            }
-
-            await db
-                .update(schema.integrations)
-                .set({
-                    status: "disconnected",
-                    errorMessage: null,
-                    isDefault: false,
-                    updatedAt: new Date(),
-                })
-                .where(
-                    and(
-                        eq(schema.integrations.userEmail, userEmail),
-                        eq(schema.integrations.service, service),
-                        eq(schema.integrations.accountId, accountId)
-                    )
-                );
-        }
+        logger.info(
+            { userEmail, service, accountId },
+            "🗑️ Deleted integration connection"
+        );
 
         // Auto-promote oldest remaining account to default when default is disconnected.
         if (wasDefault) {
@@ -508,7 +455,7 @@ export async function disconnectService(
         }
     } else {
         // Disconnect all accounts for this service
-        const integrations = await db
+        const existingIntegrations = await db
             .select()
             .from(schema.integrations)
             .where(
@@ -518,87 +465,23 @@ export async function disconnectService(
                 )
             );
 
-        if (integrations.length === 0) {
+        if (existingIntegrations.length === 0) {
             throw new ValidationError(`${service} is not connected for this user`);
         }
 
-        if (isApiKeyService(service)) {
-            // For API key services, clear credentials immediately
-            await db
-                .update(schema.integrations)
-                .set({
-                    status: "disconnected",
-                    encryptedCredentials: null,
-                    errorMessage: null,
-                    updatedAt: new Date(),
-                })
-                .where(
-                    and(
-                        eq(schema.integrations.userEmail, userEmail),
-                        eq(schema.integrations.service, service)
-                    )
-                );
-        } else {
-            // For OAuth services, delete all connections from Nango and mark as disconnected
-            if (env.NANGO_SECRET_KEY) {
-                const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
+        // Hard delete all accounts for this service
+        await db
+            .delete(schema.integrations)
+            .where(
+                and(
+                    eq(schema.integrations.userEmail, userEmail),
+                    eq(schema.integrations.service, service)
+                )
+            );
 
-                // Delete each OAuth connection from Nango
-                for (const integration of integrations) {
-                    if (integration.connectionId) {
-                        try {
-                            await nango.deleteConnection(
-                                getNangoIntegrationKey(service),
-                                integration.connectionId
-                            );
-                            logger.info(
-                                {
-                                    userEmail,
-                                    service,
-                                    connectionId: integration.connectionId,
-                                },
-                                "Deleted OAuth connection from Nango"
-                            );
-                        } catch (error) {
-                            logger.warn(
-                                {
-                                    error,
-                                    userEmail,
-                                    service,
-                                    connectionId: integration.connectionId,
-                                },
-                                "Failed to delete from Nango (continuing)"
-                            );
-
-                            Sentry.captureException(error, {
-                                tags: {
-                                    component: "connection-manager",
-                                    action: "nango_delete_batch",
-                                },
-                                extra: {
-                                    userEmail,
-                                    service,
-                                    connectionId: integration.connectionId,
-                                },
-                            });
-                        }
-                    }
-                }
-            }
-
-            await db
-                .update(schema.integrations)
-                .set({
-                    status: "disconnected",
-                    errorMessage: null,
-                    updatedAt: new Date(),
-                })
-                .where(
-                    and(
-                        eq(schema.integrations.userEmail, userEmail),
-                        eq(schema.integrations.service, service)
-                    )
-                );
-        }
+        logger.info(
+            { userEmail, service, count: existingIntegrations.length },
+            "🗑️ Deleted all integration connections for service"
+        );
     }
 }

@@ -3,7 +3,8 @@
  *
  * All external integrations are defined here. This registry controls:
  * - Which services are available in the UI
- * - Auth method (OAuth via Nango or API key)
+ * - Auth method (OAuth or API key)
+ * - OAuth provider (in-house or legacy Nango)
  * - Rollout status (available, beta, internal)
  * - Service metadata (logos, descriptions, docs)
  */
@@ -34,7 +35,10 @@ export interface ServiceDefinition {
     /** Rollout status for progressive deployment */
     status: RolloutStatus;
 
-    /** Nango integration key for OAuth services */
+    /** In-house OAuth provider ID (for migrated services) */
+    oauthProviderId?: string;
+
+    /** @deprecated Legacy Nango integration key (being phased out) */
     nangoIntegrationKey?: string;
 
     /** URL where users can get an API key */
@@ -202,7 +206,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["search", "list_recordings", "get_transcript"],
     },
 
-    // Notion - OAuth (via Nango)
+    // Notion - OAuth (in-house)
     {
         id: "notion",
         name: "Notion",
@@ -210,7 +214,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/notion.svg",
         authMethod: "oauth",
         status: "beta",
-        nangoIntegrationKey: "notion",
+        oauthProviderId: "notion",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.notion.com/",
         capabilities: ["search_pages", "get_page", "create_page", "update_page"],
@@ -327,8 +331,25 @@ export function getAvailableServiceIds(includeInternal = true): string[] {
 }
 
 /**
- * Get Nango integration key for a service
- * Falls back to service ID if no explicit mapping defined.
+ * Check if a service uses in-house OAuth (vs legacy Nango)
+ */
+export function usesInHouseOAuth(serviceId: string): boolean {
+    const service = getServiceById(serviceId);
+    return !!service?.oauthProviderId;
+}
+
+/**
+ * Get in-house OAuth provider ID for a service
+ * Returns undefined if service doesn't use in-house OAuth.
+ */
+export function getOAuthProviderId(serviceId: string): string | undefined {
+    const service = getServiceById(serviceId);
+    return service?.oauthProviderId;
+}
+
+/**
+ * Get Nango integration key for a service (legacy)
+ * @deprecated Use getOAuthProviderId for migrated services
  */
 export function getNangoIntegrationKey(serviceId: string): string {
     const service = getServiceById(serviceId);
