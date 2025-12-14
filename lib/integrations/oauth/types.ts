@@ -49,6 +49,10 @@ export interface OAuthState {
 export interface OAuthProviderConfig {
     /** Unique identifier matching service registry */
     id: string;
+    /** OAuth client ID (from provider's developer console) */
+    clientId: string;
+    /** OAuth client secret (from provider's developer console) */
+    clientSecret: string;
     /** Provider's authorization URL */
     authorizationUrl: string;
     /** Provider's token exchange URL */

@@ -614,6 +614,59 @@ export const integrationHistoryRelations = relations(integrationHistory, ({ one 
 }));
 
 // ============================================================================
+// OAUTH STATE TABLE
+// ============================================================================
+
+/**
+ * OAuth state for CSRF protection during OAuth flows.
+ *
+ * When a user initiates OAuth:
+ * 1. Generate random state token
+ * 2. Store with user context (email, provider, return URL)
+ * 3. Include state in authorization URL
+ * 4. On callback, validate state matches and isn't expired
+ *
+ * States expire after 5 minutes to limit attack window.
+ */
+export const oauthStates = pgTable(
+    "oauth_states",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** Random CSRF token (URL-safe base64) */
+        state: varchar("state", { length: 255 }).notNull().unique(),
+
+        /** User initiating the OAuth flow */
+        userEmail: varchar("user_email", { length: 255 }).notNull(),
+
+        /** OAuth provider (notion, slack, etc.) */
+        provider: varchar("provider", { length: 100 }).notNull(),
+
+        /** Where to redirect after successful auth */
+        returnUrl: varchar("return_url", { length: 2048 }),
+
+        /** PKCE code verifier for providers that support it */
+        codeVerifier: varchar("code_verifier", { length: 255 }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** State expires after 5 minutes */
+        expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    },
+    (table) => [
+        /** Fast lookup by state token */
+        index("oauth_states_state_idx").on(table.state),
+        /** For cleanup job */
+        index("oauth_states_expires_at_idx").on(table.expiresAt),
+    ]
+);
+
+export type OAuthStateRecord = typeof oauthStates.$inferSelect;
+export type NewOAuthStateRecord = typeof oauthStates.$inferInsert;
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 

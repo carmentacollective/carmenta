@@ -26,15 +26,13 @@ vi.mock("@/lib/http-client", () => ({
 vi.mock("@/lib/env", () => ({
     env: {
         NEXT_PUBLIC_APP_URL: "https://carmenta.app",
-        NANGO_API_URL: "https://api.nango.dev",
-        NANGO_SECRET_KEY: "test-nango-key",
     },
 }));
 
 describe("NotionAdapter", () => {
     let adapter: NotionAdapter;
     const testUserEmail = "test@example.com";
-    const testConnectionId = "nango_test_connection_123";
+    const testAccessToken = "test_access_token_123";
 
     beforeEach(() => {
         adapter = new NotionAdapter();
@@ -87,51 +85,7 @@ describe("NotionAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches workspace information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    id: "workspace-123",
-                    name: "Test Workspace",
-                    type: "bot",
-                    bot: {
-                        owner: {
-                            type: "workspace",
-                            workspace: true,
-                        },
-                        workspace_name: "Test Workspace",
-                    },
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("workspace-123");
-            expect(result.displayName).toBe("Test Workspace");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/v1/users/me"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": "2025-09-03",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
+    // Note: fetchAccountInfo tests removed - account info now extracted during OAuth flow
 
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
@@ -157,7 +111,7 @@ describe("NotionAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: testAccessToken,
                 accountId: "workspace-123",
                 accountDisplayName: "Test Workspace",
                 isDefault: true,
@@ -224,7 +178,7 @@ describe("NotionAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: testAccessToken,
                 accountId: "workspace-123",
                 accountDisplayName: "Test Workspace",
                 isDefault: true,
@@ -261,12 +215,11 @@ describe("NotionAdapter", () => {
 
             expect(result.isError).toBe(false);
             expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/v1/search"),
+                expect.stringContaining("api.notion.com/v1/search"),
                 expect.objectContaining({
                     headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "notion",
-                        "Notion-Version": "2025-09-03",
+                        Authorization: `Bearer ${testAccessToken}`,
+                        "Notion-Version": "2022-06-28",
                     }),
                 })
             );
@@ -296,7 +249,7 @@ describe("NotionAdapter", () => {
 
             expect(result.isError).toBe(false);
             expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/v1/pages/page-123"),
+                expect.stringContaining("api.notion.com/v1/pages/page-123"),
                 expect.any(Object)
             );
         });
@@ -331,7 +284,7 @@ describe("NotionAdapter", () => {
             expect(result.isError).toBe(false);
             expect(httpClient.post).toHaveBeenCalledWith(
                 expect.stringContaining(
-                    "api.nango.dev/proxy/v1/databases/database-123/query"
+                    "api.notion.com/v1/databases/database-123/query"
                 ),
                 expect.any(Object)
             );
@@ -344,7 +297,7 @@ describe("NotionAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: testAccessToken,
                 accountId: "workspace-123",
                 accountDisplayName: "Test Workspace",
                 isDefault: true,

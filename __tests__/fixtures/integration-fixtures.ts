@@ -51,6 +51,7 @@ export interface TestIntegrationOptions {
     accountId?: string;
     isDefault?: boolean;
     apiKey?: string;
+    accessToken?: string; // For OAuth - direct access token
     connectionId?: string;
     accountDisplayName?: string;
     errorMessage?: string;
@@ -71,16 +72,21 @@ export async function createTestIntegration(options: TestIntegrationOptions) {
         accountId = "default",
         isDefault = false,
         apiKey,
+        accessToken,
         connectionId,
         accountDisplayName,
         errorMessage,
     } = options;
 
-    // Prepare encrypted credentials for API key type
-    let encryptedCredentials: string | null = null;
+    // Prepare encrypted credentials
+    let encryptedCreds: string | null = null;
     if (credentialType === "api_key" && apiKey) {
         const credentials: ApiKeyCredentials = { apiKey };
-        encryptedCredentials = encryptCredentials(credentials);
+        encryptedCreds = encryptCredentials(credentials);
+    } else if (credentialType === "oauth" && accessToken) {
+        // For OAuth integrations with in-house auth, encrypt the token
+        const credentials = { token: accessToken };
+        encryptedCreds = encryptCredentials(credentials);
     }
 
     const [integration] = await db
@@ -92,9 +98,11 @@ export async function createTestIntegration(options: TestIntegrationOptions) {
             status,
             accountId,
             isDefault,
-            encryptedCredentials,
+            encryptedCredentials: encryptedCreds,
             connectionId:
-                credentialType === "oauth" ? (connectionId ?? `nango_${uuid()}`) : null,
+                credentialType === "oauth" && !accessToken
+                    ? (connectionId ?? `nango_${uuid()}`)
+                    : null,
             accountDisplayName,
             errorMessage,
         })
@@ -132,22 +140,27 @@ export async function createTestApiKeyIntegration(
  *
  * @param userEmail - User's email address
  * @param service - Service ID (e.g., "notion", "clickup")
- * @param connectionId - Nango connection ID (defaults to generated)
+ * @param accessTokenOrConnectionId - Access token (for in-house OAuth) or Nango connection ID (legacy)
  * @param options - Additional options
  * @returns The created integration
  */
 export async function createTestOAuthIntegration(
     userEmail: string,
     service: string,
-    connectionId?: string,
+    accessTokenOrConnectionId?: string,
     options: Partial<TestIntegrationOptions> = {}
 ) {
+    // For in-house OAuth services (like notion), use accessToken
+    // For legacy Nango services, use connectionId
+    const isInHouseOAuth = service === "notion"; // Add more services as they migrate
+
     return createTestIntegration({
         ...options,
         userEmail,
         service,
         credentialType: "oauth",
-        connectionId,
+        accessToken: isInHouseOAuth ? accessTokenOrConnectionId : undefined,
+        connectionId: !isInHouseOAuth ? accessTokenOrConnectionId : undefined,
     });
 }
 
