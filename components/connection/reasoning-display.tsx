@@ -168,16 +168,26 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
 
     // Internal state for uncontrolled mode
     const [internalOpen, setInternalOpen] = useState(true);
-    const [hasAutoClosedOnce, setHasAutoClosedOnce] = useState(false);
     const [durationSeconds, setDurationSeconds] = useState(0);
 
     // Track timing with refs
     const startTimeRef = useRef<number | null>(null);
     const prevStreamingRef = useRef<boolean | null>(null);
+    // Track if user manually interacted - if so, don't auto-close on them
+    const userInteractedRef = useRef(false);
 
     // Use controlled or uncontrolled state
     const isOpen = controlledOpen ?? internalOpen;
-    const setIsOpen = onOpenChange ?? setInternalOpen;
+
+    // Wrap setIsOpen to track user interaction
+    const handleOpenChange = (open: boolean) => {
+        userInteractedRef.current = true;
+        if (onOpenChange) {
+            onOpenChange(open);
+        } else {
+            setInternalOpen(open);
+        }
+    };
 
     // Extract summary from content (memoized to avoid re-parsing on every render)
     const summary = useMemo(() => extractReasoningSummary(content), [content]);
@@ -202,17 +212,21 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
         prevStreamingRef.current = isNowStreaming;
     }, [isStreaming]);
 
-    // Auto-close after streaming ends (once only)
+    // Auto-close after streaming ends, but only if user hasn't manually interacted
     useEffect(() => {
-        if (!isStreaming && isOpen && !hasAutoClosedOnce) {
+        if (!isStreaming && isOpen && !userInteractedRef.current) {
             const timer = setTimeout(() => {
-                setIsOpen(false);
-                setHasAutoClosedOnce(true);
+                // Don't use handleOpenChange here - this is automatic, not user-initiated
+                if (onOpenChange) {
+                    onOpenChange(false);
+                } else {
+                    setInternalOpen(false);
+                }
             }, AUTO_CLOSE_DELAY_MS);
 
             return () => clearTimeout(timer);
         }
-    }, [isStreaming, isOpen, hasAutoClosedOnce, setIsOpen]);
+    }, [isStreaming, isOpen, onOpenChange]);
 
     // Build the status message
     const statusMessage = isStreaming
@@ -222,7 +236,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
     return (
         <Collapsible
             open={isOpen}
-            onOpenChange={setIsOpen}
+            onOpenChange={handleOpenChange}
             className={cn("not-prose", isNested && "bg-blue-500/[0.03]", className)}
         >
             <CollapsibleTrigger

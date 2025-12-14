@@ -34,6 +34,8 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
 
+import * as Sentry from "@sentry/nextjs";
+
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
@@ -472,10 +474,17 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
 
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
-            // Log error and show error state to make missing renderers obvious.
+            // Log error and report to Sentry so we catch missing renderers in production.
             logger.error(
                 { toolName, toolCallId: part.toolCallId },
                 `Missing tool renderer for "${toolName}". Add a case to ToolPartRenderer.`
+            );
+            Sentry.captureException(
+                new Error(`Missing tool renderer for "${toolName}"`),
+                {
+                    tags: { component: "ToolPartRenderer", toolName },
+                    extra: { toolCallId: part.toolCallId, input },
+                }
             );
 
             return (

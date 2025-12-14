@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * Design Lab: Chat Response Anatomy
+ *
+ * This is a reference implementation page for exploring design patterns before
+ * implementing them in production components. It serves as:
+ *
+ * 1. Living documentation of design decisions
+ * 2. Interactive prototype for stakeholder review
+ * 3. State machine exploration before implementation
+ *
+ * NOTE: This page is excluded from search indexing (robots.ts) and sitemap.
+ * It IS included in production builds intentionally - it's documentation that
+ * helps the team understand the design evolution.
+ *
+ * @see components/connection/holo-thread.tsx - Production implementation
+ * @see components/connection/concierge-display.tsx - Production concierge zone
+ */
+
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
