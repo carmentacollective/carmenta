@@ -5,13 +5,13 @@
  * Tests model selection, temperature, reasoning, and tool invocation.
  *
  * Usage:
- *   bunx braintrust eval evals/routing.eval.ts
+ *   pnpm braintrust eval evals/routing.eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
  *   - TEST_USER_TOKEN in .env.local (Clerk JWT for API auth)
  *   - Carmenta server running at http://localhost:3000
- *     Start with: npm run dev
+ *     Start with: pnpm dev
  */
 
 import "dotenv/config";
@@ -32,7 +32,7 @@ if (!JWT_TOKEN) {
     console.error("\n📋 Setup required:");
     console.error("   1. Get a long-lived JWT from Clerk Dashboard");
     console.error("   2. Add to .env.local: TEST_USER_TOKEN=<your_token>");
-    console.error("\n▶️  Then run: bunx braintrust eval evals/routing.eval.ts");
+    console.error("\n▶️  Then run: pnpm braintrust eval evals/routing.eval.ts");
     process.exit(1);
 }
 

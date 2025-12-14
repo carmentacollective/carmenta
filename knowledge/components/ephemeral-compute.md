@@ -46,7 +46,7 @@ dispatches it to ephemeral compute.
 │   ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
 │   │ Code        │  │ Scheduled   │  │ Powerhouse              │ │
 │   │ Execution   │  │ Agents      │  │                         │ │
-│   │             │  │             │  │ git, gh CLI, bun        │ │
+│   │             │  │             │  │ git, gh CLI, Node       │ │
 │   │ Python,     │  │ Email       │  │ Clone repos             │ │
 │   │ pandas,     │  │ processing, │  │ Create worktrees        │ │
 │   │ matplotlib  │  │ transcript  │  │ Write code, run tests   │ │
@@ -81,7 +81,7 @@ For users with scheduling enabled. Long-running background tasks.
 For admin users only (via Clerk). Full development environment.
 
 - Git and GitHub CLI access
-- Bun/Node toolchain
+- Node toolchain
 - Clone any repo the user has access to
 - Create worktrees, branches, PRs
 - Run tests and builds
@@ -156,7 +156,7 @@ Managed sandboxed execution as an API. Zero infrastructure.
 - $150/mo base cost + usage
 - Data leaves our infrastructure
 - Vendor dependency
-- May not support full dev toolchain (git, gh, bun) for powerhouse mode
+- May not support full dev toolchain (git, gh, Node) for powerhouse mode
 
 ### Current Status
 
@@ -166,7 +166,7 @@ Fly.io's flexibility.
 
 Research needed:
 
-- Can E2B run git, gh CLI, and bun in a sandbox?
+- Can E2B run git, gh CLI, and Node in a sandbox?
 - What's realistic E2B pricing at our expected usage?
 - What's the actual migration effort to set up Fly.io Machines?
 
@@ -184,7 +184,7 @@ For powerhouse mode:
 
 1. Admin user says "Create a PR that adds conversation export"
 2. Concierge detects powerhouse intent, checks permissions
-3. Carmenta spins up ephemeral machine with git/gh/bun
+3. Carmenta spins up ephemeral machine with git/gh/Node
 4. Machine: clones repo, creates worktree, Carmenta writes code
 5. Machine: runs tests, commits, pushes, creates PR
 6. Machine returns PR URL, auto-destroys

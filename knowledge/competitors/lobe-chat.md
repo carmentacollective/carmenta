@@ -124,7 +124,7 @@ promptfoo/{prompt-name}/
 - Gitmoji prefix convention for commits
 - Branch naming: `author/type/feature-name`
 - Pull request template usage
-- Monorepo with pnpm, bun for scripts, bunx for executables
+- Monorepo with pnpm
 - Comprehensive testing commands with file-path filtering
 
 **Model Runtime Documentation**
@@ -246,7 +246,6 @@ promptfoo/{prompt-name}/
 
 **Developer Experience**
 
-- Bun runtime (faster than Node)
 - pnpm monorepo
 - Husky for git hooks
 - Commitlint with gitmoji convention

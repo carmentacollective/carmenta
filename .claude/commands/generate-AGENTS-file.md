@@ -216,7 +216,7 @@ What does NOT belong in AGENTS.md:
 
 Exception: Project-specific tooling choices that prevent mistakes DO belong:
 
-- "Use pnpm not npm or bun" (prevents lockfile conflicts)
+- "Use pnpm not npm" (prevents lockfile conflicts)
 - "Use pnpm run db:generate not npx drizzle-kit generate" (project convention)
   </exclusion-list>
 
