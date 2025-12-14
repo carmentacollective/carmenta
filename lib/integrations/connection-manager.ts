@@ -33,11 +33,19 @@
  */
 
 import { db, schema } from "@/lib/db";
-import { isOAuthService, isApiKeyService } from "./services";
+import {
+    isOAuthService,
+    isApiKeyService,
+    getServiceById,
+    getNangoIntegrationKey,
+} from "./services";
 import { decryptCredentials, type Credentials } from "./encryption";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 import { eq, and, desc, asc } from "drizzle-orm";
+import { Nango } from "@nangohq/node";
+import * as Sentry from "@sentry/nextjs";
 
 export interface ConnectionCredentials {
     type: "oauth" | "api_key";
@@ -418,8 +426,47 @@ export async function disconnectService(
                     )
                 );
         } else {
-            // For OAuth services, mark as disconnected
-            // Actual Nango deletion happens through their API
+            // For OAuth services, delete from Nango and mark as disconnected
+            if (integration.connectionId && env.NANGO_SECRET_KEY) {
+                try {
+                    const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
+
+                    // Delete the OAuth connection from Nango
+                    await nango.deleteConnection(
+                        getNangoIntegrationKey(service),
+                        integration.connectionId
+                    );
+
+                    logger.info(
+                        { userEmail, service, connectionId: integration.connectionId },
+                        "Deleted OAuth connection from Nango"
+                    );
+                } catch (error) {
+                    // Log but don't fail - connection might already be deleted from Nango
+                    logger.warn(
+                        {
+                            error,
+                            userEmail,
+                            service,
+                            connectionId: integration.connectionId,
+                        },
+                        "Failed to delete from Nango (continuing with DB update)"
+                    );
+
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "connection-manager",
+                            action: "nango_delete",
+                        },
+                        extra: {
+                            userEmail,
+                            service,
+                            connectionId: integration.connectionId,
+                        },
+                    });
+                }
+            }
+
             await db
                 .update(schema.integrations)
                 .set({
@@ -492,7 +539,53 @@ export async function disconnectService(
                     )
                 );
         } else {
-            // For OAuth services, mark as disconnected
+            // For OAuth services, delete all connections from Nango and mark as disconnected
+            if (env.NANGO_SECRET_KEY) {
+                const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
+
+                // Delete each OAuth connection from Nango
+                for (const integration of integrations) {
+                    if (integration.connectionId) {
+                        try {
+                            await nango.deleteConnection(
+                                getNangoIntegrationKey(service),
+                                integration.connectionId
+                            );
+                            logger.info(
+                                {
+                                    userEmail,
+                                    service,
+                                    connectionId: integration.connectionId,
+                                },
+                                "Deleted OAuth connection from Nango"
+                            );
+                        } catch (error) {
+                            logger.warn(
+                                {
+                                    error,
+                                    userEmail,
+                                    service,
+                                    connectionId: integration.connectionId,
+                                },
+                                "Failed to delete from Nango (continuing)"
+                            );
+
+                            Sentry.captureException(error, {
+                                tags: {
+                                    component: "connection-manager",
+                                    action: "nango_delete_batch",
+                                },
+                                extra: {
+                                    userEmail,
+                                    service,
+                                    connectionId: integration.connectionId,
+                                },
+                            });
+                        }
+                    }
+                }
+            }
+
             await db
                 .update(schema.integrations)
                 .set({
