@@ -31,6 +31,7 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const isWebhookRoute = createRouteMatcher(["/api/webhooks(.*)"]);
+const isHealthRoute = createRouteMatcher(["/api/health"]);
 
 export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
@@ -38,6 +39,11 @@ export default clerkMiddleware(async (auth, req) => {
     // Authenticated users on landing page → redirect to connection
     if (userId && req.nextUrl.pathname === "/") {
         return Response.redirect(new URL("/connection", req.url));
+    }
+
+    // Health check is public (used by Render for zero-downtime deployments)
+    if (isHealthRoute(req)) {
+        return;
     }
 
     // Webhooks are public (use signature verification instead)

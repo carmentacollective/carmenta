@@ -12,7 +12,7 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export default function ConnectServicePage() {
     const params = useParams();
-    const service = params.service as string;
+    const service = (params?.service as string) ?? "";
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
