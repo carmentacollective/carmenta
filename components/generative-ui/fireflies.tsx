@@ -9,9 +9,10 @@
  */
 
 import { useState } from "react";
-import { Flame, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { ToolIcon } from "./tool-icon";
 
 interface FirefliesToolResultProps {
     toolCallId: string;
@@ -39,7 +40,7 @@ export function FirefliesToolResult({
     if (status === "running") {
         return (
             <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <Flame className="h-3.5 w-3.5 animate-pulse text-orange-500/70" />
+                <ToolIcon toolName="fireflies" className="h-3.5 w-3.5 animate-pulse" />
                 <span>{getStatusMessage(action, input, "running")}</span>
             </div>
         );
@@ -65,7 +66,7 @@ export function FirefliesToolResult({
                 onClick={() => setExpanded(!expanded)}
                 className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-                <Flame className="h-3.5 w-3.5 text-orange-500/70" />
+                <ToolIcon toolName="fireflies" className="h-3.5 w-3.5" />
                 <span className="flex-1">{summary}</span>
                 {output &&
                     (expanded ? (

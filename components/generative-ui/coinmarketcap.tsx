@@ -9,9 +9,10 @@
  */
 
 import { useState } from "react";
-import { TrendingUp, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { ToolIcon } from "./tool-icon";
 
 interface CoinMarketCapToolResultProps {
     toolCallId: string;
@@ -39,7 +40,10 @@ export function CoinMarketCapToolResult({
     if (status === "running") {
         return (
             <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5 animate-pulse" />
+                <ToolIcon
+                    toolName="coinmarketcap"
+                    className="h-3.5 w-3.5 animate-pulse"
+                />
                 <span>{getStatusMessage(action, input, "running")}</span>
             </div>
         );
@@ -65,7 +69,7 @@ export function CoinMarketCapToolResult({
                 onClick={() => setExpanded(!expanded)}
                 className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-                <TrendingUp className="h-3.5 w-3.5 text-primary/70" />
+                <ToolIcon toolName="coinmarketcap" className="h-3.5 w-3.5" />
                 <span className="flex-1">{summary}</span>
                 {output &&
                     (expanded ? (
