@@ -13,7 +13,7 @@
  *
  * ## What Gets Encrypted
  * - API keys for non-OAuth services (Fireflies, Limitless, Giphy, etc.)
- * - OAuth tokens are NOT encrypted here (Nango manages those)
+ * - OAuth access tokens and refresh tokens (stored via storeTokens())
  *
  * ## Key Format
  * Base64-encoded 32-byte value. Minimum 32 chars for backward compat, but 44 chars

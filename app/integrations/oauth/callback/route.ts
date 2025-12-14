@@ -181,7 +181,11 @@ export async function GET(request: NextRequest) {
         );
 
         // Redirect to success page or custom return URL
-        const successUrl = new URL(state.returnUrl ?? "/integrations", request.url);
+        // returnUrl from state token (user-controlled) must be relative path to prevent open redirect
+        const returnPath = state.returnUrl ?? "/integrations";
+        // Ensure returnUrl is a relative path (starts with /)
+        const safePath = returnPath.startsWith("/") ? returnPath : "/integrations";
+        const successUrl = new URL(safePath, request.url);
         successUrl.searchParams.set("success", "connected");
         successUrl.searchParams.set("service", state.provider);
         return clientRedirect(successUrl.toString());
