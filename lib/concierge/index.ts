@@ -336,11 +336,18 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     };
                 }
 
-                // Build the prompt with attachment context
-                let prompt = userQuery;
+                // Build the prompt with clear framing to prevent the model from answering directly
+                // Sandwich the user message between explicit instructions
+                let messageBlock = `<user-message>\n${userQuery}\n</user-message>`;
                 if (attachments.length > 0) {
-                    prompt = `[Attachments: ${attachments.join(", ")}]\n\n${userQuery}`;
+                    messageBlock = `<attachments>${attachments.join(", ")}</attachments>\n\n${messageBlock}`;
                 }
+
+                const prompt = `Analyze the following user message and select the optimal configuration (model, temperature, reasoning, title). Do NOT answer the message - only return the configuration JSON.
+
+${messageBlock}
+
+Return ONLY the JSON configuration. No markdown code fences, no explanations, no other text.`;
 
                 span.setAttribute("concierge_model", CONCIERGE_MODEL);
                 if (attachments.length > 0) {
@@ -360,10 +367,6 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 // Note: We don't set maxOutputTokens - let the SDK handle it automatically.
                 // Setting it too low (e.g., 250) causes AI_NoObjectGeneratedError when the
                 // schema requires more tokens than allocated.
-                //
-                // maxRetries: Automatically retries with validation error context when the model
-                // returns invalid JSON (like Pydantic/instructor pattern). Default is 2, we use 3
-                // for extra reliability with Haiku which occasionally returns non-JSON.
                 const result = await generateObject({
                     model: openrouter.chat(CONCIERGE_MODEL),
                     schema: conciergeSchema,
@@ -373,7 +376,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
-                    maxRetries: 3, // Auto-retry with validation errors (default: 2)
+                    maxRetries: 1, // Single retry on network/rate limit errors
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",

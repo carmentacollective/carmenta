@@ -34,7 +34,9 @@ ${rubricContent}
 </rubric>
 
 <instructions>
-Your response is a JSON object matching this exact schema:
+IMPORTANT: Return ONLY a JSON object. No markdown code fences, no explanations, no additional text. Just the raw JSON object.
+
+Your JSON response must match this exact schema:
 
 {
   "modelId": "provider/model-name",
@@ -47,7 +49,9 @@ Your response is a JSON object matching this exact schema:
   "title": "Short title (≤50 chars)"
 }
 
-Read the message and any attachments. Using the rubric, select the routing configuration:
+The user's message will be provided in a <user-message> tag. Any attachments will be listed in an <attachments> tag. Analyze the message and select the optimal configuration.
+
+**Important:** You are NOT answering the user's message - you are selecting the configuration (model, temperature, reasoning, title) that will be used to respond. Return only the configuration JSON.
 
 **modelId** - Which model will serve this moment best (OpenRouter format: provider/model-name)
 **temperature** - How much creative variation we want (0.0 = precise, 1.0 = creative)
@@ -117,10 +121,15 @@ The explanation should feel friendly and collaborative:
 - "Complex analysis ahead - we'll think through this carefully 🧠"
 
 Use "we" language. Add an emoji when it fits the energy. Keep it to one sentence.
+
+REMINDER: Your entire response must be ONLY the JSON object. Do not wrap it in markdown code fences. Do not add any text before or after the JSON. Just return the raw JSON object.
 </instructions>
 
 <examples>
-Query: "What's the capital of France?"
+<user-message>
+What's the capital of France?
+</user-message>
+
 {
   "modelId": "anthropic/claude-haiku-4.5",
   "temperature": 0.3,
@@ -129,7 +138,10 @@ Query: "What's the capital of France?"
   "title": "Capital of France"
 }
 
-Query: "Help me understand the tradeoffs between microservices and monoliths for my startup"
+<user-input>
+Help me understand the tradeoffs between microservices and monoliths for my startup
+</user-input>
+
 {
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.5,
@@ -138,7 +150,10 @@ Query: "Help me understand the tradeoffs between microservices and monoliths for
   "title": "🏗️ Microservices vs monolith tradeoffs"
 }
 
-Query: "Write a poem about the ocean"
+<user-input>
+Write a poem about the ocean
+</user-input>
+
 {
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.8,
@@ -147,7 +162,10 @@ Query: "Write a poem about the ocean"
   "title": "🌊 Ocean poem"
 }
 
-Query: "Explain how React hooks work"
+<user-input>
+Explain how React hooks work
+</user-input>
+
 {
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.4,
@@ -156,7 +174,10 @@ Query: "Explain how React hooks work"
   "title": "⚛️ Understanding React hooks"
 }
 
-Query: "Debug why my API calls are failing with 401 errors"
+<user-input>
+Debug why my API calls are failing with 401 errors
+</user-input>
+
 {
   "modelId": "anthropic/claude-sonnet-4.5",
   "temperature": 0.3,
@@ -165,7 +186,10 @@ Query: "Debug why my API calls are failing with 401 errors"
   "title": "🐛 Debug 401 API errors"
 }
 
-Query: "What should I make for dinner tonight?"
+<user-input>
+What should I make for dinner tonight?
+</user-input>
+
 {
   "modelId": "anthropic/claude-haiku-4.5",
   "temperature": 0.7,
