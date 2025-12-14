@@ -420,15 +420,16 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
-        case "limitless":
+        // Integration tools - keep alphabetical to minimize merge conflicts
+        case "fireflies":
             return (
-                <LimitlessToolResult
+                <FirefliesToolResult
                     toolCallId={part.toolCallId}
                     status={status}
                     action={(input?.action as string) ?? "unknown"}
                     input={input}
                     output={output}
-                    error={getToolError(part, output, "Limitless request failed")}
+                    error={getToolError(part, output, "Fireflies request failed")}
                 />
             );
 
@@ -444,15 +445,15 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 />
             );
 
-        case "fireflies":
+        case "limitless":
             return (
-                <FirefliesToolResult
+                <LimitlessToolResult
                     toolCallId={part.toolCallId}
                     status={status}
                     action={(input?.action as string) ?? "unknown"}
                     input={input}
                     output={output}
-                    error={getToolError(part, output, "Fireflies request failed")}
+                    error={getToolError(part, output, "Limitless request failed")}
                 />
             );
 
