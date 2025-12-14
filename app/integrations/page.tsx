@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plug, Sparkles, CheckCircle2, XCircle, X } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
@@ -34,7 +34,11 @@ interface IntegrationItem {
     accountDisplayName?: string | null;
 }
 
-export default function IntegrationsPage() {
+/**
+ * IntegrationsContent - Component that uses useSearchParams()
+ * Extracted to allow Suspense boundary wrapping
+ */
+function IntegrationsContent() {
     const searchParams = useSearchParams();
     const [connected, setConnected] = useState<ConnectedService[]>([]);
     const [available, setAvailable] = useState<ServiceDefinition[]>([]);
@@ -424,5 +428,38 @@ export default function IntegrationsPage() {
                 onSubmit={handleConnectSubmit}
             />
         </div>
+    );
+}
+
+/**
+ * IntegrationsPage - Wrapper with Suspense boundary
+ * Required for useSearchParams() in Next.js 16
+ */
+export default function IntegrationsPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="relative min-h-screen">
+                    <HolographicBackground />
+                    <div className="relative z-10">
+                        <SiteHeader bordered />
+                        <main className="py-12">
+                            <div className="mx-auto max-w-3xl px-6">
+                                <div className="flex items-center justify-center py-24">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                                        <p className="text-foreground/60">
+                                            Loading integrations...
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            }
+        >
+            <IntegrationsContent />
+        </Suspense>
     );
 }
