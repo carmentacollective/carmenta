@@ -462,11 +462,11 @@ const REASONING_COMPLETE_MESSAGES = [
     "Thought it through",
     "Worked through it",
     "Figured it out",
-    "Got there",
+    "Found clarity",
     "All sorted",
-    "Clarity",
     "Considered carefully",
     "Explored this",
+    "Understood",
 ];
 
 /**
@@ -475,7 +475,7 @@ const REASONING_COMPLETE_MESSAGES = [
 const REASONING_COMPLETE_DELIGHT = [
     "Thought that through ✨",
     "Figured it out 💡",
-    "Got there 🧠",
+    "Found clarity 🧠",
     "All sorted 💭",
 ];
 
