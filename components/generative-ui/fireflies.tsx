@@ -61,6 +61,7 @@ export function FirefliesToolResult({
     return (
         <div className="py-1">
             <button
+                type="button"
                 onClick={() => setExpanded(!expanded)}
                 className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
