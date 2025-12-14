@@ -1,90 +1,59 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import type { Components } from "react-markdown";
+import { marked } from "marked";
 
 import { cn } from "@/lib/utils";
-import { CodeBlock } from "@/components/ui/code-block";
 
-/**
- * Custom table component that wraps tables in a scrollable container
- * with styled scrollbars for both horizontal and vertical overflow.
- */
-const TableWrapper = memo(({ children }: { children?: React.ReactNode }) => (
-    <div className="scrollbar-holo my-3 overflow-x-auto rounded-lg border border-foreground/10">
-        <table
-            style={{
-                borderCollapse: "separate",
-                borderSpacing: 0,
-            }}
-        >
-            {children}
-        </table>
-    </div>
-));
-TableWrapper.displayName = "TableWrapper";
+// Configure marked for GitHub Flavored Markdown
+marked.use({
+    gfm: true,
+    breaks: false,
+});
 
 interface MarkdownRendererProps {
     /** The markdown content to render */
     content: string;
     /** Optional CSS class name for the container */
     className?: string;
-    /** Customize markdown component rendering */
-    components?: Partial<Components>;
-    /** Inline mode - renders p as span, removes margins for compact display */
+    /** Inline mode - removes paragraph margins for compact display */
     inline?: boolean;
 }
 
 /**
  * MarkdownRenderer - Reusable markdown rendering component
  *
- * Features:
- * - GitHub Flavored Markdown (tables, strikethrough, task lists)
- * - Memoized to prevent re-renders during streaming
- * - Custom code block and table styling with scrollable containers
- * - Inline mode for compact rendering (search snippets, tool results)
- * - Full integration with Carmenta's visual language
+ * Uses Marked for fast, synchronous markdown parsing.
+ * Supports GitHub Flavored Markdown (tables, strikethrough, task lists).
  *
- * Based on research from assistant-ui, Vercel AI Chatbot, and LobeChat patterns.
- *
- * Usage:
- * ```tsx
- * <MarkdownRenderer content={markdownText} />
- * <MarkdownRenderer content={snippet} inline /> // For tool results
- * ```
+ * Note: This is a simplified version that renders HTML directly.
+ * Custom code block styling is handled via CSS in .holo-markdown.
  */
 export const MarkdownRenderer = memo(
-    ({ content, className, components, inline = false }: MarkdownRendererProps) => {
-        const defaultComponents = useMemo(
-            (): Partial<Components> => ({
-                code: CodeBlock,
-                table: TableWrapper,
-                ...(inline ? { p: ({ children }) => <span>{children}</span> } : {}),
-            }),
-            [inline]
-        );
+    ({ content, className, inline = false }: MarkdownRendererProps) => {
+        const html = useMemo(() => {
+            // marked.parse() is synchronous when no async extensions are used
+            const rendered = marked.parse(content) as string;
+
+            // For inline mode, strip wrapping <p> tags for compact display
+            if (inline) {
+                return rendered.replace(/^<p>/, "").replace(/<\/p>\n?$/, "");
+            }
+
+            return rendered;
+        }, [content, inline]);
 
         return (
-            <div className={cn("holo-markdown", inline && "[&>*]:my-0", className)}>
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        ...defaultComponents,
-                        ...components,
-                    }}
-                >
-                    {content}
-                </ReactMarkdown>
-            </div>
+            <div
+                className={cn("holo-markdown", inline && "[&>*]:my-0", className)}
+                dangerouslySetInnerHTML={{ __html: html }}
+            />
         );
     },
     (prev, next) =>
         prev.content === next.content &&
         prev.className === next.className &&
-        prev.inline === next.inline &&
-        prev.components === next.components
+        prev.inline === next.inline
 );
 
 MarkdownRenderer.displayName = "MarkdownRenderer";
