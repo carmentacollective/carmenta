@@ -19,7 +19,7 @@ product.
 
 ## The Decision
 
-**Clerk + Supabase + Nango Architecture**
+**Clerk + Supabase Architecture**
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -30,13 +30,13 @@ product.
 │    - User sign-up/sign-in                   │
 │    - Session management                     │
 │    - User profiles                          │
-│    - Status: Already integrated ✅          │
+│    - Status: Integrated ✅                  │
 │                                             │
 │ 2. Database:        Supabase Postgres       │
 │    - Conversations & messages               │
 │    - Memory (profile, facts, preferences)   │
 │    - Knowledge base (ltree + FTS)           │
-│    - Service connections (Nango metadata)   │
+│    - Encrypted credentials (OAuth + API)    │
 │    - File metadata                          │
 │    - ORM: Drizzle                           │
 │    - Admin: Supabase Studio                 │
@@ -47,10 +47,11 @@ product.
 │    - CDN delivery (Cloudflare)              │
 │    - Image transformations (on-the-fly)     │
 │                                             │
-│ 4. Service OAuth:   Nango                   │
-│    - OAuth flows (200+ services)            │
-│    - Token storage & refresh                │
-│    - API proxying                           │
+│ 4. Service OAuth:   In-House                │
+│    - Custom OAuth flows per provider        │
+│    - Token storage (encrypted in Postgres)  │
+│    - Automatic token refresh                │
+│    - Webhook disconnect handlers            │
 │    - Multi-account support                  │
 │                                             │
 └─────────────────────────────────────────────┘
@@ -146,59 +147,50 @@ Full capabilities:
 **When to migrate**: If bandwidth costs spike (>200GB/month), consider R2. Until then,
 simplicity wins.
 
-### Why Nango for Service OAuth
+### Service OAuth: In-House Implementation
 
-**Decision**: Nango for third-party service connections
+**Decision**: Build OAuth in-house, store credentials in our Postgres database
 
-**Why**:
+**Previous approach**: We initially used Nango for third-party OAuth. While Nango
+promised simplified OAuth management, we encountered critical limitations:
 
-- ✅ **Built for service integrations** (200+ pre-built: Gmail, Notion, Slack, etc)
-- ✅ **Handles OAuth flows** - we don't build them
-- ✅ **Token refresh automatic** - invisible to us
-- ✅ **API proxying** - unified interface across providers
-- ✅ **Multi-account support** built-in (work + personal Gmail)
-- ✅ **Proven by mcp-hubby** (production implementation we can reference)
+- **Slack user_scope bug**: Nango's Slack integration uses `scope` parameter (bot
+  tokens) instead of `user_scope` parameter (user tokens). This meant users couldn't
+  connect Slack to act as themselves - only as a bot. GitHub issues #3560 and #3561
+  confirm this is a known, unresolved problem.
+- **Limited OAuth URL control**: No way to customize authorization URL parameters for
+  provider-specific requirements.
+- **Ugly modal UI**: Nango's Connect UI didn't match Carmenta's design quality.
+- **External dependency for critical path**: OAuth failures blocked users from core
+  functionality, and we couldn't debug or fix Nango issues ourselves.
 
-**Integration Pattern** (from mcp-hubby):
+**Why in-house is better for us**:
 
-```typescript
-// 1. User initiates OAuth
-const authUrl = await nango.auth({
-  providerConfigKey: "google-mail",
-  connectionId: `${userEmail}-gmail`,
-});
+- ✅ **Full control over OAuth URLs** - handle provider quirks (Slack user_scope, etc.)
+- ✅ **Beautiful custom UI** - modals that match Carmenta's design language
+- ✅ **One less vendor** - fewer external dependencies on critical path
+- ✅ **Unified credential storage** - OAuth tokens stored same as API keys (encrypted)
+- ✅ **Direct API calls** - simpler debugging, no proxy abstraction layer
+- ✅ **Cost reduction** - no Nango fees at scale
 
-// 2. After OAuth, store metadata in our DB
-await db.insert(connections).values({
-  userEmail: userEmail,
-  service: "gmail",
-  connectionId: `${userEmail}-gmail`, // Nango identifier
-  accountId: "user@gmail.com",
-  status: "CONNECTED",
-});
+**What we're building**:
 
-// 3. Make API calls (Nango handles tokens)
-const emails = await nango.proxy({
-  providerConfigKey: "google-mail",
-  connectionId: connectionId,
-  endpoint: "/gmail/v1/users/me/messages",
-});
-// Token expired? Nango refreshes automatically
-// We never see or manage tokens
-```
+- Custom OAuth flows per provider (authorize route + callback route)
+- Token storage encrypted in Postgres (AES-256-GCM, same as API keys)
+- Automatic token refresh before expiration
+- Webhook handlers for disconnect notifications
+- Beautiful connection modals with real-time validation
 
-**vs. Alternatives**:
+**See**: `knowledge/components/service-connectivity.md` for full specification.
 
-- **Auth0**: Can do OAuth, but awkward for service integrations (designed for SSO)
-- **WorkOS**: B2B focused, overkill for our use case
-- **Custom OAuth**: Months of work per service, token refresh complexity, ongoing
-  maintenance
+**Alternatives considered**:
 
-**Pricing**:
-
-- Free: Up to 1K users
-- $250/mo: Up to 10K users
-- Can self-host if needed (open source)
+- **Auth0**: Has Token Vault for third-party APIs, but enterprise pricing and would
+  require migrating from Clerk. Overkill for current needs.
+- **Clerk privateMetadata**: Could store tokens, but 8KB limit problematic (Google
+  tokens alone can be 4KB). Not purpose-built for credential lifecycle management.
+- **Doppler/Vault**: External secrets storage. Adds complexity without solving OAuth
+  flow issues. Can revisit if compliance requirements demand it.
 
 ### Why This Combination Works
 
@@ -206,59 +198,61 @@ const emails = await nango.proxy({
 
 ```
 Clerk      → Who are you? (app authentication)
-Nango      → Connect to Gmail (service OAuth, different concern)
-Supabase   → Where's your data? (database + files)
+Postgres   → Where's your data? (database + encrypted credentials)
+Supabase   → Files + Admin UI (storage + Studio)
+Our code   → Service OAuth (custom flows, token refresh)
 ```
 
 **Proven architecture**:
 
-- mcp-hubby validated: Clerk + Nango + Postgres
 - knowledge-base-storage.md decided: Postgres + ltree
-- file-attachments.md decided: External storage service
+- file-attachments.md decided: Supabase Storage
 
 **Best-in-class tools**:
 
 - Each service does one thing exceptionally well
-- Clerk: best auth DX
-- Supabase: best Postgres admin (Studio)
-- Nango: best service OAuth platform
+- Clerk: best auth DX for user authentication
+- Supabase: best Postgres admin (Studio) + integrated file storage
+- Our OAuth: full control, provider-specific handling, beautiful UX
 
 **Cost-effective**:
 
-- **Free to start** (all have generous free tiers)
-- **~$300/mo at scale** (10K users, 100GB storage)
-- Can optimize later (R2 for files, self-host Nango)
+- **Free to start** (Clerk and Supabase have generous free tiers)
+- **~$50/mo at scale** (10K users, 100GB storage - no Nango fees)
+- Can optimize later (R2 for files if bandwidth spikes)
 
 **Future-proof**:
 
 - ✅ Postgres ready for ltree (Phase 1 knowledge base)
 - ✅ Postgres ready for pgvector (Phase 2 memory embeddings)
-- ✅ Nango ready for 200+ services
-- ✅ Can swap any piece independently
+- ✅ OAuth architecture supports any OAuth 2.0 provider
+- ✅ Can add external secrets manager later if compliance requires
 
 ## What We're NOT Doing
 
-❌ **Auth0** - Overkill, worse DX, doesn't solve service OAuth ❌ **Separate vector
-DB** - Supabase has pgvector ❌ **Elasticsearch** - Postgres FTS sufficient for Phase 1
-❌ **Graph database** - Postgres join tables handle document links ❌ **Building OAuth
-flows** - Nango does this professionally ❌ **Building file CDN** - Supabase Storage has
-this ❌ **Multiple file storage vendors** - Keep it simple
+❌ **Auth0** - Enterprise pricing, would require Clerk migration ❌ **Nango** - Limited
+OAuth control, can't handle provider quirks ❌ **External secrets manager** - Adds
+complexity, Postgres encryption sufficient ❌ **Separate vector DB** - Supabase has
+pgvector ❌ **Elasticsearch** - Postgres FTS sufficient for Phase 1 ❌ **Graph
+database** - Postgres join tables handle document links ❌ **Multiple file storage
+vendors** - Keep it simple
 
 ## Implementation Priority
 
-**Phase 1: Foundation** (Do this first)
+**Phase 1: Foundation** (Done ✅)
 
 1. Set up Drizzle with Supabase Postgres
 2. Create schema: users, conversations, messages, files
 3. Configure Supabase Storage buckets
 4. Test file upload → storage → metadata flow
 
-**Phase 2: Service Connectivity** (After basic chat works)
+**Phase 2: Service Connectivity** (In Progress)
 
-1. Integrate Nango SDK
-2. Add connections table (service, connectionId, status)
-3. Build OAuth callback flow
-4. Test Gmail connection → API call flow
+1. Build OAuth authorize and callback routes
+2. Implement token storage with encryption
+3. Add automatic token refresh
+4. Test Slack connection with user_scope
+5. Add webhook handlers for disconnect notifications
 
 **Phase 3: Knowledge Base** (After file storage works)
 
@@ -282,20 +276,19 @@ At 10K active users, 100GB storage:
 
 - Clerk: $25/mo (10K MAU)
 - Supabase: $25/mo (8GB DB + 100GB storage + 250GB bandwidth)
-- Nango: $250/mo (10K users)
-- **Total: ~$300/mo**
+- OAuth: $0 (in-house)
+- **Total: ~$50/mo**
 
 At 1K users (getting traction):
 
 - Clerk: Free (under 10K MAU)
 - Supabase: Free or $25/mo (depends on growth)
-- Nango: Free (under 1K users)
+- OAuth: $0 (in-house)
 - **Total: $0-25/mo**
 
 **Future optimizations** (if costs spike):
 
 - Migrate files to Cloudflare R2 ($0 egress)
-- Self-host Nango (open source)
 - Use Neon for database (cheaper than Supabase)
 
 But don't optimize prematurely. Simplicity and speed matter more at this stage.
@@ -308,29 +301,29 @@ But don't optimize prematurely. Simplicity and speed matter more at this stage.
 - ✅ Supabase Studio gives us Django-like admin experience
 - ✅ Drizzle provides type-safe database access
 - ✅ File uploads work seamlessly with transformations
-- ✅ Service OAuth flows work without building them
+- ✅ Service OAuth flows handle provider quirks elegantly
 - ✅ We're not fighting infrastructure
 
 **We'll know we need to revisit if**:
 
 - ❌ Costs exceed $500/mo before revenue justifies it
 - ❌ Supabase performance becomes bottleneck
-- ❌ Nango limitations block critical integrations
-- ❌ We spend >20% time on infrastructure vs features
+- ❌ OAuth maintenance burden exceeds 10% of dev time
+- ❌ Compliance requirements demand external secrets manager
 
 ## Related Decisions
 
 - `knowledge-base-storage-architecture.md` - Chose Postgres + ltree for knowledge base
 - `knowledge/components/auth.md` - Clerk integration already complete
 - `knowledge/components/data-storage.md` - Updated to reflect this decision
-- `knowledge/components/service-connectivity.md` - Updated with Nango choice
+- `knowledge/components/service-connectivity.md` - In-house OAuth specification
 - `knowledge/components/file-attachments.md` - Updated with Supabase Storage choice
 
 ## References
 
 **Proven implementations**:
 
-- mcp-hubby (../mcp-hubby) - Clerk + Nango + Postgres production app
+- mcp-hubby (../mcp-hubby) - Clerk + Postgres production app patterns
 - Vercel ai-chatbot - Drizzle + Postgres patterns
 
 **Research**:
@@ -338,15 +331,19 @@ But don't optimize prematurely. Simplicity and speed matter more at this stage.
 - Supabase Storage docs: https://supabase.com/docs/guides/storage
 - Supabase image transformations:
   https://supabase.com/docs/guides/storage/serving/image-transformations
-- Nango docs: https://docs.nango.dev
 - Drizzle ORM: https://orm.drizzle.team
+- OAuth 2.0 RFC 6749: https://tools.ietf.org/html/rfc6749
+- Slack OAuth v2: https://api.slack.com/authentication/oauth-v2
 
 ## Next Steps
 
-1. **Database setup**: Create Supabase project, configure Drizzle
-2. **Schema design**: Build initial tables (users, conversations, messages, files)
+1. **Database setup**: Create Supabase project, configure Drizzle ✅
+2. **Schema design**: Build initial tables (users, conversations, messages, files) ✅
 3. **File storage setup**: Create buckets, test uploads and transformations
-4. **Nango integration**: Set up account, configure first provider (Gmail)
-5. **Validate end-to-end**: Upload file → process → store → retrieve flow
+4. **OAuth implementation**: Build authorize/callback routes per provider (start with
+   Slack)
+5. **Token management**: Implement encryption, storage, and automatic refresh
+6. **Validate end-to-end**: Connect service → store credentials → refresh tokens → API
+   calls
 
 No timelines. Build when ready. Validate each piece before moving to next.

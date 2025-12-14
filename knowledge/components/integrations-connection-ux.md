@@ -3,8 +3,8 @@
 User experience for connecting, managing, and troubleshooting service integrations. The
 surface layer above Service Connectivity infrastructure.
 
-**Related**: See service-connectivity.md for OAuth architecture, Nango integration, and
-credential storage. See external-tools.md for MCP ecosystem strategy.
+**Related**: See service-connectivity.md for OAuth architecture and credential storage.
+See external-tools.md for MCP ecosystem strategy.
 
 ---
 
@@ -137,7 +137,7 @@ Direct action with undo safety net (no confirmation dialog):
 2. Integration immediately becomes Available
 3. Undo toast appears: "[Service] disconnected" with **Undo** button
 4. Toast auto-dismisses after 5 seconds
-5. If no undo: credentials deleted from our system (Nango connection deleted)
+5. If no undo: credentials permanently deleted from our database
 6. If undo clicked: integration returns to previous Connected state
 
 ### Test
@@ -183,7 +183,7 @@ Users shouldn't see these—they happen automatically:
 
 ## Integration Points
 
-- **Service Connectivity**: Backend OAuth/credential management via Nango
+- **Service Connectivity**: In-house OAuth flows and encrypted credential storage
 - **Onboarding**: Initial service connection during first-run
 - **Concierge**: Routes tool calls to connected services
 - **AI Team**: Agents use connected services to complete tasks
