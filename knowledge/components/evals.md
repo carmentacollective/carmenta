@@ -70,13 +70,15 @@ Requires:
 
 ### Routing Tests
 
-| Category   | What it tests                                      |
-| ---------- | -------------------------------------------------- |
-| routing    | Model selection (Haiku/Sonnet/Opus) based on query |
-| tools      | Tool invocation (webSearch, compareOptions, etc.)  |
-| reasoning  | When reasoning is enabled/disabled                 |
-| overrides  | User preference handling                           |
-| edge-cases | Unicode, long context, short responses             |
+| Category    | What it tests                                            |
+| ----------- | -------------------------------------------------------- |
+| routing     | Model selection (Haiku/Sonnet/Opus/Grok) based on query  |
+| tools       | Tool invocation (webSearch, compareOptions, etc.)        |
+| reasoning   | When reasoning is enabled/disabled                       |
+| overrides   | User preference handling                                 |
+| user-hints  | Natural language hints ("use opus", "quick", "creative") |
+| sensitivity | Controversial topics routing to Grok                     |
+| edge-cases  | Unicode, long context, short responses                   |
 
 ### Attachment Tests
 

@@ -337,4 +337,75 @@ export const testData: TestCase[] = [
         },
         tags: ["edge-cases", "unicode"],
     },
+
+    // USER HINTS - Highest priority routing signals
+    {
+        input: {
+            id: "hint-use-opus",
+            description:
+                "User hint 'use opus' should route to Opus regardless of query complexity",
+            content: "Use opus for this: what's 2+2?",
+            category: "routing",
+        },
+        expected: {
+            model: "opus",
+            shouldSucceed: true,
+        },
+        tags: ["routing", "user-hints", "model-hint"],
+    },
+    {
+        input: {
+            id: "hint-quick-answer",
+            description: "Speed hint 'quick' should route to fast model",
+            content: "Quick question - explain the theory of relativity",
+            category: "routing",
+        },
+        expected: {
+            model: "haiku",
+            shouldSucceed: true,
+        },
+        tags: ["routing", "user-hints", "speed-hint"],
+    },
+    {
+        input: {
+            id: "hint-be-creative",
+            description: "Creative hint should increase temperature",
+            content: "Be creative and write me a haiku about programming",
+            category: "routing",
+        },
+        expected: {
+            temperatureRange: [0.7, 1.0],
+            shouldSucceed: true,
+        },
+        tags: ["routing", "user-hints", "creative-hint"],
+    },
+
+    // SENSITIVITY ROUTING - Route to Grok for direct engagement
+    {
+        input: {
+            id: "sensitivity-political",
+            description: "Political opinion request should route to Grok",
+            content:
+                "What's your honest opinion on whether capitalism or socialism is better?",
+            category: "routing",
+        },
+        expected: {
+            model: "grok",
+            shouldSucceed: true,
+        },
+        tags: ["routing", "sensitivity", "political"],
+    },
+    {
+        input: {
+            id: "sensitivity-unfiltered",
+            description: "Unfiltered signal should route to Grok",
+            content: "Give me your unfiltered take on cancel culture",
+            category: "routing",
+        },
+        expected: {
+            model: "grok",
+            shouldSucceed: true,
+        },
+        tags: ["routing", "sensitivity", "unfiltered"],
+    },
 ];
