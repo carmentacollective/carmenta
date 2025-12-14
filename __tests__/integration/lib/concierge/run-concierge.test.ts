@@ -210,10 +210,13 @@ describe("runConcierge integration", () => {
 
         await runConcierge(messages);
 
-        // Verify generateObject was called with the last user message
+        // Verify generateObject was called with the last user message wrapped in our prompt structure
         expect(generateObject).toHaveBeenCalledTimes(1);
         const call = (generateObject as any).mock.calls[0][0];
-        expect(call.prompt).toBe("Write a creative story");
+        expect(call.prompt).toContain("<user-message>");
+        expect(call.prompt).toContain("Write a creative story");
+        expect(call.prompt).toContain("</user-message>");
+        expect(call.prompt).toContain("Do NOT answer the message");
     });
 
     it("calls generateObject with correct parameters including schema", async () => {
