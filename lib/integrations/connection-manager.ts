@@ -33,7 +33,12 @@
  */
 
 import { db, schema } from "@/lib/db";
-import { isOAuthService, isApiKeyService, getServiceById } from "./services";
+import {
+    isOAuthService,
+    isApiKeyService,
+    getServiceById,
+    getNangoIntegrationKey,
+} from "./services";
 import { decryptCredentials, type Credentials } from "./encryption";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
@@ -426,13 +431,9 @@ export async function disconnectService(
                 try {
                     const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
 
-                    // Get the Nango integration key for this service
-                    const serviceInfo = getServiceById(service);
-                    const integrationKey = serviceInfo?.id || service;
-
                     // Delete the OAuth connection from Nango
                     await nango.deleteConnection(
-                        integrationKey,
+                        getNangoIntegrationKey(service),
                         integration.connectionId
                     );
 
@@ -541,15 +542,13 @@ export async function disconnectService(
             // For OAuth services, delete all connections from Nango and mark as disconnected
             if (env.NANGO_SECRET_KEY) {
                 const nango = new Nango({ secretKey: env.NANGO_SECRET_KEY });
-                const serviceInfo = getServiceById(service);
-                const integrationKey = serviceInfo?.id || service;
 
                 // Delete each OAuth connection from Nango
                 for (const integration of integrations) {
                     if (integration.connectionId) {
                         try {
                             await nango.deleteConnection(
-                                integrationKey,
+                                getNangoIntegrationKey(service),
                                 integration.connectionId
                             );
                             logger.info(
@@ -570,6 +569,18 @@ export async function disconnectService(
                                 },
                                 "Failed to delete from Nango (continuing)"
                             );
+
+                            Sentry.captureException(error, {
+                                tags: {
+                                    component: "connection-manager",
+                                    action: "nango_delete_batch",
+                                },
+                                extra: {
+                                    userEmail,
+                                    service,
+                                    connectionId: integration.connectionId,
+                                },
+                            });
                         }
                     }
                 }
