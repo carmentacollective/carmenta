@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import {
@@ -168,7 +169,6 @@ export function ToolWrapper({
     const permissions = usePermissions();
     // Use fallback for UI rendering - gracefully handle unknown tools
     const config = getToolConfig(toolName, { fallbackToDefault: true });
-    const Icon = config.icon;
 
     // Track timing across status transitions
     const timing = useToolTiming(status);
@@ -193,6 +193,26 @@ export function ToolWrapper({
             ? getErrorMessage(toolName, error)
             : getStatusMessage(toolName, status, toolCallId, timing.durationMs);
 
+    // Render icon: either a Lucide component or an SVG logo
+    const renderIcon = () => {
+        if (typeof config.icon === "string") {
+            // Logo path
+            return (
+                <Image
+                    src={config.icon}
+                    alt={config.displayName}
+                    width={16}
+                    height={16}
+                    className="h-4 w-4 shrink-0"
+                />
+            );
+        } else {
+            // Lucide icon component
+            const Icon = config.icon;
+            return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />;
+        }
+    };
+
     return (
         <Collapsible
             open={isOpen}
@@ -206,7 +226,7 @@ export function ToolWrapper({
             {/* Header */}
             <CollapsibleTrigger className="flex w-full min-w-0 items-center justify-between gap-2 p-3">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {renderIcon()}
                     <span className="truncate text-sm font-medium">
                         {config.displayName}
                     </span>

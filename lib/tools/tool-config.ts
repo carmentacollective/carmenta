@@ -18,7 +18,8 @@ export type ToolStatus = "pending" | "running" | "completed" | "error";
  */
 export interface ToolConfig {
     displayName: string;
-    icon: LucideIcon;
+    /** Either a Lucide icon component or a path to a logo (e.g., "/logos/notion.svg") */
+    icon: LucideIcon | string;
     messages: {
         pending: string;
         running: string;
@@ -105,6 +106,161 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Forecast ready", "Weather check done", "Climate confirmed"],
             fast: ["Quick forecast!", "Instant weather"],
+        },
+    },
+    limitless: {
+        displayName: "Limitless",
+        icon: "/logos/limitless.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching your conversations...",
+            completed: "Conversations found",
+            error: "Couldn't search conversations",
+        },
+        delightMessages: {
+            completed: ["Memory retrieved", "Found it", "Here's what we captured"],
+            fast: ["Quick recall!", "Found that fast"],
+        },
+    },
+    // Service integrations (alphabetical order)
+    clickup: {
+        displayName: "ClickUp",
+        icon: "/logos/clickup.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing ClickUp...",
+            completed: "ClickUp operation complete",
+            error: "Couldn't complete ClickUp operation",
+        },
+        delightMessages: {
+            completed: ["Task handled", "ClickUp updated", "All set"],
+            fast: ["Quick update!", "Done!"],
+        },
+    },
+    coinmarketcap: {
+        displayName: "CoinMarketCap",
+        icon: "/logos/coinmarketcap.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Fetching crypto data...",
+            completed: "Crypto data retrieved",
+            error: "Couldn't get crypto data",
+        },
+        delightMessages: {
+            completed: ["Market data ready", "Prices retrieved", "Crypto check done"],
+            fast: ["Quick quote!", "Market snapshot"],
+        },
+    },
+    dropbox: {
+        displayName: "Dropbox",
+        icon: "/logos/dropbox.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Dropbox...",
+            completed: "Dropbox operation complete",
+            error: "Couldn't complete Dropbox operation",
+        },
+        delightMessages: {
+            completed: ["Files ready", "Dropbox updated", "Storage synced"],
+            fast: ["Quick access!", "Got it"],
+        },
+    },
+    fireflies: {
+        displayName: "Fireflies",
+        icon: "/logos/fireflies.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching meeting transcripts...",
+            completed: "Transcripts found",
+            error: "Couldn't search transcripts",
+        },
+        delightMessages: {
+            completed: ["Meetings retrieved", "Found those notes", "Transcript ready"],
+            fast: ["Quick search!", "Found it fast"],
+        },
+    },
+    giphy: {
+        displayName: "Giphy",
+        icon: "/logos/giphy.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching GIFs...",
+            completed: "GIFs found",
+            error: "Couldn't find GIFs",
+        },
+        delightMessages: {
+            completed: ["Perfect GIF", "Found it", "GIF ready"],
+            fast: ["Quick find!", "Instant GIF"],
+        },
+    },
+    gmail: {
+        displayName: "Gmail",
+        icon: "/logos/gmail.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Gmail...",
+            completed: "Gmail operation complete",
+            error: "Couldn't complete Gmail operation",
+        },
+        delightMessages: {
+            completed: ["Email sent", "Inbox checked", "Mail ready"],
+            fast: ["Quick send!", "Sent!"],
+        },
+    },
+    "google-calendar-contacts": {
+        displayName: "Google Calendar & Contacts",
+        icon: "/logos/google-calendar-contacts.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Google...",
+            completed: "Google operation complete",
+            error: "Couldn't complete Google operation",
+        },
+        delightMessages: {
+            completed: ["Calendar updated", "Event created", "Contact found"],
+            fast: ["Quick update!", "Done!"],
+        },
+    },
+    notion: {
+        displayName: "Notion",
+        icon: "/logos/notion.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Notion...",
+            completed: "Notion operation complete",
+            error: "Couldn't complete Notion operation",
+        },
+        delightMessages: {
+            completed: ["Page ready", "Notion updated", "Found it"],
+            fast: ["Quick access!", "Got it"],
+        },
+    },
+    slack: {
+        displayName: "Slack",
+        icon: "/logos/slack.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Slack...",
+            completed: "Slack operation complete",
+            error: "Couldn't complete Slack operation",
+        },
+        delightMessages: {
+            completed: ["Message sent", "Slack updated", "Channel checked"],
+            fast: ["Quick send!", "Sent!"],
+        },
+    },
+    twitter: {
+        displayName: "X (Twitter)",
+        icon: "/logos/twitter.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing X...",
+            completed: "X operation complete",
+            error: "Couldn't complete X operation",
+        },
+        delightMessages: {
+            completed: ["Tweet posted", "Timeline checked", "Post ready"],
+            fast: ["Quick post!", "Posted!"],
         },
     },
 };
@@ -353,7 +509,7 @@ export function getReasoningCompleteMessage(
  * Get a warm error message for tool failures.
  */
 export function getErrorMessage(toolName: string, errorText?: string): string {
-    const config = getToolConfig(toolName);
+    const config = getToolConfig(toolName, { fallbackToDefault: true });
 
     // If we have specific error text, wrap it warmly
     if (errorText) {
@@ -397,6 +553,6 @@ export function isFirstToolUse(toolName: string): boolean {
  * Get first-use celebration message for a tool.
  */
 export function getFirstUseMessage(toolName: string): string | null {
-    const config = getToolConfig(toolName);
+    const config = getToolConfig(toolName, { fallbackToDefault: true });
     return `First ${config.displayName.toLowerCase()} check!`;
 }
