@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 import { generateState } from "@/lib/integrations/oauth/state";
@@ -54,6 +55,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const returnUrl = request.nextUrl.searchParams.get("returnUrl") ?? undefined;
 
     // Build callback URL
+    // In production, NEXT_PUBLIC_APP_URL must be set to prevent Host header manipulation
+    if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_APP_URL) {
+        logger.error(
+            "NEXT_PUBLIC_APP_URL not set in production - potential security risk"
+        );
+        Sentry.captureMessage("NEXT_PUBLIC_APP_URL not configured in production", {
+            level: "error",
+            tags: { component: "oauth", route: "authorize" },
+        });
+        return NextResponse.json(
+            { error: "OAuth is not properly configured. Please contact support." },
+            { status: 500 }
+        );
+    }
+
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 

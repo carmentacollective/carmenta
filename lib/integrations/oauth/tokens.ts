@@ -11,6 +11,7 @@
  */
 
 import ky, { HTTPError } from "ky";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { integrations, integrationHistory } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -357,6 +358,23 @@ export async function getAccessToken(
                     );
                     return newToken;
                 } catch (error) {
+                    // Capture refresh failure for monitoring
+                    logger.error(
+                        { error, provider: providerId, userEmail },
+                        "Token refresh failed"
+                    );
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "oauth",
+                            provider: providerId,
+                            action: "token_refresh",
+                        },
+                        extra: {
+                            userEmail,
+                            accountId: integration.accountId,
+                        },
+                    });
+
                     // Mark as expired if refresh fails
                     await markAsExpired(integration.id, providerId, userEmail);
                     throw error;

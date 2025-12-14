@@ -88,6 +88,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Build callback URL for token exchange (must match authorize)
+    // In production, NEXT_PUBLIC_APP_URL must be set to prevent Host header manipulation
+    if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_APP_URL) {
+        logger.error(
+            "NEXT_PUBLIC_APP_URL not set in production - potential security risk"
+        );
+        Sentry.captureMessage("NEXT_PUBLIC_APP_URL not configured in production", {
+            level: "error",
+            tags: { component: "oauth", route: "callback" },
+        });
+        const errorUrl = new URL("/integrations", request.url);
+        errorUrl.searchParams.set("error", "configuration_error");
+        return NextResponse.redirect(errorUrl);
+    }
+
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 
