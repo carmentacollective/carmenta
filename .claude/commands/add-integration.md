@@ -7,8 +7,10 @@ description: Create a new external service integration
 `/add-integration <service-name>`
 
 <objective>
-Build a complete, tested service integration. Study existing adapters, research the
-target API, and follow established patterns.
+Build a complete, tested service integration with excellent user experience. Study
+existing adapters, research the target API, and follow established patterns. The
+integration should feel delightful to use - tool results are intermediate data the AI
+processes; users care about the synthesized response, not raw API dumps.
 </objective>
 
 <definition-of-done>
@@ -18,6 +20,8 @@ Use TodoWrite to track progress. An integration includes:
 - [ ] Service registry entry
 - [ ] Adapter exported and registered in tools.ts
 - [ ] Tool configuration added to lib/tools/tool-config.ts
+- [ ] Tool UI component for displaying results
+- [ ] ToolPartRenderer case added
 - [ ] Service logo
 - [ ] Unit tests
 - [ ] Quality checks pass
@@ -41,6 +45,22 @@ credentials. Adapter uses decrypted `credentials.apiKey` from `getCredentials()`
 All service metadata lives in `lib/integrations/services.ts` SERVICE_REGISTRY. Adapters
 extend `ServiceAdapter` base class and implement `getHelp()`, `execute()`, and
 `executeRawAPI()`. </context>
+
+<tool-ui-philosophy>
+Tool results are intermediate data the AI processes. Users care about the AI's
+synthesized response, not raw API output. Tool UI components show minimal status: what
+happened, with optional expansion for debugging.
+
+Design principles:
+
+- Compact one-line status for success states ("Loaded 10 recordings", "Found 3 tasks")
+- Loading states show action in progress ("Searching...", "Fetching tasks...")
+- Error states are clear but not alarming
+- Optional JSON expansion for debugging (collapsed by default)
+- Let the AI's response do the heavy lifting - the UI just confirms the tool worked
+
+Reference `components/generative-ui/limitless.tsx` for the pattern to follow.
+</tool-ui-philosophy>
 
 <oauth-infrastructure>
 For OAuth services, the infrastructure is already built (implemented for ClickUp):
@@ -74,9 +94,12 @@ configure Nango, and the rest works automatically. </oauth-infrastructure>
 
 <reference-files>
 Study these files to understand patterns:
+- `lib/integrations/adapters/limitless.ts` - API key adapter with rich tool guidance
 - `lib/integrations/adapters/clickup.ts` - OAuth adapter with fetchAccountInfo
 - `lib/integrations/adapters/notion.ts` - OAuth adapter example
-- `lib/integrations/adapters/giphy.ts` - API key adapter example
+- `lib/integrations/adapters/giphy.ts` - Simple API key adapter
+- `components/generative-ui/limitless.tsx` - Tool UI component pattern
+- `components/connection/holo-thread.tsx` - ToolPartRenderer (add case here)
 - `lib/integrations/services.ts` - Service registry
 - `lib/integrations/connection-manager.ts` - Credential access
 - `lib/integrations/tools.ts` - Tool factory
@@ -90,6 +113,7 @@ Study these files to understand patterns:
    - For OAuth services: implements `fetchAccountInfo()` method that returns
      `{ identifier: string, displayName: string }` - webhook handler calls this
    - Includes comprehensive error handling
+   - Tool guidance in `getHelp()` that steers AI toward efficient usage patterns
 
 2. **Service registry entry** in `lib/integrations/services.ts`
    - Start with `status: "coming_soon"` until tested
@@ -107,15 +131,196 @@ Study these files to understand patterns:
    - Import appropriate Lucide icon (Mic2 for audio, Database for data, etc.)
    - Include delight messages for warmth and engagement
 
-5. **Service logo** at `public/logos/[service].svg`
+5. **Tool UI component** at `components/generative-ui/[service].tsx`
+   - Follow the compact status display pattern from limitless.tsx
+   - Handle loading, error, and success states
+   - Generate human-readable status messages per action
+   - Optional JSON expansion for debugging
 
-6. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
+6. **ToolPartRenderer case** in `components/connection/holo-thread.tsx`
+   - Add case in the switch statement matching the service name
+   - Import and render the tool UI component
+
+7. **Service logo** at `public/logos/[service].svg`
+
+8. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
    - Use existing adapter tests as templates (giphy, limitless, coinmarketcap)
 
-7. **Integration tests** (if adding connection-manager features)
+9. **Integration tests** (if adding connection-manager features)
    - Add test fixtures to `__tests__/fixtures/integration-fixtures.ts` if needed
    - Test credential retrieval patterns if adding new auth types
    - Follow patterns in `__tests__/integration/lib/integrations/` </deliverables>
+
+<tool-ui-pattern>
+Create a compact status display component following this structure:
+
+```typescript
+"use client";
+
+import { useState } from "react";
+import { ServiceIcon, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import type { ToolStatus } from "@/lib/tools/tool-config";
+
+interface ServiceToolResultProps {
+    toolCallId: string;
+    status: ToolStatus;
+    action: string;
+    input: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    error?: string;
+}
+
+export function ServiceToolResult({
+    status,
+    action,
+    input,
+    output,
+    error,
+}: ServiceToolResultProps) {
+    const [expanded, setExpanded] = useState(false);
+
+    // Loading state - single line with pulse animation
+    if (status === "running") {
+        return (
+            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
+                <ServiceIcon className="h-3.5 w-3.5 animate-pulse" />
+                <span>{getStatusMessage(action, input, "running")}</span>
+            </div>
+        );
+    }
+
+    // Error state - red text, clear message
+    if (status === "error" || error) {
+        return (
+            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                <span>{error || `Service ${action} failed`}</span>
+            </div>
+        );
+    }
+
+    // Success - compact summary with optional JSON expansion
+    const summary = getStatusMessage(action, input, "completed", output);
+
+    return (
+        <div className="py-1">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <ServiceIcon className="h-3.5 w-3.5 text-primary/70" />
+                <span className="flex-1">{summary}</span>
+                {output && (expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
+            </button>
+
+            {expanded && output && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
+                    {JSON.stringify(output, null, 2)}
+                </pre>
+            )}
+        </div>
+    );
+}
+
+function getStatusMessage(
+    action: string,
+    input: Record<string, unknown>,
+    status: "running" | "completed",
+    output?: Record<string, unknown>
+): string {
+    const isRunning = status === "running";
+
+    switch (action) {
+        case "list_items": {
+            if (isRunning) return "Loading items...";
+            const count = (output?.items as unknown[])?.length ?? 0;
+            return `Loaded ${count} items`;
+        }
+        case "search": {
+            const query = input.query as string;
+            if (isRunning) return `Searching "${query}"...`;
+            const count = (output?.results as unknown[])?.length ?? 0;
+            return `Found ${count} results for "${query}"`;
+        }
+        case "get_item": {
+            if (isRunning) return "Loading details...";
+            const title = output?.title as string;
+            return title ? `Loaded: ${truncate(title, 50)}` : "Loaded item";
+        }
+        case "create_item":
+            return isRunning ? "Creating..." : "Created successfully";
+        case "update_item":
+            return isRunning ? "Updating..." : "Updated successfully";
+        case "delete_item":
+            return isRunning ? "Deleting..." : "Deleted";
+        default:
+            return isRunning ? `Running ${action}...` : `Completed ${action}`;
+    }
+}
+
+function truncate(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength - 1) + "…";
+}
+```
+
+Adapt the `getStatusMessage` function for your service's specific actions. The pattern
+stays the same: running state with "...", completed state with result summary.
+</tool-ui-pattern>
+
+<tool-part-renderer-case>
+Add to the switch statement in `components/connection/holo-thread.tsx`:
+
+```typescript
+case "your-service":
+    return (
+        <YourServiceToolResult
+            toolCallId={part.toolCallId}
+            status={status}
+            action={(input?.action as string) ?? "unknown"}
+            input={input}
+            output={output}
+            error={getToolError(part, output, "Service request failed")}
+        />
+    );
+```
+
+Import the component at the top of the file with other generative-ui imports.
+</tool-part-renderer-case>
+
+<adapter-tool-guidance>
+Write tool descriptions that guide the AI toward efficient usage. Example from Limitless:
+
+```typescript
+getHelp(): HelpResponse {
+    return {
+        service: this.serviceDisplayName,
+        description:
+            "Access conversations recorded by Limitless Pendant. " +
+            "IMPORTANT: Use 'search' for topic-based queries (what did I discuss about X?). " +
+            "Use 'list_recordings' with date filter for time-based queries (what did I talk about yesterday?). " +
+            "Both return summaries - only use get_lifelog if you need the full transcript.",
+        commonOperations: ["search", "list_recordings"],
+        operations: [
+            {
+                name: "search",
+                description:
+                    "Primary action for finding conversations by topic. Returns summaries - no need to fetch each recording.",
+                // ... parameters
+                returns: "Lifelogs with summaries. Synthesize from these - don't fetch each individually.",
+            },
+            // ...
+        ],
+    };
+}
+```
+
+Key principles:
+
+- Tell the AI which operations to prefer and why
+- Note when results include enough data for synthesis
+- Warn against inefficient patterns (fetching each item individually)
+- Use sensible defaults (10 results instead of 50) </adapter-tool-guidance>
 
 <minimum-test-coverage>
 Tests cover:
