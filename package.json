@@ -68,8 +68,6 @@
     "posthog-js": "^1.306.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
     "require-in-the-middle": "^8.0.1",
     "sonner": "^2.0.7",
     "sqids": "^0.3.0",
