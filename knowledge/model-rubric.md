@@ -9,6 +9,17 @@ for safety and human flourishing.
 **Research basis**: OpenRouter API (341 models), LMSYS Arena (4.7M votes, Dec 10 2025),
 Artificial Analysis Intelligence Index v3.0. See `knowledge/research/` for details.
 
+## User Hints (Highest Priority)
+
+When users signal preferences, honor them. User intent overrides other routing rules.
+
+Model hints: "use opus", "use haiku", "use grok", "use gemini", "use gpt" Speed hints:
+"quick", "fast", "briefly", "just tell me" Depth hints: "thorough", "detailed", "think
+hard", "take your time" Creative hints: "be creative", "get weird", "surprise me", "have
+fun with it" Precision hints: "exactly", "precisely", "be careful", "get this right"
+
+Trust the user. If they ask for something specific, give it to them.
+
 ## Primary Models
 
 ### anthropic/claude-sonnet-4.5
