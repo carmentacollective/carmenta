@@ -304,10 +304,9 @@ describe("tool-config", () => {
             expect(message).toBe("We couldn't build that comparison");
         });
 
-        it("throws error for unknown tools", () => {
-            expect(() => getErrorMessage("unknownTool")).toThrow(
-                'Tool configuration missing for "unknownTool"'
-            );
+        it("uses fallback for unknown tools", () => {
+            const message = getErrorMessage("unknownTool");
+            expect(message).toBe("That didn't work out");
         });
     });
 
@@ -344,10 +343,9 @@ describe("tool-config", () => {
             expect(message).toBe("First comparison check!");
         });
 
-        it("throws error for unknown tools", () => {
-            expect(() => getFirstUseMessage("unknownTool")).toThrow(
-                'Tool configuration missing for "unknownTool"'
-            );
+        it("uses fallback for unknown tools", () => {
+            const message = getFirstUseMessage("unknownTool");
+            expect(message).toBe("First tool check!");
         });
     });
 });

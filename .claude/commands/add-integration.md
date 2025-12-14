@@ -17,6 +17,7 @@ Use TodoWrite to track progress. An integration includes:
 - [ ] Service adapter with operations
 - [ ] Service registry entry
 - [ ] Adapter exported and registered in tools.ts
+- [ ] Tool configuration added to lib/tools/tool-config.ts
 - [ ] Service logo
 - [ ] Unit tests
 - [ ] Quality checks pass
@@ -101,12 +102,17 @@ Study these files to understand patterns:
    - For OAuth: add service case in `lib/integrations/fetch-account-info.ts`
    - For OAuth: add service mapping in `app/api/connect/route.ts` if key differs
 
-4. **Service logo** at `public/logos/[service].svg`
+4. **Tool configuration** in `lib/tools/tool-config.ts`
+   - Add entry to TOOL_CONFIG with display name, icon, and status messages
+   - Import appropriate Lucide icon (Mic2 for audio, Database for data, etc.)
+   - Include delight messages for warmth and engagement
 
-5. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
+5. **Service logo** at `public/logos/[service].svg`
+
+6. **Unit tests** at `__tests__/unit/lib/integrations/adapters/[service].test.ts`
    - Use existing adapter tests as templates (giphy, limitless, coinmarketcap)
 
-6. **Integration tests** (if adding connection-manager features)
+7. **Integration tests** (if adding connection-manager features)
    - Add test fixtures to `__tests__/fixtures/integration-fixtures.ts` if needed
    - Test credential retrieval patterns if adding new auth types
    - Follow patterns in `__tests__/integration/lib/integrations/` </deliverables>
