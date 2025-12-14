@@ -6,7 +6,12 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export type CarmentaAvatarSize = "xs" | "sm" | "md" | "lg";
-export type CarmentaAvatarState = "idle" | "breathing" | "thinking" | "speaking";
+export type CarmentaAvatarState =
+    | "idle"
+    | "breathing"
+    | "thinking"
+    | "celebrating"
+    | "speaking";
 
 interface CarmentaAvatarProps {
     /** Size variant - xs for inline, sm for chat, md/lg for hero */
@@ -58,6 +63,16 @@ const breathingVariants = {
             ease: "easeInOut" as const,
         },
     },
+    celebrating: {
+        // Satisfying "exhale" - brief expansion then settle
+        scale: [1.08, 1.15, 0.95, 1],
+        opacity: 1,
+        transition: {
+            duration: 0.5,
+            times: [0, 0.3, 0.7, 1],
+            ease: "easeOut" as const,
+        },
+    },
     speaking: {
         scale: 1.02,
         opacity: 1,
@@ -93,6 +108,16 @@ const glowVariants = {
             ease: "easeInOut" as const,
         },
     },
+    celebrating: {
+        // Burst of glow on selection success
+        opacity: [0.6, 0.9, 0.4, 0.2],
+        scale: [1.2, 1.4, 1.1, 1],
+        transition: {
+            duration: 0.5,
+            times: [0, 0.25, 0.6, 1],
+            ease: "easeOut" as const,
+        },
+    },
     speaking: {
         opacity: 0.5,
         scale: 1.1,
@@ -115,6 +140,7 @@ const glowVariants = {
  * - idle: Static, no animation
  * - breathing: Gentle, slow pulse (default for passive presence)
  * - thinking: Faster pulse with opacity shift (concierge selecting)
+ * - celebrating: Brief burst + settle (selection success moment)
  * - speaking: Steady slight scale (Carmenta is actively communicating)
  */
 export function CarmentaAvatar({

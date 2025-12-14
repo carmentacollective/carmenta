@@ -647,6 +647,7 @@ function AssistantMessage({
 
     // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
     // This eliminates the visual gap between user submit and Carmenta appearing.
+    // ALSO show for completed messages that have concierge data (last message after completion).
     const showConcierge =
         isLast && (isStreaming || isConciergeRunning || Boolean(concierge));
 
@@ -655,6 +656,13 @@ function AssistantMessage({
 
     // We've selected when concierge data exists
     const hasSelected = Boolean(concierge);
+
+    // Derive avatar state for ConciergeDisplay
+    const avatarState = isSelectingModel
+        ? "thinking"
+        : hasSelected
+          ? "speaking"
+          : "idle";
 
     // Show thinking indicator only when streaming AND no content yet AND this is the last message
     // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
@@ -678,18 +686,22 @@ function AssistantMessage({
                     explanation={concierge?.explanation}
                     reasoning={concierge?.reasoning}
                     isSelecting={isSelectingModel}
+                    avatarState={avatarState}
                     messageSeed={message.id}
                 />
             )}
 
             {/* LLM ZONE - Model's output (neutral glass) */}
-            {/* Appears after concierge selection with nested reasoning, tools, content */}
+            {/* Appears after concierge selection with smooth entrance */}
             <AnimatePresence>
                 {hasSelected && hasLlmOutput && (
                     <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        transition={{ duration: 0.3, ease: "easeOut" as const }}
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{
+                            duration: 0.35,
+                            ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
+                        }}
                         className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                     >
                         {/* Reasoning - nested inside LLM zone */}
