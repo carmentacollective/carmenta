@@ -252,8 +252,9 @@ describe("ClickUpAdapter", () => {
             const result = await adapter.execute("list_teams", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("connection may have expired");
+            expect(result.content[0].text).toContain(
+                "connection to ClickUp needs a refresh"
+            );
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -267,7 +268,7 @@ describe("ClickUpAdapter", () => {
             const result = await adapter.execute("list_teams", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("moving too fast");
         });
 
         it("handles 403 permission errors", async () => {
@@ -279,7 +280,9 @@ describe("ClickUpAdapter", () => {
             const result = await adapter.execute("list_teams", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
+            expect(result.content[0].text).toContain(
+                "connection to ClickUp needs a refresh"
+            );
         });
     });
 });
