@@ -985,20 +985,20 @@
         }
     }
 
-    /* ===== BREATHING: Container "Slow" - centered ±10%, 8s ===== */
-    /* Scales from 0.90 (exhale) → 1.10 (inhale) → 0.90 */
+    /* ===== BREATHING: Container "Slow" - centered ±5%, 8.8s ===== */
+    /* Scales from 0.95 (exhale) → 1.05 (inhale) → 0.95 - subtle, calming */
     @keyframes oracle-breathe {
         0%,
         100% {
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
         50% {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
     }
 
     .oracle-breathing {
-        animation: oracle-breathe 8s ease-in-out infinite;
+        animation: oracle-breathe 8.8s ease-in-out infinite;
     }
 
     /* On hover: stop breathing, reset to base scale, let btn-hoverable handle the rest */
