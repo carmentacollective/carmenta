@@ -32,4 +32,7 @@ if (
     }
 }
 
+// Router transition tracking for Sentry
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 export { posthog };
