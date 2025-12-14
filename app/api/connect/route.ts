@@ -42,6 +42,8 @@ function getNangoIntegrationKey(service: string): string {
  * 6. User authorizes → Nango sends webhook → we store integration
  */
 export async function POST(req: Request) {
+    let service: string | undefined;
+
     try {
         // Authenticate user
         const user = await currentUser();
@@ -80,7 +82,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const { service } = parseResult.data;
+        service = parseResult.data.service;
 
         // Ensure user exists in database
         const dbUser = await getOrCreateUser(user.id, userEmail, {
@@ -123,13 +125,41 @@ export async function POST(req: Request) {
         });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error({ error: errorMessage }, "Failed to create connect session");
+
+        // Extract Axios error details for better debugging
+        const isAxiosError =
+            error && typeof error === "object" && "isAxiosError" in error;
+        const responseData =
+            isAxiosError && "response" in error ? (error as any).response?.data : null;
+        const responseStatus =
+            isAxiosError && "response" in error
+                ? (error as any).response?.status
+                : null;
+        const requestUrl =
+            isAxiosError && "config" in error ? (error as any).config?.url : null;
+
+        logger.error(
+            {
+                error: errorMessage,
+                responseData,
+                responseStatus,
+                requestUrl,
+                service,
+            },
+            "Failed to create connect session"
+        );
 
         Sentry.captureException(error, {
             tags: {
                 component: "api",
                 route: "connect",
                 action: "create_session",
+                service,
+            },
+            extra: {
+                nangoResponseData: responseData,
+                nangoResponseStatus: responseStatus,
+                requestUrl,
             },
         });
 

@@ -11,7 +11,7 @@ import { join } from "path";
 
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
-import { generateObject, type UIMessage } from "ai";
+import { generateText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
 import { assertEnv, env } from "@/lib/env";
@@ -363,28 +363,47 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                     "Running concierge"
                 );
 
-                // Run the concierge LLM with structured output
-                // Note: We don't set maxOutputTokens - let the SDK handle it automatically.
-                // Setting it too low (e.g., 250) causes AI_NoObjectGeneratedError when the
-                // schema requires more tokens than allocated.
-                const result = await generateObject({
+                // Define the routing tool - forces structured output via tool calling
+                // This is more reliable than generateObject for models that don't fully
+                // support native structured outputs (see https://github.com/vercel/ai/issues/9002)
+                const selectModelTool = tool({
+                    description:
+                        "Select the optimal model, temperature, reasoning config, and title for the user's request",
+                    inputSchema: conciergeSchema,
+                    execute: async (input) => input, // No-op execute, we just want the structured input
+                });
+
+                // Run the concierge LLM with tool calling for structured output
+                const result = await generateText({
                     model: openrouter.chat(CONCIERGE_MODEL),
-                    schema: conciergeSchema,
-                    schemaName: "ConciergeResponse",
-                    schemaDescription:
-                        "Model selection, temperature, reasoning config, and explanation for the user",
                     system: systemPrompt,
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
                     maxRetries: 1, // Single retry on network/rate limit errors
+                    tools: {
+                        selectModelTool,
+                    },
+                    toolChoice: "required", // Force the model to call the tool
                     experimental_telemetry: {
                         isEnabled: true,
                         functionId: "concierge",
                     },
                 });
 
+                // Extract the structured data from the tool call
+                // The AI SDK validates the input against our Zod schema automatically
+                if (!result.toolCalls || result.toolCalls.length === 0) {
+                    throw new Error(
+                        "No tool call generated - model did not select routing"
+                    );
+                }
+
+                const validated = (
+                    result.toolCalls[0] as { input: z.infer<typeof conciergeSchema> }
+                ).input;
+
                 // Process and validate the structured response
-                const conciergeResult = processConciergeResponse(result.object);
+                const conciergeResult = processConciergeResponse(validated);
 
                 span.setAttribute("selected_model", conciergeResult.modelId);
                 span.setAttribute("temperature", conciergeResult.temperature);
@@ -417,7 +436,10 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                 const errorName = error instanceof Error ? error.name : "UnknownError";
 
                 logger.error(
-                    { error: errorMessage, errorType: errorName },
+                    {
+                        error: errorMessage,
+                        errorType: errorName,
+                    },
                     "Concierge failed, using defaults"
                 );
 
