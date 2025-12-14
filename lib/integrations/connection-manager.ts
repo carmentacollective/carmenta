@@ -44,6 +44,11 @@ export interface ConnectionCredentials {
     type: "oauth" | "api_key";
     // For OAuth - access token ready for Authorization header
     accessToken?: string;
+    /**
+     * @deprecated Legacy Nango connection ID. Only for adapters not yet migrated to in-house OAuth.
+     * Migrated adapters (Notion) use accessToken instead.
+     */
+    connectionId?: string;
     // For API keys - decrypted credentials
     credentials?: Credentials;
     // Account information
@@ -168,6 +173,7 @@ export async function getCredentials(
             return {
                 type: "oauth",
                 accessToken,
+                connectionId: integration.accountId, // Legacy field for non-migrated adapters
                 accountId: integration.accountId,
                 accountDisplayName: integration.accountDisplayName || undefined,
                 isDefault: integration.isDefault,
