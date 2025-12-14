@@ -24,6 +24,36 @@ import { validateState } from "@/lib/integrations/oauth/state";
 import { getProvider } from "@/lib/integrations/oauth/providers";
 import { exchangeCodeForTokens, storeTokens } from "@/lib/integrations/oauth/tokens";
 
+/**
+ * Returns an HTML page that performs a client-side redirect.
+ *
+ * We use client-side redirects instead of NextResponse.redirect() because:
+ * - After OAuth flows that redirect through external providers, Clerk's session
+ *   cookies may not be recognized on server-side redirects (307)
+ * - Client-side redirects preserve the browser's cookie context
+ * - JavaScript window.location navigations are same-origin and include all cookies
+ */
+function clientRedirect(url: string): NextResponse {
+    const safeUrl = url.replace(/"/g, "&quot;");
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0;url=${safeUrl}">
+    <script>window.location.href="${safeUrl}";</script>
+    <title>Redirecting...</title>
+</head>
+<body>
+    <p>Redirecting to integrations...</p>
+</body>
+</html>`;
+
+    return new NextResponse(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+}
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
 
@@ -43,7 +73,7 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "oauth_failed");
         errorUrl.searchParams.set("message", errorDescription ?? error);
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 
     // Get required params
@@ -54,7 +84,7 @@ export async function GET(request: NextRequest) {
         logger.warn("⚠️ OAuth callback missing required params");
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_callback");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 
     // Validate state (CSRF protection)
@@ -72,7 +102,7 @@ export async function GET(request: NextRequest) {
 
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "invalid_state");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 
     // Get provider config
@@ -84,7 +114,7 @@ export async function GET(request: NextRequest) {
         );
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "unknown_provider");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 
     // Build callback URL for token exchange (must match authorize)
@@ -99,7 +129,7 @@ export async function GET(request: NextRequest) {
         });
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "configuration_error");
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
@@ -130,7 +160,7 @@ export async function GET(request: NextRequest) {
         const successUrl = new URL(state.returnUrl ?? "/integrations", request.url);
         successUrl.searchParams.set("success", "connected");
         successUrl.searchParams.set("service", state.provider);
-        return NextResponse.redirect(successUrl);
+        return clientRedirect(successUrl.toString());
     } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
 
@@ -147,6 +177,6 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/integrations", request.url);
         errorUrl.searchParams.set("error", "token_exchange_failed");
         errorUrl.searchParams.set("message", error.message);
-        return NextResponse.redirect(errorUrl);
+        return clientRedirect(errorUrl.toString());
     }
 }
