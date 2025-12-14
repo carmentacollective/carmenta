@@ -131,7 +131,6 @@ These are industry standards for modern React applications. No debate needed.
 | **React**      | 19.x    | Latest stable with concurrent features                                         |
 | **TypeScript** | 5.9+    | Type safety is table stakes                                                    |
 | **pnpm**       | 10.x    | Fast, disk-efficient package manager. Strict dependency resolution.            |
-| **Bun**        | 1.x     | Fast JavaScript runtime for dev server and builds (via `bun --bun` flag).      |
 | **Node.js**    | 24+     | Latest with native ESM, performance improvements                               |
 
 ### Why Next.js 16 over 15?
@@ -265,8 +264,8 @@ Error tracking and analytics are handled in separate component specifications.
 
 - Auto-deploy from main branch
 - Node.js 24 runtime
-- Build command: `pnpm build` (invokes `bun --bun next build`)
-- Start command: `bun .next/standalone/server.js`
+- Build command: `pnpm build`
+- Start command: `node .next/standalone/server.js`
 
 For initial homepage, static export is also an option (`output: 'export'` in
 next.config).
