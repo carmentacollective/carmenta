@@ -383,7 +383,8 @@ export abstract class ServiceAdapter {
 
         for (const param of operation.parameters) {
             if (param.required && !(param.name in paramsObj)) {
-                errors.push(`Missing required parameter: ${param.name}`);
+                const exampleHint = param.example ? ` (example: ${param.example})` : "";
+                errors.push(`Missing required parameter: ${param.name}${exampleHint}`);
             }
         }
 

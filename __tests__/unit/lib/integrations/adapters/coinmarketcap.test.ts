@@ -283,7 +283,8 @@ describe("CoinMarketCapAdapter", () => {
             const result = adapter.validate("convert_price", { amount: 100 });
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: convert");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: convert/);
         });
 
         it("accepts zero as valid amount for convert_price", () => {

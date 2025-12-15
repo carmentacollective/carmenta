@@ -126,7 +126,8 @@ describe("SlackAdapter", () => {
             const result = adapter.validate("send_message", { text: "Hello" });
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: channel");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: channel/);
         });
 
         it("accepts valid parameters for send_message", () => {

@@ -214,14 +214,18 @@ describe("FirefliesAdapter", () => {
             const result = adapter.validate("get_transcript", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: transcriptId");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(
+                /Missing required parameter: transcriptId/
+            );
         });
 
         it("validates required parameters for search_transcripts", () => {
             const result = adapter.validate("search_transcripts", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: query");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
         });
 
         it("accepts valid parameters", () => {

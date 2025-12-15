@@ -137,14 +137,16 @@ describe("DropboxAdapter", () => {
             const result = adapter.validate("list_folder", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: path");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: path/);
         });
 
         it("validates required parameters for search_files", () => {
             const result = adapter.validate("search_files", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: query");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
         });
     });
 
