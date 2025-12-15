@@ -100,42 +100,12 @@ export async function exchangeCodeForTokens(
     } catch (error) {
         // Handle HTTP errors from ky (400, 401, etc.)
         if (error instanceof HTTPError) {
+            // Try to parse OAuth error from response body
+            let errorBody: Record<string, unknown> | null = null;
             try {
-                // Try to parse OAuth error from response body
-                const errorBody = await error.response.json<Record<string, unknown>>();
-
-                if (isOAuthError(errorBody)) {
-                    const oauthError = errorBody as OAuthError;
-                    logger.error(
-                        {
-                            provider: provider.id,
-                            statusCode: error.response.status,
-                            error: oauthError.error,
-                            description: oauthError.errorDescription,
-                        },
-                        "❌ OAuth token exchange failed"
-                    );
-
-                    // Capture to Sentry with full context
-                    Sentry.captureException(error, {
-                        tags: {
-                            component: "oauth",
-                            provider: provider.id,
-                            oauth_error: oauthError.error,
-                            status_code: error.response.status.toString(),
-                        },
-                        extra: {
-                            errorDescription: oauthError.errorDescription,
-                            errorUri: oauthError.errorUri,
-                        },
-                    });
-
-                    throw new Error(
-                        `OAuth error: ${oauthError.error}${oauthError.errorDescription ? ` - ${oauthError.errorDescription}` : ""}`
-                    );
-                }
+                errorBody = await error.response.json<Record<string, unknown>>();
             } catch (parseError) {
-                // If we can't parse the error body, fall through to generic error
+                // If we can't parse the error body, continue with generic error handling
                 logger.error(
                     {
                         provider: provider.id,
@@ -143,6 +113,38 @@ export async function exchangeCodeForTokens(
                         parseError,
                     },
                     "❌ Failed to parse OAuth error response"
+                );
+            }
+
+            // Check if we got a parseable OAuth error
+            if (errorBody && isOAuthError(errorBody)) {
+                const oauthError = errorBody as OAuthError;
+                logger.error(
+                    {
+                        provider: provider.id,
+                        statusCode: error.response.status,
+                        error: oauthError.error,
+                        description: oauthError.error_description,
+                    },
+                    "❌ OAuth token exchange failed"
+                );
+
+                // Capture to Sentry with full context
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "oauth",
+                        provider: provider.id,
+                        oauth_error: oauthError.error,
+                        status_code: error.response.status.toString(),
+                    },
+                    extra: {
+                        errorDescription: oauthError.error_description,
+                        errorUri: oauthError.error_uri,
+                    },
+                });
+
+                throw new Error(
+                    `OAuth error: ${oauthError.error}${oauthError.error_description ? ` - ${oauthError.error_description}` : ""}`
                 );
             }
 
@@ -190,7 +192,7 @@ export async function exchangeCodeForTokens(
             {
                 provider: provider.id,
                 error: error.error,
-                description: error.errorDescription,
+                description: error.error_description,
             },
             "❌ Token exchange returned OAuth error"
         );
@@ -203,13 +205,13 @@ export async function exchangeCodeForTokens(
                 oauth_error: error.error,
             },
             extra: {
-                errorDescription: error.errorDescription,
-                errorUri: error.errorUri,
+                errorDescription: error.error_description,
+                errorUri: error.error_uri,
             },
         });
 
         throw new Error(
-            `OAuth error: ${error.error}${error.errorDescription ? ` - ${error.errorDescription}` : ""}`
+            `OAuth error: ${error.error}${error.error_description ? ` - ${error.error_description}` : ""}`
         );
     }
 
@@ -548,7 +550,7 @@ async function refreshAccessToken(
     if (isOAuthError(response)) {
         const error = response as OAuthError;
         throw new Error(
-            `Token refresh failed: ${error.error}${error.errorDescription ? ` - ${error.errorDescription}` : ""}`
+            `Token refresh failed: ${error.error}${error.error_description ? ` - ${error.error_description}` : ""}`
         );
     }
 

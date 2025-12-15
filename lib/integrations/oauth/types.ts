@@ -101,11 +101,12 @@ export interface TokenExchangeResult {
 
 /**
  * Error response from OAuth provider during authorization or token exchange.
+ * Per RFC 6749, OAuth providers return snake_case property names.
  */
 export interface OAuthError {
     error: string;
-    errorDescription?: string;
-    errorUri?: string;
+    error_description?: string;
+    error_uri?: string;
 }
 
 /**

@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
                 "The connection configuration is incorrect. Please contact support if this issue persists.";
         } else if (
             error.message.includes("invalid_grant") ||
-            error.message.includes("code")
+            error.message.includes("authorization code")
         ) {
             userMessage =
                 "The authorization code expired or was already used. Please try connecting again.";
