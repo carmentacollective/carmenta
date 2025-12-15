@@ -100,7 +100,7 @@ vi.mock("./lib/env", () => ({
         // OAuth provider credentials for testing
         NOTION_CLIENT_ID: "test-notion-client-id",
         NOTION_CLIENT_SECRET: "test-notion-client-secret",
-        NEXT_PUBLIC_APP_URL: "https://carmenta.app",
+        NEXT_PUBLIC_APP_URL: "https://carmenta.ai",
     },
     assertEnv: (value: unknown, name: string) => {
         if (value === undefined || value === null || value === "") {

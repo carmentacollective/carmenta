@@ -391,7 +391,7 @@ vi.mock("@/lib/http-client", () => ({
   httpClient: { get: vi.fn(), post: vi.fn() },
 }));
 vi.mock("@/lib/env", () => ({
-  env: { NEXT_PUBLIC_APP_URL: "https://carmenta.app" },
+  env: { NEXT_PUBLIC_APP_URL: "https://carmenta.ai" },
 }));
 
 describe("YourAdapter", () => {

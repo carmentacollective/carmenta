@@ -25,7 +25,7 @@ vi.mock("@/lib/http-client", () => ({
 // Mock env
 vi.mock("@/lib/env", () => ({
     env: {
-        NEXT_PUBLIC_APP_URL: "https://carmenta.app",
+        NEXT_PUBLIC_APP_URL: "https://carmenta.ai",
     },
 }));
 

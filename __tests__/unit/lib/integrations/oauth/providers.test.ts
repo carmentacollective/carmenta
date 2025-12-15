@@ -18,7 +18,7 @@ vi.mock("@/lib/env", () => ({
     env: {
         NOTION_CLIENT_ID: "test-notion-client-id",
         NOTION_CLIENT_SECRET: "test-notion-client-secret",
-        NEXT_PUBLIC_APP_URL: "https://carmenta.app",
+        NEXT_PUBLIC_APP_URL: "https://carmenta.ai",
     },
 }));
 
@@ -93,7 +93,7 @@ describe("OAuth Provider Registry", () => {
 
     describe("buildAuthorizationUrl", () => {
         const state = "test-csrf-state-token";
-        const redirectUri = "https://carmenta.app/integrations/oauth/callback";
+        const redirectUri = "https://carmenta.ai/integrations/oauth/callback";
 
         it("builds valid authorization URL for Notion", () => {
             const url = buildAuthorizationUrl("notion", state, redirectUri);
@@ -146,7 +146,7 @@ describe("OAuth Provider Registry", () => {
         });
 
         it("properly encodes special characters in redirect URI", () => {
-            const uriWithParams = "https://carmenta.app/callback?foo=bar&baz=qux";
+            const uriWithParams = "https://carmenta.ai/callback?foo=bar&baz=qux";
             const url = buildAuthorizationUrl("notion", state, uriWithParams);
 
             expect(url).toContain(encodeURIComponent(uriWithParams));
