@@ -550,7 +550,7 @@ export async function POST(req: Request) {
                 toolCalls,
                 toolResults,
                 response,
-                reasoning,
+                reasoningText,
                 usage,
                 providerMetadata,
             }) => {
@@ -578,10 +578,11 @@ export async function POST(req: Request) {
                     const parts: UIMessageLike["parts"] = [];
 
                     // Add reasoning part if present (with provider metadata for token counts)
-                    if (reasoning) {
+                    // Note: AI SDK provides `reasoningText` (string) vs `reasoning` (Array<ReasoningOutput>)
+                    if (reasoningText) {
                         parts.push({
                             type: "reasoning",
-                            text: reasoning,
+                            text: reasoningText,
                             // Include provider metadata for reasoning tokens, cache info
                             ...(providerMetadata && { providerMetadata }),
                         });
@@ -687,7 +688,7 @@ export async function POST(req: Request) {
                     logger.debug(
                         {
                             connectionId: currentConnectionId,
-                            hasReasoning: !!reasoning,
+                            hasReasoning: !!reasoningText,
                         },
                         "Connection persisted successfully"
                     );
