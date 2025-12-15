@@ -74,33 +74,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 
-    // Generate state with optional PKCE
-    const { state, codeChallenge } = await generateState(
-        userEmail,
-        providerId,
-        returnUrl,
-        provider.requiresPKCE
-    );
-
-    // Build authorization URL (may throw if credentials missing)
+    // Validate OAuth credentials before generating state
+    // This prevents orphaned state records when credentials are missing
     let authorizationUrl: string;
     try {
-        authorizationUrl = buildAuthorizationUrl(
-            providerId,
-            state,
-            redirectUri,
-            codeChallenge
-        );
+        // Build URL first - will throw if credentials missing
+        // We pass empty state temporarily just to validate credentials
+        authorizationUrl = buildAuthorizationUrl(providerId, "", redirectUri);
     } catch (error) {
         logger.error(
             { provider: providerId, error },
-            "❌ Failed to build authorization URL"
+            "❌ OAuth credentials not configured"
         );
         Sentry.captureException(error, {
             tags: { component: "oauth", route: "authorize", provider: providerId },
         });
 
-        // Return user-friendly error
+        // Return user-friendly error without creating state record
         return NextResponse.json(
             {
                 error: "OAuth credentials not configured",
@@ -111,6 +101,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             { status: 500 }
         );
     }
+
+    // Generate state with optional PKCE (only after credentials validated)
+    const { state, codeChallenge } = await generateState(
+        userEmail,
+        providerId,
+        returnUrl,
+        provider.requiresPKCE
+    );
+
+    // Build final authorization URL with actual state
+    authorizationUrl = buildAuthorizationUrl(
+        providerId,
+        state,
+        redirectUri,
+        codeChallenge
+    );
 
     logger.info({ provider: providerId, userEmail }, "🔄 Initiating OAuth flow");
 
