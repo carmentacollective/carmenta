@@ -149,3 +149,41 @@ jobs:
           fi
           echo "✅ Build successful! Output directory size:"
           du -sh .next
+
+  # E2E Tests (OAuth flows, public URL validation)
+  # These are too slow for pre-push hooks (~10-30s) but critical for CI
+  e2e:
+    name: 🎭 E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: 🧪 Run E2E tests
+        run: pnpm run test:e2e
+        env:
+          # Required for OAuth URL validation tests
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          # Dummy Clerk key for build
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=
+
+      - name: 📊 Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
