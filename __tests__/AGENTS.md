@@ -25,4 +25,23 @@ Use real database operations. Insert data, call production code, verify results.
 
 Test fixtures live in `__tests__/fixtures/`.
 
+## External API Integration Tests
+
+Some integration tests make real API calls to external services and require API keys.
+These tests are automatically skipped unless the required environment variables are set.
+
+### Giphy Integration Tests
+
+Location: `__tests__/integration/lib/integrations/adapters/giphy.integration.test.ts`
+
+Run with API key:
+
+```bash
+GIPHY_API_KEY=your_key_here pnpm test giphy.integration
+```
+
+Without the API key, these tests are skipped automatically. This allows CI/CD to run
+without requiring external API credentials while still enabling local testing with real
+APIs.
+
 @.cursor/rules/testing-standards-typescript.mdc
