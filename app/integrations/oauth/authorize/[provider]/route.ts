@@ -95,7 +95,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             {
                 error: "OAuth credentials not configured",
                 message:
-                    error instanceof Error ? error.message : "Missing OAuth credentials",
+                    error instanceof Error
+                        ? error.message
+                        : "Missing OAuth credentials",
                 provider: providerId,
             },
             { status: 500 }
