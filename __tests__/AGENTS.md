@@ -75,4 +75,19 @@ operations including search, list recordings, lifelog details, chats, audio down
 and raw API access. Destructive operations (delete_lifelog, delete_chat) only test
 parameter validation to protect real user data.
 
+### Fireflies Integration Tests
+
+Location:
+`__tests__/integration/lib/integrations/adapters/fireflies.integration.test.ts`
+
+Run with API key:
+
+```bash
+FIREFLIES_API_KEY=your_key_here pnpm test fireflies.integration
+```
+
+Without the API key, these tests are skipped automatically. Tests cover all 5 adapter
+operations: list_transcripts, get_transcript, search_transcripts, generate_summary, and
+raw_api (GraphQL). Note: Fireflies free plan has 50 API calls/day limit.
+
 @.cursor/rules/testing-standards-typescript.mdc

@@ -81,6 +81,31 @@ LIMITLESS_API_KEY=your_key_here pnpm test limitless.integration
 **Note:** Destructive operations (delete_lifelog, delete_chat) only test parameter
 validation to protect real user data from accidental deletion.
 
+### Fireflies Integration Tests
+
+Tests the Fireflies.ai service adapter with real GraphQL API calls.
+
+**Run tests:**
+
+```bash
+FIREFLIES_API_KEY=your_key_here pnpm test fireflies.integration
+```
+
+**Get an API key:** https://app.fireflies.ai/integrations/custom (API Keys section)
+
+**Test coverage (22 tests):**
+
+- Connection validation (valid/invalid API keys)
+- List transcripts with limit parameter
+- Get transcript by ID with full details
+- Search transcripts by keyword
+- Generate AI summaries (bullet points/paragraph formats)
+- Raw GraphQL API access with variables
+- Error handling and parameter validation
+
+**Note:** Fireflies free plan has 50 API calls/day limit. Tests are designed to be
+conservative with API usage.
+
 ## Why Integration Tests?
 
 While unit tests verify logic with mocks, integration tests catch:
