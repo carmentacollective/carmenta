@@ -17,37 +17,15 @@ export default function ConnectServicePage() {
     useEffect(() => {
         let cancelled = false;
 
-        const initiateConnection = async () => {
+        const initiateConnection = () => {
             try {
-                // Get OAuth authorize URL from backend
-                const response = await fetch("/api/connect", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ service }),
-                });
+                logger.info({ service }, "Redirecting to OAuth authorize");
 
                 if (cancelled) return;
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    logger.error(
-                        { errorData, service, status: response.status },
-                        "Failed to get OAuth URL"
-                    );
-
-                    throw new Error(errorData.error || "Failed to connect");
-                }
-
-                const { authorizeUrl } = await response.json();
-
-                logger.info({ service, authorizeUrl }, "Redirecting to OAuth");
-
-                if (cancelled) return;
-
-                // Redirect to OAuth authorize endpoint
-                window.location.href = authorizeUrl;
+                // Redirect directly to OAuth authorize endpoint
+                // This replaces the old Nango flow that required a POST to /api/connect
+                window.location.href = `/integrations/oauth/authorize/${service}`;
             } catch (err) {
                 if (!cancelled) {
                     logger.error(
