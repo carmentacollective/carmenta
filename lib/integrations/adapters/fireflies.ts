@@ -4,7 +4,7 @@
  * Meeting transcripts and AI insights via GraphQL API (no REST endpoints).
  *
  * ## Code-Relevant Details
- * - Search uses `keyword` param with `scope: "all"` to search titles + full transcript
+ * - Search uses `keyword` param to search titles + full transcript
  * - action_items returns formatted string, not array
  * - Duration in seconds, not minutes
  */
@@ -497,10 +497,10 @@ export class FirefliesAdapter extends ServiceAdapter {
 
         const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // API max is 50
 
-        // Use server-side keyword search with scope: "all" (searches title + full transcript)
+        // Use server-side keyword search (searches title + full transcript)
         const query = `
-            query SearchTranscripts($keyword: String!, $limit: Int!, $scope: TranscriptsQueryScope) {
-                transcripts(keyword: $keyword, limit: $limit, scope: $scope) {
+            query SearchTranscripts($keyword: String!, $limit: Int!) {
+                transcripts(keyword: $keyword, limit: $limit) {
                     id
                     title
                     date
@@ -528,7 +528,7 @@ export class FirefliesAdapter extends ServiceAdapter {
                     keywords?: string[];
                 };
             }>;
-        }>(query, apiKey, { keyword: searchQuery, limit: cappedLimit, scope: "all" });
+        }>(query, apiKey, { keyword: searchQuery, limit: cappedLimit });
 
         const transcripts = data.transcripts || [];
 
