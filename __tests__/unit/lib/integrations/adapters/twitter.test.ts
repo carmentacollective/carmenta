@@ -699,7 +699,8 @@ describe("TwitterAdapter", () => {
             const validation = adapter.validate("post_tweet", {});
 
             expect(validation.valid).toBe(false);
-            expect(validation.errors).toContain("Missing required parameter: text");
+            expect(validation.errors.length).toBeGreaterThan(0);
+            expect(validation.errors[0]).toMatch(/Missing required parameter: text/);
         });
 
         it("accepts valid parameters", () => {

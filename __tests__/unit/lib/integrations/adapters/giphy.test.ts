@@ -154,7 +154,7 @@ describe("GiphyAdapter", () => {
     });
 
     describe("search operation", () => {
-        it("requires query parameter", async () => {
+        it("requires query parameter with helpful example", async () => {
             const result = await adapter.execute("search", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
@@ -162,6 +162,8 @@ describe("GiphyAdapter", () => {
                 type: "text",
                 text: expect.stringContaining("query"),
             });
+            // Verify the error includes an example
+            expect(result.content[0].text).toMatch(/example.*funny cats/i);
         });
 
         it("searches for GIFs with query", async () => {

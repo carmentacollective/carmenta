@@ -152,14 +152,16 @@ describe("NotionAdapter", () => {
             const result = adapter.validate("search", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: query");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
         });
 
         it("validates required parameters for get_page", () => {
             const result = adapter.validate("get_page", {});
 
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain("Missing required parameter: page_id");
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: page_id/);
         });
 
         it("validates required parameters for create_page", () => {
