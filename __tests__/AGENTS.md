@@ -59,4 +59,20 @@ Without the API key, these tests are skipped automatically. Tests cover all majo
 operations including listings, quotes, global metrics, cryptocurrency info, categories,
 price conversion, and raw API access.
 
+### Limitless Integration Tests
+
+Location:
+`__tests__/integration/lib/integrations/adapters/limitless.integration.test.ts`
+
+Run with API key:
+
+```bash
+LIMITLESS_API_KEY=your_key_here pnpm test limitless.integration
+```
+
+Without the API key, these tests are skipped automatically. Tests cover all major
+operations including search, list recordings, lifelog details, chats, audio download,
+and raw API access. Destructive operations (delete_lifelog, delete_chat) only test
+parameter validation to protect real user data.
+
 @.cursor/rules/testing-standards-typescript.mdc
