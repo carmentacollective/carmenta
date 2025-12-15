@@ -82,13 +82,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         provider.requiresPKCE
     );
 
-    // Build authorization URL
-    const authorizationUrl = buildAuthorizationUrl(
-        providerId,
-        state,
-        redirectUri,
-        codeChallenge
-    );
+    // Build authorization URL (may throw if credentials missing)
+    let authorizationUrl: string;
+    try {
+        authorizationUrl = buildAuthorizationUrl(
+            providerId,
+            state,
+            redirectUri,
+            codeChallenge
+        );
+    } catch (error) {
+        logger.error(
+            { provider: providerId, error },
+            "❌ Failed to build authorization URL"
+        );
+        Sentry.captureException(error, {
+            tags: { component: "oauth", route: "authorize", provider: providerId },
+        });
+
+        // Return user-friendly error
+        return NextResponse.json(
+            {
+                error: "OAuth credentials not configured",
+                message:
+                    error instanceof Error ? error.message : "Missing OAuth credentials",
+                provider: providerId,
+            },
+            { status: 500 }
+        );
+    }
 
     logger.info({ provider: providerId, userEmail }, "🔄 Initiating OAuth flow");
 
