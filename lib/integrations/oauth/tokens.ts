@@ -79,7 +79,13 @@ export async function exchangeCodeForTokens(
     }
 
     logger.info(
-        { provider: provider.id, tokenUrl: provider.tokenUrl },
+        {
+            provider: provider.id,
+            tokenUrl: provider.tokenUrl,
+            hasCodeVerifier: !!codeVerifier,
+            codeVerifierLength: codeVerifier?.length,
+            redirectUri,
+        },
         "🔄 Exchanging authorization code for tokens"
     );
 
