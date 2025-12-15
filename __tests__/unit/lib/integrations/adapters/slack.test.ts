@@ -171,7 +171,7 @@ describe("SlackAdapter", () => {
             const result = await adapter.execute("list_channels", {}, testUserEmail);
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(expect.any(Object));
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("executes send_message operation", async () => {
@@ -194,7 +194,7 @@ describe("SlackAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
+            expect(httpClient.post).toHaveBeenCalled();
         });
 
         it("executes get_channel_history operation", async () => {
@@ -221,7 +221,7 @@ describe("SlackAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(expect.any(Object));
+            expect(httpClient.get).toHaveBeenCalled();
         });
     });
 

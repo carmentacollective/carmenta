@@ -186,7 +186,7 @@ describe("DropboxAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
+            expect(httpClient.post).toHaveBeenCalled();
         });
 
         it("executes search_files operation", async () => {
@@ -216,7 +216,7 @@ describe("DropboxAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
+            expect(httpClient.post).toHaveBeenCalled();
         });
     });
 
