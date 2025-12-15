@@ -33,6 +33,36 @@ export class SlackAdapter extends ServiceAdapter {
     }
 
     /**
+     * Extract rate limit information from Slack API response headers.
+     * Slack provides rate limit info in these headers:
+     * - x-rate-limit-limit: Total requests allowed per window
+     * - x-rate-limit-remaining: Requests remaining in current window
+     * - x-rate-limit-reset: Unix timestamp when limit resets
+     * - retry-after: Seconds to wait if rate limited
+     */
+    private extractRateLimitInfo(
+        headers: Headers
+    ): Record<string, unknown> | undefined {
+        const remaining = headers.get("x-rate-limit-remaining");
+        const reset = headers.get("x-rate-limit-reset");
+        const limit = headers.get("x-rate-limit-limit");
+        const retryAfter = headers.get("retry-after");
+
+        if (!remaining && !reset && !limit && !retryAfter) {
+            return undefined;
+        }
+
+        const rateLimitInfo: Record<string, unknown> = {};
+
+        if (remaining) rateLimitInfo.remaining = parseInt(remaining, 10);
+        if (reset) rateLimitInfo.reset_at = parseInt(reset, 10);
+        if (limit) rateLimitInfo.limit = parseInt(limit, 10);
+        if (retryAfter) rateLimitInfo.retry_after = parseInt(retryAfter, 10);
+
+        return rateLimitInfo;
+    }
+
+    /**
      * Test the OAuth connection by making a live API request.
      * Called when user clicks "Test" button to verify credentials are working.
      *
@@ -76,7 +106,8 @@ export class SlackAdapter extends ServiceAdapter {
             operations: [
                 {
                     name: "list_channels",
-                    description: "List channels in your Slack workspace",
+                    description:
+                        "List channels in your Slack workspace. Supports pagination via cursor.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -95,14 +126,23 @@ export class SlackAdapter extends ServiceAdapter {
                                 "Maximum number of channels to return (default: 100)",
                             example: "50",
                         },
+                        {
+                            name: "cursor",
+                            type: "string",
+                            required: false,
+                            description:
+                                "Pagination cursor from previous response. Omit for first page.",
+                            example: "dXNlcjpVMDYxTkZUVDI=",
+                        },
                     ],
-                    returns: "List of channels with names, IDs, and member counts",
+                    returns:
+                        "List of channels with names, IDs, and member counts. Includes next_cursor for pagination.",
                     example: `list_channels({ types: "public_channel,private_channel" })`,
                 },
                 {
                     name: "get_channel_history",
                     description:
-                        "Get messages from a channel or DM. NOTE: If this fails with 'not_in_channel', the user must join the channel first (user tokens only access channels the user is a member of).",
+                        "Get messages from a channel or DM. Supports pagination via cursor. NOTE: If this fails with 'not_in_channel', the user must join the channel first (user tokens only access channels the user is a member of).",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -119,8 +159,16 @@ export class SlackAdapter extends ServiceAdapter {
                                 "Number of messages to fetch (default: 50, max: 100)",
                             example: "25",
                         },
+                        {
+                            name: "cursor",
+                            type: "string",
+                            required: false,
+                            description:
+                                "Pagination cursor from previous response. Omit for first page.",
+                        },
                     ],
-                    returns: "List of messages with sender, timestamp, and content",
+                    returns:
+                        "List of messages with sender, timestamp, and content. Includes next_cursor for pagination if more messages available.",
                 },
                 {
                     name: "get_thread_replies",
@@ -170,6 +218,64 @@ export class SlackAdapter extends ServiceAdapter {
                     returns: "Sent message details including timestamp",
                 },
                 {
+                    name: "update_message",
+                    description:
+                        "Update an existing message. NOTE: You can only edit messages you sent.",
+                    annotations: { readOnlyHint: false, destructiveHint: false },
+                    parameters: [
+                        {
+                            name: "channel",
+                            type: "string",
+                            required: true,
+                            description: "Channel ID where the message was posted",
+                        },
+                        {
+                            name: "timestamp",
+                            type: "string",
+                            required: true,
+                            description: "Timestamp of the message to update",
+                        },
+                        {
+                            name: "text",
+                            type: "string",
+                            required: true,
+                            description: "New message text",
+                        },
+                    ],
+                    returns: "Updated message details",
+                    example: `update_message({ channel: "C1234567890", timestamp: "1234567890.123456", text: "Updated text" })`,
+                },
+                {
+                    name: "delete_message",
+                    description:
+                        "Delete a message. NOTE: You can only delete messages you sent.",
+                    annotations: { readOnlyHint: false, destructiveHint: true },
+                    parameters: [
+                        {
+                            name: "channel",
+                            type: "string",
+                            required: true,
+                            description: "Channel ID where the message was posted",
+                        },
+                        {
+                            name: "timestamp",
+                            type: "string",
+                            required: true,
+                            description: "Timestamp of the message to delete",
+                        },
+                    ],
+                    returns: "Confirmation of deletion",
+                    example: `delete_message({ channel: "C1234567890", timestamp: "1234567890.123456" })`,
+                },
+                {
+                    name: "get_workspace_info",
+                    description: "Get information about the connected Slack workspace",
+                    annotations: { readOnlyHint: true },
+                    parameters: [],
+                    returns: "Workspace details including name, domain, and user count",
+                    example: `get_workspace_info()`,
+                },
+                {
                     name: "get_user_info",
                     description: "Get information about a Slack user",
                     annotations: { readOnlyHint: true },
@@ -197,6 +303,41 @@ export class SlackAdapter extends ServiceAdapter {
                         },
                     ],
                     returns: "List of workspace members",
+                },
+                {
+                    name: "search_messages",
+                    description:
+                        "Search for messages across all channels. Searches message content and returns matching results with context.",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "query",
+                            type: "string",
+                            required: true,
+                            description:
+                                "Search query (can include keywords, phrases, or Slack search modifiers)",
+                            example: "Q4 goals",
+                        },
+                        {
+                            name: "count",
+                            type: "number",
+                            required: false,
+                            description:
+                                "Number of results to return (default: 20, max: 100)",
+                            example: "20",
+                        },
+                        {
+                            name: "sort",
+                            type: "string",
+                            required: false,
+                            description:
+                                "Sort order: 'score' (relevance) or 'timestamp' (newest first). Default: score",
+                            example: "timestamp",
+                        },
+                    ],
+                    returns:
+                        "Matching messages with channel context, sender, timestamp, and message text",
+                    example: `search_messages({ query: "Q4 goals", count: 20 })`,
                 },
                 {
                     name: "add_reaction",
@@ -358,10 +499,18 @@ export class SlackAdapter extends ServiceAdapter {
                     return await this.handleGetThreadReplies(params, accessToken);
                 case "send_message":
                     return await this.handleSendMessage(params, accessToken);
+                case "update_message":
+                    return await this.handleUpdateMessage(params, accessToken);
+                case "delete_message":
+                    return await this.handleDeleteMessage(params, accessToken);
+                case "get_workspace_info":
+                    return await this.handleGetWorkspaceInfo(params, accessToken);
                 case "get_user_info":
                     return await this.handleGetUserInfo(params, accessToken);
                 case "list_users":
                     return await this.handleListUsers(params, accessToken);
+                case "search_messages":
+                    return await this.handleSearchMessages(params, accessToken);
                 case "add_reaction":
                     return await this.handleAddReaction(params, accessToken);
                 case "upload_file":
@@ -408,23 +557,36 @@ export class SlackAdapter extends ServiceAdapter {
         params: unknown,
         accessToken: string
     ): Promise<MCPToolResponse> {
-        const { types = "public_channel", limit = 100 } = params as {
+        const {
+            types = "public_channel",
+            limit = 100,
+            cursor,
+        } = params as {
             types?: string;
             limit?: number;
+            cursor?: string;
         };
 
-        this.logInfo(`📋 [SLACK] Listing channels, types: ${types}, limit: ${limit}`);
+        this.logInfo(
+            `📋 [SLACK] Listing channels, types: ${types}, limit: ${limit}, cursor: ${cursor ? "yes" : "no"}`
+        );
 
         const cappedLimit = Math.min(Math.max(1, limit || 100), MAX_CHANNELS_LIST);
+
+        const searchParams: Record<string, string> = {
+            types,
+            limit: cappedLimit.toString(),
+            exclude_archived: "true",
+        };
+
+        if (cursor) {
+            searchParams.cursor = cursor;
+        }
 
         const response = await httpClient
             .get(`${SLACK_API_BASE}/conversations.list`, {
                 headers: this.buildHeaders(accessToken),
-                searchParams: {
-                    types,
-                    limit: cappedLimit.toString(),
-                    exclude_archived: "true",
-                },
+                searchParams,
             })
             .json<{
                 ok: boolean;
@@ -441,6 +603,9 @@ export class SlackAdapter extends ServiceAdapter {
                     topic?: { value: string };
                     purpose?: { value: string };
                 }>;
+                response_metadata?: {
+                    next_cursor?: string;
+                };
             }>();
 
         if (!response.ok || !response.channels) {
@@ -465,36 +630,58 @@ export class SlackAdapter extends ServiceAdapter {
             purpose: ch.purpose?.value || "",
         }));
 
-        return this.createJSONResponse({
+        const result: Record<string, unknown> = {
             channels: channelsList,
             count: channelsList.length,
-        });
+        };
+
+        if (response.response_metadata?.next_cursor) {
+            result.next_cursor = response.response_metadata.next_cursor;
+            result.has_more = true;
+        } else {
+            result.has_more = false;
+        }
+
+        return this.createJSONResponse(result);
     }
 
     private async handleGetChannelHistory(
         params: unknown,
         accessToken: string
     ): Promise<MCPToolResponse> {
-        const { channel, limit = 50 } = params as {
+        const {
+            channel,
+            limit = 50,
+            cursor,
+        } = params as {
             channel: string;
             limit?: number;
+            cursor?: string;
         };
 
         if (!channel || typeof channel !== "string") {
             throw new ValidationError("Channel ID is required");
         }
 
-        this.logInfo(`📥 [SLACK] Fetching history for channel ${channel}`);
+        this.logInfo(
+            `📥 [SLACK] Fetching history for channel ${channel}, cursor: ${cursor ? "yes" : "no"}`
+        );
 
         const cappedLimit = Math.min(Math.max(1, limit || 50), MAX_MESSAGES_FETCH);
+
+        const searchParams: Record<string, string> = {
+            channel,
+            limit: cappedLimit.toString(),
+        };
+
+        if (cursor) {
+            searchParams.cursor = cursor;
+        }
 
         const response = await httpClient
             .get(`${SLACK_API_BASE}/conversations.history`, {
                 headers: this.buildHeaders(accessToken),
-                searchParams: {
-                    channel,
-                    limit: cappedLimit.toString(),
-                },
+                searchParams,
             })
             .json<{
                 ok: boolean;
@@ -507,6 +694,10 @@ export class SlackAdapter extends ServiceAdapter {
                     thread_ts?: string;
                     reply_count?: number;
                 }>;
+                response_metadata?: {
+                    next_cursor?: string;
+                };
+                has_more?: boolean;
             }>();
 
         if (!response.ok) {
@@ -519,11 +710,20 @@ export class SlackAdapter extends ServiceAdapter {
 
         this.logInfo(`✅ [SLACK] Retrieved ${response.messages?.length || 0} messages`);
 
-        return this.createJSONResponse({
+        const result: Record<string, unknown> = {
             channel,
             messages: response.messages || [],
             count: response.messages?.length || 0,
-        });
+        };
+
+        if (response.has_more && response.response_metadata?.next_cursor) {
+            result.next_cursor = response.response_metadata.next_cursor;
+            result.has_more = true;
+        } else {
+            result.has_more = false;
+        }
+
+        return this.createJSONResponse(result);
     }
 
     private async handleGetThreadReplies(
@@ -632,6 +832,150 @@ export class SlackAdapter extends ServiceAdapter {
             success: true,
             ts: response.ts,
             channel: response.channel,
+        });
+    }
+
+    private async handleUpdateMessage(
+        params: unknown,
+        accessToken: string
+    ): Promise<MCPToolResponse> {
+        const { channel, timestamp, text } = params as {
+            channel: string;
+            timestamp: string;
+            text: string;
+        };
+
+        if (!channel || !timestamp || !text) {
+            throw new ValidationError("Channel, timestamp, and text are required");
+        }
+
+        this.logInfo(`✏️ [SLACK] Updating message ${timestamp} in channel ${channel}`);
+
+        const response = await httpClient
+            .post(`${SLACK_API_BASE}/chat.update`, {
+                headers: this.buildHeaders(accessToken),
+                json: {
+                    channel,
+                    ts: timestamp,
+                    text,
+                },
+            })
+            .json<{
+                ok: boolean;
+                error?: string;
+                ts?: string;
+                channel?: string;
+                text?: string;
+            }>();
+
+        if (!response.ok) {
+            const errorMsg =
+                response.error === "cant_update_message"
+                    ? "Cannot update this message. You can only edit messages you sent."
+                    : response.error === "message_not_found"
+                      ? "Message not found. It may have been deleted."
+                      : `Failed to update message${response.error ? `: ${response.error}` : ""}`;
+            return this.createErrorResponse(errorMsg);
+        }
+
+        this.logInfo(`✅ [SLACK] Message updated, ts: ${response.ts}`);
+
+        return this.createJSONResponse({
+            success: true,
+            ts: response.ts,
+            channel: response.channel,
+            text: response.text,
+        });
+    }
+
+    private async handleDeleteMessage(
+        params: unknown,
+        accessToken: string
+    ): Promise<MCPToolResponse> {
+        const { channel, timestamp } = params as {
+            channel: string;
+            timestamp: string;
+        };
+
+        if (!channel || !timestamp) {
+            throw new ValidationError("Channel and timestamp are required");
+        }
+
+        this.logInfo(`🗑️ [SLACK] Deleting message ${timestamp} in channel ${channel}`);
+
+        const response = await httpClient
+            .post(`${SLACK_API_BASE}/chat.delete`, {
+                headers: this.buildHeaders(accessToken),
+                json: {
+                    channel,
+                    ts: timestamp,
+                },
+            })
+            .json<{
+                ok: boolean;
+                error?: string;
+                ts?: string;
+                channel?: string;
+            }>();
+
+        if (!response.ok) {
+            const errorMsg =
+                response.error === "cant_delete_message"
+                    ? "Cannot delete this message. You can only delete messages you sent."
+                    : response.error === "message_not_found"
+                      ? "Message not found. It may have already been deleted."
+                      : `Failed to delete message${response.error ? `: ${response.error}` : ""}`;
+            return this.createErrorResponse(errorMsg);
+        }
+
+        this.logInfo(`✅ [SLACK] Message deleted, ts: ${response.ts}`);
+
+        return this.createJSONResponse({
+            success: true,
+            ts: response.ts,
+            channel: response.channel,
+            deleted: true,
+        });
+    }
+
+    private async handleGetWorkspaceInfo(
+        params: unknown,
+        accessToken: string
+    ): Promise<MCPToolResponse> {
+        this.logInfo(`🏢 [SLACK] Fetching workspace info`);
+
+        const response = await httpClient
+            .get(`${SLACK_API_BASE}/team.info`, {
+                headers: this.buildHeaders(accessToken),
+            })
+            .json<{
+                ok: boolean;
+                error?: string;
+                team?: {
+                    id: string;
+                    name: string;
+                    domain: string;
+                    email_domain?: string;
+                    icon?: {
+                        image_original?: string;
+                    };
+                };
+            }>();
+
+        if (!response.ok || !response.team) {
+            return this.createErrorResponse(
+                `Failed to fetch workspace info${response.error ? `: ${response.error}` : ""}`
+            );
+        }
+
+        this.logInfo(`✅ [SLACK] Retrieved workspace info for ${response.team.name}`);
+
+        return this.createJSONResponse({
+            id: response.team.id,
+            name: response.team.name,
+            domain: response.team.domain,
+            email_domain: response.team.email_domain,
+            icon: response.team.icon?.image_original,
         });
     }
 
@@ -747,6 +1091,90 @@ export class SlackAdapter extends ServiceAdapter {
             })),
             count: activeUsers.length,
         });
+    }
+
+    private async handleSearchMessages(
+        params: unknown,
+        accessToken: string
+    ): Promise<MCPToolResponse> {
+        const {
+            query,
+            count = 20,
+            sort = "score",
+        } = params as {
+            query: string;
+            count?: number;
+            sort?: string;
+        };
+
+        if (!query) {
+            throw new ValidationError("Search query is required");
+        }
+
+        this.logInfo(`🔍 [SLACK] Searching messages for: "${query}", count: ${count}`);
+
+        const cappedCount = Math.min(Math.max(1, count || 20), 100);
+
+        // Get full response to extract rate limit headers
+        const httpResponse = await httpClient.get(`${SLACK_API_BASE}/search.messages`, {
+            headers: this.buildHeaders(accessToken),
+            searchParams: {
+                query,
+                count: cappedCount.toString(),
+                sort,
+                sort_dir: sort === "timestamp" ? "desc" : undefined,
+            },
+        });
+
+        const response = await httpResponse.json<{
+            ok: boolean;
+            error?: string;
+            messages?: {
+                total: number;
+                matches: Array<{
+                    channel: { id: string; name: string };
+                    type: string;
+                    user?: string;
+                    username?: string;
+                    text: string;
+                    ts: string;
+                    permalink?: string;
+                }>;
+            };
+        }>();
+
+        if (!response.ok) {
+            const errorMsg = `Failed to search messages${response.error ? `: ${response.error}` : ""}`;
+            return this.createErrorResponse(errorMsg);
+        }
+
+        const matches = response.messages?.matches || [];
+
+        this.logInfo(
+            `✅ [SLACK] Found ${matches.length} matching messages (${response.messages?.total || 0} total)`
+        );
+
+        const result: Record<string, unknown> = {
+            query,
+            total: response.messages?.total || 0,
+            results: matches.map((m) => ({
+                channel_id: m.channel.id,
+                channel_name: m.channel.name,
+                user: m.username || m.user || "unknown",
+                text: m.text,
+                timestamp: m.ts,
+                permalink: m.permalink,
+            })),
+            count: matches.length,
+        };
+
+        // Add rate limit information if available
+        const rateLimitInfo = this.extractRateLimitInfo(httpResponse.headers);
+        if (rateLimitInfo) {
+            result.rate_limit = rateLimitInfo;
+        }
+
+        return this.createJSONResponse(result);
     }
 
     private async handleAddReaction(
