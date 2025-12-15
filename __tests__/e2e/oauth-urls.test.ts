@@ -8,9 +8,16 @@ import { test, expect } from "@playwright/test";
  *
  * This catches bugs where request.url was used instead of NEXT_PUBLIC_APP_URL,
  * causing redirects to internal hostnames instead of the public domain.
+ *
+ * Note: These tests require Clerk authentication to be configured.
+ * They will be skipped in environments without Clerk secrets (e.g., fork PRs).
  */
 
+const hasClerkSecrets =
+    !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 test.describe("OAuth URL Validation", () => {
+    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
     test("authorize route requires auth and redirects with correct URL", async ({
         page,
     }) => {

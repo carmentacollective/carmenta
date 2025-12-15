@@ -177,9 +177,10 @@ jobs:
         env:
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # Clerk test keys from GitHub secrets (with fallbacks for fork PRs)
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || 'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST || 'sk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
+          # Clerk test keys from GitHub secrets
+          # Note: Fork PRs won't have these secrets, but oauth-urls.test.ts will skip those tests
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
 
       - name: 📊 Upload Playwright report
         uses: actions/upload-artifact@v4
