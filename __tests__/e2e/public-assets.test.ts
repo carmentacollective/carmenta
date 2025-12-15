@@ -78,7 +78,7 @@ test.describe("Public Assets - URLs and Accessibility", () => {
         const logoFiles = ["/logos/carmenta-icon.svg", "/logos/carmenta-logo.svg"];
 
         for (const logo of logoFiles) {
-            const response = await page.goto(logo, { failOnStatusCode: false });
+            const response = await page.goto(logo);
 
             // Some logos might not exist, but check if the ones that do are accessible
             if (response?.status() === 200) {
