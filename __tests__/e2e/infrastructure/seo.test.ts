@@ -43,11 +43,33 @@ test.describe("SEO Files", () => {
         expect(response?.headers()["content-type"]).toContain("xml");
     });
 
+    test("sitemap.xml contains URLs with correct domain", async ({ page }) => {
+        await page.goto("/sitemap.xml");
+        const content = await page.content();
+
+        // Should contain URL entries in XML format
+        expect(content).toMatch(/<loc>.*<\/loc>/);
+        // URLs should use correct domain (localhost in dev, carmenta.ai in prod)
+        expect(content).toMatch(/(localhost|carmenta\.ai)/);
+    });
+
     test("manifest.webmanifest is accessible", async ({ page }) => {
         const response = await page.goto("/manifest.webmanifest");
 
         expect(response?.status()).toBe(200);
         expect(response?.headers()["content-type"]).toContain("json");
+    });
+
+    test("manifest.webmanifest contains required PWA fields", async ({ page }) => {
+        const response = await page.goto("/manifest.webmanifest");
+        const manifest = await response?.json();
+
+        // PWA manifest requires name, short_name, and icons
+        expect(manifest.name).toBeDefined();
+        expect(manifest.short_name).toBeDefined();
+        expect(manifest.icons).toBeDefined();
+        expect(Array.isArray(manifest.icons)).toBe(true);
+        expect(manifest.icons.length).toBeGreaterThan(0);
     });
 
     test("llms.txt is accessible", async ({ page }) => {

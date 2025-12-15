@@ -33,7 +33,7 @@ test.describe("Next.js Metadata Images", () => {
         const response = await page.goto("/icon.png");
 
         expect(response?.status()).toBe(200);
-        expect(response?.headers()["content-type"]).toMatch(/^image\/(png|x-icon)/);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/png$/);
     });
 
     test("apple-icon.png is accessible", async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe("Next.js Metadata Images", () => {
         const response = await page.goto("/apple-icon.png");
 
         expect(response?.status()).toBe(200);
-        expect(response?.headers()["content-type"]).toMatch(/^image\/(png|x-icon)/);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/png$/);
     });
 
     test("opengraph-image.png is accessible", async ({ page }) => {
