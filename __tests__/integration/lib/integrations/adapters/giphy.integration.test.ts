@@ -22,20 +22,23 @@ setupTestDb();
 describeIf("GiphyAdapter - Real API Integration", () => {
     let adapter: GiphyAdapter;
     const testUserEmail = "giphy-integration-test@carmenta.ai";
+    // TypeScript narrowing: Inside this block, GIPHY_API_KEY is guaranteed to be defined
+    // because describeIf skips the entire suite when it's undefined
+    const apiKey = GIPHY_API_KEY as string;
 
     beforeEach(async () => {
         adapter = new GiphyAdapter();
 
         // Create test user and integration with real API key
         const user = await createTestUser({ email: testUserEmail });
-        await createTestApiKeyIntegration(user.email, "giphy", GIPHY_API_KEY!, {
+        await createTestApiKeyIntegration(user.email, "giphy", apiKey, {
             accountId: "test-account",
         });
     });
 
     describe("Connection Testing", () => {
         it("validates API key successfully", async () => {
-            const result = await adapter.testConnection(GIPHY_API_KEY!);
+            const result = await adapter.testConnection(apiKey);
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
@@ -63,7 +66,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
             expect(result.content[0].type).toBe("text");
 
             // Parse the JSON response
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
 
             expect(response.query).toBe("celebration");
             expect(response.results).toBeDefined();
@@ -94,7 +97,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.results).toEqual([]);
             expect(response.totalCount).toBe(0);
             expect(response.message).toContain("No GIFs found");
@@ -109,7 +112,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.results.length).toBeLessThanOrEqual(3);
         });
 
@@ -122,7 +125,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.results).toBeDefined();
 
             // All results should have rating 'g'
@@ -138,7 +141,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.result).toBeDefined();
             expect(response.result).toHaveProperty("id");
             expect(response.result).toHaveProperty("title");
@@ -155,7 +158,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.result).toBeDefined();
             expect(response.result.id).toBeDefined();
         });
@@ -169,7 +172,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.result.rating).toBe("g");
         });
     });
@@ -184,7 +187,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.results).toBeDefined();
             expect(Array.isArray(response.results)).toBe(true);
             expect(response.results.length).toBeGreaterThan(0);
@@ -206,7 +209,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.results.length).toBeLessThanOrEqual(3);
         });
     });
@@ -252,7 +255,7 @@ describeIf("GiphyAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(false);
 
-            const response = JSON.parse(result.content[0].text);
+            const response = JSON.parse(result.content[0].text!);
             expect(response.data).toBeDefined();
             expect(Array.isArray(response.data)).toBe(true);
         });
