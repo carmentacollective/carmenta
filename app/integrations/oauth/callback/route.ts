@@ -219,10 +219,36 @@ export async function GET(request: NextRequest) {
             extra: { userEmail: state.userEmail },
         });
 
+        // Extract user-friendly error message
+        let userMessage = error.message;
+
+        // Provide specific guidance for common OAuth errors
+        if (error.message.includes("invalid_client")) {
+            userMessage =
+                "The connection configuration is incorrect. Please contact support if this issue persists.";
+        } else if (
+            error.message.includes("invalid_grant") ||
+            error.message.includes("authorization code")
+        ) {
+            userMessage =
+                "The authorization code expired or was already used. Please try connecting again.";
+        } else if (error.message.includes("redirect_uri_mismatch")) {
+            userMessage =
+                "The redirect URL doesn't match the configured URL. Please contact support.";
+        } else if (error.message.includes("access_denied")) {
+            userMessage = `You denied access to ${state.provider}. Please try again if you'd like to connect.`;
+        } else if (error.message.includes("Network error")) {
+            userMessage =
+                "We couldn't reach the service. Please check your connection and try again.";
+        } else if (!error.message || error.message.includes("Unknown")) {
+            userMessage = `We couldn't connect to ${state.provider}. Please try again or contact support.`;
+        }
+
         // Use appUrl for error redirect to ensure correct domain
         const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "token_exchange_failed");
-        errorUrl.searchParams.set("message", error.message);
+        errorUrl.searchParams.set("service", state.provider);
+        errorUrl.searchParams.set("message", userMessage);
         return clientRedirect(errorUrl.toString(), appUrl);
     }
 }
