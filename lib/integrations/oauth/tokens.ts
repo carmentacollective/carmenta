@@ -83,14 +83,101 @@ export async function exchangeCodeForTokens(
         "🔄 Exchanging authorization code for tokens"
     );
 
-    const response = await ky
-        .post(provider.tokenUrl, {
-            headers,
-            body: body.toString(),
-        })
-        .json<Record<string, unknown>>();
+    let response: Record<string, unknown>;
+    try {
+        response = await ky
+            .post(provider.tokenUrl, {
+                headers,
+                body: body.toString(),
+            })
+            .json<Record<string, unknown>>();
+    } catch (error) {
+        // Handle HTTP errors from ky (400, 401, etc.)
+        if (error instanceof HTTPError) {
+            try {
+                // Try to parse OAuth error from response body
+                const errorBody = await error.response.json<Record<string, unknown>>();
 
-    // Check for OAuth error response
+                if (isOAuthError(errorBody)) {
+                    const oauthError = errorBody as OAuthError;
+                    logger.error(
+                        {
+                            provider: provider.id,
+                            statusCode: error.response.status,
+                            error: oauthError.error,
+                            description: oauthError.errorDescription,
+                        },
+                        "❌ OAuth token exchange failed"
+                    );
+
+                    // Capture to Sentry with full context
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "oauth",
+                            provider: provider.id,
+                            oauth_error: oauthError.error,
+                            status_code: error.response.status.toString(),
+                        },
+                        extra: {
+                            errorDescription: oauthError.errorDescription,
+                            errorUri: oauthError.errorUri,
+                        },
+                    });
+
+                    throw new Error(
+                        `OAuth error: ${oauthError.error}${oauthError.errorDescription ? ` - ${oauthError.errorDescription}` : ""}`
+                    );
+                }
+            } catch (parseError) {
+                // If we can't parse the error body, fall through to generic error
+                logger.error(
+                    {
+                        provider: provider.id,
+                        statusCode: error.response.status,
+                        parseError,
+                    },
+                    "❌ Failed to parse OAuth error response"
+                );
+            }
+
+            // Generic HTTP error
+            logger.error(
+                { provider: provider.id, statusCode: error.response.status, error },
+                "❌ Token exchange HTTP error"
+            );
+
+            Sentry.captureException(error, {
+                tags: {
+                    component: "oauth",
+                    provider: provider.id,
+                    status_code: error.response.status.toString(),
+                },
+            });
+
+            throw new Error(
+                `Token exchange failed with status ${error.response.status}. Please try reconnecting or contact support if the issue persists.`
+            );
+        }
+
+        // Non-HTTP error (network, timeout, etc.)
+        logger.error(
+            { provider: provider.id, error },
+            "❌ Token exchange network error"
+        );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "oauth",
+                provider: provider.id,
+            },
+        });
+
+        throw new Error(
+            "Network error during token exchange. Please check your connection and try again."
+        );
+    }
+
+    // Check for OAuth error response in successful HTTP response (rare but possible)
     if (isOAuthError(response)) {
         const error = response as OAuthError;
         logger.error(
@@ -99,8 +186,22 @@ export async function exchangeCodeForTokens(
                 error: error.error,
                 description: error.errorDescription,
             },
-            "❌ Token exchange failed"
+            "❌ Token exchange returned OAuth error"
         );
+
+        Sentry.captureMessage("OAuth error in successful response", {
+            level: "error",
+            tags: {
+                component: "oauth",
+                provider: provider.id,
+                oauth_error: error.error,
+            },
+            extra: {
+                errorDescription: error.errorDescription,
+                errorUri: error.errorUri,
+            },
+        });
+
         throw new Error(
             `OAuth error: ${error.error}${error.errorDescription ? ` - ${error.errorDescription}` : ""}`
         );
