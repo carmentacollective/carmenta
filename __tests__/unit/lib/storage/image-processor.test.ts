@@ -38,7 +38,7 @@ describe("Image Processor - Optimization Logic", () => {
     });
 
     it("optimizes image and returns compressed version when smaller", async () => {
-        const original = createMockFile("photo.jpg", "image/jpeg", 10 * 1024 * 1024); // 10MB
+        const original = createMockFile("photo.jpg", "image/jpeg", 1024 * 1024); // 1MB
         const optimized = createMockFile("photo.jpg", "image/jpeg", 200 * 1024); // 200KB
 
         vi.mocked(imageCompression).mockResolvedValue(optimized);
@@ -78,14 +78,14 @@ describe("Image Processor - Optimization Logic", () => {
     });
 
     it("returns original file when compression library throws error", async () => {
-        const original = createMockFile("photo.jpg", "image/jpeg", 5 * 1024 * 1024);
+        const original = createMockFile("photo.jpg", "image/jpeg", 1024 * 1024);
 
         vi.mocked(imageCompression).mockRejectedValue(new Error("Compression failed"));
 
         const result = await optimizeImage(original);
 
         expect(result).toBe(original); // Fallback to original
-        expect(result.size).toBe(5 * 1024 * 1024);
+        expect(result.size).toBe(1024 * 1024);
     });
 
     it("passes correct compression options to library", async () => {
@@ -114,8 +114,8 @@ describe("Image Processor - Token Savings", () => {
     });
 
     it("achieves significant size reduction for typical photo", async () => {
-        const original = createMockFile("photo.jpg", "image/jpeg", 8 * 1024 * 1024); // 8MB
-        const optimized = createMockFile("photo.jpg", "image/jpeg", 250 * 1024); // 250KB
+        const original = createMockFile("photo.jpg", "image/jpeg", 2 * 1024 * 1024); // 2MB
+        const optimized = createMockFile("photo.jpg", "image/jpeg", 180 * 1024); // 180KB
 
         vi.mocked(imageCompression).mockResolvedValue(optimized);
 
@@ -138,8 +138,8 @@ describe("Image Processor - Token Savings", () => {
     });
 
     it("optimizes very large images effectively", async () => {
-        const original = createMockFile("huge.png", "image/png", 15 * 1024 * 1024); // 15MB
-        const optimized = createMockFile("huge.png", "image/png", 300 * 1024); // 300KB
+        const original = createMockFile("huge.png", "image/png", 3 * 1024 * 1024); // 3MB
+        const optimized = createMockFile("huge.png", "image/png", 120 * 1024); // 120KB
 
         vi.mocked(imageCompression).mockResolvedValue(optimized);
 
@@ -255,7 +255,7 @@ describe("Image Processor - Edge Cases", () => {
     });
 
     it("handles network timeout error gracefully", async () => {
-        const original = createMockFile("photo.jpg", "image/jpeg", 5 * 1024 * 1024);
+        const original = createMockFile("photo.jpg", "image/jpeg", 1024 * 1024);
 
         vi.mocked(imageCompression).mockRejectedValue(new Error("Network timeout"));
 
@@ -265,7 +265,7 @@ describe("Image Processor - Edge Cases", () => {
     });
 
     it("handles out of memory error gracefully", async () => {
-        const original = createMockFile("huge.jpg", "image/jpeg", 20 * 1024 * 1024);
+        const original = createMockFile("huge.jpg", "image/jpeg", 3 * 1024 * 1024);
 
         vi.mocked(imageCompression).mockRejectedValue(new Error("Out of memory"));
 
@@ -295,7 +295,7 @@ describe("Image Processor - Optimization Settings", () => {
     });
 
     it("uses 1092px max dimension for token optimization", async () => {
-        const file = createMockFile("test.jpg", "image/jpeg", 5 * 1024 * 1024);
+        const file = createMockFile("test.jpg", "image/jpeg", 1024 * 1024);
         const compressed = createMockFile("test.jpg", "image/jpeg", 500 * 1024);
 
         vi.mocked(imageCompression).mockResolvedValue(compressed);
@@ -311,7 +311,7 @@ describe("Image Processor - Optimization Settings", () => {
     });
 
     it("uses 85% JPEG quality setting", async () => {
-        const file = createMockFile("test.jpg", "image/jpeg", 5 * 1024 * 1024);
+        const file = createMockFile("test.jpg", "image/jpeg", 1024 * 1024);
         const compressed = createMockFile("test.jpg", "image/jpeg", 500 * 1024);
 
         vi.mocked(imageCompression).mockResolvedValue(compressed);
@@ -327,7 +327,7 @@ describe("Image Processor - Optimization Settings", () => {
     });
 
     it("uses Web Worker for non-blocking processing", async () => {
-        const file = createMockFile("test.jpg", "image/jpeg", 5 * 1024 * 1024);
+        const file = createMockFile("test.jpg", "image/jpeg", 1024 * 1024);
         const compressed = createMockFile("test.jpg", "image/jpeg", 500 * 1024);
 
         vi.mocked(imageCompression).mockResolvedValue(compressed);
