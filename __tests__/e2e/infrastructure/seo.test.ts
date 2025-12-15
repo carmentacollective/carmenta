@@ -18,14 +18,14 @@ test.describe("SEO Files", () => {
         expect(response?.headers()["content-type"]).toContain("text");
     });
 
-    test("robots.txt contains sitemap URL with correct domain", async ({ page }) => {
+    test("robots.txt contains sitemap URL", async ({ page }) => {
         await page.goto("/robots.txt");
         const content = await page.content();
 
         // Should reference sitemap.xml
         expect(content).toContain("sitemap.xml");
-        // Should use production domain in robots.txt
-        expect(content).toContain("carmenta.ai");
+        // Should use appropriate domain (localhost in dev/CI, carmenta.ai in prod)
+        expect(content).toMatch(/(localhost|carmenta\.ai)\/sitemap\.xml/);
     });
 
     test("robots.txt allows /connection/ for shared connections", async ({ page }) => {

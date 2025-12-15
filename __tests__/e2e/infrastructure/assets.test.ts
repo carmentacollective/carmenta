@@ -33,7 +33,7 @@ test.describe("Next.js Metadata Images", () => {
         const response = await page.goto("/icon.png");
 
         expect(response?.status()).toBe(200);
-        expect(response?.headers()["content-type"]).toMatch(/image/);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/(png|x-icon)/);
     });
 
     test("apple-icon.png is accessible", async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe("Next.js Metadata Images", () => {
         const response = await page.goto("/apple-icon.png");
 
         expect(response?.status()).toBe(200);
-        expect(response?.headers()["content-type"]).toMatch(/image/);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/(png|x-icon)/);
     });
 
     test("opengraph-image.png is accessible", async ({ page }) => {
@@ -50,28 +50,17 @@ test.describe("Next.js Metadata Images", () => {
         const response = await page.goto("/opengraph-image.png");
 
         expect(response?.status()).toBe(200);
-        expect(response?.headers()["content-type"]).toMatch(/image/);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/(png|jpeg)/);
     });
 });
 
 test.describe("Logo Assets", () => {
-    test("at least one logo file is accessible", async ({ page }) => {
-        // Test logo files used in the app
-        const logoFiles = ["/logos/icon-transparent.png", "/logos/carmenta-logo.svg"];
+    test("icon-transparent.png is accessible", async ({ page }) => {
+        // Primary logo used throughout the application
+        const response = await page.goto("/logos/icon-transparent.png");
 
-        let accessibleCount = 0;
-        for (const logo of logoFiles) {
-            const response = await page.goto(logo);
-
-            if (response?.status() === 200) {
-                // Verify correct content type for images
-                expect(response.headers()["content-type"]).toMatch(/image|svg|png/);
-                accessibleCount++;
-            }
-        }
-
-        // Ensure at least one logo file is accessible
-        expect(accessibleCount).toBeGreaterThan(0);
+        expect(response?.status()).toBe(200);
+        expect(response?.headers()["content-type"]).toMatch(/^image\/png/);
     });
 });
 
