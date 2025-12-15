@@ -74,17 +74,21 @@ test.describe("Public Assets - URLs and Accessibility", () => {
 
     // Test some logo files exist and are accessible
     test("logo files in /logos directory are accessible", async ({ page }) => {
-        // Test a few common logo files
-        const logoFiles = ["/logos/carmenta-icon.svg", "/logos/carmenta-logo.svg"];
+        // Test actual logo files used in the app (based on codebase)
+        const logoFiles = ["/logos/icon-transparent.png", "/logos/carmenta-logo.svg"];
 
+        let accessibleCount = 0;
         for (const logo of logoFiles) {
             const response = await page.goto(logo);
 
-            // Some logos might not exist, but check if the ones that do are accessible
             if (response?.status() === 200) {
-                expect(response.headers()["content-type"]).toMatch(/image|svg/);
+                expect(response.headers()["content-type"]).toMatch(/image|svg|png/);
+                accessibleCount++;
             }
         }
+
+        // Ensure at least one logo file is accessible
+        expect(accessibleCount).toBeGreaterThan(0);
     });
 
     test("all public asset URLs use correct domain (no internal hostnames)", async ({

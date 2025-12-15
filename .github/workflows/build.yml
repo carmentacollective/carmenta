@@ -138,7 +138,8 @@ jobs:
         run: pnpm run build
         env:
           # Clerk test key from GitHub secrets - required at build time for prerendering
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
+          # Falls back to dummy key for fork PRs (which don't have access to secrets)
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || 'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
 
       - name: ✅ Verify build output
         run: |
@@ -176,9 +177,9 @@ jobs:
         env:
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # Clerk test keys from GitHub secrets
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
+          # Clerk test keys from GitHub secrets (with fallbacks for fork PRs)
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || 'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST || 'sk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
 
       - name: 📊 Upload Playwright report
         uses: actions/upload-artifact@v4

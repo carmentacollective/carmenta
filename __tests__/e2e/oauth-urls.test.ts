@@ -41,8 +41,8 @@ test.describe("OAuth URL Validation", () => {
         // (In reality, this would come from Notion with a real code)
         await page.goto("/integrations/oauth/callback?code=MOCK_CODE&state=MOCK_STATE");
 
-        // Wait for redirect
-        await page.waitForTimeout(1000);
+        // Wait for client-side redirect to complete
+        await page.waitForURL(/\/integrations/);
 
         // Get the final URL (after client-side redirect from HTML)
         const finalUrl = page.url();
