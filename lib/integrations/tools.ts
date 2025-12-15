@@ -65,7 +65,7 @@ export function getAdapter(serviceId: string): ServiceAdapter | null {
 function buildToolDescription(service: ServiceDefinition): string {
     const actions =
         service.capabilities?.slice(0, 4).join(", ") || "various operations";
-    return `${service.description}. Actions: ${actions}. Call with action='describe' for full documentation.`;
+    return `${service.description}. Example actions: ${actions}. To use: pass {action: "action_name", params: {param1: value1, ...}}. Call with action="describe" for full documentation and all available actions.`;
 }
 
 /**

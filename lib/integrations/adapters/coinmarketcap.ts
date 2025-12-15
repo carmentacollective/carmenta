@@ -133,12 +133,12 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                     ],
                     returns:
                         "List of cryptocurrencies with price, market cap, volume, and percent changes",
-                    example: `get_listings({ limit: 10, sort: "market_cap" })`,
+                    example: `{ action: "get_listings", params: { limit: 10, sort: "market_cap" } }`,
                 },
                 {
                     name: "get_quotes",
                     description:
-                        "Get latest market quotes for specific cryptocurrencies",
+                        "Get latest market quotes for specific cryptocurrencies. At least one of symbol, id, or slug must be provided.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -146,21 +146,21 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH,SOL)",
+                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH,SOL). At least one of symbol, id, or slug is required.",
                         },
                         {
                             name: "id",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of CoinMarketCap cryptocurrency IDs",
+                                "Comma-separated list of CoinMarketCap cryptocurrency IDs. At least one of symbol, id, or slug is required.",
                         },
                         {
                             name: "slug",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency slugs (e.g., bitcoin,ethereum)",
+                                "Comma-separated list of cryptocurrency slugs (e.g., bitcoin,ethereum). At least one of symbol, id, or slug is required.",
                         },
                         {
                             name: "convert",
@@ -171,12 +171,12 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                         },
                     ],
                     returns: "Latest market quotes with detailed price and volume data",
-                    example: `get_quotes({ symbol: "BTC,ETH,SOL" })`,
+                    example: `{ action: "get_quotes", params: { symbol: "BTC,ETH,SOL" } }`,
                 },
                 {
                     name: "get_crypto_info",
                     description:
-                        "Get static metadata for cryptocurrencies (logo, description, URLs)",
+                        "Get static metadata for cryptocurrencies (logo, description, URLs). At least one of symbol, id, or slug must be provided.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -184,24 +184,26 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH)",
+                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH). At least one of symbol, id, or slug is required.",
                         },
                         {
                             name: "id",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of CoinMarketCap cryptocurrency IDs",
+                                "Comma-separated list of CoinMarketCap cryptocurrency IDs. At least one of symbol, id, or slug is required.",
                         },
                         {
                             name: "slug",
                             type: "string",
                             required: false,
-                            description: "Comma-separated list of cryptocurrency slugs",
+                            description:
+                                "Comma-separated list of cryptocurrency slugs. At least one of symbol, id, or slug is required.",
                         },
                     ],
                     returns:
                         "Cryptocurrency metadata including name, logo, description, website, social links",
+                    example: `{ action: "get_crypto_info", params: { symbol: "BTC,ETH" } }`,
                 },
                 {
                     name: "get_global_metrics",
@@ -328,7 +330,7 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                         },
                     ],
                     returns: "Converted amounts with exchange rates and timestamps",
-                    example: `convert_price({ amount: 1, symbol: "BTC", convert: "USD,EUR" })`,
+                    example: `{ action: "convert_price", params: { amount: 1, symbol: "BTC", convert: "USD,EUR" } }`,
                 },
                 {
                     name: "get_exchange_map",
@@ -422,9 +424,19 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                 `📥 [COINMARKETCAP ADAPTER] Validation failed for action '${action}':`,
                 validation.errors
             );
-            return this.createErrorResponse(
-                `Validation errors:\n${validation.errors.join("\n")}`
-            );
+
+            // Provide helpful error message with correct format
+            let errorMessage = `Validation errors:\n${validation.errors.join("\n")}`;
+
+            // If action is unknown, it might be because the LLM passed the whole call as action
+            if (validation.errors.some(e => e.includes("Unknown action"))) {
+                errorMessage += `\n\nMake sure to pass action and params separately like this:`;
+                errorMessage += `\n  { action: "get_quotes", params: { symbol: "BTC,ETH" } }`;
+                errorMessage += `\n\nNOT like this: { action: "get_quotes({ symbol: 'BTC,ETH' })" }`;
+                errorMessage += `\n\nUse action="describe" to see all available actions.`;
+            }
+
+            return this.createErrorResponse(errorMessage);
         }
 
         // Get user's API key credentials using base class helper
@@ -600,7 +612,10 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
 
         if (!symbol && !id && !slug) {
             return this.createErrorResponse(
-                "At least one of symbol, id, or slug is required"
+                "At least one of symbol, id, or slug is required for get_quotes.\n\n" +
+                "Example: { action: \"get_quotes\", params: { symbol: \"BTC,ETH\" } }\n" +
+                "Or: { action: \"get_quotes\", params: { id: \"1,1027\" } }\n" +
+                "Or: { action: \"get_quotes\", params: { slug: \"bitcoin,ethereum\" } }"
             );
         }
 
@@ -666,7 +681,10 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
 
         if (!symbol && !id && !slug) {
             return this.createErrorResponse(
-                "At least one of symbol, id, or slug is required"
+                "At least one of symbol, id, or slug is required for get_crypto_info.\n\n" +
+                "Example: { action: \"get_crypto_info\", params: { symbol: \"BTC,ETH\" } }\n" +
+                "Or: { action: \"get_crypto_info\", params: { id: \"1,1027\" } }\n" +
+                "Or: { action: \"get_crypto_info\", params: { slug: \"bitcoin,ethereum\" } }"
             );
         }
 
