@@ -157,7 +157,7 @@ describeIf("CoinMarketCapAdapter - Real API Integration", () => {
             expect(Array.isArray(btcData)).toBe(true);
             expect(btcData[0]).toHaveProperty("symbol");
             expect(btcData[0]).toHaveProperty("quote");
-        });
+        }, 15000); // API calls can be slow
 
         it("supports currency conversion in quotes", async () => {
             const result = await adapter.execute(
