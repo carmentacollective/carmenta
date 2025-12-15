@@ -30,10 +30,6 @@ export const env = createEnv({
         CLERK_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
-        // Nango OAuth management
-        NANGO_API_URL: z.string().url().default("https://api.nango.dev"),
-        NANGO_SECRET_KEY: z.string().min(1).optional(),
-        NANGO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Credential encryption for API key integrations
         ENCRYPTION_KEY: z.string().min(32).optional(),
         // In-house OAuth credentials - Notion
@@ -70,8 +66,6 @@ export const env = createEnv({
         NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
         // Clerk publishable key for client-side auth
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),
-        // Nango public key for OAuth flows
-        NEXT_PUBLIC_NANGO_PUBLIC_KEY: z.string().min(1).optional(),
         // Supabase URL for file storage
         NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
         // Supabase publishable key for client-side uploads (sb_publishable_...)
@@ -88,11 +82,7 @@ export const env = createEnv({
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-        NEXT_PUBLIC_NANGO_PUBLIC_KEY: process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY,
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
-        NANGO_API_URL: process.env.NANGO_API_URL,
-        NANGO_SECRET_KEY: process.env.NANGO_SECRET_KEY,
-        NANGO_WEBHOOK_SECRET: process.env.NANGO_WEBHOOK_SECRET,
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
         NOTION_CLIENT_ID: process.env.NOTION_CLIENT_ID,
         NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET,
