@@ -55,6 +55,32 @@ COINMARKETCAP_API_KEY=your_key_here pnpm test coinmarketcap.integration
 - Raw API access
 - Comprehensive error handling
 
+### Limitless Integration Tests
+
+Tests the Limitless service adapter with real API calls.
+
+**Run tests:**
+
+```bash
+LIMITLESS_API_KEY=your_key_here pnpm test limitless.integration
+```
+
+**Get an API key:** https://www.limitless.ai/developers
+
+**Test coverage (35 tests):**
+
+- Connection validation (valid/invalid API keys)
+- Search operations with query and date filters
+- List recordings with time range filtering
+- Lifelog details and transcripts
+- Chat conversations and messages
+- Audio download with ISO 8601 timestamps
+- Raw API access with endpoint validation
+- Comprehensive error handling and parameter validation
+
+**Note:** Destructive operations (delete_lifelog, delete_chat) only test parameter
+validation to protect real user data from accidental deletion.
+
 ## Why Integration Tests?
 
 While unit tests verify logic with mocks, integration tests catch:
@@ -95,3 +121,4 @@ Follow the existing pattern:
 - **Use non-null assertions carefully:** Only when you've verified data exists
 - **Add helpful test names:** Describe what behavior is being verified
 - **Focus on user value:** Test what makes the tool useful for LLMs helping users
+- **Handle destructive operations:** Test validation only, avoid deleting real data
