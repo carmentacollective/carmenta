@@ -54,3 +54,6 @@ pnpm-debug.log*
 
 # Eval results (local only, tracked in platform)
 scripts/evals/results/*.json
+
+# Design labs (local exploration, not part of product)
+app/design-lab/
