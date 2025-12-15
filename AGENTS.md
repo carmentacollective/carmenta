@@ -39,3 +39,51 @@ Use `pnpm` for all package management and script execution. Never use `npm` or `
 Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`)
 
 Never commit to main without explicit permission. Never use `--no-verify`.
+
+## Context Management
+
+### Compaction Strategy
+
+When compacting this session, prioritize:
+
+- Recent test output and failures with their fixes
+- Component implementations and API contract changes
+- Architecture refactoring decisions
+- Performance optimizations and their measurements
+- Outstanding issues or TODOs
+
+Manual `/compact` at task boundaries rather than letting auto-compact interrupt flow.
+
+### Preserve Development Environment State
+
+When compacting, preserve the current working state:
+
+- **Git context**: Current branch name, which worktree you're in, any uncommitted
+  changes
+- **Running processes**: Dev server port (typically 3000), database connections,
+  background jobs
+- **Environment**: Which `.env` file is active, API keys loaded, feature flags enabled
+- **Build state**: Last successful build, any compilation errors, test run status
+- **File system**: Open files, recent edits, files staged for commit
+
+LLMs frequently lose track of operational context after compaction. Explicitly
+preserving this state prevents confusion about "which server is running?" or "what
+branch am I on?"
+
+### Session Boundaries
+
+One focused task per session. For complex features:
+
+- Start fresh session for that feature
+- Run 45-90 minutes to natural checkpoint
+- Manual `/compact` at 60%+ usage (check with `/cost`)
+- Begin next phase with compacted context
+- New session for unrelated work
+
+### Token Efficiency
+
+Be specific: "Create User authentication with JWT support" not "help with auth stuff"
+
+Break complex tasks into focused sessions instead of one marathon session.
+
+Use `/clear` between completely unrelated projects.
