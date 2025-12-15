@@ -10,7 +10,7 @@ import { test, expect } from "@playwright/test";
  * and URLs should use public domain (not internal hostnames).
  */
 
-test.describe("Favicons and Icons", () => {
+test.describe("Favicons and Icons (Legacy)", () => {
     test("favicon.ico is accessible", async ({ page }) => {
         const response = await page.goto("/favicon.ico");
         expect(response?.status()).toBe(200);
@@ -24,6 +24,33 @@ test.describe("Favicons and Icons", () => {
     test("apple-touch-icon.png is accessible", async ({ page }) => {
         const response = await page.goto("/apple-touch-icon.png");
         expect(response?.status()).toBe(200);
+    });
+});
+
+test.describe("Next.js Metadata Images", () => {
+    test("icon.png is accessible", async ({ page }) => {
+        // Next.js serves app/icon.png at /icon.png
+        const response = await page.goto("/icon.png");
+
+        expect(response?.status()).toBe(200);
+        expect(response?.headers()["content-type"]).toMatch(/image/);
+    });
+
+    test("apple-icon.png is accessible", async ({ page }) => {
+        // Next.js serves app/apple-icon.png at /apple-icon.png
+        const response = await page.goto("/apple-icon.png");
+
+        expect(response?.status()).toBe(200);
+        expect(response?.headers()["content-type"]).toMatch(/image/);
+    });
+
+    test("opengraph-image.png is accessible", async ({ page }) => {
+        // Next.js serves app/opengraph-image.png at /opengraph-image.png
+        // Critical for social media sharing (Open Graph protocol)
+        const response = await page.goto("/opengraph-image.png");
+
+        expect(response?.status()).toBe(200);
+        expect(response?.headers()["content-type"]).toMatch(/image/);
     });
 });
 
