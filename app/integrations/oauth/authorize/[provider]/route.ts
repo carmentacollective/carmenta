@@ -74,7 +74,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 
-    // Generate state with optional PKCE
+    // Validate OAuth credentials before generating state
+    // This prevents orphaned state records when credentials are missing
+    let authorizationUrl: string;
+    try {
+        // Build URL first - will throw if credentials missing
+        // We pass empty state temporarily just to validate credentials
+        authorizationUrl = buildAuthorizationUrl(providerId, "", redirectUri);
+    } catch (error) {
+        logger.error(
+            { provider: providerId, error },
+            "❌ OAuth credentials not configured"
+        );
+        Sentry.captureException(error, {
+            tags: { component: "oauth", route: "authorize", provider: providerId },
+        });
+
+        // Return user-friendly error without creating state record
+        return NextResponse.json(
+            {
+                error: "OAuth credentials not configured",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Missing OAuth credentials",
+                provider: providerId,
+            },
+            { status: 500 }
+        );
+    }
+
+    // Generate state with optional PKCE (only after credentials validated)
     const { state, codeChallenge } = await generateState(
         userEmail,
         providerId,
@@ -82,8 +112,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         provider.requiresPKCE
     );
 
-    // Build authorization URL
-    const authorizationUrl = buildAuthorizationUrl(
+    // Build final authorization URL with actual state
+    authorizationUrl = buildAuthorizationUrl(
         providerId,
         state,
         redirectUri,
