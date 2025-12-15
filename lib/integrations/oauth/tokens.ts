@@ -122,7 +122,7 @@ export async function exchangeCodeForTokens(
     // Extract account info using provider-specific logic
     let accountInfo: { identifier: string; displayName: string };
     if (provider.extractAccountInfo) {
-        accountInfo = provider.extractAccountInfo(response);
+        accountInfo = await provider.extractAccountInfo(response, accessToken);
     } else {
         // Default fallback
         accountInfo = {

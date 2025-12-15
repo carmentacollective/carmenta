@@ -32,106 +32,38 @@ import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
-
-// Google Calendar API base URL (via Nango proxy)
-const CALENDAR_API_BASE = "/proxy/calendar/v3";
-// Google People API base URL (via Nango proxy)
-const PEOPLE_API_BASE = "/proxy/v1";
+import {
+    GOOGLE_CALENDAR_API_BASE,
+    GOOGLE_PEOPLE_API_BASE,
+} from "../oauth/providers/google-calendar-contacts";
 
 export class GoogleCalendarContactsAdapter extends ServiceAdapter {
     serviceName = "google-calendar-contacts";
     serviceDisplayName = "Google Calendar & Contacts";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
-    /**
-     * Fetch the Google account information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param userId - User ID (optional, only used for logging)
-     */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            // Get user info from People API (authenticated user)
-            const response = await httpClient
-                .get(`${nangoUrl}${PEOPLE_API_BASE}/people/me`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
-                    searchParams: {
-                        personFields: "names,emailAddresses",
-                    },
-                })
-                .json<{
-                    resourceName: string;
-                    names?: Array<{ displayName?: string }>;
-                    emailAddresses?: Array<{ value?: string }>;
-                }>();
-
-            const email = response.emailAddresses?.[0]?.value || "unknown";
-            const displayName = response.names?.[0]?.displayName || email;
-
-            return {
-                identifier: email,
-                displayName,
-            };
-        } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to fetch Google account info"
-            );
-            throw new ValidationError("Failed to fetch Google account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
      * Test the OAuth connection by making a live API request
      * Called when user clicks "Test" button to verify credentials are working
      *
-     * @param connectionId - Nango connection ID
+     * @param credentialOrToken - Access token or credential string
      * @param userId - User ID (optional, only used for logging)
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
             // Make a simple request to People API to verify connection
             await httpClient
-                .get(`${nangoUrl}${PEOPLE_API_BASE}/people/me`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
+                .get(`${GOOGLE_PEOPLE_API_BASE}/people/me`, {
+                    headers: this.buildHeaders(credentialOrToken),
                     searchParams: {
                         personFields: "names,emailAddresses",
                     },
@@ -140,10 +72,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify Google connection"
-            );
+            logger.error({ error, userId }, "Failed to verify Google connection");
             return {
                 success: false,
                 error:
@@ -738,20 +667,19 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         }
 
         // Get user's Google credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Google. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google-calendar-contacts`
+                    `Invalid credential type for Google. Expected OAuth credentials.`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -764,36 +692,36 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             switch (action) {
                 // Calendar operations
                 case "list_calendars":
-                    return await this.handleListCalendars(connectionId);
+                    return await this.handleListCalendars(accessToken);
                 case "list_events":
-                    return await this.handleListEvents(params, connectionId);
+                    return await this.handleListEvents(params, accessToken);
                 case "get_event":
-                    return await this.handleGetEvent(params, connectionId);
+                    return await this.handleGetEvent(params, accessToken);
                 case "create_event":
-                    return await this.handleCreateEvent(params, connectionId);
+                    return await this.handleCreateEvent(params, accessToken);
                 case "update_event":
-                    return await this.handleUpdateEvent(params, connectionId);
+                    return await this.handleUpdateEvent(params, accessToken);
                 case "delete_event":
-                    return await this.handleDeleteEvent(params, connectionId);
+                    return await this.handleDeleteEvent(params, accessToken);
                 case "quick_add":
-                    return await this.handleQuickAdd(params, connectionId);
+                    return await this.handleQuickAdd(params, accessToken);
                 case "freebusy":
-                    return await this.handleFreebusy(params, connectionId);
+                    return await this.handleFreebusy(params, accessToken);
                 // Contacts operations
                 case "list_contacts":
-                    return await this.handleListContacts(params, connectionId);
+                    return await this.handleListContacts(params, accessToken);
                 case "search_contacts":
-                    return await this.handleSearchContacts(params, connectionId);
+                    return await this.handleSearchContacts(params, accessToken);
                 case "get_contact":
-                    return await this.handleGetContact(params, connectionId);
+                    return await this.handleGetContact(params, accessToken);
                 case "create_contact":
-                    return await this.handleCreateContact(params, connectionId);
+                    return await this.handleCreateContact(params, accessToken);
                 case "update_contact":
-                    return await this.handleUpdateContact(params, connectionId);
+                    return await this.handleUpdateContact(params, accessToken);
                 case "delete_contact":
-                    return await this.handleDeleteContact(params, connectionId);
+                    return await this.handleDeleteContact(params, accessToken);
                 case "list_contact_groups":
-                    return await this.handleListContactGroups(connectionId);
+                    return await this.handleListContactGroups(accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -815,7 +743,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
                 }
             );
 
@@ -831,17 +758,10 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     // ============== CALENDAR HANDLERS ==============
 
-    private async handleListCalendars(connectionId: string): Promise<MCPToolResponse> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
+    private async handleListCalendars(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
-            .get(`${nangoUrl}${CALENDAR_API_BASE}/users/me/calendarList`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+            .get(`${GOOGLE_CALENDAR_API_BASE}/users/me/calendarList`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 items: Array<{
@@ -867,7 +787,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleListEvents(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             calendar_id = "primary",
@@ -887,9 +807,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             order_by?: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const searchParams: Record<string, string> = {
             singleEvents: String(single_events),
             maxResults: String(Math.min(max_results, 2500)),
@@ -902,13 +819,9 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
         const response = await httpClient
             .get(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
+                    headers: this.buildHeaders(accessToken),
                     searchParams,
                 }
             )
@@ -949,25 +862,18 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleGetEvent(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { calendar_id = "primary", event_id } = params as {
             calendar_id?: string;
             event_id: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
             .get(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
+                    headers: this.buildHeaders(accessToken),
                 }
             )
             .json<Record<string, unknown>>();
@@ -977,7 +883,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleCreateEvent(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             calendar_id = "primary",
@@ -1001,9 +907,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             recurrence?: string[];
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const body: Record<string, unknown> = {
             summary,
             start,
@@ -1017,14 +920,9 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
         const response = await httpClient
             .post(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                        "Content-Type": "application/json",
-                    },
+                    headers: this.buildHeaders(accessToken),
                     searchParams: {
                         sendUpdates: send_updates,
                     },
@@ -1051,7 +949,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleUpdateEvent(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             calendar_id = "primary",
@@ -1073,19 +971,12 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             send_updates?: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         // First get the existing event
         const existing = await httpClient
             .get(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
+                    headers: this.buildHeaders(accessToken),
                 }
             )
             .json<Record<string, unknown>>();
@@ -1100,14 +991,9 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
         const response = await httpClient
             .put(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                        "Content-Type": "application/json",
-                    },
+                    headers: this.buildHeaders(accessToken),
                     searchParams: {
                         sendUpdates: send_updates,
                     },
@@ -1130,7 +1016,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleDeleteEvent(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             calendar_id = "primary",
@@ -1142,17 +1028,10 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             send_updates?: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         await httpClient.delete(
-            `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
+            `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/${encodeURIComponent(event_id)}`,
             {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     sendUpdates: send_updates,
                 },
@@ -1167,25 +1046,18 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleQuickAdd(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { calendar_id = "primary", text } = params as {
             calendar_id?: string;
             text: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
             .post(
-                `${nangoUrl}${CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/quickAdd`,
+                `${GOOGLE_CALENDAR_API_BASE}/calendars/${encodeURIComponent(calendar_id)}/events/quickAdd`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    },
+                    headers: this.buildHeaders(accessToken),
                     searchParams: {
                         text,
                     },
@@ -1211,7 +1083,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleFreebusy(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             time_min,
@@ -1223,17 +1095,9 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             calendar_ids?: string[];
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .post(`${nangoUrl}${CALENDAR_API_BASE}/freeBusy`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                    "Content-Type": "application/json",
-                },
+            .post(`${GOOGLE_CALENDAR_API_BASE}/freeBusy`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     timeMin: time_min,
                     timeMax: time_max,
@@ -1261,7 +1125,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleListContacts(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             page_size = 100,
@@ -1273,9 +1137,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             sort_order?: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const searchParams: Record<string, string> = {
             pageSize: String(Math.min(page_size, 1000)),
             personFields: "names,emailAddresses,phoneNumbers,organizations,metadata",
@@ -1285,12 +1146,8 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         if (sort_order) searchParams.sortOrder = sort_order;
 
         const response = await httpClient
-            .get(`${nangoUrl}${PEOPLE_API_BASE}/people/me/connections`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+            .get(`${GOOGLE_PEOPLE_API_BASE}/people/me/connections`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams,
             })
             .json<{
@@ -1337,23 +1194,16 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleSearchContacts(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { query, page_size = 10 } = params as {
             query: string;
             page_size?: number;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .get(`${nangoUrl}${PEOPLE_API_BASE}/people:searchContacts`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+            .get(`${GOOGLE_PEOPLE_API_BASE}/people:searchContacts`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     query,
                     pageSize: String(Math.min(page_size, 30)),
@@ -1391,20 +1241,13 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleGetContact(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { resource_name } = params as { resource_name: string };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .get(`${nangoUrl}${PEOPLE_API_BASE}/${resource_name}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+            .get(`${GOOGLE_PEOPLE_API_BASE}/${resource_name}`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     personFields:
                         "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,birthdays,metadata",
@@ -1417,7 +1260,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleCreateContact(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             given_name,
@@ -1442,9 +1285,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             notes?: string;
         };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const body: Record<string, unknown> = {};
 
         if (given_name || family_name) {
@@ -1457,13 +1297,8 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         if (notes) body.biographies = [{ value: notes }];
 
         const response = await httpClient
-            .post(`${nangoUrl}${PEOPLE_API_BASE}/people:createContact`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                    "Content-Type": "application/json",
-                },
+            .post(`${GOOGLE_PEOPLE_API_BASE}/people:createContact`, {
+                headers: this.buildHeaders(accessToken),
                 json: body,
             })
             .json<{
@@ -1482,7 +1317,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleUpdateContact(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             resource_name,
@@ -1501,9 +1336,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             phone_numbers?: Array<{ value: string; type?: string }>;
             organizations?: Array<{ name?: string; title?: string }>;
         };
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         // Build update fields
         const updateFields: string[] = [];
@@ -1539,13 +1371,8 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .patch(`${nangoUrl}${PEOPLE_API_BASE}/${resource_name}:updateContact`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                    "Content-Type": "application/json",
-                },
+            .patch(`${GOOGLE_PEOPLE_API_BASE}/${resource_name}:updateContact`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     updatePersonFields: updateFields.join(","),
                 },
@@ -1567,21 +1394,14 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
     private async handleDeleteContact(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { resource_name } = params as { resource_name: string };
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         await httpClient.delete(
-            `${nangoUrl}${PEOPLE_API_BASE}/${resource_name}:deleteContact`,
+            `${GOOGLE_PEOPLE_API_BASE}/${resource_name}:deleteContact`,
             {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+                headers: this.buildHeaders(accessToken),
             }
         );
 
@@ -1592,18 +1412,11 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
     }
 
     private async handleListContactGroups(
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const response = await httpClient
-            .get(`${nangoUrl}${PEOPLE_API_BASE}/contactGroups`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "google-calendar-contacts",
-                },
+            .get(`${GOOGLE_PEOPLE_API_BASE}/contactGroups`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 contactGroups: Array<{
@@ -1654,20 +1467,19 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             );
         }
 
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Google. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/google-calendar-contacts`
+                    `Invalid credential type for Google. Expected OAuth credentials.`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -1675,19 +1487,20 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             throw error;
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
+        // Determine the base URL based on the endpoint
+        let baseUrl: string;
+        if (endpoint.startsWith("/calendar/v3")) {
+            baseUrl = GOOGLE_CALENDAR_API_BASE;
+        } else {
+            baseUrl = GOOGLE_PEOPLE_API_BASE;
+        }
 
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "google-calendar-contacts",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         if (query && typeof query === "object") {
@@ -1698,7 +1511,6 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
         if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
             requestOptions.json = body;
-            requestOptions.headers["Content-Type"] = "application/json";
         }
 
         try {
@@ -1708,7 +1520,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                 | "put"
                 | "delete"
                 | "patch";
-            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
+            const fullUrl = `${baseUrl}${endpoint}`;
 
             const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
                 Record<string, unknown>

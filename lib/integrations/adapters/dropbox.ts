@@ -1,11 +1,11 @@
 /**
  * Dropbox Service Adapter
  *
- * File storage via Dropbox API through Nango proxy.
+ * File storage via Dropbox API.
  *
  * ## File Uploads NOT Supported
  * Upload endpoints use content.dropboxapi.com with binary bodies and custom headers -
- * incompatible with Nango's JSON proxy. Users must upload via Dropbox UI.
+ * incompatible with standard JSON requests. Users must upload via Dropbox UI.
  *
  * ## API Body Quirks (code workarounds in place)
  * - No-param endpoints require body: "null" (literal string)
@@ -19,6 +19,7 @@ import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "../oauth/providers/dropbox";
 
 // Constants for Dropbox API limits
 const MAX_SEARCH_RESULTS = 100;
@@ -26,107 +27,40 @@ const MAX_LIST_RESULTS = 100;
 // Reserved for future file size validation
 const _MAX_FILE_DOWNLOAD_SIZE = 150 * 1024 * 1024; // 150MB - Dropbox API limit
 
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
-
 export class DropboxAdapter extends ServiceAdapter {
     serviceName = "dropbox";
     serviceDisplayName = "Dropbox";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
-    /**
-     * Fetch the Dropbox account information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param userId - User ID (optional, only used for logging)
-     */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            const response = await httpClient
-                .post(`${nangoUrl}/proxy/2/users/get_current_account`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "dropbox",
-                        "Content-Type": "application/json",
-                    },
-                    body: "null", // See "API Request Body Quirks" in file header
-                })
-                .json<{
-                    account_id: string;
-                    name: {
-                        display_name: string;
-                        given_name?: string;
-                        surname?: string;
-                    };
-                    email: string;
-                }>();
-
-            return {
-                identifier: response.account_id,
-                displayName: response.name.display_name || response.email,
-            };
-        } catch (error) {
-            this.logError("Failed to fetch Dropbox account info:", error);
-            throw new ValidationError("Failed to fetch Dropbox account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
      * Test the OAuth connection by making a live API request
      * Called when user clicks "Test" button to verify credentials are working
      *
-     * @param connectionId - Nango connection ID
+     * @param credentialOrToken - Access token or credential string
      * @param userId - User ID (optional, only used for logging)
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
-            // Make the same request as fetchAccountInfo to verify connection
+            // Verify connection by fetching account info
             await httpClient
-                .post(`${nangoUrl}/proxy/2/users/get_current_account`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "dropbox",
-                        "Content-Type": "application/json",
-                    },
-                    body: "null",
+                .post(`${DROPBOX_API_BASE}/users/get_current_account`, {
+                    headers: this.buildHeaders(credentialOrToken),
+                    body: "null", // See "API Request Body Quirks" in file header
                 })
                 .json<Record<string, unknown>>();
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify Dropbox connection"
-            );
+            logger.error({ error, userId }, "Failed to verify Dropbox connection");
             return {
                 success: false,
                 error:
@@ -381,20 +315,19 @@ export class DropboxAdapter extends ServiceAdapter {
         }
 
         // Get user's Dropbox credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Dropbox. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`
+                    "Invalid credentials: OAuth required for Dropbox"
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -406,23 +339,23 @@ export class DropboxAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "list_folder":
-                    return await this.handleListFolder(params, connectionId);
+                    return await this.handleListFolder(params, accessToken);
                 case "search_files":
-                    return await this.handleSearchFiles(params, connectionId);
+                    return await this.handleSearchFiles(params, accessToken);
                 case "get_metadata":
-                    return await this.handleGetMetadata(params, connectionId);
+                    return await this.handleGetMetadata(params, accessToken);
                 case "download_file":
-                    return await this.handleDownloadFile(params, connectionId);
+                    return await this.handleDownloadFile(params, accessToken);
                 case "create_folder":
-                    return await this.handleCreateFolder(params, connectionId);
+                    return await this.handleCreateFolder(params, accessToken);
                 case "move":
-                    return await this.handleMove(params, connectionId);
+                    return await this.handleMove(params, accessToken);
                 case "delete":
-                    return await this.handleDelete(params, connectionId);
+                    return await this.handleDelete(params, accessToken);
                 case "create_shared_link":
-                    return await this.handleCreateSharedLink(params, connectionId);
+                    return await this.handleCreateSharedLink(params, accessToken);
                 case "get_current_account":
-                    return await this.handleGetCurrentAccount(connectionId);
+                    return await this.handleGetCurrentAccount(accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -445,7 +378,6 @@ export class DropboxAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
                 }
             );
 
@@ -500,22 +432,16 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleListFolder(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path, recursive = false } = params as {
             path: string;
             recursive?: boolean;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/list_folder`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/list_folder`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     path: path === "" ? "" : path,
                     recursive,
@@ -561,7 +487,7 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleSearchFiles(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             query,
@@ -578,15 +504,9 @@ export class DropboxAdapter extends ServiceAdapter {
             MAX_SEARCH_RESULTS
         );
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/search_v2`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/search_v2`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     query,
                     options: {
@@ -637,19 +557,13 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleGetMetadata(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path } = params as { path: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/get_metadata`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/get_metadata`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     path,
                     include_deleted: false,
@@ -683,20 +597,16 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleDownloadFile(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path } = params as { path: string };
 
         // Content endpoint - see "API Request Body Quirks" in file header
-        const nangoSecretKey = getNangoSecretKey();
-
         // Get response as ArrayBuffer to preserve raw bytes for binary files
         const arrayBuffer = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/download`, {
+            .post(`${DROPBOX_CONTENT_API_BASE}/files/download`, {
                 headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
+                    Authorization: `Bearer ${accessToken}`,
                     "Dropbox-API-Arg": JSON.stringify({ path }),
                 },
                 body: "", // See "Dropbox API Request Body Quirks" above
@@ -730,19 +640,13 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleCreateFolder(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path } = params as { path: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/create_folder_v2`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/create_folder_v2`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     path,
                     autorename: false,
@@ -765,22 +669,16 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleMove(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { from_path, to_path } = params as {
             from_path: string;
             to_path: string;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/move_v2`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/move_v2`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     from_path,
                     to_path,
@@ -808,19 +706,13 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleDelete(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path } = params as { path: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/2/files/delete_v2`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "dropbox",
-                    "Content-Type": "application/json",
-                },
+            .post(`${DROPBOX_API_BASE}/files/delete_v2`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     path,
                 },
@@ -840,30 +732,21 @@ export class DropboxAdapter extends ServiceAdapter {
 
     private async handleCreateSharedLink(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { path } = params as { path: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         try {
             const response = await httpClient
-                .post(
-                    `${this.getNangoUrl()}/proxy/2/sharing/create_shared_link_with_settings`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${nangoSecretKey}`,
-                            "Connection-Id": connectionId,
-                            "Provider-Config-Key": "dropbox",
-                            "Content-Type": "application/json",
+                .post(`${DROPBOX_API_BASE}/sharing/create_shared_link_with_settings`, {
+                    headers: this.buildHeaders(accessToken),
+                    json: {
+                        path,
+                        settings: {
+                            requested_visibility: "public",
                         },
-                        json: {
-                            path,
-                            settings: {
-                                requested_visibility: "public",
-                            },
-                        },
-                    }
-                )
+                    },
+                })
                 .json<{
                     url: string;
                     name: string;
@@ -882,13 +765,8 @@ export class DropboxAdapter extends ServiceAdapter {
                 error.message.includes("shared_link_already_exists")
             ) {
                 const listResponse = await httpClient
-                    .post(`${this.getNangoUrl()}/proxy/2/sharing/list_shared_links`, {
-                        headers: {
-                            Authorization: `Bearer ${nangoSecretKey}`,
-                            "Connection-Id": connectionId,
-                            "Provider-Config-Key": "dropbox",
-                            "Content-Type": "application/json",
-                        },
+                    .post(`${DROPBOX_API_BASE}/sharing/list_shared_links`, {
+                        headers: this.buildHeaders(accessToken),
                         json: {
                             path,
                         },
@@ -918,18 +796,12 @@ export class DropboxAdapter extends ServiceAdapter {
     }
 
     private async handleGetCurrentAccount(
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
-        const nangoSecretKey = getNangoSecretKey();
         const [accountResponse, spaceResponse] = await Promise.all([
             httpClient
-                .post(`${this.getNangoUrl()}/proxy/2/users/get_current_account`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "dropbox",
-                        "Content-Type": "application/json",
-                    },
+                .post(`${DROPBOX_API_BASE}/users/get_current_account`, {
+                    headers: this.buildHeaders(accessToken),
                     body: "null", // See "API Request Body Quirks" in file header
                 })
                 .json<{
@@ -946,13 +818,8 @@ export class DropboxAdapter extends ServiceAdapter {
                     };
                 }>(),
             httpClient
-                .post(`${this.getNangoUrl()}/proxy/2/users/get_space_usage`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "dropbox",
-                        "Content-Type": "application/json",
-                    },
+                .post(`${DROPBOX_API_BASE}/users/get_space_usage`, {
+                    headers: this.buildHeaders(accessToken),
                     body: "null", // See "API Request Body Quirks" in file header
                 })
                 .json<{
@@ -1017,20 +884,19 @@ export class DropboxAdapter extends ServiceAdapter {
         }
 
         // Get user credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for Dropbox. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`
+                    "Invalid credentials: OAuth required for Dropbox"
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -1038,21 +904,13 @@ export class DropboxAdapter extends ServiceAdapter {
             throw error;
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         // Build request options
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "dropbox",
-                "Content-Type": "application/json",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         // Add query parameters if provided
@@ -1074,7 +932,7 @@ export class DropboxAdapter extends ServiceAdapter {
                 | "put"
                 | "delete"
                 | "patch";
-            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
+            const fullUrl = `https://api.dropboxapi.com${endpoint}`;
 
             const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
                 Record<string, unknown>

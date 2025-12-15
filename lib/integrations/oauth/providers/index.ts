@@ -7,6 +7,12 @@
 
 import type { OAuthProviderConfig } from "../types";
 import { notionProvider } from "./notion";
+import { slackProvider } from "./slack";
+import { clickupProvider } from "./clickup";
+import { dropboxProvider } from "./dropbox";
+import { googleCalendarContactsProvider } from "./google-calendar-contacts";
+import { gmailProvider } from "./gmail";
+import { twitterProvider } from "./twitter";
 
 /**
  * Registry of all OAuth providers.
@@ -14,10 +20,12 @@ import { notionProvider } from "./notion";
  */
 const providers: Record<string, OAuthProviderConfig> = {
     notion: notionProvider,
-    // Future providers:
-    // slack: slackProvider,
-    // google: googleProvider,
-    // github: githubProvider,
+    slack: slackProvider,
+    clickup: clickupProvider,
+    dropbox: dropboxProvider,
+    "google-calendar-contacts": googleCalendarContactsProvider,
+    gmail: gmailProvider,
+    twitter: twitterProvider,
 };
 
 /**
@@ -93,3 +101,18 @@ export function buildAuthorizationUrl(
 // Re-export for convenience
 export { notionProvider } from "./notion";
 export { NOTION_API_BASE, NOTION_API_VERSION } from "./notion";
+export { slackProvider } from "./slack";
+export { SLACK_API_BASE } from "./slack";
+export { clickupProvider } from "./clickup";
+export { CLICKUP_API_BASE } from "./clickup";
+export { dropboxProvider } from "./dropbox";
+export { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "./dropbox";
+export { googleCalendarContactsProvider } from "./google-calendar-contacts";
+export {
+    GOOGLE_CALENDAR_API_BASE,
+    GOOGLE_PEOPLE_API_BASE,
+} from "./google-calendar-contacts";
+export { gmailProvider } from "./gmail";
+export { GMAIL_API_BASE } from "./gmail";
+export { twitterProvider } from "./twitter";
+export { TWITTER_API_BASE } from "./twitter";

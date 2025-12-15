@@ -66,20 +66,26 @@ export interface OAuthProviderConfig {
     scopeParamName?: string;
     /** Use Basic Auth for token exchange (client_id:client_secret base64) */
     useBasicAuth?: boolean;
-    /** Use PKCE (Proof Key for Code Exchange) */
-    usePKCE?: boolean;
+    /** Use PKCE (Proof Key for Code Exchange) - required by some providers like Dropbox, Twitter */
+    requiresPKCE?: boolean;
     /** Additional params to include in authorization URL */
     additionalAuthParams?: Record<string, string>;
     /** Additional params to include in token exchange request */
     additionalTokenParams?: Record<string, string>;
     /**
      * Extract account info from token response.
+     * Can be async if provider requires additional API call to fetch user info.
      * Returns identifier (unique ID) and displayName (human-readable).
+     *
+     * @param tokenResponse - Raw token response from provider
+     * @param accessToken - Access token (for providers that need to call API to get account info)
      */
-    extractAccountInfo?: (tokenResponse: Record<string, unknown>) => {
-        identifier: string;
-        displayName: string;
-    };
+    extractAccountInfo?: (
+        tokenResponse: Record<string, unknown>,
+        accessToken?: string
+    ) =>
+        | { identifier: string; displayName: string }
+        | Promise<{ identifier: string; displayName: string }>;
 }
 
 /**

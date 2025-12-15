@@ -1,7 +1,7 @@
 /**
  * ClickUp Service Adapter
  *
- * Task management via ClickUp API through Nango proxy.
+ * Task management via ClickUp API using in-house OAuth.
  *
  * ## Hierarchy Navigation
  * Team → Space → (optional Folder) → List → Task. You MUST have a list_id to create
@@ -19,105 +19,44 @@ import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
+import { CLICKUP_API_BASE } from "../oauth/providers/clickup";
 
 export class ClickUpAdapter extends ServiceAdapter {
     serviceName = "clickup";
     serviceDisplayName = "ClickUp";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
     /**
-     * Fetch the ClickUp account information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param userId - User ID (optional, only used for logging)
+     * Build headers for ClickUp API requests.
+     * ClickUp uses the access token directly (not "Bearer {token}").
      */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            const response = await httpClient
-                .get(`${nangoUrl}/proxy/api/v2/user`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "clickup",
-                    },
-                })
-                .json<{
-                    user: {
-                        id: number;
-                        username: string;
-                        email: string;
-                    };
-                }>();
-
-            return {
-                identifier: response.user.email,
-                displayName: response.user.username || response.user.email,
-            };
-        } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "📋 Failed to fetch ClickUp account info"
-            );
-            throw new ValidationError("Failed to fetch ClickUp account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: accessToken,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
-     * Test the OAuth connection by making a live API request
-     * Called when user clicks "Test" button to verify credentials are working
+     * Test the OAuth connection by making a live API request.
+     * Called when user clicks "Test" button to verify credentials are working.
      *
-     * @param connectionId - Nango connection ID
-     * @param userId - User ID (optional, only used for logging)
+     * For OAuth connections, the credentialOrToken is the actual credential to test.
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
-            // Make the same request as fetchAccountInfo to verify connection
+            // Make a simple request to verify connection
             await httpClient
-                .get(`${nangoUrl}/proxy/api/v2/user`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "clickup",
-                    },
+                .get(`${CLICKUP_API_BASE}/user`, {
+                    headers: this.buildHeaders(credentialOrToken),
                 })
                 .json<Record<string, unknown>>();
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify ClickUp connection"
-            );
+            logger.error({ error, userId }, "Failed to verify ClickUp connection");
             return {
                 success: false,
                 error:
@@ -569,20 +508,21 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
 
         // Get user's ClickUp credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
-                return this.createErrorResponse(
-                    `No connection ID found for ClickUp. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/clickup`
+
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
+                this.logInfo(
+                    `📝 [CLICKUP ADAPTER] User ${userId} attempted to use ClickUp but no connection found`
                 );
+                return this.createErrorResponse(this.createNotConnectedError());
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -594,27 +534,27 @@ export class ClickUpAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "list_teams":
-                    return await this.handleListTeams(connectionId);
+                    return await this.handleListTeams(accessToken);
                 case "list_spaces":
-                    return await this.handleListSpaces(params, connectionId);
+                    return await this.handleListSpaces(params, accessToken);
                 case "list_lists":
-                    return await this.handleListLists(params, connectionId);
+                    return await this.handleListLists(params, accessToken);
                 case "list_tasks":
-                    return await this.handleListTasks(params, connectionId);
+                    return await this.handleListTasks(params, accessToken);
                 case "get_task":
-                    return await this.handleGetTask(params, connectionId);
+                    return await this.handleGetTask(params, accessToken);
                 case "create_task":
-                    return await this.handleCreateTask(params, connectionId);
+                    return await this.handleCreateTask(params, accessToken);
                 case "update_task":
-                    return await this.handleUpdateTask(params, connectionId);
+                    return await this.handleUpdateTask(params, accessToken);
                 case "delete_task":
-                    return await this.handleDeleteTask(params, connectionId);
+                    return await this.handleDeleteTask(params, accessToken);
                 case "create_comment":
-                    return await this.handleCreateComment(params, connectionId);
+                    return await this.handleCreateComment(params, accessToken);
                 case "list_comments":
-                    return await this.handleListComments(params, connectionId);
+                    return await this.handleListComments(params, accessToken);
                 case "list_time_entries":
-                    return await this.handleListTimeEntries(params, connectionId);
+                    return await this.handleListTimeEntries(params, accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -637,7 +577,7 @@ export class ClickUpAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
+                    accessToken: accessToken ? "***" : undefined, // Redacted for security
                 }
             );
 
@@ -681,15 +621,10 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
     }
 
-    private async handleListTeams(connectionId: string): Promise<MCPToolResponse> {
-        const nangoSecretKey = getNangoSecretKey();
+    private async handleListTeams(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/api/v2/team`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(`${CLICKUP_API_BASE}/team`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 teams: Array<{
@@ -713,18 +648,13 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleListSpaces(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { team_id } = params as { team_id: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/api/v2/team/${team_id}/space`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(`${CLICKUP_API_BASE}/team/${team_id}/space`, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     archived: "false",
                 },
@@ -751,7 +681,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleListLists(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { space_id, folder_id } = params as {
             space_id?: string;
@@ -765,17 +695,12 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
 
         const endpoint = folder_id
-            ? `/proxy/api/v2/folder/${folder_id}/list`
-            : `/proxy/api/v2/space/${space_id}/list`;
+            ? `${CLICKUP_API_BASE}/folder/${folder_id}/list`
+            : `${CLICKUP_API_BASE}/space/${space_id}/list`;
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}${endpoint}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(endpoint, {
+                headers: this.buildHeaders(accessToken),
                 searchParams: {
                     archived: "false",
                 },
@@ -801,7 +726,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleListTasks(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             list_id,
@@ -846,8 +771,8 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
 
         const endpoint = list_id
-            ? `/proxy/api/v2/list/${list_id}/task`
-            : `/proxy/api/v2/team/${team_id}/task`;
+            ? `${CLICKUP_API_BASE}/list/${list_id}/task`
+            : `${CLICKUP_API_BASE}/team/${team_id}/task`;
 
         // Build query parameters
         const searchParams = new URLSearchParams();
@@ -877,14 +802,9 @@ export class ClickUpAdapter extends ServiceAdapter {
         if (date_updated_lt)
             searchParams.set("date_updated_lt", String(date_updated_lt));
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}${endpoint}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(endpoint, {
+                headers: this.buildHeaders(accessToken),
                 searchParams,
             })
             .json<{
@@ -917,18 +837,13 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleGetTask(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(`${CLICKUP_API_BASE}/task/${task_id}`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 id: string;
@@ -969,7 +884,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleCreateTask(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             list_id,
@@ -1005,15 +920,9 @@ export class ClickUpAdapter extends ServiceAdapter {
         if (start_date) body.start_date = start_date;
         if (tags) body.tags = tags;
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/api/v2/list/${list_id}/task`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                    "Content-Type": "application/json",
-                },
+            .post(`${CLICKUP_API_BASE}/list/${list_id}/task`, {
+                headers: this.buildHeaders(accessToken),
                 json: body,
             })
             .json<{
@@ -1035,7 +944,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleUpdateTask(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id, name, description, status, priority, assignees, due_date } =
             params as {
@@ -1057,15 +966,9 @@ export class ClickUpAdapter extends ServiceAdapter {
         if (assignees !== undefined) body.assignees = assignees;
         if (due_date !== undefined) body.due_date = due_date;
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .put(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                    "Content-Type": "application/json",
-                },
+            .put(`${CLICKUP_API_BASE}/task/${task_id}`, {
+                headers: this.buildHeaders(accessToken),
                 json: body,
             })
             .json<{
@@ -1085,17 +988,12 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleDeleteTask(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const nangoSecretKey = getNangoSecretKey();
-        await httpClient.delete(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}`, {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "clickup",
-            },
+        await httpClient.delete(`${CLICKUP_API_BASE}/task/${task_id}`, {
+            headers: this.buildHeaders(accessToken),
         });
 
         return this.createJSONResponse({
@@ -1107,7 +1005,7 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleCreateComment(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id, comment_text, notify_all } = params as {
             task_id: string;
@@ -1115,15 +1013,9 @@ export class ClickUpAdapter extends ServiceAdapter {
             notify_all?: boolean;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/comment`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                    "Content-Type": "application/json",
-                },
+            .post(`${CLICKUP_API_BASE}/task/${task_id}/comment`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     comment_text,
                     notify_all: notify_all ?? false,
@@ -1147,18 +1039,13 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleListComments(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/comment`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(`${CLICKUP_API_BASE}/task/${task_id}/comment`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 comments: Array<{
@@ -1183,18 +1070,13 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     private async handleListTimeEntries(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { task_id } = params as { task_id: string };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/api/v2/task/${task_id}/time`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "clickup",
-                },
+            .get(`${CLICKUP_API_BASE}/task/${task_id}/time`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 data: Array<{
@@ -1254,20 +1136,17 @@ export class ClickUpAdapter extends ServiceAdapter {
         }
 
         // Get user credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
-                return this.createErrorResponse(
-                    `No connection ID found for ClickUp. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/clickup`
-                );
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
+                return this.createErrorResponse(this.createNotConnectedError());
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -1275,8 +1154,7 @@ export class ClickUpAdapter extends ServiceAdapter {
             throw error;
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
+        this.logInfo(`🔧 [CLICKUP] Raw API call: ${method} ${endpoint}`);
 
         // Build request options
         const requestOptions: {
@@ -1284,11 +1162,7 @@ export class ClickUpAdapter extends ServiceAdapter {
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "clickup",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         // Add query parameters if provided
@@ -1310,22 +1184,23 @@ export class ClickUpAdapter extends ServiceAdapter {
                 | "put"
                 | "delete"
                 | "patch";
-            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
+            const fullUrl = `https://api.clickup.com${endpoint}`;
 
             const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
                 Record<string, unknown>
             >();
 
+            this.logInfo(`✅ [CLICKUP] Raw API call successful`);
+
             return this.createJSONResponse(response);
         } catch (error) {
-            logger.error(
+            this.logError(
+                `❌ [CLICKUP ADAPTER] Raw API request failed for user ${userId}:`,
                 {
                     endpoint,
                     method,
-                    userId,
                     error: error instanceof Error ? error.message : String(error),
-                },
-                "📋 [CLICKUP ADAPTER] Raw API request failed"
+                }
             );
 
             // Capture error to Sentry for monitoring and alerting

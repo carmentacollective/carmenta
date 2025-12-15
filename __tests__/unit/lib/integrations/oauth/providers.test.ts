@@ -58,9 +58,9 @@ describe("OAuth Provider Registry", () => {
         });
 
         it("returns false for unknown providers", () => {
-            expect(isOAuthProvider("slack")).toBe(false);
-            expect(isOAuthProvider("google")).toBe(false);
             expect(isOAuthProvider("github")).toBe(false);
+            expect(isOAuthProvider("stripe")).toBe(false);
+            expect(isOAuthProvider("unknown")).toBe(false);
         });
 
         it("returns false for empty string", () => {
@@ -79,9 +79,15 @@ describe("OAuth Provider Registry", () => {
         it("returns only currently registered providers", () => {
             const ids = getOAuthProviderIds();
 
-            // Currently only Notion is registered
-            expect(ids).toHaveLength(1);
-            expect(ids[0]).toBe("notion");
+            // All 7 OAuth providers are now registered
+            expect(ids).toHaveLength(7);
+            expect(ids).toContain("notion");
+            expect(ids).toContain("slack");
+            expect(ids).toContain("clickup");
+            expect(ids).toContain("dropbox");
+            expect(ids).toContain("gmail");
+            expect(ids).toContain("google-calendar-contacts");
+            expect(ids).toContain("twitter");
         });
     });
 
@@ -155,7 +161,7 @@ describe("OAuth Provider Registry", () => {
 
         it("does not use PKCE by default", () => {
             const provider = getProvider("notion");
-            expect(provider?.usePKCE).toBeFalsy();
+            expect(provider?.requiresPKCE).toBeFalsy();
         });
 
         it("has empty scopes array (access determined by user selection)", () => {
@@ -180,7 +186,7 @@ describe("OAuth Provider Registry", () => {
             });
         });
 
-        it("falls back to default display name if workspace_name missing", () => {
+        it("falls back to default display name if workspace_name missing", async () => {
             const provider = getProvider("notion");
 
             const mockResponse = {
@@ -189,7 +195,7 @@ describe("OAuth Provider Registry", () => {
                 // workspace_name is missing
             };
 
-            const accountInfo = provider?.extractAccountInfo?.(mockResponse);
+            const accountInfo = await provider?.extractAccountInfo?.(mockResponse);
 
             expect(accountInfo?.identifier).toBe("ws-123");
             expect(accountInfo?.displayName).toBe("Notion Workspace");

@@ -1,11 +1,11 @@
 /**
  * X (Twitter) Service Adapter
  *
- * Tweets and timeline via X API v2 through Nango proxy. All endpoints use "2/" prefix.
+ * Tweets and timeline via X API v2. All endpoints use "2/" prefix.
  *
- * ## safeNangoRequest Wrapper
+ * ## safeTwitterRequest Wrapper
  * Connection resets during JSON parsing are common with X API. All requests wrapped
- * in safeNangoRequest which handles retry and error recovery.
+ * in safeTwitterRequest which handles retry and error recovery.
  *
  * ## User ID Dependency
  * V2 POST operations (likes, retweets) require user ID, not username.
@@ -20,57 +20,44 @@ import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
+import { TWITTER_API_BASE } from "../oauth/providers/twitter";
 
 // Constants for X API limits
 const MAX_TWEETS_FETCH = 100; // Max allowed by API per request
 const MAX_USERS_FETCH = 100;
 
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
-
 export class TwitterAdapter extends ServiceAdapter {
     serviceName = "twitter";
     serviceDisplayName = "X (Twitter)";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
-     * Safely fetch and parse JSON from Nango proxy
-     * Automatically includes Nango authentication headers
+     * Safely fetch and parse JSON from Twitter API
      * Handles connection errors that can occur during JSON parsing
      */
-    private async safeNangoRequest<T>(
+    private async safeTwitterRequest<T>(
         method: "get" | "post" | "delete",
         endpoint: string,
-        connectionId: string,
+        accessToken: string,
         options?: {
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         }
     ): Promise<T> {
-        const nangoSecretKey = getNangoSecretKey();
-        const url = `${this.getNangoUrl()}/proxy/${endpoint}`;
+        const url = `${TWITTER_API_BASE}/${endpoint}`;
 
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "twitter",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         if (options?.searchParams) {
@@ -78,7 +65,6 @@ export class TwitterAdapter extends ServiceAdapter {
         }
 
         if (options?.json) {
-            requestOptions.headers["Content-Type"] = "application/json";
             requestOptions.json = options.json;
         }
 
@@ -109,7 +95,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
                     // Report to Sentry for observability
                     this.captureError(jsonError, {
-                        action: `safeNangoRequest_json_parsing_${method}_${endpoint}`,
+                        action: `safeTwitterRequest_json_parsing_${method}_${endpoint}`,
                     });
 
                     throw new Error(
@@ -139,7 +125,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
                 // Report to Sentry for observability
                 this.captureError(error, {
-                    action: `safeNangoRequest_connection_${method}_${endpoint}`,
+                    action: `safeTwitterRequest_connection_${method}_${endpoint}`,
                 });
 
                 throw new Error(
@@ -153,55 +139,23 @@ export class TwitterAdapter extends ServiceAdapter {
     }
 
     /**
-     * Fetch the X account information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     *
-     * @param connectionId - Nango connection ID (required for OAuth webhook flow)
-     * @param _userId - User ID (optional, only used for logging)
-     */
-    async fetchAccountInfo(
-        connectionId: string,
-        _userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        try {
-            // Get authenticated user info
-            const userResponse = await this.safeNangoRequest<{
-                data: {
-                    id: string;
-                    name: string;
-                    username: string;
-                };
-            }>("get", "2/users/me", connectionId);
-
-            return {
-                identifier: `@${userResponse.data.username}`,
-                displayName: userResponse.data.name,
-            };
-        } catch (error) {
-            this.logError("❌ Failed to fetch X account info:", error);
-            throw new ValidationError("Failed to fetch X account information");
-        }
-    }
-
-    /**
      * Test the OAuth connection by making a live API request
      * Called when user clicks "Test" button to verify credentials are working
      *
-     * @param connectionId - Nango connection ID
+     * @param credentialOrToken - Access token or credential object
      * @param _userId - User ID (optional, only used for logging)
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         _userId?: string
     ): Promise<{ success: boolean; error?: string }> {
         try {
+            const accessToken = credentialOrToken;
+
             // Make a simple request to verify connection
-            await this.safeNangoRequest<{
+            await this.safeTwitterRequest<{
                 data: { id: string };
-            }>("get", "2/users/me", connectionId);
+            }>("get", "2/users/me", accessToken);
 
             return { success: true };
         } catch (error) {
@@ -500,20 +454,20 @@ export class TwitterAdapter extends ServiceAdapter {
         }
 
         // Get user's X connection via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userEmail,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for X. Please reconnect at: ` +
+                    `Invalid credentials type for X. Please reconnect at: ` +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/twitter`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 this.logInfo(
@@ -528,27 +482,27 @@ export class TwitterAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "post_tweet":
-                    return await this.handlePostTweet(params, connectionId);
+                    return await this.handlePostTweet(params, accessToken);
                 case "get_user_timeline":
-                    return await this.handleGetUserTimeline(params, connectionId);
+                    return await this.handleGetUserTimeline(params, accessToken);
                 case "search_tweets":
-                    return await this.handleSearchTweets(params, connectionId);
+                    return await this.handleSearchTweets(params, accessToken);
                 case "get_user_profile":
-                    return await this.handleGetUserProfile(params, connectionId);
+                    return await this.handleGetUserProfile(params, accessToken);
                 case "get_mentions":
-                    return await this.handleGetMentions(params, connectionId);
+                    return await this.handleGetMentions(params, accessToken);
                 case "like_tweet":
-                    return await this.handleLikeTweet(params, connectionId);
+                    return await this.handleLikeTweet(params, accessToken);
                 case "unlike_tweet":
-                    return await this.handleUnlikeTweet(params, connectionId);
+                    return await this.handleUnlikeTweet(params, accessToken);
                 case "retweet":
-                    return await this.handleRetweet(params, connectionId);
+                    return await this.handleRetweet(params, accessToken);
                 case "unretweet":
-                    return await this.handleUnretweet(params, connectionId);
+                    return await this.handleUnretweet(params, accessToken);
                 case "get_followers":
-                    return await this.handleGetFollowers(params, connectionId);
+                    return await this.handleGetFollowers(params, accessToken);
                 case "get_following":
-                    return await this.handleGetFollowing(params, connectionId);
+                    return await this.handleGetFollowing(params, accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -571,7 +525,6 @@ export class TwitterAdapter extends ServiceAdapter {
                     error: error instanceof Error ? error.message : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
-                    connectionId,
                 }
             );
 
@@ -589,7 +542,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handlePostTweet(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { text } = params as { text: string };
 
@@ -606,21 +559,21 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`📤 [twitter] Posting tweet: "${text.substring(0, 50)}..."`);
 
         // Get user ID first (required for posting tweets in v2 API)
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Post the tweet
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: {
                 id: string;
                 text: string;
             };
-        }>("post", "2/tweets", connectionId, {
+        }>("post", "2/tweets", accessToken, {
             json: {
                 text,
             },
@@ -638,7 +591,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleGetUserTimeline(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { max_results = 10 } = params as { max_results?: number };
 
@@ -647,16 +600,16 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`📥 [twitter] Fetching user timeline, limit: ${cappedLimit}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Get user's tweets
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: Array<{
                 id: string;
                 text: string;
@@ -671,7 +624,7 @@ export class TwitterAdapter extends ServiceAdapter {
             meta?: {
                 result_count: number;
             };
-        }>("get", `2/users/${userId}/tweets`, connectionId, {
+        }>("get", `2/users/${userId}/tweets`, accessToken, {
             searchParams: {
                 max_results: cappedLimit.toString(),
                 "tweet.fields": "created_at,public_metrics",
@@ -689,7 +642,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleSearchTweets(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { query, max_results = 10 } = params as {
             query: string;
@@ -706,7 +659,7 @@ export class TwitterAdapter extends ServiceAdapter {
             `🔍 [twitter] Searching tweets: "${query}", limit: ${cappedLimit}`
         );
 
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: Array<{
                 id: string;
                 text: string;
@@ -722,7 +675,7 @@ export class TwitterAdapter extends ServiceAdapter {
             meta?: {
                 result_count: number;
             };
-        }>("get", "2/tweets/search/recent", connectionId, {
+        }>("get", "2/tweets/search/recent", accessToken, {
             searchParams: {
                 query,
                 max_results: cappedLimit.toString(),
@@ -742,7 +695,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleGetUserProfile(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { username } = params as { username: string };
 
@@ -752,7 +705,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
         this.logInfo(`👤 [twitter] Fetching profile for @${username}`);
 
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: {
                 id: string;
                 name: string;
@@ -768,7 +721,7 @@ export class TwitterAdapter extends ServiceAdapter {
                     listed_count: number;
                 };
             };
-        }>("get", `2/users/by/username/${username}`, connectionId, {
+        }>("get", `2/users/by/username/${username}`, accessToken, {
             searchParams: {
                 "user.fields":
                     "created_at,description,public_metrics,verified,profile_image_url",
@@ -784,7 +737,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleGetMentions(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { max_results = 10 } = params as { max_results?: number };
 
@@ -793,16 +746,16 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`📥 [twitter] Fetching mentions, limit: ${cappedLimit}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Get mentions
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: Array<{
                 id: string;
                 text: string;
@@ -818,7 +771,7 @@ export class TwitterAdapter extends ServiceAdapter {
             meta?: {
                 result_count: number;
             };
-        }>("get", `2/users/${userId}/mentions`, connectionId, {
+        }>("get", `2/users/${userId}/mentions`, accessToken, {
             searchParams: {
                 max_results: cappedLimit.toString(),
                 "tweet.fields": "created_at,author_id,public_metrics",
@@ -836,7 +789,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleLikeTweet(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { tweet_id } = params as { tweet_id: string };
 
@@ -847,20 +800,20 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`👍 [twitter] Liking tweet ${tweet_id}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Like the tweet
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: {
                 liked: boolean;
             };
-        }>("post", `2/users/${userId}/likes`, connectionId, {
+        }>("post", `2/users/${userId}/likes`, accessToken, {
             json: {
                 tweet_id,
             },
@@ -877,7 +830,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleUnlikeTweet(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { tweet_id } = params as { tweet_id: string };
 
@@ -888,19 +841,19 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`👎 [twitter] Unliking tweet ${tweet_id}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Unlike the tweet
-        await this.safeNangoRequest<{ data: { liked: boolean } }>(
+        await this.safeTwitterRequest<{ data: { liked: boolean } }>(
             "delete",
             `2/users/${userId}/likes/${tweet_id}`,
-            connectionId
+            accessToken
         );
 
         this.logInfo(`✅ [twitter] Tweet ${tweet_id} unliked successfully`);
@@ -914,7 +867,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleRetweet(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { tweet_id } = params as { tweet_id: string };
 
@@ -925,20 +878,20 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`🔄 [twitter] Retweeting tweet ${tweet_id}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Retweet
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: {
                 retweeted: boolean;
             };
-        }>("post", `2/users/${userId}/retweets`, connectionId, {
+        }>("post", `2/users/${userId}/retweets`, accessToken, {
             json: {
                 tweet_id,
             },
@@ -955,7 +908,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleUnretweet(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { tweet_id } = params as { tweet_id: string };
 
@@ -966,19 +919,19 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`🔙 [twitter] Unretweeting tweet ${tweet_id}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Unretweet
-        await this.safeNangoRequest<{ data: { retweeted: boolean } }>(
+        await this.safeTwitterRequest<{ data: { retweeted: boolean } }>(
             "delete",
             `2/users/${userId}/retweets/${tweet_id}`,
-            connectionId
+            accessToken
         );
 
         this.logInfo(`✅ [twitter] Tweet ${tweet_id} unretweeted successfully`);
@@ -992,7 +945,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleGetFollowers(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { max_results = 10 } = params as { max_results?: number };
 
@@ -1001,16 +954,16 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`👥 [twitter] Fetching followers, limit: ${cappedLimit}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Get followers
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: Array<{
                 id: string;
                 name: string;
@@ -1026,7 +979,7 @@ export class TwitterAdapter extends ServiceAdapter {
             meta?: {
                 result_count: number;
             };
-        }>("get", `2/users/${userId}/followers`, connectionId, {
+        }>("get", `2/users/${userId}/followers`, accessToken, {
             searchParams: {
                 max_results: cappedLimit.toString(),
                 "user.fields": "description,public_metrics,verified",
@@ -1044,7 +997,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
     private async handleGetFollowing(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { max_results = 10 } = params as { max_results?: number };
 
@@ -1053,16 +1006,16 @@ export class TwitterAdapter extends ServiceAdapter {
         this.logInfo(`👥 [twitter] Fetching following, limit: ${cappedLimit}`);
 
         // Get user ID first
-        const userResponse = await this.safeNangoRequest<{
+        const userResponse = await this.safeTwitterRequest<{
             data: {
                 id: string;
             };
-        }>("get", "2/users/me", connectionId);
+        }>("get", "2/users/me", accessToken);
 
         const userId = userResponse.data.id;
 
         // Get following
-        const response = await this.safeNangoRequest<{
+        const response = await this.safeTwitterRequest<{
             data: Array<{
                 id: string;
                 name: string;
@@ -1078,7 +1031,7 @@ export class TwitterAdapter extends ServiceAdapter {
             meta?: {
                 result_count: number;
             };
-        }>("get", `2/users/${userId}/following`, connectionId, {
+        }>("get", `2/users/${userId}/following`, accessToken, {
             searchParams: {
                 max_results: cappedLimit.toString(),
                 "user.fields": "description,public_metrics,verified",
@@ -1127,29 +1080,26 @@ export class TwitterAdapter extends ServiceAdapter {
         }
 
         // Get user credentials via connection manager
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userEmail,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
-                    `No connection ID found for X. Please reconnect at: ` +
+                    `Invalid credentials type for X. Please reconnect at: ` +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/twitter`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
             }
             throw error;
         }
-
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
 
         this.logInfo(`🔧 [twitter] Raw API call: ${method} ${endpoint}`);
 
@@ -1159,11 +1109,7 @@ export class TwitterAdapter extends ServiceAdapter {
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "twitter",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         // Add query parameters if provided
@@ -1175,7 +1121,6 @@ export class TwitterAdapter extends ServiceAdapter {
 
         // Add body for POST/PUT/PATCH
         if (["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
-            requestOptions.headers["Content-Type"] = "application/json";
             if (body) {
                 requestOptions.json = body;
             }
@@ -1188,7 +1133,7 @@ export class TwitterAdapter extends ServiceAdapter {
                 | "delete"
                 | "put"
                 | "patch";
-            const fullUrl = `${nangoUrl}/proxy/${endpoint}`;
+            const fullUrl = `${TWITTER_API_BASE}/${endpoint}`;
 
             const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
                 Record<string, unknown>

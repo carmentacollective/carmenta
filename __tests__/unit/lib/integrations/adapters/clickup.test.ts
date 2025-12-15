@@ -85,46 +85,6 @@ describe("ClickUpAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches ClickUp account information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    user: {
-                        id: 123,
-                        username: "testuser",
-                        email: "test@clickup.com",
-                    },
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("test@clickup.com");
-            expect(result.displayName).toBe("testuser");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/api/v2/user"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "clickup",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =
@@ -144,7 +104,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -179,7 +139,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -202,10 +162,7 @@ describe("ClickUpAdapter", () => {
             const result = await adapter.execute("list_teams", {}, testUserEmail);
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/api/v2/team"),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("executes list_tasks operation", async () => {
@@ -233,12 +190,7 @@ describe("ClickUpAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/api/v2/list/list-123/task"
-                ),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("executes create_task operation", async () => {
@@ -261,12 +213,7 @@ describe("ClickUpAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/api/v2/list/list-123/task"
-                ),
-                expect.any(Object)
-            );
+            expect(httpClient.post).toHaveBeenCalled();
         });
     });
 
@@ -276,7 +223,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,

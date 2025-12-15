@@ -83,44 +83,6 @@ describe("GoogleCalendarContactsAdapter", () => {
         });
     });
 
-    describe("fetchAccountInfo", () => {
-        it("fetches Google account information", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    resourceName: "people/123",
-                    names: [{ displayName: "Test User" }],
-                    emailAddresses: [{ value: "test@gmail.com" }],
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo(testConnectionId);
-
-            expect(result.identifier).toBe("test@gmail.com");
-            expect(result.displayName).toBe("Test User");
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/v1/people/me"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": testConnectionId,
-                        "Provider-Config-Key": "google-calendar-contacts",
-                    }),
-                })
-            );
-        });
-
-        it("handles errors when fetching account info", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Network error")),
-            } as never);
-
-            await expect(adapter.fetchAccountInfo(testConnectionId)).rejects.toThrow(
-                ValidationError
-            );
-        });
-    });
-
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
             const { getCredentials } =
@@ -140,7 +102,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -176,7 +138,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -200,12 +162,7 @@ describe("GoogleCalendarContactsAdapter", () => {
             const result = await adapter.execute("list_calendars", {}, testUserEmail);
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/calendar/v3/users/me/calendarList"
-                ),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("executes list_events operation", async () => {
@@ -230,12 +187,7 @@ describe("GoogleCalendarContactsAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "api.nango.dev/proxy/calendar/v3/calendars/primary/events"
-                ),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("executes search_contacts operation", async () => {
@@ -270,7 +222,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,

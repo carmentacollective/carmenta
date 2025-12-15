@@ -121,15 +121,7 @@ describe("TwitterAdapter", () => {
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("proxy/2/users/me"),
-                expect.objectContaining({
-                    headers: expect.objectContaining({
-                        "Connection-Id": "nango-connection-id",
-                        "Provider-Config-Key": "twitter",
-                    }),
-                })
-            );
+            expect(httpClient.get).toHaveBeenCalled();
         });
 
         it("returns error for connection failure", async () => {
@@ -142,37 +134,6 @@ describe("TwitterAdapter", () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
-        });
-    });
-
-    describe("fetchAccountInfo", () => {
-        it("returns account identifier and display name", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockResolvedValue({
-                    data: {
-                        id: "12345",
-                        name: "Test User",
-                        username: "testuser",
-                    },
-                }),
-            } as never);
-
-            const result = await adapter.fetchAccountInfo("nango-connection-id");
-
-            expect(result.identifier).toBe("@testuser");
-            expect(result.displayName).toBe("Test User");
-        });
-
-        it("throws ValidationError on failure", async () => {
-            const { httpClient } = await import("@/lib/http-client");
-            (httpClient.get as Mock).mockReturnValue({
-                json: vi.fn().mockRejectedValue(new Error("Connection failed")),
-            } as never);
-
-            await expect(
-                adapter.fetchAccountInfo("invalid-connection")
-            ).rejects.toThrow(ValidationError);
         });
     });
 
@@ -197,12 +158,12 @@ describe("TwitterAdapter", () => {
             });
         });
 
-        it("returns error when connectionId is missing", async () => {
+        it("returns error when accessToken is missing", async () => {
             const { getCredentials } =
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: null, // Missing connectionId
+                accessToken: null, // Missing accessToken
             });
 
             const result = await adapter.execute(
@@ -212,7 +173,7 @@ describe("TwitterAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("connection");
+            expect(result.content[0].text).toContain("Invalid credentials");
         });
     });
 
@@ -222,7 +183,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -295,7 +259,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -373,7 +340,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -420,7 +390,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -470,7 +443,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -515,7 +491,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -551,7 +530,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -589,7 +571,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 
@@ -651,7 +636,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 

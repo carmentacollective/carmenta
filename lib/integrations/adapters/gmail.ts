@@ -1,7 +1,7 @@
 /**
  * Gmail Service Adapter
  *
- * Email management via Gmail API through Nango proxy.
+ * Email management via Gmail API.
  * Uses Google's "restricted" scope tier - requires verified OAuth app.
  *
  * ## Message Encoding
@@ -20,14 +20,7 @@ import { httpClient } from "@/lib/http-client";
 import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-
-/** Get and validate Nango secret key */
-function getNangoSecretKey(): string {
-    if (!env.NANGO_SECRET_KEY) {
-        throw new Error("Missing required environment variable: NANGO_SECRET_KEY");
-    }
-    return env.NANGO_SECRET_KEY;
-}
+import { GMAIL_API_BASE } from "../oauth/providers/gmail";
 
 /** Encode email to base64url format required by Gmail API */
 function encodeEmail(email: string): string {
@@ -100,87 +93,30 @@ export class GmailAdapter extends ServiceAdapter {
     serviceName = "gmail";
     serviceDisplayName = "Gmail";
 
-    private getNangoUrl(): string {
-        if (!env.NANGO_API_URL) {
-            throw new Error("Missing required environment variable: NANGO_API_URL");
-        }
-        return env.NANGO_API_URL;
-    }
-
-    /**
-     * Fetch the Gmail account information
-     * Used to populate accountIdentifier and accountDisplayName after OAuth
-     */
-    async fetchAccountInfo(
-        connectionId: string,
-        userId?: string
-    ): Promise<{
-        identifier: string;
-        displayName: string;
-    }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
-        try {
-            const response = await httpClient
-                .get(`${nangoUrl}/proxy/gmail/v1/users/me/profile`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
-                })
-                .json<{
-                    emailAddress: string;
-                    messagesTotal?: number;
-                    threadsTotal?: number;
-                }>();
-
-            return {
-                identifier: response.emailAddress,
-                displayName: response.emailAddress,
-            };
-        } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to fetch Gmail account info"
-            );
-            this.captureError(error, {
-                action: "fetchAccountInfo",
-                params: { connectionId, userId },
-                userId,
-            });
-            throw new ValidationError("Failed to fetch Gmail account information");
-        }
+    private buildHeaders(accessToken: string): Record<string, string> {
+        return {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        };
     }
 
     /**
      * Test the OAuth connection by making a live API request
      */
     async testConnection(
-        connectionId: string,
+        credentialOrToken: string,
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         try {
             await httpClient
-                .get(`${nangoUrl}/proxy/gmail/v1/users/me/profile`, {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
+                .get(`${GMAIL_API_BASE}/users/me/profile`, {
+                    headers: this.buildHeaders(credentialOrToken),
                 })
                 .json<Record<string, unknown>>();
 
             return { success: true };
         } catch (error) {
-            logger.error(
-                { error, userId, connectionId },
-                "Failed to verify Gmail connection"
-            );
+            logger.error({ error, userId }, "Failed to verify Gmail connection");
             return {
                 success: false,
                 error:
@@ -499,20 +435,20 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
                     `No Gmail connection found. Please connect at: ` +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -523,21 +459,21 @@ export class GmailAdapter extends ServiceAdapter {
         try {
             switch (action) {
                 case "send_message":
-                    return await this.handleSendMessage(params, connectionId);
+                    return await this.handleSendMessage(params, accessToken);
                 case "search_messages":
-                    return await this.handleSearchMessages(params, connectionId);
+                    return await this.handleSearchMessages(params, accessToken);
                 case "get_message":
-                    return await this.handleGetMessage(params, connectionId);
+                    return await this.handleGetMessage(params, accessToken);
                 case "list_threads":
-                    return await this.handleListThreads(params, connectionId);
+                    return await this.handleListThreads(params, accessToken);
                 case "get_thread":
-                    return await this.handleGetThread(params, connectionId);
+                    return await this.handleGetThread(params, accessToken);
                 case "create_draft":
-                    return await this.handleCreateDraft(params, connectionId);
+                    return await this.handleCreateDraft(params, accessToken);
                 case "list_labels":
-                    return await this.handleListLabels(connectionId);
+                    return await this.handleListLabels(accessToken);
                 case "modify_labels":
-                    return await this.handleModifyLabels(params, connectionId);
+                    return await this.handleModifyLabels(params, accessToken);
                 case "raw_api":
                     return await this.executeRawAPI(
                         params as RawAPIParams,
@@ -587,7 +523,7 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleSendMessage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             to,
@@ -623,7 +559,6 @@ export class GmailAdapter extends ServiceAdapter {
         });
 
         const encodedEmail = encodeEmail(email);
-        const nangoSecretKey = getNangoSecretKey();
 
         const requestBody: { raw: string; threadId?: string } = { raw: encodedEmail };
         if (thread_id) {
@@ -631,13 +566,8 @@ export class GmailAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/gmail/v1/users/me/messages/send`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "gmail",
-                    "Content-Type": "application/json",
-                },
+            .post(`${GMAIL_API_BASE}/users/me/messages/send`, {
+                headers: this.buildHeaders(accessToken),
                 json: requestBody,
             })
             .json<{ id: string; threadId: string; labelIds?: string[] }>();
@@ -652,7 +582,7 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleSearchMessages(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             q,
@@ -664,7 +594,6 @@ export class GmailAdapter extends ServiceAdapter {
             include_spam_trash?: boolean;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const searchParams = new URLSearchParams({
             q,
             maxResults: String(Math.min(max_results, 100)),
@@ -672,16 +601,9 @@ export class GmailAdapter extends ServiceAdapter {
         });
 
         const listResponse = await httpClient
-            .get(
-                `${this.getNangoUrl()}/proxy/gmail/v1/users/me/messages?${searchParams}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
-                }
-            )
+            .get(`${GMAIL_API_BASE}/users/me/messages?${searchParams}`, {
+                headers: this.buildHeaders(accessToken),
+            })
             .json<{
                 messages?: Array<{ id: string; threadId: string }>;
                 resultSizeEstimate?: number;
@@ -699,13 +621,9 @@ export class GmailAdapter extends ServiceAdapter {
             listResponse.messages.slice(0, max_results).map(async (msg) => {
                 const detail = await httpClient
                     .get(
-                        `${this.getNangoUrl()}/proxy/gmail/v1/users/me/messages/${msg.id}?format=metadata`,
+                        `${GMAIL_API_BASE}/users/me/messages/${msg.id}?format=metadata`,
                         {
-                            headers: {
-                                Authorization: `Bearer ${nangoSecretKey}`,
-                                "Connection-Id": connectionId,
-                                "Provider-Config-Key": "gmail",
-                            },
+                            headers: this.buildHeaders(accessToken),
                         }
                     )
                     .json<GmailMessage>();
@@ -736,25 +654,17 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleGetMessage(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { message_id, format = "full" } = params as {
             message_id: string;
             format?: string;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(
-                `${this.getNangoUrl()}/proxy/gmail/v1/users/me/messages/${message_id}?format=${format}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
-                }
-            )
+            .get(`${GMAIL_API_BASE}/users/me/messages/${message_id}?format=${format}`, {
+                headers: this.buildHeaders(accessToken),
+            })
             .json<GmailMessage>();
 
         const headers = response.payload?.headers ?? [];
@@ -808,7 +718,7 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleListThreads(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const {
             q,
@@ -820,7 +730,6 @@ export class GmailAdapter extends ServiceAdapter {
             label_ids?: string[];
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const searchParams = new URLSearchParams({
             maxResults: String(Math.min(max_results, 100)),
         });
@@ -830,16 +739,9 @@ export class GmailAdapter extends ServiceAdapter {
         }
 
         const response = await httpClient
-            .get(
-                `${this.getNangoUrl()}/proxy/gmail/v1/users/me/threads?${searchParams}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
-                }
-            )
+            .get(`${GMAIL_API_BASE}/users/me/threads?${searchParams}`, {
+                headers: this.buildHeaders(accessToken),
+            })
             .json<{
                 threads?: Array<{ id: string; snippet?: string; historyId?: string }>;
                 resultSizeEstimate?: number;
@@ -857,25 +759,17 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleGetThread(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { thread_id, format = "full" } = params as {
             thread_id: string;
             format?: string;
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .get(
-                `${this.getNangoUrl()}/proxy/gmail/v1/users/me/threads/${thread_id}?format=${format}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                    },
-                }
-            )
+            .get(`${GMAIL_API_BASE}/users/me/threads/${thread_id}?format=${format}`, {
+                headers: this.buildHeaders(accessToken),
+            })
             .json<GmailThread>();
 
         const messages = response.messages?.map((msg) => {
@@ -903,7 +797,7 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleCreateDraft(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { to, subject, body, cc, is_html } = params as {
             to: string;
@@ -922,16 +816,10 @@ export class GmailAdapter extends ServiceAdapter {
         });
 
         const encodedEmail = encodeEmail(email);
-        const nangoSecretKey = getNangoSecretKey();
 
         const response = await httpClient
-            .post(`${this.getNangoUrl()}/proxy/gmail/v1/users/me/drafts`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "gmail",
-                    "Content-Type": "application/json",
-                },
+            .post(`${GMAIL_API_BASE}/users/me/drafts`, {
+                headers: this.buildHeaders(accessToken),
                 json: {
                     message: { raw: encodedEmail },
                 },
@@ -946,15 +834,10 @@ export class GmailAdapter extends ServiceAdapter {
         });
     }
 
-    private async handleListLabels(connectionId: string): Promise<MCPToolResponse> {
-        const nangoSecretKey = getNangoSecretKey();
+    private async handleListLabels(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
-            .get(`${this.getNangoUrl()}/proxy/gmail/v1/users/me/labels`, {
-                headers: {
-                    Authorization: `Bearer ${nangoSecretKey}`,
-                    "Connection-Id": connectionId,
-                    "Provider-Config-Key": "gmail",
-                },
+            .get(`${GMAIL_API_BASE}/users/me/labels`, {
+                headers: this.buildHeaders(accessToken),
             })
             .json<{
                 labels: Array<{
@@ -979,7 +862,7 @@ export class GmailAdapter extends ServiceAdapter {
 
     private async handleModifyLabels(
         params: unknown,
-        connectionId: string
+        accessToken: string
     ): Promise<MCPToolResponse> {
         const { message_id, add_labels, remove_labels } = params as {
             message_id: string;
@@ -987,23 +870,14 @@ export class GmailAdapter extends ServiceAdapter {
             remove_labels?: string[];
         };
 
-        const nangoSecretKey = getNangoSecretKey();
         const response = await httpClient
-            .post(
-                `${this.getNangoUrl()}/proxy/gmail/v1/users/me/messages/${message_id}/modify`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${nangoSecretKey}`,
-                        "Connection-Id": connectionId,
-                        "Provider-Config-Key": "gmail",
-                        "Content-Type": "application/json",
-                    },
-                    json: {
-                        addLabelIds: add_labels ?? [],
-                        removeLabelIds: remove_labels ?? [],
-                    },
-                }
-            )
+            .post(`${GMAIL_API_BASE}/users/me/messages/${message_id}/modify`, {
+                headers: this.buildHeaders(accessToken),
+                json: {
+                    addLabelIds: add_labels ?? [],
+                    removeLabelIds: remove_labels ?? [],
+                },
+            })
             .json<{ id: string; threadId: string; labelIds: string[] }>();
 
         return this.createJSONResponse({
@@ -1041,20 +915,20 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
-        let connectionId: string;
+        let accessToken: string;
         try {
             const credentials = await getCredentials(
                 userId,
                 this.serviceName,
                 accountId
             );
-            if (!credentials.connectionId) {
+            if (credentials.type !== "oauth" || !credentials.accessToken) {
                 return this.createErrorResponse(
                     `No Gmail connection found. Please connect at: ` +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`
                 );
             }
-            connectionId = credentials.connectionId;
+            accessToken = credentials.accessToken;
         } catch (error) {
             if (error instanceof ValidationError) {
                 return this.createErrorResponse(error.message);
@@ -1062,19 +936,12 @@ export class GmailAdapter extends ServiceAdapter {
             throw error;
         }
 
-        const nangoUrl = this.getNangoUrl();
-        const nangoSecretKey = getNangoSecretKey();
-
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
             json?: Record<string, unknown>;
         } = {
-            headers: {
-                Authorization: `Bearer ${nangoSecretKey}`,
-                "Connection-Id": connectionId,
-                "Provider-Config-Key": "gmail",
-            },
+            headers: this.buildHeaders(accessToken),
         };
 
         if (query && typeof query === "object") {
@@ -1094,7 +961,7 @@ export class GmailAdapter extends ServiceAdapter {
                 | "put"
                 | "delete"
                 | "patch";
-            const fullUrl = `${nangoUrl}/proxy${endpoint}`;
+            const fullUrl = `${GMAIL_API_BASE}${endpoint.replace("/gmail/v1", "")}`;
 
             const response = await httpClient[httpMethod](fullUrl, requestOptions).json<
                 Record<string, unknown>
