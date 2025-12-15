@@ -137,9 +137,8 @@ jobs:
       - name: 🏗️ Build Next.js application
         run: pnpm run build
         env:
-          # Dummy key for CI builds - Clerk requires a publishable key at build time for prerendering
-          # This is not a real key, just satisfies Clerk's format validation (base64 encoded)
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=
+          # Clerk test key from GitHub secrets - required at build time for prerendering
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
 
       - name: ✅ Verify build output
         run: |
@@ -177,9 +176,9 @@ jobs:
         env:
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # Dummy Clerk keys for E2E test environment
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=
-          CLERK_SECRET_KEY: sk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=
+          # Clerk test keys from GitHub secrets
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
 
       - name: 📊 Upload Playwright report
         uses: actions/upload-artifact@v4
