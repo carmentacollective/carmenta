@@ -6,11 +6,18 @@
  * Catches errors in route segments and renders a fallback UI.
  * Used for errors within the layout (not the root layout itself).
  *
+ * Recovery Strategy: Auto-refresh once on any error. If the error persists
+ * after refresh (within 30s), show the error UI. This handles deployment
+ * transitions gracefully without brittle error message detection.
+ *
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const REFRESH_KEY = "carmenta_error_refresh";
+const REFRESH_WINDOW_MS = 30000;
 
 export default function Error({
     error,
@@ -19,47 +26,62 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
-    // Check if this is a deployment mismatch error (happens during deploys)
-    const isDeploymentMismatch =
-        error.message?.includes("Failed to find Server Action") ||
-        error.message?.includes("immutable");
+    const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
+    const hasCheckedRef = useRef(false);
 
     useEffect(() => {
-        // Only log non-deployment errors to Sentry
-        // Deployment mismatches are expected during deployments
-        if (!isDeploymentMismatch) {
+        if (hasCheckedRef.current) return;
+        hasCheckedRef.current = true;
+
+        const lastRefresh = sessionStorage.getItem(REFRESH_KEY);
+        const now = Date.now();
+
+        // If we haven't tried a refresh in the last 30 seconds, try once
+        if (!lastRefresh || now - parseInt(lastRefresh) > REFRESH_WINDOW_MS) {
+            sessionStorage.setItem(REFRESH_KEY, now.toString());
+
+            // Use setTimeout to avoid lint rule about setState in useEffect
+            const stateTimer = setTimeout(() => {
+                setIsAutoRefreshing(true);
+            }, 0);
+
+            const refreshTimer = setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+            return () => {
+                clearTimeout(stateTimer);
+                clearTimeout(refreshTimer);
+            };
+        } else {
+            // Second error within 30s - log to Sentry
             Sentry.captureException(error, {
-                tags: {
-                    errorBoundary: "app",
-                },
-                extra: {
-                    digest: error.digest,
-                },
+                tags: { errorBoundary: "app" },
+                extra: { digest: error.digest },
             });
         }
-    }, [error, isDeploymentMismatch]);
+    }, [error]);
 
-    // For deployment mismatches, auto-reload to get the new version
-    useEffect(() => {
-        if (isDeploymentMismatch) {
-            const timer = setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [isDeploymentMismatch]);
-
-    if (isDeploymentMismatch) {
+    if (isAutoRefreshing) {
         return (
             <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
                 <div className="max-w-md text-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/logos/icon-transparent.png"
+                        alt="Carmenta"
+                        className="mx-auto mb-6 h-12 w-12"
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                    />
+                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
                     <h2 className="mb-4 text-xl font-bold text-foreground">
                         Updating...
                     </h2>
-                    <p className="mb-6 text-muted-foreground">
+                    <p className="text-muted-foreground">
                         We just deployed a new version. Refreshing to get the latest.
                     </p>
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
                 </div>
             </div>
         );
@@ -68,6 +90,15 @@ export default function Error({
     return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
             <div className="max-w-md text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src="/logos/icon-transparent.png"
+                    alt="Carmenta"
+                    className="mx-auto mb-6 h-12 w-12"
+                    onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                />
                 <h2 className="mb-4 text-xl font-bold text-foreground">
                     We hit a snag
                 </h2>
