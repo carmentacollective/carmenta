@@ -620,7 +620,10 @@ describe("TwitterAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: "nango-connection-123",
+                accessToken: "test-access-token",
+                accountId: "@testuser",
+                accountDisplayName: "Test User",
+                isDefault: true,
             });
         });
 

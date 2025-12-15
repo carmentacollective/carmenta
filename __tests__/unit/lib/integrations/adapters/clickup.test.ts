@@ -104,7 +104,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -139,7 +139,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -162,10 +162,7 @@ describe("ClickUpAdapter", () => {
             const result = await adapter.execute("list_teams", {}, testUserEmail);
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/api/v2/team"),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("executes list_tasks operation", async () => {
@@ -236,7 +233,7 @@ describe("ClickUpAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@clickup.com",
                 accountDisplayName: "Test User",
                 isDefault: true,

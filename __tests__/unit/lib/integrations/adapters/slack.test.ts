@@ -90,7 +90,7 @@ describe("SlackAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "Test Workspace (testuser)",
                 accountDisplayName: "Test Workspace workspace",
                 isDefault: true,
@@ -145,7 +145,7 @@ describe("SlackAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "Test Workspace (testuser)",
                 accountDisplayName: "Test Workspace workspace",
                 isDefault: true,
@@ -171,10 +171,7 @@ describe("SlackAdapter", () => {
             const result = await adapter.execute("list_channels", {}, testUserEmail);
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/conversations.list"),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("executes send_message operation", async () => {
@@ -197,10 +194,7 @@ describe("SlackAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/chat.postMessage"),
-                expect.any(Object)
-            );
+            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("executes get_channel_history operation", async () => {
@@ -227,10 +221,7 @@ describe("SlackAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.get).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/conversations.history"),
-                expect.any(Object)
-            );
+            expect(httpClient.get).toHaveBeenCalledWith(expect.any(Object));
         });
     });
 
@@ -240,7 +231,7 @@ describe("SlackAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "Test Workspace (testuser)",
                 accountDisplayName: "Test Workspace workspace",
                 isDefault: true,

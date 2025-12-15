@@ -58,9 +58,9 @@ describe("OAuth Provider Registry", () => {
         });
 
         it("returns false for unknown providers", () => {
-            expect(isOAuthProvider("slack")).toBe(false);
-            expect(isOAuthProvider("google")).toBe(false);
             expect(isOAuthProvider("github")).toBe(false);
+            expect(isOAuthProvider("stripe")).toBe(false);
+            expect(isOAuthProvider("unknown")).toBe(false);
         });
 
         it("returns false for empty string", () => {
@@ -79,9 +79,15 @@ describe("OAuth Provider Registry", () => {
         it("returns only currently registered providers", () => {
             const ids = getOAuthProviderIds();
 
-            // Currently only Notion is registered
-            expect(ids).toHaveLength(1);
-            expect(ids[0]).toBe("notion");
+            // All 7 OAuth providers are now registered
+            expect(ids).toHaveLength(7);
+            expect(ids).toContain("notion");
+            expect(ids).toContain("slack");
+            expect(ids).toContain("clickup");
+            expect(ids).toContain("dropbox");
+            expect(ids).toContain("gmail");
+            expect(ids).toContain("google-calendar-contacts");
+            expect(ids).toContain("twitter");
         });
     });
 

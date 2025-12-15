@@ -102,7 +102,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -138,7 +138,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -232,7 +232,7 @@ describe("GoogleCalendarContactsAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "Test User",
                 isDefault: true,

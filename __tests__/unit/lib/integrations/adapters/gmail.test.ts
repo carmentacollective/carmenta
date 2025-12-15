@@ -150,7 +150,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -185,7 +185,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -272,7 +272,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -357,7 +357,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -410,7 +410,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -459,7 +459,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -502,7 +502,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,
@@ -574,7 +574,7 @@ describe("GmailAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "test@gmail.com",
                 accountDisplayName: "test@gmail.com",
                 isDefault: true,

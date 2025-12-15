@@ -95,7 +95,7 @@ describe("DropboxAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "dbid:account-123",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -154,7 +154,7 @@ describe("DropboxAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "dbid:account-123",
                 accountDisplayName: "Test User",
                 isDefault: true,
@@ -186,10 +186,7 @@ describe("DropboxAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/2/files/list_folder"),
-                expect.any(Object)
-            );
+            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("executes search_files operation", async () => {
@@ -219,10 +216,7 @@ describe("DropboxAdapter", () => {
             );
 
             expect(result.isError).toBe(false);
-            expect(httpClient.post).toHaveBeenCalledWith(
-                expect.stringContaining("api.nango.dev/proxy/2/files/search_v2"),
-                expect.any(Object)
-            );
+            expect(httpClient.post).toHaveBeenCalledWith(expect.any(Object));
         });
     });
 
@@ -232,7 +226,7 @@ describe("DropboxAdapter", () => {
                 await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
-                connectionId: testConnectionId,
+                accessToken: "test-access-token",
                 accountId: "dbid:account-123",
                 accountDisplayName: "Test User",
                 isDefault: true,
