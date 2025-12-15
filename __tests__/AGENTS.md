@@ -44,4 +44,19 @@ Without the API key, these tests are skipped automatically. This allows CI/CD to
 without requiring external API credentials while still enabling local testing with real
 APIs.
 
+### CoinMarketCap Integration Tests
+
+Location:
+`__tests__/integration/lib/integrations/adapters/coinmarketcap.integration.test.ts`
+
+Run with API key:
+
+```bash
+COINMARKETCAP_API_KEY=your_key_here pnpm test coinmarketcap.integration
+```
+
+Without the API key, these tests are skipped automatically. Tests cover all major
+operations including listings, quotes, global metrics, cryptocurrency info, categories,
+price conversion, and raw API access.
+
 @.cursor/rules/testing-standards-typescript.mdc
