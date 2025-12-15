@@ -71,6 +71,23 @@ How agents work together:
 - **Service Connectivity**: Agents use external services to complete tasks
 - **Scheduled Agents**: Some team member work happens on schedules
 - **Interface**: We see which agent is working, can direct requests
+- **[God Mode](./god-mode.md)**: Premium tier where AI Team can act AS the user
+
+## Evolution: God Mode
+
+The AI Team described here works alongside you. [God Mode](./god-mode.md) is the next
+evolution—where the AI Team doesn't just assist, it acts as you:
+
+| Capability             | AI Team | God Mode |
+| ---------------------- | ------- | -------- |
+| Read your data         | ✓       | ✓        |
+| Take actions in tools  | ✓       | ✓        |
+| Modify your code       | —       | ✓        |
+| Send messages as you   | —       | ✓        |
+| Full local environment | —       | ✓        |
+
+God Mode is invite-only for trusted friends. Nick operates dedicated infrastructure
+(Mac + Cloud VM) for each user. See [God Mode](./god-mode.md) for details.
 
 ## Success Criteria
 

@@ -366,6 +366,78 @@ after deployments.
 
 ---
 
+## God Mode Questions
+
+These questions relate to [God Mode](../components/god-mode.md) as a product tier.
+
+God Mode is invite-only for trusted friends. Nick operates all infrastructure.
+
+### iMessage Infrastructure
+
+**Question:** What's the most reliable way to automate iMessage?
+
+**Options:**
+
+| Option        | Reliability | Setup Complexity | Notes                   |
+| ------------- | ----------- | ---------------- | ----------------------- |
+| AppleScript   | Medium      | Low              | Native but limited      |
+| BlueBubbles   | Medium-High | Medium           | Active project, web/API |
+| AirMessage    | Medium      | Medium           | Android-focused         |
+| Custom bridge | Unknown     | High             | Full control            |
+
+**Needs:**
+
+- Technical evaluation of each option
+- Reliability testing over extended periods
+- Understanding of failure modes
+
+**Status:** Needs research
+
+---
+
+### Progressive Trust Model
+
+**Question:** How do users earn higher autonomy levels?
+
+**Draft progression:**
+
+| Week | Mode       | AI Behavior                  | User Experience               |
+| ---- | ---------- | ---------------------------- | ----------------------------- |
+| 1-2  | Draft      | Prepares, waits for approval | Full visibility, full control |
+| 3-4  | Supervised | Sends low-stakes, notifies   | Trust building, quick review  |
+| 5+   | Autonomous | Handles routine, digests     | Morning newspaper model       |
+
+**Needs:**
+
+- Define "low-stakes" vs "high-stakes" messages
+- User research on comfort with autonomous messaging
+- Metrics for trust escalation (error rate, user satisfaction)
+
+**Status:** Needs design
+
+---
+
+### Multi-User Isolation
+
+**Question:** How to isolate multiple friends on shared Mac infrastructure?
+
+**Considerations:**
+
+- Each user's credentials must be isolated
+- Each user's repos/files must be isolated
+- Execution must not leak between users
+- Audit trails must be per-user
+
+**Options:**
+
+- Separate user accounts on Mac
+- Containerization (Docker on Mac)
+- Separate Mac Minis per user (simplest, most expensive)
+
+**Status:** Needs architecture decision
+
+---
+
 ## 2027 Vision Questions
 
 ### What Does "Full Autonomy" Actually Mean?
@@ -451,14 +523,18 @@ after deployments.
 
 Track resolved questions here for reference.
 
-| Question | Decision | Date | Rationale |
-| -------- | -------- | ---- | --------- |
-| -        | -        | -    | -         |
+| Question                     | Decision                        | Date       | Rationale                                                         |
+| ---------------------------- | ------------------------------- | ---------- | ----------------------------------------------------------------- |
+| Where does AI Engineer live? | Dedicated Dev Server + Cloud VM | 2024-12-15 | Environment fidelity is critical. See execution-infrastructure.md |
+| GitHub auth approach         | GitHub App (Carmenta identity)  | 2024-12-15 | Clean audit trail, scoped permissions                             |
+| Cross-repo orchestration     | Dev server has all repos        | 2024-12-15 | Simplest: all repos on one machine                                |
 
 ## Next Actions
 
-1. **Decide: GitHub auth approach** — Block for M2
-2. **Decide: @mention vs broader PM triggers** — Block for M1
-3. **Research: Browseros capabilities** — Inform M5 design
-4. **Design: Persona schema** — Enable M5 implementation
-5. **Design: Knowledge context selection** — Enable M4 implementation
+1. **Implement: Dedicated dev server** — Provision VM, replicate environment, install
+   Claude Code daemon
+2. **Implement: GitHub App setup** — Create Carmenta Bot, configure permissions
+3. **Research: iMessage automation** — Evaluate BlueBubbles and alternatives
+4. **Research: Browseros vs Playwright** — Inform simulated user implementation
+5. **Design: Carmenta Control Plane** — Route tasks to dev server, provide visibility
+6. **Design: Multi-user isolation** — How to run God Mode for multiple friends

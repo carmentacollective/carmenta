@@ -103,5 +103,7 @@ decisions.
 
 - [architecture.md](./architecture.md) — System design, data flows, mermaid diagrams
 - [actors.md](./actors.md) — Detailed specification of each AI actor
+- [execution-infrastructure.md](./execution-infrastructure.md) — Where the AI Engineer
+  runs
 - [milestones.md](./milestones.md) — Implementation sequence
 - [open-questions.md](./open-questions.md) — Gaps and unknowns to resolve
