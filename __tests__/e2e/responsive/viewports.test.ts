@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Mobile and Responsive Design Tests
+ * Responsive Design and Viewport Tests
  *
- * Validates viewport configuration, responsive behavior,
- * and basic mobile optimizations.
+ * Validates viewport configuration, responsive behavior across breakpoints,
+ * and mobile optimizations.
+ *
+ * Tests behavior: Layout should adapt to different viewport sizes without horizontal
+ * scroll, meta tags should be configured correctly, and mobile-specific CSS should apply.
  */
 
-test.describe("Mobile Viewport and Meta Tags", () => {
-    test("should have proper viewport configuration", async ({ page }) => {
+test.describe("Viewport Configuration", () => {
+    test("proper viewport meta tag is present", async ({ page }) => {
         await page.goto("/");
 
         const viewport = await page.locator('meta[name="viewport"]');
@@ -18,59 +21,65 @@ test.describe("Mobile Viewport and Meta Tags", () => {
         );
     });
 
-    test("should have theme-color meta tag", async ({ page }) => {
+    test("theme-color meta tags are present", async ({ page }) => {
         await page.goto("/");
 
         const themeColor = await page.locator('meta[name="theme-color"]');
-        await expect(themeColor).toHaveCount(2); // One for light, one for dark
+        // One for light mode, one for dark mode
+        await expect(themeColor).toHaveCount(2);
     });
 });
 
 test.describe("Responsive Breakpoints", () => {
-    test("should render correctly on mobile (375px)", async ({ page }) => {
+    test("renders correctly on mobile viewport (375px)", async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto("/");
 
+        // Should not overflow viewport width
         const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
         expect(bodyWidth).toBeLessThanOrEqual(375);
 
         await expect(page.locator("body")).toBeVisible();
     });
 
-    test("should render correctly on tablet (768px)", async ({ page }) => {
+    test("renders correctly on tablet viewport (768px)", async ({ page }) => {
         await page.setViewportSize({ width: 768, height: 1024 });
         await page.goto("/");
 
+        // Should not overflow viewport width
         const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
         expect(bodyWidth).toBeLessThanOrEqual(768);
 
         await expect(page.locator("body")).toBeVisible();
     });
 
-    test("should render correctly on desktop (1440px)", async ({ page }) => {
+    test("renders correctly on desktop viewport (1440px)", async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.goto("/");
 
+        // Should not overflow viewport width
         const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
         expect(bodyWidth).toBeLessThanOrEqual(1440);
 
         await expect(page.locator("body")).toBeVisible();
     });
 
-    test("should handle orientation change", async ({ page }) => {
+    test("handles orientation change without breaking layout", async ({ page }) => {
+        // Portrait
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto("/");
 
         const portraitWidth = await page.evaluate(() => document.body.scrollWidth);
         expect(portraitWidth).toBeLessThanOrEqual(375);
 
+        // Landscape
         await page.setViewportSize({ width: 667, height: 375 });
 
         const landscapeWidth = await page.evaluate(() => document.body.scrollWidth);
         expect(landscapeWidth).toBeLessThanOrEqual(667);
     });
 
-    test("should have no horizontal scroll on mobile", async ({ page }) => {
+    test("no horizontal scroll on mobile viewport", async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto("/");
 
@@ -85,8 +94,8 @@ test.describe("Responsive Breakpoints", () => {
     });
 });
 
-test.describe("Touch Interactions", () => {
-    test("should have transparent tap highlight", async ({ page }) => {
+test.describe("Mobile Optimizations", () => {
+    test("transparent tap highlight is configured", async ({ page }) => {
         await page.goto("/");
 
         const tapHighlight = await page.evaluate(() => {
@@ -99,7 +108,7 @@ test.describe("Touch Interactions", () => {
         expect(tapHighlight).toMatch(/rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
     });
 
-    test("should prevent text size adjustment on orientation change", async ({
+    test("text size adjustment on orientation change is prevented", async ({
         page,
     }) => {
         await page.goto("/");
@@ -113,10 +122,8 @@ test.describe("Touch Interactions", () => {
 
         expect(textSizeAdjust).toBe("100%");
     });
-});
 
-test.describe("Accessibility", () => {
-    test("should have smooth scrolling", async ({ page }) => {
+    test("smooth scrolling is enabled", async ({ page }) => {
         await page.goto("/");
 
         const scrollBehavior = await page.evaluate(() => {
@@ -129,7 +136,7 @@ test.describe("Accessibility", () => {
 });
 
 test.describe("Font Loading", () => {
-    test("should have font CSS variables defined", async ({ page }) => {
+    test("font CSS variables are defined", async ({ page }) => {
         await page.goto("/");
 
         const fontVars = await page.evaluate(() => {
