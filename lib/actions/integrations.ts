@@ -445,7 +445,7 @@ export async function deleteIntegration(
 /**
  * Test an integration by actually testing the connection
  * - API key services: Call adapter's testConnection method with actual API key
- * - OAuth services: Verify Nango connection exists and credentials are valid
+ * - OAuth services: Get access token from in-house OAuth and verify connection is valid
  */
 export async function testIntegration(
     serviceId: string,
@@ -525,8 +525,10 @@ export async function testIntegration(
         }
 
         // For OAuth services, make a live test request to verify the connection is still working
-        // OAuth tokens are managed by Nango, but we verify they're valid by making an actual API call
+        // OAuth tokens are managed in-house - get the access token and test with actual API call
         const { getAdapter } = await import("@/lib/integrations/tools");
+        const { getCredentials } =
+            await import("@/lib/integrations/connection-manager");
 
         const adapter = getAdapter(serviceId);
         if (!adapter) {
@@ -540,39 +542,43 @@ export async function testIntegration(
             };
         }
 
-        // Get the integration record to find the Nango connection ID
-        const whereConditions: Array<ReturnType<typeof eq>> = [
-            eq(schema.integrations.userEmail, userEmail),
-            eq(schema.integrations.service, serviceId),
-        ];
-        if (accountId) {
-            whereConditions.push(eq(schema.integrations.accountId, accountId));
-        }
+        // Get the stored credentials for the specific account
+        const connectionCreds = await getCredentials(userEmail, serviceId, accountId);
 
-        const integrations = await db
-            .select()
-            .from(schema.integrations)
-            .where(and(...whereConditions))
-            .limit(1);
-
-        const integration = integrations[0];
-        if (!integration) {
-            return { success: false, error: "Integration not found" };
-        }
-
-        // For OAuth, we need the Nango connectionId (not accountId which is the user's service identifier)
-        if (!integration.connectionId) {
+        if (connectionCreds.type !== "oauth") {
             return {
                 success: false,
-                error: "No Nango connection ID found for this integration",
+                error: "Invalid credentials type",
             };
         }
 
-        const nangoConnectionId = integration.connectionId;
+        if (!connectionCreds.accessToken) {
+            return {
+                success: false,
+                error: "No access token found for this integration",
+            };
+        }
 
-        // Call the adapter's testConnection method
-        // OAuth adapters pass Nango connectionId, API key adapters pass apiKey
-        return await adapter.testConnection(nangoConnectionId);
+        // Actually test the connection using the adapter with the access token
+        const result = await adapter.testConnection(connectionCreds.accessToken);
+
+        if (!result.success) {
+            // Update integration status to error for this specific account
+            const whereConditions = [
+                eq(schema.integrations.userEmail, userEmail),
+                eq(schema.integrations.service, serviceId),
+            ];
+            if (accountId) {
+                whereConditions.push(eq(schema.integrations.accountId, accountId));
+            }
+
+            await db
+                .update(schema.integrations)
+                .set({ status: "error", updatedAt: new Date() })
+                .where(and(...whereConditions));
+        }
+
+        return result;
     } catch (error) {
         logger.error(
             { err: error, userEmail, serviceId },
