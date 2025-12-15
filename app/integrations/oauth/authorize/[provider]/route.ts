@@ -27,6 +27,9 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
     const { provider: providerId } = await params;
 
+    // Calculate base URL for redirects - use public domain, not internal hostname
+    const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
+
     // Get authenticated user
     const user = await currentUser();
     if (!user?.emailAddresses?.[0]?.emailAddress) {
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             "⚠️ Unauthorized OAuth authorize attempt"
         );
         return NextResponse.redirect(
-            new URL("/sign-in?redirect=/integrations", request.url)
+            new URL("/sign-in?redirect=/integrations", appUrl)
         );
     }
 
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const returnUrl = request.nextUrl.searchParams.get("returnUrl") ?? undefined;
 
     // Build callback URL
-    // In production, NEXT_PUBLIC_APP_URL must be set to prevent Host header manipulation
+    // In production, NEXT_PUBLIC_APP_URL should be set to prevent Host header manipulation
     if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_APP_URL) {
         logger.error(
             "NEXT_PUBLIC_APP_URL not set in production - potential security risk"
@@ -69,8 +72,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             { status: 500 }
         );
     }
-
-    const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 
     // Generate state with optional PKCE

@@ -92,6 +92,11 @@ function clientRedirect(url: string, baseUrl: string): NextResponse {
 }
 
 export async function GET(request: NextRequest) {
+    // Calculate base URL for ALL redirects at the start
+    // Use NEXT_PUBLIC_APP_URL if set, otherwise fall back to request origin
+    // This ensures all redirects use the public domain, not internal hostnames
+    const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
+
     const searchParams = request.nextUrl.searchParams;
 
     // Check for OAuth error from provider
@@ -106,11 +111,11 @@ export async function GET(request: NextRequest) {
             extra: { errorDescription },
         });
 
-        // Redirect to error page
-        const errorUrl = new URL("/integrations", request.url);
+        // Redirect to error page using public domain
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "oauth_failed");
         errorUrl.searchParams.set("message", errorDescription ?? error);
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
 
     // Get required params
@@ -119,9 +124,9 @@ export async function GET(request: NextRequest) {
 
     if (!code || !stateParam) {
         logger.warn("⚠️ OAuth callback missing required params");
-        const errorUrl = new URL("/integrations", request.url);
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "invalid_callback");
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
 
     // Validate state (CSRF protection)
@@ -137,9 +142,9 @@ export async function GET(request: NextRequest) {
             tags: { component: "oauth" },
         });
 
-        const errorUrl = new URL("/integrations", request.url);
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "invalid_state");
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
 
     // Get provider config
@@ -149,13 +154,13 @@ export async function GET(request: NextRequest) {
             { provider: state.provider },
             "❌ Unknown provider in OAuth state"
         );
-        const errorUrl = new URL("/integrations", request.url);
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "unknown_provider");
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
 
     // Build callback URL for token exchange (must match authorize)
-    // In production, NEXT_PUBLIC_APP_URL must be set to prevent Host header manipulation
+    // In production, NEXT_PUBLIC_APP_URL should be set to prevent Host header manipulation
     if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_APP_URL) {
         logger.error(
             "NEXT_PUBLIC_APP_URL not set in production - potential security risk"
@@ -164,12 +169,10 @@ export async function GET(request: NextRequest) {
             level: "error",
             tags: { component: "oauth", route: "callback" },
         });
-        const errorUrl = new URL("/integrations", request.url);
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "configuration_error");
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
-
-    const appUrl = env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     const redirectUri = `${appUrl}/integrations/oauth/callback`;
 
     try {
@@ -198,10 +201,11 @@ export async function GET(request: NextRequest) {
         const returnPath = state.returnUrl ?? "/integrations";
         // Ensure returnUrl is a relative path (starts with /)
         const safePath = returnPath.startsWith("/") ? returnPath : "/integrations";
-        const successUrl = new URL(safePath, request.url);
+        // Use appUrl (public domain) as base, not request.url (could be internal hostname)
+        const successUrl = new URL(safePath, appUrl);
         successUrl.searchParams.set("success", "connected");
         successUrl.searchParams.set("service", state.provider);
-        return clientRedirect(successUrl.toString(), request.url);
+        return clientRedirect(successUrl.toString(), appUrl);
     } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
 
@@ -215,9 +219,10 @@ export async function GET(request: NextRequest) {
             extra: { userEmail: state.userEmail },
         });
 
-        const errorUrl = new URL("/integrations", request.url);
+        // Use appUrl for error redirect to ensure correct domain
+        const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "token_exchange_failed");
         errorUrl.searchParams.set("message", error.message);
-        return clientRedirect(errorUrl.toString(), request.url);
+        return clientRedirect(errorUrl.toString(), appUrl);
     }
 }
