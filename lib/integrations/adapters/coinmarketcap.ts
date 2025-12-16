@@ -55,28 +55,28 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
             if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
                 return {
                     success: false,
-                    error: "Invalid API key. Please check your key and try again.",
+                    error: "That API key isn't valid. Please check your key.",
                 };
             }
 
             if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
                 return {
                     success: false,
-                    error: "API key doesn't have permission. Check your subscription plan.",
+                    error: "That API key doesn't have permission. Check your subscription plan.",
                 };
             }
 
             if (errorMessage.includes("429")) {
                 return {
                     success: false,
-                    error: "Rate limit exceeded. Please wait a moment and try again.",
+                    error: "CoinMarketCap rate limit hit. Please wait a moment.",
                 };
             }
 
             // Generic error
             return {
                 success: false,
-                error: `Connection test failed: ${errorMessage}`,
+                error: `We couldn't test that connection. The monitoring caught it. 🤖`,
             };
         }
     }

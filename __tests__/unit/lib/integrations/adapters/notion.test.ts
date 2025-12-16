@@ -317,8 +317,8 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("connection may have expired");
+            expect(result.content[0].text).toContain("connection expired");
+            expect(result.content[0].text).toContain("Reconnect");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -336,7 +336,7 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 permission errors with actionable guidance", async () => {

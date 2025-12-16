@@ -532,7 +532,7 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 404 not found errors", async () => {
@@ -548,7 +548,7 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("not found");
+            expect(result.content[0].text).toContain("doesn't exist");
         });
 
         it("handles unknown action", async () => {

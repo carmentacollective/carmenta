@@ -321,7 +321,7 @@ export async function connectApiKeyService(
             error:
                 error instanceof Error
                     ? error.message
-                    : "We couldn't make that connection",
+                    : "We had an error connecting that service. Our monitoring caught it. 🤖",
         };
     }
 }
@@ -372,7 +372,7 @@ export async function disconnectService(
             error:
                 error instanceof Error
                     ? error.message
-                    : "We couldn't disconnect that service",
+                    : "We had an error disconnecting that service. The robots have been notified. 🤖",
         };
     }
 }
@@ -437,7 +437,7 @@ export async function deleteIntegration(
             error:
                 error instanceof Error
                     ? error.message
-                    : "We couldn't delete that integration",
+                    : "We had an error deleting that integration. We've been alerted. 🤖",
         };
     }
 }
@@ -595,7 +595,10 @@ export async function testIntegration(
 
         return {
             success: false,
-            error: error instanceof Error ? error.message : "That test didn't work out",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We couldn't test that connection. The robots have been notified. 🤖",
         };
     }
 }

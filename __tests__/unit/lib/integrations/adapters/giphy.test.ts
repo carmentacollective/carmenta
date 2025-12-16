@@ -113,7 +113,7 @@ describe("GiphyAdapter", () => {
             const result = await adapter.testConnection("invalid-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("Invalid API key");
+            expect(result.error).toContain("That API key isn't valid");
         });
 
         it("returns error for rate limit (429)", async () => {
@@ -127,7 +127,7 @@ describe("GiphyAdapter", () => {
             const result = await adapter.testConnection("rate-limited-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("Rate limit");
+            expect(result.error).toContain("rate limit hit");
         });
     });
 
@@ -411,7 +411,7 @@ describe("GiphyAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 permission errors", async () => {

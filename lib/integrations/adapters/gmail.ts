@@ -497,24 +497,24 @@ export class GmailAdapter extends ServiceAdapter {
                 userId,
             });
 
-            let errorMessage = `Failed to ${action}: `;
+            let errorMessage = `We couldn't ${action}: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
-                    errorMessage += "Message or thread not found.";
+                    errorMessage += "That message or thread doesn't exist.";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
                     errorMessage +=
                         "Authentication failed. Your Gmail connection may have expired. " +
-                        `Please reconnect at: ${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`;
+                        `Reconnect at: ${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`;
                 } else if (error.message.includes("429")) {
-                    errorMessage += "Rate limit exceeded. Please try again shortly.";
+                    errorMessage += "Gmail rate limit hit. Please wait a moment.";
                 } else {
                     errorMessage += error.message;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage += "The bots have been alerted. 🤖";
             }
 
             return this.createErrorResponse(errorMessage);
