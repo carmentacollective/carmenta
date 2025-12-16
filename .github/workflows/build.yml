@@ -150,11 +150,16 @@ jobs:
           echo "✅ Build successful! Output directory size:"
           du -sh .next
 
+      - name: 📦 Create artifact bundle
+        run: |
+          # Create tarball to bypass .gitignore restrictions in upload-artifact@v4
+          tar -czf nextjs-build.tar.gz .next
+
       - name: 📤 Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: .next/
+          path: nextjs-build.tar.gz
           retention-days: 1
 
   # E2E Tests (OAuth flows, public URL validation)
@@ -181,7 +186,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
-          path: .next
+
+      - name: 📦 Extract build artifacts
+        run: |
+          tar -xzf nextjs-build.tar.gz
+          rm nextjs-build.tar.gz
 
       - name: 🎭 Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
