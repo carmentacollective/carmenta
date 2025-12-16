@@ -339,7 +339,7 @@ describe("NotionAdapter", () => {
             expect(result.content[0].text).toContain("Rate limit exceeded");
         });
 
-        it("handles 403 permission errors", async () => {
+        it("handles 403 permission errors with actionable guidance", async () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.post as Mock).mockReturnValue({
                 json: vi.fn().mockRejectedValue(new Error("HTTP 403: Forbidden")),
@@ -352,7 +352,303 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
+            expect(result.content[0].text).toContain("Permission denied");
+            expect(result.content[0].text).toContain("Connections");
+            expect(result.content[0].text).toContain("Carmenta");
+        });
+    });
+
+    describe("list_comments Operation", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: testAccessToken,
+                accountId: "workspace-123",
+                accountDisplayName: "Test Workspace",
+                isDefault: true,
+            });
+        });
+
+        it("validates required block_id parameter", () => {
+            const result = adapter.validate("list_comments", {});
+
+            expect(result.valid).toBe(false);
+            expect(result.errors.length).toBeGreaterThan(0);
+            expect(result.errors[0]).toMatch(/Missing required parameter: block_id/);
+        });
+
+        it("fetches comments from a page", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            const mockComments = {
+                results: [
+                    {
+                        id: "comment-123",
+                        created_time: "2024-01-15T10:00:00.000Z",
+                        created_by: { id: "user-456", object: "user" },
+                        rich_text: [
+                            {
+                                type: "text",
+                                text: { content: "Great work!" },
+                                annotations: {
+                                    bold: false,
+                                    italic: false,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: false,
+                                },
+                            },
+                        ],
+                        discussion_id: "disc-789",
+                    },
+                ],
+                has_more: false,
+                next_cursor: null,
+            };
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockComments),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_comments",
+                { block_id: "page-123" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            expect(httpClient.get).toHaveBeenCalledWith(
+                expect.stringContaining("api.notion.com/v1/comments?block_id=page-123"),
+                expect.any(Object)
+            );
+
+            const response = JSON.parse(result.content[0].text as string);
+            expect(response.totalCount).toBe(1);
+            expect(response.comments[0].id).toBe("comment-123");
+            expect(response.comments[0].content_markdown).toBe("Great work!");
+        });
+
+        it("converts rich text with formatting to markdown", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            const mockComments = {
+                results: [
+                    {
+                        id: "comment-456",
+                        created_time: "2024-01-15T10:00:00.000Z",
+                        created_by: { id: "user-789", object: "user" },
+                        rich_text: [
+                            {
+                                type: "text",
+                                text: { content: "Bold" },
+                                annotations: {
+                                    bold: true,
+                                    italic: false,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: false,
+                                },
+                            },
+                            {
+                                type: "text",
+                                text: { content: " and " },
+                                annotations: {
+                                    bold: false,
+                                    italic: false,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: false,
+                                },
+                            },
+                            {
+                                type: "text",
+                                text: { content: "italic" },
+                                annotations: {
+                                    bold: false,
+                                    italic: true,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: false,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                has_more: false,
+                next_cursor: null,
+            };
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockComments),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_comments",
+                { block_id: "page-123" },
+                testUserEmail
+            );
+
+            const response = JSON.parse(result.content[0].text as string);
+            expect(response.comments[0].content_markdown).toBe("**Bold** and *italic*");
+        });
+
+        it("handles empty comments gracefully", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    results: [],
+                    has_more: false,
+                    next_cursor: null,
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_comments",
+                { block_id: "page-123" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text as string);
+            expect(response.totalCount).toBe(0);
+            expect(response.note).toContain("No comments found");
+        });
+    });
+
+    describe("Search with Parent Context", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: testAccessToken,
+                accountId: "workspace-123",
+                accountDisplayName: "Test Workspace",
+                isDefault: true,
+            });
+        });
+
+        it("documents include_parent parameter in help", () => {
+            const help = adapter.getHelp();
+            const searchOp = help.operations.find((op) => op.name === "search");
+
+            expect(searchOp).toBeDefined();
+            const includeParentParam = searchOp?.parameters.find(
+                (p) => p.name === "include_parent"
+            );
+            expect(includeParentParam).toBeDefined();
+            expect(includeParentParam?.type).toBe("boolean");
+        });
+
+        it("includes parent context when include_parent is true", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+
+            // Mock search results with parent info
+            const mockSearchResults = {
+                results: [
+                    {
+                        id: "page-123",
+                        object: "page",
+                        properties: {
+                            title: {
+                                type: "title",
+                                title: [{ plain_text: "Child Page" }],
+                            },
+                        },
+                        url: "https://notion.so/page-123",
+                        last_edited_time: "2024-01-15T10:00:00.000Z",
+                        parent: { type: "page_id", page_id: "parent-page-456" },
+                    },
+                ],
+                has_more: false,
+            };
+
+            // Mock parent page fetch
+            const mockParentPage = {
+                id: "parent-page-456",
+                properties: {
+                    title: {
+                        type: "title",
+                        title: [{ plain_text: "Parent Page Title" }],
+                    },
+                },
+            };
+
+            // Setup mocks in order
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockSearchResults),
+            } as never);
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockParentPage),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test", include_parent: true },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text as string);
+            expect(response.results[0].parent).toBeDefined();
+            expect(response.results[0].parent.type).toBe("page");
+            expect(response.results[0].parent.title).toBe("Parent Page Title");
+            expect(response.results[0].location).toContain("Parent Page Title");
+        });
+
+        it("skips parent context when include_parent is false (default)", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+
+            const mockSearchResults = {
+                results: [
+                    {
+                        id: "page-123",
+                        object: "page",
+                        properties: {
+                            title: {
+                                type: "title",
+                                title: [{ plain_text: "Test Page" }],
+                            },
+                        },
+                        url: "https://notion.so/page-123",
+                        last_edited_time: "2024-01-15T10:00:00.000Z",
+                    },
+                ],
+                has_more: false,
+            };
+
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockSearchResults),
+            } as never);
+
+            const result = await adapter.execute(
+                "search",
+                { query: "test" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text as string);
+            expect(response.results[0].parent).toBeUndefined();
+            expect(response.results[0].location).toBeUndefined();
+        });
+    });
+
+    describe("list_comments in Help", () => {
+        it("documents list_comments operation", () => {
+            const help = adapter.getHelp();
+            const operationNames = help.operations.map((op) => op.name);
+
+            expect(operationNames).toContain("list_comments");
+
+            const listCommentsOp = help.operations.find(
+                (op) => op.name === "list_comments"
+            );
+            expect(listCommentsOp?.annotations?.readOnlyHint).toBe(true);
+            expect(
+                listCommentsOp?.parameters.find((p) => p.name === "block_id")
+            ).toBeDefined();
         });
     });
 });
