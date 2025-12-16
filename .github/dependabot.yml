@@ -1,6 +1,5 @@
+# Migrated to Renovate - see renovate.json
+# Renovate handles: npm packages, GitHub Actions, and more
+# Keeping this file for reference only
 version: 2
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+updates: []

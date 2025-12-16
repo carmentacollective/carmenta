@@ -1,0 +1,146 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":enablePreCommit",
+    "group:monorepos",
+    "group:recommended",
+    "workarounds:all"
+  ],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["before 10am on Saturday"],
+  "labels": ["dependencies"],
+  "assignees": [],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 0,
+  "minimumReleaseAge": "3 days",
+  "rangeStrategy": "bump",
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "⬆️",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 10am on the first Saturday of the month"]
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    {
+      "description": "Automerge non-major updates for all dependencies",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Require manual review for major updates",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update"]
+    },
+    {
+      "description": "Group all @radix-ui packages together",
+      "groupName": "Radix UI",
+      "matchPackagePrefixes": ["@radix-ui/"]
+    },
+    {
+      "description": "Group all @ai-sdk packages together",
+      "groupName": "AI SDK",
+      "matchPackagePrefixes": ["@ai-sdk/"]
+    },
+    {
+      "description": "Group all @clerk packages together",
+      "groupName": "Clerk",
+      "matchPackagePrefixes": ["@clerk/"]
+    },
+    {
+      "description": "Group all @sentry packages together",
+      "groupName": "Sentry",
+      "matchPackagePrefixes": ["@sentry/"]
+    },
+    {
+      "description": "Group all @types packages together",
+      "groupName": "TypeScript definitions",
+      "matchPackagePrefixes": ["@types/"],
+      "automerge": true
+    },
+    {
+      "description": "Group ESLint packages",
+      "groupName": "ESLint",
+      "matchPackageNames": ["eslint"],
+      "matchPackagePrefixes": ["eslint-", "@eslint/"],
+      "automerge": true
+    },
+    {
+      "description": "Group Prettier packages",
+      "groupName": "Prettier",
+      "matchPackageNames": ["prettier"],
+      "matchPackagePrefixes": ["prettier-"],
+      "automerge": true
+    },
+    {
+      "description": "Group test-related packages",
+      "groupName": "Test tooling",
+      "matchPackagePrefixes": ["@playwright/", "@testing-library/", "@vitest/"],
+      "matchPackageNames": ["vitest", "msw", "jsdom"],
+      "automerge": true
+    },
+    {
+      "description": "Group Drizzle ORM packages",
+      "groupName": "Drizzle ORM",
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit"],
+      "automerge": false,
+      "labels": ["dependencies", "database"]
+    },
+    {
+      "description": "Pin Next.js to avoid unexpected framework updates",
+      "matchPackageNames": ["next", "eslint-config-next"],
+      "groupName": "Next.js",
+      "automerge": false,
+      "labels": ["dependencies", "framework"]
+    },
+    {
+      "description": "Pin React updates - test thoroughly",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "groupName": "React",
+      "automerge": false,
+      "labels": ["dependencies", "framework"]
+    },
+    {
+      "description": "Faster updates for dev-only tooling",
+      "matchDepTypes": ["devDependencies"],
+      "matchPackageNames": [
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "tailwindcss-animate"
+      ],
+      "groupName": "Build tooling",
+      "automerge": true,
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Security patches - update immediately",
+      "matchUpdateTypes": ["patch"],
+      "matchCurrentVersion": "!/^0/",
+      "matchDepTypes": ["dependencies"],
+      "minimumReleaseAge": "0 days",
+      "schedule": ["at any time"]
+    },
+    {
+      "description": "GitHub Actions - separate grouping",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": true,
+      "pinDigests": true
+    }
+  ],
+  "postUpdateOptions": ["pnpmDedupe"],
+  "pnpm": {
+    "minimumVersion": "10.0.0"
+  },
+  "ignoreDeps": []
+}
