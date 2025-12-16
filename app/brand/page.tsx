@@ -10,7 +10,7 @@ import { OracleShowcase } from "@/components/brand/oracle-showcase";
 import { ButtonStateDemo } from "@/components/brand/button-state-demo";
 
 export const metadata: Metadata = {
-    title: "Brand Guidelines | Carmenta",
+    title: "Brand Guidelines · Carmenta",
     description:
         "Visual identity, interaction design, and philosophy for Carmenta—a heart-centered AI interface.",
 };

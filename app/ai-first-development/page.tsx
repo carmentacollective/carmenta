@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export const metadata: Metadata = {
-    title: "AI-First Development | Carmenta",
+    title: "AI-First Development · Carmenta",
     description:
         "How products get built in the age of AI. Specification as source of truth, code as derived. Products that improve themselves.",
 };
