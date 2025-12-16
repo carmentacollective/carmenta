@@ -215,7 +215,7 @@ function IntegrationsContent() {
                 const next = new Map(prev);
                 next.set(item.service.id, {
                     type: "error",
-                    text: "Failed to disconnect. Please try again.",
+                    text: "We couldn't disconnect that service. The bots are on it. 🤖",
                 });
                 return next;
             });
@@ -243,7 +243,9 @@ function IntegrationsContent() {
                     const next = new Map(prev);
                     next.set(item.service.id, {
                         type: "error",
-                        text: result.error || "Connection test failed",
+                        text:
+                            result.error ||
+                            "We couldn't test that connection. The bots are on it. 🤖",
                     });
                     return next;
                 });

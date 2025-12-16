@@ -595,7 +595,10 @@ export async function testIntegration(
 
         return {
             success: false,
-            error: error instanceof Error ? error.message : "That test didn't work out",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We couldn't test that connection. The robots have been notified. 🤖",
         };
     }
 }

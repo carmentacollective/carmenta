@@ -258,27 +258,27 @@ export abstract class ServiceAdapter {
         if (msg.includes("401") || msg.includes("Unauthorized")) {
             return {
                 success: false,
-                error: "Invalid API key. Please check your key and try again.",
+                error: "That API key isn't valid. Please check your key.",
             };
         }
 
         if (msg.includes("403") || msg.includes("Forbidden")) {
             return {
                 success: false,
-                error: "API key doesn't have permission. Check your subscription plan.",
+                error: "That API key doesn't have permission. Check your subscription plan.",
             };
         }
 
         if (msg.includes("429")) {
             return {
                 success: false,
-                error: "Rate limit exceeded. Please wait a moment and try again.",
+                error: `${this.serviceDisplayName} rate limit hit. Please wait a moment.`,
             };
         }
 
         return {
             success: false,
-            error: `Connection test failed: ${msg}`,
+            error: `We couldn't test that connection. The monitoring caught it. 🤖`,
         };
     }
 
@@ -462,11 +462,9 @@ export abstract class ServiceAdapter {
      */
     protected createNotConnectedError(): string {
         return [
-            `❌ ${this.serviceDisplayName} is not connected to your account.`,
+            `❌ ${this.serviceDisplayName} isn't connected to your account.`,
             "",
-            `Please connect ${this.serviceDisplayName} at: ${this.getIntegrationUrl()}`,
-            "",
-            "Once connected, try your request again.",
+            `Connect ${this.serviceDisplayName} at: ${this.getIntegrationUrl()}`,
         ].join("\n");
     }
 
@@ -474,7 +472,7 @@ export abstract class ServiceAdapter {
      * Create a standardized "invalid connection" error message
      */
     protected createInvalidConnectionError(): string {
-        return `${this.serviceDisplayName} connection is invalid. Please reconnect at: ${this.getIntegrationUrl()}`;
+        return `Your ${this.serviceDisplayName} connection is invalid. Reconnect at: ${this.getIntegrationUrl()}`;
     }
 
     /**
@@ -486,10 +484,10 @@ export abstract class ServiceAdapter {
      * @returns User-friendly error message
      */
     protected handleCommonAPIError(error: unknown, action: string): string {
-        const errorMessage = `Failed to ${action}: `;
+        const errorMessage = `We couldn't ${action}: `;
 
         if (!(error instanceof Error)) {
-            return errorMessage + "Unknown error";
+            return errorMessage + "The bots have been alerted. 🤖";
         }
 
         const errMsg = error.message;
@@ -504,10 +502,7 @@ export abstract class ServiceAdapter {
 
         // 404 errors
         if (errMsg.includes("404")) {
-            return (
-                errorMessage +
-                "The requested resource was not found. Please check the ID."
-            );
+            return errorMessage + "That resource doesn't exist. Check the ID.";
         }
 
         // 401 errors - definitely authentication
@@ -515,7 +510,7 @@ export abstract class ServiceAdapter {
             return (
                 errorMessage +
                 `Authentication failed. Your ${this.serviceDisplayName} connection may have expired. ` +
-                `Please reconnect at: ${this.getIntegrationUrl()}`
+                `Reconnect at: ${this.getIntegrationUrl()}`
             );
         }
 
@@ -531,7 +526,8 @@ export abstract class ServiceAdapter {
         // 429 rate limit
         if (errMsg.includes("429")) {
             return (
-                errorMessage + "Rate limit exceeded. Please try again in a few moments."
+                errorMessage +
+                `${this.serviceDisplayName} rate limit hit. Please wait a moment.`
             );
         }
 
@@ -539,7 +535,7 @@ export abstract class ServiceAdapter {
         if (errMsg.includes("500") || errMsg.includes("503")) {
             return (
                 errorMessage +
-                `${this.serviceDisplayName} service is temporarily unavailable. Please try again later.`
+                `${this.serviceDisplayName} is temporarily unavailable. Please try again later.`
             );
         }
 
