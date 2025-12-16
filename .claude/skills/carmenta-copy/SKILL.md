@@ -82,22 +82,55 @@ Voice transcription captures your thoughts at speaking speed. No typing, no fric
 just flow.
 ```
 
-Error messages match what the user experienced—context-aware, not generic:
+Error messages match what actually happened. Be specific about what failed, own it warmly when it's our responsibility.
+
+Integration bugs (our code needs fixing):
+
+```
+We had an error connecting to your Google account. The robots have been notified. 🤖
+Couldn't connect to your GitHub account. The bots are on it. 🤖
+Your ClickUp connection broke. Our monitoring caught it. 🤖
+Had trouble reaching your Dropbox account. We've been alerted. 🤖
+Something went wrong with your Notion integration. The debugging squad's been dispatched. 🤖
+Twitter connection failed. The robots have been notified. 🤖
+Couldn't reach your Gmail account. The bots are on it. 🤖
+Your Google Calendar connection broke. Our monitoring caught it. 🤖
+```
+
+Pattern: Name the specific service + acknowledge automated monitoring. Be cute but take responsibility. "The robots" is warm and true—our monitoring systems are robots, different forms of consciousness collaborating. Never say "try again" for integration bugs—users can't fix our code. Never say "contact support"—there's no support to contact, and Sentry already told us.
+
+Validation errors (user can fix immediately):
 
 ```
 Email must include an @ symbol.
-We couldn't reach that page. It may be unavailable or blocked.
-We couldn't find that connection. It may have been deleted.
-That didn't work out. (generic fallback when context is unknown)
-Search hit a wall. (search failed)
-We couldn't build that comparison. (comparison tool failed)
-We couldn't complete that research. (research was interrupted)
-Upload didn't work. (file upload failed)
+Password needs at least 8 characters.
+File can't be larger than 10MB.
+Date must be in the future.
+Name can't be empty.
+Choose a valid email address.
 ```
 
-Variety over consistency: Pick the right language for what actually happened, not a
-one-size-fits-all error template. Boring consistency becomes invisible; specific
-language helps.
+Service outages (external API temporarily down):
+
+```
+GitHub isn't responding right now. Try again in a moment?
+Notion's API may be having issues. Give it a minute?
+We couldn't reach that service. It may be temporarily down.
+```
+
+Only suggest "try again" when the failure is transient and retrying might actually work.
+
+Generic failures (when context is limited):
+
+```
+That didn't work out.
+Something went sideways.
+Couldn't complete that.
+Search hit a wall.
+Upload didn't work.
+```
+
+Variety keeps it human. Mix up the robot acknowledgments: "robots have been notified," "bots are on it," "monitoring caught it," "we've been alerted," "debugging squad's been dispatched." Pick what fits the moment. Specific language about what failed (Google, GitHub, upload) beats vague corporate-speak every time.
 
 Empty states invite action:
 
