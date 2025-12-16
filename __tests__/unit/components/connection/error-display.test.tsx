@@ -32,11 +32,11 @@ describe("Error Message Parsing", () => {
     describe("parseErrorMessage", () => {
         it("returns friendly message when JSON error response is passed", () => {
             const jsonError =
-                '{"error":"We hit a snag processing that. Let\'s try again.","errorType":"Error"}';
+                '{"error":"Something went sideways. The robots are on it. 🤖","errorType":"Error"}';
 
             const result = parseErrorMessage(jsonError);
 
-            expect(result).toBe("We hit a snag processing that. Let's try again.");
+            expect(result).toBe("Something went sideways. The robots are on it. 🤖");
             expect(result).not.toContain("{");
             expect(result).not.toContain("errorType");
         });
@@ -77,13 +77,13 @@ describe("RuntimeErrorBanner", () => {
     it("should NOT display raw JSON to users", () => {
         // This test documents the BUG: currently the error banner shows raw JSON
         const jsonErrorMessage =
-            '{"error":"We hit a snag processing that. Let\'s try again.","errorType":"Error"}';
+            '{"error":"Something went sideways. The robots are on it. 🤖","errorType":"Error"}';
 
         // The EXPECTED behavior is that users see the friendly message
         const displayedMessage = parseErrorMessage(jsonErrorMessage);
 
         expect(displayedMessage).toBe(
-            "We hit a snag processing that. Let's try again."
+            "Something went sideways. The robots are on it. 🤖"
         );
         expect(displayedMessage).not.toMatch(/^\{.*\}$/); // Should NOT be JSON
     });

@@ -152,7 +152,7 @@ export async function connectApiKeyService(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "We need you to sign in" };
+        return { success: false, error: "Sign in to continue" };
     }
 
     const service = getServiceById(serviceId);
@@ -336,7 +336,7 @@ export async function disconnectService(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "We need you to sign in" };
+        return { success: false, error: "Sign in to continue" };
     }
 
     try {
@@ -387,7 +387,7 @@ export async function deleteIntegration(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "We need you to sign in" };
+        return { success: false, error: "Sign in to continue" };
     }
 
     try {
@@ -454,7 +454,7 @@ export async function testIntegration(
     const userEmail = await getUserEmail();
 
     if (!userEmail) {
-        return { success: false, error: "We need you to sign in" };
+        return { success: false, error: "Sign in to continue" };
     }
 
     const service = getServiceById(serviceId);
