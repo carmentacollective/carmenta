@@ -7,24 +7,16 @@
  * Follows Giphy brand guidelines for attribution.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ExternalLink, Copy, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/client-logger";
+import type { FormattedGIF } from "@/lib/integrations/adapters/giphy";
 
-export interface GifData {
-    id: string;
-    title: string;
-    url: string;
-    rating: string;
-    images: {
-        original: { url: string; width: string; height: string };
-        fixed_height: { url: string; width: string; height: string };
-        fixed_width: { url: string; width: string; height: string };
-    };
-    attribution: string;
-}
+// Re-export for convenience
+export type GifData = FormattedGIF;
 
 interface GifCardProps {
     gif: GifData;
@@ -43,11 +35,21 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
     const [copied, setCopied] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Use fixed_height for consistent display
     const imageUrl = gif.images.fixed_height.url;
     const width = parseInt(gif.images.fixed_height.width, 10) || 356;
     const height = parseInt(gif.images.fixed_height.height, 10) || 200;
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (copyTimeoutRef.current) {
+                clearTimeout(copyTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleCopy = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -55,9 +57,10 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
         try {
             await navigator.clipboard.writeText(gif.images.original.url);
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Silently fail - copy not critical
+            copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            logger.error({ error, gifId: gif.id }, "Failed to copy GIF URL");
+            // No user feedback needed - copy not critical
         }
     };
 
@@ -112,7 +115,17 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                 )}
                 unoptimized // Required for animated GIFs
                 onLoad={() => setImageLoaded(true)}
-                onError={() => setImageError(true)}
+                onError={(e) => {
+                    logger.error(
+                        {
+                            error: e,
+                            gifId: gif.id,
+                            imageUrl,
+                        },
+                        "GIF failed to load"
+                    );
+                    setImageError(true);
+                }}
             />
 
             {/* Hover overlay with actions */}

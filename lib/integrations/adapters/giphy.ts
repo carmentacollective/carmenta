@@ -538,7 +538,7 @@ interface GiphyImage {
     height: string;
 }
 
-interface FormattedGIF {
+export interface FormattedGIF {
     id: string;
     title: string;
     url: string;
