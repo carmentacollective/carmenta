@@ -187,7 +187,7 @@ describe("POST /api/connection", () => {
         expect(response.status).toBe(401);
 
         const body = await response.json();
-        expect(body.error).toBe("We need you to sign in first");
+        expect(body.error).toBe("Sign in to continue");
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {

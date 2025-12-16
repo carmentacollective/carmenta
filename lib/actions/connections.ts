@@ -115,7 +115,7 @@ export async function createNewConnection(): Promise<CreateConnectionResult> {
     const dbUser = await getDbUser();
 
     if (!dbUser) {
-        throw new Error("We need you to sign in");
+        throw new Error("Sign in to continue");
     }
 
     const connection = await dbCreateConnection(dbUser.id);
@@ -237,12 +237,12 @@ export async function updateConnection(
 export async function archiveConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
     if (!dbUser) {
-        throw new Error("We need you to sign in");
+        throw new Error("Sign in to continue");
     }
 
     const connection = await validateConnectionAccess(connectionId, dbUser.id);
     if (!connection) {
-        throw new Error("We couldn't find that connection");
+        throw new Error("That connection doesn't exist");
     }
 
     await dbArchiveConnection(connection.id);
@@ -255,12 +255,12 @@ export async function archiveConnection(connectionId: string): Promise<void> {
 export async function deleteConnection(connectionId: string): Promise<void> {
     const dbUser = await getDbUser();
     if (!dbUser) {
-        throw new Error("We need you to sign in");
+        throw new Error("Sign in to continue");
     }
 
     const connection = await validateConnectionAccess(connectionId, dbUser.id);
     if (!connection) {
-        throw new Error("We couldn't find that connection");
+        throw new Error("That connection doesn't exist");
     }
 
     await dbDeleteConnection(connection.id);

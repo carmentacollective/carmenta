@@ -296,7 +296,7 @@ describe("tool-config", () => {
     describe("getErrorMessage", () => {
         it("wraps custom error text warmly", () => {
             const message = getErrorMessage("compareOptions", "Connection timed out");
-            expect(message).toBe("We hit a snag: Connection timed out");
+            expect(message).toBe("Something went wrong: Connection timed out");
         });
 
         it("uses tool-specific error without custom text", () => {

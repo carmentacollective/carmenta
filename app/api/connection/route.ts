@@ -106,7 +106,7 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message: "Search didn't work out. Want to try again?",
+                    message: "Search came up empty. The robots are on it. 🤖",
                     results: [],
                 };
             }
@@ -139,7 +139,7 @@ const tools = {
                 return {
                     error: true,
                     message:
-                        "We couldn't reach that page. It may be unavailable or blocked.",
+                        "That page isn't loading. It might be down or blocking access.",
                     title: "",
                     content: "",
                     url,
@@ -194,7 +194,8 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message: "Research hit a wall. Try a different angle?",
+                    message:
+                        "Research didn't find much. The robots are investigating. 🤖",
                     summary: "",
                     findings: [],
                     sources: [],
@@ -223,13 +224,10 @@ export async function POST(req: Request) {
         // This allows git worktrees, forks, and local dev without Clerk setup
         const user = await currentUser();
         if (!user && process.env.NODE_ENV === "production") {
-            return new Response(
-                JSON.stringify({ error: "We need you to sign in first" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            return new Response(JSON.stringify({ error: "Sign in to continue" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         // Use actual email if authenticated, fallback for development
@@ -255,7 +253,7 @@ export async function POST(req: Request) {
             );
             return new Response(
                 JSON.stringify({
-                    error: "We couldn't understand that request. Mind trying again?",
+                    error: "That request didn't quite make sense. The robots are looking into it. 🤖",
                     details: parseResult.error.flatten(),
                 }),
                 {
@@ -330,7 +328,7 @@ export async function POST(req: Request) {
             connectionId = decodeConnectionId(existingConnectionId);
             if (connectionId === null) {
                 return new Response(
-                    JSON.stringify({ error: "We couldn't find that connection" }),
+                    JSON.stringify({ error: "That connection doesn't exist" }),
                     { status: 400, headers: { "Content-Type": "application/json" } }
                 );
             }
@@ -877,7 +875,7 @@ export async function POST(req: Request) {
         // Return error response with details (safe for client)
         return new Response(
             JSON.stringify({
-                error: "We hit a snag processing that. Let's try again.",
+                error: "Something went sideways. The robots are on it. 🤖",
                 // Include error type for debugging (not the full message which might contain sensitive info)
                 errorType: errorName,
             }),

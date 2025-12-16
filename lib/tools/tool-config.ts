@@ -518,7 +518,7 @@ export function getErrorMessage(toolName: string, errorText?: string): string {
 
     // If we have specific error text, wrap it warmly
     if (errorText) {
-        return `We hit a snag: ${errorText}`;
+        return `Something went wrong: ${errorText}`;
     }
 
     return config.messages.error;
