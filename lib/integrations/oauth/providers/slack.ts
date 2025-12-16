@@ -17,6 +17,9 @@ export const slackProvider: OAuthProviderConfig = {
     authorizationUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/oauth/v2/access",
 
+    // Use user_scope parameter for user tokens (not scope, which is for bot tokens)
+    scopeParamName: "user_scope",
+
     // Scopes for user token (user operations, not bot)
     // Reference: https://api.slack.com/scopes
     scopes: [
