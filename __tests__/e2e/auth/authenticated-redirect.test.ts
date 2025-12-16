@@ -46,8 +46,7 @@ test.describe("Authenticated User Redirects", () => {
         await page.goto("/");
 
         // Should be redirected to /connection
-        await page.waitForURL(/\/connection/, { timeout: 10000 });
-        expect(page.url()).toContain("/connection");
+        await expect(page).toHaveURL(/\/connection/, { timeout: 10000 });
     });
 
     test("authenticated users stay on /connection after redirect", async ({
@@ -69,10 +68,11 @@ test.describe("Authenticated User Redirects", () => {
         await page.goto("/connection");
 
         // Should stay on /connection (not redirect loop)
-        expect(page.url()).toContain("/connection");
+        await expect(page).toHaveURL(/\/connection/);
 
         // Page should load without errors
         const response = await page.reload();
+        expect(response).not.toBeNull();
         expect(response?.status()).toBe(200);
     });
 });
