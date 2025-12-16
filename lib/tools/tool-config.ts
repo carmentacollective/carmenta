@@ -59,7 +59,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Exploring the web together...",
             completed: "Found what we were looking for",
-            error: "We couldn't reach the web",
+            error: "We couldn't search the web right now. The robots caught it. 🤖",
         },
         delightMessages: {
             completed: ["Discovery made", "Here's what's out there", "Found it"],
@@ -73,7 +73,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Retrieving that page together...",
             completed: "Page content ready",
-            error: "We couldn't reach that page",
+            error: "We couldn't reach that page. It may be unavailable or blocked.",
         },
         delightMessages: {
             completed: ["Content captured", "Page ready", "Got the details"],
@@ -87,7 +87,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Diving into this...",
             completed: "Research complete",
-            error: "We couldn't complete that research",
+            error: "We couldn't complete that research. The bots have been alerted. 🤖",
         },
         delightMessages: {
             completed: ["Found insights", "Discoveries made", "Research done"],
@@ -115,7 +115,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Searching your conversations...",
             completed: "Conversations found",
-            error: "Couldn't search conversations",
+            error: "We couldn't search conversations. Our monitoring caught it. 🤖",
         },
         delightMessages: {
             completed: ["Memory retrieved", "Found it", "Here's what we captured"],
