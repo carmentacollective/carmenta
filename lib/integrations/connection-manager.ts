@@ -185,7 +185,7 @@ export async function getCredentials(
                 "Failed to get OAuth access token"
             );
             throw new ValidationError(
-                `Your ${service} connection expired. The robots have been notified. 🤖`
+                `Your ${service} connection expired. Reconnect at /integrations to get back.`
             );
         }
     }
