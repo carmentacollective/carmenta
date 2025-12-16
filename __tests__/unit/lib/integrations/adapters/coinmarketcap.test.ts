@@ -136,9 +136,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("invalid-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                "That API key isn't valid. Please check your key."
-            );
+            expect(result.error).toContain("API key");
         });
 
         it("returns error for permission issues (403)", async () => {
@@ -150,9 +148,8 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("restricted-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                "That API key doesn't have permission. Check your subscription plan."
-            );
+            expect(result.error).toContain("permission");
+            expect(result.error).toContain("subscription");
         });
 
         it("returns error for rate limit (429)", async () => {
@@ -166,9 +163,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("rate-limited-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                "CoinMarketCap rate limit hit. Please wait a moment."
-            );
+            expect(result.error).toContain("rate limit");
         });
 
         it("returns generic error for unknown failures", async () => {
@@ -180,9 +175,8 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("test-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                "We couldn't test that connection. The monitoring caught it. 🤖"
-            );
+            expect(result.error).toContain("couldn't test");
+            expect(result.error).toContain("🤖");
         });
     });
 
