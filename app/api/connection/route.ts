@@ -342,7 +342,7 @@ export async function POST(req: Request) {
                 const connection = await createConnection(
                     dbUser.id,
                     conciergeResult.title, // Title from concierge
-                    conciergeResult.modelId
+                    routingResult.modelId // Use final routed model, not Concierge's initial choice
                 );
                 connectionId = connection.id;
                 connectionPublicId = encodeConnectionId(connection.id);
