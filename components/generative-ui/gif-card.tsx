@@ -59,16 +59,25 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
         e.preventDefault();
         e.stopPropagation();
         try {
+            // Clear existing timeout before setting new one (prevents stacking on rapid clicks)
+            if (copyTimeoutRef.current) {
+                clearTimeout(copyTimeoutRef.current);
+            }
+
             await navigator.clipboard.writeText(gif.images.original.url);
             setCopied(true);
-            copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+            copyTimeoutRef.current = setTimeout(() => {
+                if (mountedRef.current) {
+                    setCopied(false);
+                }
+            }, 2000);
         } catch (error) {
             logger.error({ error, gifId: gif.id }, "Failed to copy GIF URL");
             Sentry.captureException(error, {
+                level: "info", // Non-critical - copy is convenience feature
                 tags: { component: "gif-card", action: "copy" },
                 extra: { gifId: gif.id },
             });
-            // No user feedback needed - copy not critical
         }
     };
 
