@@ -57,7 +57,7 @@ export const clickupProvider: OAuthProviderConfig = {
             };
         } catch (error) {
             throw new Error(
-                `Failed to fetch ClickUp user info: ${error instanceof Error ? error.message : String(error)}`
+                `We couldn't reach your ClickUp account. Give it another try?`
             );
         }
     },

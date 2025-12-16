@@ -72,9 +72,7 @@ export const twitterProvider: OAuthProviderConfig = {
                 displayName: userResponse.data.name || `@${userResponse.data.username}`,
             };
         } catch (error) {
-            throw new Error(
-                `Failed to fetch Twitter account info: ${error instanceof Error ? error.message : String(error)}`
-            );
+            throw new Error(`Twitter didn't let us in. Try reconnecting?`);
         }
     },
 

@@ -73,9 +73,7 @@ export const dropboxProvider: OAuthProviderConfig = {
                 displayName: accountResponse.name.display_name || accountResponse.email,
             };
         } catch (error) {
-            throw new Error(
-                `Failed to fetch Dropbox account info: ${error instanceof Error ? error.message : String(error)}`
-            );
+            throw new Error(`Dropbox didn't connect. Try reconnecting?`);
         }
     },
 

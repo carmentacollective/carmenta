@@ -73,9 +73,7 @@ export const gmailProvider: OAuthProviderConfig = {
                 displayName: profileResponse.emailAddress,
             };
         } catch (error) {
-            throw new Error(
-                `Failed to fetch Gmail account info: ${error instanceof Error ? error.message : String(error)}`
-            );
+            throw new Error(`Gmail connection hit a wall. Try again?`);
         }
     },
 

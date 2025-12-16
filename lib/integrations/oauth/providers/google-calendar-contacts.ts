@@ -27,8 +27,11 @@ export const googleCalendarContactsProvider: OAuthProviderConfig = {
     // Scopes for Calendar and Contacts access
     // Reference: https://developers.google.com/identity/protocols/oauth2/scopes
     scopes: [
-        "https://www.googleapis.com/auth/calendar", // Full calendar access (read/write)
-        "https://www.googleapis.com/auth/contacts", // Full contacts access (read/write)
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/contacts.readonly",
+        "https://www.googleapis.com/auth/contacts",
         "https://www.googleapis.com/auth/userinfo.email", // User email for account identification
         "https://www.googleapis.com/auth/userinfo.profile", // User profile for display name
     ],
@@ -54,33 +57,33 @@ export const googleCalendarContactsProvider: OAuthProviderConfig = {
         const { httpClient } = await import("@/lib/http-client");
 
         try {
-            // Get user info from People API
+            // Get user info from OAuth2 userinfo endpoint
+            // This is more reliable than People API - only needs basic userinfo scopes
+            // which don't require additional Google verification
             const userResponse = await httpClient
-                .get("https://people.googleapis.com/v1/people/me", {
+                .get("https://www.googleapis.com/oauth2/v2/userinfo", {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                     },
-                    searchParams: {
-                        personFields: "names,emailAddresses",
-                    },
                 })
                 .json<{
-                    resourceName: string;
-                    names?: Array<{ displayName?: string }>;
-                    emailAddresses?: Array<{ value?: string }>;
+                    id: string;
+                    email: string;
+                    verified_email: boolean;
+                    name?: string;
+                    given_name?: string;
+                    family_name?: string;
                 }>();
 
-            const email = userResponse.emailAddresses?.[0]?.value || "unknown";
-            const displayName = userResponse.names?.[0]?.displayName || email;
+            const email = userResponse.email;
+            const displayName = userResponse.name || email;
 
             return {
                 identifier: email,
                 displayName,
             };
         } catch (error) {
-            throw new Error(
-                `Failed to fetch Google account info: ${error instanceof Error ? error.message : String(error)}`
-            );
+            throw new Error(`Google connection didn't work out. Try again?`);
         }
     },
 
