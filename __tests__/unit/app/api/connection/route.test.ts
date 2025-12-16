@@ -45,11 +45,27 @@ vi.mock("@/lib/env", () => ({
 // Mock concierge
 vi.mock("@/lib/concierge", () => ({
     runConcierge: vi.fn(),
+    buildConciergeInput: vi.fn().mockReturnValue({
+        currentMessage: { content: "test", role: "user" },
+        recentContext: { messageCount: 1, conversationDepth: 1 },
+        attachments: [],
+        contextMetadata: { estimatedCurrentTokens: 100 },
+    }),
+    getAttachmentTypesFromInput: vi.fn().mockReturnValue([]),
     CONCIERGE_DEFAULTS: {
         modelId: "anthropic/claude-sonnet-4.5",
         temperature: 0.5,
         reasoning: { enabled: false },
     },
+}));
+
+// Mock context routing rules
+vi.mock("@/lib/context", () => ({
+    applyRoutingRules: vi.fn().mockReturnValue({
+        modelId: "anthropic/claude-sonnet-4.5",
+        wasChanged: false,
+        originalModelId: "anthropic/claude-sonnet-4.5",
+    }),
 }));
 
 // Mock database functions for persistence

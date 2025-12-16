@@ -78,6 +78,31 @@ function parseReasoningConfig(reasoningHeader: string | null): ReasoningConfig {
 }
 
 /**
+ * Parses context utilization from header JSON.
+ */
+function parseContextUtilization(
+    header: string | null
+): ConciergeResult["contextUtilization"] | undefined {
+    if (!header) {
+        return undefined;
+    }
+
+    try {
+        const decoded = decodeURIComponent(header);
+        const parsed = JSON.parse(decoded);
+        return {
+            estimatedTokens: parsed.estimatedTokens,
+            contextLimit: parsed.contextLimit,
+            utilizationPercent: parsed.utilizationPercent / 100, // Convert from percentage to 0-1
+            isWarning: parsed.isWarning,
+            isCritical: parsed.isCritical,
+        };
+    } catch {
+        return undefined;
+    }
+}
+
+/**
  * Parses concierge headers from a Response object.
  */
 export function parseConciergeHeaders(response: Response): ConciergeResult | null {
@@ -85,6 +110,11 @@ export function parseConciergeHeaders(response: Response): ConciergeResult | nul
     const temperature = response.headers.get("X-Concierge-Temperature");
     const explanation = response.headers.get("X-Concierge-Explanation");
     const reasoningHeader = response.headers.get("X-Concierge-Reasoning");
+
+    // New context window management headers
+    const autoSwitched = response.headers.get("X-Concierge-Auto-Switched") === "true";
+    const autoSwitchReason = response.headers.get("X-Concierge-Auto-Switch-Reason");
+    const contextUtilizationHeader = response.headers.get("X-Context-Utilization");
 
     if (!modelId || !temperature || !explanation) {
         return null;
@@ -96,5 +126,11 @@ export function parseConciergeHeaders(response: Response): ConciergeResult | nul
         temperature: Number.isNaN(parsedTemp) ? 0.5 : parsedTemp,
         explanation: decodeURIComponent(explanation),
         reasoning: parseReasoningConfig(reasoningHeader),
+        // Context window management fields
+        autoSwitched: autoSwitched || undefined,
+        autoSwitchReason: autoSwitchReason
+            ? decodeURIComponent(autoSwitchReason)
+            : undefined,
+        contextUtilization: parseContextUtilization(contextUtilizationHeader),
     };
 }
