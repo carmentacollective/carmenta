@@ -51,8 +51,10 @@ export const gmailProvider: OAuthProviderConfig = {
             throw new Error("Access token required to fetch Google account info");
         }
 
-        // Import httpClient dynamically to avoid circular dependencies
+        // Import httpClient and monitoring tools dynamically to avoid circular dependencies
         const { httpClient } = await import("@/lib/http-client");
+        const { logger } = await import("@/lib/logger");
+        const Sentry = await import("@sentry/nextjs");
 
         try {
             // Get user info from Gmail API
@@ -73,6 +75,13 @@ export const gmailProvider: OAuthProviderConfig = {
                 displayName: profileResponse.emailAddress,
             };
         } catch (error) {
+            logger.error(
+                { error, provider: "gmail", endpoint: "gmail/v1/users/me/profile" },
+                "Failed to fetch Gmail account info"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "oauth", provider: "gmail" },
+            });
             throw new Error(`Gmail connection hit a wall. Try again?`);
         }
     },

@@ -45,8 +45,10 @@ export const twitterProvider: OAuthProviderConfig = {
             throw new Error("Access token required to fetch Twitter account info");
         }
 
-        // Import httpClient dynamically to avoid circular dependencies
+        // Import httpClient and monitoring tools dynamically to avoid circular dependencies
         const { httpClient } = await import("@/lib/http-client");
+        const { logger } = await import("@/lib/logger");
+        const Sentry = await import("@sentry/nextjs");
 
         try {
             // Get authenticated user info
@@ -72,6 +74,13 @@ export const twitterProvider: OAuthProviderConfig = {
                 displayName: userResponse.data.name || `@${userResponse.data.username}`,
             };
         } catch (error) {
+            logger.error(
+                { error, provider: "twitter", endpoint: "2/users/me" },
+                "Failed to fetch Twitter account info"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "oauth", provider: "twitter" },
+            });
             throw new Error(`Twitter didn't let us in. Try reconnecting?`);
         }
     },

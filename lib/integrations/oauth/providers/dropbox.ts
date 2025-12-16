@@ -47,8 +47,10 @@ export const dropboxProvider: OAuthProviderConfig = {
             throw new Error("Access token required to fetch Dropbox account info");
         }
 
-        // Import httpClient dynamically to avoid circular dependencies
+        // Import httpClient and monitoring tools dynamically to avoid circular dependencies
         const { httpClient } = await import("@/lib/http-client");
+        const { logger } = await import("@/lib/logger");
+        const Sentry = await import("@sentry/nextjs");
 
         try {
             const accountResponse = await httpClient
@@ -73,6 +75,13 @@ export const dropboxProvider: OAuthProviderConfig = {
                 displayName: accountResponse.name.display_name || accountResponse.email,
             };
         } catch (error) {
+            logger.error(
+                { error, provider: "dropbox", endpoint: "2/users/get_current_account" },
+                "Failed to fetch Dropbox account info"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "oauth", provider: "dropbox" },
+            });
             throw new Error(`Dropbox didn't connect. Try reconnecting?`);
         }
     },

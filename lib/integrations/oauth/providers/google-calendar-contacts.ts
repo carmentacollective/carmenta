@@ -53,8 +53,10 @@ export const googleCalendarContactsProvider: OAuthProviderConfig = {
             throw new Error("Access token required to fetch Google account info");
         }
 
-        // Import httpClient dynamically to avoid circular dependencies
+        // Import httpClient and monitoring tools dynamically to avoid circular dependencies
         const { httpClient } = await import("@/lib/http-client");
+        const { logger } = await import("@/lib/logger");
+        const Sentry = await import("@sentry/nextjs");
 
         try {
             // Get user info from OAuth2 userinfo endpoint
@@ -83,6 +85,17 @@ export const googleCalendarContactsProvider: OAuthProviderConfig = {
                 displayName,
             };
         } catch (error) {
+            logger.error(
+                {
+                    error,
+                    provider: "google-calendar-contacts",
+                    endpoint: "oauth2/v2/userinfo",
+                },
+                "Failed to fetch Google account info"
+            );
+            Sentry.captureException(error, {
+                tags: { component: "oauth", provider: "google-calendar-contacts" },
+            });
             throw new Error(`Google connection didn't work out. Try again?`);
         }
     },
