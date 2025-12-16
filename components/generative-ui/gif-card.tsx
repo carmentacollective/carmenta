@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ExternalLink, Copy, Check } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -36,15 +37,18 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const mountedRef = useRef(true);
 
     // Use fixed_height for consistent display
     const imageUrl = gif.images.fixed_height.url;
     const width = parseInt(gif.images.fixed_height.width, 10) || 356;
     const height = parseInt(gif.images.fixed_height.height, 10) || 200;
 
-    // Cleanup timeout on unmount
+    // Cleanup timeout and track mount status
     useEffect(() => {
+        mountedRef.current = true;
         return () => {
+            mountedRef.current = false;
             if (copyTimeoutRef.current) {
                 clearTimeout(copyTimeoutRef.current);
             }
@@ -60,6 +64,10 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
             copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
         } catch (error) {
             logger.error({ error, gifId: gif.id }, "Failed to copy GIF URL");
+            Sentry.captureException(error, {
+                tags: { component: "gif-card", action: "copy" },
+                extra: { gifId: gif.id },
+            });
             // No user feedback needed - copy not critical
         }
     };
@@ -124,7 +132,13 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         },
                         "GIF failed to load"
                     );
-                    setImageError(true);
+                    Sentry.captureException(e, {
+                        tags: { component: "gif-card" },
+                        extra: { gifId: gif.id, imageUrl },
+                    });
+                    if (mountedRef.current) {
+                        setImageError(true);
+                    }
                 }}
             />
 
