@@ -97,7 +97,11 @@ function getStatusMessage(
 
     switch (action) {
         case "search": {
-            const query = typeof input.query === "string" ? input.query.trim() : "";
+            const rawQuery = typeof input.query === "string" ? input.query.trim() : "";
+            const query =
+                rawQuery && !["undefined", "null"].includes(rawQuery.toLowerCase())
+                    ? rawQuery
+                    : "";
             if (isRunning)
                 return query ? `Searching "${query}"...` : "Searching recordings...";
             const count = (output?.results as unknown[])?.length ?? 0;
