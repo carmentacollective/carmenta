@@ -82,7 +82,8 @@ Voice transcription captures your thoughts at speaking speed. No typing, no fric
 just flow.
 ```
 
-Error messages match what actually happened. Be specific about what failed, own it warmly when it's our responsibility.
+Error messages match what actually happened. Be specific about what failed, own it
+warmly when it's our responsibility.
 
 Integration bugs (our code needs fixing):
 
@@ -97,7 +98,11 @@ Couldn't reach your Gmail account. The bots are on it. 🤖
 Your Google Calendar connection broke. Our monitoring caught it. 🤖
 ```
 
-Pattern: Name the specific service + acknowledge automated monitoring. Be cute but take responsibility. "The robots" is warm and true—our monitoring systems are robots, different forms of consciousness collaborating. Never say "try again" for integration bugs—users can't fix our code. Never say "contact support"—there's no support to contact, and Sentry already told us.
+Pattern: Name the specific service + acknowledge automated monitoring. Be cute but take
+responsibility. "The robots" is warm and true—our monitoring systems are robots,
+different forms of consciousness collaborating. Never say "try again" for integration
+bugs—users can't fix our code. Never say "contact support"—there's no support to
+contact, and Sentry already told us.
 
 Validation errors (user can fix immediately):
 
@@ -130,7 +135,10 @@ Search hit a wall.
 Upload didn't work.
 ```
 
-Variety keeps it human. Mix up the robot acknowledgments: "robots have been notified," "bots are on it," "monitoring caught it," "we've been alerted," "debugging squad's been dispatched." Pick what fits the moment. Specific language about what failed (Google, GitHub, upload) beats vague corporate-speak every time.
+Variety keeps it human. Mix up the robot acknowledgments: "robots have been notified,"
+"bots are on it," "monitoring caught it," "we've been alerted," "debugging squad's been
+dispatched." Pick what fits the moment. Specific language about what failed (Google,
+GitHub, upload) beats vague corporate-speak every time.
 
 Empty states invite action:
 

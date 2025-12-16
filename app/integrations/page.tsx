@@ -112,11 +112,16 @@ function IntegrationsContent() {
             loadServices();
         } else if (error) {
             const errorMessages: Record<string, string> = {
-                oauth_failed: message ?? "Authorization didn't work out. We've been alerted. 🤖",
-                invalid_callback: "The OAuth callback was invalid. Our monitoring caught it. 🤖",
+                oauth_failed:
+                    message ?? "Authorization didn't work out. We've been alerted. 🤖",
+                invalid_callback:
+                    "The OAuth callback was invalid. Our monitoring caught it. 🤖",
                 invalid_state: "Your session expired. Please try connecting again.",
-                unknown_provider: "That service isn't recognized. The robots have been notified. 🤖",
-                token_exchange_failed: message ?? "We had an error completing that connection. The bots are on it. 🤖",
+                unknown_provider:
+                    "That service isn't recognized. The robots have been notified. 🤖",
+                token_exchange_failed:
+                    message ??
+                    "We had an error completing that connection. The bots are on it. 🤖",
                 configuration_error: "Service configuration error - we're on it",
             };
             setGlobalMessage({

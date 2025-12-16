@@ -230,16 +230,14 @@ export async function GET(request: NextRequest) {
             error.message.includes("invalid_grant") ||
             error.message.includes("authorization code")
         ) {
-            userMessage =
-                `Your authorization code for ${state.provider} expired. The robots have been notified. 🤖`;
+            userMessage = `Your authorization code for ${state.provider} expired. The robots have been notified. 🤖`;
         } else if (error.message.includes("redirect_uri_mismatch")) {
             userMessage =
                 "The redirect URL doesn't match what's configured in the provider settings. We'll need to update the OAuth configuration.";
         } else if (error.message.includes("access_denied")) {
             userMessage = `You declined access to ${state.provider}. To connect, you'll need to grant permissions.`;
         } else if (error.message.includes("Network error")) {
-            userMessage =
-                `We couldn't reach ${state.provider} right now. It may be temporarily unavailable. Try again in a moment?`;
+            userMessage = `We couldn't reach ${state.provider} right now. It may be temporarily unavailable. Try again in a moment?`;
         } else if (!error.message || error.message.includes("Unknown")) {
             userMessage = `We had an error connecting to your ${state.provider} account. The robots have been notified. 🤖`;
         }
