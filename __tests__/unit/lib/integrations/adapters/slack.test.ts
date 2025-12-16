@@ -127,7 +127,7 @@ describe("SlackAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: channel/);
+            expect(result.errors[0]).toMatch(/We need the channel parameter/);
         });
 
         it("accepts valid parameters for send_message", () => {
@@ -343,7 +343,7 @@ describe("SlackAdapter", () => {
             const result = adapter.validate("search_messages", { count: 20 });
 
             expect(result.valid).toBe(false);
-            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
+            expect(result.errors[0]).toMatch(/We need the query parameter/);
         });
     });
 

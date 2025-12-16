@@ -138,7 +138,9 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                 {
                     name: "get_quotes",
                     description:
-                        "Get latest market quotes for specific cryptocurrencies",
+                        "Get latest market quotes for specific cryptocurrencies. " +
+                        "IMPORTANT: You must provide at least one identifier - symbol, id, or slug. " +
+                        "Use symbol for common lookups like BTC or ETH.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -146,21 +148,22 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH,SOL)",
+                                "Comma-separated cryptocurrency symbols - use this for most lookups (e.g., BTC,ETH,SOL). At least one of symbol/id/slug required.",
+                            example: "BTC,ETH",
                         },
                         {
                             name: "id",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of CoinMarketCap cryptocurrency IDs",
+                                "Comma-separated CoinMarketCap IDs - use for precision when symbols are ambiguous. At least one of symbol/id/slug required.",
                         },
                         {
                             name: "slug",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency slugs (e.g., bitcoin,ethereum)",
+                                "Comma-separated slugs (e.g., bitcoin,ethereum). At least one of symbol/id/slug required.",
                         },
                         {
                             name: "convert",
@@ -176,7 +179,8 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                 {
                     name: "get_crypto_info",
                     description:
-                        "Get static metadata for cryptocurrencies (logo, description, URLs)",
+                        "Get static metadata for cryptocurrencies (logo, description, URLs). " +
+                        "IMPORTANT: You must provide at least one identifier - symbol, id, or slug.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -184,24 +188,27 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of cryptocurrency symbols (e.g., BTC,ETH)",
+                                "Comma-separated cryptocurrency symbols (e.g., BTC,ETH). At least one of symbol/id/slug required.",
+                            example: "BTC,ETH",
                         },
                         {
                             name: "id",
                             type: "string",
                             required: false,
                             description:
-                                "Comma-separated list of CoinMarketCap cryptocurrency IDs",
+                                "Comma-separated CoinMarketCap IDs. At least one of symbol/id/slug required.",
                         },
                         {
                             name: "slug",
                             type: "string",
                             required: false,
-                            description: "Comma-separated list of cryptocurrency slugs",
+                            description:
+                                "Comma-separated slugs (e.g., bitcoin,ethereum). At least one of symbol/id/slug required.",
                         },
                     ],
                     returns:
                         "Cryptocurrency metadata including name, logo, description, website, social links",
+                    example: `get_crypto_info({ symbol: "BTC" })`,
                 },
                 {
                     name: "get_global_metrics",
@@ -600,7 +607,7 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
 
         if (!symbol && !id && !slug) {
             return this.createErrorResponse(
-                "At least one of symbol, id, or slug is required"
+                "We need a cryptocurrency to look up. Provide symbol (e.g., BTC,ETH), id, or slug."
             );
         }
 
@@ -666,7 +673,7 @@ export class CoinMarketCapAdapter extends ServiceAdapter {
 
         if (!symbol && !id && !slug) {
             return this.createErrorResponse(
-                "At least one of symbol, id, or slug is required"
+                "We need a cryptocurrency to look up. Provide symbol (e.g., BTC,ETH), id, or slug."
             );
         }
 

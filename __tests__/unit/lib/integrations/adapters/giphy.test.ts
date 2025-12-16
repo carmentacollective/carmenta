@@ -162,8 +162,10 @@ describe("GiphyAdapter", () => {
                 type: "text",
                 text: expect.stringContaining("query"),
             });
-            // Verify the error includes an example
-            expect(result.content[0].text).toMatch(/example.*funny cats/i);
+            // Carmenta-copy friendly error message with example
+            expect(result.content[0].text).toMatch(
+                /We need the query parameter.*funny cats/i
+            );
         });
 
         it("searches for GIFs with query", async () => {
