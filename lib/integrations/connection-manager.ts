@@ -185,7 +185,7 @@ export async function getCredentials(
                 "Failed to get OAuth access token"
             );
             throw new ValidationError(
-                `We couldn't reach ${service}. Let's reconnect it.`
+                `Your ${service} connection expired. The robots have been notified. 🤖`
             );
         }
     }
@@ -217,7 +217,7 @@ export async function getCredentials(
                 `Failed to decrypt credentials for ${service}`
             );
             throw new ValidationError(
-                `We couldn't read ${service} credentials. Let's reconnect it.`
+                `We had an error reading your ${service} credentials. The bots are on it. 🤖`
             );
         }
     }
