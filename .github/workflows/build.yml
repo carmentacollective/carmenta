@@ -154,7 +154,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: .next
+          path: .next/
           retention-days: 1
 
   # E2E Tests (OAuth flows, public URL validation)
