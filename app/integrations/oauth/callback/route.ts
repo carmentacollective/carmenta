@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
         // Provide specific guidance for common OAuth errors
         if (error.message.includes("invalid_client")) {
             userMessage =
-                "The connection configuration is incorrect. Please contact support if this issue persists.";
+                "Something's off with the connection setup. This usually means the API credentials need updating.";
         } else if (
             error.message.includes("invalid_grant") ||
             error.message.includes("authorization code")
@@ -234,14 +234,14 @@ export async function GET(request: NextRequest) {
                 "The authorization code expired or was already used. Please try connecting again.";
         } else if (error.message.includes("redirect_uri_mismatch")) {
             userMessage =
-                "The redirect URL doesn't match the configured URL. Please contact support.";
+                "The redirect URL doesn't match what's configured in the provider settings. We'll need to update the OAuth configuration.";
         } else if (error.message.includes("access_denied")) {
             userMessage = `You denied access to ${state.provider}. Please try again if you'd like to connect.`;
         } else if (error.message.includes("Network error")) {
             userMessage =
                 "We couldn't reach the service. Please check your connection and try again.";
         } else if (!error.message || error.message.includes("Unknown")) {
-            userMessage = `We couldn't connect to ${state.provider}. Please try again or contact support.`;
+            userMessage = `We couldn't connect to ${state.provider}. Try again?`;
         }
 
         // Use appUrl for error redirect to ensure correct domain

@@ -162,9 +162,7 @@ export async function exchangeCodeForTokens(
                 },
             });
 
-            throw new Error(
-                `Token exchange failed with status ${error.response.status}. Please try reconnecting or contact support if the issue persists.`
-            );
+            throw new Error("Connection hit a wall. Try reconnecting.");
         }
 
         // Non-HTTP error (network, timeout, etc.)
