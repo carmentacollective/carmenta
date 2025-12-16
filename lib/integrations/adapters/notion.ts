@@ -69,6 +69,119 @@ function normalizeNotionId(id: string): string {
     return id;
 }
 
+/**
+ * Rich text element from Notion API
+ */
+interface NotionRichTextElement {
+    type: string;
+    text?: {
+        content: string;
+        link?: { url: string } | null;
+    };
+    mention?: {
+        type: string;
+        user?: { id: string; name?: string };
+        page?: { id: string };
+        database?: { id: string };
+        date?: { start: string; end?: string };
+    };
+    equation?: {
+        expression: string;
+    };
+    annotations?: {
+        bold: boolean;
+        italic: boolean;
+        strikethrough: boolean;
+        underline: boolean;
+        code: boolean;
+        color?: string;
+    };
+    plain_text?: string;
+    href?: string | null;
+}
+
+/**
+ * Converts Notion's rich text array to readable markdown.
+ * Handles text with annotations (bold, italic, code, etc.), links, mentions, and equations.
+ *
+ * @param richText - Array of Notion rich text elements
+ * @returns Markdown string representation
+ * @example
+ * richTextToMarkdown([{ type: "text", text: { content: "Hello" }, annotations: { bold: true } }])
+ * // Returns: "**Hello**"
+ */
+function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): string {
+    if (!richText || richText.length === 0) {
+        return "";
+    }
+
+    return richText
+        .map((element) => {
+            let text = "";
+            let isLink = false; // Track if this element is a markdown link
+
+            // Handle different element types
+            if (element.type === "text" && element.text) {
+                text = element.text.content;
+
+                // Apply link if present
+                if (element.text.link?.url) {
+                    text = `[${text}](${element.text.link.url})`;
+                    isLink = true;
+                }
+            } else if (element.type === "mention" && element.mention) {
+                // Handle mentions (user, page, database, date)
+                const mention = element.mention;
+                if (mention.type === "user" && mention.user) {
+                    text = `@${mention.user.name || mention.user.id}`;
+                } else if (mention.type === "page" && mention.page) {
+                    text = `[📄 page](notion://page/${mention.page.id})`;
+                    isLink = true;
+                } else if (mention.type === "database" && mention.database) {
+                    text = `[📊 database](notion://database/${mention.database.id})`;
+                    isLink = true;
+                } else if (mention.type === "date" && mention.date) {
+                    text = mention.date.end
+                        ? `${mention.date.start} → ${mention.date.end}`
+                        : mention.date.start;
+                } else {
+                    // Fallback to plain_text if available
+                    text = element.plain_text || "[mention]";
+                }
+            } else if (element.type === "equation" && element.equation) {
+                // Equations are already code-formatted, don't apply code annotation
+                text = `\`${element.equation.expression}\``;
+            } else if (element.plain_text) {
+                // Fallback to plain_text for any other type
+                text = element.plain_text;
+            }
+
+            // Apply annotations (bold, italic, strikethrough, code)
+            // Order matters: code should be innermost, then other formatting
+            // Skip code annotation for links (markdown links in backticks render as literal text)
+            if (element.annotations) {
+                const { bold, italic, strikethrough, code } = element.annotations;
+
+                // Only apply code formatting if not already a link or equation
+                if (code && !isLink && element.type !== "equation") {
+                    text = `\`${text}\``;
+                }
+                if (strikethrough) {
+                    text = `~~${text}~~`;
+                }
+                if (italic) {
+                    text = `*${text}*`;
+                }
+                if (bold) {
+                    text = `**${text}**`;
+                }
+            }
+
+            return text;
+        })
+        .join("");
+}
+
 export class NotionAdapter extends ServiceAdapter {
     serviceName = "notion";
     serviceDisplayName = "Notion";
@@ -157,10 +270,20 @@ export class NotionAdapter extends ServiceAdapter {
                                 "Number of results to return (default: 25, max: 100)",
                             example: "10",
                         },
+                        {
+                            name: "include_parent",
+                            type: "boolean",
+                            required: false,
+                            description:
+                                "Include parent page/database info for context (default: false). " +
+                                "Shows WHERE each result lives in the workspace hierarchy. " +
+                                "Requires additional API calls per result.",
+                            example: "true",
+                        },
                     ],
                     returns:
-                        "List of matching pages/databases with titles, IDs, and metadata",
-                    example: `search({ query: "meeting notes", filter: { property: "object", value: "page" } })`,
+                        "List of matching pages/databases with titles, IDs, and metadata. With include_parent: also shows parent title and location.",
+                    example: `search({ query: "meeting notes", filter: { property: "object", value: "page" }, include_parent: true })`,
                 },
                 {
                     name: "get_page",
@@ -542,6 +665,23 @@ export class NotionAdapter extends ServiceAdapter {
                     returns: "Created comment object",
                 },
                 {
+                    name: "list_comments",
+                    description: "Retrieve all comments on a page or discussion thread",
+                    annotations: { readOnlyHint: true },
+                    parameters: [
+                        {
+                            name: "block_id",
+                            type: "string",
+                            required: true,
+                            description:
+                                "Page ID or block ID to get comments from. For page comments, use the page ID.",
+                        },
+                    ],
+                    returns:
+                        "List of comments with author, timestamp, and content (as both raw rich_text and readable markdown)",
+                    example: `list_comments({ block_id: "page-uuid" })`,
+                },
+                {
                     name: "list_users",
                     description: "Get workspace users",
                     annotations: { readOnlyHint: true },
@@ -671,6 +811,8 @@ export class NotionAdapter extends ServiceAdapter {
                     return await this.handleGetChildBlocks(params, accessToken);
                 case "create_comment":
                     return await this.handleCreateComment(params, accessToken);
+                case "list_comments":
+                    return await this.handleListComments(params, accessToken);
                 case "list_users":
                     return await this.handleListUsers(accessToken);
                 case "raw_api":
@@ -710,15 +852,23 @@ export class NotionAdapter extends ServiceAdapter {
             let errorMessage = `Failed to ${action}: `;
             if (error instanceof Error) {
                 // Parse common error types
+                const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
                 if (error.message.includes("404")) {
                     errorMessage +=
                         "The requested resource was not found. Check that the page/database ID is correct and that the integration has access.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+                } else if (error.message.includes("401")) {
                     errorMessage += `Authentication failed. Your Notion connection may have expired. Please reconnect at: ${appUrl}/integrations/notion`;
+                } else if (error.message.includes("403")) {
+                    // 403 is permission-specific, not authentication
+                    errorMessage +=
+                        "Permission denied. This usually means the page or database isn't shared with the Carmenta integration. " +
+                        "To fix this:\n" +
+                        "1. Open the page in Notion\n" +
+                        "2. Click the ••• menu (top right)\n" +
+                        "3. Select 'Connections' → Add 'Carmenta'\n\n" +
+                        "If you've already shared the page, you may not have edit permissions for write operations. " +
+                        `Check your workspace settings or reconnect at: ${appUrl}/integrations/notion`;
                 } else if (error.message.includes("429")) {
                     errorMessage +=
                         "Rate limit exceeded (3 requests/second). Please try again in a moment.";
@@ -748,11 +898,13 @@ export class NotionAdapter extends ServiceAdapter {
             filter,
             sort,
             page_size = 25,
+            include_parent = false,
         } = params as {
             query: string;
             filter?: { property: string; value: string };
             sort?: { direction: string; timestamp: string };
             page_size?: number;
+            include_parent?: boolean;
         };
 
         // Cap page_size between 1 and MAX_PAGE_SIZE (100)
@@ -789,6 +941,12 @@ export class NotionAdapter extends ServiceAdapter {
                     properties?: Record<string, unknown>;
                     title?: Array<{ plain_text: string }>;
                     url: string;
+                    parent?: {
+                        type: string;
+                        page_id?: string;
+                        database_id?: string;
+                        workspace?: boolean;
+                    };
                 }>;
                 has_more: boolean;
                 next_cursor: string | null;
@@ -801,6 +959,85 @@ export class NotionAdapter extends ServiceAdapter {
                 results: [],
                 message: "No pages or databases found matching your search.",
             });
+        }
+
+        // Build a map of parent IDs to fetch
+        const parentIdsToFetch: Set<string> = new Set();
+        if (include_parent) {
+            for (const result of response.results) {
+                if (result.parent?.page_id) {
+                    parentIdsToFetch.add(result.parent.page_id);
+                } else if (result.parent?.database_id) {
+                    parentIdsToFetch.add(result.parent.database_id);
+                }
+            }
+        }
+
+        // Fetch parent titles in parallel (if include_parent is true)
+        const parentTitles: Map<string, string> = new Map();
+        if (include_parent && parentIdsToFetch.size > 0) {
+            const parentFetches = Array.from(parentIdsToFetch).map(async (parentId) => {
+                try {
+                    // Try fetching as page first
+                    const pageResponse = await httpClient
+                        .get(
+                            `${NOTION_API_BASE}/v1/pages/${normalizeNotionId(parentId)}`,
+                            { headers: this.buildHeaders(accessToken) }
+                        )
+                        .json<{
+                            id: string;
+                            properties?: Record<string, unknown>;
+                        }>();
+
+                    // Extract title from properties
+                    if (pageResponse.properties) {
+                        const titleProp = Object.values(pageResponse.properties).find(
+                            (
+                                prop
+                            ): prop is {
+                                type: string;
+                                title?: Array<{ plain_text: string }>;
+                            } =>
+                                typeof prop === "object" &&
+                                prop !== null &&
+                                "type" in prop &&
+                                prop.type === "title"
+                        );
+                        if (titleProp?.title?.[0]?.plain_text) {
+                            parentTitles.set(parentId, titleProp.title[0].plain_text);
+                            return;
+                        }
+                    }
+                    parentTitles.set(parentId, "Untitled");
+                } catch {
+                    // Might be a database, try that
+                    try {
+                        const dbResponse = await httpClient
+                            .get(
+                                `${NOTION_API_BASE}/v1/databases/${normalizeNotionId(parentId)}`,
+                                { headers: this.buildHeaders(accessToken) }
+                            )
+                            .json<{
+                                id: string;
+                                title?: Array<{ plain_text: string }>;
+                            }>();
+
+                        if (dbResponse.title?.[0]?.plain_text) {
+                            parentTitles.set(
+                                parentId,
+                                `📊 ${dbResponse.title[0].plain_text}`
+                            );
+                        } else {
+                            parentTitles.set(parentId, "📊 Untitled Database");
+                        }
+                    } catch {
+                        // Parent not accessible
+                        parentTitles.set(parentId, "[Parent not accessible]");
+                    }
+                }
+            });
+
+            await Promise.all(parentFetches);
         }
 
         // Format results for readability
@@ -827,13 +1064,61 @@ export class NotionAdapter extends ServiceAdapter {
                 }
             }
 
-            return {
+            // Build parent context if requested
+            let parent_context:
+                | {
+                      type: string;
+                      id?: string;
+                      title?: string;
+                  }
+                | undefined;
+
+            if (include_parent && result.parent) {
+                if (result.parent.page_id) {
+                    parent_context = {
+                        type: "page",
+                        id: result.parent.page_id,
+                        title: parentTitles.get(result.parent.page_id),
+                    };
+                } else if (result.parent.database_id) {
+                    parent_context = {
+                        type: "database",
+                        id: result.parent.database_id,
+                        title: parentTitles.get(result.parent.database_id),
+                    };
+                } else if (result.parent.workspace) {
+                    parent_context = {
+                        type: "workspace",
+                        title: "Workspace (top-level)",
+                    };
+                }
+            }
+
+            const formatted: {
+                id: string;
+                type: string;
+                title: string;
+                url: string;
+                last_edited: string;
+                parent?: { type: string; id?: string; title?: string };
+                location?: string;
+            } = {
                 id: result.id,
                 type: result.object,
                 title,
                 url: result.url,
                 last_edited: result.last_edited_time,
             };
+
+            if (parent_context) {
+                formatted.parent = parent_context;
+                // Create human-readable location string
+                formatted.location = parent_context.title
+                    ? `in "${parent_context.title}"`
+                    : `in ${parent_context.type}`;
+            }
+
+            return formatted;
         });
 
         return this.createJSONResponse({
@@ -843,7 +1128,9 @@ export class NotionAdapter extends ServiceAdapter {
             results: formattedResults,
             note: response.has_more
                 ? "More results available - refine the search query or use pagination to see additional pages."
-                : "These are all matching results - use the URLs to reference specific pages.",
+                : include_parent
+                  ? "Results include parent context showing where each item lives in your workspace."
+                  : "These are all matching results - use the URLs to reference specific pages. Use include_parent:true to see where each result lives.",
         });
     }
 
@@ -1565,6 +1852,62 @@ export class NotionAdapter extends ServiceAdapter {
         });
     }
 
+    private async handleListComments(
+        params: unknown,
+        accessToken: string
+    ): Promise<MCPToolResponse> {
+        const { block_id } = params as { block_id: string };
+        const normalizedBlockId = normalizeNotionId(block_id);
+
+        const response = await httpClient
+            .get(`${NOTION_API_BASE}/v1/comments?block_id=${normalizedBlockId}`, {
+                headers: this.buildHeaders(accessToken),
+            })
+            .json<{
+                results: Array<{
+                    id: string;
+                    created_time: string;
+                    created_by: { id: string; object: string };
+                    rich_text: Array<{
+                        type: string;
+                        text?: { content: string; link?: { url: string } };
+                        annotations?: {
+                            bold: boolean;
+                            italic: boolean;
+                            strikethrough: boolean;
+                            underline: boolean;
+                            code: boolean;
+                        };
+                    }>;
+                    discussion_id?: string;
+                }>;
+                has_more: boolean;
+                next_cursor: string | null;
+            }>();
+
+        const comments = response.results.map((comment) => ({
+            id: comment.id,
+            created_time: comment.created_time,
+            created_by_id: comment.created_by.id,
+            discussion_id: comment.discussion_id,
+            rich_text: comment.rich_text,
+            // Convert rich text to readable markdown
+            content_markdown: richTextToMarkdown(comment.rich_text),
+        }));
+
+        return this.createJSONResponse({
+            block_id,
+            totalCount: comments.length,
+            has_more: response.has_more,
+            next_cursor: response.next_cursor,
+            comments,
+            note:
+                comments.length === 0
+                    ? "No comments found on this page."
+                    : "Comments include both raw rich_text (for Notion API calls) and content_markdown (for readability).",
+        });
+    }
+
     private async handleListUsers(accessToken: string): Promise<MCPToolResponse> {
         const response = await httpClient
             .get(`${NOTION_API_BASE}/v1/users`, {
@@ -1704,16 +2047,19 @@ export class NotionAdapter extends ServiceAdapter {
 
             let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
+                const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
                 if (error.message.includes("404")) {
                     errorMessage +=
                         "Endpoint not found. Check the Notion API documentation for the correct endpoint path: " +
                         "https://developers.notion.com/reference/intro";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+                } else if (error.message.includes("401")) {
                     errorMessage += `Authentication failed. Your Notion connection may have expired. Please reconnect at: ${appUrl}/integrations/notion`;
+                } else if (error.message.includes("403")) {
+                    errorMessage +=
+                        "Permission denied. The resource isn't shared with the Carmenta integration. " +
+                        "Share the page/database in Notion via Connections → Add 'Carmenta'. " +
+                        `If already shared, check workspace settings or reconnect at: ${appUrl}/integrations/notion`;
                 } else {
                     errorMessage += error.message;
                 }
