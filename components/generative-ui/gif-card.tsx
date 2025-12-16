@@ -141,7 +141,9 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         },
                         "GIF failed to load"
                     );
-                    Sentry.captureException(e, {
+                    // Create Error object for Sentry (don't pass SyntheticEvent)
+                    const error = new Error(`GIF failed to load: ${imageUrl}`);
+                    Sentry.captureException(error, {
                         tags: { component: "gif-card" },
                         extra: { gifId: gif.id, imageUrl },
                     });
