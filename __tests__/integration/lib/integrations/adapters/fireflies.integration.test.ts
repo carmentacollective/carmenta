@@ -388,8 +388,8 @@ describeIf("FirefliesAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            // Error message format: "We need the query parameter"
-            expect(result.content[0].text).toMatch(/missing.*query|query.*required/i);
+            // Carmenta-copy friendly error message
+            expect(result.content[0].text).toMatch(/We need the query parameter/i);
         });
 
         it("handles GraphQL variables", async () => {
