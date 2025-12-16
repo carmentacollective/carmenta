@@ -9,18 +9,27 @@ import { test, expect } from "@playwright/test";
  * Next.js 16 export default vs export const proxy issue.
  *
  * Requires environment variables:
+ * - CLERK_PUBLISHABLE_KEY (or NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+ * - CLERK_SECRET_KEY
  * - E2E_CLERK_USER_EMAIL: Test user email
  * - E2E_CLERK_USER_PASSWORD: Test user password
  *
- * Tests are skipped if credentials are not configured.
+ * Tests are skipped if any required credentials are not configured.
  */
 
 const testUserEmail = process.env.E2E_CLERK_USER_EMAIL;
 const testUserPassword = process.env.E2E_CLERK_USER_PASSWORD;
-const hasCredentials = testUserEmail && testUserPassword;
+const hasClerkKeys =
+    (process.env.CLERK_PUBLISHABLE_KEY ||
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
+    process.env.CLERK_SECRET_KEY;
+const hasCredentials = testUserEmail && testUserPassword && hasClerkKeys;
 
 test.describe("Authenticated User Redirects", () => {
-    test.skip(!hasCredentials, "Skipping: E2E_CLERK_USER_* credentials not set");
+    test.skip(
+        !hasCredentials,
+        "Skipping: Clerk API keys or E2E_CLERK_USER_* credentials not set"
+    );
 
     test("authenticated users on homepage are redirected to /connection", async ({
         page,
