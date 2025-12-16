@@ -138,7 +138,7 @@ describe("DropboxAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: path/);
+            expect(result.errors[0]).toMatch(/We need the path parameter/);
         });
 
         it("validates required parameters for search_files", () => {
@@ -146,7 +146,7 @@ describe("DropboxAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
+            expect(result.errors[0]).toMatch(/We need the query parameter/);
         });
     });
 

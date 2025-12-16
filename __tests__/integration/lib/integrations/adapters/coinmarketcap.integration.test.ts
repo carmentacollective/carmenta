@@ -355,12 +355,8 @@ describeIf("CoinMarketCapAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: amount/
-            );
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: convert/
-            );
+            expect(result.content[0].text).toMatch(/We need the amount parameter/);
+            expect(result.content[0].text).toMatch(/We need the convert parameter/);
         });
 
         it("requires either symbol or id", async () => {
@@ -466,9 +462,7 @@ describeIf("CoinMarketCapAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: endpoint/
-            );
+            expect(result.content[0].text).toMatch(/We need the endpoint parameter/);
         });
 
         it("requires method parameter", async () => {
@@ -481,9 +475,7 @@ describeIf("CoinMarketCapAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: method/
-            );
+            expect(result.content[0].text).toMatch(/We need the method parameter/);
         });
     });
 });

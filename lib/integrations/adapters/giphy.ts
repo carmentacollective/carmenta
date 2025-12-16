@@ -42,14 +42,17 @@ export class GiphyAdapter extends ServiceAdapter {
             operations: [
                 {
                     name: "search",
-                    description: "Search for GIFs on Giphy with a query string",
+                    description:
+                        "Search for GIFs on Giphy. " +
+                        'REQUIRED: You must provide a query parameter with the search term (e.g., query: "funny cats").',
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
                             name: "query",
                             type: "string",
                             required: true,
-                            description: "Search query term or phrase",
+                            description:
+                                'REQUIRED search term - what GIFs to find (e.g., "funny cats", "celebration", "thank you")',
                             example: "funny cats",
                         },
                         {

@@ -700,7 +700,7 @@ describe("TwitterAdapter", () => {
 
             expect(validation.valid).toBe(false);
             expect(validation.errors.length).toBeGreaterThan(0);
-            expect(validation.errors[0]).toMatch(/Missing required parameter: text/);
+            expect(validation.errors[0]).toMatch(/We need the text parameter/);
         });
 
         it("accepts valid parameters", () => {
@@ -716,7 +716,7 @@ describe("TwitterAdapter", () => {
             const validation = adapter.validate("unknown_action", {});
 
             expect(validation.valid).toBe(false);
-            expect(validation.errors[0]).toContain("Unknown action");
+            expect(validation.errors[0]).toContain("We don't recognize");
         });
     });
 });

@@ -365,7 +365,9 @@ export abstract class ServiceAdapter {
         if (!operation) {
             return {
                 valid: false,
-                errors: [`Unknown action: ${action}`],
+                errors: [
+                    `We don't recognize "${action}". Use action='describe' to see available operations.`,
+                ],
             };
         }
 
@@ -375,7 +377,9 @@ export abstract class ServiceAdapter {
         if (typeof params !== "object" || params === null || Array.isArray(params)) {
             return {
                 valid: false,
-                errors: ["Parameters must be an object"],
+                errors: [
+                    'We need parameters as an object (e.g., { query: "search term" })',
+                ],
             };
         }
 
@@ -383,8 +387,9 @@ export abstract class ServiceAdapter {
 
         for (const param of operation.parameters) {
             if (param.required && !(param.name in paramsObj)) {
-                const exampleHint = param.example ? ` (example: ${param.example})` : "";
-                errors.push(`Missing required parameter: ${param.name}${exampleHint}`);
+                // Carmenta-copy friendly: warm but helpful for both LLM retry and user display
+                const exampleHint = param.example ? ` (e.g., "${param.example}")` : "";
+                errors.push(`We need the ${param.name} parameter${exampleHint}`);
             }
         }
 

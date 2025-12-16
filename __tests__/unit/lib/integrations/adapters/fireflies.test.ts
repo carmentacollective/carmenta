@@ -215,9 +215,7 @@ describe("FirefliesAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(
-                /Missing required parameter: transcriptId/
-            );
+            expect(result.errors[0]).toMatch(/We need the transcriptId parameter/);
         });
 
         it("validates required parameters for search_transcripts", () => {
@@ -225,7 +223,7 @@ describe("FirefliesAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
+            expect(result.errors[0]).toMatch(/We need the query parameter/);
         });
 
         it("accepts valid parameters", () => {

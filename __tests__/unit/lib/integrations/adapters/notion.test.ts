@@ -153,7 +153,7 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
+            expect(result.errors[0]).toMatch(/We need the query parameter/);
         });
 
         it("validates required parameters for get_page", () => {
@@ -161,7 +161,7 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: page_id/);
+            expect(result.errors[0]).toMatch(/We need the page_id parameter/);
         });
 
         it("validates required parameters for create_page", () => {
@@ -376,7 +376,7 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: block_id/);
+            expect(result.errors[0]).toMatch(/We need the block_id parameter/);
         });
 
         it("fetches comments from a page", async () => {

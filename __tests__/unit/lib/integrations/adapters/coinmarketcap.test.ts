@@ -280,7 +280,8 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/Missing required parameter: convert/);
+            // Carmenta-copy friendly error message
+            expect(result.errors[0]).toMatch(/We need the convert parameter/);
         });
 
         it("accepts zero as valid amount for convert_price", () => {
@@ -308,8 +309,9 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute("get_quotes", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
+            // Carmenta-copy friendly error message
             expect(result.content[0].text).toContain(
-                "At least one of symbol, id, or slug is required"
+                "We need a cryptocurrency to look up"
             );
         });
 

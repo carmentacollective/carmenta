@@ -555,7 +555,7 @@ describe("GmailAdapter", () => {
             const result = await adapter.execute("unknown_action", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Unknown action");
+            expect(result.content[0].text).toContain("We don't recognize");
         });
     });
 

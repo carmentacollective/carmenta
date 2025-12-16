@@ -186,7 +186,7 @@ describeIf("FirefliesAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toMatch(
-                /Missing required parameter: transcriptId/
+                /We need the transcriptId parameter/
             );
         });
 
@@ -271,7 +271,7 @@ describeIf("FirefliesAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(/Missing required parameter: query/);
+            expect(result.content[0].text).toMatch(/We need the query parameter/);
         });
     });
 
@@ -358,7 +358,7 @@ describeIf("FirefliesAdapter - Real API Integration", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toMatch(
-                /Missing required parameter: transcriptId/
+                /We need the transcriptId parameter/
             );
         });
     });
@@ -388,7 +388,7 @@ describeIf("FirefliesAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            // Error message format: "Missing required parameter: query"
+            // Error message format: "We need the query parameter"
             expect(result.content[0].text).toMatch(/missing.*query|query.*required/i);
         });
 

@@ -142,7 +142,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(/Missing required parameter: query/);
+            expect(result.content[0].text).toMatch(/We need the query parameter/);
         });
     });
 
@@ -274,9 +274,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: lifelogId/
-            );
+            expect(result.content[0].text).toMatch(/We need the lifelogId parameter/);
         });
 
         it("handles invalid lifelog ID gracefully", async () => {
@@ -343,9 +341,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: lifelogId/
-            );
+            expect(result.content[0].text).toMatch(/We need the lifelogId parameter/);
         });
     });
 
@@ -462,9 +458,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: chatId/
-            );
+            expect(result.content[0].text).toMatch(/We need the chatId parameter/);
         });
 
         it("handles invalid chat ID gracefully", async () => {
@@ -539,9 +533,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: startTime/
-            );
+            expect(result.content[0].text).toMatch(/We need the startTime parameter/);
         });
 
         it("validates required endTime parameter", async () => {
@@ -555,9 +547,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: endTime/
-            );
+            expect(result.content[0].text).toMatch(/We need the endTime parameter/);
         });
     });
 
@@ -573,9 +563,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: lifelogId/
-            );
+            expect(result.content[0].text).toMatch(/We need the lifelogId parameter/);
         });
 
         // Note: We intentionally do NOT test actual deletion to protect user data
@@ -593,9 +581,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: chatId/
-            );
+            expect(result.content[0].text).toMatch(/We need the chatId parameter/);
         });
 
         // Note: We intentionally do NOT test actual deletion to protect user data
@@ -643,9 +629,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: endpoint/
-            );
+            expect(result.content[0].text).toMatch(/We need the endpoint parameter/);
         });
 
         it("validates required method parameter", async () => {
@@ -658,9 +642,7 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /Missing required parameter: method/
-            );
+            expect(result.content[0].text).toMatch(/We need the method parameter/);
         });
 
         it("supports query parameters in raw API calls", async () => {
