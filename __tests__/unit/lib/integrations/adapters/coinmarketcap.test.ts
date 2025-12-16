@@ -137,7 +137,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe(
-                "Invalid API key. Please check your key and try again."
+                "That API key isn't valid. Please check your key."
             );
         });
 
@@ -151,7 +151,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe(
-                "API key doesn't have permission. Check your subscription plan."
+                "That API key doesn't have permission. Check your subscription plan."
             );
         });
 
@@ -167,7 +167,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe(
-                "Rate limit exceeded. Please wait a moment and try again."
+                "CoinMarketCap rate limit hit. Please wait a moment."
             );
         });
 
@@ -180,7 +180,9 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("test-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe("Connection test failed: Network timeout");
+            expect(result.error).toBe(
+                "We couldn't test that connection. The monitoring caught it. 🤖"
+            );
         });
     });
 
@@ -200,7 +202,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap is not connected to your account"
+                "CoinMarketCap isn't connected to your account"
             );
             expect(result.content[0].text).toContain("integrations/coinmarketcap");
         });
@@ -273,7 +275,7 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "CoinMarketCap is not connected to your account"
+                "CoinMarketCap isn't connected to your account"
             );
         });
     });
@@ -500,7 +502,7 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 subscription plan errors", async () => {

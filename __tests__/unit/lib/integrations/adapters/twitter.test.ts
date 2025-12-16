@@ -674,7 +674,7 @@ describe("TwitterAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles connection reset errors gracefully", async () => {

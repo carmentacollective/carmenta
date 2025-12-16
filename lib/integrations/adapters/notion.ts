@@ -707,32 +707,32 @@ export class NotionAdapter extends ServiceAdapter {
             });
 
             // User-friendly error message
-            let errorMessage = `Failed to ${action}: `;
+            let errorMessage = `We couldn't ${action}: `;
             if (error instanceof Error) {
                 // Parse common error types
                 if (error.message.includes("404")) {
                     errorMessage +=
-                        "The requested resource was not found. Check that the page/database ID is correct and that the integration has access.";
+                        "That resource doesn't exist. Check that the page/database ID is correct and that the integration has access.";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
                     const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-                    errorMessage += `Authentication failed. Your Notion connection may have expired. Please reconnect at: ${appUrl}/integrations/notion`;
+                    errorMessage += `Authentication failed. Your Notion connection may have expired. Reconnect at: ${appUrl}/integrations/notion`;
                 } else if (error.message.includes("429")) {
                     errorMessage +=
-                        "Rate limit exceeded (3 requests/second). Please try again in a moment.";
+                        "Notion rate limit hit (3 requests/second). Please wait a moment.";
                 } else if (
                     error.message.includes("500") ||
                     error.message.includes("503")
                 ) {
                     errorMessage +=
-                        "Notion service is temporarily unavailable. Please try again later.";
+                        "Notion is temporarily unavailable. Please try again later.";
                 } else {
                     errorMessage += error.message;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage += "The bots have been alerted. 🤖";
             }
 
             return this.createErrorResponse(errorMessage);

@@ -389,30 +389,29 @@ export class DropboxAdapter extends ServiceAdapter {
             });
 
             // User-friendly error message
-            let errorMessage = `Failed to ${action}: `;
+            let errorMessage = `We couldn't ${action}: `;
             if (error instanceof Error) {
                 // Parse common error types
                 if (
                     error.message.includes("404") ||
                     error.message.includes("not_found")
                 ) {
-                    errorMessage += "File or folder not found.";
+                    errorMessage += "That file or folder doesn't exist.";
                 } else if (
                     error.message.includes("401") ||
                     error.message.includes("403")
                 ) {
                     errorMessage +=
-                        "Authentication failed. Your Dropbox connection may have expired. Please reconnect at: " +
+                        "Authentication failed. Your Dropbox connection may have expired. Reconnect at: " +
                         `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`;
                 } else if (error.message.includes("429")) {
-                    errorMessage +=
-                        "Rate limit exceeded. Please try again in a few moments.";
+                    errorMessage += "Dropbox rate limit hit. Please wait a moment.";
                 } else if (
                     error.message.includes("500") ||
                     error.message.includes("503")
                 ) {
                     errorMessage +=
-                        "Dropbox service is temporarily unavailable. Please try again later.";
+                        "Dropbox is temporarily unavailable. Please try again later.";
                 } else if (error.message.includes("conflict")) {
                     errorMessage +=
                         "A file or folder with that name already exists at this location.";
@@ -423,7 +422,7 @@ export class DropboxAdapter extends ServiceAdapter {
                     errorMessage += error.message;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage += "The bots have been alerted. 🤖";
             }
 
             return this.createErrorResponse(errorMessage);
@@ -973,7 +972,7 @@ export class DropboxAdapter extends ServiceAdapter {
                     errorMessage += error.message;
                 }
             } else {
-                errorMessage += "Unknown error";
+                errorMessage += "The bots have been alerted. 🤖";
             }
 
             return this.createErrorResponse(errorMessage);

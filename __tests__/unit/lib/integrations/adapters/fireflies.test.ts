@@ -128,7 +128,7 @@ describe("FirefliesAdapter", () => {
             const result = await adapter.testConnection("invalid-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("Invalid API key");
+            expect(result.error).toContain("That API key isn't valid");
         });
 
         it("returns error for GraphQL errors", async () => {
@@ -155,7 +155,7 @@ describe("FirefliesAdapter", () => {
             const result = await adapter.testConnection("rate-limited-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("Rate limit");
+            expect(result.error).toContain("rate limit hit");
         });
     });
 
@@ -171,7 +171,7 @@ describe("FirefliesAdapter", () => {
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain(
-                "Fireflies.ai is not connected to your account"
+                "Fireflies.ai isn't connected to your account"
             );
             expect(result.content[0].text).toContain("integrations/fireflies");
         });
@@ -378,7 +378,7 @@ describe("FirefliesAdapter", () => {
             const result = await adapter.execute("list_transcripts", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Rate limit exceeded");
+            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 permission errors", async () => {
