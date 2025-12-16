@@ -282,4 +282,318 @@ describe("SlackAdapter", () => {
             );
         });
     });
+
+    describe("New Operations - Message Search", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "Test Workspace (testuser)",
+                accountDisplayName: "Test Workspace workspace",
+                isDefault: true,
+            });
+        });
+
+        it("executes search_messages with rate limit headers", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            const mockHeaders = new Headers({
+                "x-rate-limit-remaining": "50",
+                "x-rate-limit-limit": "100",
+                "x-rate-limit-reset": "1234567890",
+            });
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    messages: {
+                        total: 2,
+                        matches: [
+                            {
+                                channel: { id: "C123", name: "general" },
+                                type: "message",
+                                text: "Q4 goals discussion",
+                                ts: "1234567890.123456",
+                                username: "alice",
+                                permalink: "https://slack.com/...",
+                            },
+                        ],
+                    },
+                }),
+                headers: mockHeaders,
+            } as never);
+
+            const result = await adapter.execute(
+                "search_messages",
+                { query: "Q4 goals", count: 20 },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text!);
+            expect(response.query).toBe("Q4 goals");
+            expect(response.total).toBe(2);
+            expect(response.results).toHaveLength(1);
+            expect(response.rate_limit).toBeDefined();
+            expect(response.rate_limit.remaining).toBe(50);
+        });
+
+        it("validates required query parameter", () => {
+            const result = adapter.validate("search_messages", { count: 20 });
+
+            expect(result.valid).toBe(false);
+            expect(result.errors[0]).toMatch(/Missing required parameter: query/);
+        });
+    });
+
+    describe("New Operations - Message Editing", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "Test Workspace (testuser)",
+                accountDisplayName: "Test Workspace workspace",
+                isDefault: true,
+            });
+        });
+
+        it("executes update_message successfully", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    ts: "1234567890.123456",
+                    channel: "C123",
+                    text: "Updated text",
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "update_message",
+                {
+                    channel: "C123",
+                    timestamp: "1234567890.123456",
+                    text: "Updated text",
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            expect(httpClient.post).toHaveBeenCalled();
+        });
+
+        it("handles cant_update_message permission error", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: false,
+                    error: "cant_update_message",
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "update_message",
+                {
+                    channel: "C123",
+                    timestamp: "1234567890.123456",
+                    text: "Updated text",
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain(
+                "You can only edit messages you sent"
+            );
+        });
+    });
+
+    describe("New Operations - Message Deletion", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "Test Workspace (testuser)",
+                accountDisplayName: "Test Workspace workspace",
+                isDefault: true,
+            });
+        });
+
+        it("executes delete_message successfully", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    ts: "1234567890.123456",
+                    channel: "C123",
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "delete_message",
+                {
+                    channel: "C123",
+                    timestamp: "1234567890.123456",
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text!);
+            expect(response.deleted).toBe(true);
+        });
+
+        it("handles message_not_found error", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: false,
+                    error: "message_not_found",
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "delete_message",
+                {
+                    channel: "C123",
+                    timestamp: "1234567890.123456",
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain(
+                "Message not found. It may have already been deleted"
+            );
+        });
+    });
+
+    describe("New Operations - Workspace Info", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "Test Workspace (testuser)",
+                accountDisplayName: "Test Workspace workspace",
+                isDefault: true,
+            });
+        });
+
+        it("executes get_workspace_info successfully", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    team: {
+                        id: "T123",
+                        name: "Test Workspace",
+                        domain: "test-workspace",
+                        email_domain: "example.com",
+                        icon: {
+                            image_original: "https://example.com/icon.png",
+                        },
+                    },
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "get_workspace_info",
+                {},
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text!);
+            expect(response.name).toBe("Test Workspace");
+            expect(response.domain).toBe("test-workspace");
+        });
+    });
+
+    describe("New Operations - Pagination", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "Test Workspace (testuser)",
+                accountDisplayName: "Test Workspace workspace",
+                isDefault: true,
+            });
+        });
+
+        it("handles pagination cursor in list_channels", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    channels: [
+                        {
+                            id: "C123",
+                            name: "general",
+                            is_channel: true,
+                            is_group: false,
+                            is_im: false,
+                            is_mpim: false,
+                            is_private: false,
+                            num_members: 10,
+                        },
+                    ],
+                    response_metadata: {
+                        next_cursor: "dXNlcjpVMDYxTkZUVDI=",
+                    },
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_channels",
+                { cursor: "previous_cursor" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text!);
+            expect(response.has_more).toBe(true);
+            expect(response.next_cursor).toBe("dXNlcjpVMDYxTkZUVDI=");
+        });
+
+        it("handles pagination cursor in get_channel_history", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    ok: true,
+                    messages: [
+                        {
+                            type: "message",
+                            text: "Hello",
+                            user: "U123",
+                            ts: "1234567890.123456",
+                        },
+                    ],
+                    has_more: true,
+                    response_metadata: {
+                        next_cursor: "bmV4dF9jdXJzb3I=",
+                    },
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "get_channel_history",
+                { channel: "C123", cursor: "previous_cursor" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const response = JSON.parse(result.content[0].text!);
+            expect(response.has_more).toBe(true);
+            expect(response.next_cursor).toBe("bmV4dF9jdXJzb3I=");
+        });
+    });
 });
