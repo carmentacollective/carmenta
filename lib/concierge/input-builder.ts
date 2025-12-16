@@ -142,7 +142,7 @@ export function buildConciergeInput(
 
     // Build recent context
     const recentMessages = messages.slice(-4); // Last 4 messages for context
-    const lastAssistantMessage = recentMessages
+    const lastAssistantMessage = [...recentMessages]
         .reverse()
         .find((m) => m.role === "assistant");
     const previousUserMessage = recentMessages

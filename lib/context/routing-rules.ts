@@ -21,19 +21,6 @@ import {
 import type { UIMessage } from "ai";
 
 /**
- * Context ladder: models ordered by context window size.
- * When context overflows, we climb to the next rung.
- */
-const CONTEXT_LADDER: ModelId[] = [
-    "anthropic/claude-opus-4.5", // 200K (smallest context, highest quality)
-    "anthropic/claude-haiku-4.5", // 200K (same size, faster)
-    "openai/gpt-5.2", // 400K
-    "google/gemini-3-pro-preview", // 1M
-    "anthropic/claude-sonnet-4.5", // 1M
-    "x-ai/grok-4.1-fast", // 2M (largest context)
-];
-
-/**
  * Audio-capable models. Currently only Gemini has native audio support.
  */
 const AUDIO_CAPABLE_MODELS = ["google/gemini-3-pro-preview"] as const;
@@ -308,4 +295,4 @@ function formatTokens(tokens: number): string {
     return String(tokens);
 }
 
-export { CONTEXT_LADDER, AUDIO_CAPABLE_MODELS, VIDEO_CAPABLE_MODELS };
+export { AUDIO_CAPABLE_MODELS, VIDEO_CAPABLE_MODELS };

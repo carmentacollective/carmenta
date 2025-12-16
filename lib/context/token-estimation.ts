@@ -71,8 +71,16 @@ function extractTextFromMessage(message: UIMessage): string {
 
 /**
  * Estimates token count for a string using character approximation.
+ * Accepts either provider name ("anthropic") or full model ID ("anthropic/claude-sonnet-4.5").
  */
-export function estimateTokens(text: string, provider: string = "default"): number {
+export function estimateTokens(
+    text: string,
+    providerOrModelId: string = "default"
+): number {
+    // Extract provider from model ID if needed (e.g., "anthropic/claude-sonnet-4.5" → "anthropic")
+    const provider = providerOrModelId.includes("/")
+        ? providerOrModelId.split("/")[0]
+        : providerOrModelId;
     const charsPerToken = CHARS_PER_TOKEN[provider] ?? CHARS_PER_TOKEN.default;
     return Math.ceil(text.length / charsPerToken);
 }
@@ -120,7 +128,8 @@ export function calculateContextUtilization(
     provider: string = "default"
 ): ContextUtilization {
     const estimatedTokens = estimateConversationTokens(messages, provider);
-    const utilizationPercent = estimatedTokens / contextLimit;
+    // Guard against division by zero with misconfigured models
+    const utilizationPercent = contextLimit > 0 ? estimatedTokens / contextLimit : 1.0;
     const safeLimit = contextLimit * CONTEXT_SAFETY_BUFFER;
     const availableTokens = Math.max(0, safeLimit - estimatedTokens);
 
