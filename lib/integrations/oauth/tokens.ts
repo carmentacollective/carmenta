@@ -213,12 +213,37 @@ export async function exchangeCodeForTokens(
         );
     }
 
-    // Parse token response
-    const accessToken = response.access_token as string;
-    const refreshToken = response.refresh_token as string | undefined;
-    const tokenType = (response.token_type as string) ?? "Bearer";
-    const expiresIn = response.expires_in as number | undefined;
-    const scope = response.scope as string | undefined;
+    // Parse token response - use provider-specific extraction if available
+    let accessToken: string;
+    let refreshToken: string | undefined;
+    let tokenType: string;
+    let expiresIn: number | undefined;
+    let scope: string | undefined;
+
+    if (provider.extractTokens) {
+        const extracted = provider.extractTokens(response);
+        if (extracted) {
+            accessToken = extracted.accessToken;
+            refreshToken = extracted.refreshToken;
+            tokenType = extracted.tokenType ?? "Bearer";
+            expiresIn = extracted.expiresIn;
+            scope = extracted.scope;
+        } else {
+            // Provider returned null, use standard extraction
+            accessToken = response.access_token as string;
+            refreshToken = response.refresh_token as string | undefined;
+            tokenType = (response.token_type as string) ?? "Bearer";
+            expiresIn = response.expires_in as number | undefined;
+            scope = response.scope as string | undefined;
+        }
+    } else {
+        // Standard OAuth token response format
+        accessToken = response.access_token as string;
+        refreshToken = response.refresh_token as string | undefined;
+        tokenType = (response.token_type as string) ?? "Bearer";
+        expiresIn = response.expires_in as number | undefined;
+        scope = response.scope as string | undefined;
+    }
 
     // Calculate expiration timestamp
     let expiresAt: number | undefined;
