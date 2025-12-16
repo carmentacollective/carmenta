@@ -1115,15 +1115,22 @@ export class SlackAdapter extends ServiceAdapter {
 
         const cappedCount = Math.min(Math.max(1, count || 20), 100);
 
+        // Build search params conditionally - don't send undefined values
+        const searchParams: Record<string, string> = {
+            query,
+            count: cappedCount.toString(),
+            sort,
+        };
+
+        // Only add sort_dir when sort is timestamp to avoid serializing undefined
+        if (sort === "timestamp") {
+            searchParams.sort_dir = "desc";
+        }
+
         // Get full response to extract rate limit headers
         const httpResponse = await httpClient.get(`${SLACK_API_BASE}/search.messages`, {
             headers: this.buildHeaders(accessToken),
-            searchParams: {
-                query,
-                count: cappedCount.toString(),
-                sort,
-                sort_dir: sort === "timestamp" ? "desc" : undefined,
-            },
+            searchParams,
         });
 
         const response = await httpResponse.json<{
