@@ -118,6 +118,7 @@ function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): stri
     return richText
         .map((element) => {
             let text = "";
+            let isLink = false; // Track if this element is a markdown link
 
             // Handle different element types
             if (element.type === "text" && element.text) {
@@ -126,6 +127,7 @@ function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): stri
                 // Apply link if present
                 if (element.text.link?.url) {
                     text = `[${text}](${element.text.link.url})`;
+                    isLink = true;
                 }
             } else if (element.type === "mention" && element.mention) {
                 // Handle mentions (user, page, database, date)
@@ -134,8 +136,10 @@ function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): stri
                     text = `@${mention.user.name || mention.user.id}`;
                 } else if (mention.type === "page" && mention.page) {
                     text = `[📄 page](notion://page/${mention.page.id})`;
+                    isLink = true;
                 } else if (mention.type === "database" && mention.database) {
                     text = `[📊 database](notion://database/${mention.database.id})`;
+                    isLink = true;
                 } else if (mention.type === "date" && mention.date) {
                     text = mention.date.end
                         ? `${mention.date.start} → ${mention.date.end}`
@@ -145,7 +149,7 @@ function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): stri
                     text = element.plain_text || "[mention]";
                 }
             } else if (element.type === "equation" && element.equation) {
-                // Wrap equations in backticks for code formatting
+                // Equations are already code-formatted, don't apply code annotation
                 text = `\`${element.equation.expression}\``;
             } else if (element.plain_text) {
                 // Fallback to plain_text for any other type
@@ -154,10 +158,12 @@ function richTextToMarkdown(richText: NotionRichTextElement[] | undefined): stri
 
             // Apply annotations (bold, italic, strikethrough, code)
             // Order matters: code should be innermost, then other formatting
+            // Skip code annotation for links (markdown links in backticks render as literal text)
             if (element.annotations) {
                 const { bold, italic, strikethrough, code } = element.annotations;
 
-                if (code) {
+                // Only apply code formatting if not already a link or equation
+                if (code && !isLink && element.type !== "equation") {
                     text = `\`${text}\``;
                 }
                 if (strikethrough) {

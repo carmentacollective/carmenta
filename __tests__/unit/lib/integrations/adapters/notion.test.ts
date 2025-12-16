@@ -492,6 +492,67 @@ describe("NotionAdapter", () => {
             expect(response.comments[0].content_markdown).toBe("**Bold** and *italic*");
         });
 
+        it("preserves links when code annotation is applied", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            const mockComments = {
+                results: [
+                    {
+                        id: "comment-link",
+                        created_time: "2024-01-15T10:00:00.000Z",
+                        created_by: { id: "user-789", object: "user" },
+                        rich_text: [
+                            {
+                                type: "text",
+                                text: {
+                                    content: "Click here",
+                                    link: { url: "https://example.com" },
+                                },
+                                annotations: {
+                                    bold: false,
+                                    italic: false,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: true, // Code annotation + link
+                                },
+                            },
+                            {
+                                type: "mention",
+                                mention: {
+                                    type: "page",
+                                    page: { id: "page-ref" },
+                                },
+                                annotations: {
+                                    bold: false,
+                                    italic: false,
+                                    strikethrough: false,
+                                    underline: false,
+                                    code: true, // Code annotation + page mention
+                                },
+                            },
+                        ],
+                    },
+                ],
+                has_more: false,
+                next_cursor: null,
+            };
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue(mockComments),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_comments",
+                { block_id: "page-123" },
+                testUserEmail
+            );
+
+            const response = JSON.parse(result.content[0].text as string);
+            // Links should be preserved, not wrapped in backticks
+            expect(response.comments[0].content_markdown).toBe(
+                "[Click here](https://example.com)[📄 page](notion://page/page-ref)"
+            );
+        });
+
         it("handles empty comments gracefully", async () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.get as Mock).mockReturnValue({
