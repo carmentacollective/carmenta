@@ -12,6 +12,64 @@
 export type ReasoningEffort = "high" | "medium" | "low" | "none";
 
 /**
+ * Lightweight input for the Concierge.
+ *
+ * Instead of passing the full message array, we extract metadata
+ * to reduce token usage and improve routing speed.
+ */
+export interface ConciergeInput {
+    /** Current user message content */
+    currentMessage: {
+        content: string;
+        role: "user";
+    };
+
+    /** Recent conversation context for continuity (e.g., "tell me more") */
+    recentContext: {
+        /** Number of messages in the conversation */
+        messageCount: number;
+        /** Last assistant message text (truncated) for context */
+        lastAssistantMessage?: string;
+        /** Last user message text (truncated) for context */
+        lastUserMessage?: string;
+        /** How many exchanges have occurred */
+        conversationDepth: number;
+    };
+
+    /** Attachment metadata (type, size, name - NOT content) */
+    attachments: Array<{
+        type: "image" | "pdf" | "audio" | "video" | "file";
+        size?: number;
+        name?: string;
+        mimeType: string;
+    }>;
+
+    /** Context window utilization info */
+    contextMetadata: {
+        /** Estimated tokens in the conversation */
+        estimatedCurrentTokens: number;
+        /** Current model being considered */
+        currentModel?: string;
+        /** Model's context window limit */
+        modelContextLimit?: number;
+        /** Utilization as a percentage (0-1) */
+        utilizationPercent?: number;
+    };
+
+    /** User signals/overrides */
+    userSignals?: {
+        /** User explicitly requested this model */
+        requestedModel?: string;
+        /** User explicitly requested this temperature */
+        requestedTemperature?: number;
+        /** User explicitly requested this reasoning level */
+        requestedReasoning?: string;
+        /** Additional hints from user input */
+        hints?: string[];
+    };
+}
+
+/**
  * Configuration for extended reasoning/thinking.
  *
  * Different models use different mechanisms:
@@ -64,10 +122,30 @@ export interface ConciergeResult {
     title?: string;
 
     /**
-     * Whether the model was auto-switched due to attachment requirements.
-     * True when attachments force a specific model (e.g., audio → Gemini).
+     * Whether the model was auto-switched due to technical requirements.
+     * True when attachments or context overflow force a specific model.
      */
     autoSwitched?: boolean;
+
+    /**
+     * Reason for auto-switching, shown to user.
+     * Examples:
+     * - "Audio file detected - routing to Gemini for native audio processing"
+     * - "Conversation exceeds 200K context - switched to GPT-5.2"
+     */
+    autoSwitchReason?: string;
+
+    /**
+     * Context utilization metrics at time of routing.
+     * Useful for UI indicators and debugging.
+     */
+    contextUtilization?: {
+        estimatedTokens: number;
+        contextLimit: number;
+        utilizationPercent: number;
+        isWarning: boolean;
+        isCritical: boolean;
+    };
 }
 
 /**

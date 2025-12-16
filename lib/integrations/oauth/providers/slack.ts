@@ -17,6 +17,38 @@ export const slackProvider: OAuthProviderConfig = {
     authorizationUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/oauth/v2/access",
 
+    // Use user_scope parameter for user tokens (not scope, which is for bot tokens)
+    scopeParamName: "user_scope",
+
+    /**
+     * Extract tokens from Slack's user token response.
+     * For user tokens, Slack returns the access token in authed_user.access_token
+     * (not at the root level like most providers).
+     */
+    extractTokens: (response) => {
+        const authedUser = response.authed_user as
+            | {
+                  access_token: string;
+                  token_type?: string;
+                  scope?: string;
+              }
+            | undefined;
+
+        if (!authedUser?.access_token) {
+            // No user token in response - might be bot-only response or error
+            return null; // Fall back to standard extraction
+        }
+
+        return {
+            accessToken: authedUser.access_token,
+            tokenType: authedUser.token_type ?? "user",
+            scope: authedUser.scope,
+            // Slack user tokens don't expire
+            refreshToken: undefined,
+            expiresIn: undefined,
+        };
+    },
+
     // Scopes for user token (user operations, not bot)
     // Reference: https://api.slack.com/scopes
     scopes: [

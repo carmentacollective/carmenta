@@ -34,11 +34,19 @@ import {
 
 export type {
     ConciergeResult,
+    ConciergeInput,
     ReasoningConfig,
     ReasoningEffort,
     OpenRouterEffort,
 } from "./types";
 export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
+
+// Export input builder functions
+export {
+    buildConciergeInput,
+    getAttachmentTypesFromInput,
+    type BuildConciergeInputOptions,
+} from "./input-builder";
 
 // Re-export internal functions for testing
 export {

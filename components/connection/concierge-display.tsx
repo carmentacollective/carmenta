@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { ChevronDown, Brain, Check, Loader2 } from "lucide-react";
+import { ChevronDown, Brain, Check, Loader2, ArrowRightLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -106,6 +106,18 @@ interface ConciergeDisplayProps {
     messageSeed?: string;
     /** Additional CSS classes */
     className?: string;
+    /** Whether the model was auto-switched due to technical requirements */
+    autoSwitched?: boolean;
+    /** Reason for auto-switching (shown to user) */
+    autoSwitchReason?: string;
+    /** Context utilization metrics */
+    contextUtilization?: {
+        estimatedTokens: number;
+        contextLimit: number;
+        utilizationPercent: number;
+        isWarning: boolean;
+        isCritical: boolean;
+    };
 }
 
 /**
@@ -129,6 +141,9 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     avatarState = "idle",
     messageSeed = "default",
     className,
+    autoSwitched,
+    autoSwitchReason,
+    contextUtilization,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
     const hasSelected = Boolean(modelId);
@@ -284,6 +299,40 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                         >
                                             <Check className="h-3.5 w-3.5 text-green-500/70" />
                                         </motion.div>
+                                        {/* Auto-switch indicator */}
+                                        {autoSwitched && autoSwitchReason && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <motion.div
+                                                        initial={{
+                                                            opacity: 0,
+                                                            scale: 0,
+                                                        }}
+                                                        animate={{
+                                                            opacity: 1,
+                                                            scale: 1,
+                                                        }}
+                                                        transition={{
+                                                            delay: 0.2,
+                                                            type: "spring",
+                                                            stiffness: 400,
+                                                            damping: 15,
+                                                        }}
+                                                        className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5"
+                                                    >
+                                                        <ArrowRightLeft className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                                    </motion.div>
+                                                </TooltipTrigger>
+                                                <TooltipContent
+                                                    side="top"
+                                                    className="max-w-xs"
+                                                >
+                                                    <p className="text-xs">
+                                                        {autoSwitchReason}
+                                                    </p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
                                     </motion.div>
                                 ) : null}
                             </AnimatePresence>
@@ -368,7 +417,50 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                             </span>
                                         </div>
                                     )}
+                                    {contextUtilization && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-foreground/40">
+                                                Context
+                                            </span>
+                                            <span
+                                                className={cn(
+                                                    "text-foreground/60",
+                                                    contextUtilization.isWarning &&
+                                                        "text-amber-600 dark:text-amber-400",
+                                                    contextUtilization.isCritical &&
+                                                        "text-red-600 dark:text-red-400"
+                                                )}
+                                            >
+                                                {Math.round(
+                                                    contextUtilization.utilizationPercent *
+                                                        100
+                                                )}
+                                                %{" "}
+                                                <span className="text-foreground/40">
+                                                    (
+                                                    {Math.round(
+                                                        contextUtilization.estimatedTokens /
+                                                            1000
+                                                    ).toLocaleString()}
+                                                    k/
+                                                    {Math.round(
+                                                        contextUtilization.contextLimit /
+                                                            1000
+                                                    ).toLocaleString()}
+                                                    k tokens)
+                                                </span>
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
+                                {autoSwitched && autoSwitchReason && (
+                                    <div className="mt-2 flex items-start gap-2 rounded border border-amber-500/20 bg-amber-500/5 px-2 py-1.5">
+                                        <ArrowRightLeft className="mt-0.5 h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                                            {autoSwitchReason}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </CollapsibleContent>
                     )}

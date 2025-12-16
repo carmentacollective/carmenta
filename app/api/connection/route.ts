@@ -14,8 +14,11 @@ import { z } from "zod";
 import {
     runConcierge,
     CONCIERGE_DEFAULTS,
+    buildConciergeInput,
+    getAttachmentTypesFromInput,
     type OpenRouterEffort,
 } from "@/lib/concierge";
+import { applyRoutingRules, type RoutingRulesResult } from "@/lib/context";
 import {
     getOrCreateUser,
     createConnection,
@@ -103,7 +106,7 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message: "Search didn't work out. Want to try again?",
+                    message: "Search came up empty. The robots are on it. 🤖",
                     results: [],
                 };
             }
@@ -136,7 +139,7 @@ const tools = {
                 return {
                     error: true,
                     message:
-                        "We couldn't reach that page. It may be unavailable or blocked.",
+                        "That page isn't loading. It might be down or blocking access.",
                     title: "",
                     content: "",
                     url,
@@ -191,7 +194,8 @@ const tools = {
             if (!result) {
                 return {
                     error: true,
-                    message: "Research hit a wall. Try a different angle?",
+                    message:
+                        "Research didn't find much. The robots are investigating. 🤖",
                     summary: "",
                     findings: [],
                     sources: [],
@@ -220,13 +224,10 @@ export async function POST(req: Request) {
         // This allows git worktrees, forks, and local dev without Clerk setup
         const user = await currentUser();
         if (!user && process.env.NODE_ENV === "production") {
-            return new Response(
-                JSON.stringify({ error: "We need you to sign in first" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            return new Response(JSON.stringify({ error: "Sign in to continue" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         // Use actual email if authenticated, fallback for development
@@ -252,7 +253,7 @@ export async function POST(req: Request) {
             );
             return new Response(
                 JSON.stringify({
-                    error: "We couldn't understand that request. Mind trying again?",
+                    error: "That request didn't quite make sense. The robots are looking into it. 🤖",
                     details: parseResult.error.flatten(),
                 }),
                 {
@@ -292,6 +293,31 @@ export async function POST(req: Request) {
         // Run the Concierge FIRST to get model selection AND title (for new connections)
         const conciergeResult = await runConcierge(messages);
 
+        // Build lightweight input for routing rules
+        const conciergeInput = buildConciergeInput(messages, {
+            currentModel: conciergeResult.modelId,
+            userSignals: {
+                requestedModel: modelOverride,
+                requestedTemperature: temperatureOverride,
+                requestedReasoning: reasoningOverride,
+            },
+        });
+
+        // Apply hard-coded routing rules (context overflow, attachment requirements, etc.)
+        // These rules override Concierge decisions when technical requirements demand it
+        const routingResult: RoutingRulesResult = applyRoutingRules({
+            selectedModelId: conciergeResult.modelId as Parameters<
+                typeof applyRoutingRules
+            >[0]["selectedModelId"],
+            userOverride: modelOverride as Parameters<
+                typeof applyRoutingRules
+            >[0]["userOverride"],
+            attachmentTypes: getAttachmentTypesFromInput(conciergeInput),
+            reasoningEnabled: conciergeResult.reasoning.enabled,
+            toolsEnabled: true, // Tools are always available
+            messages,
+        });
+
         // Track if this is a new connection (for header response)
         let isNewConnection = false;
         let connectionSlug: string | null = null;
@@ -302,7 +328,7 @@ export async function POST(req: Request) {
             connectionId = decodeConnectionId(existingConnectionId);
             if (connectionId === null) {
                 return new Response(
-                    JSON.stringify({ error: "We couldn't find that connection" }),
+                    JSON.stringify({ error: "That connection doesn't exist" }),
                     { status: 400, headers: { "Content-Type": "application/json" } }
                 );
             }
@@ -314,7 +340,7 @@ export async function POST(req: Request) {
                 const connection = await createConnection(
                     dbUser.id,
                     conciergeResult.title, // Title from concierge
-                    conciergeResult.modelId
+                    routingResult.modelId // Use final routed model, not Concierge's initial choice
                 );
                 connectionId = connection.id;
                 connectionPublicId = encodeConnectionId(connection.id);
@@ -365,15 +391,32 @@ export async function POST(req: Request) {
             high: { enabled: true, maxTokens: 16000, effort: "high" },
         };
 
+        // Determine final model ID - routing rules take precedence over concierge
+        // User overrides are already handled within applyRoutingRules
+        const finalModelId = routingResult.modelId;
+
+        // Build explanation based on what happened
+        let finalExplanation: string;
+        if (hasOverrides) {
+            finalExplanation = `User override applied${modelOverride ? ` (model: ${modelOverride})` : ""}${temperatureOverride !== undefined ? ` (temp: ${temperatureOverride})` : ""}${reasoningOverride ? ` (reasoning: ${reasoningOverride})` : ""}`;
+        } else if (routingResult.wasChanged && routingResult.reason) {
+            // Routing rules changed the model - show why
+            finalExplanation = routingResult.reason;
+        } else {
+            finalExplanation = conciergeResult.explanation;
+        }
+
         const concierge = {
-            modelId: modelOverride ?? conciergeResult.modelId,
+            modelId: finalModelId,
             temperature: temperatureOverride ?? conciergeResult.temperature,
-            explanation: hasOverrides
-                ? `User override applied${modelOverride ? ` (model: ${modelOverride})` : ""}${temperatureOverride !== undefined ? ` (temp: ${temperatureOverride})` : ""}${reasoningOverride ? ` (reasoning: ${reasoningOverride})` : ""}`
-                : conciergeResult.explanation,
+            explanation: finalExplanation,
             reasoning: reasoningOverride
                 ? reasoningPresetMap[reasoningOverride]
                 : conciergeResult.reasoning,
+            // Track if model was auto-switched by routing rules
+            autoSwitched: routingResult.wasChanged,
+            autoSwitchReason: routingResult.reason,
+            contextUtilization: routingResult.contextUtilization,
         };
 
         // Check if the selected model supports tool calling
@@ -743,6 +786,35 @@ export async function POST(req: Request) {
         );
         headers.set("X-Connection-Id", connectionPublicId!);
 
+        // Add context window management headers
+        if (concierge.autoSwitched) {
+            headers.set("X-Concierge-Auto-Switched", "true");
+            if (concierge.autoSwitchReason) {
+                headers.set(
+                    "X-Concierge-Auto-Switch-Reason",
+                    encodeURIComponent(concierge.autoSwitchReason)
+                );
+            }
+        }
+
+        // Include context utilization metrics for UI indicators
+        if (concierge.contextUtilization) {
+            headers.set(
+                "X-Context-Utilization",
+                encodeURIComponent(
+                    JSON.stringify({
+                        estimatedTokens: concierge.contextUtilization.estimatedTokens,
+                        contextLimit: concierge.contextUtilization.contextLimit,
+                        utilizationPercent: Math.round(
+                            concierge.contextUtilization.utilizationPercent * 100
+                        ),
+                        isWarning: concierge.contextUtilization.isWarning,
+                        isCritical: concierge.contextUtilization.isCritical,
+                    })
+                )
+            );
+        }
+
         // For new connections, include the slug and title so client can update UI immediately
         if (isNewConnection && connectionSlug) {
             headers.set("X-Connection-Slug", connectionSlug);
@@ -803,7 +875,7 @@ export async function POST(req: Request) {
         // Return error response with details (safe for client)
         return new Response(
             JSON.stringify({
-                error: "We hit a snag processing that. Let's try again.",
+                error: "Something went sideways. The robots are on it. 🤖",
                 // Include error type for debugging (not the full message which might contain sensitive info)
                 errorType: errorName,
             }),
