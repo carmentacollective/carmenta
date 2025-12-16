@@ -5,13 +5,16 @@
  *
  * ## Code-Relevant Details
  * - API key passed as query param (api_key), not Authorization header
- * - Rating param filters content (g, pg, pg-13, r) - default is unfiltered
+ * - Rating param filters content (g, pg, pg-13, r) - defaults to "pg" for safety
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
 import { httpClient } from "@/lib/http-client";
 
 const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
+
+/** Default content rating for safety - pg keeps results work-appropriate */
+const DEFAULT_RATING = "pg";
 
 export class GiphyAdapter extends ServiceAdapter {
     serviceName = "giphy";
@@ -69,7 +72,7 @@ export class GiphyAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "Content rating filter: g (General Audience), pg (Parental Guidance), pg-13 (Parents Strongly Cautioned), r (Restricted)",
+                                "Content rating filter: g (General Audience), pg (Parental Guidance - default), pg-13 (Parents Strongly Cautioned), r (Restricted)",
                             example: "g",
                         },
                         {
@@ -103,7 +106,8 @@ export class GiphyAdapter extends ServiceAdapter {
                             name: "rating",
                             type: "string",
                             required: false,
-                            description: "Content rating filter: g, pg, pg-13, r",
+                            description:
+                                "Content rating filter: g, pg (default), pg-13, r",
                             example: "pg",
                         },
                     ],
@@ -134,7 +138,8 @@ export class GiphyAdapter extends ServiceAdapter {
                             name: "rating",
                             type: "string",
                             required: false,
-                            description: "Content rating filter: g, pg, pg-13, r",
+                            description:
+                                "Content rating filter: g, pg (default), pg-13, r",
                             example: "g",
                         },
                     ],
@@ -264,11 +269,8 @@ export class GiphyAdapter extends ServiceAdapter {
             limit: Math.min(limit, 50).toString(),
             offset: offset.toString(),
             lang,
+            rating: rating || DEFAULT_RATING,
         };
-
-        if (rating) {
-            searchParams.rating = rating;
-        }
 
         this.logInfo(`🔍 [GIPHY ADAPTER] Searching for GIFs: "${query}"`);
 
@@ -320,13 +322,11 @@ export class GiphyAdapter extends ServiceAdapter {
 
         const searchParams: Record<string, string> = {
             api_key: apiKey,
+            rating: rating || DEFAULT_RATING,
         };
 
         if (tag) {
             searchParams.tag = tag;
-        }
-        if (rating) {
-            searchParams.rating = rating;
         }
 
         this.logInfo(
@@ -370,11 +370,8 @@ export class GiphyAdapter extends ServiceAdapter {
             api_key: apiKey,
             limit: Math.min(limit, 50).toString(),
             offset: offset.toString(),
+            rating: rating || DEFAULT_RATING,
         };
-
-        if (rating) {
-            searchParams.rating = rating;
-        }
 
         this.logInfo(`🔥 [GIPHY ADAPTER] Getting trending GIFs`);
 

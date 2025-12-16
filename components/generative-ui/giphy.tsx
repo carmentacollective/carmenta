@@ -1,18 +1,24 @@
 "use client";
 
 /**
- * Giphy Tool UI - Compact Status Display
+ * Giphy Tool UI - Visual GIF Display
  *
- * Tool results are intermediate data the AI processes. The user cares about
- * the AI's synthesized response, not raw API output. This component shows
- * minimal status: what happened, with optional expansion for debugging.
+ * Renders GIFs visually in chat with proper attribution.
+ * GIFs are inherently visual content - users want to SEE them, not read JSON.
+ *
+ * Actions:
+ * - search: Gallery of results with query context
+ * - get_random: Single GIF card
+ * - get_trending: Gallery of trending GIFs
+ * - describe/raw_api: Compact status (non-visual operations)
  */
 
-import { useState } from "react";
-import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { ToolIcon } from "./tool-icon";
+import { GifCard, type GifData } from "./gif-card";
+import { GifGallery } from "./gif-gallery";
 
 interface GiphyToolResultProps {
     toolCallId: string;
@@ -24,8 +30,8 @@ interface GiphyToolResultProps {
 }
 
 /**
- * Compact Giphy tool result.
- * Shows a single line summary with optional raw data expansion.
+ * Visual Giphy tool result.
+ * Renders actual animated GIFs instead of JSON data.
  */
 export function GiphyToolResult({
     status,
@@ -34,14 +40,19 @@ export function GiphyToolResult({
     output,
     error,
 }: GiphyToolResultProps) {
-    const [expanded, setExpanded] = useState(false);
-
-    // Loading state - single line with pulse
+    // Loading state - shows what we're looking for
     if (status === "running") {
         return (
-            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <ToolIcon toolName="giphy" className="h-3.5 w-3.5 animate-pulse" />
-                <span>{getStatusMessage(action, input, "running")}</span>
+            <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                <Image
+                    src="/logos/giphy.svg"
+                    alt="GIPHY"
+                    width={60}
+                    height={16}
+                    className="h-4 w-auto opacity-60"
+                />
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{getLoadingMessage(action, input)}</span>
             </div>
         );
     }
@@ -49,91 +60,190 @@ export function GiphyToolResult({
     // Error state
     if (status === "error" || error) {
         return (
-            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2 py-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
                 <span>{error || `Giphy ${action} failed`}</span>
             </div>
         );
     }
 
-    // Success - compact summary with optional expansion
-    const summary = getStatusMessage(action, input, "completed", output);
-
-    return (
-        <div className="py-1">
-            <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ToolIcon toolName="giphy" className="h-3.5 w-3.5" />
-                <span className="flex-1">{summary}</span>
-                {output &&
-                    (expanded ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                    ))}
-            </button>
-
-            {expanded && output && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
-    );
+    // Success - render visual GIFs based on action
+    return renderGifContent(action, input, output);
 }
 
 /**
- * Generate human-readable status messages based on action and result
+ * Generate loading message based on action
  */
-function getStatusMessage(
-    action: string,
-    input: Record<string, unknown>,
-    status: "running" | "completed",
-    output?: Record<string, unknown>
-): string {
-    const isRunning = status === "running";
-
+function getLoadingMessage(action: string, input: Record<string, unknown>): string {
     switch (action) {
         case "search": {
             const query = input.query as string;
-            if (isRunning) return `Searching "${truncate(query, 30)}"...`;
-            const count = (output?.results as unknown[])?.length ?? 0;
-            const total = output?.totalCount as number;
-            if (count === 0) return `No GIFs found for "${truncate(query, 30)}"`;
-            return total > count
-                ? `Found ${count} of ${total} GIFs for "${truncate(query, 25)}"`
-                : `Found ${count} GIFs for "${truncate(query, 30)}"`;
+            return `Searching for "${truncate(query, 30)}"...`;
+        }
+        case "get_random": {
+            const tag = input.tag as string | undefined;
+            return tag ? `Getting random "${tag}" GIF...` : "Getting random GIF...";
+        }
+        case "get_trending":
+            return "Loading trending GIFs...";
+        case "describe":
+            return "Loading capabilities...";
+        default:
+            return `Running ${action}...`;
+    }
+}
+
+/**
+ * Render visual GIF content based on action type
+ */
+function renderGifContent(
+    action: string,
+    input: Record<string, unknown>,
+    output?: Record<string, unknown>
+) {
+    switch (action) {
+        case "search": {
+            const results = output?.results as GifData[] | undefined;
+            const query = (input.query as string) || (output?.query as string);
+            const totalCount = output?.totalCount as number | undefined;
+
+            if (!results || results.length === 0) {
+                return (
+                    <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                        <Image
+                            src="/logos/giphy.svg"
+                            alt="GIPHY"
+                            width={60}
+                            height={16}
+                            className="h-4 w-auto opacity-60"
+                        />
+                        <span>No GIFs found for &quot;{query}&quot;</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="py-2">
+                    <GifGallery gifs={results} totalCount={totalCount} query={query} />
+                </div>
+            );
         }
 
         case "get_random": {
-            const tag = input.tag as string | undefined;
-            if (isRunning) {
-                return tag ? `Getting random "${tag}" GIF...` : "Getting random GIF...";
+            const result = output?.result as GifData | undefined;
+
+            if (!result) {
+                return (
+                    <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                        <Image
+                            src="/logos/giphy.svg"
+                            alt="GIPHY"
+                            width={60}
+                            height={16}
+                            className="h-4 w-auto opacity-60"
+                        />
+                        <span>No GIF returned</span>
+                    </div>
+                );
             }
-            const result = output?.result as { title?: string } | undefined;
-            const title = result?.title;
-            return title ? `Random GIF: ${truncate(title, 40)}` : "Got random GIF";
+
+            const tag = input.tag as string | undefined;
+
+            return (
+                <div className="py-2">
+                    <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Image
+                            src="/logos/giphy.svg"
+                            alt="GIPHY"
+                            width={60}
+                            height={16}
+                            className="h-4 w-auto opacity-60"
+                        />
+                        <span>{tag ? `Random "${tag}" GIF` : "Random GIF"}</span>
+                    </div>
+                    <GifCard gif={result} className="max-w-md" />
+                </div>
+            );
         }
 
         case "get_trending": {
-            if (isRunning) return "Fetching trending GIFs...";
-            const count = (output?.results as unknown[])?.length ?? 0;
-            return `Loaded ${count} trending GIFs`;
+            const results = output?.results as GifData[] | undefined;
+            const totalCount = output?.totalCount as number | undefined;
+
+            if (!results || results.length === 0) {
+                return (
+                    <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                        <Image
+                            src="/logos/giphy.svg"
+                            alt="GIPHY"
+                            width={60}
+                            height={16}
+                            className="h-4 w-auto opacity-60"
+                        />
+                        <span>No trending GIFs available</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="py-2">
+                    <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Image
+                            src="/logos/giphy.svg"
+                            alt="GIPHY"
+                            width={60}
+                            height={16}
+                            className="h-4 w-auto opacity-60"
+                        />
+                        <span>🔥 Trending on Giphy</span>
+                    </div>
+                    <GifGallery gifs={results} totalCount={totalCount} />
+                </div>
+            );
         }
 
-        case "raw_api": {
-            const endpoint = input.endpoint as string;
-            if (isRunning) return `Calling ${truncate(endpoint, 30)}...`;
-            return "API call completed";
-        }
-
+        // Non-visual operations - compact status only
         case "describe":
-            return isRunning ? "Loading capabilities..." : "Giphy ready";
+            return (
+                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Image
+                        src="/logos/giphy.svg"
+                        alt="GIPHY"
+                        width={60}
+                        height={16}
+                        className="h-4 w-auto opacity-60"
+                    />
+                    <span>Giphy ready</span>
+                </div>
+            );
+
+        case "raw_api":
+            return (
+                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Image
+                        src="/logos/giphy.svg"
+                        alt="GIPHY"
+                        width={60}
+                        height={16}
+                        className="h-4 w-auto opacity-60"
+                    />
+                    <span>API call completed</span>
+                </div>
+            );
 
         default:
-            return isRunning ? `Running ${action}...` : `Completed ${action}`;
+            return (
+                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Image
+                        src="/logos/giphy.svg"
+                        alt="GIPHY"
+                        width={60}
+                        height={16}
+                        className="h-4 w-auto opacity-60"
+                    />
+                    <span>Completed {action}</span>
+                </div>
+            );
     }
 }
 
