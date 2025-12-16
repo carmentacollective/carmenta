@@ -11,6 +11,7 @@
  */
 
 import type { UIMessage } from "ai";
+import { logger } from "@/lib/logger";
 
 /**
  * Characters per token by provider.
@@ -128,8 +129,21 @@ export function calculateContextUtilization(
     provider: string = "default"
 ): ContextUtilization {
     const estimatedTokens = estimateConversationTokens(messages, provider);
-    // Guard against division by zero with misconfigured models
-    const utilizationPercent = contextLimit > 0 ? estimatedTokens / contextLimit : 1.0;
+
+    // Guard against invalid context limits (misconfigured models)
+    if (contextLimit <= 0) {
+        logger.error({ contextLimit }, "Invalid context limit - model misconfigured");
+        return {
+            estimatedTokens,
+            contextLimit,
+            utilizationPercent: 0,
+            availableTokens: 0,
+            isWarning: false,
+            isCritical: false,
+        };
+    }
+
+    const utilizationPercent = estimatedTokens / contextLimit;
     const safeLimit = contextLimit * CONTEXT_SAFETY_BUFFER;
     const availableTokens = Math.max(0, safeLimit - estimatedTokens);
 

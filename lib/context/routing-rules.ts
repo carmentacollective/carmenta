@@ -174,6 +174,7 @@ function handleContextOverflow(
 ): RoutingRulesResult {
     const modelConfig = getModel(currentModelId);
     if (!modelConfig) {
+        logger.error({ modelId: currentModelId }, "Unknown model ID in routing rules");
         return {
             modelId: currentModelId,
             wasChanged: false,
