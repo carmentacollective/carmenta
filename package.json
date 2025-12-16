@@ -74,6 +74,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@clerk/testing": "^1.13.24",
     "@clerk/types": "^4.101.6",
     "@electric-sql/pglite": "^0.3.14",
     "@playwright/test": "^1.57.0",

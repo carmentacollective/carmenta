@@ -3,8 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright configuration for E2E tests
  *
- * Tests public routes and auth redirects. No authentication required.
- * Authenticated functionality is tested via unit tests with mocked Clerk.
+ * CI runs against production build (pnpm start) to catch production-only bugs.
+ * Local development uses dev server (pnpm dev) for faster iteration.
+ *
+ * Uses @clerk/testing for authenticated test flows. Requires:
+ * - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ * - CLERK_SECRET_KEY
+ * - E2E_CLERK_USER_EMAIL + E2E_CLERK_USER_PASSWORD (for authenticated tests)
  */
 export default defineConfig({
     testDir: "./__tests__/e2e",
@@ -20,15 +25,22 @@ export default defineConfig({
     },
 
     projects: [
+        // Global setup initializes Clerk testing token
+        {
+            name: "setup",
+            testMatch: /global\.setup\.ts/,
+        },
         {
             name: "chromium",
             use: { ...devices["Desktop Chrome"] },
+            dependencies: ["setup"],
         },
     ],
 
-    // Run dev server before starting tests
     webServer: {
-        command: "pnpm dev",
+        // CI: Use production server with pre-built .next directory
+        // Local: Use dev server for faster iteration
+        command: process.env.CI ? "pnpm start" : "pnpm dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
