@@ -42,13 +42,13 @@ Announce hotfix mode at start: "Hotfix branch detected - running expedited revie
 Addressing only security issues and bugs, declining all other feedback." </hotfix-mode>
 
 <comment-sources>
-Code review bots comment in different places. Fetch both:
-- PR comments (general feedback on the PR itself)
-- Review comments (inline on specific code lines)
-- Reviews (approval status with body text)
+Bot feedback lives in TWO separate locations. Fetch both or you'll miss half the feedback:
 
-Identify bot comments by author - automated usernames like cursor-bot,
-claude-code-review, greptile-bot. Human comments require different handling.
+1. **PR-level comments** - General feedback on the PR itself (Claude reviews live here)
+2. **Inline review comments** - Line-specific feedback attached to code (Cursor Bug Bot)
+
+These are different GitHub API endpoints. The PR comments endpoint does NOT include
+inline review comments. You must query both.
 
 Different bots behave differently:
 
@@ -56,10 +56,7 @@ Different bots behave differently:
   review - it's the only one that matters for current code state.
 
 - Cursor Bug Bot: Comments inline on specific code lines. Address all inline comments -
-  each one flags a specific location.
-
-The structure difference helps you fetch efficiently: Claude reviews show up as PR-level
-comments, Cursor reviews show up as line-level review comments. </comment-sources>
+  each one flags a specific location. Bot username is `cursor[bot]`. </comment-sources>
 
 <autonomous-wait-loop>
 This command runs autonomously - no user prompts, just do the work.
