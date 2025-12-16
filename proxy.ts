@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 /**
  * Route protection proxy using Clerk
@@ -43,7 +44,7 @@ export const proxy = clerkMiddleware(async (auth, req) => {
 
     // Authenticated users on landing page → redirect to connection
     if (userId && req.nextUrl.pathname === "/") {
-        return Response.redirect(new URL("/connection", req.url));
+        return NextResponse.redirect(new URL("/connection", req.url));
     }
 
     // Health check is public (used by Render for zero-downtime deployments)
