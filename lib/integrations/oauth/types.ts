@@ -73,6 +73,21 @@ export interface OAuthProviderConfig {
     /** Additional params to include in token exchange request */
     additionalTokenParams?: Record<string, string>;
     /**
+     * Extract access token from token response.
+     * Some providers (like Slack with user tokens) return the token in a non-standard location.
+     * If not provided, defaults to response.access_token.
+     *
+     * @param tokenResponse - Raw token response from provider
+     * @returns Extracted token set or null if standard extraction should be used
+     */
+    extractTokens?: (tokenResponse: Record<string, unknown>) => {
+        accessToken: string;
+        refreshToken?: string;
+        tokenType?: string;
+        expiresIn?: number;
+        scope?: string;
+    } | null;
+    /**
      * Extract account info from token response.
      * Can be async if provider requires additional API call to fetch user info.
      * Returns identifier (unique ID) and displayName (human-readable).
