@@ -27,7 +27,11 @@ export async function onRequestError(
         revalidateReason?: "on-demand" | "stale" | undefined;
     }
 ) {
-    // Import Sentry dynamically to avoid issues during build
+    // Skip errors that occur after response is already sent
+    if (error.message?.includes("Cannot append headers")) {
+        return;
+    }
+
     const Sentry = await import("@sentry/nextjs");
 
     Sentry.captureException(error, {
