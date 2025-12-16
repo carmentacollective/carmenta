@@ -49,9 +49,7 @@ test.describe("Authenticated User Redirects", () => {
         await expect(page).toHaveURL(/\/connection/, { timeout: 10000 });
     });
 
-    test("authenticated users stay on /connection after redirect", async ({
-        page,
-    }) => {
+    test("authenticated users stay on /connection after redirect", async ({ page }) => {
         await setupClerkTestingToken({ page });
         await page.goto("/");
 
