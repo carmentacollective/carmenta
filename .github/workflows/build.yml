@@ -150,8 +150,20 @@ jobs:
           echo "✅ Build successful! Output directory size:"
           du -sh .next
 
+      - name: 📦 Create artifact bundle
+        run: |
+          # Create tarball to bypass .gitignore restrictions in upload-artifact@v4
+          tar -czf nextjs-build.tar.gz .next
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: nextjs-build.tar.gz
+          retention-days: 1
+
   # E2E Tests (OAuth flows, public URL validation)
-  # These are too slow for pre-push hooks (~10-30s) but critical for CI
+  # Runs against production build to catch production-only bugs
   e2e:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
@@ -170,21 +182,36 @@ jobs:
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: 📦 Extract build artifacts
+        run: |
+          tar -xzf nextjs-build.tar.gz
+          rm nextjs-build.tar.gz
+
       - name: 🎭 Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: 🧪 Run E2E tests
+      - name: 🧪 Run E2E tests against production build
         run: pnpm run test:e2e
         env:
+          CI: true
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # Clerk test keys from GitHub secrets
-          # Note: Fork PRs won't have these secrets, but oauth-urls.test.ts will skip those tests
+          # Clerk keys for testing (required for @clerk/testing)
+          # Note: Fork PRs won't have these secrets, tests will be skipped
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
+          # Test user credentials for authenticated E2E tests
+          # Tests are skipped if not configured
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
 
       - name: 📊 Upload Playwright report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
