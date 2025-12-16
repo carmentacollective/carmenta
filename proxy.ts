@@ -22,6 +22,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  *
  * Note: Next.js 16 renamed middleware.ts to proxy.ts
  * The clerkMiddleware helper name remains unchanged
+ *
+ * IMPORTANT: Next.js 16 requires the proxy function to be a NAMED export called "proxy".
+ * Using `export default` instead of `export const proxy =` will cause:
+ * "Error: Cannot append headers after they are sent to the client"
  */
 const isProtectedRoute = createRouteMatcher([
     "/connection(.*)",
@@ -34,7 +38,7 @@ const isWebhookRoute = createRouteMatcher(["/api/webhooks(.*)"]);
 const isHealthRoute = createRouteMatcher(["/healthz"]);
 const isOAuthCallbackRoute = createRouteMatcher(["/integrations/oauth/callback(.*)"]);
 
-export default clerkMiddleware(async (auth, req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
 
     // Authenticated users on landing page → redirect to connection
