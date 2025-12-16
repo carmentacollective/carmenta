@@ -14,6 +14,6 @@ describe("AIFirstDevelopmentPage", () => {
     });
 
     it("has the expected metadata title", () => {
-        expect(metadata.title).toBe("AI-First Development | Carmenta");
+        expect(metadata.title).toBe("AI-First Development · Carmenta");
     });
 });
