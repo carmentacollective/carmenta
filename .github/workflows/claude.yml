@@ -10,6 +10,9 @@ on:
   pull_request_review:
     types: [submitted]
 
+env:
+  PNPM_VERSION: "10"
+
 jobs:
   claude:
     if: |
@@ -19,32 +22,76 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      actions: read
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
-      - name: Run Claude Code
+      # Setup tooling BEFORE Claude runs so it can use pnpm/node
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 📗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🤖 Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-          # This is an optional setting that allows Claude to read CI results on PRs
+          claude_args: --dangerously-skip-permissions
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+      # Post-Claude quality gates using the action's branch_name output
+      - name: 🔀 Checkout Claude's branch
+        if: steps.claude.outputs.branch_name != ''
+        run: |
+          git fetch origin ${{ steps.claude.outputs.branch_name }}
+          git checkout ${{ steps.claude.outputs.branch_name }}
 
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr:*)'
+      - name: ✨ Auto-fix lint & format issues
+        if: steps.claude.outputs.branch_name != ''
+        run: |
+          pnpm run lint:fix || true
+          pnpm run format || true
 
+      - name: 🔧 Type check
+        if: steps.claude.outputs.branch_name != ''
+        run: pnpm run type-check
+
+      - name: 🧪 Run tests
+        if: steps.claude.outputs.branch_name != ''
+        run: pnpm run test
+        env:
+          NODE_ENV: test
+
+      - name: 📝 Commit quality fixes
+        if: steps.claude.outputs.branch_name != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "🔧 Apply lint & format fixes
+
+            Auto-applied by CI to match repo quality standards.
+
+            🤖 Generated with [Claude Code](https://claude.ai/code)"
+            git push origin ${{ steps.claude.outputs.branch_name }}
+          fi
