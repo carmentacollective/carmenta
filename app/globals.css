@@ -764,6 +764,16 @@
         background: transparent; /* Clean corner where scrollbars meet */
     }
 
+    /* Hide scrollbar during streaming - content is auto-scrolling anyway */
+    .scrollbar-streaming {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .scrollbar-streaming::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
+    }
+
     /*
      * Chat viewport fade - Apple-level subtle bidirectional fades
      *
