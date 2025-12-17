@@ -62,7 +62,7 @@ export interface ConnectionWithMessages {
     modelId: string | null;
     // Concierge data for UI display on page refresh
     conciergeModelId: string | null;
-    conciergeTemperature: number | null;
+    conciergeTemperature: string | null; // numeric(3,2) returns string
     conciergeExplanation: string | null;
     conciergeReasoning: ConciergeReasoningConfig | null;
     lastActivityAt: Date;

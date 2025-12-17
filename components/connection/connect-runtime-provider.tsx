@@ -753,6 +753,10 @@ function ConciergeWrapper({ children }: { children: ReactNode }) {
 
     // Convert PersistedConciergeData to ConciergeResult format
     // The persisted format matches ConciergeResult's core fields
+    //
+    // SAFETY: When initialConcierge is truthy, all fields are guaranteed to be present.
+    // extractConciergeData() in lib/actions/connections.ts only returns non-null when
+    // ALL fields exist in the database row.
     const initial = initialConcierge
         ? {
               modelId: initialConcierge.modelId,

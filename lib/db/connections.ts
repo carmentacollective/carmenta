@@ -68,7 +68,8 @@ export async function createConnection(
             streamingStatus: "idle",
             // Concierge data for UI persistence
             conciergeModelId: conciergeData?.modelId ?? null,
-            conciergeTemperature: conciergeData?.temperature ?? null,
+            // Convert number to string for numeric(3,2) column
+            conciergeTemperature: conciergeData?.temperature?.toString() ?? null,
             conciergeExplanation: conciergeData?.explanation ?? null,
             conciergeReasoning: conciergeData?.reasoning ?? null,
         })

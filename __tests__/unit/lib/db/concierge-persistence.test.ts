@@ -51,7 +51,7 @@ describe("Concierge Persistence", () => {
             // TypeScript compile check - these should exist after fix
             const testConnection: Partial<ConnectionType> = {
                 conciergeModelId: "anthropic/claude-sonnet-4.5",
-                conciergeTemperature: 0.7,
+                conciergeTemperature: "0.7", // String for numeric(3,2) column
                 conciergeExplanation: "Selected for balanced task",
                 conciergeReasoning: { enabled: true, effort: "medium" },
             };

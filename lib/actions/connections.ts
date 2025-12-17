@@ -87,7 +87,8 @@ function extractConciergeData(connection: Connection): PersistedConciergeData | 
     ) {
         return {
             modelId: connection.conciergeModelId,
-            temperature: connection.conciergeTemperature,
+            // Convert string back to number (numeric column returns string)
+            temperature: parseFloat(connection.conciergeTemperature),
             explanation: connection.conciergeExplanation,
             reasoning: connection.conciergeReasoning,
         };

@@ -146,9 +146,10 @@ describe("POST /api/connection", () => {
                     status: "active" as const,
                     streamingStatus: "idle" as const,
                     modelId: null,
-                    // Concierge data for persistence
+                    // Concierge data for persistence (temperature is string for numeric column)
                     conciergeModelId: conciergeData?.modelId ?? null,
-                    conciergeTemperature: conciergeData?.temperature ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
                     conciergeExplanation: conciergeData?.explanation ?? null,
                     conciergeReasoning: conciergeData?.reasoning ?? null,
                     createdAt: new Date(),
@@ -373,7 +374,8 @@ describe("POST /api/connection", () => {
                     streamingStatus: "idle" as const,
                     modelId: null,
                     conciergeModelId: conciergeData?.modelId ?? null,
-                    conciergeTemperature: conciergeData?.temperature ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
                     conciergeExplanation: conciergeData?.explanation ?? null,
                     conciergeReasoning: conciergeData?.reasoning ?? null,
                     createdAt: new Date(),
@@ -425,7 +427,8 @@ describe("POST /api/connection", () => {
                     streamingStatus: "idle" as const,
                     modelId: null,
                     conciergeModelId: conciergeData?.modelId ?? null,
-                    conciergeTemperature: conciergeData?.temperature ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
                     conciergeExplanation: conciergeData?.explanation ?? null,
                     conciergeReasoning: conciergeData?.reasoning ?? null,
                     createdAt: new Date(),

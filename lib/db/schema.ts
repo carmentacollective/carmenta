@@ -25,6 +25,7 @@ import {
     pgEnum,
     boolean,
     real,
+    numeric,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -200,8 +201,11 @@ export const connections = pgTable(
         /** Model selected by concierge for this connection */
         conciergeModelId: varchar("concierge_model_id", { length: 255 }),
 
-        /** Temperature setting selected by concierge */
-        conciergeTemperature: real("concierge_temperature"),
+        /** Temperature setting selected by concierge (0.00-9.99 range, 2 decimal precision) */
+        conciergeTemperature: numeric("concierge_temperature", {
+            precision: 3,
+            scale: 2,
+        }),
 
         /** One-sentence explanation of the model choice */
         conciergeExplanation: text("concierge_explanation"),
