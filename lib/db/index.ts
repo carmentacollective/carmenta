@@ -71,6 +71,8 @@ export type {
     ToolCallData,
     DataPartContent,
     ProviderMetadata,
+    Document,
+    NewDocument,
 } from "./schema";
 
 // Re-export user operations

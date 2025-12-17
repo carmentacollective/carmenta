@@ -150,12 +150,38 @@ export interface CreateDocumentInput {
 }
 
 /**
+ * Validate document input for security and data integrity
+ */
+function validateDocumentInput(input: CreateDocumentInput): void {
+    // Content size limit: 1MB
+    if (input.content.length > 1_000_000) {
+        throw new Error("Document content exceeds 1MB limit");
+    }
+
+    // Path format: Only allow alphanumeric, dots, hyphens, underscores, apostrophes
+    const normalizedPath = toPath(input.path);
+    if (!/^[a-z0-9._'-]+$/i.test(normalizedPath)) {
+        throw new Error(
+            `Invalid path format: "${input.path}". ` +
+                "Paths must contain only letters, numbers, dots, hyphens, underscores, and apostrophes."
+        );
+    }
+
+    // Name validation: No path traversal
+    if (input.name.includes("..") || input.name.includes("/")) {
+        throw new Error('Invalid document name: Cannot contain ".." or "/"');
+    }
+}
+
+/**
  * Create a new document in the knowledge base
  */
 export async function create(
     userId: string,
     input: CreateDocumentInput
 ): Promise<Document> {
+    validateDocumentInput(input);
+
     const ltreePath = toPath(input.path);
 
     const [doc] = await db
@@ -270,6 +296,8 @@ export async function upsert(
     userId: string,
     input: CreateDocumentInput
 ): Promise<Document> {
+    validateDocumentInput(input);
+
     const normalizedPath = toPath(input.path);
 
     const [doc] = await db
@@ -365,7 +393,10 @@ export async function search(
 ): Promise<Document[]> {
     // Simple ILIKE search - works with pglite for testing
     // Production can use FTS index for better performance
-    const searchPattern = `%${query}%`;
+
+    // Escape LIKE special characters (% and _) so they're treated as literals
+    const escapedQuery = query.replace(/[%_]/g, "\\$&");
+    const searchPattern = `%${escapedQuery}%`;
 
     const result = await db.execute(sql`
         SELECT *

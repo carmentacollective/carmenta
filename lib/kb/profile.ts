@@ -167,8 +167,9 @@ export async function addPerson(
     name: string,
     content: string
 ): Promise<void> {
-    // Normalize name for path (lowercase, no spaces)
-    const normalizedName = name.toLowerCase().replace(/\s+/g, "-");
+    // Normalize name for path (lowercase, no spaces, no dots)
+    // Dots are path separators, so replace them with hyphens
+    const normalizedName = name.toLowerCase().replace(/\s+/g, "-").replace(/\./g, "-");
     const path = `${PROFILE_PATHS.people}.${normalizedName}`;
 
     await kb.upsert(userId, {
