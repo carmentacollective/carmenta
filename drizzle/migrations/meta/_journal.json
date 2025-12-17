@@ -43,6 +43,13 @@
       "when": 1765989761767,
       "tag": "0005_perpetual_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765991756683,
+      "tag": "0006_opposite_skrulls",
+      "breakpoints": true
     }
   ]
 }
