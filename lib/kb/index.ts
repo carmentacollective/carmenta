@@ -244,10 +244,14 @@ export async function readFolder(
         logger.warn({ depth }, "readFolder depth parameter not yet implemented in V1");
     }
 
+    // Escape LIKE special characters in the path (% and _) to prevent wildcard matching
+    // e.g., "project_a" should match "project_a.notes" but not "projectXa.notes"
+    const escapedPath = normalizedPath.replace(/[%_]/g, "\\$&");
+
     const result = await db.execute(sql`
         SELECT * FROM documents
         WHERE user_id = ${userId}
-        AND (path = ${normalizedPath} OR path LIKE ${normalizedPath + ".%"})
+        AND (path = ${normalizedPath} OR path LIKE ${escapedPath + ".%"})
         ORDER BY path
     `);
 
