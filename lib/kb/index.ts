@@ -93,6 +93,29 @@ function normalizeExecuteResult(result: unknown): Record<string, unknown>[] {
 }
 
 // ============================================================================
+// SQL Utilities
+// ============================================================================
+
+/**
+ * Escape special characters for PostgreSQL LIKE patterns.
+ *
+ * LIKE wildcards: % (any chars), _ (single char)
+ * Uses backslash as escape character (PostgreSQL default).
+ *
+ * Only needed for user-provided search queries. Path queries don't need
+ * escaping because path validation disallows % and _ characters.
+ *
+ * @example
+ * const pattern = `%${escapeLikePattern(userInput)}%`;
+ * sql`SELECT * FROM t WHERE col ILIKE ${pattern}`
+ */
+function escapeLikePattern(input: string): string {
+    return input
+        .replace(/\\/g, "\\\\") // Escape backslash first
+        .replace(/[%_]/g, "\\$&"); // Then escape % and _
+}
+
+// ============================================================================
 // Path Utilities
 // ============================================================================
 
@@ -158,12 +181,14 @@ function validateDocumentInput(input: CreateDocumentInput): void {
         throw new Error("Document content exceeds 1MB limit");
     }
 
-    // Path format: Only allow alphanumeric, dots, hyphens, underscores, apostrophes
+    // Path format: Only allow alphanumeric, dots, hyphens, apostrophes
+    // No underscores - we use Title Case for names (e.g., SarahConnor not sarah_connor)
+    // This also means we don't need LIKE escaping for path queries since % and _ are both disallowed
     const normalizedPath = toPath(input.path);
-    if (!/^[a-z0-9._'-]+$/i.test(normalizedPath)) {
+    if (!/^[a-z0-9.'-]+$/i.test(normalizedPath)) {
         throw new Error(
             `Invalid path format: "${input.path}". ` +
-                "Paths must contain only letters, numbers, dots, hyphens, underscores, and apostrophes."
+                "Paths must contain only letters, numbers, dots, hyphens, and apostrophes."
         );
     }
 
@@ -244,10 +269,7 @@ export async function readFolder(
         logger.warn({ depth }, "readFolder depth parameter not yet implemented in V1");
     }
 
-    // Note: Underscores in paths act as single-character wildcards in LIKE queries
-    // This is a known V1 limitation (PGlite doesn't support ESCAPE clause)
-    // Paths use dots as separators so this is rarely an issue in practice
-    // V2 will use ltree which eliminates this problem entirely
+    // No LIKE escaping needed - path validation disallows % and _ characters
     const result = await db.execute(sql`
         SELECT * FROM documents
         WHERE user_id = ${userId}
@@ -396,12 +418,10 @@ export async function search(
     limit: number = 10
 ): Promise<Document[]> {
     // Simple ILIKE search - works with pglite for testing
-    // Production can use FTS index for better performance
+    // V2: Upgrade to PostgreSQL FTS with websearch_to_tsquery for better relevance
 
-    // Note: Special characters like % and _ act as wildcards in LIKE queries
-    // This is a known V1 limitation (PGlite doesn't support ESCAPE clause)
-    // V2 will use PostgreSQL full-text search which handles this properly
-    const searchPattern = `%${query}%`;
+    // Escape LIKE wildcards so user input is treated literally
+    const searchPattern = `%${escapeLikePattern(query)}%`;
 
     const result = await db.execute(sql`
         SELECT *
