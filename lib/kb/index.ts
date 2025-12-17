@@ -7,8 +7,28 @@
  * Path format: "profile.identity", "profile.people.sarah" (dots as separators)
  * No leading dots - paths start at root level.
  *
- * V1: Text paths with LIKE queries (simple, works with pglite for testing)
- * V2: Consider ltree extension for production efficiency at scale
+ * ## Architecture Decision: V1 Text Paths vs V2 ltree
+ *
+ * **V1 (Current):** Text paths with LIKE queries
+ * - Simple implementation, works with PGlite for fast testing
+ * - Sufficient for early user base (hundreds of documents per user)
+ * - Path queries: `path LIKE 'profile.%'`
+ *
+ * **V2 (Future):** PostgreSQL ltree extension
+ * - Native hierarchical operators: `path <@ 'profile'` (descendant), `path @> 'profile'` (ancestor)
+ * - GiST index support for O(log n) hierarchical queries
+ * - Better performance at scale (thousands of documents per user)
+ *
+ * **Migration Path to V2:**
+ * 1. Add ltree column: `ALTER TABLE documents ADD COLUMN path_ltree ltree;`
+ * 2. Migrate data: `UPDATE documents SET path_ltree = path::ltree;`
+ * 3. Add GiST index: `CREATE INDEX idx_docs_path_ltree ON documents USING GIST (path_ltree);`
+ * 4. Update queries to use ltree operators
+ * 5. Test setup: Use real PostgreSQL with transaction rollback isolation
+ *    (see postgres-setup.ts pattern with savepoints)
+ *
+ * The current V1 schema uses the same dot-notation that ltree expects,
+ * making the migration straightforward when scaling requires it.
  *
  * @example
  * ```typescript
