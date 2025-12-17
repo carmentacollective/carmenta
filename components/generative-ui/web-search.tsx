@@ -127,7 +127,7 @@ export function WebSearchResults({
                                             isResultExpanded ? null : index
                                         )
                                     }
-                                    className="flex w-full items-start gap-3 text-left"
+                                    className="group flex w-full items-start gap-3 text-left"
                                 >
                                     <div className="flex-1">
                                         <div className="flex items-baseline gap-2">
