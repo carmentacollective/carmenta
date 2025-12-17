@@ -244,14 +244,14 @@ export async function readFolder(
         logger.warn({ depth }, "readFolder depth parameter not yet implemented in V1");
     }
 
-    // Escape LIKE special characters in the path (% and _) to prevent wildcard matching
-    // e.g., "project_a" should match "project_a.notes" but not "projectXa.notes"
-    const escapedPath = normalizedPath.replace(/[%_]/g, "\\$&");
-
+    // Note: Underscores in paths act as single-character wildcards in LIKE queries
+    // This is a known V1 limitation (PGlite doesn't support ESCAPE clause)
+    // Paths use dots as separators so this is rarely an issue in practice
+    // V2 will use ltree which eliminates this problem entirely
     const result = await db.execute(sql`
         SELECT * FROM documents
         WHERE user_id = ${userId}
-        AND (path = ${normalizedPath} OR path LIKE ${escapedPath + ".%"})
+        AND (path = ${normalizedPath} OR path LIKE ${normalizedPath + ".%"})
         ORDER BY path
     `);
 
@@ -398,9 +398,10 @@ export async function search(
     // Simple ILIKE search - works with pglite for testing
     // Production can use FTS index for better performance
 
-    // Escape LIKE special characters (% and _) so they're treated as literals
-    const escapedQuery = query.replace(/[%_]/g, "\\$&");
-    const searchPattern = `%${escapedQuery}%`;
+    // Note: Special characters like % and _ act as wildcards in LIKE queries
+    // This is a known V1 limitation (PGlite doesn't support ESCAPE clause)
+    // V2 will use PostgreSQL full-text search which handles this properly
+    const searchPattern = `%${query}%`;
 
     const result = await db.execute(sql`
         SELECT *

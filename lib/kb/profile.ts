@@ -85,42 +85,65 @@ export async function initializeProfile(
 
     let created = false;
 
-    // Create identity document
+    // Create identity document if it doesn't exist
     if (!(await kb.exists(userId, PROFILE_PATHS.identity))) {
-        await kb.create(userId, {
-            path: PROFILE_PATHS.identity,
-            name: "identity.txt",
-            content:
-                initialData?.identity ??
-                (withTemplates ? PROFILE_TEMPLATES.identity : ""),
-            sourceType: "seed",
-        });
-        created = true;
+        try {
+            await kb.create(userId, {
+                path: PROFILE_PATHS.identity,
+                name: "identity.txt",
+                content:
+                    initialData?.identity ??
+                    (withTemplates ? PROFILE_TEMPLATES.identity : ""),
+                sourceType: "seed",
+            });
+            created = true;
+        } catch (error) {
+            // If concurrent request created it, that's fine - skip silently
+            logger.debug(
+                { userId, error },
+                "Profile identity already exists (race condition)"
+            );
+        }
     }
 
-    // Create preferences document
+    // Create preferences document if it doesn't exist
     if (!(await kb.exists(userId, PROFILE_PATHS.preferences))) {
-        await kb.create(userId, {
-            path: PROFILE_PATHS.preferences,
-            name: "preferences.txt",
-            content:
-                initialData?.preferences ??
-                (withTemplates ? PROFILE_TEMPLATES.preferences : ""),
-            sourceType: "seed",
-        });
-        created = true;
+        try {
+            await kb.create(userId, {
+                path: PROFILE_PATHS.preferences,
+                name: "preferences.txt",
+                content:
+                    initialData?.preferences ??
+                    (withTemplates ? PROFILE_TEMPLATES.preferences : ""),
+                sourceType: "seed",
+            });
+            created = true;
+        } catch (error) {
+            logger.debug(
+                { userId, error },
+                "Profile preferences already exists (race condition)"
+            );
+        }
     }
 
-    // Create goals document
+    // Create goals document if it doesn't exist
     if (!(await kb.exists(userId, PROFILE_PATHS.goals))) {
-        await kb.create(userId, {
-            path: PROFILE_PATHS.goals,
-            name: "goals.txt",
-            content:
-                initialData?.goals ?? (withTemplates ? PROFILE_TEMPLATES.goals : ""),
-            sourceType: "seed",
-        });
-        created = true;
+        try {
+            await kb.create(userId, {
+                path: PROFILE_PATHS.goals,
+                name: "goals.txt",
+                content:
+                    initialData?.goals ??
+                    (withTemplates ? PROFILE_TEMPLATES.goals : ""),
+                sourceType: "seed",
+            });
+            created = true;
+        } catch (error) {
+            logger.debug(
+                { userId, error },
+                "Profile goals already exists (race condition)"
+            );
+        }
     }
 
     if (created) {

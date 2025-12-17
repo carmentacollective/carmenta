@@ -84,7 +84,11 @@ ${goals.content.trim()}`);
             const peopleSection = people
                 .map((p) => {
                     const name = kb.getNameFromPath(p.path);
-                    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+                    // Capitalize first letter of each word (handles hyphenated names like "sarah-thompson")
+                    const displayName = name
+                        .split("-")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join("-");
                     return `### ${displayName}
 
 ${p.content.trim()}`;
