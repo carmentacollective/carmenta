@@ -71,6 +71,8 @@ export type {
     ToolCallData,
     DataPartContent,
     ProviderMetadata,
+    Document,
+    NewDocument,
     ConciergeReasoningConfig,
 } from "./schema";
 
