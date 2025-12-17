@@ -63,7 +63,7 @@
          * Top fade: hint that content exists above
          * Bottom fade: slightly larger to transition into input dock area */
         --chat-fade-top: 40px;
-        --chat-fade-bottom: 56px;
+        --chat-fade-bottom: 32px;
     }
 
     /* Dark mode - Cosmic consciousness depths with ethereal shimmer */

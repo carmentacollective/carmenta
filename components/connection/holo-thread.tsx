@@ -116,7 +116,7 @@ function HoloThreadInner() {
             <div
                 ref={containerRef}
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-4 pt-4 sm:px-4 sm:pb-6 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-4 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
