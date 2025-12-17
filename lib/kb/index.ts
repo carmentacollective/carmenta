@@ -55,6 +55,23 @@ function mapRowToDocument(row: Record<string, unknown>): Document {
     };
 }
 
+/**
+ * Normalize db.execute() result to array of rows
+ * Handles both postgres-js (returns array directly) and PGlite (returns QueryResult with .rows)
+ */
+function normalizeExecuteResult(result: unknown): Record<string, unknown>[] {
+    // PGlite returns QueryResult object with rows property
+    if (result && typeof result === "object" && "rows" in result) {
+        return (result as { rows: Record<string, unknown>[] }).rows;
+    }
+    // postgres-js returns array directly
+    if (Array.isArray(result)) {
+        return result as Record<string, unknown>[];
+    }
+    // Fallback - empty array
+    return [];
+}
+
 // ============================================================================
 // Path Utilities
 // ============================================================================
@@ -188,8 +205,7 @@ export async function readFolder(
         ORDER BY path
     `);
 
-    // postgres-js/pglite returns array directly, map to Document type
-    return (result as unknown as Record<string, unknown>[]).map(mapRowToDocument);
+    return normalizeExecuteResult(result).map(mapRowToDocument);
 }
 
 /**
@@ -252,6 +268,8 @@ export async function upsert(
             set: {
                 content: input.content,
                 name: input.name,
+                sourceType: input.sourceType ?? "manual",
+                sourceId: input.sourceId,
                 tags: input.tags ?? [],
                 updatedAt: new Date(),
             },
@@ -338,8 +356,7 @@ export async function search(
         LIMIT ${limit}
     `);
 
-    // postgres-js/pglite returns array directly
-    return (result as unknown as Record<string, unknown>[]).map(mapRowToDocument);
+    return normalizeExecuteResult(result).map(mapRowToDocument);
 }
 
 // ============================================================================
