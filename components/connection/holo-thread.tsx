@@ -47,7 +47,7 @@ import { Greeting } from "@/components/ui/greeting";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
-import { ConciergeDisplay } from "./concierge-display";
+import { ConciergeDisplayStacked } from "./concierge-display-stacked";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { useConnection } from "./connection-context";
 import { ModelSelectorPopover } from "./model-selector";
@@ -712,7 +712,7 @@ function AssistantMessage({
         <div className="my-4 flex w-full flex-col gap-0">
             {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
-                <ConciergeDisplay
+                <ConciergeDisplayStacked
                     modelId={concierge?.modelId}
                     temperature={concierge?.temperature}
                     explanation={concierge?.explanation}
@@ -881,7 +881,7 @@ function PendingAssistantMessage({
     return (
         <div className="my-4 flex w-full flex-col gap-0">
             {/* CONCIERGE ZONE - Always show during pending state */}
-            <ConciergeDisplay
+            <ConciergeDisplayStacked
                 modelId={concierge?.modelId}
                 temperature={concierge?.temperature}
                 explanation={concierge?.explanation}

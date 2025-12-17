@@ -1,5 +1,6 @@
 export { Chat } from "./chat";
 export { ConciergeDisplay } from "./concierge-display";
+export { ConciergeDisplayStacked } from "./concierge-display-stacked";
 export { ConnectRuntimeProvider } from "./connect-runtime-provider";
 export { ConnectLayout } from "./connect-layout";
 export { ConnectionChooser } from "./connection-chooser";
