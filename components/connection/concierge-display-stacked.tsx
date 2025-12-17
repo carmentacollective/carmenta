@@ -155,18 +155,23 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                     duration: 0.25,
                     ease: [0.16, 1, 0.3, 1],
                 }}
-                className={cn("not-prose", className)}
+                className={cn("not-prose relative min-h-[28px]", className)}
             >
-                <AnimatePresence mode="wait">
+                {/*
+                 * Crossfade transition (no mode="wait") for smooth state changes.
+                 * Both states can overlap briefly during transition, avoiding the
+                 * jarring "gap" that mode="wait" creates.
+                 */}
+                <AnimatePresence>
                     {isSelecting && !hasSelected ? (
                         /* Selecting state - avatar + spinner + message */
                         <motion.div
                             key="selecting"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={springConfig.gentle}
-                            className="flex items-center gap-2.5"
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute flex items-center gap-2.5"
                         >
                             <CarmentaAvatar size="xs" state={avatarState} />
                             <Loader2 className="h-3 w-3 animate-spin text-primary/60" />
@@ -178,9 +183,9 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                         /* Selected state - stacked layout with Apple-inspired hierarchy */
                         <motion.div
                             key="selected"
-                            initial={{ opacity: 0, scale: 0.96 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={springConfig.snappy}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 0.05 }}
                             className="flex items-start gap-2.5"
                         >
                             {/* Provider badge - subtle gradient background */}
