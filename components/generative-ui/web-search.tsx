@@ -1,6 +1,13 @@
 "use client";
 
-import { Search, ExternalLink, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import {
+    Search,
+    ExternalLink,
+    AlertCircle,
+    ChevronDown,
+    ChevronUp,
+} from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
@@ -20,10 +27,19 @@ interface WebSearchResultsProps {
     error?: string;
 }
 
+function extractDomain(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname.replace(/^www\./, "");
+    } catch {
+        return url;
+    }
+}
+
 /**
  * Tool UI for displaying web search results.
  *
- * Renders search results with title, snippet, and link.
+ * Progressive disclosure design - collapsed by default, expand to see results.
  */
 export function WebSearchResults({
     status,
@@ -31,21 +47,15 @@ export function WebSearchResults({
     results,
     error,
 }: WebSearchResultsProps) {
-    // Loading state
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [expandedResultIndex, setExpandedResultIndex] = useState<number | null>(null);
+
+    // Loading state - minimal and elegant
     if (status === "running") {
         return (
-            <div className="glass-card max-w-2xl animate-pulse">
-                <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                        Exploring the web for &quot;{query}&quot;...
-                    </span>
-                </div>
-                <div className="mt-4 space-y-3">
-                    <div className="h-4 w-3/4 rounded bg-muted" />
-                    <div className="h-3 w-full rounded bg-muted" />
-                    <div className="h-3 w-2/3 rounded bg-muted" />
-                </div>
+            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4 animate-pulse" />
+                <span>Exploring the web for &quot;{query}&quot;...</span>
             </div>
         );
     }
@@ -68,52 +78,106 @@ export function WebSearchResults({
     // Empty results
     if (!results || results.length === 0) {
         return (
-            <div className="glass-card max-w-2xl">
-                <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                        Nothing came up for &quot;{query}&quot;. Want to try a different
-                        search?
-                    </span>
-                </div>
+            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                <span>
+                    Nothing came up for &quot;{query}&quot;. Want to try a different
+                    search?
+                </span>
             </div>
         );
     }
 
-    // Success state
+    // Success state - collapsed by default
     return (
-        <div className="glass-card max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <Search className="h-4 w-4" />
+        <div className="max-w-2xl">
+            {/* Collapsed summary - always visible */}
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="group flex w-full items-center gap-2 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <Search className="h-4 w-4 flex-shrink-0" />
                 <span>
-                    Found {results.length} {results.length === 1 ? "result" : "results"}{" "}
-                    for &quot;{query}&quot;
+                    We found {results.length}{" "}
+                    {results.length === 1 ? "result" : "results"} for &quot;{query}
+                    &quot;
                 </span>
-            </div>
+                {isExpanded ? (
+                    <ChevronUp className="ml-auto h-4 w-4 flex-shrink-0" />
+                ) : (
+                    <ChevronDown className="ml-auto h-4 w-4 flex-shrink-0" />
+                )}
+            </button>
 
-            <div className="space-y-4">
-                {results.map((item, index) => (
-                    <div key={index} className="group">
-                        <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-start gap-2 text-primary hover:underline"
-                        >
-                            <span className="font-medium">{item.title}</span>
-                            <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                        </a>
-                        <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                            <MarkdownRenderer content={item.snippet} inline />
-                        </div>
-                        {item.publishedDate && (
-                            <p className="mt-1 text-xs text-muted-foreground/70">
-                                {item.publishedDate}
-                            </p>
-                        )}
-                    </div>
-                ))}
-            </div>
+            {/* Expanded results - progressive disclosure */}
+            {isExpanded && (
+                <div className="mt-3 space-y-2 duration-200 animate-in fade-in slide-in-from-top-2">
+                    {results.map((item, index) => {
+                        const domain = extractDomain(item.url);
+                        const isResultExpanded = expandedResultIndex === index;
+
+                        return (
+                            <div
+                                key={index}
+                                className="glass-card transition-all hover:border-border/60"
+                            >
+                                <button
+                                    onClick={() =>
+                                        setExpandedResultIndex(
+                                            isResultExpanded ? null : index
+                                        )
+                                    }
+                                    className="flex w-full items-start gap-3 text-left"
+                                >
+                                    <div className="flex-1">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="font-medium text-foreground group-hover:text-primary">
+                                                {item.title}
+                                            </span>
+                                        </div>
+                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>{domain}</span>
+                                            {item.publishedDate && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span>{item.publishedDate}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <a
+                                            href={item.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                            aria-label={`Open ${item.title} in new tab`}
+                                        >
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                        </a>
+                                        {isResultExpanded ? (
+                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                        ) : (
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                    </div>
+                                </button>
+
+                                {/* Expanded snippet */}
+                                {isResultExpanded && (
+                                    <div className="mt-3 border-t pt-3 text-sm text-muted-foreground duration-150 animate-in fade-in slide-in-from-top-1">
+                                        <MarkdownRenderer
+                                            content={item.snippet}
+                                            inline
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }
