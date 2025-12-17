@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/git-guard.py"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/git-guard.py"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/save-worktree-state.py"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/save-worktree-state.py"
           }
         ]
       }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/restore-worktree-context.py"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/restore-worktree-context.py"
           }
         ]
       }
