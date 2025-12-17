@@ -29,6 +29,13 @@
       "when": 1765734319664,
       "tag": "0003_flaky_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765954641157,
+      "tag": "0004_add-knowledge-base-documents",
+      "breakpoints": true
     }
   ]
 }

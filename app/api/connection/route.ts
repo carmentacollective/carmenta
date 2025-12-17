@@ -548,9 +548,11 @@ export async function POST(req: Request) {
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can
         // use providerOptions for cache_control.
-        const systemMessages = buildSystemMessages({
+        // Includes profile context from Knowledge Base (V1 memory).
+        const systemMessages = await buildSystemMessages({
             user,
             userEmail,
+            userId: dbUser.id, // Internal UUID for Knowledge Base lookup
             timezone: undefined, // TODO: Get from client in future
         });
 

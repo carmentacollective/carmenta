@@ -2,6 +2,7 @@ import type { User } from "@clerk/nextjs/server";
 import type { SystemModelMessage } from "ai";
 import { SYSTEM_PROMPT } from "./system";
 import { renderSessionContext } from "./templates";
+import { compileUserContext } from "@/lib/kb/profile";
 
 /**
  * System message builder with Anthropic prompt caching via OpenRouter.
@@ -40,6 +41,7 @@ import { renderSessionContext } from "./templates";
 export interface UserContext {
     user: User | null;
     userEmail: string;
+    userId?: string; // User's internal UUID for KB lookup
     timezone?: string;
 }
 
@@ -105,9 +107,18 @@ function buildUserContextContent(context: UserContext): string {
  * NOT passed via the `system` string parameter. The `system` param doesn't
  * support providerOptions.
  *
+ * Structure (V1 with Knowledge Base):
+ * 1. Static system prompt (CACHED) - ~2700 tokens
+ * 2. Dynamic session context (NOT cached) - ~50-100 tokens
+ * 3. Profile context (NOT cached) - ~200-500 tokens
+ *
+ * The profile context comes from the user's Knowledge Base (/profile/) and
+ * allows Carmenta to know who they're working with, their preferences, and
+ * what they're working toward.
+ *
  * @example
  * ```typescript
- * const systemMessages = buildSystemMessages({ user, userEmail });
+ * const systemMessages = await buildSystemMessages({ user, userEmail, userId });
  * const result = await streamText({
  *     model: openrouter.chat(modelId),
  *     // system: undefined,  <-- Don't use this
@@ -115,10 +126,12 @@ function buildUserContextContent(context: UserContext): string {
  * });
  * ```
  */
-export function buildSystemMessages(context: UserContext): SystemModelMessage[] {
+export async function buildSystemMessages(
+    context: UserContext
+): Promise<SystemModelMessage[]> {
     const dynamicContent = buildUserContextContent(context);
 
-    return [
+    const messages: SystemModelMessage[] = [
         // Static prompt - CACHED via Anthropic cache_control
         {
             role: "system",
@@ -129,11 +142,26 @@ export function buildSystemMessages(context: UserContext): SystemModelMessage[] 
                 },
             },
         },
-        // Dynamic context - NOT cached (changes every request)
+        // Dynamic session context - NOT cached (changes every request)
         {
             role: "system",
             content: dynamicContent,
             // No providerOptions = no caching
         },
     ];
+
+    // Add profile context if userId is available
+    if (context.userId) {
+        const profileContext = await compileUserContext(context.userId);
+
+        if (profileContext) {
+            messages.push({
+                role: "system",
+                content: profileContext,
+                // No providerOptions = no caching (profile can change)
+            });
+        }
+    }
+
+    return messages;
 }

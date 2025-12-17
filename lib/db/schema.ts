@@ -361,6 +361,7 @@ export const messageParts = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
     connections: many(connections),
     integrations: many(integrations),
+    documents: many(documents),
 }));
 
 export const connectionsRelations = relations(connections, ({ one, many }) => ({
@@ -667,6 +668,114 @@ export type OAuthStateRecord = typeof oauthStates.$inferSelect;
 export type NewOAuthStateRecord = typeof oauthStates.$inferInsert;
 
 // ============================================================================
+// KNOWLEDGE BASE TABLES
+// ============================================================================
+
+/**
+ * Document source types - where the document came from
+ */
+export const documentSourceTypeEnum = pgEnum("document_source_type", [
+    // Manual entry
+    "manual", // User or admin created directly
+    "seed", // Initial profile template
+
+    // Conversation extraction (V2)
+    "conversation_extraction",
+    "conversation_decision",
+    "conversation_commitment",
+
+    // File uploads (V2)
+    "uploaded_pdf",
+    "uploaded_image",
+    "uploaded_audio",
+    "uploaded_document",
+    "uploaded_text",
+
+    // Integration sync (V2+)
+    "integration_limitless",
+    "integration_fireflies",
+    "integration_gmail",
+    "integration_slack",
+    "integration_notion",
+]);
+
+/**
+ * Knowledge Base Documents
+ *
+ * Core storage for user knowledge. Uses dot-notation paths for filesystem-like
+ * hierarchy (e.g., "profile.identity", "profile.people.sarah").
+ *
+ * Design decisions:
+ * - Text paths with dot notation: Simple, works with pglite for testing
+ * - V2: Migrate to ltree for production efficiency at scale
+ * - Text content over JSONB: LLM-readable, searchable, simple
+ * - No version history yet: V2 - add without breaking changes
+ * - Tags as array: Simple tag-based filtering
+ * - Generated tsvector: Postgres full-text search without extra infra
+ */
+export const documents = pgTable(
+    "documents",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** Owner - references users.id (UUID) */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /**
+         * Hierarchical path using dot notation
+         * Examples: "profile.identity", "profile.people.sarah"
+         * Note: No leading dot, dots as separators
+         * V1: text type with LIKE queries
+         * V2: Consider ltree extension for production efficiency
+         */
+        path: text("path").notNull(),
+
+        /** Human-readable document name (e.g., "identity.txt") */
+        name: varchar("name", { length: 255 }).notNull(),
+
+        /** Plain text content - LLM-readable */
+        content: text("content").notNull(),
+
+        /** Source of this document */
+        sourceType: documentSourceTypeEnum("source_type").notNull().default("manual"),
+
+        /** Reference to source (conversation ID, file ID, etc.) - V2 use */
+        sourceId: text("source_id"),
+
+        /** Tags for filtering (e.g., ["project", "active"]) */
+        tags: text("tags").array().notNull().default([]),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Primary lookup: user's documents by path prefix */
+        index("documents_user_id_idx").on(table.userId),
+        /** Unique path per user */
+        uniqueIndex("documents_user_path_unique_idx").on(table.userId, table.path),
+        /** Tag-based filtering */
+        index("documents_tags_idx").on(table.tags),
+    ]
+);
+
+/**
+ * Relations for documents
+ */
+export const documentsRelations = relations(documents, ({ one }) => ({
+    user: one(users, {
+        fields: [documents.userId],
+        references: [users.id],
+    }),
+}));
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -687,3 +796,6 @@ export type NewIntegration = typeof integrations.$inferInsert;
 
 export type IntegrationHistory = typeof integrationHistory.$inferSelect;
 export type NewIntegrationHistory = typeof integrationHistory.$inferInsert;
+
+export type Document = typeof documents.$inferSelect;
+export type NewDocument = typeof documents.$inferInsert;
