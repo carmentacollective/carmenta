@@ -55,12 +55,18 @@ test.describe("Smoke Tests", () => {
         const failedRequests: string[] = [];
 
         page.on("requestfailed", (request) => {
-            failedRequests.push(request.url());
+            const url = request.url();
+            // Exclude Clerk auth redirects - these are expected for unauthenticated users
+            // and may fail/abort as part of normal redirect flow
+            if (url.includes("accounts.dev") || url.includes("clerk.")) {
+                return;
+            }
+            failedRequests.push(url);
         });
 
         await page.goto("/");
 
-        // Should not have failed requests
+        // Should not have failed requests (excluding expected auth redirects)
         expect(failedRequests).toHaveLength(0);
     });
 });
