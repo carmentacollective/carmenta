@@ -108,23 +108,6 @@ function HoloThreadInner() {
     const lastMessage = messages[messages.length - 1];
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
 
-    // Force scroll to bottom during streaming
-    // The useChatScroll hook has complex logic that sometimes fails to scroll
-    // This is a simpler, more aggressive approach during active streaming
-    const streamingContentLength =
-        lastMessage?.parts
-            ?.filter((p): p is { type: "text"; text: string } => p?.type === "text")
-            .reduce((acc, p) => acc + (p.text?.length ?? 0), 0) ?? 0;
-
-    useEffect(() => {
-        if (isLoading && containerRef.current) {
-            containerRef.current.scrollTo({
-                top: containerRef.current.scrollHeight,
-                behavior: "instant",
-            });
-        }
-    }, [isLoading, streamingContentLength, containerRef]);
-
     return (
         <div className="flex h-full flex-col bg-transparent">
             {/* Full-viewport drag-drop overlay */}
