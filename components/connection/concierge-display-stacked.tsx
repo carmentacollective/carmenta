@@ -49,19 +49,12 @@ function getSelectingMessage(seed: string): string {
 }
 
 /**
- * Maps model IDs to friendly display names.
+ * Gets friendly display name from model-config (single source of truth).
+ * Falls back to extracting model name from ID if not found.
  */
 function getModelDisplayName(modelId: string): string {
-    const displayNames: Record<string, string> = {
-        "anthropic/claude-opus-4.5": "Claude Opus",
-        "anthropic/claude-sonnet-4.5": "Claude Sonnet",
-        "anthropic/claude-haiku-4.5": "Claude Haiku",
-        "google/gemini-3-pro-preview": "Gemini Pro",
-        "x-ai/grok-4.1-fast": "Grok",
-        "openai/gpt-5.2": "ChatGPT",
-    };
-
-    return displayNames[modelId] ?? modelId.split("/").pop() ?? modelId;
+    const model = getModel(modelId);
+    return model?.displayName ?? modelId.split("/").pop() ?? modelId;
 }
 
 /**
