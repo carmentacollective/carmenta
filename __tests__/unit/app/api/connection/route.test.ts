@@ -132,24 +132,32 @@ describe("POST /api/connection", () => {
             updatedAt: new Date(),
         });
 
-        vi.mocked(createConnection).mockImplementation(async (userId, title) => {
-            const id = 1; // Integer ID from database
-            const publicId = encodeConnectionId(id);
-            return {
-                id, // Integer, not string
-                userId,
-                title: title ?? null,
-                slug: title
-                    ? `fix-authentication-bug-${publicId}`
-                    : `connection-${publicId}`,
-                status: "active" as const,
-                streamingStatus: "idle" as const,
-                modelId: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                lastActivityAt: new Date(),
-            };
-        });
+        vi.mocked(createConnection).mockImplementation(
+            async (userId, title, _modelId, conciergeData) => {
+                const id = 1; // Integer ID from database
+                const publicId = encodeConnectionId(id);
+                return {
+                    id, // Integer, not string
+                    userId,
+                    title: title ?? null,
+                    slug: title
+                        ? `fix-authentication-bug-${publicId}`
+                        : `connection-${publicId}`,
+                    status: "active" as const,
+                    streamingStatus: "idle" as const,
+                    modelId: null,
+                    // Concierge data for persistence (temperature is string for numeric column)
+                    conciergeModelId: conciergeData?.modelId ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
+                    conciergeExplanation: conciergeData?.explanation ?? null,
+                    conciergeReasoning: conciergeData?.reasoning ?? null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastActivityAt: new Date(),
+                };
+            }
+        );
 
         vi.mocked(upsertMessage).mockResolvedValue(undefined);
         vi.mocked(updateStreamingStatus).mockResolvedValue(undefined);
@@ -269,11 +277,17 @@ describe("POST /api/connection", () => {
                 expect.arrayContaining([expect.objectContaining({ role: "user" })])
             );
 
-            // Verify connection was created with title from concierge
+            // Verify connection was created with title and concierge data
             expect(vi.mocked(createConnection)).toHaveBeenCalledWith(
                 "db-user-123",
                 "Fix authentication bug", // Title from concierge mock
-                "anthropic/claude-sonnet-4.5" // Model from concierge mock
+                "anthropic/claude-sonnet-4.5", // Model from concierge mock
+                {
+                    modelId: "anthropic/claude-sonnet-4.5",
+                    temperature: 0.5,
+                    explanation: "Standard task.",
+                    reasoning: { enabled: false },
+                }
             );
         });
 
@@ -351,7 +365,7 @@ describe("POST /api/connection", () => {
 
             // Update mock to reflect new title with integer ID
             vi.mocked(createConnection).mockImplementationOnce(
-                async (userId, title) => ({
+                async (userId, title, _modelId, conciergeData) => ({
                     id: testId,
                     userId,
                     title: title ?? null,
@@ -359,6 +373,11 @@ describe("POST /api/connection", () => {
                     status: "active" as const,
                     streamingStatus: "idle" as const,
                     modelId: null,
+                    conciergeModelId: conciergeData?.modelId ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
+                    conciergeExplanation: conciergeData?.explanation ?? null,
+                    conciergeReasoning: conciergeData?.reasoning ?? null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lastActivityAt: new Date(),
@@ -399,7 +418,7 @@ describe("POST /api/connection", () => {
             const testPublicId = encodeConnectionId(testId);
 
             vi.mocked(createConnection).mockImplementationOnce(
-                async (userId, _title) => ({
+                async (userId, _title, _modelId, conciergeData) => ({
                     id: testId,
                     userId,
                     title: null,
@@ -407,6 +426,11 @@ describe("POST /api/connection", () => {
                     status: "active" as const,
                     streamingStatus: "idle" as const,
                     modelId: null,
+                    conciergeModelId: conciergeData?.modelId ?? null,
+                    conciergeTemperature:
+                        conciergeData?.temperature?.toString() ?? null,
+                    conciergeExplanation: conciergeData?.explanation ?? null,
+                    conciergeReasoning: conciergeData?.reasoning ?? null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lastActivityAt: new Date(),

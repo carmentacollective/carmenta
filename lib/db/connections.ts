@@ -14,6 +14,7 @@ import {
     messageParts,
     type Connection,
     type NewConnection,
+    type ConciergeReasoningConfig,
 } from "./schema";
 import {
     mapUIMessageToDB,
@@ -30,17 +31,30 @@ import { encodeConnectionId, generateSlug } from "../sqids";
 // ============================================================================
 
 /**
+ * Concierge data to be stored with a connection.
+ * This is the model selection decision made by the concierge.
+ */
+export interface ConciergeData {
+    modelId: string;
+    temperature: number;
+    explanation: string;
+    reasoning: ConciergeReasoningConfig;
+}
+
+/**
  * Creates a new connection
  *
  * @param userId - Owner of the connection
  * @param title - Optional title (auto-generated later if not provided)
  * @param modelId - Model used for this connection
+ * @param conciergeData - Optional concierge decision data to persist for UI display
  * @returns The created connection
  */
 export async function createConnection(
     userId: string,
     title?: string,
-    modelId?: string
+    modelId?: string,
+    conciergeData?: ConciergeData
 ): Promise<Connection> {
     // Insert without ID - Postgres auto-generates it via SERIAL
     const [connection] = await db
@@ -52,6 +66,12 @@ export async function createConnection(
             modelId: modelId ?? null,
             status: "active",
             streamingStatus: "idle",
+            // Concierge data for UI persistence
+            conciergeModelId: conciergeData?.modelId ?? null,
+            // Convert number to string for numeric(3,2) column
+            conciergeTemperature: conciergeData?.temperature?.toString() ?? null,
+            conciergeExplanation: conciergeData?.explanation ?? null,
+            conciergeReasoning: conciergeData?.reasoning ?? null,
         })
         .returning();
 

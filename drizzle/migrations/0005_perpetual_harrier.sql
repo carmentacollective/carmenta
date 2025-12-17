@@ -1,0 +1,1 @@
+ALTER TABLE "connections" ALTER COLUMN "concierge_temperature" SET DATA TYPE numeric(3, 2);

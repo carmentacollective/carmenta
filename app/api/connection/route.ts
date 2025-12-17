@@ -334,45 +334,9 @@ export async function POST(req: Request) {
             }
             connectionPublicId = existingConnectionId;
         } else {
-            // New connection - create it with title from concierge
+            // New connection - will be created after computing final concierge data
             isNewConnection = true;
-            try {
-                const connection = await createConnection(
-                    dbUser.id,
-                    conciergeResult.title, // Title from concierge
-                    routingResult.modelId // Use final routed model, not Concierge's initial choice
-                );
-                connectionId = connection.id;
-                connectionPublicId = encodeConnectionId(connection.id);
-                connectionSlug = connection.slug;
-                logger.info(
-                    {
-                        connectionId,
-                        publicId: connectionPublicId,
-                        slug: connectionSlug,
-                        title: conciergeResult.title,
-                        userId: dbUser.id,
-                    },
-                    "Created new connection with title"
-                );
-            } catch (error) {
-                logger.error(
-                    { error, userId: dbUser.id, title: conciergeResult.title },
-                    "Failed to create connection"
-                );
-                throw error;
-            }
         }
-
-        // Save the latest user message before streaming
-        // (messages array may contain history, we only need to save new messages)
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage && lastMessage.role === "user") {
-            await upsertMessage(connectionId, lastMessage as UIMessageLike);
-        }
-
-        // Mark connection as streaming
-        await updateStreamingStatus(connectionId, "streaming");
 
         // Apply user overrides if provided (these take precedence over concierge)
         const hasOverrides =
@@ -418,6 +382,55 @@ export async function POST(req: Request) {
             autoSwitchReason: routingResult.reason,
             contextUtilization: routingResult.contextUtilization,
         };
+
+        // Create new connection now that we have final concierge data
+        // We persist what the user actually sees (after overrides/routing), not just
+        // what the concierge initially suggested.
+        if (isNewConnection) {
+            try {
+                const connection = await createConnection(
+                    dbUser.id,
+                    conciergeResult.title, // Title from concierge
+                    routingResult.modelId, // Use final routed model
+                    // Persist FINAL concierge data (after overrides/routing)
+                    {
+                        modelId: concierge.modelId,
+                        temperature: concierge.temperature,
+                        explanation: concierge.explanation,
+                        reasoning: concierge.reasoning,
+                    }
+                );
+                connectionId = connection.id;
+                connectionPublicId = encodeConnectionId(connection.id);
+                connectionSlug = connection.slug;
+                logger.info(
+                    {
+                        connectionId,
+                        publicId: connectionPublicId,
+                        slug: connectionSlug,
+                        title: conciergeResult.title,
+                        userId: dbUser.id,
+                    },
+                    "Created new connection with title and concierge data"
+                );
+            } catch (error) {
+                logger.error(
+                    { error, userId: dbUser.id, title: conciergeResult.title },
+                    "Failed to create connection"
+                );
+                throw error;
+            }
+        }
+
+        // Save the latest user message before streaming
+        // (messages array may contain history, we only need to save new messages)
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.role === "user") {
+            await upsertMessage(connectionId!, lastMessage as UIMessageLike);
+        }
+
+        // Mark connection as streaming
+        await updateStreamingStatus(connectionId!, "streaming");
 
         // Check if the selected model supports tool calling
         // Default to false for unknown models to avoid runtime errors

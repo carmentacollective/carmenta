@@ -745,17 +745,42 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 }
 
 /**
+ * Inner wrapper that reads initialConcierge from ConnectionContext
+ * and passes it to ConciergeProvider.
+ */
+function ConciergeWrapper({ children }: { children: ReactNode }) {
+    const { initialConcierge } = useConnection();
+
+    // Convert PersistedConciergeData to ConciergeResult format
+    // The persisted format matches ConciergeResult's core fields
+    //
+    // SAFETY: When initialConcierge is truthy, all fields are guaranteed to be present.
+    // extractConciergeData() in lib/actions/connections.ts only returns non-null when
+    // ALL fields exist in the database row.
+    const initial = initialConcierge
+        ? {
+              modelId: initialConcierge.modelId,
+              temperature: initialConcierge.temperature,
+              explanation: initialConcierge.explanation,
+              reasoning: initialConcierge.reasoning,
+          }
+        : null;
+
+    return <ConciergeProvider initial={initial}>{children}</ConciergeProvider>;
+}
+
+/**
  * Provides chat functionality via Vercel AI SDK's useChat hook.
  *
  * This wraps the app with:
- * - ConciergeProvider for concierge data
+ * - ConciergeProvider for concierge data (hydrated from persisted state)
  * - ChatContext for message state and actions
  * - Runtime error display with retry capability
  */
 export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
     return (
-        <ConciergeProvider>
+        <ConciergeWrapper>
             <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
-        </ConciergeProvider>
+        </ConciergeWrapper>
     );
 }
