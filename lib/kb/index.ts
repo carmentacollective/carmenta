@@ -33,6 +33,29 @@ import { logger } from "@/lib/logger";
 import type { Document, NewDocument } from "@/lib/db/schema";
 
 // ============================================================================
+// Type Helpers
+// ============================================================================
+
+/**
+ * Map raw database row to Document type
+ * Centralized mapping to avoid duplication and ensure consistency
+ */
+function mapRowToDocument(row: Record<string, unknown>): Document {
+    return {
+        id: row.id as string,
+        userId: row.user_id as string,
+        path: row.path as string,
+        name: row.name as string,
+        content: row.content as string,
+        sourceType: row.source_type as Document["sourceType"],
+        sourceId: row.source_id as string | null,
+        tags: row.tags as string[],
+        createdAt: row.created_at as Date,
+        updatedAt: row.updated_at as Date,
+    };
+}
+
+// ============================================================================
 // Path Utilities
 // ============================================================================
 
@@ -166,18 +189,7 @@ export async function readFolder(
     `);
 
     // postgres-js/pglite returns array directly, map to Document type
-    return (result as unknown as Record<string, unknown>[]).map((row) => ({
-        id: row.id as string,
-        userId: row.user_id as string,
-        path: row.path as string,
-        name: row.name as string,
-        content: row.content as string,
-        sourceType: row.source_type as Document["sourceType"],
-        sourceId: row.source_id as string | null,
-        tags: row.tags as string[],
-        createdAt: row.created_at as Date,
-        updatedAt: row.updated_at as Date,
-    }));
+    return (result as unknown as Record<string, unknown>[]).map(mapRowToDocument);
 }
 
 /**
@@ -216,23 +228,42 @@ export async function update(
 
 /**
  * Upsert a document - create if not exists, update if exists
+ * Uses atomic INSERT ... ON CONFLICT to avoid race conditions
  */
 export async function upsert(
     userId: string,
     input: CreateDocumentInput
 ): Promise<Document> {
-    const existing = await read(userId, input.path);
+    const normalizedPath = toPath(input.path);
 
-    if (existing) {
-        const updated = await update(userId, input.path, {
-            content: input.content,
+    const [doc] = await db
+        .insert(schema.documents)
+        .values({
+            userId,
+            path: normalizedPath,
             name: input.name,
-            tags: input.tags,
-        });
-        return updated!;
-    }
+            content: input.content,
+            sourceType: input.sourceType ?? "manual",
+            sourceId: input.sourceId,
+            tags: input.tags ?? [],
+        })
+        .onConflictDoUpdate({
+            target: [schema.documents.userId, schema.documents.path],
+            set: {
+                content: input.content,
+                name: input.name,
+                tags: input.tags ?? [],
+                updatedAt: new Date(),
+            },
+        })
+        .returning();
 
-    return create(userId, input);
+    logger.info(
+        { userId, path: normalizedPath, name: input.name },
+        "📚 Document upserted in knowledge base"
+    );
+
+    return doc;
 }
 
 /**
@@ -308,18 +339,7 @@ export async function search(
     `);
 
     // postgres-js/pglite returns array directly
-    return (result as unknown as Record<string, unknown>[]).map((row) => ({
-        id: row.id as string,
-        userId: row.user_id as string,
-        path: row.path as string,
-        name: row.name as string,
-        content: row.content as string,
-        sourceType: row.source_type as Document["sourceType"],
-        sourceId: row.source_id as string | null,
-        tags: row.tags as string[],
-        createdAt: row.created_at as Date,
-        updatedAt: row.updated_at as Date,
-    }));
+    return (result as unknown as Record<string, unknown>[]).map(mapRowToDocument);
 }
 
 // ============================================================================

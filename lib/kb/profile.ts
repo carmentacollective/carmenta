@@ -207,7 +207,14 @@ export async function hasPopulatedProfile(userId: string): Promise<boolean> {
 
     if (!identity) return false;
 
-    // Check if it's still the template (has placeholder brackets)
-    const isTemplate = identity.content.includes("[Your name]");
+    // Check for multiple template markers - more robust than single marker
+    const templateMarkers = [
+        "[Your name]",
+        "[Your professional role]",
+        "[Brief professional background]",
+    ];
+    const isTemplate = templateMarkers.some((marker) =>
+        identity.content.includes(marker)
+    );
     return !isTemplate;
 }

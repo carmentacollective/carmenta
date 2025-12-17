@@ -1,5 +1,5 @@
 {
-  "id": "3f291bff-af37-4eba-bd56-0e52ccf344e0",
+  "id": "2ab71528-404a-4d52-8a34-2cb7c3e6c83b",
   "prevId": "932f5a16-7f92-4a10-8029-66bd46a71c82",
   "version": "7",
   "dialect": "postgresql",
@@ -186,7 +186,7 @@
         },
         "path": {
           "name": "path",
-          "type": "ltree",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },

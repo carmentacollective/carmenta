@@ -18,6 +18,7 @@
  * ```
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { kb, PROFILE_PATHS } from "./index";
 import { logger } from "@/lib/logger";
 
@@ -108,8 +109,12 @@ ${peopleSection}`);
 
         return compiledContext;
     } catch (error) {
-        // Log error but return empty string - graceful degradation
+        // Log error and report to Sentry, but return empty string - graceful degradation
         logger.error({ error, userId }, "Failed to compile user profile context");
+        Sentry.captureException(error, {
+            tags: { component: "knowledge-base", action: "compile-context" },
+            extra: { userId },
+        });
         return "";
     }
 }
