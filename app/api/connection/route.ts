@@ -334,13 +334,20 @@ export async function POST(req: Request) {
             }
             connectionPublicId = existingConnectionId;
         } else {
-            // New connection - create it with title from concierge
+            // New connection - create it with title and concierge data
             isNewConnection = true;
             try {
                 const connection = await createConnection(
                     dbUser.id,
                     conciergeResult.title, // Title from concierge
-                    routingResult.modelId // Use final routed model, not Concierge's initial choice
+                    routingResult.modelId, // Use final routed model, not Concierge's initial choice
+                    // Persist concierge data for UI display on page refresh
+                    {
+                        modelId: conciergeResult.modelId,
+                        temperature: conciergeResult.temperature,
+                        explanation: conciergeResult.explanation,
+                        reasoning: conciergeResult.reasoning,
+                    }
                 );
                 connectionId = connection.id;
                 connectionPublicId = encodeConnectionId(connection.id);
@@ -353,7 +360,7 @@ export async function POST(req: Request) {
                         title: conciergeResult.title,
                         userId: dbUser.id,
                     },
-                    "Created new connection with title"
+                    "Created new connection with title and concierge data"
                 );
             } catch (error) {
                 logger.error(

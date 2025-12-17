@@ -19,9 +19,10 @@ import {
     deleteConnection as dbDeleteConnection,
     loadMessages as dbLoadMessages,
     mapConnectionMessagesToUI,
+    type ConciergeData,
 } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/db";
-import type { Connection } from "@/lib/db/schema";
+import type { Connection, ConciergeReasoningConfig } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/logger";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
@@ -52,6 +53,17 @@ export interface PublicConnection {
 }
 
 /**
+ * Concierge data for hydrating the UI on page load.
+ * This is extracted from the connection and returned separately for clarity.
+ */
+export interface PersistedConciergeData {
+    modelId: string;
+    temperature: number;
+    explanation: string;
+    reasoning: ConciergeReasoningConfig;
+}
+
+/**
  * Maps a DB connection to a public connection with encoded string ID
  */
 function toPublicConnection(connection: Connection): PublicConnection {
@@ -59,6 +71,28 @@ function toPublicConnection(connection: Connection): PublicConnection {
         ...connection,
         id: encodeConnectionId(connection.id),
     };
+}
+
+/**
+ * Extracts concierge data from a connection for UI hydration.
+ * Returns null if any required field is missing (e.g., connection created before this feature).
+ */
+function extractConciergeData(connection: Connection): PersistedConciergeData | null {
+    // All fields must be present for valid concierge data
+    if (
+        connection.conciergeModelId &&
+        connection.conciergeTemperature != null &&
+        connection.conciergeExplanation &&
+        connection.conciergeReasoning
+    ) {
+        return {
+            modelId: connection.conciergeModelId,
+            temperature: connection.conciergeTemperature,
+            explanation: connection.conciergeExplanation,
+            reasoning: connection.conciergeReasoning,
+        };
+    }
+    return null;
 }
 
 /**
@@ -158,13 +192,14 @@ export async function getRecentConnections(
 }
 
 /**
- * Loads a connection with all its messages
+ * Loads a connection with all its messages and concierge data
  * @param connectionId - Public Sqid string from the client
- * @returns PublicConnectionWithMessages with encoded Sqid ID
+ * @returns PublicConnectionWithMessages with encoded Sqid ID and concierge data for hydration
  */
 export async function loadConnection(connectionId: string): Promise<{
     connection: PublicConnectionWithMessages;
     messages: UIMessageLike[];
+    concierge: PersistedConciergeData | null;
 } | null> {
     const dbUser = await getDbUser();
     if (!dbUser) {
@@ -179,8 +214,9 @@ export async function loadConnection(connectionId: string): Promise<{
     const messages = mapConnectionMessagesToUI(connection);
     const publicConnection: PublicConnectionWithMessages =
         toPublicConnection(connection);
+    const concierge = extractConciergeData(connection);
 
-    return { connection: publicConnection, messages };
+    return { connection: publicConnection, messages, concierge };
 }
 
 /**

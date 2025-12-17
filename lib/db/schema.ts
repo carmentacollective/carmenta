@@ -24,6 +24,7 @@ import {
     serial,
     pgEnum,
     boolean,
+    real,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -138,6 +139,15 @@ export const users = pgTable(
 // ============================================================================
 
 /**
+ * Concierge reasoning configuration stored with connection
+ */
+export interface ConciergeReasoningConfig {
+    enabled: boolean;
+    effort?: "high" | "medium" | "low" | "none";
+    maxTokens?: number;
+}
+
+/**
  * Connection metadata - tab-style access with background save support
  *
  * Design decisions:
@@ -145,6 +155,7 @@ export const users = pgTable(
  * - `streamingStatus` tracks long-running operations for recovery
  * - `lastActivityAt` is the primary sort key for recency
  * - `modelId` records which model was used (useful for cost tracking)
+ * - Concierge data persisted for display on page refresh
  * - No sidebar archive - users access via recency or search
  */
 export const connections = pgTable(
@@ -183,6 +194,21 @@ export const connections = pgTable(
 
         /** Model used for this connection (e.g., "anthropic/claude-sonnet-4") */
         modelId: varchar("model_id", { length: 255 }),
+
+        // ---- Concierge Data (persisted for display on page refresh) ----
+
+        /** Model selected by concierge for this connection */
+        conciergeModelId: varchar("concierge_model_id", { length: 255 }),
+
+        /** Temperature setting selected by concierge */
+        conciergeTemperature: real("concierge_temperature"),
+
+        /** One-sentence explanation of the model choice */
+        conciergeExplanation: text("concierge_explanation"),
+
+        /** Reasoning configuration selected by concierge */
+        conciergeReasoning:
+            jsonb("concierge_reasoning").$type<ConciergeReasoningConfig>(),
 
         /** Last activity for recency sorting (updated on every message) */
         lastActivityAt: timestamp("last_activity_at", { withTimezone: true })

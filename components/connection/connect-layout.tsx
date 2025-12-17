@@ -23,7 +23,10 @@ import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectionChooser } from "./connection-chooser";
 import { Oracle } from "@/components/ui/oracle";
 import { UserAuthButton } from "@/components/ui";
-import type { PublicConnection } from "@/lib/actions/connections";
+import type {
+    PublicConnection,
+    PersistedConciergeData,
+} from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 // ============================================================
@@ -147,6 +150,8 @@ interface ConnectLayoutProps {
     activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
+    /** Initial concierge data for hydrating the display on page load */
+    initialConcierge?: PersistedConciergeData | null;
 }
 
 export function ConnectLayout({
@@ -154,12 +159,14 @@ export function ConnectLayout({
     initialConnections = [],
     activeConnection = null,
     initialMessages = [],
+    initialConcierge = null,
 }: ConnectLayoutProps) {
     return (
         <ConnectionProvider
             initialConnections={initialConnections}
             activeConnection={activeConnection}
             initialMessages={initialMessages}
+            initialConcierge={initialConcierge}
         >
             <ConnectLayoutInner>{children}</ConnectLayoutInner>
         </ConnectionProvider>

@@ -17,6 +17,7 @@ import type {
     ToolCallData,
     DataPartContent,
     ProviderMetadata,
+    ConciergeReasoningConfig,
 } from "./schema";
 
 // ============================================================================
@@ -59,6 +60,11 @@ export interface ConnectionWithMessages {
     status: "active" | "background" | "archived";
     streamingStatus: "idle" | "streaming" | "completed" | "failed";
     modelId: string | null;
+    // Concierge data for UI display on page refresh
+    conciergeModelId: string | null;
+    conciergeTemperature: number | null;
+    conciergeExplanation: string | null;
+    conciergeReasoning: ConciergeReasoningConfig | null;
     lastActivityAt: Date;
     createdAt: Date;
     updatedAt: Date;

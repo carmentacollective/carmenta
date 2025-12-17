@@ -21,18 +21,22 @@ const ConciergeContext = createContext<ConciergeContextValue | null>(null);
 
 interface ConciergeProviderProps {
     children: ReactNode;
+    /** Optional initial concierge data for hydrating from persisted state */
+    initial?: ConciergeResult | null;
 }
 
 /**
  * Provides concierge data to the component tree.
  * Updated by ConnectRuntimeProvider when response headers arrive.
  *
- * Note: This is global state for the current response only.
- * Historical messages don't retain their original concierge data.
- * For V2, consider associating concierge data with message IDs.
+ * Now supports initial state hydration from persisted data (V2).
+ * When a connection is loaded, the concierge data is restored from the database.
  */
-export function ConciergeProvider({ children }: ConciergeProviderProps) {
-    const [concierge, setConciergeState] = useState<ConciergeResult | null>(null);
+export function ConciergeProvider({
+    children,
+    initial = null,
+}: ConciergeProviderProps) {
+    const [concierge, setConciergeState] = useState<ConciergeResult | null>(initial);
 
     const setConcierge = useCallback((data: ConciergeResult | null) => {
         setConciergeState(data);
