@@ -63,7 +63,7 @@
          * Top fade: hint that content exists above
          * Bottom fade: slightly larger to transition into input dock area */
         --chat-fade-top: 40px;
-        --chat-fade-bottom: 56px;
+        --chat-fade-bottom: 32px;
     }
 
     /* Dark mode - Cosmic consciousness depths with ethereal shimmer */
@@ -762,6 +762,16 @@
 
     .scrollbar-holo::-webkit-scrollbar-corner {
         background: transparent; /* Clean corner where scrollbars meet */
+    }
+
+    /* Hide scrollbar during streaming - content is auto-scrolling anyway */
+    .scrollbar-streaming {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .scrollbar-streaming::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
     }
 
     /*

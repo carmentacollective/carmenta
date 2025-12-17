@@ -115,12 +115,15 @@ function HoloThreadInner() {
             {/* Viewport with fade mask and mobile touch optimizations */}
             <div
                 ref={containerRef}
-                className="scrollbar-holo chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-20 pt-4 sm:px-4 sm:pb-24 sm:pt-8 md:pb-32"
+                className={cn(
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-4 sm:pb-10 sm:pt-8",
+                    isLoading ? "scrollbar-streaming" : "scrollbar-holo"
+                )}
             >
                 {isEmpty ? (
                     <ThreadWelcome />
                 ) : (
-                    <div className="flex w-full max-w-4xl flex-col">
+                    <div className="flex w-full flex-col">
                         {messages.map((message, index) => (
                             <MessageBubble
                                 key={message.id}
@@ -148,7 +151,7 @@ function HoloThreadInner() {
             {/* Input container with safe area for notched devices */}
             <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
-                    className="relative flex w-full max-w-4xl flex-col items-center"
+                    className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -178,7 +181,7 @@ function HoloThreadInner() {
  */
 function ThreadWelcome() {
     return (
-        <div className="flex w-full max-w-4xl flex-grow flex-col items-center justify-center text-center">
+        <div className="flex w-full flex-grow flex-col items-center justify-center text-center">
             <Greeting
                 className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
                 subtitleClassName="mt-2 text-base text-foreground/60"
@@ -1229,7 +1232,7 @@ function Composer({ isNewConversation }: ComposerProps) {
             : "idle";
 
     return (
-        <div className="flex w-full max-w-4xl flex-col gap-2">
+        <div className="flex w-full flex-col gap-2">
             {/* Upload progress display */}
             {hasPendingFiles && (
                 <UploadProgressDisplay onInsertInline={handleInsertInline} />
