@@ -1,6 +1,6 @@
 {
-  "id": "f0241f5a-687a-4c19-85f7-8226a4210475",
-  "prevId": "932f5a16-7f92-4a10-8029-66bd46a71c82",
+  "id": "71cb868f-a87b-4704-9c60-99af4b89119d",
+  "prevId": "f0241f5a-687a-4c19-85f7-8226a4210475",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -62,7 +62,7 @@
         },
         "concierge_temperature": {
           "name": "concierge_temperature",
-          "type": "real",
+          "type": "numeric(3, 2)",
           "primaryKey": false,
           "notNull": false
         },

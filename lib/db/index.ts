@@ -73,6 +73,7 @@ export type {
     ProviderMetadata,
     Document,
     NewDocument,
+    ConciergeReasoningConfig,
 } from "./schema";
 
 // Re-export user operations
@@ -100,6 +101,7 @@ export {
     markAsBackground,
     findInterruptedConnections,
     mapConnectionMessagesToUI,
+    type ConciergeData,
     type ConnectionWithMessages,
     type MessageWithParts,
     type UIMessageLike,

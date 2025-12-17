@@ -66,14 +66,14 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
         notFound();
     }
 
-    // Load the connection and its messages
+    // Load the connection, messages, and concierge data
     const result = await loadConnection(connectionId);
 
     if (!result) {
         notFound();
     }
 
-    const { connection, messages } = result;
+    const { connection, messages, concierge } = result;
 
     // If the slug doesn't match the current connection slug, redirect to canonical URL
     // This handles cases where the title changed and old URLs need updating
@@ -93,6 +93,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
                     initialConnections={recentConnections}
                     activeConnection={connection}
                     initialMessages={messages}
+                    initialConcierge={concierge}
                 >
                     <Chat />
                 </ConnectLayout>

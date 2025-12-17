@@ -27,6 +27,7 @@ import {
     archiveConnection,
     deleteConnection as deleteConnectionAction,
     type PublicConnection,
+    type PersistedConciergeData,
 } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/client-logger";
@@ -46,6 +47,8 @@ interface ConnectionContextValue {
     isPending: boolean;
     error: Error | null;
     initialMessages: UIMessageLike[];
+    /** Persisted concierge data for hydrating UI on page load */
+    initialConcierge: PersistedConciergeData | null;
     setActiveConnection: (slug: string) => void;
     createNewConnection: () => void;
     archiveActiveConnection: () => void;
@@ -65,6 +68,8 @@ interface ConnectionProviderProps {
     initialConnections?: PublicConnection[];
     activeConnection?: PublicConnection | null;
     initialMessages?: UIMessageLike[];
+    /** Persisted concierge data for hydrating UI on page load */
+    initialConcierge?: PersistedConciergeData | null;
 }
 
 export function ConnectionProvider({
@@ -72,6 +77,7 @@ export function ConnectionProvider({
     initialConnections = [],
     activeConnection = null,
     initialMessages = [],
+    initialConcierge = null,
 }: ConnectionProviderProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -222,6 +228,7 @@ export function ConnectionProvider({
             isPending,
             error,
             initialMessages,
+            initialConcierge,
             setActiveConnection: setActiveConnectionNav,
             createNewConnection: handleCreateNewConnection,
             archiveActiveConnection,
@@ -244,6 +251,7 @@ export function ConnectionProvider({
             isPending,
             error,
             initialMessages,
+            initialConcierge,
             setActiveConnectionNav,
             handleCreateNewConnection,
             archiveActiveConnection,
