@@ -1,7 +1,14 @@
 "use client";
 
-import { memo } from "react";
-import { Brain, Loader2, ArrowRightLeft, Check } from "lucide-react";
+import { memo, useState } from "react";
+import {
+    Brain,
+    Loader2,
+    ArrowRightLeft,
+    Check,
+    ChevronDown,
+    Thermometer,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -11,7 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getModel } from "@/lib/model-config";
+import { getModel, TEMPERATURE_PRESETS, REASONING_PRESETS } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
 import {
     CarmentaAvatar,
@@ -29,14 +36,21 @@ const springConfig = {
 };
 
 /**
- * Selecting state messages - warm, varied, "we" language.
+ * Selecting state messages - Carmenta voice explaining AI selection.
+ * Warm "we" language that conveys partnership, not tool-use.
  * Hash-based selection ensures consistency without randomness.
  */
 const SELECTING_MESSAGES = [
-    "Finding our approach...",
-    "Selecting together...",
-    "Matching this to you...",
-    "Tuning in...",
+    "Finding the best mind for this moment...",
+    "Choosing which AI will serve you best...",
+    "Matching your thought to the right model...",
+    "Selecting the perfect voice for this...",
+    "Calibrating for exactly what you need...",
+    "Finding your ideal collaborator...",
+    "Tuning into the right response...",
+    "Discovering the perfect match...",
+    "Sensing which AI fits this best...",
+    "Aligning you with the right model...",
 ];
 
 function getSelectingMessage(seed: string): string {
@@ -58,14 +72,37 @@ function getModelDisplayName(modelId: string): string {
 }
 
 /**
- * Extracts the short reason from explanation.
- * Takes the part before "—" or the whole string if no delimiter.
+ * Gets the temperature preset label from a value.
  */
-function getShortReason(explanation: string | undefined): string {
-    if (!explanation) return "";
-    const parts = explanation.split("—");
-    return (parts[0] ?? explanation).trim();
+function getTemperatureLabel(temperature: number): string {
+    // Find closest preset
+    const preset = TEMPERATURE_PRESETS.reduce((closest, p) =>
+        Math.abs(p.value - temperature) < Math.abs(closest.value - temperature)
+            ? p
+            : closest
+    );
+    return preset.label;
 }
+
+/**
+ * Gets the reasoning preset label from effort level.
+ */
+function getReasoningLabel(reasoning: ReasoningConfig | undefined): {
+    label: string;
+    emoji: string;
+} | null {
+    if (!reasoning?.enabled) return null;
+
+    const effortMap: Record<string, { label: string; emoji: string }> = {
+        high: { label: "Deep thinking", emoji: "🧠" },
+        medium: { label: "Balanced", emoji: "⚖️" },
+        low: { label: "Quick", emoji: "🏃" },
+    };
+
+    return effortMap[reasoning.effort ?? ""] ?? { label: "Thinking", emoji: "💭" };
+}
+
+// Note: getShortReason was removed - we now show full explanations with model capabilities
 
 interface ConciergeDisplayStackedProps {
     /** The selected model ID - null when still selecting */
@@ -115,6 +152,7 @@ interface ConciergeDisplayStackedProps {
  */
 export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
     modelId,
+    temperature,
     explanation,
     reasoning,
     isSelecting = false,
@@ -124,22 +162,32 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
     autoSwitched,
     autoSwitchReason,
 }: ConciergeDisplayStackedProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const hasSelected = Boolean(modelId);
     const displayName = modelId ? getModelDisplayName(modelId) : null;
     const modelConfig = modelId ? getModel(modelId) : null;
     const selectingMessage = getSelectingMessage(messageSeed);
-    const shortReason = getShortReason(explanation);
 
-    // Determine reasoning label for badge
-    const reasoningLabel = reasoning?.enabled
-        ? reasoning.effort === "high"
-            ? "deep thinking"
-            : reasoning.effort === "medium"
-              ? "thoughtful"
-              : reasoning.effort === "low"
-                ? "light thinking"
-                : "thinking"
-        : null;
+    // Get display labels
+    const reasoningInfo = getReasoningLabel(reasoning);
+    const temperatureLabel =
+        temperature !== undefined ? getTemperatureLabel(temperature) : null;
+
+    // Temperature emoji mapping
+    const temperatureEmoji =
+        temperatureLabel === "Precise"
+            ? "🎯"
+            : temperatureLabel === "Balanced"
+              ? "⚖️"
+              : temperatureLabel === "Creative"
+                ? "🎨"
+                : "✨"; // Expressive
+
+    // Build the explanation with model capabilities
+    const fullExplanation = explanation
+        ? `${explanation}${modelConfig?.description ? ` — ${modelConfig.description}` : ""}`
+        : (modelConfig?.description ?? "");
 
     // Don't render if we have nothing to show
     if (!isSelecting && !hasSelected) {
@@ -155,7 +203,7 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                     duration: 0.25,
                     ease: [0.16, 1, 0.3, 1],
                 }}
-                className={cn("not-prose relative min-h-[28px]", className)}
+                className={cn("not-prose relative min-h-[40px]", className)}
             >
                 {/*
                  * Crossfade transition (no mode="wait") for smooth state changes.
@@ -175,9 +223,29 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                         >
                             <CarmentaAvatar size="xs" state={avatarState} />
                             <Loader2 className="h-3 w-3 animate-spin text-primary/60" />
-                            <span className="text-xs font-medium text-primary/80">
+                            {/* Magical shimmer text - 20% magical with gradient animation */}
+                            <motion.span
+                                initial={{ opacity: 0, backgroundPosition: "0% 50%" }}
+                                animate={{
+                                    opacity: 1,
+                                    backgroundPosition: [
+                                        "0% 50%",
+                                        "100% 50%",
+                                        "0% 50%",
+                                    ],
+                                }}
+                                transition={{
+                                    opacity: { duration: 0.2 },
+                                    backgroundPosition: {
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                    },
+                                }}
+                                className="bg-gradient-to-r from-primary/90 via-purple-500/80 to-primary/90 bg-[length:200%_100%] bg-clip-text text-xs font-medium text-transparent"
+                            >
                                 {selectingMessage}
-                            </span>
+                            </motion.span>
                         </motion.div>
                     ) : hasSelected ? (
                         /* Selected state - stacked layout with Apple-inspired hierarchy */
@@ -188,36 +256,19 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                             transition={{ duration: 0.2, delay: 0.05 }}
                             className="flex items-start gap-2.5"
                         >
-                            {/* Provider badge - subtle gradient background */}
+                            {/* Carmenta avatar - speaking to present the selection */}
                             <motion.div
                                 initial={{ scale: 0.7, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={springConfig.bouncy}
-                                className="mt-px shrink-0"
+                                className="mt-0.5 shrink-0"
                             >
-                                {modelConfig?.description ? (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div className="flex h-5 w-5 cursor-help items-center justify-center rounded-md bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 text-[9px] font-semibold tracking-tight text-primary ring-1 ring-primary/15 transition-colors hover:ring-primary/25">
-                                                {getProviderInitials(modelId!)}
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" className="max-w-xs">
-                                            <p className="text-xs">
-                                                {modelConfig.description}
-                                            </p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                ) : (
-                                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 text-[9px] font-semibold tracking-tight text-primary ring-1 ring-primary/15">
-                                        {getProviderInitials(modelId!)}
-                                    </div>
-                                )}
+                                <CarmentaAvatar size="sm" state="speaking" />
                             </motion.div>
 
-                            {/* Stacked text: name + short reason */}
-                            <div className="min-w-0 space-y-0.5">
-                                {/* Top line: name + badges + success indicator */}
+                            {/* Stacked text: name + explanation + details */}
+                            <div className="min-w-0 space-y-1">
+                                {/* Top line: name + badges + expand toggle */}
                                 <div className="flex items-center gap-1.5">
                                     <motion.span
                                         initial={{ opacity: 0, x: -4 }}
@@ -226,12 +277,12 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                                             delay: 0.05,
                                             ...springConfig.gentle,
                                         }}
-                                        className="text-sm font-medium text-foreground/90"
+                                        className="text-sm font-semibold text-foreground"
                                     >
                                         {displayName}
                                     </motion.span>
 
-                                    {/* Success checkmark - satisfying spring bounce */}
+                                    {/* Success checkmark */}
                                     <motion.div
                                         initial={{ scale: 0, opacity: 0, rotate: -45 }}
                                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -240,32 +291,8 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                                             ...springConfig.bouncy,
                                         }}
                                     >
-                                        <Check className="h-3 w-3 text-green-500/80" />
+                                        <Check className="h-3.5 w-3.5 text-green-500" />
                                     </motion.div>
-
-                                    {/* Reasoning badge */}
-                                    {reasoningLabel && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <motion.span
-                                                    initial={{ opacity: 0, scale: 0.7 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{
-                                                        delay: 0.15,
-                                                        ...springConfig.bouncy,
-                                                    }}
-                                                    className="flex cursor-help items-center gap-0.5 text-primary/60"
-                                                >
-                                                    <Brain className="h-3 w-3" />
-                                                </motion.span>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top">
-                                                <p className="text-xs capitalize">
-                                                    {reasoningLabel}
-                                                </p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )}
 
                                     {/* Auto-switch indicator */}
                                     {autoSwitched && autoSwitchReason && (
@@ -275,12 +302,12 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                                                     initial={{ opacity: 0, scale: 0.7 }}
                                                     animate={{ opacity: 1, scale: 1 }}
                                                     transition={{
-                                                        delay: 0.2,
+                                                        delay: 0.15,
                                                         ...springConfig.bouncy,
                                                     }}
-                                                    className="cursor-help text-amber-500/80"
+                                                    className="cursor-help text-amber-500"
                                                 >
-                                                    <ArrowRightLeft className="h-3 w-3" />
+                                                    <ArrowRightLeft className="h-3.5 w-3.5" />
                                                 </motion.div>
                                             </TooltipTrigger>
                                             <TooltipContent
@@ -293,19 +320,87 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
                                             </TooltipContent>
                                         </Tooltip>
                                     )}
+
+                                    {/* Expand/collapse toggle - only show if we have details */}
+                                    {(temperatureLabel || reasoningInfo) && (
+                                        <motion.button
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.2 }}
+                                            onClick={() => setIsExpanded(!isExpanded)}
+                                            className="ml-auto flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-muted-foreground"
+                                        >
+                                            <span>{isExpanded ? "Less" : "More"}</span>
+                                            <motion.div
+                                                animate={{
+                                                    rotate: isExpanded ? 180 : 0,
+                                                }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <ChevronDown className="h-3 w-3" />
+                                            </motion.div>
+                                        </motion.button>
+                                    )}
                                 </div>
 
-                                {/* Bottom line: short reason - muted secondary text */}
-                                {shortReason && (
+                                {/* Explanation - larger, full text */}
+                                {fullExplanation && (
                                     <motion.p
                                         initial={{ opacity: 0, y: 2 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.12, duration: 0.2 }}
-                                        className="text-xs text-muted-foreground/70"
+                                        className="text-sm leading-relaxed text-muted-foreground"
                                     >
-                                        {shortReason}
+                                        {fullExplanation}
                                     </motion.p>
                                 )}
+
+                                {/* Collapsible details section */}
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="flex flex-wrap gap-2 pt-1.5">
+                                                {/* Temperature badge */}
+                                                {temperatureLabel && (
+                                                    <div className="flex items-center gap-1 rounded-full bg-foreground/5 px-2 py-1 text-xs text-muted-foreground">
+                                                        <Thermometer className="h-3 w-3" />
+                                                        <span>{temperatureEmoji}</span>
+                                                        <span>{temperatureLabel}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Reasoning badge */}
+                                                {reasoningInfo && (
+                                                    <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
+                                                        <Brain className="h-3 w-3" />
+                                                        <span>
+                                                            {reasoningInfo.emoji}
+                                                        </span>
+                                                        <span>
+                                                            {reasoningInfo.label}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Model tags */}
+                                                {modelConfig?.tags.map((tag) => (
+                                                    <div
+                                                        key={tag}
+                                                        className="rounded-full bg-foreground/5 px-2 py-1 text-xs text-muted-foreground"
+                                                    >
+                                                        {tag}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
                     ) : null}
@@ -314,20 +409,3 @@ export const ConciergeDisplayStacked = memo(function ConciergeDisplayStacked({
         </TooltipProvider>
     );
 });
-
-/**
- * Extracts provider initials for the compact badge.
- * e.g., "anthropic/claude-sonnet-4.5" -> "CL"
- */
-function getProviderInitials(modelId: string): string {
-    const initials: Record<string, string> = {
-        "anthropic/claude-opus-4.5": "CL",
-        "anthropic/claude-sonnet-4.5": "CL",
-        "anthropic/claude-haiku-4.5": "CL",
-        "google/gemini-3-pro-preview": "GM",
-        "x-ai/grok-4.1-fast": "GK",
-        "openai/gpt-5.2": "GP",
-    };
-
-    return initials[modelId] ?? modelId.slice(0, 2).toUpperCase();
-}

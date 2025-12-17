@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 
 import { ConciergeDisplayStacked } from "@/components/connection/concierge-display-stacked";
 
@@ -31,9 +31,9 @@ describe("ConciergeDisplayStacked", () => {
                 <ConciergeDisplayStacked isSelecting={true} messageSeed="test-seed" />
             );
 
-            // Should show one of the selecting messages
+            // Should show one of the selecting messages (Carmenta voice)
             expect(container).toHaveTextContent(
-                /(Finding our approach|Selecting together|Matching this to you|Tuning in)/
+                /(Finding the best mind|Choosing which AI|Matching your thought|Selecting the perfect voice|Calibrating for exactly|Finding your ideal|Tuning into the right|Discovering the perfect|Sensing which AI|Aligning you with)/
             );
         });
 
@@ -43,12 +43,14 @@ describe("ConciergeDisplayStacked", () => {
             expect(container).toHaveTextContent("Claude Sonnet");
         });
 
-        it("shows short reason (first part before dash)", () => {
+        it("shows full explanation with model capabilities", () => {
             const { container } = render(<ConciergeDisplayStacked {...defaultProps} />);
 
+            // Now shows full explanation including model description
             expect(container).toHaveTextContent("Quick question");
-            // Should NOT show the part after "—"
-            expect(container).not.toHaveTextContent("Grok excels at casual");
+            expect(container).toHaveTextContent("Grok excels at casual");
+            // Also includes model description from model-config
+            expect(container).toHaveTextContent("Balanced powerhouse");
         });
 
         it("shows full explanation when no dash separator", () => {
@@ -122,63 +124,86 @@ describe("ConciergeDisplayStacked", () => {
         });
     });
 
-    describe("provider initials badge", () => {
-        it("shows CL initials for Claude models", () => {
-            const { container } = render(<ConciergeDisplayStacked {...defaultProps} />);
+    describe("Carmenta avatar", () => {
+        it("shows Carmenta avatar in selecting state", () => {
+            const { container } = render(
+                <ConciergeDisplayStacked isSelecting={true} messageSeed="test" />
+            );
 
-            expect(container).toHaveTextContent("CL");
+            // CarmentaAvatar renders an image with alt="Carmenta"
+            const avatar = container.querySelector('img[alt="Carmenta"]');
+            expect(avatar).toBeInTheDocument();
         });
 
-        it("shows GM initials for Gemini models", () => {
-            const { container } = render(
+        it("shows Carmenta avatar in selected state", () => {
+            const { container } = render(<ConciergeDisplayStacked {...defaultProps} />);
+
+            // CarmentaAvatar renders an image with alt="Carmenta"
+            const avatar = container.querySelector('img[alt="Carmenta"]');
+            expect(avatar).toBeInTheDocument();
+        });
+
+        it("shows same Carmenta avatar regardless of model", () => {
+            // Claude model
+            const { container: claude } = render(
+                <ConciergeDisplayStacked {...defaultProps} />
+            );
+            expect(claude.querySelector('img[alt="Carmenta"]')).toBeInTheDocument();
+            cleanup();
+
+            // Gemini model - should also show Carmenta avatar (not provider-specific)
+            const { container: gemini } = render(
                 <ConciergeDisplayStacked
                     {...defaultProps}
                     modelId="google/gemini-3-pro-preview"
                 />
             );
-
-            expect(container).toHaveTextContent("GM");
-        });
-
-        it("shows GK initials for Grok models", () => {
-            const { container } = render(
-                <ConciergeDisplayStacked
-                    {...defaultProps}
-                    modelId="x-ai/grok-4.1-fast"
-                />
-            );
-
-            expect(container).toHaveTextContent("GK");
-        });
-
-        it("shows GP initials for GPT models", () => {
-            const { container } = render(
-                <ConciergeDisplayStacked {...defaultProps} modelId="openai/gpt-5.2" />
-            );
-
-            expect(container).toHaveTextContent("GP");
+            expect(gemini.querySelector('img[alt="Carmenta"]')).toBeInTheDocument();
         });
     });
 
     describe("reasoning indicator", () => {
-        it("shows brain icon when reasoning enabled", () => {
-            const { container } = render(
+        it("shows brain icon in expanded details when reasoning enabled", () => {
+            const { container, getByText } = render(
                 <ConciergeDisplayStacked
                     {...defaultProps}
+                    temperature={0.7}
                     reasoning={{ enabled: true, effort: "high" }}
                 />
             );
 
-            // Brain icon should be present (lucide icon class)
+            // Click "More" to expand details
+            const moreButton = getByText("More");
+            fireEvent.click(moreButton);
+
+            // Brain icon should be present in expanded section
             const brainIcon = container.querySelector(".lucide-brain");
             expect(brainIcon).toBeInTheDocument();
         });
 
-        it("does not show brain icon when reasoning disabled", () => {
-            const { container } = render(<ConciergeDisplayStacked {...defaultProps} />);
+        it("shows 'More' button when reasoning or temperature available", () => {
+            const { getByText } = render(
+                <ConciergeDisplayStacked
+                    {...defaultProps}
+                    temperature={0.7}
+                    reasoning={{ enabled: true, effort: "high" }}
+                />
+            );
 
-            const brainIcon = container.querySelector(".lucide-brain");
-            expect(brainIcon).not.toBeInTheDocument();
+            // "More" button should be visible
+            expect(getByText("More")).toBeInTheDocument();
+        });
+
+        it("does not show expand button when no temperature or reasoning", () => {
+            const { queryByText } = render(
+                <ConciergeDisplayStacked
+                    modelId="anthropic/claude-sonnet-4.5"
+                    explanation="Quick question"
+                />
+            );
+
+            // No "More" button when no temperature or reasoning provided
+            expect(queryByText("More")).not.toBeInTheDocument();
         });
     });
 
@@ -239,13 +264,11 @@ describe("ConciergeDisplayStacked", () => {
 
             const text2 = container2.textContent;
 
-            // Just verify both contain valid selecting messages
-            expect(text1).toMatch(
-                /(Finding our approach|Selecting together|Matching this to you|Tuning in)/
-            );
-            expect(text2).toMatch(
-                /(Finding our approach|Selecting together|Matching this to you|Tuning in)/
-            );
+            // Just verify both contain valid selecting messages (Carmenta voice)
+            const messagePattern =
+                /(Finding the best mind|Choosing which AI|Matching your thought|Selecting the perfect voice|Calibrating for exactly|Finding your ideal|Tuning into the right|Discovering the perfect|Sensing which AI|Aligning you with)/;
+            expect(text1).toMatch(messagePattern);
+            expect(text2).toMatch(messagePattern);
         });
     });
 
@@ -270,7 +293,7 @@ describe("ConciergeDisplayStacked", () => {
             const { container } = render(<ConciergeDisplayStacked {...defaultProps} />);
 
             // The text container should have space-y class for vertical stacking
-            const stackedContainer = container.querySelector(".space-y-0\\.5");
+            const stackedContainer = container.querySelector(".space-y-1");
             expect(stackedContainer).toBeInTheDocument();
         });
 
