@@ -201,163 +201,142 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
 
                     {/* Status content - layered crossfade approach */}
                     <div className="relative min-w-0 flex-1">
-                        {/* Selecting state layer */}
-                        <motion.div
-                            initial={false}
-                            animate={{
-                                opacity: showSelecting ? 1 : 0,
-                                y: showSelecting ? 0 : -4,
-                                scale: showSelecting ? 1 : 0.98,
-                            }}
-                            transition={{
-                                duration: 0.25,
-                                ease: [0.16, 1, 0.3, 1],
-                            }}
-                            className={cn(
-                                "flex items-center gap-2",
-                                !showSelecting && "pointer-events-none absolute inset-0"
-                            )}
-                        >
-                            <span className="text-sm text-foreground/90">
-                                {selectingMessage}
-                            </span>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground/50" />
-                        </motion.div>
-
-                        {/* Selected state layer */}
-                        <motion.div
-                            initial={false}
-                            animate={{
-                                opacity: showSelected ? 0.7 : 0,
-                                y: showSelected ? 0 : 4,
-                                scale: showSelected ? 1 : 0.98,
-                            }}
-                            transition={{
-                                duration: 0.4,
-                                delay: showSelected ? 0.1 : 0, // Slight delay for crossfade overlap
-                                ease: [0.16, 1, 0.3, 1],
-                            }}
-                            className={cn(
-                                "flex min-w-0 items-center gap-2.5",
-                                !showSelected && "pointer-events-none absolute inset-0"
-                            )}
-                        >
-                            {/* Arrow with fade-in */}
-                            <motion.span
-                                initial={{ opacity: 0, x: -4 }}
-                                animate={{
-                                    opacity: showSelected ? 0.3 : 0,
-                                    x: showSelected ? 0 : -4,
-                                }}
-                                transition={{ duration: 0.3, delay: 0.15 }}
-                                className="text-sm text-foreground"
-                            >
-                                →
-                            </motion.span>
-
-                            {/* Provider icon */}
-                            {modelConfig?.provider && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{
-                                        opacity: showSelected ? 1 : 0,
-                                        scale: showSelected ? 1 : 0.8,
-                                    }}
-                                    transition={{ duration: 0.25, delay: 0.2 }}
-                                >
-                                    <ProviderIcon
-                                        provider={modelConfig.provider}
-                                        className="h-4 w-4 shrink-0 text-foreground/60"
-                                    />
-                                </motion.div>
-                            )}
-
-                            {/* Model name */}
-                            <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: showSelected ? 1 : 0 }}
-                                transition={{ duration: 0.25, delay: 0.25 }}
-                                className="truncate text-sm font-medium text-foreground/80"
-                            >
-                                {displayName}
-                            </motion.span>
-
-                            {/* Separator */}
-                            <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: showSelected ? 0.25 : 0 }}
-                                transition={{ duration: 0.2, delay: 0.3 }}
-                                className="text-sm text-foreground"
-                            >
-                                ·
-                            </motion.span>
-
-                            {/* Temperature badge */}
-                            <motion.span
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{
-                                    opacity: showSelected ? 1 : 0,
-                                    scale: showSelected ? 1 : 0.8,
-                                }}
+                        {/* Selecting state layer - only render when active */}
+                        {showSelecting && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -4, scale: 0.98 }}
                                 transition={{
                                     duration: 0.25,
-                                    delay: 0.35,
-                                    type: "spring",
-                                    stiffness: 400,
-                                    damping: 20,
+                                    ease: [0.16, 1, 0.3, 1],
                                 }}
-                                className="text-sm"
+                                className="flex items-center gap-2"
                             >
-                                {tempBadge.emoji}
-                            </motion.span>
+                                <span className="text-sm text-foreground/90">
+                                    {selectingMessage}
+                                </span>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground/50" />
+                            </motion.div>
+                        )}
 
-                            {/* Reasoning badge */}
-                            {reasoningBadge && (
+                        {/* Selected state layer - only render when selected */}
+                        {showSelected && (
+                            <motion.div
+                                initial={{ opacity: 1, y: 4, scale: 0.98 }}
+                                animate={{ opacity: 0.7, y: 0, scale: 1 }}
+                                transition={{
+                                    duration: 0.4,
+                                    delay: 0.1, // Slight delay for crossfade overlap
+                                    ease: [0.16, 1, 0.3, 1],
+                                }}
+                                className="flex min-w-0 items-center gap-2.5"
+                            >
+                                {/* Arrow with fade-in */}
+                                <motion.span
+                                    initial={{ opacity: 0, x: -4 }}
+                                    animate={{ opacity: 0.3, x: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.15 }}
+                                    className="text-sm text-foreground"
+                                >
+                                    →
+                                </motion.span>
+
+                                {/* Provider icon */}
+                                {modelConfig?.provider && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.25, delay: 0.2 }}
+                                    >
+                                        <ProviderIcon
+                                            provider={modelConfig.provider}
+                                            className="h-4 w-4 shrink-0 text-foreground/60"
+                                        />
+                                    </motion.div>
+                                )}
+
+                                {/* Model name */}
+                                <motion.span
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.25, delay: 0.25 }}
+                                    className="truncate text-sm font-medium text-foreground/80"
+                                >
+                                    {displayName}
+                                </motion.span>
+
+                                {/* Separator */}
+                                <motion.span
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 0.25 }}
+                                    transition={{ duration: 0.2, delay: 0.3 }}
+                                    className="text-sm text-foreground"
+                                >
+                                    ·
+                                </motion.span>
+
+                                {/* Temperature badge */}
                                 <motion.span
                                     initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{
-                                        opacity: showSelected ? 1 : 0,
-                                        scale: showSelected ? 1 : 0.8,
-                                    }}
+                                    animate={{ opacity: 1, scale: 1 }}
                                     transition={{
                                         duration: 0.25,
-                                        delay: 0.4,
+                                        delay: 0.35,
                                         type: "spring",
                                         stiffness: 400,
                                         damping: 20,
                                     }}
                                     className="text-sm"
                                 >
-                                    {reasoningBadge.emoji}
+                                    {tempBadge.emoji}
                                 </motion.span>
-                            )}
 
-                            {/* Auto-switch indicator */}
-                            {autoSwitched && autoSwitchReason && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{
-                                        delay: 0.45,
-                                        type: "spring",
-                                        stiffness: 400,
-                                        damping: 15,
-                                    }}
-                                    className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5"
-                                >
-                                    <ArrowRightLeft className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                </motion.div>
-                            )}
-
-                            {/* Expand chevron - appears on hover */}
-                            <ChevronDown
-                                className={cn(
-                                    "ml-auto h-4 w-4 shrink-0 text-foreground/25 transition-all duration-200",
-                                    "opacity-0 group-hover:opacity-100",
-                                    isOpen && "rotate-180 opacity-100"
+                                {/* Reasoning badge */}
+                                {reasoningBadge && (
+                                    <motion.span
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{
+                                            duration: 0.25,
+                                            delay: 0.4,
+                                            type: "spring",
+                                            stiffness: 400,
+                                            damping: 20,
+                                        }}
+                                        className="text-sm"
+                                    >
+                                        {reasoningBadge.emoji}
+                                    </motion.span>
                                 )}
-                            />
-                        </motion.div>
+
+                                {/* Auto-switch indicator */}
+                                {autoSwitched && autoSwitchReason && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{
+                                            delay: 0.45,
+                                            type: "spring",
+                                            stiffness: 400,
+                                            damping: 15,
+                                        }}
+                                        className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5"
+                                    >
+                                        <ArrowRightLeft className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                    </motion.div>
+                                )}
+
+                                {/* Expand chevron - appears on hover */}
+                                <ChevronDown
+                                    className={cn(
+                                        "ml-auto h-4 w-4 shrink-0 text-foreground/25 transition-all duration-200",
+                                        "opacity-0 group-hover:opacity-100",
+                                        isOpen && "rotate-180 opacity-100"
+                                    )}
+                                />
+                            </motion.div>
+                        )}
                     </div>
                 </CollapsibleTrigger>
 
