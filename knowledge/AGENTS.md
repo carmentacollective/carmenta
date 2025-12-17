@@ -30,10 +30,16 @@ You're not documenting a product. You're maintaining the product kernel.
 - `product/` - Core identity: vision.md, personas.md, boundaries.md
 - `components/` - Feature-level specifications (one file per capability)
 - `competitors/` - Competitive analysis (one file per competitor)
+- `decisions/` - Cross-cutting architectural decisions (infrastructure, patterns)
 - `roadmap.md` - Milestones and sequencing
 
-Structure serves findability. A decision about auth goes in `components/auth.md`, not in
-a decisions folder.
+Structure serves findability:
+
+- Component-specific decisions go in component files (auth decisions →
+  `components/auth.md`)
+- Cross-cutting decisions go in `decisions/` (infrastructure stack, architecture
+  patterns)
+- When in doubt: where would someone look for this?
 
 ## Writing for LLM Consumption
 

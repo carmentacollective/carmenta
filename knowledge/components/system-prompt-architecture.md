@@ -533,4 +533,4 @@ living document that evolves with the product.
 
 - @.cursor/rules/prompt-engineering.mdc - Guidelines for prompts AI writes for other AIs
 - @.cursor/rules/heart-centered-ai-philosophy.mdc - Core philosophy to integrate
-- @knowledge/vision.md - Product vision that informs system prompt design
+- @knowledge/product/vision.md - Product vision that informs system prompt design
