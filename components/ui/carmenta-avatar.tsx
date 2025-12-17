@@ -55,10 +55,11 @@ const breathingVariants = {
         },
     },
     thinking: {
-        scale: [1, 1.08, 1],
-        opacity: [0.85, 1, 0.85],
+        scale: [1, 1.12, 1.04, 1.1, 1],
+        opacity: [0.9, 1, 0.95, 1, 0.9],
+        rotate: [0, 2, -1, 1, 0],
         transition: {
-            duration: 1.5,
+            duration: 2,
             repeat: Infinity,
             ease: "easeInOut" as const,
         },
@@ -100,10 +101,10 @@ const glowVariants = {
         },
     },
     thinking: {
-        opacity: [0.3, 0.6, 0.3],
-        scale: [1, 1.2, 1],
+        opacity: [0.4, 0.8, 0.5, 0.7, 0.4],
+        scale: [1, 1.35, 1.15, 1.3, 1],
         transition: {
-            duration: 1.5,
+            duration: 2,
             repeat: Infinity,
             ease: "easeInOut" as const,
         },

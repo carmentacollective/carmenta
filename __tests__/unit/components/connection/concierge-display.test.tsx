@@ -43,6 +43,22 @@ describe("ConciergeDisplay", () => {
             const collapsible = container.querySelector("[data-state]");
             expect(collapsible).toHaveAttribute("data-state", "closed");
         });
+
+        it("shows temperature emoji badge in collapsed state", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            // Balance emoji for temp 0.5
+            expect(within(trigger).getByText("⚖️")).toBeInTheDocument();
+        });
+
+        it("shows reasoning emoji badge in collapsed state", () => {
+            const { container } = render(<ConciergeDisplay {...defaultProps} />);
+
+            const trigger = container.querySelector("button")!;
+            // Quick emoji for reasoning disabled
+            expect(within(trigger).getByText("⚡")).toBeInTheDocument();
+        });
     });
 
     describe("expanded state", () => {
@@ -57,34 +73,23 @@ describe("ConciergeDisplay", () => {
             expect(collapsible).toHaveAttribute("data-state", "open");
         });
 
-        it("shows model ID in expanded content", () => {
+        it("shows explanation in expanded content", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            // The code element with the model ID appears in expanded content
-            expect(container.querySelector("code")).toHaveTextContent(
-                "anthropic/claude-sonnet-4.5"
-            );
+            expect(container).toHaveTextContent("Balanced default for general tasks.");
         });
 
-        it("shows temperature value in expanded content", () => {
+        it("shows temperature badge with label in expanded content", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            expect(container).toHaveTextContent("0.5");
-        });
-
-        it("shows temperature label in expanded content", () => {
-            const { container } = render(<ConciergeDisplay {...defaultProps} />);
-
-            const trigger = container.querySelector("button")!;
-            fireEvent.click(trigger);
-
-            expect(container).toHaveTextContent("(balanced)");
+            // Expanded panel shows "⚖️ Balanced" badge
+            expect(container).toHaveTextContent("Balanced");
         });
 
         it("closes when trigger clicked again", () => {
@@ -99,7 +104,7 @@ describe("ConciergeDisplay", () => {
             expect(collapsible).toHaveAttribute("data-state", "closed");
         });
 
-        it("shows reasoning config when enabled", () => {
+        it("shows reasoning badge when enabled", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
@@ -110,35 +115,37 @@ describe("ConciergeDisplay", () => {
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            expect(container).toHaveTextContent("high");
-            expect(container).toHaveTextContent("16,000 tokens");
+            // Should show "🧠 Deep" badge for high effort
+            expect(container).toHaveTextContent("Deep");
         });
 
-        it("shows reasoning as disabled when not enabled", () => {
+        it("shows quick badge when reasoning disabled", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            expect(container).toHaveTextContent("disabled");
+            // Should show "⚡ Quick" badge
+            expect(container).toHaveTextContent("Quick");
         });
     });
 
-    describe("reasoning indicator in header", () => {
-        it("shows brain icon and reasoning label when enabled", () => {
+    describe("reasoning emoji in header", () => {
+        it("shows balanced emoji for medium effort reasoning", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
+                    temperature={0.2} // Use precise temp to avoid duplicate ⚖️
                     reasoning={{ enabled: true, effort: "medium" }}
                 />
             );
 
             const trigger = container.querySelector("button")!;
-            // Should show "thoughtful" label for medium effort
-            expect(within(trigger).getByText("thoughtful")).toBeInTheDocument();
+            // Balanced emoji for medium effort (distinct from 🎯 precise temp)
+            expect(within(trigger).getByText("⚖️")).toBeInTheDocument();
         });
 
-        it("shows deep thinking label for high effort", () => {
+        it("shows brain emoji for high effort reasoning", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
@@ -147,17 +154,16 @@ describe("ConciergeDisplay", () => {
             );
 
             const trigger = container.querySelector("button")!;
-            expect(within(trigger).getByText("deep thinking")).toBeInTheDocument();
+            // Brain emoji for high effort
+            expect(within(trigger).getByText("🧠")).toBeInTheDocument();
         });
 
-        it("does not show reasoning label when disabled", () => {
+        it("shows quick emoji when reasoning disabled", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
-            expect(within(trigger).queryByText("thoughtful")).not.toBeInTheDocument();
-            expect(
-                within(trigger).queryByText("deep thinking")
-            ).not.toBeInTheDocument();
+            // Quick emoji for disabled
+            expect(within(trigger).getByText("⚡")).toBeInTheDocument();
         });
     });
 
@@ -220,49 +226,41 @@ describe("ConciergeDisplay", () => {
         });
     });
 
-    describe("temperature labels", () => {
-        it("shows 'precise' for low temperatures", () => {
+    describe("temperature emoji badges", () => {
+        it("shows precise emoji (🎯) for low temperatures", () => {
             const { container } = render(
                 <ConciergeDisplay {...defaultProps} temperature={0.2} />
             );
 
             const trigger = container.querySelector("button")!;
-            fireEvent.click(trigger);
-
-            expect(container).toHaveTextContent("(precise)");
+            expect(within(trigger).getByText("🎯")).toBeInTheDocument();
         });
 
-        it("shows 'balanced' for medium temperatures", () => {
+        it("shows balanced emoji (⚖️) for medium temperatures", () => {
             const { container } = render(
                 <ConciergeDisplay {...defaultProps} temperature={0.5} />
             );
 
             const trigger = container.querySelector("button")!;
-            fireEvent.click(trigger);
-
-            expect(container).toHaveTextContent("(balanced)");
+            expect(within(trigger).getByText("⚖️")).toBeInTheDocument();
         });
 
-        it("shows 'creative' for higher temperatures", () => {
+        it("shows creative emoji (🎨) for higher temperatures", () => {
             const { container } = render(
                 <ConciergeDisplay {...defaultProps} temperature={0.75} />
             );
 
             const trigger = container.querySelector("button")!;
-            fireEvent.click(trigger);
-
-            expect(container).toHaveTextContent("(creative)");
+            expect(within(trigger).getByText("🎨")).toBeInTheDocument();
         });
 
-        it("shows 'expressive' for high temperatures", () => {
+        it("shows expressive emoji (✨) for high temperatures", () => {
             const { container } = render(
                 <ConciergeDisplay {...defaultProps} temperature={0.9} />
             );
 
             const trigger = container.querySelector("button")!;
-            fireEvent.click(trigger);
-
-            expect(container).toHaveTextContent("(expressive)");
+            expect(within(trigger).getByText("✨")).toBeInTheDocument();
         });
     });
 
@@ -283,17 +281,18 @@ describe("ConciergeDisplay", () => {
             expect(trigger).toHaveAttribute("aria-expanded", "true");
         });
 
-        it("chevron has rotate class based on open state", () => {
+        it("chevron rotates when open", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
-            // Find chevron by its lucide class (not last-child since Check icon is also present)
             const chevron = trigger.querySelector(".lucide-chevron-down");
 
-            expect(chevron).toHaveClass("rotate-0");
+            // Initially no rotate-180 class
+            expect(chevron).not.toHaveClass("rotate-180");
 
             fireEvent.click(trigger);
 
+            // After opening, should have rotate-180
             expect(chevron).toHaveClass("rotate-180");
         });
     });
@@ -314,26 +313,17 @@ describe("ConciergeDisplay", () => {
         });
     });
 
-    describe("tooltip", () => {
-        it("model name has cursor-help when description exists", () => {
+    describe("model name display", () => {
+        it("shows model name as plain span", () => {
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button")!;
-            const modelName = within(trigger).getByText("Claude Sonnet");
-            expect(modelName).toHaveClass("cursor-help");
-        });
-
-        it("wraps model name in tooltip trigger when description exists", () => {
-            const { container } = render(<ConciergeDisplay {...defaultProps} />);
-
-            const trigger = container.querySelector("button")!;
-            // Model name should be wrapped in a tooltip trigger span
             const modelName = within(trigger).getByText("Claude Sonnet");
             expect(modelName).toBeInTheDocument();
             expect(modelName.tagName).toBe("SPAN");
         });
 
-        it("shows plain model name without cursor-help for unknown models", () => {
+        it("shows plain model name for unknown models", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
@@ -344,7 +334,6 @@ describe("ConciergeDisplay", () => {
             const trigger = container.querySelector("button")!;
             const modelName = within(trigger).getByText("unknown-model");
             expect(modelName).toBeInTheDocument();
-            expect(modelName).not.toHaveClass("cursor-help");
         });
     });
 });
