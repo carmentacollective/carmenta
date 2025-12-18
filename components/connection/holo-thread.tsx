@@ -22,7 +22,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import { Square, ArrowDown, CornerDownLeft, Sparkles } from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -42,7 +42,6 @@ import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
-import { useConnection } from "./connection-context";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
