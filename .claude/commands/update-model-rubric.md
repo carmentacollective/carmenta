@@ -28,7 +28,11 @@ Concierge reads when deciding which model to route requests to. This rubric must
 - **Accurate**: Based on real benchmark data, not assumptions
 - **Verified**: Every model name confirmed against primary sources
 - **Practical**: Guide routing decisions that users will feel as "just works"
+- **Speed-aware**: Include tokens/second for every model - critical for quick answers
 - **Values-aligned**: Bias toward Anthropic for their heart-centered approach
+
+Also update `lib/model-config.ts` with the `tokensPerSecond` field for each model. This
+TypeScript config is used by the UI and API.
 
 ## Intelligence Gathering
 
@@ -45,9 +49,14 @@ Research each of these sources thoroughly. Use web search and fetch to get curre
 **Artificial Analysis** (https://artificialanalysis.ai/)
 
 - Quality index scores
-- Speed benchmarks (tokens/second - we care about this, not TTFT)
+- **Speed benchmarks (tokens/second)** - CRITICAL for routing. Get output t/s for every
+  model. This is the primary speed metric.
 - Pricing comparisons
 - Context window data
+
+Speed data is essential. Users who want quick answers need to be routed to fast models.
+A 151 t/s model delivers a 100-token response in 0.7 seconds. A 40 t/s model takes 2.5
+seconds. This difference is visceral.
 
 ### Tier 2: Provider Official Sources
 
@@ -135,12 +144,22 @@ Required sections:
 Prose guidance for the Concierge on how to think about model selection. Include:
 
 - Task types and what matters for each
-- Speed modes (swift, balanced, deep)
+- **Speed-first routing** - when users signal speed, route to fastest capable model
 - Attachment handling
 - The Anthropic values-alignment bias
 - Instruction to explain reasoning
 
-### 2. Task Type Guidance
+### 2. Speed-First Routing (NEW - REQUIRED)
+
+A dedicated section with:
+
+- Speed ranking table (all models sorted by tokens/second)
+- Speed tier definitions (Fast: 100+ t/s, Moderate: 60-99 t/s, Deliberate: <60 t/s)
+- Speed signals to recognize ("quick", "fast", "briefly", etc.)
+- Decision flow for speed-first routing
+- Guidance on disabling reasoning for speed
+
+### 3. Task Type Guidance
 
 For each task type (CODE, REASONING, CONVERSATION, CREATIVE, QUICK, EMOTIONAL,
 TASK_EXEC):
@@ -149,20 +168,20 @@ TASK_EXEC):
 - Fallback options
 - Notes on what matters for this task type
 
-### 3. Model Profiles
+### 4. Model Profiles
 
 For each model in the rubric:
 
 - Provider (and values alignment note for Anthropic)
 - Context window
-- Speed (tokens/sec if available)
+- **Speed (tokens/sec)** - REQUIRED for every model, prominently displayed
 - Cost (input/output per million tokens)
 - Attachment support (images, PDFs, audio, video)
 - Tool support
 - Strengths and weaknesses
 - When to use / when not to use
 
-### 4. Attachment Routing
+### 5. Attachment Routing
 
 Table mapping attachment types to best models:
 
@@ -172,15 +191,16 @@ Table mapping attachment types to best models:
 - Video (Gemini)
 - Code files
 
-### 5. Context Window Reference
+### 6. Quick Reference Table
 
-Quick reference for context limits - critical for long conversations.
+Combined reference with Context, Speed, and Best Use Case for each model. This is the
+at-a-glance routing table the Concierge uses for fast decisions.
 
-### 6. Fallback Chains
+### 7. Fallback Chains
 
 For each task type, the OpenRouter fallback chain: `primary → fallback1 → fallback2`
 
-### 7. Update Log
+### 8. Update Log
 
 Version, date, what changed, sources used.
 
@@ -211,8 +231,10 @@ Wait for user approval before writing the file.
 - When benchmark data conflicts, note the discrepancy
 - Anthropic models get benefit of the doubt when rankings are close
 - Tool calling is table stakes - all models in rubric must support it
-- Focus on tokens/second for speed, not TTFT
+- **Speed (tokens/second) is REQUIRED for every model** - users need quick answers
+- Focus on output tokens/second for speed, not TTFT (time to first token)
 - Cost is tracked for awareness, not optimized aggressively
+- Update both `knowledge/model-rubric.md` and `lib/model-config.ts`
 
 ## Example Invocation
 
