@@ -223,54 +223,61 @@ export function ConnectionProvider({
     );
 
     const handleToggleStarConnection = useCallback((id: string) => {
+        // Capture values from the functional update for use in API call
+        let originalIsStarred: boolean | undefined;
+        let originalStarredAt: Date | null | undefined;
+        let newIsStarred: boolean | undefined;
+
+        // Pure optimistic update - captures original values via closure
         setConnections((prev) => {
             const connection = prev.find((c) => c.id === id);
             if (!connection) return prev;
 
-            // Capture original state for rollback
-            const originalIsStarred = connection.isStarred;
-            const originalStarredAt = connection.starredAt;
-            const newIsStarred = !originalIsStarred;
+            originalIsStarred = connection.isStarred;
+            originalStarredAt = connection.starredAt;
+            newIsStarred = !originalIsStarred;
 
-            // Server action (fire and forget with error handling)
-            startTransition(async () => {
-                try {
-                    await toggleStarAction(id, newIsStarred);
-                    logger.debug(
-                        { connectionId: id, isStarred: newIsStarred },
-                        "Toggled star"
-                    );
-                } catch (err) {
-                    // Revert to original state on error
-                    setConnections((current) =>
-                        current.map((c) =>
-                            c.id === id
-                                ? {
-                                      ...c,
-                                      isStarred: originalIsStarred,
-                                      starredAt: originalStarredAt,
-                                  }
-                                : c
-                        )
-                    );
-                    const error = err instanceof Error ? err : new Error(String(err));
-                    logger.error({ error, connectionId: id }, "Failed to toggle star");
-                    setError(error);
-                }
-            });
-
-            // Optimistic update
             return prev.map((c) =>
                 c.id === id
                     ? {
                           ...c,
-                          isStarred: newIsStarred,
+                          isStarred: newIsStarred!,
                           starredAt: newIsStarred ? new Date() : null,
                       }
                     : c
             );
         });
-    }, []); // Empty deps - uses functional updates
+
+        // Server action OUTSIDE setState updater (prevents double API calls in StrictMode)
+        startTransition(async () => {
+            // Guard: if connection wasn't found, skip API call
+            if (newIsStarred === undefined) return;
+
+            try {
+                await toggleStarAction(id, newIsStarred);
+                logger.debug(
+                    { connectionId: id, isStarred: newIsStarred },
+                    "Toggled star"
+                );
+            } catch (err) {
+                // Revert to original state on error
+                setConnections((current) =>
+                    current.map((c) =>
+                        c.id === id
+                            ? {
+                                  ...c,
+                                  isStarred: originalIsStarred!,
+                                  starredAt: originalStarredAt!,
+                              }
+                            : c
+                    )
+                );
+                const error = err instanceof Error ? err : new Error(String(err));
+                logger.error({ error, connectionId: id }, "Failed to toggle star");
+                setError(error);
+            }
+        });
+    }, []); // Empty deps - uses functional updates and closures
 
     // Computed: starred connections sorted by lastActivityAt
     const starredConnections = useMemo(
