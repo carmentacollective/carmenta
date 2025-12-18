@@ -449,9 +449,14 @@ function createFetchWrapper(
  * Inner provider that has access to concierge context.
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
-    const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages, addNewConnection, setIsStreaming } =
-        useConnection();
+    const { setConcierge, concierge } = useConcierge();
+    const {
+        activeConnectionId,
+        initialMessages,
+        addNewConnection,
+        setIsStreaming,
+        setIsConciergeRunning,
+    } = useConnection();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
@@ -557,10 +562,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Derive loading state from status
     const isLoading = status === "streaming" || status === "submitted";
 
-    // Sync streaming state with connection context
+    // Sync streaming and concierge states with connection context
     useEffect(() => {
         setIsStreaming(isLoading);
-    }, [isLoading, setIsStreaming]);
+        // Concierge is running when we're loading but don't have a concierge result yet
+        setIsConciergeRunning(isLoading && !concierge);
+    }, [isLoading, concierge, setIsStreaming, setIsConciergeRunning]);
 
     // Track previous connection ID to detect navigation between connections
     const prevConnectionIdRef = useRef<string | null>(activeConnectionId);
