@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+import { motion, AnimatePresence } from "framer-motion";
 import {
     BookOpen,
     ExternalLink,
@@ -9,6 +12,133 @@ import {
 } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
+
+type ResearchDepth = "quick" | "standard" | "deep";
+
+/**
+ * Tips shown during research - honest, helpful information about what's happening
+ * and what users will receive. No fake progress stages.
+ */
+const researchTips: Record<ResearchDepth, string[]> = {
+    quick: [
+        "We're pulling a fast overview from top sources",
+        "Scanning key resources to answer your question",
+        "A concise summary with the most relevant findings is on its way",
+    ],
+    standard: [
+        "We're exploring multiple sources to build a complete picture",
+        "Each finding comes with a confidence rating",
+        "Every insight traces back to sources so you can explore further",
+        "We synthesize rather than just list - looking for the real patterns",
+        "Good research takes time - we're being thorough",
+    ],
+    deep: [
+        "We're exploring many sources for comprehensive analysis",
+        "Going deep to give you the most complete picture",
+        "Every finding will show confidence levels and source links",
+        "We look for corroborating evidence across multiple sources",
+        "Complex topics deserve thorough investigation - we're taking our time",
+        "Thorough research surfaces nuances that quick searches miss",
+    ],
+};
+
+/**
+ * Loading state component that provides valuable information during the wait.
+ * Shows rotating tips, elapsed time, and activity indicator with polished animations.
+ */
+function ResearchInProgress({
+    objective,
+    depth,
+}: {
+    objective: string;
+    depth: ResearchDepth;
+}) {
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const tips = researchTips[depth];
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setElapsedSeconds((s) => s + 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Rotate tips every 10 seconds
+    const currentTipIndex = Math.floor(elapsedSeconds / 10) % tips.length;
+    const currentTip = tips[currentTipIndex];
+
+    const depthLabel = depth === "deep" ? "thorough" : depth;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="glass-card relative max-w-2xl overflow-hidden"
+        >
+            {/* Subtle shimmer overlay */}
+            <div className="animate-shimmer pointer-events-none absolute inset-0 opacity-30" />
+
+            {/* Header */}
+            <div className="relative flex items-center gap-2">
+                <BookOpen className="h-4 w-4 animate-pulse text-primary" />
+                <span className="text-sm text-foreground">
+                    Conducting {depthLabel} research...
+                </span>
+            </div>
+
+            {/* Objective */}
+            <p className="relative mt-2 text-xs text-muted-foreground/70">
+                &quot;{objective}&quot;
+            </p>
+
+            {/* Rotating tip with smooth crossfade */}
+            <div className="relative mt-4 min-h-[1.5rem]">
+                <AnimatePresence mode="wait">
+                    <motion.p
+                        key={currentTipIndex}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        className="text-sm text-muted-foreground"
+                    >
+                        {currentTip}
+                    </motion.p>
+                </AnimatePresence>
+            </div>
+
+            {/* Activity indicator - indeterminate progress bar */}
+            <div className="relative mt-4 h-0.5 w-full overflow-hidden rounded-full bg-muted/50">
+                <motion.div
+                    className="absolute h-full w-1/4 rounded-full bg-primary/40"
+                    animate={{
+                        x: ["0%", "300%", "0%"],
+                    }}
+                    transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                />
+            </div>
+
+            {/* Elapsed time - subtle, secondary */}
+            <AnimatePresence>
+                {elapsedSeconds >= 5 && (
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="relative mt-3 text-right text-xs text-muted-foreground/40"
+                    >
+                        {elapsedSeconds}s
+                    </motion.p>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+}
 
 interface ResearchFinding {
     insight: string;
@@ -26,7 +156,7 @@ interface DeepResearchResultProps {
     toolCallId: string;
     status: ToolStatus;
     objective: string;
-    depth?: "quick" | "standard" | "deep";
+    depth?: ResearchDepth;
     summary?: string;
     findings?: ResearchFinding[];
     sources?: ResearchSource[];
@@ -58,31 +188,9 @@ export function DeepResearchResult({
     sources,
     error,
 }: DeepResearchResultProps) {
-    const depthLabel = depth === "deep" ? "thorough" : depth;
-
-    // Loading state
+    // Loading state - valuable waiting experience
     if (status === "running") {
-        return (
-            <div className="glass-card max-w-2xl animate-pulse">
-                <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                        Conducting {depthLabel} research...
-                    </span>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground/70">
-                    &quot;{objective}&quot;
-                </p>
-                <div className="mt-4 space-y-2">
-                    <div className="h-3 w-full rounded bg-muted" />
-                    <div className="h-3 w-5/6 rounded bg-muted" />
-                    <div className="h-3 w-4/6 rounded bg-muted" />
-                </div>
-                <p className="mt-4 text-xs text-muted-foreground/50">
-                    This may take 30-60 seconds...
-                </p>
-            </div>
-        );
+        return <ResearchInProgress objective={objective} depth={depth} />;
     }
 
     // Error state
