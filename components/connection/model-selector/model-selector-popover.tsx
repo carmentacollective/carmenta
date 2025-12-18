@@ -75,11 +75,11 @@ const REASONING_SLIDER_PRESETS = REASONING_PRESETS.filter((p) => p.id !== "auto"
     (p) => ({
         label: p.label,
         emoji:
-            p.label === "None"
+            p.label === "Quick"
                 ? "⚡"
-                : p.label === "Quick"
+                : p.label === "Thoughtful"
                   ? "🏃"
-                  : p.label === "Balanced"
+                  : p.label === "Thorough"
                     ? "⚖️"
                     : "🧠", // Deep
     })
@@ -231,36 +231,49 @@ export function ModelSelectorPopover({
                                 )}
                             </div>
                             <div className="max-h-44 space-y-1.5 overflow-y-scroll rounded-lg border border-foreground/10 bg-gradient-to-b from-foreground/[0.02] to-foreground/[0.04] p-1.5">
-                                {/* Auto option */}
+                                {/* Auto option - magical! */}
                                 <button
                                     onClick={() =>
                                         onChange({ ...overrides, modelId: null })
                                     }
                                     className={cn(
-                                        "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-all",
+                                        "flex w-full flex-col gap-1.5 rounded-xl px-3 py-3 text-left transition-all",
                                         overrides.modelId === null
-                                            ? "bg-background shadow-sm ring-1 ring-primary/20"
-                                            : "hover:bg-background/50"
+                                            ? "bg-gradient-to-br from-primary/10 via-purple-500/5 to-pink-500/10 shadow-sm ring-1 ring-primary/30"
+                                            : "hover:bg-gradient-to-br hover:from-primary/5 hover:to-purple-500/5"
                                     )}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <Sparkles
+                                        <div
                                             className={cn(
-                                                "h-4 w-4",
+                                                "flex h-6 w-6 items-center justify-center rounded-lg transition-all",
                                                 overrides.modelId === null
-                                                    ? "text-primary"
-                                                    : "text-foreground/40"
+                                                    ? "bg-gradient-to-br from-primary to-purple-500 shadow-sm"
+                                                    : "bg-foreground/10"
                                             )}
-                                        />
-                                        <span className="text-sm font-medium">
-                                            Auto
-                                        </span>
-                                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
-                                            Recommended
+                                        >
+                                            <Sparkles
+                                                className={cn(
+                                                    "h-3.5 w-3.5",
+                                                    overrides.modelId === null
+                                                        ? "text-white"
+                                                        : "text-foreground/40"
+                                                )}
+                                            />
+                                        </div>
+                                        <span
+                                            className={cn(
+                                                "text-sm font-semibold",
+                                                overrides.modelId === null
+                                                    ? "bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent"
+                                                    : ""
+                                            )}
+                                        >
+                                            Automagically
                                         </span>
                                     </div>
                                     <p className="text-xs text-foreground/50">
-                                        Carmenta picks the best model for your message
+                                        Picks the best model for your message
                                     </p>
                                 </button>
 
@@ -387,10 +400,10 @@ export function ModelSelectorPopover({
                                         });
                                         setIsOpen(false);
                                     }}
-                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-colors hover:bg-background/50 hover:text-foreground/70"
+                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-all hover:bg-gradient-to-r hover:from-primary/10 hover:to-purple-500/10 hover:text-foreground/70"
                                 >
                                     <Sparkles className="h-3 w-3" />
-                                    Carmenta AI Concierge decides automagically
+                                    Let Carmenta decide automagically ✨
                                 </button>
                             </div>
                         </div>
