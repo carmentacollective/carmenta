@@ -111,7 +111,7 @@ describe("ConnectionChooser", () => {
         it("shows search button when connections exist", () => {
             render(<ConnectionChooser />);
 
-            const searchButton = screen.getByTitle("Search connections");
+            const searchButton = screen.getByLabelText("Search connections");
             expect(searchButton).toBeInTheDocument();
         });
 
@@ -125,7 +125,9 @@ describe("ConnectionChooser", () => {
             render(<ConnectionChooser />);
 
             // S1 renders nothing
-            expect(screen.queryByTitle("Search connections")).not.toBeInTheDocument();
+            expect(
+                screen.queryByLabelText("Search connections")
+            ).not.toBeInTheDocument();
         });
 
         it("displays active connection title", () => {
@@ -140,14 +142,14 @@ describe("ConnectionChooser", () => {
         it("shows new connection button", () => {
             render(<ConnectionChooser />);
 
-            expect(screen.getByTitle("New connection")).toBeInTheDocument();
+            expect(screen.getByLabelText("New connection")).toBeInTheDocument();
         });
 
         it("shows loading state when pending", () => {
             setupMock({ isPending: true });
             render(<ConnectionChooser />);
 
-            const newButton = screen.getByTitle("New connection");
+            const newButton = screen.getByLabelText("New connection");
             expect(newButton).toBeDisabled();
         });
 
@@ -164,7 +166,7 @@ describe("ConnectionChooser", () => {
         it("opens dropdown when search button is clicked", () => {
             render(<ConnectionChooser />);
 
-            const searchButton = screen.getByTitle("Search connections");
+            const searchButton = screen.getByLabelText("Search connections");
             fireEvent.click(searchButton);
 
             expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -183,7 +185,7 @@ describe("ConnectionChooser", () => {
         it("displays recent connections in dropdown", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             // Connections appear in the dropdown list (may appear twice - in header and dropdown)
             expect(
@@ -200,7 +202,7 @@ describe("ConnectionChooser", () => {
         it("closes dropdown when ESC is pressed", async () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
 
             fireEvent.keyDown(window, { key: "Escape" });
@@ -216,7 +218,7 @@ describe("ConnectionChooser", () => {
         it("closes dropdown when close button is clicked", async () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const closeButton = screen.getByLabelText("Close");
             fireEvent.click(closeButton);
 
@@ -230,7 +232,7 @@ describe("ConnectionChooser", () => {
         it("closes dropdown when backdrop is clicked", async () => {
             const { container } = render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const backdrop = container.querySelector(".fixed.inset-0");
             fireEvent.click(backdrop!);
 
@@ -244,7 +246,7 @@ describe("ConnectionChooser", () => {
         it("focuses search input when dropdown opens", async () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const searchInput = screen.getByPlaceholderText("Search...");
 
             // Focus happens via requestAnimationFrame, so we wait
@@ -258,7 +260,7 @@ describe("ConnectionChooser", () => {
         it("selects connection when clicked", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
@@ -268,7 +270,7 @@ describe("ConnectionChooser", () => {
         it("closes dropdown after selection", async () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
@@ -282,7 +284,7 @@ describe("ConnectionChooser", () => {
         it("calls setActiveConnection when connection is selected", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
@@ -293,7 +295,7 @@ describe("ConnectionChooser", () => {
             setupMock({ freshConnectionIds: new Set(["conn-1"]) });
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             expect(screen.getByText("new")).toBeInTheDocument();
         });
@@ -303,7 +305,7 @@ describe("ConnectionChooser", () => {
         it("creates new connection when button is clicked", () => {
             render(<ConnectionChooser />);
 
-            const newButton = screen.getByTitle("New connection");
+            const newButton = screen.getByLabelText("New connection");
             fireEvent.click(newButton);
 
             expect(mockCreateNewConnection).toHaveBeenCalledTimes(1);
@@ -313,7 +315,7 @@ describe("ConnectionChooser", () => {
             setupMock({ isPending: true });
             render(<ConnectionChooser />);
 
-            const newButton = screen.getByTitle("New connection");
+            const newButton = screen.getByLabelText("New connection");
             expect(newButton).toBeDisabled();
         });
     });
@@ -327,7 +329,7 @@ describe("ConnectionChooser", () => {
         it("renders delete button for each connection", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             // Each connection should have an accessible delete button
             expect(
@@ -344,7 +346,7 @@ describe("ConnectionChooser", () => {
         it("shows confirmation before deleting", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             fireEvent.click(screen.getByLabelText("Delete First Conversation"));
 
             // Should show confirmation with connection name (use regex to match the text)
@@ -365,7 +367,7 @@ describe("ConnectionChooser", () => {
         it("deletes connection when confirmed", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             fireEvent.click(screen.getByLabelText("Delete First Conversation"));
             fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
@@ -375,7 +377,7 @@ describe("ConnectionChooser", () => {
         it("cancels delete and returns to normal view", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             fireEvent.click(screen.getByLabelText("Delete First Conversation"));
             fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
@@ -394,7 +396,7 @@ describe("ConnectionChooser", () => {
         it("does not navigate when clicking delete button", () => {
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             fireEvent.click(screen.getByLabelText("Delete First Conversation"));
 
             expect(mockSetActiveConnection).not.toHaveBeenCalled();
@@ -444,7 +446,7 @@ describe("ConnectionChooser", () => {
             });
             render(<ConnectionChooser />);
 
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             // Connection should appear in the list (may appear twice - header and dropdown)
             expect(

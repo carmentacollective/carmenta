@@ -36,7 +36,8 @@ export function FilePickerButton() {
             <button
                 type="button"
                 onClick={handleClick}
-                className="btn-icon-glass group"
+                className="tooltip btn-icon-glass group"
+                data-tooltip="Attach files (images, PDFs, text up to 10MB)"
                 aria-label="Attach file"
             >
                 <Paperclip className="h-5 w-5 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-6 sm:w-6" />

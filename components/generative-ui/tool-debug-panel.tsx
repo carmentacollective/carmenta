@@ -77,7 +77,6 @@ export function ToolDebugPanel({
                     "text-muted-foreground/50 transition-colors hover:text-muted-foreground",
                     "hover:bg-muted/30"
                 )}
-                title="Debug info"
             >
                 <Wrench className="h-3 w-3" />
                 <ChevronDown

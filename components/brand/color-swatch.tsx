@@ -35,8 +35,8 @@ export function ColorSwatch({
                 <div className="space-y-1 text-sm">
                     <button
                         onClick={() => handleCopy(hex)}
-                        className="block w-full text-left font-mono text-foreground/60 transition-colors hover:text-primary"
-                        title="Click to copy"
+                        className="tooltip block w-full text-left font-mono text-foreground/60 transition-colors hover:text-primary"
+                        data-tooltip="Copy color code"
                     >
                         {hex}
                         {copied === hex && (
@@ -45,8 +45,8 @@ export function ColorSwatch({
                     </button>
                     <button
                         onClick={() => handleCopy(hsl)}
-                        className="block w-full text-left font-mono text-xs text-foreground/50 transition-colors hover:text-primary"
-                        title="Click to copy"
+                        className="tooltip block w-full text-left font-mono text-xs text-foreground/50 transition-colors hover:text-primary"
+                        data-tooltip="Copy HSL value"
                     >
                         {hsl}
                         {copied === hsl && (

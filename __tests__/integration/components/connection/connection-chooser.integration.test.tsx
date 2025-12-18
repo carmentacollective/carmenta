@@ -138,7 +138,7 @@ describe("ConnectionChooser Integration", () => {
             expect(screen.getByText("Chat")).toBeInTheDocument();
 
             // 4. Open dropdown and verify both connections are listed
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe("ConnectionChooser Integration", () => {
             );
 
             // Open dropdown
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -271,7 +271,7 @@ describe("ConnectionChooser Integration", () => {
             );
 
             // Open dropdown
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
 
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -331,7 +331,7 @@ describe("ConnectionChooser Integration", () => {
             );
 
             // Open dropdown
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
             });
@@ -355,7 +355,7 @@ describe("ConnectionChooser Integration", () => {
             });
 
             // Reopen dropdown - confirmation should NOT be showing
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
             });
@@ -387,7 +387,7 @@ describe("ConnectionChooser Integration", () => {
             );
 
             // Open dropdown
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
             });
@@ -419,7 +419,7 @@ describe("ConnectionChooser Integration", () => {
             });
 
             // Reopen - should be clean state
-            fireEvent.click(screen.getByTitle("Search connections"));
+            fireEvent.click(screen.getByLabelText("Search connections"));
             await waitFor(() => {
                 expect(screen.getByLabelText("Delete Test Chat")).toBeInTheDocument();
                 expect(
