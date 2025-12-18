@@ -356,8 +356,7 @@ function ConnectionDropdown({
                                                                     conn.id
                                                                 )
                                                             }
-                                                            className="tooltip relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
-                                                            data-tooltip="Delete connection"
+                                                            className="relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
                                                             aria-label={`Delete ${conn.title || "connection"}`}
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
