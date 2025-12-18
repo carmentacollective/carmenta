@@ -25,7 +25,13 @@ interface MarkdownRendererProps {
 export const MarkdownRenderer = memo(
     ({ content, className, inline = false }: MarkdownRendererProps) => {
         return (
-            <div className={cn("holo-markdown", inline && "[&>*]:my-0", className)}>
+            <div
+                className={cn(
+                    "holo-markdown",
+                    inline && "[&>*]:my-0 [&>p]:m-0 [&>p]:inline",
+                    className
+                )}
+            >
                 <Streamdown>{content}</Streamdown>
             </div>
         );
