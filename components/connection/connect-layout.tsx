@@ -23,6 +23,7 @@ import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectionChooser } from "./connection-chooser";
 import { Oracle } from "@/components/ui/oracle";
 import { UserAuthButton } from "@/components/ui";
+import { useConcierge } from "@/lib/concierge/context";
 import type {
     PublicConnection,
     PersistedConciergeData,
@@ -62,8 +63,12 @@ const mainEntranceVariants = {
 
 function CarmentaOracle() {
     const { isStreaming } = useConnection();
+    const { concierge } = useConcierge();
 
-    return <Oracle href="/" size="sm" state={isStreaming ? "working" : "breathing"} />;
+    // Show "working" only during concierge selection phase (before streaming starts)
+    const isConciergeSelecting = isStreaming && !concierge;
+
+    return <Oracle href="/" size="sm" state={isConciergeSelecting ? "working" : "breathing"} />;
 }
 
 // ============================================================
