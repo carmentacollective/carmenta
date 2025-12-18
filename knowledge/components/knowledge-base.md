@@ -247,18 +247,28 @@ organization. The Librarian maintains consistency regardless of where data origi
 For technical implementation details including database schema, query patterns, and
 phased rollout plan, see [Knowledge Base Storage](./knowledge-base-storage.md).
 
+### Namespace Architecture
+
+**Two dimensions determine document behavior:**
+
+1. **Ownership**: Global (userId = null) vs Per-user (userId = string)
+2. **Injection**: Always (context) vs Searched (knowledge)
+
+| Path prefix   | Ownership | Injection | Purpose                                   |
+| ------------- | --------- | --------- | ----------------------------------------- |
+| `profile/*`   | Per-user  | Always    | User context—who you are, how we interact |
+| `docs/*`      | Global    | Searched  | Product documentation (V2)                |
+| `knowledge/*` | Per-user  | Searched  | User's own knowledge                      |
+
 ### Filesystem Structure
 
 **Hierarchical Organization**:
 
 ```
 /profile/
-  /identity.txt                    # Who you are, professional context
-  /preferences.txt                 # Communication style, how you work
-  /people/                         # People you know, relationships
-    /sarah-chen.txt
-    /mike-founder.txt
-  /goals.txt                       # Current priorities, what you're working toward
+  /character                       # AI personality (Carmenta defaults, customizable)
+  /identity                        # Who you are—name, role, what you're building
+  /preferences                     # How we interact—communication style, depth
 /projects/
   /carmenta/
     /research/
@@ -282,9 +292,20 @@ phased rollout plan, see [Knowledge Base Storage](./knowledge-base-storage.md).
   /learnings.txt
 ```
 
-The `/profile/` folder is special: its contents are injected into every conversation
-context. This is how Carmenta "knows" you without re-explaining. Profile documents are
-updated continuously as the Librarian learns from conversations.
+The `/profile/` folder is special: its contents are always injected into every
+conversation context. This is how Carmenta "knows" you without re-explaining.
+
+**Profile documents (V1):**
+
+- `profile/character` - AI personality (seeded with Carmenta defaults, customizable)
+- `profile/identity` - Who you are (seeded with name from Clerk)
+- `profile/preferences` - How we interact (empty initially)
+
+**Values** are not stored in the database—they're baked into the code from the
+`heart-centered-prompts` package. Values are displayed in the UI for transparency but
+are protected and not user-editable.
+
+Profile documents are updated continuously as the Librarian learns from conversations.
 
 The AI creates and maintains this hierarchy based on understanding your work and
 interests. Conversations populate the structure just like uploaded files. A conversation

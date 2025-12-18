@@ -458,6 +458,58 @@ Memory as first-class citizen:
 </memory_patterns>
 ```
 
+### 4-Layer System Prompt Architecture
+
+The system prompt is structured in four layers, each with distinct caching behavior:
+
+```
+┌──────────────────────────────────────────────┐
+│ LAYER 1: Values (from code, globally cached) │
+│ heart-centered-prompts package (terse)       │
+│ ~200 tokens, frozen, maximum cache hits      │
+└──────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────┐
+│ LAYER 2: Profile (per-user, cached by hash)  │
+│ <character>...</character>                   │
+│ <about>...</about>                           │
+│ <preferences>...</preferences>               │
+│ ~500-800 tokens                              │
+└──────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────┐
+│ LAYER 3: Retrieved context (dynamic)         │
+│ Relevant docs/* or knowledge/* if searched   │
+│ (V2 - not in initial implementation)         │
+└──────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────┐
+│ LAYER 4: Session (not cached)                │
+│ Today's date, conversation context           │
+│ ~50 tokens                                   │
+└──────────────────────────────────────────────┘
+```
+
+**Layer 1 (Values)**: The philosophical foundation from `heart-centered-prompts`
+package. Protected, never user-editable. Globally cached for all users.
+
+**Layer 2 (Profile)**: Three profile documents with XML format and `purpose` attributes:
+
+- `profile/character` → `<character purpose="...">` - AI personality
+- `profile/identity` → `<about purpose="...">` - User identity
+- `profile/preferences` → `<preferences purpose="...">` - Collaboration style
+
+Each document has metadata stored in the DB:
+
+- `promptLabel` - XML tag name
+- `promptHint` - Purpose attribute content
+- `promptOrder` - Ordering in compiled prompt
+- `alwaysInclude` - Whether to include in every request
+
+**Layer 3 (Retrieved)**: Searchable documentation and knowledge (V2 scope).
+
+**Layer 4 (Session)**: Dynamic session context like current date.
+
 ### AI Team Coordination
 
 Define patterns for multi-agent workflows:

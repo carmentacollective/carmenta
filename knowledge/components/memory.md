@@ -190,32 +190,40 @@ here.
 ```typescript
 {
   role: "system",
-  content: await compileUserContext(userEmail)
+  content: await compileProfileContext(userId)
 }
 
-async function compileUserContext(userEmail: string): Promise<string> {
-  // Fetch /profile/* documents from Knowledge Base
-  const profile = await kb.readFolder(userEmail, '/profile/');
+async function compileProfileContext(userId: string): Promise<string | null> {
+  // Fetch profile/* documents from Knowledge Base
+  const docs = await kb.readFolder(userId, 'profile');
 
-  return `
-  # Current User Context
+  // Compile docs with promptLabel and promptHint into XML format
+  const sections = docs
+    .filter(d => d.alwaysInclude && d.promptLabel && d.content?.trim())
+    .sort((a, b) => a.promptOrder - b.promptOrder)
+    .map(d => `<${d.promptLabel} purpose="${d.promptHint}">\n${d.content.trim()}\n</${d.promptLabel}>`);
 
-  User: ${userEmail}
-
-  ${profile.find(d => d.name === 'identity.txt')?.content}
-
-  ## Preferences
-  ${profile.find(d => d.name === 'preferences.txt')?.content}
-
-  ## Current Goals
-  ${profile.find(d => d.name === 'goals.txt')?.content}
-
-  ## People
-  ${profile.filter(d => d.path.startsWith('/profile/people/')).map(p =>
-    `- ${p.name}: ${p.content.slice(0, 200)}`
-  ).join('\n')}
-  `;
+  if (sections.length === 0) return null;
+  return sections.join('\n\n');
 }
+```
+
+**Example output**:
+
+```xml
+<character purpose="The AI's personality—name, voice, patterns">
+Name: Carmenta
+Voice: Warm, sophisticated, quiet confidence
+</character>
+
+<about purpose="Who the user is—identity, role, current focus">
+Nick Sullivan
+Building Carmenta - heart-centered AI for builders
+</about>
+
+<preferences purpose="How the user prefers to collaborate—tone, format, depth">
+Direct and concrete. Match energy.
+</preferences>
 ```
 
 **Cache behavior**: Not cached - changes every request.
@@ -388,24 +396,45 @@ dynamic user context (computed per-request).
 
 ### /profile/ Folder (Tier 1: Always Included)
 
-**Purpose**: Core identity that should be in every request
+**Purpose**: Core context that should be in every request
 
 **Documents**:
 
 ```
 /profile/
-  identity.txt           # Who you are professionally
-  preferences.txt        # Communication style, how you work
-  people/
-    sarah-chen.txt       # Key relationships, context
-    mike-founder.txt
-  goals.txt              # Current priorities, what you're working toward
+  character              # AI personality (Carmenta defaults, customizable)
+  identity               # Who you are—name, role, what you're building
+  preferences            # How we interact—communication style, depth
+```
+
+**Values** are not stored in the database—they're baked into the code from the
+`heart-centered-prompts` package and injected as the first (globally cached) layer of
+the system prompt.
+
+**XML Output Format**: Each profile document is compiled with a `purpose` attribute for
+LLM context:
+
+```xml
+<character purpose="The AI's personality—name, voice, patterns">
+Name: Carmenta
+Voice: Warm, sophisticated, quiet confidence
+</character>
+
+<about purpose="Who the user is—identity, role, current focus">
+Nick Sullivan
+Building Carmenta - heart-centered AI for builders
+</about>
+
+<preferences purpose="How the user prefers to collaborate—tone, format, depth">
+Direct and concrete. Match energy.
+Technical depth expected.
+</preferences>
 ```
 
 **Ingestion**: [Knowledge Librarian](./knowledge-librarian.md) continuously updates from
 conversations
 
-**Access pattern**: Read entire folder, compile into dynamic context
+**Access pattern**: Read entire folder, compile into dynamic context with XML tags
 
 **Token budget**: 3-5K tokens total
 
