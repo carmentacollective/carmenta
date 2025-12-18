@@ -45,7 +45,7 @@ export const viewport = {
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://carmenta.ai"),
-    title: "Carmenta – Create at the Speed of Thought",
+    title: "Carmenta · Create at the Speed of Thought",
     description:
         "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
 
@@ -66,14 +66,14 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://carmenta.ai",
         siteName: "Carmenta",
-        title: "Carmenta – Create at the Speed of Thought",
+        title: "Carmenta · Create at the Speed of Thought",
         description:
             "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
     },
 
     twitter: {
         card: "summary_large_image",
-        title: "Carmenta – Create at the Speed of Thought",
+        title: "Carmenta · Create at the Speed of Thought",
         description:
             "Create at the speed of thought. Every frontier model—Claude, GPT, Gemini, Grok—unified. Memory that persists. An AI team that works alongside you. Partnership, not tool-use.",
     },

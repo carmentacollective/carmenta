@@ -42,7 +42,7 @@ const SPEED_QUALITY_DISPLAY: Record<
     { label: string; emoji: string; color: string }
 > = {
     fast: { label: "Fast", emoji: "⚡", color: "text-amber-500" },
-    balanced: { label: "Balanced", emoji: "⚖️", color: "text-blue-500" },
+    versatile: { label: "Versatile", emoji: "⚖️", color: "text-blue-500" },
     deep: { label: "Deep", emoji: "🔬", color: "text-purple-500" },
     specialized: { label: "Specialized", emoji: "✨", color: "text-green-500" },
 };

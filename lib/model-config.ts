@@ -24,7 +24,7 @@ export interface ReasoningConfig {
 }
 
 /** Speed vs quality positioning */
-export type SpeedQuality = "fast" | "balanced" | "deep" | "specialized";
+export type SpeedQuality = "fast" | "versatile" | "deep" | "specialized";
 
 /** Capability tags shown in UI */
 export type ModelTag =
@@ -73,8 +73,8 @@ export const MODELS: readonly ModelConfig[] = [
         id: "anthropic/claude-sonnet-4.5",
         displayName: "Claude Sonnet",
         provider: "anthropic",
-        description: "Balanced powerhouse for code, analysis, and creative work",
-        speedQuality: "balanced",
+        description: "Versatile powerhouse for code, analysis, and creative work",
+        speedQuality: "versatile",
         tags: ["Deep thinking", "Long docs"],
         contextWindow: 1_000_000,
         inputCostPerMillion: 3,
@@ -128,7 +128,7 @@ export const MODELS: readonly ModelConfig[] = [
         displayName: "Gemini Pro",
         provider: "google",
         description: "Multimodal understanding for video, audio, and images",
-        speedQuality: "balanced",
+        speedQuality: "versatile",
         tags: ["Video", "Audio", "Long docs"],
         contextWindow: 1_000_000,
         inputCostPerMillion: 2,
@@ -161,7 +161,7 @@ export const MODELS: readonly ModelConfig[] = [
         displayName: "ChatGPT",
         provider: "openai",
         description: "Frontier model for professional work with adaptive reasoning",
-        speedQuality: "balanced",
+        speedQuality: "versatile",
         tags: ["Deep thinking", "Tools", "Long docs"],
         contextWindow: 400_000,
         inputCostPerMillion: 1.75,

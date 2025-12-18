@@ -116,7 +116,7 @@ export interface ConciergeResult {
     reasoning: ReasoningConfig;
 
     /**
-     * Generated title for the connection (max 50 chars).
+     * Generated title for the connection (15-35 chars ideal).
      * Only present on first message - used to create the connection.
      */
     title?: string;

@@ -240,7 +240,7 @@ const conciergeSchema = z.object({
         .string()
         .min(2, "Title must be at least 2 characters")
         .max(MAX_TITLE_LENGTH)
-        .describe("Short title for the connection (2-50 chars, required)"),
+        .describe("Short title for future reference (15-35 chars ideal)"),
 });
 
 /**
