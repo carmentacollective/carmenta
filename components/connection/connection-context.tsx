@@ -228,7 +228,10 @@ export function ConnectionProvider({
             const connection = connections.find((c) => c.id === id);
             if (!connection) return;
 
-            const newIsStarred = !connection.isStarred;
+            // Capture original state for rollback
+            const originalIsStarred = connection.isStarred;
+            const originalStarredAt = connection.starredAt;
+            const newIsStarred = !originalIsStarred;
 
             // Optimistic update
             setConnections((prev) =>
@@ -252,14 +255,14 @@ export function ConnectionProvider({
                         "Toggled star"
                     );
                 } catch (err) {
-                    // Revert optimistic update on error
+                    // Revert to original state on error
                     setConnections((prev) =>
                         prev.map((c) =>
                             c.id === id
                                 ? {
                                       ...c,
-                                      isStarred: !newIsStarred,
-                                      starredAt: !newIsStarred ? new Date() : null,
+                                      isStarred: originalIsStarred,
+                                      starredAt: originalStarredAt,
                                   }
                                 : c
                         )
