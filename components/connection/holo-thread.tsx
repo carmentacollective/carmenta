@@ -22,14 +22,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import {
-    Square,
-    ArrowDown,
-    CornerDownLeft,
-    Sparkles,
-    PenLine,
-    Check,
-} from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -1118,7 +1111,7 @@ function Composer({ isNewConversation }: ComposerProps) {
             const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
             if (!input.trim() && nonTextFiles.length === 0) {
                 setShouldFlash(true);
-                setTimeout(() => setShouldFlash(false), 500);
+                setTimeout(() => setShouldFlash(false), 300); // Brief hint, not punitive
                 inputRef.current?.focus();
                 return;
             }
@@ -1200,15 +1193,16 @@ function Composer({ isNewConversation }: ComposerProps) {
             }
 
             // Enter sends if not loading and has content
-            // During loading, Enter just inserts newline (user can draft next message)
-            if (
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                !isLoading &&
-                (input.trim() || completedFiles.length > 0)
-            ) {
-                e.preventDefault();
-                handleSubmit(e as unknown as FormEvent);
+            // During loading, let Enter insert newline naturally (user drafts next message)
+            if (e.key === "Enter" && !e.shiftKey) {
+                if (isLoading) {
+                    // Let default behavior insert newline while streaming
+                    return;
+                }
+                if (input.trim() || completedFiles.length > 0) {
+                    e.preventDefault();
+                    handleSubmit(e as unknown as FormEvent);
+                }
             }
         },
         [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
@@ -1236,9 +1230,10 @@ function Composer({ isNewConversation }: ComposerProps) {
         wasLoadingRef.current = isLoading;
 
         if (wasLoading && !isLoading && !wasStoppedRef.current) {
-            // Natural completion: show success checkmark briefly
+            // Natural completion: show success checkmark
+            // Duration (600ms) exceeds exhale animation (500ms) so success registers
             const startTimer = setTimeout(() => setShowComplete(true), 0);
-            const endTimer = setTimeout(() => setShowComplete(false), 400);
+            const endTimer = setTimeout(() => setShowComplete(false), 600);
             return () => {
                 clearTimeout(startTimer);
                 clearTimeout(endTimer);
@@ -1420,20 +1415,12 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
             }
         }, [pipelineState]);
 
-        // Determine which icon to show based on variant and state
+        // Determine which icon to show based on variant
+        // Stop button always shows Square (universal stop symbol)
+        // Ring color varies by state, but icon stays consistent for clear affordance
         const getIcon = () => {
             if (variant === "stop") {
-                // Stop button shows state-aware icons
-                switch (pipelineState) {
-                    case "concierge":
-                        return <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    case "streaming":
-                        return <PenLine className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    case "complete":
-                        return <Check className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    default:
-                        return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
-                }
+                return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
             }
             // Send and ghost variants use children
             return children;
