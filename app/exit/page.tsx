@@ -6,6 +6,7 @@ import { useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
 import { HolographicBackground } from "@/components/ui/holographic-background";
+import { logger } from "@/lib/client-logger";
 
 /**
  * Exit page - handles signing out with a graceful transition
@@ -14,15 +15,22 @@ export default function ExitPage() {
     const router = useRouter();
     const { signOut } = useClerk();
     const [isExiting, setIsExiting] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         const handleExit = async () => {
-            setIsExiting(true);
-            await signOut();
-            // Short delay for the animation to show
-            setTimeout(() => {
-                router.push("/");
-            }, 500);
+            try {
+                setIsExiting(true);
+                await signOut();
+                // Short delay for the animation to show
+                setTimeout(() => {
+                    router.push("/");
+                }, 500);
+            } catch (err) {
+                logger.error({ error: err }, "Sign out failed");
+                setError(true);
+                setIsExiting(false);
+            }
         };
 
         handleExit();
@@ -45,11 +53,25 @@ export default function ExitPage() {
                         priority
                     />
                     <h1 className="text-2xl font-semibold tracking-tight text-foreground/90">
-                        {isExiting ? "Until next time" : "Exiting..."}
+                        {error
+                            ? "Something went wrong"
+                            : isExiting
+                              ? "Until next time"
+                              : "Exiting..."}
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        We&apos;ll remember where we left off
+                        {error
+                            ? "We couldn't sign you out. Please try again."
+                            : "We'll remember where we left off"}
                     </p>
+                    {error && (
+                        <button
+                            onClick={() => router.push("/")}
+                            className="mt-4 text-sm font-medium text-primary hover:text-primary/80"
+                        >
+                            Return home
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
