@@ -108,7 +108,6 @@ export default function RootLayout({
     return (
         <ClerkProvider
             signInUrl="/enter"
-            signUpUrl="/enter"
             afterSignOutUrl="/"
             appearance={clerkAppearance}
         >
