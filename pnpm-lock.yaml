@@ -17,6 +17,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^6.35.6
         version: 6.36.2(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@marker.io/browser':
+        specifier: ^0.20.2
+        version: 0.20.2
       '@openrouter/ai-sdk-provider':
         specifier: ^1.5.3
         version: 1.5.3(ai@5.0.113(zod@4.1.13))(zod@4.1.13)
@@ -1228,6 +1231,9 @@ packages:
 
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+
+  '@marker.io/browser@0.20.2':
+    resolution: {integrity: sha512-rayC9s9ERzKMyjMkfvqKBCSqSVKPQad9F4NvZraGK6yd+mJZfY3C3cPFe89s4Uu9TUvfNm1cR7YfSgdvc/dyvg==}
 
   '@mswjs/interceptors@0.40.0':
     resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
@@ -6531,6 +6537,8 @@ snapshots:
       - supports-color
 
   '@kwsites/promise-deferred@1.1.1': {}
+
+  '@marker.io/browser@0.20.2': {}
 
   '@mswjs/interceptors@0.40.0':
     dependencies:
