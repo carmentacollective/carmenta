@@ -1,15 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import { marked } from "marked";
+import { memo } from "react";
+import { Streamdown } from "streamdown";
 
 import { cn } from "@/lib/utils";
-
-// Configure marked for GitHub Flavored Markdown
-marked.use({
-    gfm: true,
-    breaks: false,
-});
 
 interface MarkdownRendererProps {
     /** The markdown content to render */
@@ -23,31 +17,23 @@ interface MarkdownRendererProps {
 /**
  * MarkdownRenderer - Reusable markdown rendering component
  *
- * Uses Marked for fast, synchronous markdown parsing.
- * Supports GitHub Flavored Markdown (tables, strikethrough, task lists).
+ * Uses Streamdown (Vercel's AI-optimized markdown renderer) for streaming-aware
+ * parsing. Handles incomplete markdown syntax gracefully during streaming.
  *
- * Note: This is a simplified version that renders HTML directly.
- * Custom code block styling is handled via CSS in .holo-markdown.
+ * Supports GitHub Flavored Markdown (tables, strikethrough, task lists).
  */
 export const MarkdownRenderer = memo(
     ({ content, className, inline = false }: MarkdownRendererProps) => {
-        const html = useMemo(() => {
-            // marked.parse() is synchronous when no async extensions are used
-            const rendered = marked.parse(content) as string;
-
-            // For inline mode, strip wrapping <p> tags for compact display
-            if (inline) {
-                return rendered.replace(/^<p>/, "").replace(/<\/p>\n?$/, "");
-            }
-
-            return rendered;
-        }, [content, inline]);
-
         return (
             <div
-                className={cn("holo-markdown", inline && "[&>*]:my-0", className)}
-                dangerouslySetInnerHTML={{ __html: html }}
-            />
+                className={cn(
+                    "holo-markdown",
+                    inline && "[&>*]:my-0 [&>p]:m-0 [&>p]:inline",
+                    className
+                )}
+            >
+                <Streamdown>{content}</Streamdown>
+            </div>
         );
     },
     (prev, next) =>
