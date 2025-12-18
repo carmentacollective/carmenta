@@ -6,8 +6,10 @@
 
 export * from "./types";
 
-// Main component: Model Selector Popover with stepped sliders
+// Main components
 export { ModelSelectorPopover } from "./model-selector-popover";
+export { ModelSelectorModal } from "./model-selector-modal";
+export { ModelSelectorTrigger } from "./model-selector-trigger";
 
 // Building blocks
 export { SteppedSlider } from "./stepped-slider";
