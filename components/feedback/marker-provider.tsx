@@ -9,7 +9,7 @@
  * @see https://github.com/marker-io/browser-sdk
  */
 import markerSDK from "@marker.io/browser";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import { useUserContext } from "@/lib/auth/user-context";
 import { env } from "@/lib/env";
@@ -21,7 +21,7 @@ interface MarkerProviderProps {
 }
 
 export function MarkerProvider({ children }: MarkerProviderProps) {
-    const widgetRef = useRef<MarkerWidget | null>(null);
+    const [widget, setWidget] = useState<MarkerWidget | null>(null);
     const { user, isSignedIn } = useUserContext();
 
     // Initialize Marker.io widget
@@ -32,30 +32,29 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
         let isMounted = true;
 
         const initMarker = async () => {
-            const widget = await markerSDK.loadWidget({
+            const loadedWidget = await markerSDK.loadWidget({
                 project: projectId,
             });
 
             if (!isMounted) {
-                widget.unload();
+                loadedWidget.unload();
                 return;
             }
 
-            widgetRef.current = widget;
+            setWidget(loadedWidget);
         };
 
         void initMarker();
 
         return () => {
             isMounted = false;
-            widgetRef.current?.unload();
-            widgetRef.current = null;
+            widget?.unload();
+            setWidget(null);
         };
     }, []);
 
     // Identify reporter when user is signed in
     useEffect(() => {
-        const widget = widgetRef.current;
         if (!widget) return;
 
         if (isSignedIn && user) {
@@ -66,9 +65,15 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
 
             if (email) {
                 widget.setReporter({ email, fullName });
+            } else {
+                // User has no email - clear any previous reporter
+                widget.clearReporter();
             }
+        } else {
+            // Not signed in - clear reporter
+            widget.clearReporter();
         }
-    }, [isSignedIn, user]);
+    }, [widget, isSignedIn, user]);
 
     return <>{children}</>;
 }
