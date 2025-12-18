@@ -8,6 +8,7 @@ import { PWARegistration } from "@/components/pwa-registration";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
+import { MarkerProvider } from "@/components/feedback/marker-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -120,10 +121,12 @@ export default function RootLayout({
                     >
                         <body className="min-h-screen bg-background font-sans antialiased">
                             <ThemeProvider>
-                                <PWARegistration />
-                                <StructuredData />
-                                <Toaster />
-                                {children}
+                                <MarkerProvider>
+                                    <PWARegistration />
+                                    <StructuredData />
+                                    <Toaster />
+                                    {children}
+                                </MarkerProvider>
                             </ThemeProvider>
                         </body>
                     </html>

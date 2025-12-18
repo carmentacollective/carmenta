@@ -14,7 +14,9 @@
  */
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useMarkerOptional } from "@/components/feedback/marker-provider";
 
 const REFRESH_KEY = "carmenta_error_refresh";
 const REFRESH_WINDOW_MS = 30000;
@@ -28,6 +30,22 @@ export default function Error({
 }) {
     const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
     const hasCheckedRef = useRef(false);
+    const marker = useMarkerOptional();
+
+    const handleReportIssue = useCallback(() => {
+        if (!marker?.isReady) return;
+
+        // Inject error context before capturing
+        marker.setCustomData({
+            errorName: error.name,
+            errorMessage: error.message,
+            errorDigest: error.digest ?? "unknown",
+            errorStack: error.stack?.slice(0, 500) ?? "no stack trace",
+            triggeredFrom: "error-boundary",
+        });
+
+        marker.capture("fullscreen");
+    }, [marker, error]);
 
     useEffect(() => {
         if (hasCheckedRef.current) return;
@@ -106,19 +124,29 @@ export default function Error({
                     Something unexpected happened. We&apos;ve been notified and
                     we&apos;re on it.
                 </p>
-                <div className="flex justify-center gap-4">
-                    <button
-                        onClick={reset}
-                        className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
-                    >
-                        Refresh
-                    </button>
-                    <Link
-                        href="/"
-                        className="rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
-                    >
-                        Go home
-                    </Link>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={reset}
+                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                            Refresh
+                        </button>
+                        <Link
+                            href="/"
+                            className="rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+                        >
+                            Go home
+                        </Link>
+                    </div>
+                    {marker?.isReady && (
+                        <button
+                            onClick={handleReportIssue}
+                            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                            Help us fix this
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
