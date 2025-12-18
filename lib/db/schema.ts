@@ -219,6 +219,14 @@ export const connections = pgTable(
             .notNull()
             .defaultNow(),
 
+        // ---- Starring (quick access) ----
+
+        /** Whether this connection is starred for quick access */
+        isStarred: boolean("is_starred").notNull().default(false),
+
+        /** When the connection was starred (null if not starred) */
+        starredAt: timestamp("starred_at", { withTimezone: true }),
+
         createdAt: timestamp("created_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
@@ -239,6 +247,12 @@ export const connections = pgTable(
         index("connections_streaming_status_idx").on(table.streamingStatus),
         /** Slug lookup - unique per connection */
         index("connections_slug_idx").on(table.slug),
+        /** Starred connections for a user, sorted by activity for quick access */
+        index("connections_user_starred_idx").on(
+            table.userId,
+            table.isStarred,
+            table.lastActivityAt
+        ),
     ]
 );
 

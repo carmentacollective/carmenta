@@ -65,6 +65,9 @@ export interface ConnectionWithMessages {
     conciergeTemperature: string | null; // numeric(3,2) returns string
     conciergeExplanation: string | null;
     conciergeReasoning: ConciergeReasoningConfig | null;
+    // Starring for quick access
+    isStarred: boolean;
+    starredAt: Date | null;
     lastActivityAt: Date;
     createdAt: Date;
     updatedAt: Date;

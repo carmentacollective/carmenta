@@ -17,6 +17,9 @@ import {
     updateConnection as dbUpdateConnection,
     archiveConnection as dbArchiveConnection,
     deleteConnection as dbDeleteConnection,
+    toggleStar as dbToggleStar,
+    getStarredConnections as dbGetStarredConnections,
+    getRecentUnstarredConnections as dbGetRecentUnstarredConnections,
     loadMessages as dbLoadMessages,
     mapConnectionMessagesToUI,
     type ConciergeData,
@@ -47,6 +50,8 @@ export interface PublicConnection {
     status: "active" | "background" | "archived";
     streamingStatus: "idle" | "streaming" | "completed" | "failed";
     modelId: string | null;
+    isStarred: boolean;
+    starredAt: Date | null;
     lastActivityAt: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -301,6 +306,64 @@ export async function deleteConnection(connectionId: string): Promise<void> {
     }
 
     await dbDeleteConnection(connection.id);
+}
+
+/**
+ * Toggles the starred status of a connection
+ * @param connectionId - Public Sqid string from the client
+ * @param isStarred - New starred state
+ * @returns Updated PublicConnection
+ */
+export async function toggleStarConnection(
+    connectionId: string,
+    isStarred: boolean
+): Promise<PublicConnection | null> {
+    const dbUser = await getDbUser();
+    if (!dbUser) {
+        return null;
+    }
+
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
+        return null;
+    }
+
+    const updated = await dbToggleStar(connection.id, isStarred);
+    return updated ? toPublicConnection(updated) : null;
+}
+
+/**
+ * Gets starred connections for the current user
+ * @returns PublicConnection[] with encoded Sqid IDs, sorted by lastActivityAt
+ */
+export async function getStarredConnections(
+    limit: number = 20
+): Promise<PublicConnection[]> {
+    const dbUser = await getDbUser();
+    if (!dbUser) {
+        return [];
+    }
+
+    const connections = await dbGetStarredConnections(dbUser.id, limit);
+    return connections.map(toPublicConnection);
+}
+
+/**
+ * Gets recent unstarred connections for the current user
+ * For use in the "Recent" section that excludes starred connections
+ * @returns PublicConnection[] with encoded Sqid IDs
+ */
+export async function getRecentUnstarredConnections(
+    limit: number = 6,
+    status?: "active" | "background" | "archived"
+): Promise<PublicConnection[]> {
+    const dbUser = await getDbUser();
+    if (!dbUser) {
+        return [];
+    }
+
+    const connections = await dbGetRecentUnstarredConnections(dbUser.id, limit, status);
+    return connections.map(toPublicConnection);
 }
 
 /**

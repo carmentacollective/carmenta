@@ -82,6 +82,8 @@ describe("ConnectionChooser Integration", () => {
         status: "active" | "background" | "archived";
         streamingStatus: "idle" | "streaming" | "completed" | "failed";
         modelId: string | null;
+        isStarred: boolean;
+        starredAt: Date | null;
         lastActivityAt: Date;
         createdAt: Date;
         updatedAt: Date;
