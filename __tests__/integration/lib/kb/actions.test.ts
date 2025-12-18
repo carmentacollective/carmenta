@@ -34,27 +34,31 @@ vi.mock("@clerk/nextjs/server", () => ({
 }));
 
 describe("Knowledge Base Server Actions", () => {
-    // Use a valid UUID for test user
+    // Use a valid UUID for test user (database ID)
     const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
     const OTHER_USER_ID = "660e8400-e29b-41d4-a716-446655440000";
+
+    // Clerk IDs (what auth() returns)
+    const TEST_CLERK_ID = "clerk_test_123";
+    const OTHER_CLERK_ID = "clerk_other_456";
 
     beforeEach(async () => {
         // Create test user in database (required for foreign key constraint)
         await db.insert(schema.users).values({
             id: TEST_USER_ID,
-            clerkId: "clerk_test_123",
+            clerkId: TEST_CLERK_ID,
             email: "test@example.com",
         });
 
         // Create other user for multi-user tests
         await db.insert(schema.users).values({
             id: OTHER_USER_ID,
-            clerkId: "clerk_other_456",
+            clerkId: OTHER_CLERK_ID,
             email: "other@example.com",
         });
 
-        // Default: authenticated user
-        mocks.mockAuth.mockResolvedValue({ userId: TEST_USER_ID });
+        // Default: authenticated user (auth() returns Clerk ID, not database UUID)
+        mocks.mockAuth.mockResolvedValue({ userId: TEST_CLERK_ID });
     });
 
     describe("getKBFolders()", () => {
