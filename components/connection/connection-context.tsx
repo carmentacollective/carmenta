@@ -222,29 +222,15 @@ export function ConnectionProvider({
         []
     );
 
-    const handleToggleStarConnection = useCallback(
-        (id: string) => {
-            // Find current state
-            const connection = connections.find((c) => c.id === id);
-            if (!connection) return;
+    const handleToggleStarConnection = useCallback((id: string) => {
+        setConnections((prev) => {
+            const connection = prev.find((c) => c.id === id);
+            if (!connection) return prev;
 
             // Capture original state for rollback
             const originalIsStarred = connection.isStarred;
             const originalStarredAt = connection.starredAt;
             const newIsStarred = !originalIsStarred;
-
-            // Optimistic update
-            setConnections((prev) =>
-                prev.map((c) =>
-                    c.id === id
-                        ? {
-                              ...c,
-                              isStarred: newIsStarred,
-                              starredAt: newIsStarred ? new Date() : null,
-                          }
-                        : c
-                )
-            );
 
             // Server action (fire and forget with error handling)
             startTransition(async () => {
@@ -256,8 +242,8 @@ export function ConnectionProvider({
                     );
                 } catch (err) {
                     // Revert to original state on error
-                    setConnections((prev) =>
-                        prev.map((c) =>
+                    setConnections((current) =>
+                        current.map((c) =>
                             c.id === id
                                 ? {
                                       ...c,
@@ -272,9 +258,19 @@ export function ConnectionProvider({
                     setError(error);
                 }
             });
-        },
-        [connections]
-    );
+
+            // Optimistic update
+            return prev.map((c) =>
+                c.id === id
+                    ? {
+                          ...c,
+                          isStarred: newIsStarred,
+                          starredAt: newIsStarred ? new Date() : null,
+                      }
+                    : c
+            );
+        });
+    }, []); // Empty deps - uses functional updates
 
     // Computed: starred connections sorted by lastActivityAt
     const starredConnections = useMemo(
