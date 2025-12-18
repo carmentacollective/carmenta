@@ -78,9 +78,9 @@ function getReasoningEmoji(
     const effort = reasoning.effort ?? "medium";
     const badges: Record<string, { emoji: string; label: string }> = {
         high: { emoji: "🧠", label: "Deep" },
-        medium: { emoji: "⚖️", label: "Balanced" },
-        low: { emoji: "🏃", label: "Quick" },
-        none: { emoji: "⚡", label: "None" },
+        medium: { emoji: "⚖️", label: "Thorough" },
+        low: { emoji: "🏃", label: "Thoughtful" },
+        none: { emoji: "⚡", label: "Quick" },
     };
 
     return badges[effort] ?? { emoji: "🧠", label: "Thinking" };

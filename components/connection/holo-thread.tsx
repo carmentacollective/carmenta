@@ -43,7 +43,7 @@ import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { useConnection } from "./connection-context";
-import { ModelSelectorPopover } from "./model-selector";
+import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
@@ -1311,7 +1311,7 @@ function Composer({ isNewConversation }: ComposerProps) {
 
                     <FilePickerButton />
 
-                    <ModelSelectorPopover
+                    <ModelSelectorTrigger
                         overrides={overrides}
                         onChange={setOverrides}
                         conciergeModel={conciergeModel}
