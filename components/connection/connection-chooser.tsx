@@ -458,6 +458,7 @@ export function ConnectionChooser() {
                             <button
                                 onClick={openDropdown}
                                 className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
+                                aria-label="Search connections"
                             >
                                 <Search className="h-4 w-4" />
                             </button>
@@ -486,6 +487,7 @@ export function ConnectionChooser() {
                                     "text-foreground/50 hover:text-foreground/80",
                                     "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                 )}
+                                aria-label="New connection"
                             >
                                 {isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
