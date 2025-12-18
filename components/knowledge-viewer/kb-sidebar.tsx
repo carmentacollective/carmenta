@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, FileText, User, Settings, Command } from "lucide-react";
+import { ChevronRight, FileText, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 
@@ -28,7 +28,6 @@ export interface KBSidebarProps {
     folders: KBFolder[];
     selectedPath: string | null;
     onSelect: (path: string) => void;
-    onOpenSearch: () => void;
     dimmed?: boolean;
 }
 
@@ -36,7 +35,6 @@ export function KBSidebar({
     folders,
     selectedPath,
     onSelect,
-    onOpenSearch,
     dimmed = false,
 }: KBSidebarProps) {
     const [expanded, setExpanded] = useState<Set<string>>(
@@ -62,18 +60,11 @@ export function KBSidebar({
                 dimmed && "opacity-30"
             )}
         >
-            {/* Header with ⌘K hint */}
-            <div className="flex items-center justify-between border-b border-foreground/10 p-4">
+            {/* Header */}
+            <div className="border-b border-foreground/10 p-4">
                 <span className="text-sm font-medium text-foreground/70">
                     Knowledge
                 </span>
-                <button
-                    onClick={onOpenSearch}
-                    className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1 text-xs text-foreground/50 transition-colors hover:bg-foreground/10"
-                >
-                    <Command className="h-3 w-3" />
-                    <span>K</span>
-                </button>
             </div>
 
             {/* Tree */}

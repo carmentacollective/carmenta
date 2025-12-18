@@ -57,7 +57,6 @@ export function KnowledgeViewer({ initialFolders }: KnowledgeViewerProps) {
                 folders={folders}
                 selectedPath={selectedPath}
                 onSelect={setSelectedPath}
-                onOpenSearch={() => setSearchOpen(true)}
                 dimmed={searchOpen}
             />
 
