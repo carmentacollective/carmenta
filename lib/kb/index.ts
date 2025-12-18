@@ -442,6 +442,7 @@ export async function search(
 export const PROFILE_PATHS = {
     root: "profile",
     identity: "profile.identity",
+    instructions: "profile.instructions",
     preferences: "profile.preferences",
     goals: "profile.goals",
     people: "profile.people",

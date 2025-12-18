@@ -826,6 +826,7 @@ describe("PROFILE_PATHS Constant", () => {
         expect(PROFILE_PATHS).toEqual({
             root: "profile",
             identity: "profile.identity",
+            instructions: "profile.instructions",
             preferences: "profile.preferences",
             goals: "profile.goals",
             people: "profile.people",
