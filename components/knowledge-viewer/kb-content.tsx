@@ -63,23 +63,30 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
     const handleSave = useCallback(() => {
         if (!document) return;
 
+        const savedPath = document.path; // Capture for comparison
         setError(null);
         startTransition(async () => {
             try {
-                const updated = await updateKBDocument(document.path, editContent);
-                onUpdate(document.path, updated);
-                setIsEditing(false);
+                const updated = await updateKBDocument(savedPath, editContent);
+                onUpdate(savedPath, updated);
+                // Only exit edit mode if we're still on the same document
+                if (document.path === savedPath) {
+                    setIsEditing(false);
+                }
             } catch (err) {
                 const message =
                     err instanceof Error ? err.message : "Failed to save changes";
-                setError(message);
+                // Only show error if we're still on the same document
+                if (document.path === savedPath) {
+                    setError(message);
+                }
                 logger.error(
-                    { error: err, path: document.path },
+                    { error: err, path: savedPath },
                     "Failed to save KB document"
                 );
                 Sentry.captureException(err, {
                     tags: { component: "kb-content", action: "save" },
-                    extra: { path: document.path },
+                    extra: { path: savedPath },
                 });
             }
         });
