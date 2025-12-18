@@ -113,8 +113,6 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
     };
 
     return (
-        <MarkerContext.Provider value={contextValue}>
-            {children}
-        </MarkerContext.Provider>
+        <MarkerContext.Provider value={contextValue}>{children}</MarkerContext.Provider>
     );
 }

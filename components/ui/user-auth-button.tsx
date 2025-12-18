@@ -1,7 +1,16 @@
 "use client";
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
-import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Plug, Sparkles } from "lucide-react";
+import {
+    User,
+    LogOut,
+    Moon,
+    Sun,
+    UserCircle2,
+    Monitor,
+    Plug,
+    Sparkles,
+} from "lucide-react";
 
 import { useMarker } from "@/components/feedback/marker-provider";
 import { AnimatePresence, motion } from "framer-motion";
@@ -312,7 +321,9 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         >
                                             <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                             <Sparkles className="relative h-4 w-4 text-foreground/60" />
-                                            <span className="relative">Improve Carmenta</span>
+                                            <span className="relative">
+                                                Improve Carmenta
+                                            </span>
                                         </button>
                                     </div>
 
