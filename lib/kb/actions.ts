@@ -13,6 +13,35 @@ import { auth } from "@clerk/nextjs/server";
 import { kb, PROFILE_PATHS } from "./index";
 import { initializeProfile } from "./profile";
 import { logger } from "@/lib/logger";
+import { findUserByClerkId } from "@/lib/db/users";
+
+// ============================================================================
+// Helper
+// ============================================================================
+
+/**
+ * Get the database user ID from Clerk auth
+ *
+ * Clerk's auth() returns their internal userId, but our documents table
+ * references users.id (UUID). This helper translates between them.
+ *
+ * @throws Error if not authenticated or user not found in database
+ */
+async function getDbUserId(): Promise<string> {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+        throw new Error("Unauthorized");
+    }
+
+    const user = await findUserByClerkId(clerkId);
+    if (!user) {
+        // User exists in Clerk but not in our database yet
+        // This can happen on first sign-in before webhook fires
+        throw new Error("User not found - please refresh the page");
+    }
+
+    return user.id;
+}
 
 // ============================================================================
 // Types
@@ -41,10 +70,7 @@ export interface KBFolder {
  * Get all KB documents for the current user, organized by folder
  */
 export async function getKBFolders(): Promise<KBFolder[]> {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await getDbUserId();
 
     const allDocs = await kb.listAll(userId);
 
@@ -82,10 +108,7 @@ export async function getKBFolders(): Promise<KBFolder[]> {
  * Get all KB documents as a flat list
  */
 export async function getKBDocuments(): Promise<KBDocument[]> {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await getDbUserId();
 
     const docs = await kb.listAll(userId);
     return docs.map((doc) => ({
@@ -101,10 +124,7 @@ export async function getKBDocuments(): Promise<KBDocument[]> {
  * Get a single KB document by path
  */
 export async function getKBDocument(path: string): Promise<KBDocument | null> {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await getDbUserId();
 
     const doc = await kb.read(userId, path);
     if (!doc) return null;
@@ -125,10 +145,7 @@ export async function updateKBDocument(
     path: string,
     content: string
 ): Promise<KBDocument> {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await getDbUserId();
 
     try {
         const updated = await kb.update(userId, path, { content });
@@ -177,10 +194,7 @@ export interface ClerkUserData {
 export async function initializeKBWithClerkData(
     clerkData: ClerkUserData
 ): Promise<{ created: boolean }> {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await getDbUserId();
 
     // Build identity content from Clerk data
     const name = clerkData.firstName ?? clerkData.fullName ?? "Friend";
@@ -228,10 +242,16 @@ Any special requests?
  * Check if the user has initialized their KB profile
  */
 export async function hasKBProfile(): Promise<boolean> {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
         return false;
     }
 
-    return kb.exists(userId, PROFILE_PATHS.identity);
+    const user = await findUserByClerkId(clerkId);
+    if (!user) {
+        // User not in database yet - no profile
+        return false;
+    }
+
+    return kb.exists(user.id, PROFILE_PATHS.identity);
 }
