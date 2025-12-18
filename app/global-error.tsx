@@ -10,17 +10,11 @@
  * after refresh (within 30s), show the error UI.
  *
  * Note: Must render full HTML since the root layout isn't available.
- * Cannot use MarkerProvider context here - we initialize SDK directly.
  *
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
-import markerSDK from "@marker.io/browser";
 import * as Sentry from "@sentry/nextjs";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import { env } from "@/lib/env";
-
-type MarkerWidget = Awaited<ReturnType<typeof markerSDK.loadWidget>>;
+import { useEffect, useRef, useState } from "react";
 
 const REFRESH_KEY = "carmenta_error_refresh";
 const REFRESH_WINDOW_MS = 30000;
@@ -34,55 +28,6 @@ export default function GlobalError({
 }) {
     const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
     const hasCheckedRef = useRef(false);
-    const markerRef = useRef<MarkerWidget | null>(null);
-    const [markerReady, setMarkerReady] = useState(false);
-
-    // Initialize Marker.io directly (no provider available in global error)
-    useEffect(() => {
-        const projectId = env.NEXT_PUBLIC_MARKER_PROJECT_ID;
-        if (!projectId) return;
-
-        let isMounted = true;
-
-        void (async () => {
-            try {
-                const widget = await markerSDK.loadWidget({
-                    project: projectId,
-                    silent: true,
-                });
-
-                if (!isMounted) {
-                    widget.unload();
-                    return;
-                }
-
-                markerRef.current = widget;
-                setMarkerReady(true);
-            } catch {
-                // Silently fail - Marker.io is optional
-            }
-        })();
-
-        return () => {
-            isMounted = false;
-            markerRef.current?.unload();
-        };
-    }, []);
-
-    const handleReportIssue = useCallback(() => {
-        const widget = markerRef.current;
-        if (!widget) return;
-
-        widget.setCustomData({
-            errorName: error.name,
-            errorMessage: error.message,
-            errorDigest: error.digest ?? "unknown",
-            errorStack: error.stack?.slice(0, 500) ?? "no stack trace",
-            triggeredFrom: "global-error-boundary",
-        });
-
-        widget.capture("fullscreen");
-    }, [error]);
 
     useEffect(() => {
         if (hasCheckedRef.current) return;
@@ -167,22 +112,12 @@ export default function GlobalError({
                             Something unexpected happened. We&apos;ve been notified and
                             we&apos;re on it.
                         </p>
-                        <div className="flex flex-col items-center gap-4">
-                            <button
-                                onClick={reset}
-                                className="rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
-                            >
-                                Refresh
-                            </button>
-                            {markerReady && (
-                                <button
-                                    onClick={handleReportIssue}
-                                    className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                                >
-                                    Help us fix this
-                                </button>
-                            )}
-                        </div>
+                        <button
+                            onClick={reset}
+                            className="rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                            Refresh
+                        </button>
                     </div>
                 </div>
             </body>
