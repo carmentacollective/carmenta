@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/react";
 
-import { ModelSelectorPopover } from "@/components/connect/model-selector/model-selector-popover";
-import { DEFAULT_OVERRIDES } from "@/components/connect/model-selector/types";
+import { ModelSelectorPopover } from "@/components/connection/model-selector/model-selector-popover";
+import { DEFAULT_OVERRIDES } from "@/components/connection/model-selector/types";
 import { MODELS, getModel } from "@/lib/model-config";
 
 describe("ModelSelectorPopover", () => {
@@ -78,7 +78,7 @@ describe("ModelSelectorPopover", () => {
 
             const button = container.querySelector("button");
             expect(button).toBeDisabled();
-            expect(button).toHaveClass("cursor-not-allowed");
+            expect(button).toHaveClass("btn-disabled");
         });
     });
 
@@ -377,7 +377,7 @@ describe("ModelSelectorPopover", () => {
 
             // Check for model description
             expect(container).toHaveTextContent(
-                "Carmenta analyzes your request and picks the best model"
+                "Carmenta picks the best model for your message"
             );
         });
     });
