@@ -50,6 +50,8 @@ export interface ModelConfig {
     tags: readonly ModelTag[];
     /** Maximum context window in tokens */
     contextWindow: number;
+    /** Output tokens per second - critical for speed-first routing */
+    tokensPerSecond: number;
     /** Cost per million input tokens (USD) - internal use */
     inputCostPerMillion: number;
     /** Cost per million output tokens (USD) - internal use */
@@ -77,6 +79,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "versatile",
         tags: ["Deep thinking", "Long docs"],
         contextWindow: 1_000_000,
+        tokensPerSecond: 60,
         inputCostPerMillion: 3,
         outputCostPerMillion: 15,
         attachments: ["image", "pdf"],
@@ -95,6 +98,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "deep",
         tags: ["Deep thinking"],
         contextWindow: 200_000,
+        tokensPerSecond: 40,
         inputCostPerMillion: 5,
         outputCostPerMillion: 25,
         attachments: ["image", "pdf"],
@@ -113,6 +117,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "fast",
         tags: ["Deep thinking"],
         contextWindow: 200_000,
+        tokensPerSecond: 100,
         inputCostPerMillion: 1,
         outputCostPerMillion: 5,
         attachments: ["image", "pdf"],
@@ -131,6 +136,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "versatile",
         tags: ["Video", "Audio", "Long docs"],
         contextWindow: 1_000_000,
+        tokensPerSecond: 124,
         inputCostPerMillion: 2,
         outputCostPerMillion: 12,
         attachments: ["image", "pdf", "audio", "video"],
@@ -146,6 +152,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "fast",
         tags: ["Deep thinking", "Long docs"],
         contextWindow: 2_000_000,
+        tokensPerSecond: 151,
         inputCostPerMillion: 0.2,
         outputCostPerMillion: 0.5,
         attachments: ["image", "pdf"],
@@ -164,6 +171,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "versatile",
         tags: ["Deep thinking", "Tools", "Long docs"],
         contextWindow: 400_000,
+        tokensPerSecond: 95,
         inputCostPerMillion: 1.75,
         outputCostPerMillion: 14,
         attachments: ["image", "pdf"],
@@ -182,6 +190,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "specialized",
         tags: ["Live web"],
         contextWindow: 128_000,
+        tokensPerSecond: 80,
         inputCostPerMillion: 3,
         outputCostPerMillion: 15,
         attachments: ["image"],
@@ -313,3 +322,44 @@ export const REASONING_PRESETS = [
 ] as const;
 
 export type ReasoningPresetId = (typeof REASONING_PRESETS)[number]["id"];
+
+/**
+ * Get models sorted by speed (fastest first).
+ * Use this for speed-first routing when user wants quick answers.
+ */
+export function getModelsBySpeed(): ModelConfig[] {
+    return [...MODELS].sort((a, b) => b.tokensPerSecond - a.tokensPerSecond);
+}
+
+/**
+ * Get the fastest model that supports the required capabilities.
+ * Returns undefined if no model matches the requirements.
+ */
+export function getFastestModel(options?: {
+    requiresTools?: boolean;
+    attachmentType?: string;
+}): ModelConfig | undefined {
+    const sorted = getModelsBySpeed();
+
+    return sorted.find((model) => {
+        if (options?.requiresTools && !model.supportsTools) return false;
+        if (
+            options?.attachmentType &&
+            !model.attachments.includes(options.attachmentType)
+        )
+            return false;
+        return true;
+    });
+}
+
+/**
+ * Speed tier classification for routing decisions.
+ * Fast: 100+ t/s - ideal for quick answers
+ * Moderate: 60-99 t/s - balanced speed/quality
+ * Deliberate: <60 t/s - prioritizes quality over speed
+ */
+export function getSpeedTier(model: ModelConfig): "fast" | "moderate" | "deliberate" {
+    if (model.tokensPerSecond >= 100) return "fast";
+    if (model.tokensPerSecond >= 60) return "moderate";
+    return "deliberate";
+}
