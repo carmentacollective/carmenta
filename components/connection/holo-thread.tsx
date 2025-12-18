@@ -22,14 +22,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import {
-    Square,
-    ArrowDown,
-    CornerDownLeft,
-    Sparkles,
-    PenLine,
-    Check,
-} from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -931,8 +924,8 @@ interface ComposerProps {
 
 function Composer({ isNewConversation }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
-    const { concierge } = useConcierge();
-    const { isConciergeRunning } = useConnection();
+    const { concierge, setConcierge } = useConcierge();
+    const { isConciergeRunning, setIsConciergeRunning } = useConnection();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const {
@@ -955,6 +948,12 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     // Track last sent message for stop-returns-message behavior
     const lastSentMessageRef = useRef<string | null>(null);
+
+    // Prevent double-submit race condition - set synchronously before async append
+    const isSubmittingRef = useRef(false);
+
+    // Track if user manually stopped vs natural completion (for button animation)
+    const wasStoppedRef = useRef(false);
 
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
@@ -1112,16 +1111,22 @@ function Composer({ isNewConversation }: ComposerProps) {
             const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
             if (!input.trim() && nonTextFiles.length === 0) {
                 setShouldFlash(true);
-                setTimeout(() => setShouldFlash(false), 500);
+                setTimeout(() => setShouldFlash(false), 300); // Brief hint, not punitive
                 inputRef.current?.focus();
                 return;
             }
 
-            // Don't send while uploading
+            // Prevent concurrent submits (double-click, rapid Enter)
+            // Use ref for synchronous check before React state updates
+            if (isSubmittingRef.current) return;
+
+            // Don't send while uploading or already loading
             if (isLoading || isComposing || isUploading) return;
 
             const message = input.trim();
             lastSentMessageRef.current = message;
+            wasStoppedRef.current = false; // Reset stop flag for new message
+            isSubmittingRef.current = true; // Set synchronously before async
             setInput("");
 
             try {
@@ -1142,6 +1147,8 @@ function Composer({ isNewConversation }: ComposerProps) {
                     "Failed to send message"
                 );
                 setInput(message);
+            } finally {
+                isSubmittingRef.current = false;
             }
         },
         [
@@ -1161,31 +1168,41 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     const handleStop = useCallback(() => {
         if (!isLoading) return;
+        wasStoppedRef.current = true; // Mark as user-stopped (no success checkmark)
         stop();
+        // Clear concierge state immediately for clean UI reset
+        // The effect in runtime provider should also do this, but explicit is safer
+        setConcierge(null);
+        setIsConciergeRunning(false);
         // Restore message for quick correction (only if user hasn't typed new content)
         if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
-    }, [isLoading, stop, input, setInput]);
+    }, [isLoading, stop, setConcierge, setIsConciergeRunning, input, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (isComposing) return;
 
+            // Escape stops generation
             if (e.key === "Escape" && isLoading) {
                 e.preventDefault();
                 handleStop();
                 return;
             }
 
-            if (
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                (input.trim() || completedFiles.length > 0)
-            ) {
-                e.preventDefault();
-                handleSubmit(e as unknown as FormEvent);
+            // Enter sends if not loading and has content
+            // During loading, let Enter insert newline naturally (user drafts next message)
+            if (e.key === "Enter" && !e.shiftKey) {
+                if (isLoading) {
+                    // Let default behavior insert newline while streaming
+                    return;
+                }
+                if (input.trim() || completedFiles.length > 0) {
+                    e.preventDefault();
+                    handleSubmit(e as unknown as FormEvent);
+                }
             }
         },
         [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
@@ -1207,25 +1224,30 @@ function Composer({ isNewConversation }: ComposerProps) {
     const [showComplete, setShowComplete] = useState(false);
 
     // Detect loading → not loading transition and show complete briefly
+    // Skip checkmark animation if user manually stopped (wasStoppedRef)
     useEffect(() => {
         const wasLoading = wasLoadingRef.current;
         wasLoadingRef.current = isLoading;
 
-        if (wasLoading && !isLoading) {
-            // Defer to next tick to avoid synchronous setState in effect
+        if (wasLoading && !isLoading && !wasStoppedRef.current) {
+            // Natural completion: show success checkmark
+            // Duration (600ms) exceeds exhale animation (500ms) so success registers
             const startTimer = setTimeout(() => setShowComplete(true), 0);
-            const endTimer = setTimeout(() => setShowComplete(false), 400);
+            const endTimer = setTimeout(() => setShowComplete(false), 600);
             return () => {
                 clearTimeout(startTimer);
                 clearTimeout(endTimer);
             };
         }
+        // If user stopped, wasStoppedRef is true so we skip the checkmark
     }, [isLoading]);
 
     // Compute pipeline state for button styling
+    // Note: concierge requires BOTH isLoading AND isConciergeRunning
+    // This prevents sparkles from getting stuck if isConciergeRunning lingers after loading ends
     const pipelineState: PipelineState = showComplete
         ? "complete"
-        : isConciergeRunning
+        : isLoading && isConciergeRunning
           ? "concierge"
           : isLoading
             ? "streaming"
@@ -1393,20 +1415,12 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
             }
         }, [pipelineState]);
 
-        // Determine which icon to show based on variant and state
+        // Determine which icon to show based on variant
+        // Stop button always shows Square (universal stop symbol)
+        // Ring color varies by state, but icon stays consistent for clear affordance
         const getIcon = () => {
             if (variant === "stop") {
-                // Stop button shows state-aware icons
-                switch (pipelineState) {
-                    case "concierge":
-                        return <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    case "streaming":
-                        return <PenLine className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    case "complete":
-                        return <Check className="h-4 w-4 sm:h-5 sm:w-5" />;
-                    default:
-                        return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
-                }
+                return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
             }
             // Send and ghost variants use children
             return children;
