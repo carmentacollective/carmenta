@@ -363,3 +363,98 @@ export function getSpeedTier(model: ModelConfig): "fast" | "moderate" | "deliber
     if (model.tokensPerSecond >= 60) return "moderate";
     return "deliberate";
 }
+
+/**
+ * Fallback model chains for OpenRouter automatic failover.
+ *
+ * Strategy: Each chain intentionally uses different providers for maximum reliability.
+ * If a provider has an outage, rate limit, or returns an error, OpenRouter automatically
+ * tries the next model in the chain.
+ *
+ * Design principles:
+ * 1. Primary model first in array
+ * 2. First fallback: different provider, similar capabilities
+ * 3. Second fallback: another provider for additional redundancy
+ * 4. Consider model rubric guidance on strengths
+ *
+ * OpenRouter will bill based on whichever model actually succeeds.
+ */
+export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
+    // Sonnet → Gemini (versatile multimodal) → GPT (versatile frontier)
+    "anthropic/claude-sonnet-4.5": [
+        "anthropic/claude-sonnet-4.5",
+        "google/gemini-3-pro-preview",
+        "openai/gpt-5.2",
+    ],
+
+    // Opus → GPT (frontier professional) → Sonnet (same provider, still capable)
+    "anthropic/claude-opus-4.5": [
+        "anthropic/claude-opus-4.5",
+        "openai/gpt-5.2",
+        "anthropic/claude-sonnet-4.5",
+    ],
+
+    // Haiku → Grok (fastest) → Gemini (fast multimodal)
+    "anthropic/claude-haiku-4.5": [
+        "anthropic/claude-haiku-4.5",
+        "x-ai/grok-4.1-fast",
+        "google/gemini-3-pro-preview",
+    ],
+
+    // Gemini → Sonnet (versatile) → GPT (versatile)
+    "google/gemini-3-pro-preview": [
+        "google/gemini-3-pro-preview",
+        "anthropic/claude-sonnet-4.5",
+        "openai/gpt-5.2",
+    ],
+
+    // Grok → Gemini (fast, different provider) → Haiku (fast Anthropic)
+    "x-ai/grok-4.1-fast": [
+        "x-ai/grok-4.1-fast",
+        "google/gemini-3-pro-preview",
+        "anthropic/claude-haiku-4.5",
+    ],
+
+    // GPT → Opus (deep capability) → Sonnet (versatile)
+    "openai/gpt-5.2": [
+        "openai/gpt-5.2",
+        "anthropic/claude-opus-4.5",
+        "anthropic/claude-sonnet-4.5",
+    ],
+
+    // Perplexity → Sonnet (can't do live web, but capable) → Gemini (versatile)
+    "perplexity/sonar-pro": [
+        "perplexity/sonar-pro",
+        "anthropic/claude-sonnet-4.5",
+        "google/gemini-3-pro-preview",
+    ],
+} as const;
+
+/**
+ * Get the fallback chain for a given model ID.
+ * Returns the model array for OpenRouter's `models` parameter.
+ */
+export function getFallbackChain(modelId: string): string[] {
+    // If model is in our config, return its fallback chain (spread to make mutable)
+    if (isValidModelId(modelId)) {
+        return [...MODEL_FALLBACKS[modelId as ModelId]];
+    }
+
+    // Unknown model - return just that model (no fallbacks)
+    return [modelId];
+}
+
+/**
+ * Concierge model fallback chain.
+ * Based on knowledge/decisions/concierge-model-selection.md evaluation.
+ *
+ * Priority order:
+ * 1. Gemini 3 Pro - 100% accuracy, 9.4s, $0.0044/call
+ * 2. Grok 4.1 Fast - 100% accuracy, 6.1s, $0.0165/call (faster but 4.5x cost)
+ * 3. Claude Sonnet 4.5 - Safe fallback if both fail
+ */
+export const CONCIERGE_FALLBACK_CHAIN: readonly ModelId[] = [
+    "google/gemini-3-pro-preview",
+    "x-ai/grok-4.1-fast",
+    "anthropic/claude-sonnet-4.5",
+] as const;
