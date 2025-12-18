@@ -173,9 +173,10 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
 
 /**
  * The model used to run the Concierge itself.
- * Haiku 4.5 is fast and capable enough for routing decisions.
+ * Gemini 3 Pro achieves 100% accuracy on model selection and temperature
+ * (vs 95%/85.7% with Haiku). 9.4s latency is acceptable for one-time routing.
  */
-export const CONCIERGE_MODEL = "anthropic/claude-haiku-4.5";
+export const CONCIERGE_MODEL = "google/gemini-3-pro-preview";
 
 /**
  * Whitelist of allowed models the concierge can select.
