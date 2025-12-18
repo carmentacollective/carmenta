@@ -61,15 +61,9 @@ const mainEntranceVariants = {
 // ============================================================
 
 function CarmentaOracle() {
-    const { isConciergeRunning } = useConnection();
+    const { isStreaming } = useConnection();
 
-    return (
-        <Oracle
-            href="/"
-            size="sm"
-            state={isConciergeRunning ? "working" : "breathing"}
-        />
-    );
+    return <Oracle href="/" size="sm" state={isStreaming ? "working" : "breathing"} />;
 }
 
 // ============================================================
