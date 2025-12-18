@@ -2,7 +2,9 @@
 
 ## Summary
 
-Implemented automatic model failover using OpenRouter's native failover capability. When a model fails (rate limit, outage, content moderation, context overflow), OpenRouter automatically tries the next model in the configured chain.
+Implemented automatic model failover using OpenRouter's native failover capability. When
+a model fails (rate limit, outage, content moderation, context overflow), OpenRouter
+automatically tries the next model in the configured chain.
 
 ## Changes
 
@@ -12,24 +14,27 @@ Added failover chain configuration for all supported models:
 
 ```typescript
 export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
-    // Strategy: Primary → Different provider → Another provider
-    "anthropic/claude-sonnet-4.5": [
-        "anthropic/claude-sonnet-4.5",
-        "google/gemini-3-pro-preview",  // Different provider
-        "openai/gpt-5.2",                // Another provider
-    ],
-    // ... chains for all 7 models
+  // Strategy: Primary → Different provider → Another provider
+  "anthropic/claude-sonnet-4.5": [
+    "anthropic/claude-sonnet-4.5",
+    "google/gemini-3-pro-preview", // Different provider
+    "openai/gpt-5.2", // Another provider
+  ],
+  // ... chains for all 7 models
 };
 ```
 
 **Design Principles:**
+
 - Primary model first in array
 - First fallback: different provider, similar capabilities
 - Second fallback: another provider for additional redundancy
 - Considers model rubric guidance on strengths
 
 **Added Functions:**
-- `getFallbackChain(modelId)` - Returns mutable array for OpenRouter's `models` parameter
+
+- `getFallbackChain(modelId)` - Returns mutable array for OpenRouter's `models`
+  parameter
 - `CONCIERGE_FALLBACK_CHAIN` - Hardcoded chain for concierge routing
 
 ### 2. Concierge Failover (`lib/concierge/index.ts`)
@@ -45,6 +50,7 @@ providerOptions: {
 ```
 
 **Concierge Chain:**
+
 1. `google/gemini-3-pro-preview` (100% accuracy, 9.4s, $0.0044/call)
 2. `x-ai/grok-4.1-fast` (100% accuracy, 6.1s, $0.0165/call - faster but 4.5x cost)
 3. `anthropic/claude-sonnet-4.5` (safe fallback)
@@ -57,39 +63,43 @@ Updated main conversation streaming to include failover:
 let providerOptions: any;
 
 if (concierge.reasoning.enabled) {
-    providerOptions = {
-        openrouter: {
-            models: getFallbackChain(concierge.modelId),
-            reasoning: { /* ... */ },
-        },
-    };
+  providerOptions = {
+    openrouter: {
+      models: getFallbackChain(concierge.modelId),
+      reasoning: {
+        /* ... */
+      },
+    },
+  };
 } else {
-    providerOptions = {
-        openrouter: {
-            models: getFallbackChain(concierge.modelId),
-        },
-    };
+  providerOptions = {
+    openrouter: {
+      models: getFallbackChain(concierge.modelId),
+    },
+  };
 }
 ```
 
-**Added Failover Detection:**
-Logs when OpenRouter uses a fallback model:
+**Added Failover Detection:** Logs when OpenRouter uses a fallback model:
 
 ```typescript
 const actualModelId = response.modelId;
 if (actualModelId && actualModelId !== concierge.modelId) {
-    logger.warn({
-        requestedModel: concierge.modelId,
-        actualModel: actualModelId,
-        userEmail,
-        connectionId,
-    }, "🔄 Model failover occurred - OpenRouter used fallback");
+  logger.warn(
+    {
+      requestedModel: concierge.modelId,
+      actualModel: actualModelId,
+      userEmail,
+      connectionId,
+    },
+    "🔄 Model failover occurred - OpenRouter used fallback"
+  );
 
-    Sentry.addBreadcrumb({
-        category: "model.failover",
-        message: `Failover: ${concierge.modelId} → ${actualModelId}`,
-        level: "warning",
-    });
+  Sentry.addBreadcrumb({
+    category: "model.failover",
+    message: `Failover: ${concierge.modelId} → ${actualModelId}`,
+    level: "warning",
+  });
 }
 ```
 
@@ -97,46 +107,42 @@ if (actualModelId && actualModelId !== concierge.modelId) {
 
 ### By Model:
 
-**Anthropic Claude Sonnet 4.5** (versatile default)
-→ Google Gemini 3 Pro (versatile multimodal)
-→ OpenAI GPT-5.2 (versatile frontier)
+**Anthropic Claude Sonnet 4.5** (versatile default) → Google Gemini 3 Pro (versatile
+multimodal) → OpenAI GPT-5.2 (versatile frontier)
 
-**Anthropic Claude Opus 4.5** (deep work)
-→ OpenAI GPT-5.2 (frontier professional)
-→ Anthropic Claude Sonnet 4.5 (still capable)
+**Anthropic Claude Opus 4.5** (deep work) → OpenAI GPT-5.2 (frontier professional) →
+Anthropic Claude Sonnet 4.5 (still capable)
 
-**Anthropic Claude Haiku 4.5** (speed-focused)
-→ X.AI Grok 4.1 Fast (fastest)
-→ Google Gemini 3 Pro (fast multimodal)
+**Anthropic Claude Haiku 4.5** (speed-focused) → X.AI Grok 4.1 Fast (fastest) → Google
+Gemini 3 Pro (fast multimodal)
 
-**Google Gemini 3 Pro** (multimodal versatile)
-→ Anthropic Claude Sonnet 4.5 (versatile)
+**Google Gemini 3 Pro** (multimodal versatile) → Anthropic Claude Sonnet 4.5 (versatile)
 → OpenAI GPT-5.2 (versatile)
 
-**X.AI Grok 4.1 Fast** (speed + massive context)
-→ Google Gemini 3 Pro (fast, different provider)
-→ Anthropic Claude Haiku 4.5 (fast, different provider)
+**X.AI Grok 4.1 Fast** (speed + massive context) → Google Gemini 3 Pro (fast, different
+provider) → Anthropic Claude Haiku 4.5 (fast, different provider)
 
-**OpenAI GPT-5.2** (tools + professional work)
-→ Anthropic Claude Opus 4.5 (high capability)
-→ Anthropic Claude Sonnet 4.5 (versatile)
+**OpenAI GPT-5.2** (tools + professional work) → Anthropic Claude Opus 4.5 (high
+capability) → Anthropic Claude Sonnet 4.5 (versatile)
 
-**Perplexity Sonar Pro** (live web search)
-→ Anthropic Claude Sonnet 4.5 (can't do live web, but capable)
-→ Google Gemini 3 Pro (versatile alternative)
+**Perplexity Sonar Pro** (live web search) → Anthropic Claude Sonnet 4.5 (can't do live
+web, but capable) → Google Gemini 3 Pro (versatile alternative)
 
 ## How It Works
 
-1. **Request:** App calls `streamText()` with primary model + fallback chain in `providerOptions.openrouter.models`
+1. **Request:** App calls `streamText()` with primary model + fallback chain in
+   `providerOptions.openrouter.models`
 
 2. **OpenRouter Processing:**
    - Tries primary model first
-   - If error (rate limit, outage, content moderation, context overflow) → tries next model
+   - If error (rate limit, outage, content moderation, context overflow) → tries next
+     model
    - Continues down chain until success or exhausted
 
 3. **Response:** OpenRouter returns which model was actually used in `response.modelId`
 
-4. **Logging:** If `actualModelId !== requestedModelId`, log failover event to Pino + Sentry
+4. **Logging:** If `actualModelId !== requestedModelId`, log failover event to Pino +
+   Sentry
 
 5. **Billing:** You're charged for whichever model succeeded
 
@@ -172,6 +178,7 @@ Added comprehensive test suite (`__tests__/unit/model-failover.test.ts`):
 ## Future Enhancements
 
 Potential improvements:
+
 - [ ] Track failover frequency per model (analytics)
 - [ ] Alert if specific model fails frequently (monitoring)
 - [ ] Dynamic chain adjustment based on observed reliability
