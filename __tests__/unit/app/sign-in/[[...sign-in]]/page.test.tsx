@@ -1,28 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
-import { render } from "@testing-library/react";
-import SignInPage, { metadata } from "@/app/sign-in/[[...sign-in]]/page";
-import { ThemeProvider } from "@/lib/theme";
 
-// Mock the Clerk SignIn component
-vi.mock("@clerk/nextjs", async () => {
-    const actual = await vi.importActual("@clerk/nextjs");
-    return {
-        ...actual,
-        SignIn: () => <div data-testid="clerk-signin">SignIn Component</div>,
-    };
-});
+// Mock next/navigation redirect
+vi.mock("next/navigation", () => ({
+    redirect: vi.fn(),
+}));
+
+import SignInPage from "@/app/sign-in/[[...sign-in]]/page";
+import { redirect } from "next/navigation";
 
 describe("SignInPage", () => {
-    it("renders without errors", () => {
-        const { container } = render(
-            <ThemeProvider>
-                <SignInPage />
-            </ThemeProvider>
-        );
-        expect(container).toBeTruthy();
-    });
-
-    it("has the expected metadata title", () => {
-        expect(metadata.title).toBe("Welcome Back · Carmenta");
+    it("redirects to /enter", () => {
+        SignInPage();
+        expect(redirect).toHaveBeenCalledWith("/enter");
     });
 });

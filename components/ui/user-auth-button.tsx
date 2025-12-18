@@ -44,7 +44,7 @@ interface UserAuthButtonProps {
 export function UserAuthButton({ className }: UserAuthButtonProps) {
     const { isLoaded, isSignedIn } = useAuth();
     const { user } = useUser();
-    const { signOut, openUserProfile } = useClerk();
+    const { openUserProfile } = useClerk();
     const [isOpen, setIsOpen] = useState(false);
     const [hoveredTheme, setHoveredTheme] = useState<ThemeVariant | null>(null);
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -59,14 +59,14 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
         return <div className={cn("h-10 w-10", className)} aria-hidden="true" />;
     }
 
-    // Not signed in - show Sign In button
+    // Not signed in - show Enter button
     if (!isSignedIn || !user) {
         return (
             <Link
-                href="/sign-in"
+                href="/enter"
                 className={cn("btn-cta rounded-full px-4 py-2 text-sm", className)}
             >
-                Sign In
+                Enter
             </Link>
         );
     }
@@ -338,17 +338,15 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         </button>
                                     </div>
 
-                                    <button
-                                        onClick={() => {
-                                            signOut();
-                                            setIsOpen(false);
-                                        }}
+                                    <Link
+                                        href="/exit"
+                                        onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
                                         <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <LogOut className="relative h-4 w-4 text-foreground/60" />
-                                        <span className="relative">Sign out</span>
-                                    </button>
+                                        <span className="relative">Exit</span>
+                                    </Link>
                                 </div>
                             </div>
                         </motion.div>

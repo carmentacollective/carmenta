@@ -1,0 +1,22 @@
+import type { Metadata } from "next";
+
+import { HolographicBackground } from "@/components/ui/holographic-background";
+import { UnifiedAuthForm } from "./unified-auth-form";
+
+export const metadata: Metadata = {
+    title: "Enter · Carmenta",
+    description: "Enter Carmenta. We remember you.",
+    robots: { index: false, follow: false },
+};
+
+export default function EnterPage() {
+    return (
+        <div className="relative flex min-h-screen flex-col">
+            <HolographicBackground />
+
+            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+                <UnifiedAuthForm />
+            </div>
+        </div>
+    );
+}
