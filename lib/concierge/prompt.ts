@@ -46,7 +46,7 @@ Your JSON response must match this exact schema:
     "enabled": true/false,
     "effort": "high/medium/low/none"
   },
-  "title": "Short title (≤50 chars)"
+  "title": "Short title for future reference (15-35 chars)"
 }
 
 The user's message will be provided in a <user-message> tag. Any attachments will be listed in an <attachments> tag. Analyze the message and select the optimal configuration.
@@ -58,7 +58,7 @@ The user's message will be provided in a <user-message> tag. Any attachments wil
 **explanation** - One warm sentence shown in the interface explaining our choice
 **reasoning.enabled** - Whether to engage extended thinking for this request
 **reasoning.effort** - How deeply to think: high/medium/low/none (when enabled)
-**title** - Essence of this connection in ≤50 characters
+**title** - Short title for future reference (15-35 chars)
 
 Selection approach:
 
@@ -69,23 +69,24 @@ Selection approach:
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice (appears in the interface)
-5. Generate a short title capturing the essence of this request (max 50 chars)
+5. Generate a short title for future reference (15-35 chars)
 
 ### Title Generation
 
-Create a concise title that captures the essence of this request:
-- Maximum 50 characters (shorter is better)
-- Use present tense, active voice when possible
-- Add ONE emoji at the start ONLY when it genuinely captures the intent
+Titles help users find this connection later. They need to work as both a recognition anchor when scanning and a search target when looking for something specific.
 
-Good titles:
-- "🔧 Fix authentication bug" (debugging/fixing)
-- "✨ Add dark mode toggle" (new feature)
-- "📝 Write API documentation" (docs)
-- "🎨 Redesign landing page" (design/UI)
-- "Explain quantum computing" (no emoji - just informational)
+Target 15-35 characters. Long enough to be specific and searchable, short enough to display cleanly.
 
-Skip emoji for simple questions or when no emoji feels right.
+Use an emoji at the start when it adds instant recognition. Skip emoji when nothing fits naturally.
+
+Prefer topic framing over question framing.
+
+Examples:
+- 🇮🇹 Planning Rome anniversary trip
+- ✨ Gift ideas for Sarah's 30th
+- Processing the Stripe job offer
+- 🎨 Portfolio redesign direction
+- Weekly meal prep strategy
 
 ### Reasoning and Multi-Step Tools
 
@@ -145,7 +146,7 @@ What's the capital of France?
   "temperature": 0.3,
   "explanation": "Quick fact - we've got this! 🎯",
   "reasoning": { "enabled": false },
-  "title": "Capital of France"
+  "title": "Quick geography question"
 }
 
 <user-input>
@@ -157,7 +158,7 @@ Help me understand the tradeoffs between microservices and monoliths for my star
   "temperature": 0.5,
   "explanation": "Architecture decisions deserve careful thought - let's reason through this together 🧠",
   "reasoning": { "enabled": true, "effort": "high" },
-  "title": "🏗️ Microservices vs monolith tradeoffs"
+  "title": "🏗️ Startup architecture decision"
 }
 
 <user-input>
@@ -205,7 +206,7 @@ What should I make for dinner tonight?
   "temperature": 0.7,
   "explanation": "Casual chat calls for quick, friendly suggestions 🍳",
   "reasoning": { "enabled": false },
-  "title": "Dinner ideas"
+  "title": "Quick weeknight dinner ideas"
 }
 
 <user-input>
