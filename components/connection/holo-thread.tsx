@@ -22,7 +22,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import { Square, ArrowDown, CornerDownLeft, Sparkles } from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -42,7 +42,6 @@ import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
-import { useConnection } from "./connection-context";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
@@ -73,7 +72,6 @@ export function HoloThread() {
 function HoloThreadInner() {
     const { messages, isLoading } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
-    const { isConciergeRunning } = useConnection();
     const { concierge } = useConcierge();
 
     // Optimal chat scroll behavior
@@ -132,7 +130,6 @@ function HoloThreadInner() {
                         {/* Pending assistant response - shows immediately after user sends */}
                         {needsPendingAssistant && (
                             <PendingAssistantMessage
-                                isConciergeRunning={isConciergeRunning}
                                 concierge={concierge}
                                 messageSeed={lastMessage.id}
                             />
@@ -660,7 +657,6 @@ function AssistantMessage({
     isStreaming: boolean;
 }) {
     const { concierge } = useConcierge();
-    const { isConciergeRunning } = useConnection();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
@@ -676,11 +672,10 @@ function AssistantMessage({
     // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
     // This eliminates the visual gap between user submit and Carmenta appearing.
     // ALSO show for completed messages that have concierge data (last message after completion).
-    const showConcierge =
-        isLast && (isStreaming || isConciergeRunning || Boolean(concierge));
+    const showConcierge = isLast && (isStreaming || Boolean(concierge));
 
     // We're in "selecting" state when streaming/running but don't have selection yet
-    const isSelectingModel = (isStreaming || isConciergeRunning) && !concierge;
+    const isSelectingModel = isStreaming && !concierge;
 
     // We've selected when concierge data exists
     const hasSelected = Boolean(concierge);
@@ -852,19 +847,17 @@ function AssistantMessage({
  * - ThinkingIndicator after concierge selects model, while waiting for content
  */
 interface PendingAssistantMessageProps {
-    isConciergeRunning: boolean;
     concierge: ConciergeResult | null;
     messageSeed: string;
 }
 
 function PendingAssistantMessage({
-    isConciergeRunning,
     concierge,
     messageSeed,
 }: PendingAssistantMessageProps) {
     // During concierge phase: show "Finding our approach..."
     // After concierge selects model: show thinking indicator while waiting for first token
-    const isSelectingModel = isConciergeRunning && !concierge;
+    const isSelectingModel = !concierge;
     const hasSelected = Boolean(concierge);
 
     // Derive avatar state
@@ -925,7 +918,6 @@ interface ComposerProps {
 function Composer({ isNewConversation }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge, setConcierge } = useConcierge();
-    const { isConciergeRunning, setIsConciergeRunning } = useConnection();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const {
@@ -1173,13 +1165,13 @@ function Composer({ isNewConversation }: ComposerProps) {
         // Clear concierge state immediately for clean UI reset
         // The effect in runtime provider should also do this, but explicit is safer
         setConcierge(null);
-        setIsConciergeRunning(false);
+
         // Restore message for quick correction (only if user hasn't typed new content)
         if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
-    }, [isLoading, stop, setConcierge, setIsConciergeRunning, input, setInput]);
+    }, [isLoading, stop, setConcierge, input, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1247,7 +1239,7 @@ function Composer({ isNewConversation }: ComposerProps) {
     // This prevents sparkles from getting stuck if isConciergeRunning lingers after loading ends
     const pipelineState: PipelineState = showComplete
         ? "complete"
-        : isLoading && isConciergeRunning
+        : isLoading && !concierge
           ? "concierge"
           : isLoading
             ? "streaming"
