@@ -108,83 +108,11 @@ if (!user) {
 }
 ```
 
-### NEVER Swallow Errors
-
-Silent failures are the worst kind of bug - they hide problems until they cause data
-corruption or production incidents. Follow these rules:
-
-**Always report errors to Sentry before handling them:**
-
-```typescript
-// ✅ GOOD - Report to Sentry, then handle
-try {
-  const result = await fetchData();
-} catch (error) {
-  logger.error({ error, context }, "Failed to fetch data");
-  Sentry.captureException(error, { tags: { component: "data-fetch" } });
-
-  // Then decide: rethrow, fallback, or user-facing error
-  throw error; // or return fallback value with user notification
-}
-```
-
-```typescript
-// ❌ BAD - Silent failure, error disappears
-try {
-  const result = await fetchData();
-} catch (error) {
-  logger.error({ error }, "Failed to fetch data"); // Only logs to console!
-  // Error disappears - no Sentry alert, user sees nothing
-}
-```
-
-**Let errors bubble up to error boundaries by default:**
-
-Error boundaries handle logging, Sentry reporting, and user-facing responses. Don't
-catch errors unless you have meaningful recovery logic (retry, fallback, cleanup).
-
-```typescript
-// ✅ GOOD - Let it bubble to error boundary
-const data = await getServicesWithStatus(); // Throws on error
-setData(data);
-
-// ✅ GOOD - Catch with recovery logic + Sentry
-try {
-  const data = await getServicesWithStatus();
-  setData(data);
-} catch (error) {
-  Sentry.captureException(error);
-  // Show user-facing error with retry option
-  setError({ message: "Failed to load services", retry: () => loadData() });
-}
-
-// ❌ BAD - Catch and log only
-try {
-  const data = await getServicesWithStatus();
-  setData(data);
-} catch (error) {
-  logger.error({ error }, "Failed"); // Disappears into console
-  // User sees nothing, no Sentry alert
-}
-```
-
-**Client-side errors need Sentry too:**
-
-The client-logger only writes to console. For errors that should alert you, use Sentry:
-
-```typescript
-// ✅ GOOD - Report client errors to Sentry
-try {
-  await clientOperation();
-} catch (error) {
-  logger.error({ error }, "Client operation failed");
-  Sentry.captureException(error, { level: "error" });
-  toast.error("Operation failed. Please try again.");
-}
-```
-
-When in doubt, let it fail loudly so issues surface in Sentry rather than getting lost
-in logs.
+Let errors bubble up to error boundaries. Don't silently catch and log errors - that
+buries problems. Error boundaries handle logging, Sentry reporting, and user-facing
+responses. Only catch errors when you have meaningful recovery logic (retry, fallback,
+cleanup). When in doubt, let it fail loudly so issues surface in Sentry rather than
+getting lost in logs.
 
 ## Code Organization
 

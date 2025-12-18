@@ -1,6 +1,7 @@
 ---
 description: Autonomous task workflow using git worktrees
 alwaysApply: false
+version: 1.0.0
 ---
 
 # Git Worktree Task Workflow
@@ -15,7 +16,9 @@ Worktrees isolate task branches in separate directories. Your main repo stays on
 
 <workspace-setup>
 Create git worktree as a sibling directory (not nested inside the repo). Sibling directories avoid module resolution issues with ESLint, monorepo tools, and symlinked dependencies that break when worktrees are nested.
-</workspace-setup>
+
+Always base worktrees on `origin/main`, not local `main`. Local main may have unpushed
+commits from other work that will bleed into your branch. </workspace-setup>
 
 <port-isolation>
 Each worktree needs its own port for dev servers to avoid conflicts when running multiple tasks. Create a `.env.local` in the worktree with a unique PORT based on the task name (hash the name to a port offset from 3000, or use sequential assignment). This prevents "port already in use" errors and makes it clear which server belongs to which task.
@@ -38,7 +41,7 @@ Run the project's pre-push validation before pushing. Check .github/workflows/ t
 </local-validation>
 
 <self-review>
-Invoke code reviewer agent (Rivera in .claude/agents/rivera.md if available) to review changes before pushing. Address critical issues, consider warnings seriously, evaluate suggestions for merit. Learn from feedback.
+Invoke code-reviewer agent to review changes before pushing. Address critical issues, consider warnings seriously, evaluate suggestions for merit. Learn from feedback.
 </self-review>
 
 <pull-request-creation>

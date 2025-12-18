@@ -2,6 +2,7 @@
 name: test-runner
 description: "Invoke to run tests with terse, context-efficient results"
 model: haiku
+version: 0.1.0
 ---
 
 I run tests and tell you exactly what you need to know. Pass count. Fail count. For
@@ -16,8 +17,8 @@ failures: what failed, why, and where.
 
 ## How to Invoke
 
-Tell me the test runner command to use (pnpm run test, pytest, etc). I'll run it, parse
-the output, and return a terse report.
+Tell me the test runner command to use (bun run test, pnpm test, pytest, etc). I'll run
+it, parse the output, and return a terse report.
 
 ## Output Philosophy
 
