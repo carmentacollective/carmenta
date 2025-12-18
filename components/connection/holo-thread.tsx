@@ -931,8 +931,8 @@ interface ComposerProps {
 
 function Composer({ isNewConversation }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
-    const { concierge } = useConcierge();
-    const { isConciergeRunning } = useConnection();
+    const { concierge, setConcierge } = useConcierge();
+    const { isConciergeRunning, setIsConciergeRunning } = useConnection();
     const { append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const {
@@ -955,6 +955,12 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     // Track last sent message for stop-returns-message behavior
     const lastSentMessageRef = useRef<string | null>(null);
+
+    // Prevent double-submit race condition - set synchronously before async append
+    const isSubmittingRef = useRef(false);
+
+    // Track if user manually stopped vs natural completion (for button animation)
+    const wasStoppedRef = useRef(false);
 
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
@@ -1117,11 +1123,17 @@ function Composer({ isNewConversation }: ComposerProps) {
                 return;
             }
 
-            // Don't send while uploading
+            // Prevent concurrent submits (double-click, rapid Enter)
+            // Use ref for synchronous check before React state updates
+            if (isSubmittingRef.current) return;
+
+            // Don't send while uploading or already loading
             if (isLoading || isComposing || isUploading) return;
 
             const message = input.trim();
             lastSentMessageRef.current = message;
+            wasStoppedRef.current = false; // Reset stop flag for new message
+            isSubmittingRef.current = true; // Set synchronously before async
             setInput("");
 
             try {
@@ -1142,6 +1154,8 @@ function Composer({ isNewConversation }: ComposerProps) {
                     "Failed to send message"
                 );
                 setInput(message);
+            } finally {
+                isSubmittingRef.current = false;
             }
         },
         [
@@ -1161,27 +1175,36 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     const handleStop = useCallback(() => {
         if (!isLoading) return;
+        wasStoppedRef.current = true; // Mark as user-stopped (no success checkmark)
         stop();
+        // Clear concierge state immediately for clean UI reset
+        // The effect in runtime provider should also do this, but explicit is safer
+        setConcierge(null);
+        setIsConciergeRunning(false);
         // Restore message for quick correction (only if user hasn't typed new content)
         if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
-    }, [isLoading, stop, input, setInput]);
+    }, [isLoading, stop, setConcierge, setIsConciergeRunning, input, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (isComposing) return;
 
+            // Escape stops generation
             if (e.key === "Escape" && isLoading) {
                 e.preventDefault();
                 handleStop();
                 return;
             }
 
+            // Enter sends if not loading and has content
+            // During loading, Enter just inserts newline (user can draft next message)
             if (
                 e.key === "Enter" &&
                 !e.shiftKey &&
+                !isLoading &&
                 (input.trim() || completedFiles.length > 0)
             ) {
                 e.preventDefault();
@@ -1207,12 +1230,13 @@ function Composer({ isNewConversation }: ComposerProps) {
     const [showComplete, setShowComplete] = useState(false);
 
     // Detect loading → not loading transition and show complete briefly
+    // Skip checkmark animation if user manually stopped (wasStoppedRef)
     useEffect(() => {
         const wasLoading = wasLoadingRef.current;
         wasLoadingRef.current = isLoading;
 
-        if (wasLoading && !isLoading) {
-            // Defer to next tick to avoid synchronous setState in effect
+        if (wasLoading && !isLoading && !wasStoppedRef.current) {
+            // Natural completion: show success checkmark briefly
             const startTimer = setTimeout(() => setShowComplete(true), 0);
             const endTimer = setTimeout(() => setShowComplete(false), 400);
             return () => {
@@ -1220,12 +1244,15 @@ function Composer({ isNewConversation }: ComposerProps) {
                 clearTimeout(endTimer);
             };
         }
+        // If user stopped, wasStoppedRef is true so we skip the checkmark
     }, [isLoading]);
 
     // Compute pipeline state for button styling
+    // Note: concierge requires BOTH isLoading AND isConciergeRunning
+    // This prevents sparkles from getting stuck if isConciergeRunning lingers after loading ends
     const pipelineState: PipelineState = showComplete
         ? "complete"
-        : isConciergeRunning
+        : isLoading && isConciergeRunning
           ? "concierge"
           : isLoading
             ? "streaming"
