@@ -1,42 +1,51 @@
 # Carmenta Evals
 
-Braintrust-based evaluations for Carmenta's Concierge routing system and file attachment
-handling.
+Braintrust-based evaluations for Carmenta's Concierge routing system, concierge model
+comparison, and file attachment handling.
 
 ## Quick Start
 
 ### Prerequisites
 
-1. **Start the Carmenta server:**
+1. **For routing/attachment evals**: Start the Carmenta server:
 
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
-   The server must be running at `http://localhost:3000` for evals to connect.
+   The server must be running at `http://localhost:3000` for these evals.
 
-2. **Ensure environment variables are set** in `.env.local`:
+2. **For concierge model eval**: Server not required - calls OpenRouter directly.
+
+3. **Environment variables** in `.env.local`:
    - `BRAINTRUST_API_KEY` - Get from https://www.braintrust.dev
-   - `TEST_USER_TOKEN` - Long-lived JWT from Clerk Dashboard
-   - (Both should already be configured)
+   - `OPENROUTER_API_KEY` - Get from https://openrouter.ai
+   - `TEST_USER_TOKEN` - Long-lived JWT from Clerk Dashboard (for routing/attachment
+     evals)
 
 ### Run the Evals
 
 ```bash
-# Run routing evaluation
-pnpm dlx braintrust eval evals/routing.eval.ts
+# Run concierge model comparison (compares Haiku, GPT-5 Nano, Gemini Flash)
+pnpm braintrust eval evals/concierge.eval.ts
+
+# Run with specific model only
+CONCIERGE_MODEL=openai/gpt-5-nano pnpm braintrust eval evals/concierge.eval.ts
+
+# Enable LLM-as-judge scoring for title quality (expensive, more detailed)
+ENABLE_LLM_JUDGE=true pnpm braintrust eval evals/concierge.eval.ts
+
+# Run routing evaluation (requires server running)
+pnpm braintrust eval evals/routing.eval.ts
 
 # Run attachment evaluation
-pnpm dlx braintrust eval evals/attachments.eval.ts
-
-# Run both
-pnpm dlx braintrust eval evals/routing.eval.ts evals/attachments.eval.ts
+pnpm braintrust eval evals/attachments.eval.ts
 
 # Watch mode - re-run on file changes
-pnpm dlx braintrust eval evals/routing.eval.ts --watch
+pnpm braintrust eval evals/routing.eval.ts --watch
 
 # Just list the tests without running
-pnpm dlx braintrust eval evals/routing.eval.ts --list
+pnpm braintrust eval evals/routing.eval.ts --list
 
 # View results online
 # After running, visit the URL shown in terminal or:
@@ -44,6 +53,34 @@ pnpm dlx braintrust eval evals/routing.eval.ts --list
 ```
 
 ## Evals Available
+
+### Concierge Model Eval (`concierge.eval.ts`)
+
+Compares different models for the Concierge role (the model that does the routing).
+
+**What it tests:**
+
+- Classification accuracy (does it route to the right model?)
+- Temperature selection (does it match query type?)
+- Reasoning enablement (does it enable reasoning when needed?)
+- Title generation quality (concise, descriptive, not generic)
+- Latency (how fast is each model?)
+
+**Model candidates tested:**
+
+- `anthropic/claude-haiku-4.5` - Current production model
+- `openai/gpt-5-nano` - Fast and cheap alternative
+- `google/gemini-3-flash-preview` - Newest Google flash model
+
+**Test cases:** 30+ covering speed signals, complexity, creativity, code, reasoning,
+sensitivity, attachments, hints, and edge cases.
+
+**Key features:**
+
+- Tests the concierge directly (doesn't require server running)
+- Side-by-side comparison of multiple models in Braintrust dashboard
+- Optional LLM-as-judge scoring for nuanced title quality assessment
+- Tracks cost and latency alongside accuracy
 
 ### Routing Eval (`routing.eval.ts`)
 
@@ -129,7 +166,12 @@ Missing Clerk JWT in environment variables.
 
 ## Files
 
-- `routing.eval.ts` - Concierge routing evaluation
+- `concierge.eval.ts` - Concierge model comparison evaluation
+- `concierge-test-data.ts` - Test cases for concierge model eval
+- `lib/concierge-runner.ts` - Configurable runner for testing different concierge models
+- `scorers/concierge-scorer.ts` - Scoring logic for concierge decisions
+- `scorers/title-quality-scorer.ts` - LLM-as-judge scorer for title quality
+- `routing.eval.ts` - Concierge routing evaluation (full API pipeline)
 - `routing-test-data.ts` - Test cases for routing eval
 - `attachments.eval.ts` - File attachment handling evaluation
 - `scorers/routing-scorer.ts` - Custom scoring logic for routing decisions
