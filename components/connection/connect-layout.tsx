@@ -68,7 +68,13 @@ function CarmentaOracle() {
     // Show "working" only during concierge selection phase (before streaming starts)
     const isConciergeSelecting = isStreaming && !concierge;
 
-    return <Oracle href="/" size="sm" state={isConciergeSelecting ? "working" : "breathing"} />;
+    return (
+        <Oracle
+            href="/"
+            size="sm"
+            state={isConciergeSelecting ? "working" : "breathing"}
+        />
+    );
 }
 
 // ============================================================
