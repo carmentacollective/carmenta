@@ -198,10 +198,11 @@ Working on: [Current major project or focus area]`;
 
     // Also create the instructions document if it doesn't exist
     if (!(await kb.exists(userId, PROFILE_PATHS.instructions))) {
-        await kb.create(userId, {
-            path: PROFILE_PATHS.instructions,
-            name: "instructions.txt",
-            content: `How should Carmenta communicate with you?
+        try {
+            await kb.create(userId, {
+                path: PROFILE_PATHS.instructions,
+                name: "instructions.txt",
+                content: `How should Carmenta communicate with you?
 [e.g., Be direct, use technical terms, keep responses concise]
 
 What should Carmenta know about you?
@@ -209,8 +210,15 @@ What should Carmenta know about you?
 
 Any special requests?
 [e.g., Always explain your reasoning, suggest alternatives]`,
-            sourceType: "seed",
-        });
+                sourceType: "seed",
+            });
+        } catch (error) {
+            // If concurrent request created it, that's fine - skip silently
+            logger.debug(
+                { userId, error },
+                "Instructions document already exists (race condition)"
+            );
+        }
     }
 
     return { created };
