@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
 import { generateTitle } from "@/lib/db/title-generator";
 import { buildConciergePrompt } from "./prompt";
@@ -388,6 +389,11 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                     prompt,
                     temperature: 0.1, // Low temperature for consistent routing
                     maxRetries: 1, // Single retry on network/rate limit errors
+                    providerOptions: {
+                        openrouter: {
+                            models: [...CONCIERGE_FALLBACK_CHAIN], // Gemini 3 Pro → Grok 4.1 Fast → Sonnet 4.5
+                        },
+                    },
                     tools: {
                         selectModelTool,
                     },

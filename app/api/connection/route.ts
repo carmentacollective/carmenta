@@ -29,7 +29,7 @@ import {
 import { assertEnv, env } from "@/lib/env";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
-import { getModel } from "@/lib/model-config";
+import { getModel, getFallbackChain } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
@@ -514,9 +514,17 @@ export async function POST(req: Request) {
 
             providerOptions = {
                 openrouter: {
+                    models: getFallbackChain(concierge.modelId),
                     reasoning: concierge.reasoning.maxTokens
                         ? { max_tokens: concierge.reasoning.maxTokens }
                         : { effort },
+                },
+            };
+        } else {
+            // Reasoning disabled, but still configure failover models
+            providerOptions = {
+                openrouter: {
+                    models: getFallbackChain(concierge.modelId),
                 },
             };
         }
@@ -630,6 +638,31 @@ export async function POST(req: Request) {
                                 ? "Prompt cache hit - cost savings active"
                                 : "No cache hit (expected on first request or cache expiry)"
                         );
+                    }
+
+                    // Detect and log model failover
+                    const actualModelId = response.modelId;
+                    if (actualModelId && actualModelId !== concierge.modelId) {
+                        logger.warn(
+                            {
+                                requestedModel: concierge.modelId,
+                                actualModel: actualModelId,
+                                userEmail,
+                                connectionId: currentConnectionId,
+                            },
+                            "🔄 Model failover occurred - OpenRouter used fallback"
+                        );
+
+                        Sentry.addBreadcrumb({
+                            category: "model.failover",
+                            message: `Failover: ${concierge.modelId} → ${actualModelId}`,
+                            level: "warning",
+                            data: {
+                                requestedModel: concierge.modelId,
+                                actualModel: actualModelId,
+                                connectionId: currentConnectionId,
+                            },
+                        });
                     }
 
                     // Build UI message parts from the step result
