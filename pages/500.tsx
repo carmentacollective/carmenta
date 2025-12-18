@@ -57,7 +57,7 @@ export default function Custom500() {
     return (
         <>
             <Head>
-                <title>We hit a snag - Carmenta</title>
+                <title>Something went sideways - Carmenta</title>
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <div
@@ -83,6 +83,7 @@ export default function Custom500() {
                             width: "48px",
                             height: "48px",
                             marginBottom: "1.5rem",
+                            opacity: 0.9,
                         }}
                         onError={(e) => {
                             (e.target as HTMLImageElement).style.display = "none";
@@ -94,7 +95,7 @@ export default function Custom500() {
                             style={{
                                 width: "2rem",
                                 height: "2rem",
-                                border: "4px solid #7c3aed",
+                                border: "3px solid #7c3aed",
                                 borderRightColor: "transparent",
                                 borderRadius: "50%",
                                 animation: "spin 1s linear infinite",
@@ -106,24 +107,25 @@ export default function Custom500() {
                     <h1
                         style={{
                             fontSize: "1.5rem",
-                            fontWeight: 700,
+                            fontWeight: 600,
                             marginBottom: "1rem",
                             color: "#fafafa",
+                            letterSpacing: "-0.025em",
                         }}
                     >
-                        {isAutoRefreshing ? "Updating..." : "We hit a snag"}
+                        {isAutoRefreshing ? "Updating..." : "Something went sideways"}
                     </h1>
 
                     <p
                         style={{
                             color: "#a1a1aa",
                             marginBottom: "1.5rem",
-                            lineHeight: 1.5,
+                            lineHeight: 1.6,
                         }}
                     >
                         {isAutoRefreshing
-                            ? "We just deployed a new version. Refreshing to get the latest."
-                            : "Something unexpected happened. We've been notified and we're on it."}
+                            ? "We just shipped something new. Refreshing to get you the latest."
+                            : "We hit a bump. The robots have been notified."}
                     </p>
 
                     {!isAutoRefreshing && (
@@ -139,10 +141,10 @@ export default function Custom500() {
                                 onClick={() => window.location.reload()}
                                 style={{
                                     display: "inline-block",
-                                    padding: "0.5rem 1rem",
+                                    padding: "0.625rem 1.25rem",
                                     fontSize: "0.875rem",
                                     fontFamily: "inherit",
-                                    borderRadius: "0.375rem",
+                                    borderRadius: "0.5rem",
                                     background: "#7c3aed",
                                     color: "white",
                                     border: "none",
@@ -155,10 +157,10 @@ export default function Custom500() {
                                 href="/"
                                 style={{
                                     display: "inline-block",
-                                    padding: "0.5rem 1rem",
+                                    padding: "0.625rem 1.25rem",
                                     fontSize: "0.875rem",
                                     fontFamily: "inherit",
-                                    borderRadius: "0.375rem",
+                                    borderRadius: "0.5rem",
                                     background: "transparent",
                                     color: "#fafafa",
                                     border: "1px solid #27272a",

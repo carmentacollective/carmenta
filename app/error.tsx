@@ -70,17 +70,17 @@ export default function Error({
                     <img
                         src="/logos/icon-transparent.png"
                         alt="Carmenta"
-                        className="mx-auto mb-6 h-12 w-12"
+                        className="mx-auto mb-6 h-12 w-12 opacity-90"
                         onError={(e) => {
                             (e.target as HTMLImageElement).style.display = "none";
                         }}
                     />
-                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
-                    <h2 className="mb-4 text-xl font-bold text-foreground">
+                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-primary border-r-transparent" />
+                    <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
                         Updating...
                     </h2>
-                    <p className="text-muted-foreground">
-                        We just deployed a new version. Refreshing to get the latest.
+                    <p className="leading-relaxed text-muted-foreground">
+                        We just shipped something new. Refreshing to get you the latest.
                     </p>
                 </div>
             </div>
@@ -94,28 +94,27 @@ export default function Error({
                 <img
                     src="/logos/icon-transparent.png"
                     alt="Carmenta"
-                    className="mx-auto mb-6 h-12 w-12"
+                    className="mx-auto mb-6 h-12 w-12 opacity-90"
                     onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
                     }}
                 />
-                <h2 className="mb-4 text-xl font-bold text-foreground">
-                    We hit a snag
+                <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
+                    Something went sideways
                 </h2>
-                <p className="mb-6 text-muted-foreground">
-                    Something unexpected happened. We&apos;ve been notified and
-                    we&apos;re on it.
+                <p className="mb-6 leading-relaxed text-muted-foreground">
+                    We hit a bump. The robots have been notified.
                 </p>
                 <div className="flex justify-center gap-4">
                     <button
                         onClick={reset}
-                        className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                        className="rounded-lg bg-primary px-5 py-2.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                         Refresh
                     </button>
                     <Link
                         href="/"
-                        className="rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+                        className="rounded-lg border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:bg-muted"
                     >
                         Go home
                     </Link>
