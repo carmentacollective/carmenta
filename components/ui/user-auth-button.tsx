@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
-import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Plug } from "lucide-react";
+import { User, LogOut, Moon, Sun, UserCircle2, Monitor, Plug, Sparkles } from "lucide-react";
+
+import { useMarker } from "@/components/feedback/marker-provider";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -38,6 +40,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { theme, setTheme } = useTheme();
     const { themeVariant, setThemeVariant } = useThemeVariant();
+    const { capture: captureMarker, isReady: isMarkerReady } = useMarker();
     // Track the "committed" theme (what user has actually selected, not just hovering)
     const [committedTheme, setCommittedTheme] = useState<ThemeVariant>(themeVariant);
 
@@ -296,6 +299,22 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Feedback button */}
+                                    <div className="border-t border-foreground/10">
+                                        <button
+                                            onClick={() => {
+                                                captureMarker();
+                                                setIsOpen(false);
+                                            }}
+                                            disabled={!isMarkerReady}
+                                            className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground disabled:opacity-50"
+                                        >
+                                            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                            <Sparkles className="relative h-4 w-4 text-foreground/60" />
+                                            <span className="relative">Improve Carmenta</span>
+                                        </button>
+                                    </div>
 
                                     <button
                                         onClick={() => {
