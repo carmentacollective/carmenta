@@ -59,9 +59,10 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
         if (!projectId) return;
 
         let isMounted = true;
+        let loadedWidget: MarkerWidget | null = null;
 
         const initMarker = async () => {
-            const loadedWidget = await markerSDK.loadWidget({
+            loadedWidget = await markerSDK.loadWidget({
                 project: projectId,
             });
 
@@ -80,8 +81,7 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
 
         return () => {
             isMounted = false;
-            widget?.unload();
-            setWidget(null);
+            loadedWidget?.unload();
         };
     }, []);
 
