@@ -16,9 +16,6 @@ export default function NotFound() {
                     src="/logos/icon-transparent.png"
                     alt="Carmenta"
                     className="mx-auto h-12 w-12 opacity-90"
-                    onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                    }}
                 />
 
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground">
