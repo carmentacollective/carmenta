@@ -28,6 +28,8 @@ const createMockConnection = (
     modelId: "claude-3",
     status: "active",
     streamingStatus: "idle",
+    isStarred: false,
+    starredAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     lastActivityAt: new Date("2024-01-01"),
@@ -55,26 +57,34 @@ const mockConnections: PublicConnection[] = [
     }),
 ];
 
+const mockToggleStarConnection = vi.fn();
+
 // Default mock values - S5 state (has title, shows full [Search | Title | New] pill)
 const defaultMockValue = {
     connections: mockConnections,
+    starredConnections: [] as PublicConnection[],
+    unstarredConnections: mockConnections,
     activeConnection: mockConnections[0],
     activeConnectionId: mockConnections[0].id,
     displayTitle: "First Conversation", // S5: has title
     freshConnectionIds: new Set<string>(),
     runningCount: 0,
     isStreaming: false,
+    isConciergeRunning: false,
     isLoaded: true,
     isPending: false,
     error: null,
     initialMessages: [],
+    initialConcierge: null,
     setActiveConnection: mockSetActiveConnection,
     createNewConnection: mockCreateNewConnection,
     archiveActiveConnection: vi.fn(),
     deleteConnection: mockDeleteConnection,
+    toggleStarConnection: mockToggleStarConnection,
     clearError: vi.fn(),
     addNewConnection: vi.fn(),
     setIsStreaming: vi.fn(),
+    setIsConciergeRunning: vi.fn(),
 };
 
 let currentMockValue = { ...defaultMockValue };
@@ -418,9 +428,11 @@ describe("ConnectionChooser", () => {
         });
 
         it("handles connection with no title", () => {
+            const untitledConnection = createMockConnection({ title: null });
             setupMock({
-                connections: [createMockConnection({ title: null })],
-                activeConnection: createMockConnection({ title: null }),
+                connections: [untitledConnection],
+                unstarredConnections: [untitledConnection],
+                activeConnection: untitledConnection,
                 displayTitle: undefined, // S2-S4: no title yet
             });
             render(<ConnectionChooser />);
@@ -434,14 +446,14 @@ describe("ConnectionChooser", () => {
         });
 
         it("displays streaming connection in list", () => {
+            const streamingConnection = createMockConnection({
+                id: "conn-streaming",
+                title: "Streaming Connection",
+                streamingStatus: "streaming",
+            });
             setupMock({
-                connections: [
-                    createMockConnection({
-                        id: "conn-streaming",
-                        title: "Streaming Connection",
-                        streamingStatus: "streaming",
-                    }),
-                ],
+                connections: [streamingConnection],
+                unstarredConnections: [streamingConnection],
                 displayTitle: "Streaming Connection", // S5: has title
             });
             render(<ConnectionChooser />);

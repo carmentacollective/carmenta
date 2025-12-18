@@ -621,6 +621,8 @@ describe("mapConnectionMessagesToUI", () => {
             conciergeTemperature: null,
             conciergeExplanation: null,
             conciergeReasoning: null,
+            isStarred: false,
+            starredAt: null,
             lastActivityAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),

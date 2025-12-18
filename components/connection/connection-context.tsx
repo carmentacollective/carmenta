@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import {
     archiveConnection,
     deleteConnection as deleteConnectionAction,
+    toggleStarConnection as toggleStarAction,
     type PublicConnection,
     type PersistedConciergeData,
 } from "@/lib/actions/connections";
@@ -34,6 +35,10 @@ import { logger } from "@/lib/client-logger";
 
 interface ConnectionContextValue {
     connections: PublicConnection[];
+    /** Starred connections, sorted by lastActivityAt */
+    starredConnections: PublicConnection[];
+    /** Non-starred connections, sorted by lastActivityAt */
+    unstarredConnections: PublicConnection[];
     activeConnection: PublicConnection | null;
     activeConnectionId: string | null;
     /** Title to display (from server OR from just-created connection) */
@@ -53,6 +58,7 @@ interface ConnectionContextValue {
     createNewConnection: () => void;
     archiveActiveConnection: () => void;
     deleteConnection: (id: string) => void;
+    toggleStarConnection: (id: string) => void;
     clearError: () => void;
     addNewConnection: (
         connection: Partial<PublicConnection> & { id: string; slug: string }
@@ -179,6 +185,8 @@ export function ConnectionProvider({
                 modelId: partialConnection.modelId ?? null,
                 status: "active",
                 streamingStatus: "streaming",
+                isStarred: false,
+                starredAt: null,
                 createdAt: now,
                 updatedAt: now,
                 lastActivityAt: now,
@@ -214,9 +222,88 @@ export function ConnectionProvider({
         []
     );
 
+    const handleToggleStarConnection = useCallback(
+        (id: string) => {
+            // Find current state
+            const connection = connections.find((c) => c.id === id);
+            if (!connection) return;
+
+            const newIsStarred = !connection.isStarred;
+
+            // Optimistic update
+            setConnections((prev) =>
+                prev.map((c) =>
+                    c.id === id
+                        ? {
+                              ...c,
+                              isStarred: newIsStarred,
+                              starredAt: newIsStarred ? new Date() : null,
+                          }
+                        : c
+                )
+            );
+
+            // Server action (fire and forget with error handling)
+            startTransition(async () => {
+                try {
+                    await toggleStarAction(id, newIsStarred);
+                    logger.debug(
+                        { connectionId: id, isStarred: newIsStarred },
+                        "Toggled star"
+                    );
+                } catch (err) {
+                    // Revert optimistic update on error
+                    setConnections((prev) =>
+                        prev.map((c) =>
+                            c.id === id
+                                ? {
+                                      ...c,
+                                      isStarred: !newIsStarred,
+                                      starredAt: !newIsStarred ? new Date() : null,
+                                  }
+                                : c
+                        )
+                    );
+                    const error = err instanceof Error ? err : new Error(String(err));
+                    logger.error({ error, connectionId: id }, "Failed to toggle star");
+                    setError(error);
+                }
+            });
+        },
+        [connections]
+    );
+
+    // Computed: starred connections sorted by lastActivityAt
+    const starredConnections = useMemo(
+        () =>
+            connections
+                .filter((c) => c.isStarred)
+                .sort(
+                    (a, b) =>
+                        new Date(b.lastActivityAt).getTime() -
+                        new Date(a.lastActivityAt).getTime()
+                ),
+        [connections]
+    );
+
+    // Computed: unstarred connections sorted by lastActivityAt
+    const unstarredConnections = useMemo(
+        () =>
+            connections
+                .filter((c) => !c.isStarred)
+                .sort(
+                    (a, b) =>
+                        new Date(b.lastActivityAt).getTime() -
+                        new Date(a.lastActivityAt).getTime()
+                ),
+        [connections]
+    );
+
     const value = useMemo<ConnectionContextValue>(
         () => ({
             connections,
+            starredConnections,
+            unstarredConnections,
             activeConnection,
             activeConnectionId,
             displayTitle: activeConnection?.title ?? displayTitle,
@@ -233,6 +320,7 @@ export function ConnectionProvider({
             createNewConnection: handleCreateNewConnection,
             archiveActiveConnection,
             deleteConnection: handleDeleteConnection,
+            toggleStarConnection: handleToggleStarConnection,
             clearError,
             addNewConnection,
             setIsStreaming,
@@ -240,6 +328,8 @@ export function ConnectionProvider({
         }),
         [
             connections,
+            starredConnections,
+            unstarredConnections,
             activeConnection,
             activeConnectionId,
             displayTitle,
@@ -256,6 +346,7 @@ export function ConnectionProvider({
             handleCreateNewConnection,
             archiveActiveConnection,
             handleDeleteConnection,
+            handleToggleStarConnection,
             clearError,
             addNewConnection,
         ]

@@ -203,6 +203,82 @@ export async function deleteConnection(connectionId: number): Promise<void> {
 }
 
 // ============================================================================
+// STARRING OPERATIONS
+// ============================================================================
+
+/**
+ * Toggles the starred status of a connection
+ *
+ * @param connectionId - ID of the connection
+ * @param isStarred - New starred state
+ * @returns Updated connection
+ */
+export async function toggleStar(
+    connectionId: number,
+    isStarred: boolean
+): Promise<Connection | null> {
+    const [updated] = await db
+        .update(connections)
+        .set({
+            isStarred,
+            starredAt: isStarred ? new Date() : null,
+            updatedAt: new Date(),
+        })
+        .where(eq(connections.id, connectionId))
+        .returning();
+
+    logger.info({ connectionId, isStarred }, "Toggled connection star");
+    return updated ?? null;
+}
+
+/**
+ * Gets starred connections for a user
+ *
+ * @param userId - User ID
+ * @param limit - Max connections to return (default 20)
+ * @returns Starred connections ordered by last activity
+ */
+export async function getStarredConnections(
+    userId: string,
+    limit: number = 20
+): Promise<Connection[]> {
+    return db.query.connections.findMany({
+        where: and(eq(connections.userId, userId), eq(connections.isStarred, true)),
+        orderBy: [desc(connections.lastActivityAt)],
+        limit,
+    });
+}
+
+/**
+ * Gets recent unstarred connections for a user (for exclusive sections)
+ *
+ * @param userId - User ID
+ * @param limit - Max connections to return (default 6)
+ * @param status - Optional status filter
+ * @returns Unstarred connections ordered by last activity
+ */
+export async function getRecentUnstarredConnections(
+    userId: string,
+    limit: number = 6,
+    status?: "active" | "background" | "archived"
+): Promise<Connection[]> {
+    const conditions = [
+        eq(connections.userId, userId),
+        eq(connections.isStarred, false),
+    ];
+
+    if (status) {
+        conditions.push(eq(connections.status, status));
+    }
+
+    return db.query.connections.findMany({
+        where: and(...conditions),
+        orderBy: [desc(connections.lastActivityAt)],
+        limit,
+    });
+}
+
+// ============================================================================
 // MESSAGE OPERATIONS
 // ============================================================================
 

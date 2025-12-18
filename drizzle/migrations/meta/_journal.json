@@ -50,6 +50,13 @@
       "when": 1765991756683,
       "tag": "0006_opposite_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766093634461,
+      "tag": "0007_chilly_swordsman",
+      "breakpoints": true
     }
   ]
 }
