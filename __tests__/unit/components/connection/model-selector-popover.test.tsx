@@ -90,8 +90,7 @@ describe("ModelSelectorPopover", () => {
             fireEvent.click(trigger);
 
             // Popover should appear with model list
-            expect(container).toHaveTextContent("Auto");
-            expect(container).toHaveTextContent("Recommended");
+            expect(container).toHaveTextContent("Automagically");
         });
 
         it("closes popover when clicking backdrop", () => {
@@ -162,7 +161,7 @@ describe("ModelSelectorPopover", () => {
             // Find the Auto button (first button in the model list)
             const modelButtons = container.querySelectorAll(".max-h-44 button");
             const autoButton = modelButtons[0];
-            expect(autoButton).toHaveClass("bg-background");
+            expect(autoButton).toHaveClass("bg-gradient-to-br");
             expect(autoButton).toHaveClass("ring-1");
         });
 
@@ -296,8 +295,8 @@ describe("ModelSelectorPopover", () => {
             fireEvent.click(trigger);
 
             expect(container).toHaveTextContent("Reasoning");
-            expect(container).toHaveTextContent("None");
-            expect(container).toHaveTextContent("Maximum");
+            expect(container).toHaveTextContent("Quick");
+            expect(container).toHaveTextContent("Deep");
         });
     });
 
@@ -308,9 +307,7 @@ describe("ModelSelectorPopover", () => {
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
 
-            expect(container).toHaveTextContent(
-                "Carmenta AI Concierge decides automagically"
-            );
+            expect(container).toHaveTextContent("Let Carmenta decide automagically");
         });
 
         it("resets and closes when AI Concierge button clicked", () => {
@@ -377,7 +374,7 @@ describe("ModelSelectorPopover", () => {
 
             // Check for model description
             expect(container).toHaveTextContent(
-                "Carmenta picks the best model for your message"
+                "Picks the best model for your message"
             );
         });
     });
