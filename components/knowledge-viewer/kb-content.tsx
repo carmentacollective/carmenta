@@ -46,6 +46,7 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
             setIsEditing(false);
         }
         setEditContent(document?.content ?? "");
+        setError(null);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only run when path changes
     }, [document?.path]);
 
