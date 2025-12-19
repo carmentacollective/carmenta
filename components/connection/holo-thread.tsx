@@ -48,6 +48,7 @@ import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
+import { ClickUpToolResult } from "@/components/generative-ui/clickup";
 import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
@@ -442,6 +443,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         // Integration tools - keep alphabetical to minimize merge conflicts
+        case "clickup":
+            return (
+                <ClickUpToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "ClickUp request failed")}
+                />
+            );
+
         case "coinmarketcap":
             return (
                 <CoinMarketCapToolResult
