@@ -12,11 +12,9 @@ export default defineConfig({
             "__tests__/integration/**/*.{test,spec}.{ts,tsx}",
         ],
         pool: "threads",
-        poolOptions: {
-            threads: {
-                singleThread: false,
-                isolate: true,
-            },
+        threads: {
+            singleThread: false,
+            isolate: true,
         },
         coverage: {
             provider: "v8",
