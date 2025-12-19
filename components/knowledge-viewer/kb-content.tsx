@@ -67,13 +67,15 @@ export function KBContent({
     const hasChanges = editContent !== originalContent;
 
     // Derive display save state from hasChanges and saveState
-    // (avoiding setState in useEffect for derived state)
+    // Priority: saving (in flight) > unsaved (user made new changes) > saved > idle
     const displaySaveState: SaveState =
-        saveState === "saving" || saveState === "saved"
-            ? saveState
+        saveState === "saving"
+            ? "saving"
             : hasChanges
               ? "unsaved"
-              : "idle";
+              : saveState === "saved"
+                ? "saved"
+                : "idle";
 
     // Sync state with document prop changes (external system sync pattern)
     const currentPath = kbDocument?.path;
@@ -194,14 +196,17 @@ export function KBContent({
                 const updated = await updateKBDocument(savedPath, editContent);
                 onUpdate(savedPath, updated);
 
-                // Update original content and show success
-                setOriginalContent(editContent);
-                setSaveState("saved");
+                // Only update state if we're still on the same document
+                // (user may have switched documents during save)
+                if (kbDocument?.path === savedPath) {
+                    setOriginalContent(editContent);
+                    setSaveState("saved");
 
-                // Clear saved state after 2 seconds
-                savedTimeoutRef.current = setTimeout(() => {
-                    setSaveState("idle");
-                }, 2000);
+                    // Clear saved state after 2 seconds
+                    savedTimeoutRef.current = setTimeout(() => {
+                        setSaveState("idle");
+                    }, 2000);
+                }
             } catch (err) {
                 const message =
                     err instanceof Error ? err.message : "Failed to save changes";
@@ -225,8 +230,8 @@ export function KBContent({
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "s") {
                 e.preventDefault();
-                // Only save if component is active (not dimmed) and has changes
-                if (!dimmed && hasChanges && !isOverLimit) {
+                // Only save if component is active, has changes, and not already saving
+                if (!dimmed && hasChanges && !isOverLimit && !isPending) {
                     handleSave();
                 }
             }
@@ -234,7 +239,7 @@ export function KBContent({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [handleSave, hasChanges, isOverLimit, dimmed]);
+    }, [handleSave, hasChanges, isOverLimit, dimmed, isPending]);
 
     if (!kbDocument) {
         return (
@@ -395,6 +400,24 @@ export function KBContent({
                                 <Check className="h-4 w-4" aria-hidden="true" />
                                 <span>Saved</span>
                             </motion.div>
+                        ) : displaySaveState === "saving" ? (
+                            <motion.div
+                                key="saving"
+                                role="status"
+                                aria-live="polite"
+                                aria-busy="true"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
+                            >
+                                <Loader2
+                                    className="h-3.5 w-3.5 animate-spin"
+                                    aria-hidden="true"
+                                />
+                                <span>Saving...</span>
+                            </motion.div>
                         ) : displaySaveState === "unsaved" ? (
                             <motion.div
                                 key="actions"
@@ -427,8 +450,7 @@ export function KBContent({
                                 {/* Save Button */}
                                 <button
                                     onClick={handleSave}
-                                    disabled={isPending || isOverLimit}
-                                    aria-busy={isPending}
+                                    disabled={isOverLimit}
                                     className={cn(
                                         "flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2",
                                         "text-sm font-medium",
@@ -440,23 +462,11 @@ export function KBContent({
                                         "disabled:opacity-50"
                                     )}
                                 >
-                                    {isPending ? (
-                                        <Loader2
-                                            className="h-3.5 w-3.5 animate-spin"
-                                            aria-hidden="true"
-                                        />
-                                    ) : (
-                                        <Save
-                                            className="h-3.5 w-3.5"
-                                            aria-hidden="true"
-                                        />
-                                    )}
-                                    <span>{isPending ? "Saving..." : "Save"}</span>
-                                    {!isPending && (
-                                        <kbd className="ml-1.5 hidden rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-normal sm:inline-block">
-                                            ⌘S
-                                        </kbd>
-                                    )}
+                                    <Save className="h-3.5 w-3.5" aria-hidden="true" />
+                                    <span>Save</span>
+                                    <kbd className="ml-1.5 hidden rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-normal sm:inline-block">
+                                        ⌘S
+                                    </kbd>
                                 </button>
                             </motion.div>
                         ) : null}
