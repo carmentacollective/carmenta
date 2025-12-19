@@ -27,15 +27,12 @@ vi.mock("@/lib/http-client", () => ({
 vi.mock("@/lib/env", () => ({
     env: {
         NEXT_PUBLIC_APP_URL: "https://carmenta.ai",
-        NANGO_API_URL: "https://api.nango.dev",
-        NANGO_SECRET_KEY: "test-nango-key",
     },
 }));
 
 describe("GoogleCalendarContactsAdapter", () => {
     let adapter: GoogleCalendarContactsAdapter;
     const testUserEmail = "test@example.com";
-    const testConnectionId = "nango_test_google_123";
 
     beforeEach(() => {
         adapter = new GoogleCalendarContactsAdapter();
