@@ -1,18 +1,36 @@
--- Migrate event_source: Map nango_webhook to system before recreating enum
-ALTER TABLE "integration_history" ALTER COLUMN "event_source" SET DATA TYPE text;--> statement-breakpoint
-UPDATE "integration_history" SET "event_source" = 'system' WHERE "event_source" = 'nango_webhook';--> statement-breakpoint
-DROP TYPE "public"."integration_event_source";--> statement-breakpoint
-CREATE TYPE "public"."integration_event_source" AS ENUM('user', 'system');--> statement-breakpoint
-ALTER TABLE "integration_history" ALTER COLUMN "event_source" SET DATA TYPE "public"."integration_event_source" USING "event_source"::"public"."integration_event_source";--> statement-breakpoint
+-- Migration 0010: Remove Nango remnants (simplified - just drop old data)
+-- Nick is the only user and is fine reconnecting integrations
 
--- Migrate event_type: Map old Nango events to semantic equivalents before recreating enum
-ALTER TABLE "integration_history" ALTER COLUMN "event_type" SET DATA TYPE text;--> statement-breakpoint
-UPDATE "integration_history" SET "event_type" = 'reconnected' WHERE "event_type" = 'nango_token_refresh';--> statement-breakpoint
-UPDATE "integration_history" SET "event_type" = 'connected' WHERE "event_type" IN ('nango_sync_success', 'nango_connection_created');--> statement-breakpoint
-UPDATE "integration_history" SET "event_type" = 'connection_error' WHERE "event_type" IN ('nango_sync_error', 'nango_connection_error');--> statement-breakpoint
-DROP TYPE "public"."integration_event_type";--> statement-breakpoint
+-- Clear integration history - easier than migrating old enum values
+TRUNCATE TABLE "integration_history";--> statement-breakpoint
+
+-- Recreate event_source enum cleanly
+DROP TYPE IF EXISTS "public"."integration_event_source" CASCADE;--> statement-breakpoint
+CREATE TYPE "public"."integration_event_source" AS ENUM('user', 'system');--> statement-breakpoint
+-- Recreate event_source column (CASCADE dropped it)
+ALTER TABLE "integration_history" ADD COLUMN "event_source" "integration_event_source" NOT NULL;--> statement-breakpoint
+
+-- Recreate event_type enum cleanly
+DROP TYPE IF EXISTS "public"."integration_event_type" CASCADE;--> statement-breakpoint
 CREATE TYPE "public"."integration_event_type" AS ENUM('connected', 'disconnected', 'reconnected', 'token_expired', 'connection_error', 'rate_limited');--> statement-breakpoint
-ALTER TABLE "integration_history" ALTER COLUMN "event_type" SET DATA TYPE "public"."integration_event_type" USING "event_type"::"public"."integration_event_type";--> statement-breakpoint
-ALTER TABLE "integration_history" DROP COLUMN "connection_id";--> statement-breakpoint
-ALTER TABLE "integration_history" DROP COLUMN "nango_provider_config_key";--> statement-breakpoint
-ALTER TABLE "integrations" DROP COLUMN "connection_id";
+-- Recreate event_type column (CASCADE dropped it)
+ALTER TABLE "integration_history" ADD COLUMN "event_type" "integration_event_type" NOT NULL;--> statement-breakpoint
+-- Recreate index (CASCADE dropped it when it dropped event_type column)
+CREATE INDEX IF NOT EXISTS "integration_history_event_type_occurred_at_idx" ON "integration_history" USING btree ("event_type", "occurred_at");--> statement-breakpoint
+
+-- Drop Nango columns if they exist
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'integration_history' AND column_name = 'connection_id') THEN
+        ALTER TABLE "integration_history" DROP COLUMN "connection_id";
+    END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'integration_history' AND column_name = 'nango_provider_config_key') THEN
+        ALTER TABLE "integration_history" DROP COLUMN "nango_provider_config_key";
+    END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'integrations' AND column_name = 'connection_id') THEN
+        ALTER TABLE "integrations" DROP COLUMN "connection_id";
+    END IF;
+END $$;
