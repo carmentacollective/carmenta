@@ -7,10 +7,14 @@ TRUNCATE TABLE "integration_history";--> statement-breakpoint
 -- Recreate event_source enum cleanly
 DROP TYPE IF EXISTS "public"."integration_event_source" CASCADE;--> statement-breakpoint
 CREATE TYPE "public"."integration_event_source" AS ENUM('user', 'system');--> statement-breakpoint
+-- Recreate event_source column (CASCADE dropped it)
+ALTER TABLE "integration_history" ADD COLUMN "event_source" "integration_event_source" NOT NULL;--> statement-breakpoint
 
 -- Recreate event_type enum cleanly
 DROP TYPE IF EXISTS "public"."integration_event_type" CASCADE;--> statement-breakpoint
 CREATE TYPE "public"."integration_event_type" AS ENUM('connected', 'disconnected', 'reconnected', 'token_expired', 'connection_error', 'rate_limited');--> statement-breakpoint
+-- Recreate event_type column (CASCADE dropped it)
+ALTER TABLE "integration_history" ADD COLUMN "event_type" "integration_event_type" NOT NULL;--> statement-breakpoint
 
 -- Drop Nango columns if they exist
 DO $$ BEGIN
