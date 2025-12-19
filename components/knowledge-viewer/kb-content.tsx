@@ -136,6 +136,8 @@ export function KBContent({
                 e.preventDefault();
                 const availableChars = CHAR_LIMIT - currentLength + selectionLength;
 
+                // Allow paste if we have selected text (even at limit)
+                // The selection will be replaced, freeing up space
                 if (availableChars > 0) {
                     const truncatedPaste = pasteText.slice(0, availableChars);
                     const before = editContent.slice(0, selectionStart);
@@ -144,11 +146,13 @@ export function KBContent({
 
                     setEditContent(newContent);
 
-                    // Show warning with truncation details
-                    const truncatedChars = pasteText.length - truncatedPaste.length;
-                    setError(
-                        `Pasted content truncated by ${truncatedChars.toLocaleString()} characters to fit ${CHAR_LIMIT.toLocaleString()} limit`
-                    );
+                    // Show warning if we had to truncate
+                    if (truncatedPaste.length < pasteText.length) {
+                        const truncatedChars = pasteText.length - truncatedPaste.length;
+                        setError(
+                            `Pasted content truncated by ${truncatedChars.toLocaleString()} characters to fit ${CHAR_LIMIT.toLocaleString()} limit`
+                        );
+                    }
 
                     // Position cursor after pasted content
                     setTimeout(() => {
@@ -156,6 +160,7 @@ export function KBContent({
                         textarea.setSelectionRange(newPosition, newPosition);
                     }, 0);
                 } else {
+                    // No selection and already at/over limit
                     setError(
                         `Cannot paste: already at ${CHAR_LIMIT.toLocaleString()} character limit`
                     );
@@ -177,6 +182,12 @@ export function KBContent({
         const savedPath = kbDocument.path;
         setError(null);
         setSaveState("saving");
+
+        // Clear any existing timeout to prevent race conditions
+        if (savedTimeoutRef.current) {
+            clearTimeout(savedTimeoutRef.current);
+            savedTimeoutRef.current = null;
+        }
 
         startTransition(async () => {
             try {
@@ -214,7 +225,8 @@ export function KBContent({
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "s") {
                 e.preventDefault();
-                if (hasChanges && !isOverLimit) {
+                // Only save if component is active (not dimmed) and has changes
+                if (!dimmed && hasChanges && !isOverLimit) {
                     handleSave();
                 }
             }
@@ -222,7 +234,7 @@ export function KBContent({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [handleSave, hasChanges, isOverLimit]);
+    }, [handleSave, hasChanges, isOverLimit, dimmed]);
 
     if (!kbDocument) {
         return (
