@@ -177,8 +177,12 @@ function getStatusMessage(
             return isRunning ? "Connecting..." : "Ready";
 
         case "raw_api": {
-            const endpoint = input.endpoint as string;
-            if (isRunning) return `Calling ${truncate(endpoint, 30)}...`;
+            const endpoint = input.endpoint as string | undefined;
+            if (isRunning) {
+                return endpoint
+                    ? `Calling ${truncate(endpoint, 30)}...`
+                    : "Calling API...";
+            }
             return "Done";
         }
 
