@@ -293,7 +293,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                                 );
                                                             }}
                                                             className={cn(
-                                                                "h-6 w-6 rounded-full transition-all",
+                                                                "h-10 w-10 rounded-full transition-all",
                                                                 isCommitted
                                                                     ? "ring-2 ring-foreground/60 ring-offset-2 ring-offset-background"
                                                                     : "opacity-60 hover:scale-110 hover:opacity-100"
