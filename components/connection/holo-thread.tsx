@@ -52,6 +52,7 @@ import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
 import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
+import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
@@ -473,6 +474,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "google-calendar-contacts":
+            return (
+                <GoogleCalendarContactsToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Google Calendar request failed")}
                 />
             );
 
