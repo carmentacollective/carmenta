@@ -11,7 +11,7 @@ Get a PR to "ready to merge" by intelligently triaging bot feedback. You have co
 bots lack - use judgment, not compliance. Declining feedback is as valid as accepting
 it. The goal is "ready to merge," not "zero comments."
 
-Read @rules/code-review-standards.mdc for triage principles:
+Read @.cursor/rules/code-review-standards.mdc for triage principles:
 
 - Fix critical bugs, ensure security, validate core behavior
 - Skip theoretical edge cases, minor polish, over-engineering suggestions

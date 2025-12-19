@@ -47,8 +47,8 @@ Add an "Always Apply Rules" section at the top with @ references:
 
 Core project rules that apply to all tasks:
 
-@rules/personalities/unity.mdc @rules/git-interaction.mdc
-@rules/typescript-coding-standards.mdc
+@.cursor/rules/personalities/unity.mdc @.cursor/rules/git-interaction.mdc
+@.cursor/rules/typescript-coding-standards.mdc
 ```
 
 Why use @ references instead of extraction:
@@ -265,7 +265,7 @@ Keep these minimal. They inherit root context, so only include:
 
 [The critical constraint or domain knowledge - often a warning about what NOT to do]
 
-@rules/relevant-rule.mdc
+@.cursor/rules/relevant-rule.mdc
 ```
 
 No commands. No generic descriptions. Just the context that prevents mistakes.
@@ -281,7 +281,7 @@ Auto-generated files tracked by Drizzle's journal system.
 `drizzle-kit generate` from schema changes in `lib/db/schema.ts`. Manually created files
 exist but never run — they fail silently.
 
-@rules/drizzle-database-migrations.mdc
+@.cursor/rules/drizzle-database-migrations.mdc
 ```
 
 ## Matching Rules to Directories
