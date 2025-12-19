@@ -577,11 +577,22 @@ function TaskDetailDisplay({ output }: { output?: Record<string, unknown> }) {
         tags: output.tags as string[] | undefined,
     };
 
-    // Handle assignees that come as objects
-    if (output.assignees && Array.isArray(output.assignees)) {
-        task.assignees = (
-            output.assignees as Array<{ username?: string; email?: string }>
-        ).map((a) => a.username || a.email || "Unknown");
+    // Handle assignees - can be strings (from list_tasks) or objects (from get_task)
+    if (
+        output.assignees &&
+        Array.isArray(output.assignees) &&
+        output.assignees.length > 0
+    ) {
+        const first = output.assignees[0];
+        if (typeof first === "string") {
+            // Already strings (from list_tasks)
+            task.assignees = output.assignees as string[];
+        } else {
+            // Objects with username/email (from get_task)
+            task.assignees = (
+                output.assignees as Array<{ username?: string; email?: string }>
+            ).map((a) => a.username || a.email || "Unknown");
+        }
     }
 
     return (
