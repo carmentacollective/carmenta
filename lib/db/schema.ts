@@ -736,6 +736,7 @@ export const documentSourceTypeEnum = pgEnum("document_source_type", [
     // Manual entry
     "manual", // User or admin created directly
     "seed", // Initial profile template
+    "system_docs", // System documentation synced from /docs folder
 
     // Conversation extraction (V2)
     "conversation_extraction",
