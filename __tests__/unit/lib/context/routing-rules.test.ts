@@ -5,7 +5,7 @@
  * All tests are concurrent since routing rules are pure functions.
  */
 
-import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 
 import {
     applyRoutingRules,
@@ -13,7 +13,7 @@ import {
     type RoutingRulesInput,
 } from "@/lib/context/routing-rules";
 import type { UIMessage } from "ai";
-import type { ModelId } from "@/lib/model-config";
+import { AUDIO_CAPABLE_MODEL, type ModelId } from "@/lib/model-config";
 
 // Silence logs during tests
 beforeAll(() => {
@@ -124,22 +124,21 @@ describe.concurrent("Routing Rules - Audio Attachments", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
         expect(result.wasChanged).toBe(true);
         expect(result.reason).toContain("Audio file detected");
-        expect(result.reason).toContain("Gemini");
     });
 
-    it("does not change if already on Gemini with audio", () => {
+    it("does not change if already on audio-capable model with audio", () => {
         const input = createRoutingInput({
-            selectedModelId: "google/gemini-3-pro-preview",
+            selectedModelId: AUDIO_CAPABLE_MODEL,
             attachmentTypes: ["audio"],
         });
 
         const result = applyRoutingRules(input);
 
-        // Already on Gemini, but rule still fires - wasChanged reflects final state
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        // Already on audio-capable model, but rule still fires - wasChanged reflects final state
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
     });
 
     it("handles multiple attachment types including audio", () => {
@@ -150,13 +149,13 @@ describe.concurrent("Routing Rules - Audio Attachments", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
         expect(result.reason).toContain("Audio");
     });
 });
 
 describe.concurrent("Routing Rules - Video Attachments", () => {
-    it("routes video attachments to Gemini", () => {
+    it("routes video attachments to video-capable model", () => {
         const input = createRoutingInput({
             selectedModelId: "anthropic/claude-sonnet-4.5",
             attachmentTypes: ["video"],
@@ -164,12 +163,12 @@ describe.concurrent("Routing Rules - Video Attachments", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
         expect(result.wasChanged).toBe(true);
         expect(result.reason).toContain("Video file detected");
     });
 
-    it("handles both audio and video (both require Gemini)", () => {
+    it("handles both audio and video (both require same model)", () => {
         const input = createRoutingInput({
             selectedModelId: "openai/gpt-5.2",
             attachmentTypes: ["audio", "video"],
@@ -177,7 +176,7 @@ describe.concurrent("Routing Rules - Video Attachments", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
     });
 });
 
@@ -360,8 +359,8 @@ describe.concurrent("Routing Rules - Priority Order", () => {
 
         const result = applyRoutingRules(input);
 
-        // Audio takes priority - route to Gemini
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        // Audio takes priority - route to audio-capable model
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
         expect(result.reason).toContain("Audio");
     });
 
@@ -411,7 +410,7 @@ describe.concurrent("Routing Rules - Edge Cases", () => {
         const result = applyRoutingRules(input);
 
         expect(result.originalModelId).toBe("anthropic/claude-opus-4.5");
-        expect(result.modelId).toBe("google/gemini-3-pro-preview");
+        expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
     });
 
     it("handles unknown attachment types gracefully", () => {

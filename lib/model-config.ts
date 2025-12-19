@@ -458,3 +458,15 @@ export const CONCIERGE_FALLBACK_CHAIN: readonly ModelId[] = [
     "google/gemini-3-pro-preview",
     "anthropic/claude-sonnet-4.5",
 ] as const;
+
+/**
+ * Model with native audio support.
+ * Currently only Gemini 3 Pro supports audio file processing.
+ */
+export const AUDIO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
+
+/**
+ * Model with native video support.
+ * Currently only Gemini 3 Pro supports video file processing.
+ */
+export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";

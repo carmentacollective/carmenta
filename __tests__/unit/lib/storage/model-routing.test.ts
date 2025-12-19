@@ -2,13 +2,15 @@
  * Model Routing Tests
  *
  * Tests for file-to-model routing logic with focus on:
- * - Audio files forcing Gemini (only model with native audio)
+ * - Audio files forcing audio-capable model (only model with native audio)
  * - PDFs and images allowing concierge choice (prefers Claude)
  * - Multiple file handling
  * - Required model detection
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { AUDIO_CAPABLE_MODEL } from "@/lib/model-config";
 import {
     getAttachmentMeta,
     getAttachmentMetaForFiles,
@@ -20,65 +22,65 @@ import {
 // ============================================================================
 
 describe("Model Routing - Audio Files", () => {
-    it("forces Gemini for MP3 audio files", () => {
+    it("forces audio-capable model for MP3 audio files", () => {
         const meta = getAttachmentMeta("audio/mp3");
 
         expect(meta.mediaType).toBe("audio/mp3");
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for MPEG audio files", () => {
+    it("forces audio-capable model for MPEG audio files", () => {
         const meta = getAttachmentMeta("audio/mpeg");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for WAV audio files", () => {
+    it("forces audio-capable model for WAV audio files", () => {
         const meta = getAttachmentMeta("audio/wav");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for FLAC audio files", () => {
+    it("forces audio-capable model for FLAC audio files", () => {
         const meta = getAttachmentMeta("audio/flac");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for M4A audio files (audio/mp4)", () => {
+    it("forces audio-capable model for M4A audio files (audio/mp4)", () => {
         const meta = getAttachmentMeta("audio/mp4");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for M4A audio files (audio/x-m4a)", () => {
+    it("forces audio-capable model for M4A audio files (audio/x-m4a)", () => {
         const meta = getAttachmentMeta("audio/x-m4a");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for AAC audio files", () => {
+    it("forces audio-capable model for AAC audio files", () => {
         const meta = getAttachmentMeta("audio/aac");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for OGG audio files", () => {
+    it("forces audio-capable model for OGG audio files", () => {
         const meta = getAttachmentMeta("audio/ogg");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for WebM audio files", () => {
+    it("forces audio-capable model for WebM audio files", () => {
         const meta = getAttachmentMeta("audio/webm");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 
-    it("forces Gemini for AIFF audio files", () => {
+    it("forces audio-capable model for AIFF audio files", () => {
         const meta = getAttachmentMeta("audio/aiff");
 
-        expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 });
 
@@ -188,7 +190,7 @@ describe("Model Routing - Multiple Files", () => {
         const meta = getAttachmentMetaForFiles(files);
 
         expect(meta[0].requiredModel).toBeUndefined();
-        expect(meta[1].requiredModel).toBe("google/gemini-3-pro-preview");
+        expect(meta[1].requiredModel).toBe(AUDIO_CAPABLE_MODEL);
     });
 });
 
@@ -209,26 +211,26 @@ describe("Model Routing - Required Model Detection", () => {
         expect(required).toBeNull();
     });
 
-    it("returns Gemini when audio file present", () => {
+    it("returns audio-capable model when audio file present", () => {
         const attachments = [
             { mediaType: "image/jpeg" },
-            { mediaType: "audio/mp3", requiredModel: "google/gemini-3-pro-preview" },
+            { mediaType: "audio/mp3", requiredModel: AUDIO_CAPABLE_MODEL },
         ];
 
         const required = getRequiredModel(attachments);
 
-        expect(required).toBe("google/gemini-3-pro-preview");
+        expect(required).toBe(AUDIO_CAPABLE_MODEL);
     });
 
     it("returns first required model when multiple exist", () => {
         const attachments = [
-            { mediaType: "audio/wav", requiredModel: "google/gemini-3-pro-preview" },
-            { mediaType: "audio/mp3", requiredModel: "google/gemini-3-pro-preview" },
+            { mediaType: "audio/wav", requiredModel: AUDIO_CAPABLE_MODEL },
+            { mediaType: "audio/mp3", requiredModel: AUDIO_CAPABLE_MODEL },
         ];
 
         const required = getRequiredModel(attachments);
 
-        expect(required).toBe("google/gemini-3-pro-preview");
+        expect(required).toBe(AUDIO_CAPABLE_MODEL);
     });
 
     it("returns null for empty array", () => {
@@ -242,13 +244,13 @@ describe("Model Routing - Required Model Detection", () => {
             { mediaType: "image/jpeg" },
             { mediaType: "image/png" },
             { mediaType: "application/pdf" },
-            { mediaType: "audio/flac", requiredModel: "google/gemini-3-pro-preview" },
+            { mediaType: "audio/flac", requiredModel: AUDIO_CAPABLE_MODEL },
             { mediaType: "text/plain" },
         ];
 
         const required = getRequiredModel(attachments);
 
-        expect(required).toBe("google/gemini-3-pro-preview");
+        expect(required).toBe(AUDIO_CAPABLE_MODEL);
     });
 });
 
@@ -327,11 +329,9 @@ describe("Model Routing - Routing Logic", () => {
 
         const audioMeta = audioTypes.map(getAttachmentMeta);
 
-        // All should require Gemini
+        // All should require audio-capable model
         expect(
-            audioMeta.every(
-                (meta) => meta.requiredModel === "google/gemini-3-pro-preview"
-            )
+            audioMeta.every((meta) => meta.requiredModel === AUDIO_CAPABLE_MODEL)
         ).toBe(true);
     });
 
@@ -380,7 +380,7 @@ describe("Model Routing - File Config Integration", () => {
 
         for (const mimeType of supportedAudio) {
             const meta = getAttachmentMeta(mimeType);
-            expect(meta.requiredModel).toBe("google/gemini-3-pro-preview");
+            expect(meta.requiredModel).toBe(AUDIO_CAPABLE_MODEL);
         }
     });
 

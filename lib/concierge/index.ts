@@ -16,7 +16,7 @@ import { z } from "zod";
 
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
+import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
 import { generateTitle } from "@/lib/db/title-generator";
 import { buildConciergePrompt } from "./prompt";
@@ -330,16 +330,16 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 if (attachments.includes("audio")) {
                     logger.info(
                         { attachments },
-                        "Audio attachment detected - forcing Gemini"
+                        "Audio attachment detected - forcing audio-capable model"
                     );
                     // Generate title since we're bypassing the normal concierge LLM call
                     const title = await generateTitle(userQuery);
                     return {
-                        modelId: "google/gemini-3-pro-preview",
+                        modelId: AUDIO_CAPABLE_MODEL,
                         temperature: 0.5,
                         explanation:
-                            "Audio file detected - routing to Gemini for native audio processing 🎵",
-                        reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
+                            "Audio file detected - routing to audio-capable model for native audio processing 🎵",
+                        reasoning: { enabled: false }, // Audio model doesn't support reasoning tokens
                         autoSwitched: true,
                         title,
                     };

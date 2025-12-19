@@ -12,23 +12,19 @@
  */
 
 import { logger } from "@/lib/logger";
-import { getModel, MODELS, type ModelId } from "@/lib/model-config";
+import {
+    AUDIO_CAPABLE_MODEL,
+    getModel,
+    MODELS,
+    type ModelId,
+    VIDEO_CAPABLE_MODEL,
+} from "@/lib/model-config";
 
 import {
     calculateContextUtilization,
     type ContextUtilization,
 } from "./token-estimation";
 import type { UIMessage } from "ai";
-
-/**
- * Audio-capable models. Currently only Gemini has native audio support.
- */
-const AUDIO_CAPABLE_MODELS = ["google/gemini-3-pro-preview"] as const;
-
-/**
- * Video-capable models. Currently only Gemini has native video support.
- */
-const VIDEO_CAPABLE_MODELS = ["google/gemini-3-pro-preview"] as const;
 
 /**
  * Result from applying hard-coded routing rules.
@@ -101,22 +97,21 @@ export function applyRoutingRules(input: RoutingRulesInput): RoutingRulesResult 
 
     // Rule 1: Audio attachments → Gemini (ONLY model with native audio)
     if (attachmentTypes.includes("audio")) {
-        const geminiId = AUDIO_CAPABLE_MODELS[0];
-        if (currentModelId !== geminiId) {
+        if (currentModelId !== AUDIO_CAPABLE_MODEL) {
             logger.info(
-                { from: currentModelId, to: geminiId },
-                "Audio attachment detected - forcing Gemini"
+                { from: currentModelId, to: AUDIO_CAPABLE_MODEL },
+                "Audio attachment detected - forcing audio-capable model"
             );
-            currentModelId = geminiId;
+            currentModelId = AUDIO_CAPABLE_MODEL;
             wasChanged = true;
             reason =
-                "Audio file detected - routing to Gemini for native audio processing";
+                "Audio file detected - routing to audio-capable model for native audio processing";
         }
     }
 
     // Rule 2: Video attachments → Gemini (ONLY model with native video)
     if (attachmentTypes.includes("video")) {
-        const geminiId = VIDEO_CAPABLE_MODELS[0];
+        const geminiId = VIDEO_CAPABLE_MODEL;
         if (currentModelId !== geminiId) {
             logger.info(
                 { from: currentModelId, to: geminiId },
@@ -295,5 +290,3 @@ function formatTokens(tokens: number): string {
     }
     return String(tokens);
 }
-
-export { AUDIO_CAPABLE_MODELS, VIDEO_CAPABLE_MODELS };

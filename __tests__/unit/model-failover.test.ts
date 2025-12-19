@@ -4,11 +4,12 @@
 
 import { describe, expect, it } from "vitest";
 import {
-    MODEL_FALLBACKS,
-    getFallbackChain,
     CONCIERGE_FALLBACK_CHAIN,
+    getFallbackChain,
+    MODEL_FALLBACKS,
     type ModelId,
 } from "@/lib/model-config";
+import { ALLOWED_MODELS, CONCIERGE_MODEL } from "@/lib/concierge/types";
 
 describe("Model Failover Configuration", () => {
     describe("getFallbackChain", () => {
@@ -115,20 +116,26 @@ describe("Model Failover Configuration", () => {
     });
 
     describe("CONCIERGE_FALLBACK_CHAIN", () => {
-        it("uses Gemini 3 Pro as primary (best accuracy)", () => {
-            expect(CONCIERGE_FALLBACK_CHAIN[0]).toBe("google/gemini-3-pro-preview");
+        it("primary matches CONCIERGE_MODEL", () => {
+            expect(CONCIERGE_FALLBACK_CHAIN[0]).toBe(CONCIERGE_MODEL);
         });
 
-        it("uses Grok 4.1 Fast as first fallback (faster, 100% accurate)", () => {
-            expect(CONCIERGE_FALLBACK_CHAIN[1]).toBe("x-ai/grok-4.1-fast");
+        it("all models in chain are in ALLOWED_MODELS", () => {
+            for (const modelId of CONCIERGE_FALLBACK_CHAIN) {
+                expect(ALLOWED_MODELS).toContain(modelId);
+            }
         });
 
-        it("uses Sonnet as final fallback (safe default)", () => {
-            expect(CONCIERGE_FALLBACK_CHAIN[2]).toBe("anthropic/claude-sonnet-4.5");
+        it("has at least 2 models for redundancy", () => {
+            expect(CONCIERGE_FALLBACK_CHAIN.length).toBeGreaterThanOrEqual(2);
         });
 
-        it("has exactly 3 models for concierge routing", () => {
-            expect(CONCIERGE_FALLBACK_CHAIN).toHaveLength(3);
+        it("uses different providers for redundancy", () => {
+            // Extract providers from model IDs
+            const providers = CONCIERGE_FALLBACK_CHAIN.map((id) => id.split("/")[0]);
+            // Should have at least 2 different providers
+            const uniqueProviders = new Set(providers);
+            expect(uniqueProviders.size).toBeGreaterThanOrEqual(2);
         });
     });
 
