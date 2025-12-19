@@ -29,7 +29,6 @@
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
 import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import {
@@ -52,6 +51,11 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
      * Test the OAuth connection by making a live API request
      * Called when user clicks "Test" button to verify credentials are working
      *
+     * Uses Calendar API (primary calendar) rather than People API because:
+     * - Calendar API is always enabled when user grants calendar scopes
+     * - People API requires separate enablement in Google Cloud Console
+     * - More reliable test for the "Calendar & Contacts" integration
+     *
      * @param credentialOrToken - Access token or credential string
      * @param userId - User ID (optional, only used for logging)
      */
@@ -60,25 +64,47 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
         userId?: string
     ): Promise<{ success: boolean; error?: string }> {
         try {
-            // Make a simple request to People API to verify connection
+            // Use Calendar API - always enabled when calendar scopes are granted
             await httpClient
-                .get(`${GOOGLE_PEOPLE_API_BASE}/people/me`, {
+                .get(`${GOOGLE_CALENDAR_API_BASE}/calendars/primary`, {
                     headers: this.buildHeaders(credentialOrToken),
-                    searchParams: {
-                        personFields: "names,emailAddresses",
-                    },
                 })
                 .json<Record<string, unknown>>();
 
             return { success: true };
         } catch (error) {
             logger.error({ error, userId }, "Failed to verify Google connection");
+
+            // Convert raw HTTP errors to user-friendly messages
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            if (errorMessage.includes("401") || errorMessage.includes("403")) {
+                return {
+                    success: false,
+                    error: `Your Google connection may have expired. Try reconnecting at ${this.getIntegrationUrl()}`,
+                };
+            }
+
+            if (errorMessage.includes("404")) {
+                return {
+                    success: false,
+                    error: "We couldn't find your primary calendar. Make sure you have a Google Calendar set up.",
+                };
+            }
+
+            if (
+                errorMessage.includes("timeout") ||
+                errorMessage.includes("ECONNREFUSED")
+            ) {
+                return {
+                    success: false,
+                    error: "Google Calendar is temporarily unavailable. Try again in a moment.",
+                };
+            }
+
             return {
                 success: false,
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Connection verification failed",
+                error: "We couldn't verify your Google connection. Try reconnecting.",
             };
         }
     }
