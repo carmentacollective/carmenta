@@ -244,3 +244,57 @@ export async function hasKBProfile(): Promise<boolean> {
     // Check if the character document exists (indicates profile was initialized)
     return kb.exists(user.id, PROFILE_PATHS.character);
 }
+
+// ============================================================================
+// Search Operations
+// ============================================================================
+
+export interface KBSearchResult extends KBDocument {
+    /** Search relevance rank (higher = more relevant) */
+    rank: number;
+    /** Snippet of matching content */
+    snippet: string;
+}
+
+/**
+ * Full-text search across all user's KB documents
+ *
+ * Uses PostgreSQL full-text search with ranking. Searches across
+ * document content with stemming and relevance scoring.
+ *
+ * @param query - Search query (supports phrases, AND/OR operators via websearch syntax)
+ * @returns Array of matching documents with relevance scores
+ */
+export async function searchKB(query: string): Promise<KBSearchResult[]> {
+    const userId = await getDbUserId();
+
+    if (!query.trim()) {
+        return [];
+    }
+
+    try {
+        const results = await kb.search(userId, query);
+
+        logger.info({ userId, query, resultCount: results.length }, "🔍 KB search");
+
+        return results.map((doc) => ({
+            id: doc.id,
+            path: doc.path,
+            name: doc.name,
+            content: doc.content,
+            description: doc.description,
+            promptLabel: doc.promptLabel,
+            editable: doc.editable,
+            updatedAt: doc.updatedAt,
+            rank: doc.rank,
+            snippet: doc.snippet,
+        }));
+    } catch (error) {
+        logger.error({ error, userId, query }, "KB search failed");
+        Sentry.captureException(error, {
+            tags: { action: "kb_search", component: "kb-actions" },
+            extra: { userId, query },
+        });
+        throw error;
+    }
+}

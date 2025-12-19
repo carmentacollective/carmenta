@@ -439,35 +439,65 @@ export async function exists(userId: string, path: string): Promise<boolean> {
 }
 
 // ============================================================================
-// Search Operations (V1 - Basic)
+// Search Operations
 // ============================================================================
 
+export interface SearchResult extends Document {
+    /** Relevance rank (0-1, higher = more relevant) */
+    rank: number;
+    /** Snippet of matching content with context */
+    snippet: string;
+}
+
 /**
- * Simple keyword search across all user documents
- * V1: Uses ILIKE for case-insensitive pattern matching
- * V2: Upgrade to PostgreSQL FTS with websearch_to_tsquery for production
+ * Full-text search across user's documents using PostgreSQL FTS
+ *
+ * Uses websearch_to_tsquery for natural query syntax:
+ * - "exact phrase"
+ * - word1 OR word2
+ * - word1 -excluded
+ *
+ * Returns results ranked by relevance with text snippets showing context.
+ *
+ * @param userId - User ID to search within
+ * @param query - Search query (natural language, supports operators)
+ * @param limit - Max results to return (default 20)
  */
 export async function search(
     userId: string,
     query: string,
-    limit: number = 10
-): Promise<Document[]> {
-    // Simple ILIKE search - works with pglite for testing
-    // V2: Upgrade to PostgreSQL FTS with websearch_to_tsquery for better relevance
+    limit: number = 20
+): Promise<SearchResult[]> {
+    if (!query.trim()) {
+        return [];
+    }
 
-    // Escape LIKE wildcards so user input is treated literally
-    const searchPattern = `%${escapeLikePattern(query)}%`;
-
+    // PostgreSQL full-text search with ranking and snippets
     const result = await db.execute(sql`
-        SELECT *
-        FROM documents
-        WHERE user_id = ${userId}
-        AND (content ILIKE ${searchPattern} OR name ILIKE ${searchPattern})
-        ORDER BY updated_at DESC
+        SELECT
+            d.*,
+            ts_rank(d.search_vector, query) as rank,
+            ts_headline(
+                'english',
+                d.content,
+                query,
+                'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=25'
+            ) as snippet
+        FROM documents d,
+             websearch_to_tsquery('english', ${query}) query
+        WHERE d.user_id = ${userId}
+          AND d.search_vector @@ query
+        ORDER BY rank DESC, d.updated_at DESC
         LIMIT ${limit}
     `);
 
-    return normalizeExecuteResult(result).map(mapRowToDocument);
+    const rows = normalizeExecuteResult(result);
+
+    return rows.map((row) => ({
+        ...mapRowToDocument(row),
+        rank: (row.rank as number) ?? 0,
+        snippet: (row.snippet as string) ?? "",
+    }));
 }
 
 // ============================================================================
