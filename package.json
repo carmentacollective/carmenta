@@ -8,6 +8,17 @@
     "url": "https://github.com/carmentacollective/carmenta"
   },
   "homepage": "https://carmenta.ai",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@sentry/cli",
+      "core-js",
+      "esbuild",
+      "msw",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
