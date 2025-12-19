@@ -173,10 +173,10 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
 
 /**
  * The model used to run the Concierge itself.
- * Gemini 3 Pro achieves 100% accuracy on model selection and temperature
- * (vs 95%/85.7% with Haiku). 9.4s latency is acceptable for one-time routing.
+ * Grok 4.1 Fast achieves 100% accuracy on model selection and temperature
+ * with 6.1s latency (35% faster than Gemini's 9.4s).
  */
-export const CONCIERGE_MODEL = "google/gemini-3-pro-preview";
+export const CONCIERGE_MODEL = "x-ai/grok-4.1-fast";
 
 /**
  * Whitelist of allowed models the concierge can select.
