@@ -8,13 +8,16 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
 import {
     getKBFolders,
+    getGlobalDocs,
+    getValuesDocument,
     initializeKBWithClerkData,
     hasKBProfile,
+    type KBFolder,
 } from "@/lib/kb/actions";
 
 export const metadata: Metadata = {
     title: "Knowledge Base · Carmenta",
-    description: "View and edit what Carmenta knows about you.",
+    description: "View and shape our shared understanding.",
 };
 
 /**
@@ -47,8 +50,47 @@ export default async function KnowledgeBasePage() {
         });
     }
 
-    // Fetch KB folders for initial render
-    const folders = await getKBFolders();
+    // Fetch all KB data in parallel
+    const [userFolders, globalDocs, valuesDoc] = await Promise.all([
+        getKBFolders(),
+        getGlobalDocs(),
+        getValuesDocument(),
+    ]);
+
+    // Build folder structure in order: values, profile, knowledge, docs
+    const allFolders: KBFolder[] = [];
+
+    // 1. Values folder (always present)
+    allFolders.push({
+        id: "values",
+        name: "values",
+        path: "values",
+        documents: [valuesDoc],
+    });
+
+    // 2. Profile folder (from user folders)
+    const profileFolder = userFolders.find((f) => f.path === "profile");
+    if (profileFolder) {
+        allFolders.push(profileFolder);
+    }
+
+    // 3. Knowledge folder (from user folders, if exists)
+    const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
+    if (knowledgeFolder) {
+        allFolders.push(knowledgeFolder);
+    }
+
+    // 4. Docs folder (global system docs, last)
+    if (globalDocs.length > 0) {
+        // Group docs by parent path for nested structure
+        const docsFolder: KBFolder = {
+            id: "docs",
+            name: "docs",
+            path: "docs",
+            documents: globalDocs,
+        };
+        allFolders.push(docsFolder);
+    }
 
     return (
         <div className="relative flex min-h-screen flex-col">
@@ -70,7 +112,7 @@ export default async function KnowledgeBasePage() {
                                         Knowledge Base
                                     </h1>
                                     <p className="text-foreground/70">
-                                        What Carmenta knows about you
+                                        What we remember together
                                     </p>
                                 </div>
                             </div>
@@ -78,7 +120,7 @@ export default async function KnowledgeBasePage() {
 
                         {/* Knowledge Viewer */}
                         <section className="min-h-[500px] flex-1">
-                            {folders.length === 0 ? (
+                            {allFolders.length === 0 ? (
                                 <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
                                     <Sparkles className="mb-4 h-12 w-12 text-foreground/30" />
                                     <h3 className="text-lg font-medium text-foreground/80">
@@ -89,7 +131,7 @@ export default async function KnowledgeBasePage() {
                                     </p>
                                 </div>
                             ) : (
-                                <KnowledgeViewer initialFolders={folders} />
+                                <KnowledgeViewer initialFolders={allFolders} />
                             )}
                         </section>
                     </div>

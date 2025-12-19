@@ -20,6 +20,7 @@ import {
     Check,
     RotateCcw,
     Loader2,
+    Heart,
 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { logger } from "@/lib/client-logger";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
+    "values.heart-centered": Heart,
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,
@@ -245,7 +247,7 @@ export function KBContent({
         return (
             <main
                 className={cn(
-                    "glass-card flex flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
+                    "glass-card flex min-h-[400px] flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
                     dimmed && "opacity-30"
                 )}
             >
@@ -260,7 +262,7 @@ export function KBContent({
     return (
         <main
             className={cn(
-                "glass-card relative flex flex-1 flex-col rounded-xl transition-opacity duration-200",
+                "glass-card relative flex min-h-[400px] flex-1 flex-col rounded-xl transition-opacity duration-200",
                 dimmed && "opacity-30"
             )}
         >
