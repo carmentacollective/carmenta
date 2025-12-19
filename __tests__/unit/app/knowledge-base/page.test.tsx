@@ -13,6 +13,8 @@ import type { ReactElement } from "react";
 const mocks = vi.hoisted(() => ({
     mockCurrentUser: vi.fn(),
     mockGetKBFolders: vi.fn(),
+    mockGetGlobalDocs: vi.fn(),
+    mockGetValuesDocument: vi.fn(),
     mockInitializeKBWithClerkData: vi.fn(),
     mockHasKBProfile: vi.fn(),
 }));
@@ -24,6 +26,8 @@ vi.mock("@clerk/nextjs/server", () => ({
 // Mock KB actions
 vi.mock("@/lib/kb/actions", () => ({
     getKBFolders: mocks.mockGetKBFolders,
+    getGlobalDocs: mocks.mockGetGlobalDocs,
+    getValuesDocument: mocks.mockGetValuesDocument,
     initializeKBWithClerkData: mocks.mockInitializeKBWithClerkData,
     hasKBProfile: mocks.mockHasKBProfile,
 }));
@@ -104,6 +108,17 @@ describe("/knowledge-base page", () => {
         mocks.mockCurrentUser.mockResolvedValue(mockUser);
         mocks.mockHasKBProfile.mockResolvedValue(true);
         mocks.mockGetKBFolders.mockResolvedValue(mockFolders);
+        mocks.mockGetGlobalDocs.mockResolvedValue([]);
+        mocks.mockGetValuesDocument.mockResolvedValue({
+            id: "values-heart-centered",
+            path: "values.heart-centered",
+            name: "Heart-Centered Philosophy",
+            content: "Test values content",
+            description: "The foundational values that guide how we work together",
+            promptLabel: null,
+            editable: false,
+            updatedAt: new Date(),
+        });
     });
 
     describe("Authentication", () => {
@@ -262,14 +277,14 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert
+            // Assert - now has values folder + profile folder = 2 folders
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "1");
+            expect(viewer).toHaveAttribute("data-folder-count", "2");
         });
 
-        it("shows empty state when no folders exist", async () => {
-            // Arrange: No folders
+        it("always includes values folder even when no user folders exist", async () => {
+            // Arrange: No user folders
             mocks.mockGetKBFolders.mockResolvedValue([]);
 
             // Act
@@ -277,13 +292,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should show empty state
-            const { getByText, queryByTestId } = render(result as ReactElement);
-            expect(
-                getByText("We're setting up your knowledge base")
-            ).toBeInTheDocument();
-            expect(getByText("Refresh the page in a moment.")).toBeInTheDocument();
-            expect(queryByTestId("knowledge-viewer")).not.toBeInTheDocument();
+            // Assert: Should still render viewer with values folder
+            const { getByTestId } = render(result as ReactElement);
+            const viewer = getByTestId("knowledge-viewer");
+            expect(viewer).toHaveAttribute("data-folder-count", "1"); // values folder only
         });
 
         it("renders with folders when they exist", async () => {
@@ -295,12 +307,9 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should render viewer, not empty state
-            const { getByTestId, queryByText } = render(result as ReactElement);
+            // Assert: Should render viewer with folders
+            const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
-            expect(
-                queryByText("We're setting up your knowledge base")
-            ).not.toBeInTheDocument();
         });
     });
 
@@ -311,20 +320,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert
-            const { getByTestId, getByText } = render(result as ReactElement);
-
-            // Background
+            // Assert: Core layout components render
+            const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("holographic-bg")).toBeInTheDocument();
-
-            // Header
             expect(getByTestId("site-header")).toBeInTheDocument();
-
-            // Page title
-            expect(getByText("Knowledge Base")).toBeInTheDocument();
-            expect(getByText("What Carmenta knows about you")).toBeInTheDocument();
-
-            // Content area
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
         });
 
@@ -337,20 +336,6 @@ describe("/knowledge-base page", () => {
             // Assert
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("book-icon")).toBeInTheDocument();
-        });
-
-        it("renders Sparkles icon in empty state", async () => {
-            // Arrange: Empty state
-            mocks.mockGetKBFolders.mockResolvedValue([]);
-
-            // Act
-            const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
-                .default;
-            const result = await KnowledgeBasePage();
-
-            // Assert
-            const { getByTestId } = render(result as ReactElement);
-            expect(getByTestId("sparkles-icon")).toBeInTheDocument();
         });
     });
 
@@ -394,8 +379,8 @@ describe("/knowledge-base page", () => {
             });
         });
 
-        it("handles empty folders array", async () => {
-            // Arrange
+        it("handles empty folders array with values folder always present", async () => {
+            // Arrange: No user folders
             mocks.mockGetKBFolders.mockResolvedValue([]);
 
             // Act
@@ -403,11 +388,13 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should render empty state
-            const { getByText } = render(result as ReactElement);
-            expect(
-                getByText("We're setting up your knowledge base")
-            ).toBeInTheDocument();
+            // Assert: Values folder always present, so viewer renders (never empty state)
+            const { getByTestId } = render(result as ReactElement);
+            expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
+            expect(getByTestId("knowledge-viewer")).toHaveAttribute(
+                "data-folder-count",
+                "1"
+            );
         });
 
         it("handles folders with many documents", async () => {
@@ -465,7 +452,7 @@ describe("/knowledge-base page", () => {
             // Assert
             expect(metadata).toEqual({
                 title: "Knowledge Base · Carmenta",
-                description: "View and edit what Carmenta knows about you.",
+                description: "View and shape our shared understanding.",
             });
         });
     });
