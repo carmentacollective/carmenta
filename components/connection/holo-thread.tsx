@@ -48,11 +48,12 @@ import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
+import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
-import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
+import { NotionToolResult } from "@/components/generative-ui/notion";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
@@ -485,6 +486,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Limitless request failed")}
+                />
+            );
+
+        case "notion":
+            return (
+                <NotionToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Notion request failed")}
                 />
             );
 
