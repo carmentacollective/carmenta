@@ -87,7 +87,7 @@ export function NotionToolResult({
 
 /**
  * Generate a human-readable status message based on action and result.
- * Uses Notion-aware language that feels natural for workspace operations.
+ * Uses Carmenta voice - warm, specific, and collaborative.
  */
 function getStatusMessage(
     action: string,
@@ -102,17 +102,17 @@ function getStatusMessage(
             const query = input.query as string | undefined;
             if (isRunning) {
                 return query
-                    ? `Searching for "${truncate(query, 30)}"...`
-                    : "Searching Notion...";
+                    ? `Finding "${truncate(query, 30)}"...`
+                    : "Exploring your workspace...";
             }
             const count = countResults(output);
             return `Found ${count} result${count === 1 ? "" : "s"}`;
         }
 
         case "get_page": {
-            if (isRunning) return "Loading page...";
+            if (isRunning) return "Opening page...";
             const title = extractPageTitle(output);
-            return title ? `Loaded: ${truncate(title, 40)}` : "Page loaded";
+            return title ? `Page ready: ${truncate(title, 40)}` : "Page ready";
         }
 
         case "create_page": {
@@ -128,7 +128,7 @@ function getStatusMessage(
         }
 
         case "query_database": {
-            if (isRunning) return "Querying database...";
+            if (isRunning) return "Looking through your database...";
             const count = countResults(output);
             return `Found ${count} entr${count === 1 ? "y" : "ies"}`;
         }
@@ -139,19 +139,19 @@ function getStatusMessage(
         }
 
         case "get_database": {
-            if (isRunning) return "Loading database...";
+            if (isRunning) return "Opening database...";
             const title = extractDatabaseTitle(output);
-            return title ? `Loaded: ${truncate(title, 40)}` : "Database loaded";
+            return title ? `Database ready: ${truncate(title, 40)}` : "Database ready";
         }
 
         case "list_databases": {
-            if (isRunning) return "Listing databases...";
+            if (isRunning) return "Finding your databases...";
             const count = countResults(output);
             return `Found ${count} database${count === 1 ? "" : "s"}`;
         }
 
         case "get_block_children": {
-            if (isRunning) return "Loading blocks...";
+            if (isRunning) return "Loading content...";
             const count = countResults(output);
             return `Loaded ${count} block${count === 1 ? "" : "s"}`;
         }
@@ -162,28 +162,28 @@ function getStatusMessage(
         }
 
         case "get_user": {
-            if (isRunning) return "Loading user...";
+            if (isRunning) return "Finding teammate...";
             const name = extractUserName(output);
-            return name ? `Loaded: ${name}` : "User loaded";
+            return name ? `Found: ${name}` : "Teammate found";
         }
 
         case "list_users": {
             if (isRunning) return "Loading team...";
             const count = countResults(output);
-            return `Loaded ${count} member${count === 1 ? "" : "s"}`;
+            return `Found ${count} teammate${count === 1 ? "" : "s"}`;
         }
 
         case "describe":
-            return isRunning ? "Checking capabilities..." : "Capabilities loaded";
+            return isRunning ? "Connecting..." : "Ready";
 
         case "raw_api": {
             const endpoint = input.endpoint as string;
             if (isRunning) return `Calling ${truncate(endpoint, 30)}...`;
-            return "API call complete";
+            return "Done";
         }
 
         default:
-            return isRunning ? `Running ${action}...` : `Completed ${action}`;
+            return isRunning ? `Working on ${action}...` : "Done";
     }
 }
 
