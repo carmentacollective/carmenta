@@ -30,6 +30,8 @@ export interface KBSidebarProps {
     selectedPath: string | null;
     onSelect: (path: string) => void;
     dimmed?: boolean;
+    /** Additional classes for the nav container */
+    className?: string;
 }
 
 export function KBSidebar({
@@ -37,6 +39,7 @@ export function KBSidebar({
     selectedPath,
     onSelect,
     dimmed = false,
+    className,
 }: KBSidebarProps) {
     const [expanded, setExpanded] = useState<Set<string>>(
         new Set(folders.map((f) => f.path))
@@ -58,7 +61,8 @@ export function KBSidebar({
         <nav
             className={cn(
                 "glass-card flex w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
-                dimmed && "opacity-30"
+                dimmed && "opacity-30",
+                className
             )}
         >
             {/* Header */}
@@ -122,13 +126,13 @@ export function KBSidebar({
                                                             onSelect(doc.path)
                                                         }
                                                         className={cn(
-                                                            "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
+                                                            "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
                                                             selectedPath === doc.path
                                                                 ? "bg-primary/10 text-primary"
                                                                 : "text-foreground/60 hover:bg-foreground/5"
                                                         )}
                                                     >
-                                                        <DocIcon className="h-3.5 w-3.5" />
+                                                        <DocIcon className="h-4 w-4" />
                                                         <span>{doc.name}</span>
                                                     </button>
                                                 );

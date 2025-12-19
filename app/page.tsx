@@ -279,17 +279,20 @@ export default function HomePage() {
                     </h1>
 
                     {/* Rotating text content - centered block, LEFT-ALIGNED text */}
+                    {/* Fixed height on mobile prevents CTA button from jumping as carousel text changes */}
                     <div
                         onClick={() => setPaused((p) => !p)}
                         className={cn(
                             "w-full max-w-2xl cursor-pointer",
+                            "min-h-[16rem] sm:min-h-0",
                             contentVisible
                                 ? "breathe-enter translate-y-0 opacity-100"
                                 : "breathe-exit -translate-y-2 opacity-0"
                         )}
                     >
                         {/* Headline with typewriter effect - LEFT ALIGNED */}
-                        <h2 className="mb-6 min-h-[1.5em] text-3xl font-light text-foreground/90 sm:text-4xl lg:text-5xl">
+                        {/* min-h accounts for 2-line headlines on mobile */}
+                        <h2 className="mb-6 min-h-[2.5em] text-3xl font-light text-foreground/90 sm:min-h-[1.5em] sm:text-4xl lg:text-5xl">
                             {displayedChars}
                             {phase === "typing" &&
                                 displayedChars.length < headline.length && (

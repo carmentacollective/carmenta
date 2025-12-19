@@ -153,7 +153,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onTest}
                                     disabled={isLoading}
-                                    className="rounded-xl border-2 border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
+                                    className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
                                 >
                                     {isTesting ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,7 +164,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onDisconnect}
                                     disabled={isLoading}
-                                    className="rounded-xl border-2 border-border px-4 py-2 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
+                                    className="rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                                 >
                                     Disconnect
                                 </button>
@@ -178,7 +178,7 @@ export function IntegrationCard({
                         <button
                             onClick={onReconnect}
                             disabled={isLoading}
-                            className="rounded-xl border-2 border-amber-400/60 bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 hover:shadow disabled:opacity-50 dark:text-amber-400"
+                            className="rounded-xl border-2 border-amber-400/60 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 hover:shadow disabled:opacity-50 dark:text-amber-400"
                         >
                             {isReconnecting ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -189,7 +189,7 @@ export function IntegrationCard({
                         <button
                             onClick={onDisconnect}
                             disabled={isLoading}
-                            className="rounded-xl border-2 border-border px-4 py-2 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
+                            className="rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                         >
                             Disconnect
                         </button>
@@ -200,7 +200,7 @@ export function IntegrationCard({
                     <button
                         onClick={onConnect}
                         disabled={isLoading}
-                        className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
+                        className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
                     >
                         {isConnecting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

@@ -153,10 +153,10 @@ function HoloThreadInner() {
                     {!isAtBottom && (
                         <button
                             onClick={() => scrollToBottom("smooth")}
-                            className="btn-glass-interactive absolute -top-12 p-3 sm:-top-10 sm:p-2"
+                            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
                             aria-label="Scroll to bottom"
                         >
-                            <ArrowDown className="h-5 w-5 text-foreground/70 sm:h-4 sm:w-4" />
+                            <ArrowDown className="h-5 w-5 text-foreground/70" />
                         </button>
                     )}
                     <Composer isNewConversation={isEmpty} />
