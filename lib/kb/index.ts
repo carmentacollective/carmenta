@@ -67,6 +67,7 @@ function mapRowToDocument(row: Record<string, unknown>): Document {
         path: row.path as string,
         name: row.name as string,
         content: row.content as string,
+        searchVector: row.search_vector as string,
         description: row.description as string | null,
         promptLabel: row.prompt_label as string | null,
         promptHint: row.prompt_hint as string | null,
@@ -473,6 +474,7 @@ export async function search(
     }
 
     // PostgreSQL full-text search with ranking and snippets
+    // Searches both content (via search_vector) and name (direct match)
     const result = await db.execute(sql`
         SELECT
             d.*,
@@ -486,7 +488,10 @@ export async function search(
         FROM documents d,
              websearch_to_tsquery('english', ${query}) query
         WHERE d.user_id = ${userId}
-          AND d.search_vector @@ query
+          AND (
+            d.search_vector @@ query
+            OR d.name ILIKE ${`%${query}%`}
+          )
         ORDER BY rank DESC, d.updated_at DESC
         LIMIT ${limit}
     `);
