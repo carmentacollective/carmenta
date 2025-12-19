@@ -44,11 +44,6 @@ export interface ConnectionCredentials {
     type: "oauth" | "api_key";
     // For OAuth - access token ready for Authorization header
     accessToken?: string;
-    /**
-     * @deprecated Legacy Nango connection ID. Only for adapters not yet migrated to in-house OAuth.
-     * Migrated adapters (Notion) use accessToken instead.
-     */
-    connectionId?: string;
     // For API keys - decrypted credentials
     credentials?: Credentials;
     // Account information
@@ -388,7 +383,7 @@ export async function getConnectedServices(userEmail: string): Promise<string[]>
 
 /**
  * Disconnect a service
- * For OAuth: mark as disconnected (Nango handles the actual deletion)
+ * For OAuth: mark as disconnected and delete refresh token
  * For API keys: delete encrypted credentials
  */
 export async function disconnectService(

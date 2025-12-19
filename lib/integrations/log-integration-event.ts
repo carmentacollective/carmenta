@@ -14,17 +14,11 @@ export type IntegrationEventType =
     | "connected"
     | "disconnected"
     | "reconnected"
-    | "nango_sync_success"
-    | "nango_sync_error"
-    | "nango_auth_error"
-    | "nango_token_refresh"
-    | "nango_connection_created"
-    | "nango_connection_deleted"
     | "token_expired"
     | "connection_error"
     | "rate_limited";
 
-export type IntegrationEventSource = "user" | "nango_webhook" | "system";
+export type IntegrationEventSource = "user" | "system";
 
 export interface LogIntegrationEventOptions {
     userEmail: string;
@@ -34,7 +28,6 @@ export interface LogIntegrationEventOptions {
     eventType: IntegrationEventType;
     eventSource: IntegrationEventSource;
     connectionId?: string;
-    nangoProviderConfigKey?: string;
     errorMessage?: string;
     errorCode?: string;
     metadata?: Record<string, unknown>;
@@ -58,7 +51,6 @@ export async function logIntegrationEvent(
             eventSource: options.eventSource,
             occurredAt: new Date(),
             connectionId: options.connectionId ?? null,
-            nangoProviderConfigKey: options.nangoProviderConfigKey ?? null,
             errorMessage: options.errorMessage ?? null,
             errorCode: options.errorCode ?? null,
             metadata: options.metadata ?? null,

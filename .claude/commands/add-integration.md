@@ -75,10 +75,10 @@ For OAuth services:
 <context>
 Carmenta uses two authentication patterns:
 
-**OAuth services** (Notion, ClickUp): Nango handles OAuth flow and proxied API calls.
-Adapter uses `connectionId` from `getCredentials()`. OAuth infrastructure already exists
-
-- you only need to add the service adapter and configure Nango.
+**OAuth services** (Notion, ClickUp, Slack, etc.): In-house OAuth implementation handles
+token exchange, storage, and refresh. Adapter receives `accessToken` from
+`getCredentials()`. OAuth infrastructure already exists - you only need to add the
+service adapter and configure the OAuth provider.
 
 **API key services** (Giphy, Fireflies, Limitless): Direct API calls with encrypted
 credentials. Adapter uses decrypted `credentials.apiKey` from `getCredentials()`.
@@ -104,34 +104,39 @@ Reference `components/generative-ui/limitless.tsx` for the pattern to follow.
 </tool-ui-philosophy>
 
 <oauth-infrastructure>
-For OAuth services, the infrastructure is already built (implemented for ClickUp):
+For OAuth services, the in-house OAuth infrastructure is already built:
 
-**OAuth Callback** (`app/oauth/callback/route.ts`):
+**OAuth Flow** (`lib/integrations/oauth/`):
 
-- Custom callback URL for branding (users never see api.nango.dev)
-- 308 redirect to Nango preserving all OAuth parameters
-- No changes needed for new OAuth services
+- Handles authorization URL generation with state/PKCE
+- Token exchange after callback
+- Encrypted token storage in database
+- Automatic token refresh before expiry
+- Provider configs for each OAuth service
 
-**Session Token API** (`app/api/connect/route.ts`):
+**OAuth Callback** (`app/connect/[service]/callback/route.ts`):
 
-- Creates Nango connect sessions for initiating OAuth
+- Receives OAuth callback from provider
+- Validates state to prevent CSRF attacks
+- Exchanges auth code for tokens
+- Stores encrypted tokens and fetches account info
 - Generic implementation works for all OAuth services
-- Maps service names to Nango integration keys
 
-**Webhook Handler** (`app/api/webhooks/nango/route.ts`):
+**Connection Page** (`app/connect/[service]/page.tsx`):
 
-- Receives auth events (creation, deletion, refresh)
-- HMAC signature verification for security
-- Fetches account info using adapter's `fetchAccountInfo()` method
-- Generic implementation works for all OAuth services
+- Initiates OAuth flow for any service
+- Generates authorization URL with proper scopes
+- Handles CSRF protection with state tokens
+- Works automatically for any service with `authMethod: "oauth"`
 
 **Frontend Integration** (`app/integrations/page.tsx`):
 
-- OAuth flow already wired up
+- OAuth connection flow already wired up
 - Works automatically for any service with `authMethod: "oauth"`
 
-To add a new OAuth service: create the adapter with `fetchAccountInfo()` method,
-configure Nango, and the rest works automatically. </oauth-infrastructure>
+To add a new OAuth service: create the OAuth provider config in
+`lib/integrations/oauth/providers.ts`, create the adapter with `fetchAccountInfo()`
+method, and the rest works automatically. </oauth-infrastructure>
 
 <reference-files>
 Study these files to understand patterns:
@@ -497,17 +502,16 @@ For OAuth services:
 1. **OAuth Provider Setup:**
    - Where to create OAuth app (e.g., ClickUp App Directory, Notion Integrations)
    - OAuth settings to configure
-   - Redirect URI: `https://yourdomain.com/oauth/callback` (your custom callback)
+   - Redirect URI: `https://yourdomain.com/connect/[service]/callback`
    - Scopes required for adapter operations
 
-2. **Nango Configuration:**
-   - Add integration in Nango dashboard
-   - Configure provider settings (client ID, client secret, scopes)
-   - Set webhook URL: `https://yourdomain.com/api/webhooks/nango`
-   - Test OAuth flow with Nango's test feature
+2. **OAuth Provider Configuration:**
+   - Add provider config to `lib/integrations/oauth/providers.ts`
+   - Configure authorization URL, token URL, and scopes
+   - Include required OAuth parameters (e.g., response_type, grant_type)
 
 3. **Environment Variables:**
-   - Add to `.env.local`: `NANGO_SECRET_KEY`, `NANGO_WEBHOOK_SECRET`
+   - Add to `.env.local`: `[SERVICE]_CLIENT_ID`, `[SERVICE]_CLIENT_SECRET`
    - Add to `.env.example` with documentation
 
 For API key services:

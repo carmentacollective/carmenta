@@ -54,7 +54,7 @@ When bugs are found, document:
 </bug-documentation>
 
 <common-issues>
-**Wrong Nango proxy URLs:** Returns HTML instead of JSON. Verify URL path matches real API.
+**Wrong API URLs:** Returns HTML instead of JSON. Verify URL path matches real API documentation.
 
 **Array parameters not encoded:** Causes 400 errors. Check parameter handling.
 

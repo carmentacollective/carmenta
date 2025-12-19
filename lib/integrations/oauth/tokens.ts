@@ -6,8 +6,6 @@
  * 2. Encrypt and store tokens in database
  * 3. Retrieve and decrypt tokens for API calls
  * 4. Refresh tokens before expiry (for providers that support it)
- *
- * This module replaces Nango's token management with in-house control.
  */
 
 import ky, { HTTPError } from "ky";
@@ -617,7 +615,7 @@ async function refreshAccessToken(
         userEmail,
         service: providerId,
         accountId,
-        eventType: "nango_token_refresh", // Keeping event type for compatibility
+        eventType: "reconnected",
         eventSource: "system",
     });
 

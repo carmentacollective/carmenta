@@ -27,8 +27,8 @@ export interface Integration {
     id: number;
     userId: string;
     service: string;
-    connectionId: string | null; // Nango connection ID for OAuth
-    encryptedCredentials: string | null; // Encrypted API key
+    connectionId: string | null; // OAuth connection ID
+    encryptedCredentials: string | null; // Encrypted API key or OAuth tokens
     credentialType: CredentialType;
     accountId: string;
     accountDisplayName: string | null;
@@ -56,7 +56,7 @@ export interface ConnectionCredentials {
         token?: string;
         refreshToken?: string;
     } | null;
-    connectionId?: string; // For Nango proxy calls
+    connectionId?: string; // OAuth connection ID
 }
 
 /**
