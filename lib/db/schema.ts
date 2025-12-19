@@ -26,8 +26,22 @@ import {
     boolean,
     real,
     numeric,
+    customType,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
+
+// ============================================================================
+// CUSTOM TYPES
+// ============================================================================
+
+/**
+ * PostgreSQL tsvector type for full-text search
+ */
+const tsvector = customType<{ data: string }>({
+    dataType() {
+        return "tsvector";
+    },
+});
 
 // ============================================================================
 // ENUMS
@@ -776,6 +790,14 @@ export const documents = pgTable(
         /** Plain text content - LLM-readable */
         content: text("content").notNull(),
 
+        /**
+         * Full-text search vector - generated from content
+         * Generated column: to_tsvector('english', content)
+         */
+        searchVector: tsvector("search_vector")
+            .generatedAlwaysAs(sql`to_tsvector('english', content)`)
+            .notNull(),
+
         /** Help text for editors explaining this document's purpose */
         description: text("description"),
 
@@ -829,6 +851,8 @@ export const documents = pgTable(
         index("documents_tags_idx").on(table.tags),
         /** Find always-included documents for a user */
         index("documents_always_include_idx").on(table.userId, table.alwaysInclude),
+        /** Full-text search index */
+        index("documents_search_vector_idx").using("gin", table.searchVector as never),
     ]
 );
 

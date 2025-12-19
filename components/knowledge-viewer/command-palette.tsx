@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, User, Settings, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBDocument, KBFolder } from "@/lib/kb/actions";
+import { searchKB } from "@/lib/kb/actions";
+import { logger } from "@/lib/client-logger";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
@@ -43,19 +45,50 @@ export function CommandPalette({
 }: CommandPaletteProps) {
     const [query, setQuery] = useState("");
     const [focusedIndex, setFocusedIndex] = useState(0);
+    const [searchResults, setSearchResults] = useState<KBDocument[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Filter documents based on query
-    const filtered = useMemo(() => {
-        if (!query.trim()) return documents;
+    // Perform full-text search when query changes
+    useEffect(() => {
+        const abortController = new AbortController();
 
-        const lowerQuery = query.toLowerCase();
-        return documents.filter(
-            (doc) =>
-                doc.name.toLowerCase().includes(lowerQuery) ||
-                doc.content.toLowerCase().includes(lowerQuery)
-        );
-    }, [documents, query]);
+        const performSearch = async () => {
+            if (!query.trim()) {
+                setSearchResults([]);
+                setIsSearching(false); // Bug fix: Reset loading state when clearing search
+                return;
+            }
+
+            setIsSearching(true);
+            try {
+                const results = await searchKB(query, abortController.signal);
+                if (!abortController.signal.aborted) {
+                    setSearchResults(results);
+                }
+            } catch (error) {
+                if (!abortController.signal.aborted) {
+                    logger.error({ error, query }, "Search failed");
+                    setSearchResults([]);
+                }
+            } finally {
+                if (!abortController.signal.aborted) {
+                    setIsSearching(false);
+                }
+            }
+        };
+
+        const debounceTimer = setTimeout(performSearch, 300);
+        return () => {
+            clearTimeout(debounceTimer);
+            abortController.abort();
+        };
+    }, [query]);
+
+    // Use search results if query exists, otherwise show all documents
+    const filtered = useMemo(() => {
+        return query.trim() ? searchResults : documents;
+    }, [query, searchResults, documents]);
 
     // Group filtered results by folder
     const grouped = useMemo(() => {
@@ -168,7 +201,12 @@ export function CommandPalette({
                     >
                         {/* Search input */}
                         <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
-                            <Search className="h-5 w-5 text-foreground/40" />
+                            <Search
+                                className={cn(
+                                    "h-5 w-5 text-foreground/40",
+                                    isSearching && "animate-pulse"
+                                )}
+                            />
                             <input
                                 ref={inputRef}
                                 type="text"
@@ -177,9 +215,15 @@ export function CommandPalette({
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-foreground/40"
                             />
-                            <kbd className="rounded bg-foreground/5 px-2 py-0.5 text-xs text-foreground/50">
-                                esc
-                            </kbd>
+                            {isSearching ? (
+                                <span className="text-xs text-foreground/40">
+                                    searching...
+                                </span>
+                            ) : (
+                                <kbd className="rounded bg-foreground/5 px-2 py-0.5 text-xs text-foreground/50">
+                                    esc
+                                </kbd>
+                            )}
                         </div>
 
                         {/* Results */}

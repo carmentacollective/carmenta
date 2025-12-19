@@ -57,8 +57,24 @@ import type { Document, NewDocument } from "@/lib/db/schema";
 // ============================================================================
 
 /**
+ * Columns to select in raw SQL queries.
+ * Excludes search_vector (tsvector) since it's only used for FTS matching,
+ * never needed in application code.
+ */
+const DOCUMENT_COLUMNS = sql`
+    id, user_id, path, name, content, description,
+    prompt_label, prompt_hint, prompt_order,
+    always_include, searchable, editable,
+    source_type, source_id, tags,
+    created_at, updated_at
+`;
+
+/**
  * Map raw database row to Document type
  * Centralized mapping to avoid duplication and ensure consistency
+ *
+ * Note: searchVector is set to empty string since we don't select it
+ * (it's only used internally by PostgreSQL for FTS queries)
  */
 function mapRowToDocument(row: Record<string, unknown>): Document {
     return {
@@ -67,6 +83,7 @@ function mapRowToDocument(row: Record<string, unknown>): Document {
         path: row.path as string,
         name: row.name as string,
         content: row.content as string,
+        searchVector: "", // Not selected - only used for FTS queries
         description: row.description as string | null,
         promptLabel: row.prompt_label as string | null,
         promptHint: row.prompt_hint as string | null,
@@ -292,7 +309,7 @@ export async function readFolder(
 
     // No LIKE escaping needed - path validation disallows % and _ characters
     const result = await db.execute(sql`
-        SELECT * FROM documents
+        SELECT ${DOCUMENT_COLUMNS} FROM documents
         WHERE user_id = ${userId}
         AND (path = ${normalizedPath} OR path LIKE ${normalizedPath + ".%"})
         ORDER BY path
@@ -439,35 +456,74 @@ export async function exists(userId: string, path: string): Promise<boolean> {
 }
 
 // ============================================================================
-// Search Operations (V1 - Basic)
+// Search Operations
 // ============================================================================
 
+export interface SearchResult extends Document {
+    /** Relevance rank (0-1, higher = more relevant) */
+    rank: number;
+    /** Snippet of matching content with context */
+    snippet: string;
+}
+
 /**
- * Simple keyword search across all user documents
- * V1: Uses ILIKE for case-insensitive pattern matching
- * V2: Upgrade to PostgreSQL FTS with websearch_to_tsquery for production
+ * Full-text search across user's documents using PostgreSQL FTS
+ *
+ * Uses websearch_to_tsquery for natural query syntax:
+ * - "exact phrase"
+ * - word1 OR word2
+ * - word1 -excluded
+ *
+ * Returns results ranked by relevance with text snippets showing context.
+ *
+ * @param userId - User ID to search within
+ * @param query - Search query (natural language, supports operators)
+ * @param limit - Max results to return (default 20)
  */
 export async function search(
     userId: string,
     query: string,
-    limit: number = 10
-): Promise<Document[]> {
-    // Simple ILIKE search - works with pglite for testing
-    // V2: Upgrade to PostgreSQL FTS with websearch_to_tsquery for better relevance
+    limit: number = 20
+): Promise<SearchResult[]> {
+    if (!query.trim()) {
+        return [];
+    }
 
-    // Escape LIKE wildcards so user input is treated literally
-    const searchPattern = `%${escapeLikePattern(query)}%`;
-
+    // PostgreSQL full-text search with ranking and snippets
+    // Searches both content (via search_vector) and name (direct match)
+    // Note: search_vector is used for matching but not returned to application
     const result = await db.execute(sql`
-        SELECT *
-        FROM documents
-        WHERE user_id = ${userId}
-        AND (content ILIKE ${searchPattern} OR name ILIKE ${searchPattern})
-        ORDER BY updated_at DESC
+        SELECT
+            d.id, d.user_id, d.path, d.name, d.content, d.description,
+            d.prompt_label, d.prompt_hint, d.prompt_order,
+            d.always_include, d.searchable, d.editable,
+            d.source_type, d.source_id, d.tags,
+            d.created_at, d.updated_at,
+            ts_rank(d.search_vector, query) as rank,
+            ts_headline(
+                'english',
+                d.content,
+                query,
+                'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=25'
+            ) as snippet
+        FROM documents d,
+             websearch_to_tsquery('english', ${query}) query
+        WHERE d.user_id = ${userId}
+          AND (
+            d.search_vector @@ query
+            OR d.name ILIKE ${`%${escapeLikePattern(query)}%`}
+          )
+        ORDER BY rank DESC, d.updated_at DESC
         LIMIT ${limit}
     `);
 
-    return normalizeExecuteResult(result).map(mapRowToDocument);
+    const rows = normalizeExecuteResult(result);
+
+    return rows.map((row) => ({
+        ...mapRowToDocument(row),
+        rank: (row.rank as number) ?? 0,
+        snippet: (row.snippet as string) ?? "",
+    }));
 }
 
 // ============================================================================
