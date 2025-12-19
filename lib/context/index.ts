@@ -20,8 +20,8 @@ export {
 export {
     applyRoutingRules,
     selectLargerContextModel,
-    AUDIO_CAPABLE_MODELS,
-    VIDEO_CAPABLE_MODELS,
     type RoutingRulesResult,
     type RoutingRulesInput,
 } from "./routing-rules";
+
+export { AUDIO_CAPABLE_MODEL, VIDEO_CAPABLE_MODEL } from "@/lib/model-config";
