@@ -1,123 +1,95 @@
 # Knowledge Base
 
-The knowledge base is your personal repository of context that Carmenta uses to
-understand you and your work. It's the foundation of the 1x experience: removing
-cognitive load by ensuring Carmenta always has the context it needs.
+This page you're reading now? It's part of your knowledge base—the repository of context
+that makes Carmenta useful to you.
 
 ## How It Works
 
-<architecture>
-Documents are organized in a hierarchical structure using dot-notation paths:
+Your knowledge base is organized by namespaces:
 
-profile._ — Core information about you. Always available in conversations. knowledge._ —
-Your accumulated knowledge. Searchable when relevant. docs.\* — System documentation.
-Read-only, searchable.
+**profile.\*** — Core information about you. Always present in every conversation. Who
+you are, how you work, what you're focused on.
 
-Each namespace has different behavior:
+**knowledge.\*** — Your accumulated context. Searched and retrieved when relevant.
+Projects, decisions, insights, research.
 
-- Profile documents are always injected into conversation context
-- Knowledge documents are searched and retrieved when relevant
-- Docs are system documentation (like this page) that help Carmenta answer questions
-  </architecture>
+**docs.\*** — System documentation like this page. Read-only, searchable. Helps Carmenta
+answer questions about itself.
+
+Each namespace behaves differently. Profile is always there. Knowledge is pulled in when
+it matters. Docs are reference material.
 
 ## Profile Documents
 
-<profile-namespace>
 Your profile tells Carmenta who you are and how to work with you:
 
-Identity: Your name, role, background, and what makes you tick.
+**Identity** — Your name, role, background. What makes you tick.
 
-Preferences: Communication style, work patterns, what you like and dislike.
+**Preferences** — Communication style, work patterns. What you like and don't.
 
-Goals: What you're working toward. Current priorities and long-term vision.
+**Goals** — Current priorities and longer-term vision. What you're working toward.
 
-People: Key people in your life and work. Relationships, context, what matters about
-each person.
+**People** — Key relationships. Who matters to your work and why.
 
-Character: How Carmenta should interact with you. Voice, personality, boundaries.
-</profile-namespace>
+**Character** — How Carmenta should interact with you. Voice, personality, boundaries.
 
-<how-profile-works>
-When you start a conversation, Carmenta reads your entire profile and includes it in the system prompt. This means Carmenta always knows:
-- How to address you
-- What you care about
-- Who matters to you
-- Your communication preferences
-- Your current priorities
+When you start a conversation, Carmenta reads your entire profile. This means we always
+know how to address you, what you care about, who matters to you, and what you're
+focused on.
 
-No more explaining who you are or what you're working on. The context is always there.
-</how-profile-works>
+No more explaining who you are.
 
 ## Knowledge Documents
 
-<knowledge-namespace>
 The knowledge namespace stores context that should be searchable but not always present:
 
-Projects: Active initiatives with purpose, status, key decisions. Research: Findings,
-analysis, synthesized learnings. Decisions: Choices you've made and why. Reference when
-similar decisions arise. Insights: Patterns, realizations, things worth remembering.
+**Projects** — What you're working on. Purpose, status, key decisions.
 
-When you ask a question, Carmenta searches knowledge documents for relevant context and
-includes matching documents in the conversation. </knowledge-namespace>
+**Research** — Findings, analysis, synthesized learnings.
 
-## Context Compilation
+**Decisions** — Choices you've made and why. Referenced when similar questions arise.
 
-<context-compilation>
-Before each conversation, Carmenta compiles your profile into a structured context block:
+**Insights** — Patterns, realizations, things worth remembering.
 
-<about purpose="who you are">
-Content from profile.identity
-</about>
+When you ask a question, Carmenta searches knowledge documents for relevant context.
+Matching documents join the conversation.
 
-<how-we-work purpose="preferences and style">
-Content from profile.preferences
-</how-we-work>
+## Building Your Knowledge Base
 
-<working-toward purpose="goals and priorities">
-Content from profile.goals
-</working-toward>
+Your knowledge base grows over time through:
 
-<people purpose="key relationships">
-Content from profile.people.*
-</people>
+**Direct input** — You create documents, update your profile, add what matters.
 
-This compiled context appears at the start of every system prompt, ensuring Carmenta
-always has your essential context. </context-compilation>
+**Conversation extraction** — We notice commitments, decisions, and insights worth
+saving. We'll offer to capture them.
 
-## Source Tracking
+**Integration sync** — Connected services contribute context. Meeting transcripts,
+project updates, documents—all become searchable.
 
-<source-types>
-Every document tracks where it came from:
+The knowledge base starts sparse. That's fine. Fill it as things come up. Over time,
+Carmenta knows you better and conversations flow more naturally.
 
-manual: You or Carmenta created it directly. seed: Initial profile template when you
-first signed up. conversation*extraction: Carmenta extracted this from a conversation.
-uploaded*\_: Content from uploaded files (PDF, image, audio, document). integration\_\_:
-Synced from connected services (Limitless, Fireflies, Notion). system_docs: System
-documentation synced from the docs folder.
+## Editing and Control
 
-Source tracking enables:
+Profile and knowledge documents are yours to edit. Click to view, modify what needs
+changing, save when done.
 
-- Deduplication when re-syncing
-- Understanding how knowledge was acquired
-- Filtering by source when needed </source-types>
+System docs (like this one) are read-only—maintained by us and updated with each
+deployment.
 
-## Editing
+Everything Carmenta knows about you is visible here. No hidden profiles. No secret
+inferences. What you see is what we know.
 
-Profile and knowledge documents are editable. Click to view, edit to modify, save when
-done.
+## Why This Matters
 
-System docs (like this one) are read-only. They're maintained by the Carmenta team and
-updated with each deployment.
-
-## The Promise
-
-The knowledge base is the foundation of relationship with Carmenta. What makes this
-different from other AI tools:
+The knowledge base is the foundation of everything else.
 
 Other tools: Every conversation starts fresh. You explain who you are, what you're
 working on, what you need.
 
-Carmenta: Context persists. Carmenta knows you. The relationship compounds over time.
+Carmenta: Context persists. We know you. The relationship compounds over time.
 
-This is what enables the 100x framework. You can't have a 10x AI team without memory.
-You can't have a 100x vision execution partner without context.
+This is what enables the 100x framework. You can't have a 10x AI team without shared
+memory. You can't have a 100x vision execution partner without accumulated context.
+
+The knowledge base is where partnership begins.
