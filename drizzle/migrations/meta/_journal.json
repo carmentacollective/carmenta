@@ -64,6 +64,13 @@
       "when": 1766102314125,
       "tag": "0008_kb-user-context-schema",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766104922690,
+      "tag": "0009_add-system-docs-source-type",
+      "breakpoints": true
     }
   ]
 }
