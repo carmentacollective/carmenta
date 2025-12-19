@@ -56,6 +56,7 @@ export function CommandPalette({
         const performSearch = async () => {
             if (!query.trim()) {
                 setSearchResults([]);
+                setIsSearching(false); // Bug fix: Reset loading state when clearing search
                 return;
             }
 
