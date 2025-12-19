@@ -1,5 +1,5 @@
 {
-  "id": "8f4d5ab3-e670-420d-896f-3f19e177ea9e",
+  "id": "fe7a64b1-96e2-46fa-9e81-79f7c2f68e84",
   "prevId": "b28247bf-4bfe-4349-8a7b-483052ae48a6",
   "version": "7",
   "dialect": "postgresql",
@@ -266,16 +266,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "search_vector": {
-          "name": "search_vector",
-          "type": "tsvector",
-          "primaryKey": false,
-          "notNull": true,
-          "generated": {
-            "as": "to_tsvector('english', content)",
-            "type": "stored"
-          }
-        },
         "description": {
           "name": "description",
           "type": "text",
@@ -429,21 +419,6 @@
           "isUnique": false,
           "concurrently": false,
           "method": "btree",
-          "with": {}
-        },
-        "documents_search_vector_idx": {
-          "name": "documents_search_vector_idx",
-          "columns": [
-            {
-              "expression": "search_vector",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
           "with": {}
         }
       },
@@ -1308,6 +1283,7 @@
       "values": [
         "manual",
         "seed",
+        "system_docs",
         "conversation_extraction",
         "conversation_decision",
         "conversation_commitment",
