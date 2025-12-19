@@ -168,7 +168,6 @@ export async function getCredentials(
             return {
                 type: "oauth",
                 accessToken,
-                connectionId: integration.accountId, // Legacy field for non-migrated adapters
                 accountId: integration.accountId,
                 accountDisplayName: integration.accountDisplayName || undefined,
                 isDefault: integration.isDefault,

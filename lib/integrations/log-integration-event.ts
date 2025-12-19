@@ -27,7 +27,6 @@ export interface LogIntegrationEventOptions {
     accountDisplayName?: string;
     eventType: IntegrationEventType;
     eventSource: IntegrationEventSource;
-    connectionId?: string;
     errorMessage?: string;
     errorCode?: string;
     metadata?: Record<string, unknown>;
@@ -50,7 +49,6 @@ export async function logIntegrationEvent(
             eventType: options.eventType,
             eventSource: options.eventSource,
             occurredAt: new Date(),
-            connectionId: options.connectionId ?? null,
             errorMessage: options.errorMessage ?? null,
             errorCode: options.errorCode ?? null,
             metadata: options.metadata ?? null,

@@ -114,9 +114,9 @@ For OAuth services, the in-house OAuth infrastructure is already built:
 - Automatic token refresh before expiry
 - Provider configs for each OAuth service
 
-**OAuth Callback** (`app/connect/[service]/callback/route.ts`):
+**OAuth Callback** (`app/integrations/oauth/callback/route.ts`):
 
-- Receives OAuth callback from provider
+- Receives OAuth callback from provider at `/integrations/oauth/callback`
 - Validates state to prevent CSRF attacks
 - Exchanges auth code for tokens
 - Stores encrypted tokens and fetches account info
@@ -124,7 +124,7 @@ For OAuth services, the in-house OAuth infrastructure is already built:
 
 **Connection Page** (`app/connect/[service]/page.tsx`):
 
-- Initiates OAuth flow for any service
+- Initiates OAuth flow when user clicks "Connect" for a service
 - Generates authorization URL with proper scopes
 - Handles CSRF protection with state tokens
 - Works automatically for any service with `authMethod: "oauth"`
@@ -502,7 +502,7 @@ For OAuth services:
 1. **OAuth Provider Setup:**
    - Where to create OAuth app (e.g., ClickUp App Directory, Notion Integrations)
    - OAuth settings to configure
-   - Redirect URI: `https://yourdomain.com/connect/[service]/callback`
+   - Redirect URI: `https://yourdomain.com/integrations/oauth/callback`
    - Scopes required for adapter operations
 
 2. **OAuth Provider Configuration:**

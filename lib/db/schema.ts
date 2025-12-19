@@ -462,13 +462,6 @@ export const integrationEventTypeEnum = pgEnum("integration_event_type", [
     "connected",
     "disconnected",
     "reconnected",
-    // Nango webhook events
-    "nango_sync_success",
-    "nango_sync_error",
-    "nango_auth_error",
-    "nango_token_refresh",
-    "nango_connection_created",
-    "nango_connection_deleted",
     // System events
     "token_expired",
     "connection_error",
@@ -480,7 +473,6 @@ export const integrationEventTypeEnum = pgEnum("integration_event_type", [
  */
 export const integrationEventSourceEnum = pgEnum("integration_event_source", [
     "user",
-    "nango_webhook",
     "system",
 ]);
 
@@ -488,8 +480,7 @@ export const integrationEventSourceEnum = pgEnum("integration_event_source", [
  * External service integrations
  *
  * Stores user connections to external services like Notion, Giphy, etc.
- * OAuth credentials are managed by Nango (we store connectionId).
- * API key credentials are encrypted and stored directly.
+ * OAuth tokens and API keys are encrypted and stored in encryptedCredentials.
  *
  * Key change from v1: Uses userEmail as FK instead of userId (UUID).
  * This simplifies lookups and matches mcp-hubby's proven pattern.
@@ -510,10 +501,7 @@ export const integrations = pgTable(
         /** Service identifier (e.g., "notion", "giphy") */
         service: varchar("service", { length: 100 }).notNull(),
 
-        /** Nango connection ID for OAuth services */
-        connectionId: varchar("connection_id", { length: 255 }),
-
-        /** Encrypted credentials for API key services */
+        /** Encrypted credentials (OAuth tokens or API keys) */
         encryptedCredentials: text("encrypted_credentials"),
 
         /** Credential type discriminator */
@@ -600,12 +588,6 @@ export const integrationHistory = pgTable(
         occurredAt: timestamp("occurred_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
-
-        /** Nango connection ID (if applicable) */
-        connectionId: varchar("connection_id", { length: 255 }),
-
-        /** Nango provider config key (if applicable) */
-        nangoProviderConfigKey: varchar("nango_provider_config_key", { length: 255 }),
 
         /** Error message (if applicable) */
         errorMessage: text("error_message"),

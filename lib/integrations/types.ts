@@ -27,7 +27,6 @@ export interface Integration {
     id: number;
     userId: string;
     service: string;
-    connectionId: string | null; // OAuth connection ID
     encryptedCredentials: string | null; // Encrypted API key or OAuth tokens
     credentialType: CredentialType;
     accountId: string;
@@ -56,7 +55,6 @@ export interface ConnectionCredentials {
         token?: string;
         refreshToken?: string;
     } | null;
-    connectionId?: string; // OAuth connection ID
 }
 
 /**
