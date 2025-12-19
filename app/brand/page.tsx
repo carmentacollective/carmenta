@@ -1,6 +1,14 @@
 import { Metadata } from "next";
 import Image from "next/image";
-import { Sparkles, Check, AlertCircle } from "lucide-react";
+import {
+    Sparkles,
+    Check,
+    AlertCircle,
+    Copy,
+    ExternalLink,
+    Settings,
+    Trash2,
+} from "lucide-react";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
 import { SiteHeader } from "@/components/site-header";
@@ -695,6 +703,118 @@ export default function BrandPage() {
                                             Use for branded interactions like sign-in,
                                             connection actions, and secondary CTAs.
                                         </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Tooltips */}
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-foreground/90">
+                                Tooltips
+                            </h2>
+                            <p className="text-foreground/70">
+                                CSS-only tooltips with glass effect and slide animation.
+                                Zero JS, zero dependencies—just add{" "}
+                                <code className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm">
+                                    data-tooltip
+                                </code>{" "}
+                                and{" "}
+                                <code className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm">
+                                    tooltip
+                                </code>{" "}
+                                class.
+                            </p>
+
+                            <div className="glass-card">
+                                <div className="space-y-8">
+                                    {/* Live Demo */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-medium text-foreground/90">
+                                            Live Demo
+                                        </h3>
+                                        <p className="text-sm text-foreground/60">
+                                            Hover over the buttons to see the tooltip
+                                        </p>
+                                        <div className="flex min-h-[100px] items-center justify-center gap-4 rounded-lg bg-foreground/5 p-6">
+                                            <button
+                                                data-tooltip="Copy to clipboard"
+                                                className="tooltip btn-icon-glass"
+                                            >
+                                                <Copy className="h-5 w-5 text-foreground/60" />
+                                            </button>
+                                            <button
+                                                data-tooltip="Open link"
+                                                className="tooltip btn-icon-glass"
+                                            >
+                                                <ExternalLink className="h-5 w-5 text-foreground/60" />
+                                            </button>
+                                            <button
+                                                data-tooltip="Settings"
+                                                className="tooltip btn-icon-glass"
+                                            >
+                                                <Settings className="h-5 w-5 text-foreground/60" />
+                                            </button>
+                                            <button
+                                                data-tooltip="Delete"
+                                                className="tooltip btn-icon-glass"
+                                            >
+                                                <Trash2 className="h-5 w-5 text-foreground/60" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Code */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-medium text-foreground/90">
+                                            Usage
+                                        </h3>
+                                        <div className="rounded-lg bg-foreground/5 p-4">
+                                            <code className="block whitespace-pre text-xs text-foreground/70">
+                                                {`<button
+  data-tooltip="Copy to clipboard"
+  className="tooltip"
+>
+  <CopyIcon />
+</button>`}
+                                            </code>
+                                        </div>
+                                    </div>
+
+                                    {/* Characteristics */}
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                                                Animation
+                                            </p>
+                                            <p className="font-mono text-sm text-foreground/80">
+                                                200ms ease-out
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                                                Corner Radius
+                                            </p>
+                                            <p className="font-mono text-sm text-foreground/80">
+                                                8px (rounded-lg)
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                                                Effect
+                                            </p>
+                                            <p className="font-mono text-sm text-foreground/80">
+                                                Glass + slide
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                                                Bundle Impact
+                                            </p>
+                                            <p className="font-mono text-sm text-foreground/80">
+                                                0 KB JS
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
