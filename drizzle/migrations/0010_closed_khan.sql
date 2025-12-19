@@ -15,6 +15,8 @@ DROP TYPE IF EXISTS "public"."integration_event_type" CASCADE;--> statement-brea
 CREATE TYPE "public"."integration_event_type" AS ENUM('connected', 'disconnected', 'reconnected', 'token_expired', 'connection_error', 'rate_limited');--> statement-breakpoint
 -- Recreate event_type column (CASCADE dropped it)
 ALTER TABLE "integration_history" ADD COLUMN "event_type" "integration_event_type" NOT NULL;--> statement-breakpoint
+-- Recreate index (CASCADE dropped it when it dropped event_type column)
+CREATE INDEX IF NOT EXISTS "integration_history_event_type_occurred_at_idx" ON "integration_history" USING btree ("event_type", "occurred_at");--> statement-breakpoint
 
 -- Drop Nango columns if they exist
 DO $$ BEGIN
