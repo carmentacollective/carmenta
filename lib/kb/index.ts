@@ -57,8 +57,24 @@ import type { Document, NewDocument } from "@/lib/db/schema";
 // ============================================================================
 
 /**
+ * Columns to select in raw SQL queries.
+ * Excludes search_vector (tsvector) since it's only used for FTS matching,
+ * never needed in application code.
+ */
+const DOCUMENT_COLUMNS = sql`
+    id, user_id, path, name, content, description,
+    prompt_label, prompt_hint, prompt_order,
+    always_include, searchable, editable,
+    source_type, source_id, tags,
+    created_at, updated_at
+`;
+
+/**
  * Map raw database row to Document type
  * Centralized mapping to avoid duplication and ensure consistency
+ *
+ * Note: searchVector is set to empty string since we don't select it
+ * (it's only used internally by PostgreSQL for FTS queries)
  */
 function mapRowToDocument(row: Record<string, unknown>): Document {
     return {
@@ -67,7 +83,7 @@ function mapRowToDocument(row: Record<string, unknown>): Document {
         path: row.path as string,
         name: row.name as string,
         content: row.content as string,
-        searchVector: row.search_vector as string,
+        searchVector: "", // Not selected - only used for FTS queries
         description: row.description as string | null,
         promptLabel: row.prompt_label as string | null,
         promptHint: row.prompt_hint as string | null,
@@ -293,7 +309,7 @@ export async function readFolder(
 
     // No LIKE escaping needed - path validation disallows % and _ characters
     const result = await db.execute(sql`
-        SELECT * FROM documents
+        SELECT ${DOCUMENT_COLUMNS} FROM documents
         WHERE user_id = ${userId}
         AND (path = ${normalizedPath} OR path LIKE ${normalizedPath + ".%"})
         ORDER BY path
@@ -475,9 +491,14 @@ export async function search(
 
     // PostgreSQL full-text search with ranking and snippets
     // Searches both content (via search_vector) and name (direct match)
+    // Note: search_vector is used for matching but not returned to application
     const result = await db.execute(sql`
         SELECT
-            d.*,
+            d.id, d.user_id, d.path, d.name, d.content, d.description,
+            d.prompt_label, d.prompt_hint, d.prompt_order,
+            d.always_include, d.searchable, d.editable,
+            d.source_type, d.source_id, d.tags,
+            d.created_at, d.updated_at,
             ts_rank(d.search_vector, query) as rank,
             ts_headline(
                 'english',

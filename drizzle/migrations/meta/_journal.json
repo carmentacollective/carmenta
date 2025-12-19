@@ -75,8 +75,15 @@
     {
       "idx": 10,
       "version": "7",
-      "when": 1766144366721,
-      "tag": "0010_light_changeling",
+      "when": 1766147314024,
+      "tag": "0010_closed_khan",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1766159901837,
+      "tag": "0011_kb-full-text-search",
       "breakpoints": true
     }
   ]

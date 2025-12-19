@@ -59,7 +59,6 @@ describe("Schema Drift Detection", () => {
             "id",
             "user_email", // Not user_id!
             "service",
-            "connection_id",
             "encrypted_credentials",
             "credential_type",
             "account_id",
