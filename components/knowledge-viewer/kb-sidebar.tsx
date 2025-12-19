@@ -9,17 +9,30 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, FileText, User, Sparkles, MessageSquare } from "lucide-react";
+import {
+    ChevronRight,
+    FileText,
+    User,
+    Sparkles,
+    MessageSquare,
+    Heart,
+    BookOpen,
+    Brain,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 
-// Map folder paths to icons
+// Map folder paths to icons (order: values, profile, knowledge, docs)
 const FOLDER_ICONS: Record<string, typeof User> = {
+    values: Heart,
     profile: User,
+    knowledge: Brain,
+    docs: BookOpen,
 };
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
+    "values.heart-centered": Heart,
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,
@@ -60,7 +73,7 @@ export function KBSidebar({
     return (
         <nav
             className={cn(
-                "glass-card flex w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
+                "glass-card flex min-h-[400px] w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
                 dimmed && "opacity-30",
                 className
             )}

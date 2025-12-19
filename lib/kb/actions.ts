@@ -10,10 +10,14 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { and, eq, isNull } from "drizzle-orm";
 import { kb, PROFILE_PATHS } from "./index";
 import { initializeProfile } from "./profile";
 import { logger } from "@/lib/logger";
 import { findUserByClerkId } from "@/lib/db/users";
+import { db } from "@/lib/db";
+import { documents } from "@/lib/db/schema";
+import { VALUES_CONTENT } from "@/lib/prompts/system";
 
 // ============================================================================
 // Helper
@@ -301,4 +305,58 @@ export async function searchKB(
         });
         throw error;
     }
+}
+
+// ============================================================================
+// Global Documents (Docs namespace)
+// ============================================================================
+
+/**
+ * Get global system documentation (docs namespace)
+ *
+ * These are read-only documents synced from the /docs folder via pnpm docs:sync.
+ * They have userId: null and sourceType: 'system_docs'.
+ */
+export async function getGlobalDocs(): Promise<KBDocument[]> {
+    const docs = await db.query.documents.findMany({
+        where: and(isNull(documents.userId), eq(documents.sourceType, "system_docs")),
+        orderBy: [documents.path],
+    });
+
+    return docs.map((doc) => ({
+        id: doc.id,
+        path: doc.path,
+        name: doc.name,
+        content: doc.content,
+        description: doc.description,
+        promptLabel: doc.promptLabel,
+        editable: false, // Always read-only
+        updatedAt: doc.updatedAt,
+    }));
+}
+
+// ============================================================================
+// Values Document (Heart-Centered Philosophy)
+// ============================================================================
+
+/**
+ * Get the values pseudo-document
+ *
+ * This is not stored in the database - it's the heart-centered philosophy
+ * baked into the code from the heart-centered-prompts package.
+ * Displayed in the UI for transparency but not user-editable.
+ *
+ * Note: This is async because "use server" files require all exports to be async.
+ */
+export async function getValuesDocument(): Promise<KBDocument> {
+    return {
+        id: "values-heart-centered",
+        path: "values.heart-centered",
+        name: "Heart-Centered Philosophy",
+        content: VALUES_CONTENT,
+        description: "The foundational values that guide how we work together",
+        promptLabel: null,
+        editable: false,
+        updatedAt: new Date(),
+    };
 }
