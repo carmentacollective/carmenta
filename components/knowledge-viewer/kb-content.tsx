@@ -26,6 +26,7 @@ import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
 import { logger } from "@/lib/client-logger";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
@@ -310,8 +311,8 @@ export function KBContent({
                 )}
             </AnimatePresence>
 
-            {/* Content Area */}
-            <div className="relative flex-1 overflow-hidden">
+            {/* Content Area - uses absolute positioning to fill flex space */}
+            <div className="relative min-h-0 flex-1">
                 {isEditable ? (
                     <textarea
                         ref={textareaRef}
@@ -323,7 +324,7 @@ export function KBContent({
                         aria-describedby="character-count error-message"
                         aria-invalid={isOverLimit}
                         className={cn(
-                            "h-full w-full resize-none bg-transparent px-6 py-5",
+                            "absolute inset-0 resize-none bg-transparent px-6 py-5",
                             "font-sans text-[15px] leading-[1.7] text-foreground/80",
                             "placeholder:italic placeholder:text-foreground/30",
                             "focus:outline-none",
@@ -337,9 +338,12 @@ export function KBContent({
                         }}
                     />
                 ) : (
-                    <pre className="h-full w-full overflow-y-auto whitespace-pre-wrap px-6 py-5 font-sans text-[15px] leading-[1.7] text-foreground/80">
-                        {kbDocument.content}
-                    </pre>
+                    <div className="absolute inset-0 overflow-y-auto px-6 py-5">
+                        <MarkdownRenderer
+                            content={kbDocument.content}
+                            className="text-[15px] leading-[1.7] text-foreground/80"
+                        />
+                    </div>
                 )}
             </div>
 

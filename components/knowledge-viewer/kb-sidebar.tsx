@@ -30,6 +30,11 @@ const FOLDER_ICONS: Record<string, typeof User> = {
     docs: BookOpen,
 };
 
+// Display names for folders (overrides capitalized path names)
+const FOLDER_DISPLAY_NAMES: Record<string, string> = {
+    docs: "Carmenta Documentation",
+};
+
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
     "values.heart-centered": Heart,
@@ -104,7 +109,8 @@ export function KBSidebar({
                                 >
                                     <FolderIcon className="h-4 w-4 text-foreground/50" />
                                     <span className="flex-1 text-left font-medium capitalize text-foreground/80">
-                                        {folder.name}
+                                        {FOLDER_DISPLAY_NAMES[folder.path] ??
+                                            folder.name}
                                     </span>
                                     {!isExpanded && (
                                         <span className="rounded-full bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground/50">

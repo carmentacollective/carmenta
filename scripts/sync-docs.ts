@@ -96,6 +96,9 @@ interface DocFile {
     content: string;
 }
 
+// Files to exclude from syncing (AI coding config files that shouldn't be in KB)
+const EXCLUDED_FILES = ["CLAUDE.md", "AGENTS.md", "CURSOR.md"];
+
 /**
  * Recursively find all markdown files in a directory
  */
@@ -114,7 +117,11 @@ function findMarkdownFiles(dir: string, baseDir: string = dir): DocFile[] {
 
         if (entry.isDirectory()) {
             files.push(...findMarkdownFiles(fullPath, baseDir));
-        } else if (entry.isFile() && entry.name.endsWith(".md")) {
+        } else if (
+            entry.isFile() &&
+            entry.name.endsWith(".md") &&
+            !EXCLUDED_FILES.includes(entry.name)
+        ) {
             const relativePath = path.relative(baseDir, fullPath);
             // Convert path/to/file.md → docs.path.to.file
             const kbPath =
