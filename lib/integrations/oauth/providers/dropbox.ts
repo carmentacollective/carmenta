@@ -59,6 +59,8 @@ export const dropboxProvider: OAuthProviderConfig = {
                         Authorization: `Bearer ${accessToken}`,
                         "Content-Type": "application/json",
                     },
+                    // Dropbox RPC endpoints with no parameters need literal string "null"
+                    body: "null",
                 })
                 .json<{
                     account_id: string;
