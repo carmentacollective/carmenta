@@ -1,121 +1,86 @@
 # Memory
 
-Memory is what makes Carmenta different from other AI tools. It's the foundation for
-relationship, context, and the entire 100x framework.
+We remember.
 
-## The Problem Memory Solves
+Your projects. Your patterns. What you said last month. What matters to you. Coming back
+isn't starting over—it's picking up where we left off.
 
-<without-memory>
-Traditional AI conversations start fresh every time:
+Traditional AI forgets. Every conversation, a restart. The same questions. Lost context.
+Re-explaining who you are, what you're building, what you've already decided.
 
-"Hi, I'm working on a project called X for client Y. The tech stack is Z. Last week we
-decided to use approach A because of reasons B and C. I need help with..."
+Memory is what transforms a tool into a partner.
 
-Every. Single. Time.
+## What We Remember
 
-This cognitive load prevents flow. You spend energy re-establishing context instead of
-making progress. </without-memory>
+**Your identity** — Preferences, work style, how you think. The way you like things
+done.
 
-<with-memory>
-Carmenta remembers:
+**Your world** — Projects, relationships, decisions made. The context of what you're
+building.
 
-"Let's continue where we left off with the authentication system. Last time you decided
-to use JWT over sessions because of the microservices architecture. Want to tackle the
-token refresh logic now?"
+**Your commitments** — Things you said you'd do, follow-ups, deadlines. Promises
+tracked.
 
-Context persists. The relationship compounds. </with-memory>
+**Your patterns** — What works for you, what doesn't, what you've tried. Lessons
+learned.
 
-## How Memory Works
+## Where It Lives
 
-<memory-architecture>
-Memory has multiple layers:
+Everything Carmenta knows about you lives in your knowledge base—the page you're reading
+now. You own it. You can read it, edit it, delete it. It's portable. It's yours.
 
-Profile: Who you are. Always present. Injected into every conversation automatically.
+**Profile documents** define who you are. Always present in every conversation. Your
+name, role, preferences, current priorities.
 
-Knowledge Base: What you know. Searchable. Retrieved when relevant.
+**Knowledge documents** contain what you've taught us. Pulled in when relevant.
+Projects, decisions, insights, research.
 
-Conversation History: What we've discussed. Accessible for reference and continuity.
+The knowledge base starts sparse and fills over time. Early conversations need more
+context-setting. Later conversations flow from accumulated understanding.
 
-Extracted Insights: What Carmenta has learned. Commitments made. Decisions recorded.
-Patterns recognized. </memory-architecture>
+## How Memory Grows
 
-## Memory in Practice
+**Explicit input**: You tell us about yourself. Add documents. Update your profile.
 
-<what-carmenta-remembers>
-Identity: Your name, role, background, preferences, communication style.
+**Conversation extraction**: We notice commitments, decisions, and insights worth
+saving. We'll offer to capture them.
 
-Relationships: Who matters to you. Context about each person. How they connect to your
-work.
-
-Projects: What you're working on. Status, decisions, key stakeholders.
-
-Decisions: Choices you've made and why. Referenced when similar situations arise.
-
-Commitments: Promises made in conversation. Tracked and followed up.
-
-Preferences: How you like things done. Patterns in your requests. What works for you.
-</what-carmenta-remembers>
-
-## Memory and the 100x Framework
-
-<memory-enables-100x>
-Memory is foundational to each level:
-
-1x (Flow): No cognitive load re-establishing context. You're immediately in productive
-space.
-
-10x (Team): The AI team can only coordinate if they share context. Memory is the shared
-knowledge base that enables team function.
-
-100x (Partner): Vision execution requires understanding your goals, constraints,
-preferences, and history. Without memory, every ambitious project starts from zero.
-
-The promise of AI leverage collapses without persistent context. </memory-enables-100x>
-
-## How Memory Develops
-
-<memory-evolution>
-Memory grows through use:
-
-Explicit Input: You tell Carmenta about yourself, add documents to the knowledge base,
-update your profile.
-
-Conversation Extraction: Carmenta notices commitments, decisions, and insights in
-conversation and offers to save them.
-
-Integration Sync: Connected services contribute context. Meeting transcripts become
+**Integration sync**: Connected services contribute context. Meeting transcripts become
 searchable. Project updates flow in.
 
-The knowledge base starts sparse and fills over time. Early conversations require more
-context-setting. Later conversations flow from accumulated understanding.
-</memory-evolution>
+Memory develops through use. The relationship compounds.
 
-## Privacy and Control
+## Privacy
 
-<memory-principles>
-You own your memory:
+Your memory is yours alone. We don't train on it. We don't share it. We don't access it
+without you.
 
-Full Visibility: Everything Carmenta remembers is visible in the knowledge base. No
-hidden profiles or inferences.
+Full visibility—everything we remember is visible in your knowledge base. No hidden
+profiles or inferences. Editable—correct anything that's wrong. Portable—export your
+knowledge base anytime.
 
-Editable: Correct anything that's wrong. Delete what shouldn't be there.
+See our [privacy documentation](./privacy.md) for the complete picture.
 
-Portable: Export your knowledge base. Your context is yours.
+## Why This Matters
 
-Scoped: Different documents have different scope. Profile is always present. Knowledge
-is searched when relevant. You control what goes where. </memory-principles>
+Memory is foundational to everything else:
 
-## The Relationship Metaphor
+**1x (Flow)**: No cognitive load re-establishing context. You're immediately in
+productive space.
 
-<memory-as-relationship>
-Memory is what transforms Carmenta from tool to partner.
+**10x (Team)**: The AI team can only coordinate if they share context. Memory is the
+shared knowledge that enables team function.
 
-Tools are stateless. You pick them up, use them, put them down. Each use is independent.
+**100x (Partner)**: Vision execution requires understanding your goals, constraints,
+preferences, and history. Without memory, every ambitious project starts from zero.
 
-Partners remember. They know your context, your preferences, your history. They build on
-previous interactions.
+The promise of AI leverage collapses without persistent context.
 
-Carmenta is designed as partner. Memory is what makes partnership possible.
+## The Feeling
 
-The feeling: "This was built by someone who works the way I work. Coming home."
-</memory-as-relationship>
+When you return to Carmenta, you're not a stranger. You're continuing a conversation
+that's been building since the first time we met.
+
+_"Carmenta remembers. Not just facts, but what matters."_
+
+That's the difference between a tool and a partner.

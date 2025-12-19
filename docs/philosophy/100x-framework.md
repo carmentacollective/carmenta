@@ -1,105 +1,103 @@
 # The 100x Framework
 
-The 100x framework defines what Carmenta enables. It progresses through three stages:
-Efficiency (1x), Capacity (10x), and Creativity (100x). Each level builds on the
-previous. The framework is multiplicative, not additive.
+A progression from presence to leverage. From doing your best work to doing work that
+wouldn't be possible alone.
 
-## 1x: Your Human Baseline
+## The Three Levels
 
-1x represents operating at 100% of your natural capability. Flow state. Full presence.
-Zone of genius. This is the foundation where clarity, intention, and exceptional work
+**1x: Your baseline.** Operating at 100% of your natural capability. Flow state. Full
+presence. Zone of genius.
+
+**10x: Your AI team.** One person becomes a team. Parallel execution. Delegation that
+actually works.
+
+**100x: Vision execution partner.** The barrier between imagining something and making
+it real dissolves.
+
+Each level multiplies the previous. The framework is multiplicative, not additive.
+
+## 1x: Your Baseline
+
+1x isn't about doing more. It's about accessing your full creative capacity.
+
+When you're at 1x, your best work emerges naturally. Cognitive load is eliminated.
+Attention is fully available. You're not managing chaos—you're creating from presence.
+
+**What breaks 1x**: Constantly re-explaining context. Switching between fragmented
+tools. Tracking commitments in your head. The mental overhead of coordination.
+
+**How Carmenta enables 1x**: Knowledge base captures everything worth remembering.
+Memory maintains context across conversations. Integrations automate information flow.
+Profile ensures we know how to work with you.
+
+The result: Peace of mind. The foundation where clarity, intention, and exceptional work
 emerge.
-
-<what-1x-means>
-1x is not about doing more. It is about accessing your full creative capacity. When you're at 1x, your best work emerges naturally because cognitive load is eliminated and attention is fully available.
-
-The goal: Flow state becomes accessible consistently. Everything important is captured,
-so your mind is free to create. </what-1x-means>
-
-<how-carmenta-enables-1x>
-Carmenta removes low-value cognitive load:
-- Knowledge base captures everything worth remembering
-- Memory features maintain context across conversations
-- Integrations automate routine information flow
-- Profile features ensure Carmenta knows how to work with you
-
-The result: Peace of mind. Operating at 100% of your natural capability.
-</how-carmenta-enables-1x>
 
 ## 10x: Your AI Team
 
-10x means having an AI team working alongside you where before there was only one
-person. Work that previously took days happens in hours because multiple agents work in
-parallel.
+10x means having a team where before there was only one person.
 
-<what-10x-means>
-One person becomes a team. Research, analysis, documentation, follow-up, coordination proceed simultaneously while you focus on strategy, relationships, and creative work.
+Research, analysis, documentation, follow-up, coordination—all happening in parallel
+while you focus on strategy, relationships, and the creative work only you can do.
 
-The transformation: You delegate to a team that works continuously, maintains perfect
-memory, and operates from complete information about your context. </what-10x-means>
+**What a 10x team does**:
 
-<ai-team-functions>
-Commitment Tracking: Captures every promise you make across conversations, creates tasks, monitors progress, escalates at deadlines.
+- Tracks commitments across conversations, creates tasks, monitors progress
+- Processes every conversation, updates relationships, ensures context stays current
+- Investigates multiple angles simultaneously, synthesizes findings
+- Transforms notes into documents, maintains knowledge, generates reports
 
-Memory Management: Processes every conversation, updates relationships, tracks project
-status, ensures context is always current.
+**What this changes**: Work that took days happens in hours. You delegate to a team that
+works continuously, maintains perfect memory, and operates from complete information
+about your context.
 
-Research Execution: Investigates multiple angles simultaneously, synthesizes findings,
-presents comprehensive analysis.
-
-Documentation Maintenance: Transforms notes into structured documents, maintains wikis,
-generates reports.
-
-Your 10x team forms around your actual work. These functions emerge from what currently
-bottlenecks on you personally. </ai-team-functions>
+One person becomes ten. Expanded reach without fragmenting attention.
 
 ## 100x: Vision Execution Partner
 
-100x means having an AI execution partner that turns ambitious visions into reality. The
-barrier between imagining something important and executing on it dissolves.
+100x means the barrier between imagination and execution dissolves.
 
-<what-100x-means>
-At 100x, you describe what you want to create and the AI partner orchestrates entire execution: analysis, development, validation, deployment.
+You describe what you want to create. The AI partner orchestrates: analysis,
+development, validation, iteration. Ideas validate in days instead of months. Pilots
+exist within a week instead of requiring full teams.
 
-Ideas validate in days instead of months. Pilots exist within a week instead of
-requiring full teams. Failed approaches cost hours instead of years. Successful
-initiatives launch with validated models. </what-100x-means>
+**The pattern**:
 
-<the-core-pattern>
-Regardless of domain, the pattern remains:
+1. Vision articulation — You describe what you want to create
+2. Comprehensive analysis — Research, context, options generated
+3. Rapid development — Infrastructure, tools, systems built
+4. Validation — Outcomes simulated or pilots coordinated
+5. Iteration — Refinement based on results
+6. Scaling — Operational complexity managed as vision expands
 
-1. Vision articulation: Describe what you want to create
-2. Comprehensive analysis: AI researches context and generates options
-3. Rapid development: AI builds infrastructure, tools, systems
-4. Validation: AI simulates outcomes or coordinates pilots
-5. Iteration: AI refines based on results
-6. Scaling: AI manages operational complexity as vision expands </the-core-pattern>
-
-<100-visions-capacity> At 100x, you can explore dozens of ideas simultaneously, validate
-approaches through simulation before committing resources, launch initiatives in weeks
-that would traditionally take years, and build a portfolio of impacts with shared
-infrastructure.
+**What this enables**: Exploring dozens of ideas simultaneously. Validating approaches
+through simulation before committing resources. Launching initiatives in weeks that
+would traditionally take years.
 
 Your creative capacity to imagine important work becomes the primary constraint.
-</100-visions-capacity>
 
-## Why The Sequence Matters
+## Why the Sequence Matters
 
 The framework is multiplicative:
 
-- Poor 1x (0.5) × Good 10x (10) × Good 100x (100) = 500x (limited by weak foundation)
-- Good 1x (1.0) × Good 10x (10) × Good 100x (100) = 1000x (full potential realized)
+- Poor 1x (0.5) × Good 10x (10) × Good 100x (100) = 500x
+- Good 1x (1.0) × Good 10x (10) × Good 100x (100) = 1000x
 
-Building 100x on solid 1x and 10x foundations creates true leverage. Skip the foundation
-and the multiplication fails.
+A weak foundation breaks the multiplication. Skip 1x and you're coordinating chaos. Skip
+10x and you're a bottleneck for execution.
 
-## Carmenta's Role
+Build the foundation. The leverage follows.
 
-Carmenta implements this framework:
+## What Carmenta Enables
 
-- 1x features: Knowledge base, memory, profile, cognitive load reduction
-- 10x features: AI team, scheduled agents, integrations, parallel execution
-- 100x features: Vision execution, comprehensive analysis, rapid development
+**1x features**: Knowledge base, memory, profile, cognitive load reduction. The
+foundation of flow.
+
+**10x features**: AI team, scheduled agents, integrations, parallel execution. The team
+around you.
+
+**100x features**: Vision execution, comprehensive analysis, rapid development. The
+partner who makes ambition achievable.
 
 The path from 1x to 100x is the path from personal efficiency to world-changing
 leverage.
