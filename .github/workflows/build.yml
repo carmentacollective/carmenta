@@ -45,10 +45,10 @@ jobs:
       - name: 🔧 TypeScript type checking
         run: pnpm run type-check
 
-  # Database Migration Tests
-  # Tests migrations against real PostgreSQL to catch ordering/constraint issues
-  migrations:
-    name: 🗄️ Migrations
+  # Database Setup Tests
+  # Tests migrations and docs sync against real PostgreSQL
+  database:
+    name: 🗄️ Database Setup
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -86,6 +86,11 @@ jobs:
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d carmenta_test -c "\dt" | grep -E "users|conversations|messages|message_parts"
           echo "✅ All expected tables exist"
+
+      - name: 📚 Sync documentation to knowledge base
+        run: pnpm run docs:sync
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
 
   # Unit Tests
   test:
