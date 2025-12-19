@@ -87,10 +87,10 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d carmenta_test -c "\dt" | grep -E "users|conversations|messages|message_parts"
           echo "✅ All expected tables exist"
 
-  # Unit Tests (ubuntu-latest-m has 4 cores for faster parallel execution)
+  # Unit Tests
   test:
     name: 🧪 Tests
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -113,7 +113,7 @@ jobs:
   # Build Verification
   build:
     name: 🏗️ Production Build
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:

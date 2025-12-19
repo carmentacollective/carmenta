@@ -224,8 +224,7 @@ export async function GET(request: NextRequest) {
 
         // Provide specific guidance for common OAuth errors
         if (error.message.includes("invalid_client")) {
-            userMessage =
-                "Something's off with the connection setup. This usually means the API credentials need updating.";
+            userMessage = `${state.provider} rejected our credentials. We're looking into it—try again shortly.`;
         } else if (
             error.message.includes("invalid_grant") ||
             error.message.includes("authorization code")
