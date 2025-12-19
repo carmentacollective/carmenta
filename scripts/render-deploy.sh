@@ -20,7 +20,7 @@ pnpm run db:migrate
 
 # Sync documentation to knowledge base
 echo "📚 Syncing system documentation..."
-pnpm run docs:sync
+pnpm run docs:sync || { echo "❌ Docs sync failed"; exit 1; }
 
 # Build the application
 echo "🏗️  Building application..."
