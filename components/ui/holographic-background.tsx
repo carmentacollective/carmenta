@@ -481,7 +481,7 @@ export function HolographicBackground({
                         <img
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[80vh] w-[80vh] max-w-none object-contain"
+                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain"
                         />
                     </div>
                 </div>
