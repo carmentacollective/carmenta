@@ -57,6 +57,13 @@
       "when": 1766093634461,
       "tag": "0007_chilly_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766102314125,
+      "tag": "0008_kb-user-context-schema",
+      "breakpoints": true
     }
   ]
 }

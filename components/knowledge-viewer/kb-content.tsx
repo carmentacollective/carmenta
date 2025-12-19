@@ -9,7 +9,16 @@
 
 import { useState, useCallback, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Edit3, Save, X, FileText, User, Settings, AlertCircle } from "lucide-react";
+import {
+    Edit3,
+    Save,
+    X,
+    FileText,
+    User,
+    Sparkles,
+    MessageSquare,
+    AlertCircle,
+} from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
@@ -17,14 +26,9 @@ import { logger } from "@/lib/client-logger";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
+    "profile.character": Sparkles,
     "profile.identity": User,
-    "profile.instructions": Settings,
-};
-
-// Map paths to display titles
-const PATH_TITLES: Record<string, string> = {
-    "profile.identity": "Identity",
-    "profile.instructions": "Custom Instructions",
+    "profile.preferences": MessageSquare,
 };
 
 export interface KBContentProps {
@@ -106,7 +110,7 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
     }
 
     const Icon = PATH_ICONS[document.path] ?? FileText;
-    const title = PATH_TITLES[document.path] ?? document.name.replace(".txt", "");
+    const isEditable = document.editable;
 
     return (
         <main
@@ -117,9 +121,18 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
         >
             {/* Header */}
             <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Icon className="h-5 w-5 text-foreground/50" />
-                    <h2 className="text-lg font-medium text-foreground">{title}</h2>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-foreground/50" />
+                        <h2 className="text-lg font-medium text-foreground">
+                            {document.name}
+                        </h2>
+                    </div>
+                    {document.description && (
+                        <p className="ml-8 text-sm text-foreground/50">
+                            {document.description}
+                        </p>
+                    )}
                 </div>
 
                 {/* Edit/Save/Cancel buttons */}
@@ -149,7 +162,7 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
                                 {isPending ? "Saving..." : "Save"}
                             </button>
                         </motion.div>
-                    ) : (
+                    ) : isEditable ? (
                         <motion.button
                             key="view"
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -160,7 +173,7 @@ export function KBContent({ document, onUpdate, dimmed = false }: KBContentProps
                         >
                             <Edit3 className="h-4 w-4" />
                         </motion.button>
-                    )}
+                    ) : null}
                 </AnimatePresence>
             </div>
 

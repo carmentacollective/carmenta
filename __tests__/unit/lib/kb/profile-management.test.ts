@@ -2,9 +2,8 @@
  * Profile Management Tests
  *
  * Tests cover:
- * - Profile initialization with templates and custom data
+ * - Profile initialization with three core documents (character, identity, preferences)
  * - Profile section updates
- * - Adding and retrieving people
  * - Profile population detection
  * - Idempotent initialization
  */
@@ -16,10 +15,9 @@ import { kb, PROFILE_PATHS } from "@/lib/kb/index";
 import {
     initializeProfile,
     updateProfileSection,
-    addPerson,
-    getPeople,
     hasPopulatedProfile,
-    PROFILE_TEMPLATES,
+    CARMENTA_DEFAULT_CHARACTER,
+    PROFILE_DOCUMENT_DEFS,
 } from "@/lib/kb/profile";
 
 setupTestDb();
@@ -48,82 +46,106 @@ async function createTestUser(email = "test@example.com") {
 // ============================================================================
 
 describe("Profile Initialization", () => {
-    it("creates all profile documents with templates by default", async () => {
+    it("creates all three core profile documents", async () => {
         const user = await createTestUser();
 
         const created = await initializeProfile(user.id);
 
         expect(created).toBe(true);
 
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
         const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
-        const goals = await kb.read(user.id, PROFILE_PATHS.goals);
 
+        expect(character).not.toBeNull();
         expect(identity).not.toBeNull();
         expect(preferences).not.toBeNull();
-        expect(goals).not.toBeNull();
-
-        // Check template content is present
-        expect(identity?.content).toContain("[Your name]");
-        expect(preferences?.content).toContain("Communication style:");
-        expect(goals?.content).toContain("Current priorities:");
     });
 
-    it("creates empty documents when withTemplates is false", async () => {
+    it("seeds character with Carmenta defaults", async () => {
         const user = await createTestUser();
 
-        await initializeProfile(user.id, { withTemplates: false });
+        await initializeProfile(user.id);
+
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
+
+        expect(character?.content).toBe(CARMENTA_DEFAULT_CHARACTER);
+        expect(character?.name).toBe("Carmenta");
+    });
+
+    it("seeds identity with userName when provided", async () => {
+        const user = await createTestUser();
+
+        await initializeProfile(user.id, { userName: "Nick Sullivan" });
 
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
-        const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
-        const goals = await kb.read(user.id, PROFILE_PATHS.goals);
+
+        expect(identity?.content).toBe("Nick Sullivan");
+        expect(identity?.name).toBe("Who I Am");
+    });
+
+    it("creates empty identity when no userName provided", async () => {
+        const user = await createTestUser();
+
+        await initializeProfile(user.id);
+
+        const identity = await kb.read(user.id, PROFILE_PATHS.identity);
 
         expect(identity?.content).toBe("");
-        expect(preferences?.content).toBe("");
-        expect(goals?.content).toBe("");
     });
 
-    it("uses initial data when provided", async () => {
+    it("creates empty preferences document", async () => {
         const user = await createTestUser();
 
-        await initializeProfile(user.id, {
-            initialData: {
-                identity: "Name: Nick Sullivan\nRole: Software Engineer",
-                preferences: "Communication style: Direct",
-                goals: "Current priorities:\n- Ship Carmenta V1",
-            },
-        });
+        await initializeProfile(user.id);
 
+        const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
+
+        expect(preferences?.content).toBe("");
+        expect(preferences?.name).toBe("How We Interact");
+    });
+
+    it("sets correct metadata on profile documents", async () => {
+        const user = await createTestUser();
+
+        await initializeProfile(user.id);
+
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
         const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
-        const goals = await kb.read(user.id, PROFILE_PATHS.goals);
 
-        expect(identity?.content).toBe("Name: Nick Sullivan\nRole: Software Engineer");
-        expect(preferences?.content).toBe("Communication style: Direct");
-        expect(goals?.content).toContain("Ship Carmenta V1");
+        // Check character metadata
+        expect(character?.promptLabel).toBe("character");
+        expect(character?.promptHint).toBe(PROFILE_DOCUMENT_DEFS.character.promptHint);
+        expect(character?.promptOrder).toBe(1);
+        expect(character?.alwaysInclude).toBe(true);
+        expect(character?.editable).toBe(true);
+
+        // Check identity metadata
+        expect(identity?.promptLabel).toBe("about");
+        expect(identity?.promptHint).toBe(PROFILE_DOCUMENT_DEFS.identity.promptHint);
+        expect(identity?.promptOrder).toBe(2);
+        expect(identity?.alwaysInclude).toBe(true);
+
+        // Check preferences metadata
+        expect(preferences?.promptLabel).toBe("preferences");
+        expect(preferences?.promptOrder).toBe(3);
+        expect(preferences?.alwaysInclude).toBe(true);
     });
 
     it("is idempotent - does not overwrite existing documents", async () => {
         const user = await createTestUser();
 
-        // First initialization with custom data
-        await initializeProfile(user.id, {
-            initialData: {
-                identity: "Original identity",
-            },
-        });
+        // First initialization
+        await initializeProfile(user.id, { userName: "Original Name" });
 
         // Second initialization - should not change anything
-        const created = await initializeProfile(user.id, {
-            initialData: {
-                identity: "New identity",
-            },
-        });
+        const created = await initializeProfile(user.id, { userName: "New Name" });
 
         expect(created).toBe(false);
 
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
-        expect(identity?.content).toBe("Original identity");
+        expect(identity?.content).toBe("Original Name");
     });
 
     it("only creates missing documents", async () => {
@@ -132,11 +154,12 @@ describe("Profile Initialization", () => {
         // Manually create just identity
         await kb.create(user.id, {
             path: PROFILE_PATHS.identity,
-            name: "identity.txt",
+            name: "Who I Am",
             content: "Existing identity",
+            alwaysInclude: true,
         });
 
-        // Initialize should create preferences and goals, but not touch identity
+        // Initialize should create character and preferences, but not touch identity
         const created = await initializeProfile(user.id);
 
         expect(created).toBe(true);
@@ -144,18 +167,22 @@ describe("Profile Initialization", () => {
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
         expect(identity?.content).toBe("Existing identity");
 
-        const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
-        expect(preferences?.content).toContain("[Direct/detailed/casual/formal");
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
+        expect(character?.content).toBe(CARMENTA_DEFAULT_CHARACTER);
     });
 
-    it("sets sourceType to seed for template-created documents", async () => {
+    it("sets sourceType to seed for initialized documents", async () => {
         const user = await createTestUser();
 
         await initializeProfile(user.id);
 
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
+        const preferences = await kb.read(user.id, PROFILE_PATHS.preferences);
 
+        expect(character?.sourceType).toBe("seed");
         expect(identity?.sourceType).toBe("seed");
+        expect(preferences?.sourceType).toBe("seed");
     });
 });
 
@@ -164,6 +191,22 @@ describe("Profile Initialization", () => {
 // ============================================================================
 
 describe("Profile Section Updates", () => {
+    it("updates character section", async () => {
+        const user = await createTestUser();
+        await initializeProfile(user.id);
+
+        await updateProfileSection(
+            user.id,
+            "character",
+            "Name: Custom AI\nVoice: Playful and energetic"
+        );
+
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
+        expect(character?.content).toBe(
+            "Name: Custom AI\nVoice: Playful and energetic"
+        );
+    });
+
     it("updates identity section", async () => {
         const user = await createTestUser();
         await initializeProfile(user.id);
@@ -192,20 +235,6 @@ describe("Profile Section Updates", () => {
         expect(preferences?.content).toBe("Communication style: Direct and concise");
     });
 
-    it("updates goals section", async () => {
-        const user = await createTestUser();
-        await initializeProfile(user.id);
-
-        await updateProfileSection(
-            user.id,
-            "goals",
-            "Current priorities:\n- Launch Carmenta\n- Scale to 1000 users"
-        );
-
-        const goals = await kb.read(user.id, PROFILE_PATHS.goals);
-        expect(goals?.content).toContain("Launch Carmenta");
-    });
-
     it("creates section if it does not exist (upsert behavior)", async () => {
         const user = await createTestUser();
         // Don't initialize - section doesn't exist
@@ -226,95 +255,25 @@ describe("Profile Section Updates", () => {
         const identity = await kb.read(user.id, PROFILE_PATHS.identity);
         expect(identity?.sourceType).toBe("manual");
     });
-});
 
-// ============================================================================
-// PEOPLE MANAGEMENT
-// ============================================================================
+    it("preserves metadata on update", async () => {
+        const user = await createTestUser();
+        await initializeProfile(user.id);
 
-describe("People Management", () => {
-    it("adds a person to the profile", async () => {
+        await updateProfileSection(user.id, "character", "New character content");
+
+        const character = await kb.read(user.id, PROFILE_PATHS.character);
+        expect(character?.promptLabel).toBe("character");
+        expect(character?.alwaysInclude).toBe(true);
+        expect(character?.promptOrder).toBe(1);
+    });
+
+    it("throws error when trying to update root", async () => {
         const user = await createTestUser();
 
-        await addPerson(
-            user.id,
-            "Sarah Thompson",
-            "Sarah is a senior engineer at the company.\nExpertise: React, TypeScript"
+        await expect(updateProfileSection(user.id, "root", "content")).rejects.toThrow(
+            "Cannot update profile root"
         );
-
-        const doc = await kb.read(user.id, "profile.people.sarah-thompson");
-        expect(doc).not.toBeNull();
-        expect(doc?.content).toContain("senior engineer");
-    });
-
-    it("normalizes person name for path (lowercase, hyphens)", async () => {
-        const user = await createTestUser();
-
-        await addPerson(user.id, "Mike O'Brien", "Mike is a friend.");
-
-        const doc = await kb.read(user.id, "profile.people.mike-o'brien");
-        expect(doc).not.toBeNull();
-    });
-
-    it("adds person tag to document", async () => {
-        const user = await createTestUser();
-
-        await addPerson(user.id, "Alex", "Alex is a colleague.");
-
-        const doc = await kb.read(user.id, "profile.people.alex");
-        expect(doc?.tags).toContain("person");
-    });
-
-    it("updates existing person (upsert behavior)", async () => {
-        const user = await createTestUser();
-
-        await addPerson(user.id, "Sarah", "Original info about Sarah");
-        await addPerson(user.id, "Sarah", "Updated info about Sarah");
-
-        const people = await kb.readFolder(user.id, PROFILE_PATHS.people);
-        const sarahDocs = people.filter((d) => d.path === "profile.people.sarah");
-
-        expect(sarahDocs).toHaveLength(1);
-        expect(sarahDocs[0].content).toBe("Updated info about Sarah");
-    });
-
-    it("retrieves all people", async () => {
-        const user = await createTestUser();
-
-        await addPerson(user.id, "Sarah", "Sarah info");
-        await addPerson(user.id, "Mike", "Mike info");
-        await addPerson(user.id, "Alex", "Alex info");
-
-        const people = await getPeople(user.id);
-
-        expect(people).toHaveLength(3);
-        expect(people.map((p) => p.name).sort()).toEqual(["alex", "mike", "sarah"]);
-    });
-
-    it("returns empty array when no people exist", async () => {
-        const user = await createTestUser();
-
-        const people = await getPeople(user.id);
-
-        expect(people).toEqual([]);
-    });
-
-    it("excludes the people folder document itself from results", async () => {
-        const user = await createTestUser();
-
-        // Create a document at the "people" path (folder level)
-        await kb.create(user.id, {
-            path: PROFILE_PATHS.people,
-            name: "people.txt",
-            content: "This is the people folder",
-        });
-
-        await addPerson(user.id, "Sarah", "Sarah info");
-
-        const people = await getPeople(user.id);
-
-        expect(people).toHaveLength(1);
-        expect(people[0].name).toBe("sarah");
     });
 });
 
@@ -331,84 +290,65 @@ describe("Profile Population Detection", () => {
         expect(populated).toBe(false);
     });
 
-    it("returns false when profile has template markers", async () => {
+    it("returns false when identity has no content", async () => {
         const user = await createTestUser();
-        await initializeProfile(user.id);
+        await initializeProfile(user.id); // Creates empty identity
 
         const populated = await hasPopulatedProfile(user.id);
 
         expect(populated).toBe(false);
     });
 
-    it("returns true when profile has real content", async () => {
+    it("returns true when identity has content", async () => {
         const user = await createTestUser();
-        await initializeProfile(user.id, {
-            initialData: {
-                identity: "Name: Nick Sullivan\nRole: Founder at Carmenta",
-            },
-        });
+        await initializeProfile(user.id, { userName: "Nick Sullivan" });
 
         const populated = await hasPopulatedProfile(user.id);
 
         expect(populated).toBe(true);
     });
 
-    it("detects template markers indicating unpopulated profile", async () => {
+    it("returns true after identity is updated with content", async () => {
         const user = await createTestUser();
+        await initializeProfile(user.id); // Empty identity
 
-        // Create profile with one template marker still present
-        // Using exact marker from hasPopulatedProfile check: "[Your name]"
-        await kb.create(user.id, {
-            path: PROFILE_PATHS.identity,
-            name: "identity.txt",
-            content: `Name: [Your name]
-Role: Software Engineer
-Background: 25 years in software`,
-        });
+        // Initially not populated
+        expect(await hasPopulatedProfile(user.id)).toBe(false);
 
-        const populated = await hasPopulatedProfile(user.id);
+        // Update with content
+        await updateProfileSection(user.id, "identity", "Nick Sullivan");
 
-        // Still has template marker "[Your name]", so not fully populated
-        expect(populated).toBe(false);
-    });
-
-    it("returns true when all template markers are replaced", async () => {
-        const user = await createTestUser();
-
-        await kb.create(user.id, {
-            path: PROFILE_PATHS.identity,
-            name: "identity.txt",
-            content: `Name: Nick Sullivan
-Role: Founder
-Background: Building AI systems for 25 years
-Working on: Carmenta - a heart-centered AI assistant`,
-        });
-
-        const populated = await hasPopulatedProfile(user.id);
-
-        expect(populated).toBe(true);
+        // Now populated
+        expect(await hasPopulatedProfile(user.id)).toBe(true);
     });
 });
 
 // ============================================================================
-// PROFILE TEMPLATES
+// PROFILE DOCUMENT DEFINITIONS
 // ============================================================================
 
-describe("Profile Templates", () => {
-    it("exports identity template with expected placeholders", () => {
-        expect(PROFILE_TEMPLATES.identity).toContain("[Your name]");
-        expect(PROFILE_TEMPLATES.identity).toContain("Role:");
-        expect(PROFILE_TEMPLATES.identity).toContain("Background:");
+describe("Profile Document Definitions", () => {
+    it("exports character definition with correct metadata", () => {
+        expect(PROFILE_DOCUMENT_DEFS.character.name).toBe("Carmenta");
+        expect(PROFILE_DOCUMENT_DEFS.character.promptLabel).toBe("character");
+        expect(PROFILE_DOCUMENT_DEFS.character.promptOrder).toBe(1);
     });
 
-    it("exports preferences template with expected placeholders", () => {
-        expect(PROFILE_TEMPLATES.preferences).toContain("Communication style:");
-        expect(PROFILE_TEMPLATES.preferences).toContain("Response format:");
+    it("exports identity definition with correct metadata", () => {
+        expect(PROFILE_DOCUMENT_DEFS.identity.name).toBe("Who I Am");
+        expect(PROFILE_DOCUMENT_DEFS.identity.promptLabel).toBe("about");
+        expect(PROFILE_DOCUMENT_DEFS.identity.promptOrder).toBe(2);
     });
 
-    it("exports goals template with expected structure", () => {
-        expect(PROFILE_TEMPLATES.goals).toContain("Current priorities:");
-        expect(PROFILE_TEMPLATES.goals).toContain("Working toward:");
-        expect(PROFILE_TEMPLATES.goals).toContain("Challenges:");
+    it("exports preferences definition with correct metadata", () => {
+        expect(PROFILE_DOCUMENT_DEFS.preferences.name).toBe("How We Interact");
+        expect(PROFILE_DOCUMENT_DEFS.preferences.promptLabel).toBe("preferences");
+        expect(PROFILE_DOCUMENT_DEFS.preferences.promptOrder).toBe(3);
+    });
+
+    it("exports default Carmenta character", () => {
+        expect(CARMENTA_DEFAULT_CHARACTER).toContain("Name: Carmenta");
+        expect(CARMENTA_DEFAULT_CHARACTER).toContain("Voice:");
+        expect(CARMENTA_DEFAULT_CHARACTER).toContain("Language:");
     });
 });

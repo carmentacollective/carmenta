@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, FileText, User, Settings } from "lucide-react";
+import { ChevronRight, FileText, User, Sparkles, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 
@@ -20,8 +20,9 @@ const FOLDER_ICONS: Record<string, typeof User> = {
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
+    "profile.character": Sparkles,
     "profile.identity": User,
-    "profile.instructions": Settings,
+    "profile.preferences": MessageSquare,
 };
 
 export interface KBSidebarProps {
@@ -128,12 +129,7 @@ export function KBSidebar({
                                                         )}
                                                     >
                                                         <DocIcon className="h-3.5 w-3.5" />
-                                                        <span className="capitalize">
-                                                            {doc.name.replace(
-                                                                ".txt",
-                                                                ""
-                                                            )}
-                                                        </span>
+                                                        <span>{doc.name}</span>
                                                     </button>
                                                 );
                                             })}

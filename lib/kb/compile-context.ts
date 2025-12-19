@@ -1,20 +1,24 @@
 /**
  * Profile Context Compilation
  *
- * Reads the user's /profile/ folder from the knowledge base and compiles it
- * into a context string for the system prompt. This is the V1 implementation
- * of "Carmenta knows who you are."
+ * Compiles the user's profile documents into XML context for the system prompt.
+ * Uses document metadata (promptLabel, promptHint, promptOrder) for structure.
  *
- * Profile structure:
- * - /profile/identity.txt - Who they are professionally
- * - /profile/preferences.txt - How they like to work/communicate
- * - /profile/goals.txt - What they're working toward
- * - /profile/people/*.txt - Important relationships (V2)
+ * Output format:
+ * ```xml
+ * <character purpose="The AI's personality—name, voice, patterns">
+ * Name: Carmenta
+ * Voice: Warm, sophisticated...
+ * </character>
  *
- * @example
- * ```typescript
- * const context = await compileUserContext(userId);
- * // Returns formatted markdown for system prompt injection
+ * <about purpose="Who the user is—identity, role, current focus">
+ * Nick Sullivan
+ * Building Carmenta...
+ * </about>
+ *
+ * <preferences purpose="How the user prefers to collaborate—tone, format, depth">
+ * Direct and concrete. Match energy.
+ * </preferences>
  * ```
  */
 
@@ -27,85 +31,49 @@ import { logger } from "@/lib/logger";
 // ============================================================================
 
 /**
- * Compile user's profile into context for system prompt
+ * Compile user's profile into XML context for system prompt.
  *
- * Reads all documents under /profile/ and formats them into a cohesive
- * context block. Returns empty string if no profile exists (graceful degradation).
+ * Reads all profile/* documents with alwaysInclude=true and formats them
+ * into XML blocks using their promptLabel and promptHint metadata.
  *
  * @param userId - User's UUID
- * @returns Formatted context string for system prompt, or empty string
+ * @returns XML-formatted context string, or null if no profile exists
  */
-export async function compileUserContext(userId: string): Promise<string> {
+export async function compileProfileContext(userId: string): Promise<string | null> {
     try {
         // Read all profile documents
         const profileDocs = await kb.readFolder(userId, PROFILE_PATHS.root);
 
         if (profileDocs.length === 0) {
             logger.debug({ userId }, "No profile documents found for user");
-            return "";
+            return null;
         }
 
-        // Find specific documents
-        const identity = profileDocs.find((d) => d.path === PROFILE_PATHS.identity);
-        const preferences = profileDocs.find(
-            (d) => d.path === PROFILE_PATHS.preferences
-        );
-        const goals = profileDocs.find((d) => d.path === PROFILE_PATHS.goals);
+        // Filter to always-included docs with content and metadata
+        const includedDocs = profileDocs
+            .filter((d) => d.alwaysInclude && d.promptLabel && d.content?.trim())
+            .sort((a, b) => (a.promptOrder ?? 0) - (b.promptOrder ?? 0));
 
-        // Find people documents (under profile.people.*)
-        const people = profileDocs.filter(
-            (d) =>
-                d.path.startsWith(PROFILE_PATHS.people + ".") &&
-                d.path !== PROFILE_PATHS.people
-        );
-
-        // Build context sections
-        const sections: string[] = [];
-
-        if (identity?.content) {
-            sections.push(`## About Who We're Working With
-
-${identity.content.trim()}`);
+        if (includedDocs.length === 0) {
+            logger.debug(
+                { userId },
+                "No always-included profile documents with content"
+            );
+            return null;
         }
 
-        if (preferences?.content) {
-            sections.push(`## How We Work Together
-
-${preferences.content.trim()}`);
-        }
-
-        if (goals?.content) {
-            sections.push(`## What We're Working Toward
-
-${goals.content.trim()}`);
-        }
-
-        if (people.length > 0) {
-            const peopleSection = people
-                .map((p) => {
-                    const name = kb.getNameFromPath(p.path);
-                    // Capitalize first letter of each word (handles hyphenated names like "sarah-thompson")
-                    const displayName = name
-                        .split("-")
-                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join("-");
-                    return `### ${displayName}
-
-${p.content.trim()}`;
-                })
-                .join("\n\n");
-
-            sections.push(`## People in Our World
-
-${peopleSection}`);
-        }
+        // Build XML sections
+        const sections = includedDocs.map((doc) => {
+            const purposeAttr = doc.promptHint ? ` purpose="${doc.promptHint}"` : "";
+            return `<${doc.promptLabel}${purposeAttr}>\n${doc.content.trim()}\n</${doc.promptLabel}>`;
+        });
 
         const compiledContext = sections.join("\n\n");
 
         logger.info(
             {
                 userId,
-                documentCount: profileDocs.length,
+                documentCount: includedDocs.length,
                 contextLength: compiledContext.length,
             },
             "📋 Compiled user profile context"
@@ -113,14 +81,23 @@ ${peopleSection}`);
 
         return compiledContext;
     } catch (error) {
-        // Log error and report to Sentry, but return empty string - graceful degradation
+        // Log error and report to Sentry, but return null - graceful degradation
         logger.error({ error, userId }, "Failed to compile user profile context");
         Sentry.captureException(error, {
             tags: { component: "knowledge-base", action: "compile-context" },
             extra: { userId },
         });
-        return "";
+        return null;
     }
+}
+
+/**
+ * Legacy function name for backwards compatibility
+ * @deprecated Use compileProfileContext instead
+ */
+export async function compileUserContext(userId: string): Promise<string> {
+    const context = await compileProfileContext(userId);
+    return context ?? "";
 }
 
 /**
@@ -129,7 +106,13 @@ ${peopleSection}`);
 export async function getProfileSummary(userId: string): Promise<{
     hasProfile: boolean;
     documentCount: number;
-    documents: Array<{ path: string; name: string; contentLength: number }>;
+    documents: Array<{
+        path: string;
+        name: string;
+        contentLength: number;
+        promptLabel: string | null;
+        alwaysInclude: boolean;
+    }>;
 }> {
     const profileDocs = await kb.readFolder(userId, PROFILE_PATHS.root);
 
@@ -140,6 +123,8 @@ export async function getProfileSummary(userId: string): Promise<{
             path: kb.toDisplayPath(d.path),
             name: d.name,
             contentLength: d.content.length,
+            promptLabel: d.promptLabel,
+            alwaysInclude: d.alwaysInclude,
         })),
     };
 }

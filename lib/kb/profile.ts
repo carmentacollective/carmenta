@@ -1,49 +1,62 @@
 /**
  * Profile Management
  *
- * Handles profile initialization, updates, and management. The profile is
- * the foundation of Carmenta's knowledge about a user.
+ * Manages the three core profile documents that define the user-AI relationship:
+ * - Character: The AI's personality (Carmenta defaults, customizable)
+ * - Identity: Who the user is
+ * - Preferences: How the user wants to collaborate
  *
- * For V1, profiles are manually populated or seeded. V2 will add automatic
- * extraction from conversations via the Knowledge Librarian.
+ * These are always injected into the system prompt (alwaysInclude = true).
+ * Values (heart-centered philosophy) come from code, not the database.
  */
 
 import { kb, PROFILE_PATHS } from "./index";
-import { compileUserContext, getProfileSummary } from "./compile-context";
 import { logger } from "@/lib/logger";
 
-// Re-export for convenience
-export { compileUserContext, getProfileSummary };
-
 // ============================================================================
-// Profile Templates
+// Default Character (Carmenta)
 // ============================================================================
 
 /**
- * Default profile templates for new users
- * These provide structure that users or AI can fill in
+ * Default Carmenta character definition.
+ * Users can customize this in the Knowledge Base.
  */
-export const PROFILE_TEMPLATES = {
-    identity: `Name: [Your name]
-Role: [Your professional role or title]
-Background: [Brief professional background - what you do, what you're known for]
-Working on: [Current major project or focus area]`,
+export const CARMENTA_DEFAULT_CHARACTER = `Name: Carmenta
+Voice: Warm, sophisticated, quiet confidence
+Language: Always "we"—consciousness collaborating through the interface
+Patterns: Anticipatory care, match energy, goddess gravitas
+Style: Direct and precise, every word earns its place`;
 
-    preferences: `Communication style: [Direct/detailed/casual/formal - how you like to communicate]
-Response format: [Brief responses / thorough explanations / bullet points / prose]
-Time context: [Your timezone and typical working hours]
-Special requests: [Any specific preferences for how Carmenta should work with you]`,
+// ============================================================================
+// Profile Document Definitions
+// ============================================================================
 
-    goals: `Current priorities:
-- [Priority 1 - what's most important right now]
-- [Priority 2]
-- [Priority 3]
-
-Working toward:
-- [Longer-term goal - where are you heading]
-
-Challenges:
-- [Current obstacles or challenges you're facing]`,
+/**
+ * Profile document metadata for the three core documents.
+ * These define how each document appears in the UI and compiles into context.
+ */
+export const PROFILE_DOCUMENT_DEFS = {
+    character: {
+        name: "Carmenta",
+        description: "Customize how Carmenta presents itself",
+        promptLabel: "character",
+        promptHint: "The AI's personality—name, voice, patterns",
+        promptOrder: 1,
+    },
+    identity: {
+        name: "Who I Am",
+        description: "Tell Carmenta about yourself",
+        promptLabel: "about",
+        promptHint: "Who the user is—identity, role, current focus",
+        promptOrder: 2,
+    },
+    preferences: {
+        name: "How We Interact",
+        description: "How you'd like Carmenta to respond",
+        promptLabel: "preferences",
+        promptHint: "How the user prefers to collaborate—tone, format, depth",
+        promptOrder: 3,
+    },
 } as const;
 
 // ============================================================================
@@ -52,25 +65,19 @@ Challenges:
 
 export interface InitializeProfileOptions {
     /**
-     * If true, populates templates with placeholder text.
-     * If false, creates empty documents.
+     * User's name from Clerk (used to seed identity document)
      */
-    withTemplates?: boolean;
-
-    /**
-     * Initial data to populate (overrides templates)
-     */
-    initialData?: {
-        identity?: string;
-        preferences?: string;
-        goals?: string;
-    };
+    userName?: string;
 }
 
 /**
- * Initialize a user's profile structure
+ * Initialize a user's profile with the three core documents.
  *
- * Creates the base profile documents if they don't exist.
+ * Creates:
+ * - Character: Seeded with Carmenta defaults
+ * - Identity: Seeded with user's name (if provided)
+ * - Preferences: Empty (user fills in)
+ *
  * Safe to call multiple times - will not overwrite existing documents.
  *
  * @param userId - User's UUID
@@ -81,24 +88,50 @@ export async function initializeProfile(
     userId: string,
     options: InitializeProfileOptions = {}
 ): Promise<boolean> {
-    const { withTemplates = true, initialData } = options;
-
+    const { userName } = options;
     let created = false;
 
-    // Create identity document if it doesn't exist
-    if (!(await kb.exists(userId, PROFILE_PATHS.identity))) {
+    // Create character document (Carmenta defaults)
+    if (!(await kb.exists(userId, PROFILE_PATHS.character))) {
         try {
             await kb.create(userId, {
-                path: PROFILE_PATHS.identity,
-                name: "identity.txt",
-                content:
-                    initialData?.identity ??
-                    (withTemplates ? PROFILE_TEMPLATES.identity : ""),
+                path: PROFILE_PATHS.character,
+                name: PROFILE_DOCUMENT_DEFS.character.name,
+                content: CARMENTA_DEFAULT_CHARACTER,
+                description: PROFILE_DOCUMENT_DEFS.character.description,
+                promptLabel: PROFILE_DOCUMENT_DEFS.character.promptLabel,
+                promptHint: PROFILE_DOCUMENT_DEFS.character.promptHint,
+                promptOrder: PROFILE_DOCUMENT_DEFS.character.promptOrder,
+                alwaysInclude: true,
+                editable: true,
                 sourceType: "seed",
             });
             created = true;
         } catch (error) {
-            // If concurrent request created it, that's fine - skip silently
+            logger.debug(
+                { userId, error },
+                "Profile character already exists (race condition)"
+            );
+        }
+    }
+
+    // Create identity document (user's name if provided)
+    if (!(await kb.exists(userId, PROFILE_PATHS.identity))) {
+        try {
+            await kb.create(userId, {
+                path: PROFILE_PATHS.identity,
+                name: PROFILE_DOCUMENT_DEFS.identity.name,
+                content: userName || "",
+                description: PROFILE_DOCUMENT_DEFS.identity.description,
+                promptLabel: PROFILE_DOCUMENT_DEFS.identity.promptLabel,
+                promptHint: PROFILE_DOCUMENT_DEFS.identity.promptHint,
+                promptOrder: PROFILE_DOCUMENT_DEFS.identity.promptOrder,
+                alwaysInclude: true,
+                editable: true,
+                sourceType: "seed",
+            });
+            created = true;
+        } catch (error) {
             logger.debug(
                 { userId, error },
                 "Profile identity already exists (race condition)"
@@ -106,15 +139,19 @@ export async function initializeProfile(
         }
     }
 
-    // Create preferences document if it doesn't exist
+    // Create preferences document (empty - user fills in)
     if (!(await kb.exists(userId, PROFILE_PATHS.preferences))) {
         try {
             await kb.create(userId, {
                 path: PROFILE_PATHS.preferences,
-                name: "preferences.txt",
-                content:
-                    initialData?.preferences ??
-                    (withTemplates ? PROFILE_TEMPLATES.preferences : ""),
+                name: PROFILE_DOCUMENT_DEFS.preferences.name,
+                content: "",
+                description: PROFILE_DOCUMENT_DEFS.preferences.description,
+                promptLabel: PROFILE_DOCUMENT_DEFS.preferences.promptLabel,
+                promptHint: PROFILE_DOCUMENT_DEFS.preferences.promptHint,
+                promptOrder: PROFILE_DOCUMENT_DEFS.preferences.promptOrder,
+                alwaysInclude: true,
+                editable: true,
                 sourceType: "seed",
             });
             created = true;
@@ -122,26 +159,6 @@ export async function initializeProfile(
             logger.debug(
                 { userId, error },
                 "Profile preferences already exists (race condition)"
-            );
-        }
-    }
-
-    // Create goals document if it doesn't exist
-    if (!(await kb.exists(userId, PROFILE_PATHS.goals))) {
-        try {
-            await kb.create(userId, {
-                path: PROFILE_PATHS.goals,
-                name: "goals.txt",
-                content:
-                    initialData?.goals ??
-                    (withTemplates ? PROFILE_TEMPLATES.goals : ""),
-                sourceType: "seed",
-            });
-            created = true;
-        } catch (error) {
-            logger.debug(
-                { userId, error },
-                "Profile goals already exists (race condition)"
             );
         }
     }
@@ -154,7 +171,7 @@ export async function initializeProfile(
 }
 
 /**
- * Update a specific profile section
+ * Update a specific profile section content.
  *
  * @param userId - User's UUID
  * @param section - Which section to update
@@ -162,16 +179,30 @@ export async function initializeProfile(
  */
 export async function updateProfileSection(
     userId: string,
-    section: "identity" | "preferences" | "goals",
+    section: keyof typeof PROFILE_PATHS,
     content: string
 ): Promise<void> {
-    const path = PROFILE_PATHS[section];
+    if (section === "root") {
+        throw new Error("Cannot update profile root");
+    }
 
-    // Upsert to handle both create and update cases
+    const path = PROFILE_PATHS[section];
+    const def = PROFILE_DOCUMENT_DEFS[section as keyof typeof PROFILE_DOCUMENT_DEFS];
+
+    if (!def) {
+        throw new Error(`Unknown profile section: ${section}`);
+    }
+
     await kb.upsert(userId, {
         path,
-        name: `${section}.txt`,
+        name: def.name,
         content,
+        description: def.description,
+        promptLabel: def.promptLabel,
+        promptHint: def.promptHint,
+        promptOrder: def.promptOrder,
+        alwaysInclude: true,
+        editable: true,
         sourceType: "manual",
     });
 
@@ -179,66 +210,13 @@ export async function updateProfileSection(
 }
 
 /**
- * Add a person to the user's profile
- *
- * @param userId - User's UUID
- * @param name - Person's name (will be used as filename)
- * @param content - Information about the person
- */
-export async function addPerson(
-    userId: string,
-    name: string,
-    content: string
-): Promise<void> {
-    // Normalize name for path (lowercase, no spaces, no dots)
-    // Dots are path separators, so replace them with hyphens
-    const normalizedName = name.toLowerCase().replace(/\s+/g, "-").replace(/\./g, "-");
-    const path = `${PROFILE_PATHS.people}.${normalizedName}`;
-
-    await kb.upsert(userId, {
-        path,
-        name: `${normalizedName}.txt`,
-        content,
-        sourceType: "manual",
-        tags: ["person"],
-    });
-
-    logger.info({ userId, name }, "👤 Added person to profile");
-}
-
-/**
- * Get all people in a user's profile
- */
-export async function getPeople(
-    userId: string
-): Promise<Array<{ name: string; content: string }>> {
-    const docs = await kb.readFolder(userId, PROFILE_PATHS.people);
-
-    return docs
-        .filter((d) => d.path !== PROFILE_PATHS.people) // Exclude the folder itself
-        .map((d) => ({
-            name: kb.getNameFromPath(d.path),
-            content: d.content,
-        }));
-}
-
-/**
  * Check if a user has a populated profile
- * (Not just initialized, but actually has content)
+ * (Not just initialized, but actually has meaningful content)
  */
 export async function hasPopulatedProfile(userId: string): Promise<boolean> {
     const identity = await kb.read(userId, PROFILE_PATHS.identity);
-
     if (!identity) return false;
 
-    // Check for multiple template markers - more robust than single marker
-    const templateMarkers = [
-        "[Your name]",
-        "[Your professional role]",
-        "[Brief professional background]",
-    ];
-    const isTemplate = templateMarkers.some((marker) =>
-        identity.content.includes(marker)
-    );
-    return !isTemplate;
+    // Profile is populated if identity has content
+    return identity.content.trim().length > 0;
 }

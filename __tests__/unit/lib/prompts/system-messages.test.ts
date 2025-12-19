@@ -7,9 +7,9 @@ vi.mock("@/lib/prompts/system", () => ({
     SYSTEM_PROMPT: "Static system prompt content for testing",
 }));
 
-// Mock the KB profile module to avoid database calls in unit tests
-vi.mock("@/lib/kb/profile", () => ({
-    compileUserContext: vi.fn().mockResolvedValue(""),
+// Mock the KB compile-context module to avoid database calls in unit tests
+vi.mock("@/lib/kb/compile-context", () => ({
+    compileProfileContext: vi.fn().mockResolvedValue(null),
 }));
 
 describe("buildSystemMessages", () => {
@@ -71,11 +71,11 @@ describe("buildSystemMessages", () => {
     });
 
     describe("profile context", () => {
-        it("includes profile context as third message when userId is provided and profile exists", async () => {
+        it("includes profile context as second message when userId is provided and profile exists", async () => {
             // Re-mock to return actual content
-            const { compileUserContext } = await import("@/lib/kb/profile");
-            vi.mocked(compileUserContext).mockResolvedValueOnce(
-                "## About Who We're Working With\n\nName: Test User"
+            const { compileProfileContext } = await import("@/lib/kb/compile-context");
+            vi.mocked(compileProfileContext).mockResolvedValueOnce(
+                '<about purpose="Who the user is">\nName: Test User\n</about>'
             );
 
             const context: UserContext = {
@@ -87,8 +87,9 @@ describe("buildSystemMessages", () => {
             const messages = await buildSystemMessages(context);
 
             expect(messages).toHaveLength(3);
-            expect(messages[2].content).toContain("About Who We're Working With");
-            expect(messages[2].providerOptions).toBeUndefined();
+            expect(messages[1].content).toContain("about");
+            expect(messages[1].content).toContain("Test User");
+            expect(messages[1].providerOptions).toBeUndefined();
         });
 
         it("does not include profile message when userId is not provided", async () => {
@@ -103,9 +104,9 @@ describe("buildSystemMessages", () => {
             expect(messages).toHaveLength(2);
         });
 
-        it("does not include profile message when profile is empty", async () => {
-            const { compileUserContext } = await import("@/lib/kb/profile");
-            vi.mocked(compileUserContext).mockResolvedValueOnce("");
+        it("does not include profile message when profile is null", async () => {
+            const { compileProfileContext } = await import("@/lib/kb/compile-context");
+            vi.mocked(compileProfileContext).mockResolvedValueOnce(null);
 
             const context: UserContext = {
                 user: null,

@@ -63,10 +63,17 @@ import type { Document, NewDocument } from "@/lib/db/schema";
 function mapRowToDocument(row: Record<string, unknown>): Document {
     return {
         id: row.id as string,
-        userId: row.user_id as string,
+        userId: row.user_id as string | null,
         path: row.path as string,
         name: row.name as string,
         content: row.content as string,
+        description: row.description as string | null,
+        promptLabel: row.prompt_label as string | null,
+        promptHint: row.prompt_hint as string | null,
+        promptOrder: row.prompt_order as number | null,
+        alwaysInclude: row.always_include as boolean,
+        searchable: row.searchable as boolean,
+        editable: row.editable as boolean,
         sourceType: row.source_type as Document["sourceType"],
         sourceId: row.source_id as string | null,
         tags: row.tags as string[],
@@ -133,10 +140,10 @@ export function toPath(input: string): string {
 
 /**
  * Convert ltree path to display format
- * "profile.identity" → "/profile/identity.txt"
+ * "profile.identity" → "/profile/identity"
  */
 export function toDisplayPath(ltreePath: string): string {
-    return "/" + ltreePath.replace(/\./g, "/") + ".txt";
+    return "/" + ltreePath.replace(/\./g, "/");
 }
 
 /**
@@ -167,6 +174,13 @@ export interface CreateDocumentInput {
     path: string;
     name: string;
     content: string;
+    description?: string;
+    promptLabel?: string;
+    promptHint?: string;
+    promptOrder?: number;
+    alwaysInclude?: boolean;
+    searchable?: boolean;
+    editable?: boolean;
     sourceType?: NewDocument["sourceType"];
     sourceId?: string;
     tags?: string[];
@@ -216,6 +230,13 @@ export async function create(
             path: ltreePath,
             name: input.name,
             content: input.content,
+            description: input.description,
+            promptLabel: input.promptLabel,
+            promptHint: input.promptHint,
+            promptOrder: input.promptOrder ?? 0,
+            alwaysInclude: input.alwaysInclude ?? false,
+            searchable: input.searchable ?? false,
+            editable: input.editable ?? true,
             sourceType: input.sourceType ?? "manual",
             sourceId: input.sourceId,
             tags: input.tags ?? [],
@@ -333,6 +354,13 @@ export async function upsert(
             path: normalizedPath,
             name: input.name,
             content: input.content,
+            description: input.description,
+            promptLabel: input.promptLabel,
+            promptHint: input.promptHint,
+            promptOrder: input.promptOrder ?? 0,
+            alwaysInclude: input.alwaysInclude ?? false,
+            searchable: input.searchable ?? false,
+            editable: input.editable ?? true,
             sourceType: input.sourceType ?? "manual",
             sourceId: input.sourceId,
             tags: input.tags ?? [],
@@ -342,6 +370,13 @@ export async function upsert(
             set: {
                 content: input.content,
                 name: input.name,
+                description: input.description,
+                promptLabel: input.promptLabel,
+                promptHint: input.promptHint,
+                promptOrder: input.promptOrder ?? 0,
+                alwaysInclude: input.alwaysInclude ?? false,
+                searchable: input.searchable ?? false,
+                editable: input.editable ?? true,
                 sourceType: input.sourceType ?? "manual",
                 sourceId: input.sourceId,
                 tags: input.tags ?? [],
@@ -439,13 +474,21 @@ export async function search(
 // Profile Paths (shared constants)
 // ============================================================================
 
+/**
+ * Profile document paths for the three core profile documents.
+ *
+ * V1 Structure:
+ * - character: The AI's personality (name, voice, patterns) - Carmenta defaults
+ * - identity: Who the user is (name, role, focus)
+ * - preferences: How the user prefers to collaborate (tone, format, depth)
+ *
+ * V2 (deferred): people.* for tracking relationships
+ */
 export const PROFILE_PATHS = {
     root: "profile",
+    character: "profile.character",
     identity: "profile.identity",
-    instructions: "profile.instructions",
     preferences: "profile.preferences",
-    goals: "profile.goals",
-    people: "profile.people",
 } as const;
 
 // ============================================================================
