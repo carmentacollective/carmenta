@@ -42,21 +42,32 @@ Announce hotfix mode at start: "Hotfix branch detected - running expedited revie
 Addressing only security issues and bugs, declining all other feedback." </hotfix-mode>
 
 <comment-sources>
-Bot feedback lives in TWO separate locations. Fetch both or you'll miss half the feedback:
+Bot feedback lives in TWO separate API endpoints. You must fetch BOTH or you will miss
+Cursor's feedback entirely.
 
-1. **PR-level comments** - General feedback on the PR itself (Claude reviews live here)
-2. **Inline review comments** - Line-specific feedback attached to code (Cursor Bug Bot)
+## How to fetch bot comments
 
-These are different GitHub API endpoints. The PR comments endpoint does NOT include
-inline review comments. You must query both.
+Run these two commands to get all feedback:
 
-Different bots behave differently:
+```bash
+# Claude reviews - PR-level comments
+gh pr view {PR_NUMBER} --json comments --jq '.comments[] | select(.author.login == "claude")'
 
-- Claude Code Review: Posts one top-level PR comment per review. Only address the LAST
-  review - it's the only one that matters for current code state.
+# Cursor Bug Bot - INLINE review comments (different endpoint!)
+gh api repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/comments --jq '.[] | select(.user.login == "cursor[bot]")'
+```
 
-- Cursor Bug Bot: Comments inline on specific code lines. Address all inline comments -
-  each one flags a specific location. Bot username is `cursor[bot]`. </comment-sources>
+The second command is essential - `gh pr view --json comments` does NOT include inline
+review comments. Cursor Bot exclusively uses inline comments, so without the API call
+you'll see zero Cursor feedback.
+
+## Bot-specific behavior
+
+Claude Code Review: Posts one PR comment per review. Only the LAST review matters for
+current code state - earlier reviews reference old code.
+
+Cursor Bug Bot: Posts inline comments on specific lines. Each comment flags a distinct
+issue. Bot username is `cursor[bot]`. Address all of them. </comment-sources>
 
 <autonomous-wait-loop>
 This command runs autonomously - no user prompts, just do the work.
