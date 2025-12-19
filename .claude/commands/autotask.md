@@ -25,7 +25,8 @@ Pull request ready for review, with all implementation, validation, and bot feed
 
 ## Execution Flow
 
-Read @.cursor/rules/git-worktree-task.mdc for comprehensive autonomous workflow guidance.
+Read @.cursor/rules/git-worktree-task.mdc for comprehensive autonomous workflow
+guidance.
 
 <task-preparation>
 Ensure task clarity before implementation. If the task description is unclear or ambiguous, use /create-prompt to ask clarifying questions and create a structured prompt. If the task is clear and unambiguous, proceed directly to implementation.

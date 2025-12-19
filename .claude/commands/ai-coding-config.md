@@ -6,8 +6,8 @@ version: 2.0.1
 
 # AI Coding Configuration
 
-Plugin-first AI coding configurations for Claude Code, Cursor, and other AI coding tools.
-The marketplace lives at `https://github.com/TechNickAI/ai-coding-config`.
+Plugin-first AI coding configurations for Claude Code, Cursor, and other AI coding
+tools. The marketplace lives at `https://github.com/TechNickAI/ai-coding-config`.
 
 ## Usage
 
@@ -224,13 +224,16 @@ Update all configurations to latest versions.
 <marketplace-update>
 Update the Claude Code plugin marketplace first. This pulls the latest plugin definitions and updates any installed plugins.
 
-The `/plugin` command is a native Claude Code CLI command that only works at the terminal level. Since this command executes within Claude Code itself, we invoke the CLI via bash using the `claude` command:
+The `/plugin` command is a native Claude Code CLI command that only works at the
+terminal level. Since this command executes within Claude Code itself, we invoke the CLI
+via bash using the `claude` command:
 
 ```bash
 claude /plugin marketplace update ai-coding-config
 ```
 
-This tells the Claude Code CLI to update the marketplace at `~/.claude/plugins/marketplaces/ai-coding-config/` and refresh all installed plugins.
+This tells the Claude Code CLI to update the marketplace at
+`~/.claude/plugins/marketplaces/ai-coding-config/` and refresh all installed plugins.
 
 </marketplace-update>
 
@@ -250,7 +253,8 @@ After pulling from the repository, detect if this command file (commands/ai-codi
 <plugin-migration-check>
 Check for deprecated plugins from pre-1.2.0 architecture.
 
-**Detection method:** Read the installed plugins JSON file at `~/.claude/plugins/installed_plugins.json`. Look for these deprecated plugin names:
+**Detection method:** Read the installed plugins JSON file at
+`~/.claude/plugins/installed_plugins.json`. Look for these deprecated plugin names:
 
 - `code-review` (consolidated into `agents`)
 - `dev-agents` (consolidated into `agents`)
@@ -273,7 +277,9 @@ You'll get MORE agents with the new structure, not fewer."
 
 **Migration execution:**
 
-For each deprecated plugin that IS installed, try to uninstall it. If uninstall fails (because the source was already removed from the marketplace), that's okay - continue with the next one. The goal is to clean up installed_plugins.json.
+For each deprecated plugin that IS installed, try to uninstall it. If uninstall fails
+(because the source was already removed from the marketplace), that's okay - continue
+with the next one. The goal is to clean up installed_plugins.json.
 
 ```bash
 # Example for one plugin - run via bash with claude CLI
@@ -288,7 +294,9 @@ claude plugin install agents@ai-coding-config
 claude plugin install skills@ai-coding-config
 ```
 
-**Error handling:** If install fails with "Unrecognized key" errors, the plugin manifest format may be incompatible with the current Claude Code version. Report this to the user and suggest they update Claude Code or file an issue on the ai-coding-config repository.
+**Error handling:** If install fails with "Unrecognized key" errors, the plugin manifest
+format may be incompatible with the current Claude Code version. Report this to the user
+and suggest they update Claude Code or file an issue on the ai-coding-config repository.
 
 Offer: "Migrate to new plugin structure (Recommended)" or "Skip migration"
 </plugin-migration-check>
@@ -322,18 +330,18 @@ Check for legacy v2 architecture (rules/ at root):
 
 If detected, offer migration back to standard architecture:
 
-1. "Migrate to standard architecture (Recommended)" - Moves rules back to `.cursor/rules/`, removes root symlink
+1. "Migrate to standard architecture (Recommended)" - Moves rules back to
+   `.cursor/rules/`, removes root symlink
 2. "Skip migration, just update configs" - Updates within current structure
 
-Migration steps if accepted:
-a. `rm .cursor/rules` (remove symlink)
-b. `mv rules .cursor/rules` (move real directory back)
-c. Update configs to point to `.cursor/rules/`
+Migration steps if accepted: a. `rm .cursor/rules` (remove symlink) b.
+`mv rules .cursor/rules` (move real directory back) c. Update configs to point to
+`.cursor/rules/`
 
 Current architecture (no migration needed):
+
 - `.cursor/rules/` is a real directory
-- No `rules/` directory at root in user projects
-</architecture-check>
+- No `rules/` directory at root in user projects </architecture-check>
 
 <deprecated-files-check>
 Check for deprecated files in the user's PROJECT:
@@ -374,18 +382,23 @@ metadata. Run one Grep call for source files with an absolute path like
 file iteration internally and returns clean results without shell parsing issues.
 
 For Cursor, compare COPIED files:
+
 - Rules: `~/.ai_coding_config/.cursor/rules/` vs `.cursor/rules/`
-- Personalities: `~/.ai_coding_config/plugins/personalities/` vs `.cursor/rules/personalities/`
+- Personalities: `~/.ai_coding_config/plugins/personalities/` vs
+  `.cursor/rules/personalities/`
 
 Symlinked files (commands, agents, skills) are already current from repository git pull.
 
-Identify files where source version is newer. Report updates with clear version progression (e.g., "git-interaction.mdc: 1.0.0 → 1.1.0").
+Identify files where source version is newer. Report updates with clear version
+progression (e.g., "git-interaction.mdc: 1.0.0 → 1.1.0").
 
-When updates available, use AskUserQuestion with options: Update all, Select individually, Show diffs first, Skip updates.
+When updates available, use AskUserQuestion with options: Update all, Select
+individually, Show diffs first, Skip updates.
 
 When everything is current: "All files are up to date."
 
-For personalities, preserve the user's `alwaysApply` setting. Never silently overwrite customizations.
+For personalities, preserve the user's `alwaysApply` setting. Never silently overwrite
+customizations.
 
 **Copying files:** When copying updated files, use absolute paths for both source and
 destination. A single `cp` command with full paths is safer than changing directories.
@@ -397,13 +410,12 @@ destination. A single `cp` command with full paths is safer than changing direct
 For Claude Code:
 "Updated core, agents, skills plugins to version 1.2.0"
 
-For Cursor:
-"Update complete:
+For Cursor: "Update complete:
+
 - git-interaction.mdc: 1.0.0 → 1.1.0
 - prompt-engineering.mdc: 1.0.0 → 1.2.0
 - Installed new-rule.mdc (v1.0.0)
-- 12 files already current"
-</update-summary>
+- 12 files already current" </update-summary>
 
 </update-mode>
 
