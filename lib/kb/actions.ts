@@ -263,9 +263,13 @@ export interface KBSearchResult extends KBDocument {
  * document content with stemming and relevance scoring.
  *
  * @param query - Search query (supports phrases, AND/OR operators via websearch syntax)
+ * @param signal - Optional AbortSignal to cancel the search
  * @returns Array of matching documents with relevance scores
  */
-export async function searchKB(query: string): Promise<KBSearchResult[]> {
+export async function searchKB(
+    query: string,
+    signal?: AbortSignal
+): Promise<KBSearchResult[]> {
     const userId = await getDbUserId();
 
     if (!query.trim()) {

@@ -51,6 +51,8 @@ export function CommandPalette({
 
     // Perform full-text search when query changes
     useEffect(() => {
+        const abortController = new AbortController();
+
         const performSearch = async () => {
             if (!query.trim()) {
                 setSearchResults([]);
@@ -59,18 +61,27 @@ export function CommandPalette({
 
             setIsSearching(true);
             try {
-                const results = await searchKB(query);
-                setSearchResults(results);
+                const results = await searchKB(query, abortController.signal);
+                if (!abortController.signal.aborted) {
+                    setSearchResults(results);
+                }
             } catch (error) {
-                logger.error({ error, query }, "Search failed");
-                setSearchResults([]);
+                if (!abortController.signal.aborted) {
+                    logger.error({ error, query }, "Search failed");
+                    setSearchResults([]);
+                }
             } finally {
-                setIsSearching(false);
+                if (!abortController.signal.aborted) {
+                    setIsSearching(false);
+                }
             }
         };
 
         const debounceTimer = setTimeout(performSearch, 300);
-        return () => clearTimeout(debounceTimer);
+        return () => {
+            clearTimeout(debounceTimer);
+            abortController.abort();
+        };
     }, [query]);
 
     // Use search results if query exists, otherwise show all documents

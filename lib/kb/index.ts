@@ -490,7 +490,7 @@ export async function search(
         WHERE d.user_id = ${userId}
           AND (
             d.search_vector @@ query
-            OR d.name ILIKE ${`%${query}%`}
+            OR d.name ILIKE ${`%${escapeLikePattern(query)}%`}
           )
         ORDER BY rank DESC, d.updated_at DESC
         LIMIT ${limit}
