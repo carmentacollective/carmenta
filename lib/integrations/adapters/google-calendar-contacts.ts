@@ -1,7 +1,7 @@
 /**
  * Google Calendar + Contacts Adapter
  *
- * Access to Google Calendar and Contacts (People API) via Nango proxy.
+ * Access to Google Calendar and Contacts (People API).
  * Uses "sensitive" OAuth scopes (Calendar + Contacts).
  *
  * ## Scope Tier

@@ -52,7 +52,6 @@ export interface TestIntegrationOptions {
     isDefault?: boolean;
     apiKey?: string;
     accessToken?: string; // For OAuth - direct access token
-    connectionId?: string;
     accountDisplayName?: string;
     errorMessage?: string;
 }
@@ -73,7 +72,6 @@ export async function createTestIntegration(options: TestIntegrationOptions) {
         isDefault = false,
         apiKey,
         accessToken,
-        connectionId,
         accountDisplayName,
         errorMessage,
     } = options;
@@ -99,10 +97,6 @@ export async function createTestIntegration(options: TestIntegrationOptions) {
             accountId,
             isDefault,
             encryptedCredentials: encryptedCreds,
-            connectionId:
-                credentialType === "oauth" && !accessToken
-                    ? (connectionId ?? `nango_${uuid()}`)
-                    : null,
             accountDisplayName,
             errorMessage,
         })
@@ -140,27 +134,22 @@ export async function createTestApiKeyIntegration(
  *
  * @param userEmail - User's email address
  * @param service - Service ID (e.g., "notion", "clickup")
- * @param accessTokenOrConnectionId - Access token (for in-house OAuth) or Nango connection ID (legacy)
+ * @param accessToken - OAuth access token
  * @param options - Additional options
  * @returns The created integration
  */
 export async function createTestOAuthIntegration(
     userEmail: string,
     service: string,
-    accessTokenOrConnectionId?: string,
+    accessToken?: string,
     options: Partial<TestIntegrationOptions> = {}
 ) {
-    // For in-house OAuth services (like notion), use accessToken
-    // For legacy Nango services, use connectionId
-    const isInHouseOAuth = service === "notion"; // Add more services as they migrate
-
     return createTestIntegration({
         ...options,
         userEmail,
         service,
         credentialType: "oauth",
-        accessToken: isInHouseOAuth ? accessTokenOrConnectionId : undefined,
-        connectionId: !isInHouseOAuth ? accessTokenOrConnectionId : undefined,
+        accessToken,
     });
 }
 

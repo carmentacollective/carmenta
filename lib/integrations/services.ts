@@ -4,7 +4,7 @@
  * All external integrations are defined here. This registry controls:
  * - Which services are available in the UI
  * - Auth method (OAuth or API key)
- * - OAuth provider (in-house or legacy Nango)
+ * - OAuth provider ID
  * - Rollout status (available, beta, internal)
  * - Service metadata (logos, descriptions, docs)
  */
@@ -35,11 +35,8 @@ export interface ServiceDefinition {
     /** Rollout status for progressive deployment */
     status: RolloutStatus;
 
-    /** In-house OAuth provider ID (for migrated services) */
+    /** OAuth provider ID */
     oauthProviderId?: string;
-
-    /** @deprecated Legacy Nango integration key (being phased out) */
-    nangoIntegrationKey?: string;
 
     /** URL where users can get an API key */
     getApiKeyUrl?: string;
@@ -290,7 +287,7 @@ export function getConnectableServices(includeInternal = false): ServiceDefiniti
 }
 
 /**
- * Get OAuth services (for Nango integration)
+ * Get OAuth services
  */
 export function getOAuthServices(): ServiceDefinition[] {
     return SERVICE_REGISTRY.filter((s) => s.authMethod === "oauth");
@@ -331,27 +328,10 @@ export function getAvailableServiceIds(includeInternal = true): string[] {
 }
 
 /**
- * Check if a service uses in-house OAuth (vs legacy Nango)
- */
-export function usesInHouseOAuth(serviceId: string): boolean {
-    const service = getServiceById(serviceId);
-    return !!service?.oauthProviderId;
-}
-
-/**
- * Get in-house OAuth provider ID for a service
- * Returns undefined if service doesn't use in-house OAuth.
+ * Get OAuth provider ID for a service
+ * Returns undefined if service doesn't use OAuth.
  */
 export function getOAuthProviderId(serviceId: string): string | undefined {
     const service = getServiceById(serviceId);
     return service?.oauthProviderId;
-}
-
-/**
- * Get Nango integration key for a service (legacy)
- * @deprecated Use getOAuthProviderId for migrated services
- */
-export function getNangoIntegrationKey(serviceId: string): string {
-    const service = getServiceById(serviceId);
-    return service?.nangoIntegrationKey || serviceId;
 }

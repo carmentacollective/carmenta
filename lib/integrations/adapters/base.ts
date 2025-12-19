@@ -198,7 +198,7 @@ export abstract class ServiceAdapter {
      * connection flow. OAuth services should implement this to verify tokens are
      * still valid by making a live API request.
      *
-     * @param credentialOrConnectionId - API key for API key services, Nango connection ID for OAuth services
+     * @param credentialOrConnectionId - API key for API key services, OAuth connection ID for OAuth services
      * @param userId - Optional user ID for logging (OAuth services)
      * @returns Promise that resolves with success/error result
      */

@@ -1,7 +1,7 @@
 /**
  * OAuth Module
  *
- * In-house OAuth implementation replacing Nango.
+ * In-house OAuth implementation.
  * Handles token exchange, storage, refresh, and CSRF protection.
  */
 
