@@ -42,23 +42,23 @@ describe("KB Path Utilities", () => {
 
     describe("toDisplayPath", () => {
         it("converts dot notation to filesystem display path", () => {
-            expect(toDisplayPath("profile.identity")).toBe("/profile/identity.txt");
+            expect(toDisplayPath("profile.identity")).toBe("/profile/identity");
         });
 
         it("handles single-level paths", () => {
-            expect(toDisplayPath("profile")).toBe("/profile.txt");
+            expect(toDisplayPath("profile")).toBe("/profile");
         });
 
         it("handles deeply nested paths", () => {
             expect(toDisplayPath("profile.people.colleagues.sarah")).toBe(
-                "/profile/people/colleagues/sarah.txt"
+                "/profile/people/colleagues/sarah"
             );
         });
 
-        it("always adds leading slash and .txt suffix", () => {
+        it("always adds leading slash", () => {
             const result = toDisplayPath("notes");
             expect(result.startsWith("/")).toBe(true);
-            expect(result.endsWith(".txt")).toBe(true);
+            expect(result).toBe("/notes");
         });
     });
 
@@ -100,17 +100,25 @@ describe("KB Path Utilities", () => {
 
     describe("path utility round-trip", () => {
         it("toPath and toDisplayPath are inverses for standard paths", () => {
-            const original = "/profile/identity.txt";
+            const original = "/profile/identity";
             const normalized = toPath(original);
             const displayed = toDisplayPath(normalized);
             expect(displayed).toBe(original);
         });
 
         it("handles round-trip for nested paths", () => {
-            const original = "/profile/people/sarah.txt";
+            const original = "/profile/people/sarah";
             const normalized = toPath(original);
             const displayed = toDisplayPath(normalized);
             expect(displayed).toBe(original);
+        });
+
+        it("toPath strips .txt extension, toDisplayPath does not add it", () => {
+            const withExtension = "/profile/identity.txt";
+            const normalized = toPath(withExtension);
+            expect(normalized).toBe("profile.identity");
+            const displayed = toDisplayPath(normalized);
+            expect(displayed).toBe("/profile/identity");
         });
     });
 });

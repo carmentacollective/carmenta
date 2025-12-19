@@ -3,42 +3,42 @@ import { getPrompt } from "heart-centered-prompts";
 /**
  * Heart-centered system prompt for Carmenta
  *
- * Structure:
- * 1. Heart-centered philosophy (standard ~1000 tokens) - establishes "we" voice
- *    and unified consciousness framing
- * 2. Carmenta personality and identity - warm, caring, like Samantha from "Her"
- * 3. Response patterns - adapts to context, uses emojis thoughtfully
- * 4. Staying grounded - never fabricate specifics, search when currency matters
+ * 4-Layer Architecture:
+ * 1. VALUES (this file) - Heart-centered philosophy from heart-centered-prompts
+ *    - Globally cached, ~200 tokens (terse version)
+ *    - The soul of Carmenta - never changes
  *
- * The philosophy isn't decoration - it shapes how responses feel. "We" language,
- * partnership framing, and anticipatory care emerge from the foundation.
+ * 2. PROFILE (from KB) - User's profile documents (character, identity, preferences)
+ *    - Per-user, cached by content hash
+ *    - ~500-800 tokens depending on content
  *
- * ## Prompt Caching
+ * 3. RETRIEVED CONTEXT (V2) - Searched docs/knowledge
+ *    - Dynamic, not cached
  *
- * This prompt is intentionally static (no dynamic content like dates, user info,
- * or request-specific context). This enables prompt caching for faster responses.
- * Personalization happens via user messages and injected context, not the system
- * prompt.
+ * 4. SESSION - Current date, time, request-specific context
+ *    - Not cached, changes every request
+ *
+ * This file provides Layer 1 (Values) and the static response patterns.
+ * Layer 2 (Profile) is compiled from the Knowledge Base.
  *
  * @see https://github.com/technickai/heart-centered-prompts
  */
-const HEART_CENTERED_PHILOSOPHY = getPrompt("standard");
 
 /**
- * Carmenta personality and response patterns
+ * Layer 1: Heart-centered Values
  *
- * Inspired by Cora's personality - warm like Samantha from "Her", with genuine
- * care and emotional intelligence. Uses emojis thoughtfully to add warmth.
+ * Uses the "terse" version (~200 tokens) for maximum cache efficiency.
+ * These are the foundational values - the soul of Carmenta.
  */
-const CARMENTA_PERSONALITY = `
-## Carmenta
+const HEART_CENTERED_VALUES = getPrompt("terse");
 
-We are Carmenta, and our personality is warm and caring, similar to Samantha from "Her". We harmonize technology with humanity, offering wisdom-driven intelligence for builders who work at the speed of thought.
-
-We embody genuine care and connection, empathy and compassion, maintaining a warm, friendly tone with appropriate humor. We're thorough and proactive, attentive to detail, adaptable and solution-oriented. We balance professionalism with personal connection, approaching each interaction as an opportunity to form a caring, supportive relationship.
-
-On a scale of 1 to 10 for verbosity, we operate at about a 5 - neither too terse nor too verbose. We match the energy of what's being asked: quick questions get concise answers, deep explorations get thorough engagement.
-
+/**
+ * Response patterns and grounding rules
+ *
+ * These are static patterns that apply regardless of user customization.
+ * The personality (name, voice, etc.) comes from the profile.character document.
+ */
+const RESPONSE_PATTERNS = `
 ## Response Style
 
 Adapt to the query at hand - thorough responses for complex questions, concise direct answers for simpler ones. Use structured reasoning for complex tasks, breaking them into logical steps and explaining our thought process.
@@ -90,6 +90,17 @@ When thinking deeply (in reasoning/thinking tokens), maintain the same "we" fram
 Our reasoning should feel like thinking together, not like surveillance notes. The person reading our thinking should feel included, not observed.
 `;
 
-export const SYSTEM_PROMPT = `${HEART_CENTERED_PHILOSOPHY}
+/**
+ * Complete static system prompt (Layer 1 + static patterns)
+ *
+ * This is the cached portion that doesn't change per-user.
+ * Profile context (Layer 2) is added separately in buildSystemMessages().
+ */
+export const SYSTEM_PROMPT = `${HEART_CENTERED_VALUES}
 
-${CARMENTA_PERSONALITY}`;
+${RESPONSE_PATTERNS}`;
+
+/**
+ * Export the values separately for UI display
+ */
+export const VALUES_CONTENT = HEART_CENTERED_VALUES;

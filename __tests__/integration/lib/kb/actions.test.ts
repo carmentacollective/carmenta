@@ -438,7 +438,7 @@ describe("Knowledge Base Server Actions", () => {
     });
 
     describe("initializeKBWithClerkData()", () => {
-        it("creates profile documents for new user", async () => {
+        it("creates all three profile documents for new user", async () => {
             // Arrange
             const clerkData: ClerkUserData = {
                 firstName: "Nick",
@@ -453,25 +453,26 @@ describe("Knowledge Base Server Actions", () => {
             // Assert
             expect(result.created).toBe(true);
 
-            // Verify identity document was created with custom content
+            // Verify character document was created with Carmenta defaults
+            const character = await kb.read(TEST_USER_ID, PROFILE_PATHS.character);
+            expect(character).toBeDefined();
+            expect(character?.content).toContain("Carmenta");
+            expect(character?.sourceType).toBe("seed");
+
+            // Verify identity document was created with user name
             const identity = await kb.read(TEST_USER_ID, PROFILE_PATHS.identity);
             expect(identity).toBeDefined();
-            expect(identity?.content).toContain("Name: Nick");
+            expect(identity?.content).toBe("Nick Sullivan");
             expect(identity?.sourceType).toBe("seed");
 
-            // Verify instructions document was created
-            const instructions = await kb.read(
-                TEST_USER_ID,
-                PROFILE_PATHS.instructions
-            );
-            expect(instructions).toBeDefined();
-            expect(instructions?.content).toContain(
-                "How should Carmenta communicate with you?"
-            );
-            expect(instructions?.sourceType).toBe("seed");
+            // Verify preferences document was created empty
+            const preferences = await kb.read(TEST_USER_ID, PROFILE_PATHS.preferences);
+            expect(preferences).toBeDefined();
+            expect(preferences?.content).toBe("");
+            expect(preferences?.sourceType).toBe("seed");
         });
 
-        it("uses firstName when available", async () => {
+        it("uses fullName when available", async () => {
             // Arrange
             const clerkData: ClerkUserData = {
                 firstName: "Nick",
@@ -485,15 +486,15 @@ describe("Knowledge Base Server Actions", () => {
 
             // Assert
             const identity = await kb.read(TEST_USER_ID, PROFILE_PATHS.identity);
-            expect(identity?.content).toContain("Name: Nick");
+            expect(identity?.content).toBe("Nick Sullivan");
         });
 
-        it("falls back to fullName when firstName is null", async () => {
+        it("constructs name from parts when fullName is null", async () => {
             // Arrange
             const clerkData: ClerkUserData = {
-                firstName: null,
+                firstName: "Nick",
                 lastName: "Sullivan",
-                fullName: "Nick Sullivan",
+                fullName: null,
                 email: "nick@example.com",
             };
 
@@ -502,10 +503,10 @@ describe("Knowledge Base Server Actions", () => {
 
             // Assert
             const identity = await kb.read(TEST_USER_ID, PROFILE_PATHS.identity);
-            expect(identity?.content).toContain("Name: Nick Sullivan");
+            expect(identity?.content).toBe("Nick Sullivan");
         });
 
-        it("uses 'Friend' when no name is available", async () => {
+        it("creates empty identity when no name is available", async () => {
             // Arrange
             const clerkData: ClerkUserData = {
                 firstName: null,
@@ -519,14 +520,14 @@ describe("Knowledge Base Server Actions", () => {
 
             // Assert
             const identity = await kb.read(TEST_USER_ID, PROFILE_PATHS.identity);
-            expect(identity?.content).toContain("Name: Friend");
+            expect(identity?.content).toBe("");
         });
 
         it("does not overwrite existing documents", async () => {
             // Arrange: Create existing identity document
             await kb.create(TEST_USER_ID, {
                 path: PROFILE_PATHS.identity,
-                name: "identity.txt",
+                name: "Who I Am",
                 content: "Existing custom content",
             });
 
@@ -540,20 +541,16 @@ describe("Knowledge Base Server Actions", () => {
             // Act
             const result = await initializeKBWithClerkData(clerkData);
 
-            // Assert: Should indicate profile was created (instructions doc was new)
-            // Note: initializeProfile returns false, but instructions doc is still created
+            // Assert: Should indicate profile was created (character and preferences were new)
             expect(result.created).toBe(true);
 
             // Verify existing identity content was not overwritten
             const identity = await kb.read(TEST_USER_ID, PROFILE_PATHS.identity);
             expect(identity?.content).toBe("Existing custom content");
 
-            // Verify instructions doc was created
-            const instructions = await kb.read(
-                TEST_USER_ID,
-                PROFILE_PATHS.instructions
-            );
-            expect(instructions).toBeDefined();
+            // Verify character doc was created
+            const character = await kb.read(TEST_USER_ID, PROFILE_PATHS.character);
+            expect(character).toBeDefined();
         });
 
         it("is safe to call multiple times", async () => {
@@ -605,12 +602,12 @@ describe("Knowledge Base Server Actions", () => {
             expect(hasProfile).toBe(false);
         });
 
-        it("returns true when user has identity document", async () => {
-            // Arrange: Create identity document
+        it("returns true when user has character document", async () => {
+            // Arrange: Create character document (indicates profile was initialized)
             await kb.create(TEST_USER_ID, {
-                path: PROFILE_PATHS.identity,
-                name: "identity.txt",
-                content: "Name: Test User",
+                path: PROFILE_PATHS.character,
+                name: "Carmenta",
+                content: "Name: Carmenta",
             });
 
             // Act

@@ -747,40 +747,78 @@ export const documentSourceTypeEnum = pgEnum("document_source_type", [
  * Knowledge Base Documents
  *
  * Core storage for user knowledge. Uses dot-notation paths for filesystem-like
- * hierarchy (e.g., "profile.identity", "profile.people.sarah").
+ * hierarchy with namespace-based behavior:
+ *
+ * Namespace architecture:
+ * - `profile.*` - Per-user, always injected into context (character, identity, preferences)
+ * - `docs.*` - Global (userId = null), searched when relevant (V2)
+ * - `knowledge.*` - Per-user, searched when relevant (V2)
+ *
+ * The path prefix determines behavior:
+ * - userId nullable: null = global (docs/*), string = per-user
+ * - alwaysInclude: true for profile/*, false for docs/* and knowledge/*
+ * - searchable: true for docs/* and knowledge/*, false for profile/*
+ * - editable: true for profile/* and knowledge/*, false for docs/*
  *
  * Design decisions:
  * - Text paths with dot notation: Simple, works with pglite for testing
  * - V2: Migrate to ltree for production efficiency at scale
  * - Text content over JSONB: LLM-readable, searchable, simple
- * - No version history yet: V2 - add without breaking changes
- * - Tags as array: Simple tag-based filtering
- * - Generated tsvector: Postgres full-text search without extra infra
+ * - promptLabel/promptHint: XML tag metadata for context compilation
  */
 export const documents = pgTable(
     "documents",
     {
         id: uuid("id").primaryKey().defaultRandom(),
 
-        /** Owner - references users.id (UUID) */
-        userId: uuid("user_id")
-            .references(() => users.id, { onDelete: "cascade" })
-            .notNull(),
+        /**
+         * Owner - references users.id (UUID)
+         * null = global document (docs/* namespace for shared documentation)
+         * string = per-user document (profile/* or knowledge/* namespaces)
+         */
+        userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
 
         /**
          * Hierarchical path using dot notation
-         * Examples: "profile.identity", "profile.people.sarah"
+         * Examples: "profile.identity", "profile.character", "docs.features.uploads"
          * Note: No leading dot, dots as separators
          * V1: text type with LIKE queries
          * V2: Consider ltree extension for production efficiency
          */
         path: text("path").notNull(),
 
-        /** Human-readable document name (e.g., "identity.txt") */
+        /** Human-readable document name (e.g., "Who I Am", "Carmenta") */
         name: varchar("name", { length: 255 }).notNull(),
 
         /** Plain text content - LLM-readable */
         content: text("content").notNull(),
+
+        /** Help text for editors explaining this document's purpose */
+        description: text("description"),
+
+        // ---- Prompt Injection Metadata (for profile/* docs) ----
+
+        /** XML tag name for context compilation (e.g., "character", "about") */
+        promptLabel: varchar("prompt_label", { length: 50 }),
+
+        /** Purpose attribute content for LLM context hint */
+        promptHint: text("prompt_hint"),
+
+        /** Ordering in compiled prompt (lower = earlier) */
+        promptOrder: integer("prompt_order").default(0),
+
+        // ---- Behavior Flags ----
+
+        /** Always include in context (true for profile/*) */
+        alwaysInclude: boolean("always_include").notNull().default(false),
+
+        /** Include in search results (true for docs/* and knowledge/*) */
+        searchable: boolean("searchable").notNull().default(false),
+
+        /** User can edit (true for profile/* and knowledge/*, false for docs/*) */
+        editable: boolean("editable").notNull().default(true),
+
+        // ---- Source Tracking ----
 
         /** Source of this document */
         sourceType: documentSourceTypeEnum("source_type").notNull().default("manual"),
@@ -802,10 +840,12 @@ export const documents = pgTable(
     (table) => [
         /** Primary lookup: user's documents by path prefix */
         index("documents_user_id_idx").on(table.userId),
-        /** Unique path per user */
+        /** Unique path per user (or globally if userId is null) */
         uniqueIndex("documents_user_path_unique_idx").on(table.userId, table.path),
         /** Tag-based filtering */
         index("documents_tags_idx").on(table.tags),
+        /** Find always-included documents for a user */
+        index("documents_always_include_idx").on(table.userId, table.alwaysInclude),
     ]
 );
 

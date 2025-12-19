@@ -52,6 +52,9 @@ export interface KBDocument {
     path: string;
     name: string;
     content: string;
+    description: string | null;
+    promptLabel: string | null;
+    editable: boolean;
     updatedAt: Date;
 }
 
@@ -85,6 +88,9 @@ export async function getKBFolders(): Promise<KBFolder[]> {
             path: doc.path,
             name: doc.name,
             content: doc.content,
+            description: doc.description,
+            promptLabel: doc.promptLabel,
+            editable: doc.editable,
             updatedAt: doc.updatedAt,
         });
         folderMap.set(parentPath, folderDocs);
@@ -116,6 +122,9 @@ export async function getKBDocuments(): Promise<KBDocument[]> {
         path: doc.path,
         name: doc.name,
         content: doc.content,
+        description: doc.description,
+        promptLabel: doc.promptLabel,
+        editable: doc.editable,
         updatedAt: doc.updatedAt,
     }));
 }
@@ -134,6 +143,9 @@ export async function getKBDocument(path: string): Promise<KBDocument | null> {
         path: doc.path,
         name: doc.name,
         content: doc.content,
+        description: doc.description,
+        promptLabel: doc.promptLabel,
+        editable: doc.editable,
         updatedAt: doc.updatedAt,
     };
 }
@@ -160,6 +172,9 @@ export async function updateKBDocument(
             path: updated.path,
             name: updated.name,
             content: updated.content,
+            description: updated.description,
+            promptLabel: updated.promptLabel,
+            editable: updated.editable,
             updatedAt: updated.updatedAt,
         };
     } catch (error) {
@@ -186,8 +201,11 @@ export interface ClerkUserData {
 /**
  * Initialize the user's KB profile with Clerk user data
  *
- * Called when a user first accesses the Knowledge Base. Seeds their profile
- * with their name from Clerk and creates the custom instructions document.
+ * Called when a user first accesses the Knowledge Base. Creates the three
+ * core profile documents:
+ * - Character (Carmenta defaults)
+ * - Identity (user's name)
+ * - Preferences (empty)
  *
  * Safe to call multiple times - will not overwrite existing documents.
  */
@@ -196,44 +214,14 @@ export async function initializeKBWithClerkData(
 ): Promise<{ created: boolean }> {
     const userId = await getDbUserId();
 
-    // Build identity content from Clerk data
-    const name = clerkData.firstName ?? clerkData.fullName ?? "Friend";
-    const identityContent = `Name: ${name}
-Role: [Your professional role or title]
-Background: [Brief professional background - what you do, what you're known for]
-Working on: [Current major project or focus area]`;
+    // Get user's display name for identity document
+    const userName =
+        clerkData.fullName ||
+        [clerkData.firstName, clerkData.lastName].filter(Boolean).join(" ") ||
+        undefined;
 
-    // Initialize with custom identity (overrides template)
-    const created = await initializeProfile(userId, {
-        initialData: {
-            identity: identityContent,
-        },
-    });
-
-    // Also create the instructions document if it doesn't exist
-    if (!(await kb.exists(userId, PROFILE_PATHS.instructions))) {
-        try {
-            await kb.create(userId, {
-                path: PROFILE_PATHS.instructions,
-                name: "instructions.txt",
-                content: `How should Carmenta communicate with you?
-[e.g., Be direct, use technical terms, keep responses concise]
-
-What should Carmenta know about you?
-[e.g., I'm a software engineer building AI products]
-
-Any special requests?
-[e.g., Always explain your reasoning, suggest alternatives]`,
-                sourceType: "seed",
-            });
-        } catch (error) {
-            // If concurrent request created it, that's fine - skip silently
-            logger.debug(
-                { userId, error },
-                "Instructions document already exists (race condition)"
-            );
-        }
-    }
+    // Initialize profile with the three core documents
+    const created = await initializeProfile(userId, { userName });
 
     return { created };
 }
@@ -253,5 +241,6 @@ export async function hasKBProfile(): Promise<boolean> {
         return false;
     }
 
-    return kb.exists(user.id, PROFILE_PATHS.identity);
+    // Check if the character document exists (indicates profile was initialized)
+    return kb.exists(user.id, PROFILE_PATHS.character);
 }

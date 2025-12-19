@@ -825,11 +825,9 @@ describe("PROFILE_PATHS Constant", () => {
     it("defines expected profile structure", () => {
         expect(PROFILE_PATHS).toEqual({
             root: "profile",
+            character: "profile.character",
             identity: "profile.identity",
-            instructions: "profile.instructions",
             preferences: "profile.preferences",
-            goals: "profile.goals",
-            people: "profile.people",
         });
     });
 });
