@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { logger } from "@/lib/client-logger";
 import type { Action } from "./schema";
 
 export type UseActionButtonsOptions = {
@@ -77,6 +78,12 @@ export function useActionButtons(
             try {
                 setExecutingActionId(action.id);
                 await onAction(action.id);
+            } catch (error) {
+                logger.error(
+                    { error, actionId: action.id, actionLabel: action.label },
+                    "Tool UI action failed"
+                );
+                throw error;
             } finally {
                 setExecutingActionId(null);
                 setConfirmingActionId(null);

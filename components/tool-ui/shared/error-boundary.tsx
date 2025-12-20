@@ -1,6 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import * as React from "react";
+import { logger } from "@/lib/client-logger";
 
 export interface ToolUIErrorBoundaryProps {
     componentName: string;
@@ -28,6 +30,20 @@ export class ToolUIErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        logger.error(
+            {
+                error,
+                componentStack: errorInfo.componentStack,
+                componentName: this.props.componentName,
+            },
+            "Tool UI component failed to render"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "ToolUI", name: this.props.componentName },
+            extra: { componentStack: errorInfo.componentStack },
+        });
+
         this.props.onError?.(error, errorInfo);
     }
 

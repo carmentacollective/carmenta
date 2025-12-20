@@ -187,7 +187,7 @@ export function Plan({
                 hiddenTodos: todos.slice(maxVisibleTodos),
                 completedCount: completed,
                 allComplete: completed === todos.length,
-                progress: (completed / todos.length) * 100,
+                progress: todos.length > 0 ? (completed / todos.length) * 100 : 0,
             };
         }, [todos, maxVisibleTodos]);
 
