@@ -286,12 +286,32 @@ export async function exchangeCodeForTokens(
             Object.keys(providerMetadata).length > 0 ? providerMetadata : undefined,
     };
 
+    // Log granted scopes for debugging OAuth issues
+    // Compare with requested scopes to detect scope dropping
+    const grantedScopes = scope?.split(" ") ?? [];
+    const requestedScopes = provider.scopes;
+    const missingScopes = requestedScopes.filter((s) => !grantedScopes.includes(s));
+
+    if (missingScopes.length > 0) {
+        logger.warn(
+            {
+                provider: provider.id,
+                requestedScopes,
+                grantedScopes,
+                missingScopes,
+            },
+            "⚠️ OAuth scopes were dropped - some requested scopes not granted"
+        );
+    }
+
     logger.info(
         {
             provider: provider.id,
             accountId: accountInfo.identifier,
             hasRefreshToken: !!refreshToken,
             expiresAt,
+            grantedScopes,
+            scopeCount: grantedScopes.length,
         },
         "✅ Token exchange successful"
     );

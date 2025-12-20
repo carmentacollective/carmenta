@@ -5,6 +5,7 @@
  * New providers are added here and become available throughout the app.
  */
 
+import { logger } from "@/lib/logger";
 import type { OAuthProviderConfig } from "../types";
 import { notionProvider } from "./notion";
 import { slackProvider } from "./slack";
@@ -95,7 +96,19 @@ export function buildAuthorizationUrl(
         params.append("code_challenge_method", "S256");
     }
 
-    return `${provider.authorizationUrl}?${params.toString()}`;
+    const authUrl = `${provider.authorizationUrl}?${params.toString()}`;
+
+    // Log requested scopes for debugging OAuth issues
+    logger.info(
+        {
+            provider: providerId,
+            requestedScopes: provider.scopes,
+            scopeCount: provider.scopes.length,
+        },
+        "🔐 Building OAuth authorization URL"
+    );
+
+    return authUrl;
 }
 
 // Re-export for convenience
