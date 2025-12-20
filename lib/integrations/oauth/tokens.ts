@@ -288,11 +288,15 @@ export async function exchangeCodeForTokens(
 
     // Log granted scopes for debugging OAuth issues
     // Compare with requested scopes to detect scope dropping
-    const grantedScopes = scope?.split(" ") ?? [];
+    // Per RFC 6749 §5.1: if scope is omitted, it's identical to what was requested
+    const grantedScopes = scope && scope.trim() ? scope.split(" ") : [];
     const requestedScopes = provider.scopes;
+
+    // Only warn if scope was explicitly returned but doesn't match requested
+    // Undefined/empty scope means "same as requested" per RFC 6749
     const missingScopes = requestedScopes.filter((s) => !grantedScopes.includes(s));
 
-    if (missingScopes.length > 0) {
+    if (scope && scope.trim() && missingScopes.length > 0) {
         logger.warn(
             {
                 provider: provider.id,
