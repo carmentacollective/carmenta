@@ -1193,26 +1193,9 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                 totalPeople?: number;
             }>();
 
-        const contacts = (response.connections || []).map((contact) => ({
-            resourceName: contact.resourceName,
-            etag: contact.etag,
-            name: contact.names?.[0]?.displayName || "Unknown",
-            givenName: contact.names?.[0]?.givenName,
-            familyName: contact.names?.[0]?.familyName,
-            emails: contact.emailAddresses?.map((e) => ({
-                value: e.value,
-                type: e.type,
-            })),
-            phones: contact.phoneNumbers?.map((p) => ({
-                value: p.value,
-                type: p.type,
-            })),
-            organization: contact.organizations?.[0]?.name,
-            title: contact.organizations?.[0]?.title,
-        }));
-
+        // Return original Google API structure for UI component compatibility
         return this.createJSONResponse({
-            contacts,
+            contacts: response.connections || [],
             nextPageToken: response.nextPageToken,
             totalCount: response.totalPeople,
         });
@@ -1250,18 +1233,10 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                 }>;
             }>();
 
-        const contacts = (response.results || []).map((result) => ({
-            resourceName: result.person.resourceName,
-            etag: result.person.etag,
-            name: result.person.names?.[0]?.displayName || "Unknown",
-            emails: result.person.emailAddresses?.map((e) => e.value),
-            phones: result.person.phoneNumbers?.map((p) => p.value),
-            organization: result.person.organizations?.[0]?.name,
-        }));
-
+        // Return original Google API structure for UI component compatibility
         return this.createJSONResponse({
             query,
-            contacts,
+            contacts: (response.results || []).map((result) => result.person),
         });
     }
 
