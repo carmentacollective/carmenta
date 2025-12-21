@@ -210,9 +210,12 @@ export function OnboardingChat() {
     // Handle text response submission
     const handleTextSubmit = useCallback(
         async (value: string) => {
-            setSubmittedResponse(value);
-            await completeItem(value);
-            setSubmittedResponse(null);
+            try {
+                setSubmittedResponse(value);
+                await completeItem(value);
+            } finally {
+                setSubmittedResponse(null);
+            }
         },
         [completeItem]
     );
@@ -220,8 +223,9 @@ export function OnboardingChat() {
     // Handle theme selection
     const handleThemeConfirm = useCallback(
         async (theme: string) => {
-            setConfirmedTheme(theme as ThemeVariant);
             await selectTheme(theme);
+            // Only set confirmed after successful save
+            setConfirmedTheme(theme as ThemeVariant);
         },
         [selectTheme]
     );
