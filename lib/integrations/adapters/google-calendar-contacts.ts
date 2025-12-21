@@ -48,6 +48,57 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
     }
 
     /**
+     * Check what scopes a token actually has by calling Google's tokeninfo endpoint.
+     * Used for diagnosing 403 errors - logs the actual scopes for debugging.
+     *
+     * @param accessToken - The OAuth access token to check
+     * @returns Object with scopes array and whether contacts scope is present
+     */
+    private async checkTokenScopes(accessToken: string): Promise<{
+        scopes: string[];
+        hasContactsScope: boolean;
+        hasContactsReadOnlyScope: boolean;
+    }> {
+        try {
+            const response = await httpClient
+                .get("https://oauth2.googleapis.com/tokeninfo", {
+                    searchParams: { access_token: accessToken },
+                })
+                .json<{ scope?: string }>();
+
+            const scopes = response.scope?.split(" ") ?? [];
+            const hasContactsScope = scopes.includes(
+                "https://www.googleapis.com/auth/contacts"
+            );
+            const hasContactsReadOnlyScope = scopes.includes(
+                "https://www.googleapis.com/auth/contacts.readonly"
+            );
+
+            logger.info(
+                {
+                    scopes,
+                    scopeCount: scopes.length,
+                    hasContactsScope,
+                    hasContactsReadOnlyScope,
+                },
+                "🔍 Token scope check for Google OAuth"
+            );
+
+            return { scopes, hasContactsScope, hasContactsReadOnlyScope };
+        } catch (error) {
+            logger.warn(
+                { error: error instanceof Error ? error.message : String(error) },
+                "⚠️ Failed to check token scopes"
+            );
+            return {
+                scopes: [],
+                hasContactsScope: false,
+                hasContactsReadOnlyScope: false,
+            };
+        }
+    }
+
+    /**
      * Test the OAuth connection by making a live API request
      * Called when user clicks "Test" button to verify credentials are working
      *
@@ -763,14 +814,76 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const isContactsOperation = [
+                "list_contacts",
+                "search_contacts",
+                "get_contact",
+                "create_contact",
+                "update_contact",
+                "delete_contact",
+                "list_contact_groups",
+            ].includes(action);
+            const is403 = errorMessage.includes("403");
+
             this.logError(
                 `[GOOGLE ADAPTER] Failed to execute ${action} for user ${userId}:`,
                 {
-                    error: error instanceof Error ? error.message : String(error),
+                    error: errorMessage,
                     stack: error instanceof Error ? error.stack : undefined,
                     params,
                 }
             );
+
+            // For 403 on contacts operations, check token scopes to diagnose the issue
+            if (is403 && isContactsOperation) {
+                const scopeInfo = await this.checkTokenScopes(accessToken);
+                logger.warn(
+                    {
+                        action,
+                        userId,
+                        hasContactsScope: scopeInfo.hasContactsScope,
+                        hasContactsReadOnlyScope: scopeInfo.hasContactsReadOnlyScope,
+                        tokenScopes: scopeInfo.scopes,
+                    },
+                    "🔴 Contacts 403 - checking if it's a scope or API enablement issue"
+                );
+
+                // If token has the scopes, the API itself isn't enabled
+                if (scopeInfo.hasContactsScope || scopeInfo.hasContactsReadOnlyScope) {
+                    this.captureError(error, {
+                        action,
+                        params: {
+                            ...(params as Record<string, unknown>),
+                            _diagnosis:
+                                "Token has contacts scope but API returned 403 - People API may not be enabled",
+                        },
+                        userId,
+                    });
+
+                    return this.createErrorResponse(
+                        `We couldn't ${action}: The People API may not be enabled in Google Cloud Console. ` +
+                            `Please enable it at: https://console.cloud.google.com/apis/library/people.googleapis.com ` +
+                            `then wait a few minutes and try again.`
+                    );
+                }
+
+                // Token is missing contacts scope
+                this.captureError(error, {
+                    action,
+                    params: {
+                        ...(params as Record<string, unknown>),
+                        _diagnosis: "Token is missing contacts scope",
+                        _tokenScopes: scopeInfo.scopes,
+                    },
+                    userId,
+                });
+
+                return this.createErrorResponse(
+                    `We couldn't ${action}: Your connection doesn't have contacts permission. ` +
+                        `Please disconnect and reconnect at: ${this.getIntegrationUrl()}`
+                );
+            }
 
             this.captureError(error, {
                 action,
