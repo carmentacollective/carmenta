@@ -449,13 +449,13 @@ export function getFallbackChain(modelId: string): string[] {
  * Based on knowledge/decisions/concierge-model-selection.md evaluation.
  *
  * Priority order:
- * 1. Grok 4.1 Fast - 100% accuracy, 6.1s, $0.0165/call (primary - fastest)
- * 2. Gemini 3 Pro - 100% accuracy, 9.4s, $0.0044/call (fallback - cheaper)
+ * 1. Gemini 3 Flash - 218 t/s, auto prompt caching (primary - fastest with caching)
+ * 2. Grok 4.1 Fast - 150 t/s, no caching (fallback - still fast)
  * 3. Claude Sonnet 4.5 - Safe fallback if both fail
  */
 export const CONCIERGE_FALLBACK_CHAIN: readonly ModelId[] = [
+    "google/gemini-3-flash-preview",
     "x-ai/grok-4.1-fast",
-    "google/gemini-3-pro-preview",
     "anthropic/claude-sonnet-4.5",
 ] as const;
 

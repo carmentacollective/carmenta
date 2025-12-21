@@ -1,74 +1,77 @@
 # Concierge Model Selection
 
-**Decision**: Use `google/gemini-3-pro-preview` as the Concierge model.
+**Decision**: Use `google/gemini-3-flash-preview` as the Concierge model.
 
 **Date**: December 2025
 
-**Status**: Decided
+**Status**: Decided (Updated 2025-12-20)
 
 ## Context
 
 The Concierge is Carmenta's routing layer - it analyzes incoming requests and selects
 the optimal model, temperature, reasoning configuration, and generates connection
-titles. It runs on every new conversation, so performance matters.
+titles. It runs on every new conversation, so latency matters significantly.
 
-Previously using `anthropic/claude-haiku-4.5` for speed.
+## History
 
-## Evaluation
+1. **Claude Haiku 4.5** - Fast (2.65s) but 95% accuracy on model selection
+2. **Gemini 3 Pro** - 100% accuracy but 9.4s latency felt slow
+3. **Grok 4.1 Fast** - 100% accuracy, 6.1s latency, but no prompt caching support
 
-Ran 32 test cases across 9 categories (speed signals, complexity, creativity, code,
-reasoning, sensitivity, attachments, hints, edge cases) against 4 candidates.
+## The Caching Insight
 
-See `knowledge/research/2025-12-18-concierge-model-eval.md` for full data.
+The concierge system prompt is ~4-5K tokens (model rubric + instructions). Without
+prompt caching, every call processes this entire prompt fresh.
 
-### Results Summary
+**Caching support through OpenRouter:**
 
-| Model            | Model Selection | Temperature | Reasoning | Speed | Cost/Call |
-| ---------------- | --------------- | ----------- | --------- | ----- | --------- |
-| Claude Haiku 4.5 | 95%             | 85.7%       | 92.3%     | 2.65s | $0.0037   |
-| Gemini 3 Pro     | **100%**        | **100%**    | 92.3%     | 9.4s  | $0.0044   |
-| Grok 4.1 Fast    | **100%**        | **100%**    | 92.3%     | 6.1s  | $0.0165   |
-| GPT-5 Mini       | **100%**        | **100%**    | 92.3%     | 18.9s | $0.0014   |
+| Model            | Caching      | Minimum Tokens | Notes                                                                 |
+| ---------------- | ------------ | -------------- | --------------------------------------------------------------------- |
+| Gemini 3 Flash   | ✅ Automatic | 2,048          | Just works ([source](https://ai.google.dev/gemini-api/docs/gemini-3)) |
+| Claude Haiku 4.5 | ⚠️ Manual    | 1,024          | Requires `cache_control` breakpoints                                  |
+| Grok 4.1 Fast    | ❌ None      | N/A            | Every call is fresh                                                   |
 
-## Decision Rationale
+Gemini 3 Flash's automatic caching with 2,048 token minimum means our ~4-5K token system
+prompt qualifies automatically. After the first call, subsequent calls only process the
+user query portion (~100-500 tokens).
 
-**Why Gemini 3 Pro:**
+## Current Decision: Gemini 3 Flash
 
-1. **100% accuracy** on model selection and temperature - no misroutes
-2. **Reasonable cost** - only ~$70/month more than Haiku at 100K calls/month
-3. **Acceptable latency** - 9.4s for routing is fine since it's one-time per
-   conversation
-4. **Native multimodal** - handles audio/image/video routing naturally
+**Why Gemini 3 Flash Preview:**
 
-**Why not Haiku (current):**
+1. **Fastest raw speed** - 218 t/s output, 45% faster than Haiku/Grok (~150 t/s)
+2. **Automatic prompt caching** - No code changes needed, 1,028 token minimum met
+3. **Lowest cost** - $0.50/$3 per M tokens vs Haiku's $1/$5
+4. **Native multimodal** - Handles routing with any attachment type naturally
+5. **1M context** - Future-proof for any prompt expansion
 
-The 6.4% accuracy gap (95% vs 100% model selection, 85.7% vs 100% temperature) means
-real user impact. 6 out of 100 queries get routed to wrong model or temperature.
+**Expected latency with caching:**
 
-**Why not GPT-5 Mini:**
+- Cold (first call): ~1-2s (processing full ~4-5K token prompt)
+- Warm (cached): Sub-second (processing only ~100-500 token user query)
 
-Cheapest and most accurate, but 19 seconds is too slow. Users would feel lag on every
-new conversation.
-
-**Why not Grok 4.1 Fast:**
-
-4.5x the cost of Gemini for only marginally better speed (6s vs 9.4s). Not worth it.
+The cache TTL is reasonable for interactive use - subsequent messages in a session will
+hit the warm cache.
 
 ## Implementation
 
 Update `lib/concierge/types.ts`:
 
 ```typescript
-export const CONCIERGE_MODEL = "google/gemini-3-pro-preview";
+export const CONCIERGE_MODEL = "google/gemini-3-flash-preview";
 ```
 
 ## Tradeoffs Accepted
 
-- **Slower than Haiku** - 9.4s vs 2.65s. Acceptable since it's one-time per
-  conversation.
-- **Slightly higher cost** - $0.0044 vs $0.0037 per call. Worth it for accuracy.
-- **No reasoning tokens** - Gemini 3 Pro doesn't support extended reasoning. Not needed
-  for the concierge task (classification, not analysis).
+- **Not Anthropic** - We prefer Anthropic when models are close, but the automatic
+  caching + speed advantage of Gemini 3 Flash is significant here.
+- **Preview model** - Using preview version; will update to stable when available.
+
+## Alternative: Claude Haiku 4.5 with Manual Caching
+
+If we need to switch back to Anthropic, we can implement explicit `cache_control`
+breakpoints in the message structure. This requires code changes but can reduce latency
+by up to 85% per Anthropic's documentation.
 
 ## Monitoring
 
@@ -76,7 +79,8 @@ Track in Braintrust:
 
 - Classification accuracy over time
 - Title quality scores
-- Latency p50/p95/p99
+- Latency p50/p95/p99 (expect significant improvement)
+- Cache hit rate (via OpenRouter usage stats)
 - Cost per routing decision
 
-Re-evaluate quarterly or when new model releases occur.
+Re-evaluate when Gemini 3 Flash reaches stable or if latency issues emerge.

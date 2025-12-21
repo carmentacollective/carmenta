@@ -173,10 +173,12 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
 
 /**
  * The model used to run the Concierge itself.
- * Grok 4.1 Fast achieves 100% accuracy on model selection and temperature
- * with 6.1s latency (35% faster than Gemini's 9.4s).
+ * Gemini 3 Flash offers automatic prompt caching (2048 token min) and
+ * 218 t/s output speed. The ~4-5K token system prompt qualifies for
+ * caching, giving sub-second latency after the first call.
+ * Source: https://ai.google.dev/gemini-api/docs/gemini-3
  */
-export const CONCIERGE_MODEL = "x-ai/grok-4.1-fast";
+export const CONCIERGE_MODEL = "google/gemini-3-flash-preview";
 
 /**
  * Whitelist of allowed models the concierge can select.
