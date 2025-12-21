@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
 import { BookOpen } from "lucide-react";
 
 import { SiteHeader } from "@/components/site-header";
@@ -20,15 +18,7 @@ export const metadata: Metadata = {
  * Read-only documentation synced from /docs folder.
  */
 export default async function GuidePage() {
-    // Get current user from Clerk
-    const user = await currentUser();
-
-    if (!user) {
-        // Redirect to sign-in if not authenticated
-        redirect("/sign-in?redirect_url=/guide");
-    }
-
-    // Fetch global documentation
+    // Fetch global documentation (public page - no auth required)
     const docs = await getGlobalDocs();
 
     // Organize docs into sections based on path prefix

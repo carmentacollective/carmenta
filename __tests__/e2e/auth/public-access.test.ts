@@ -13,6 +13,7 @@ const marketingPages = [
     "/",
     "/ai-first-development",
     "/brand",
+    "/guide",
     "/offline",
     "/privacy",
     "/security",
