@@ -37,22 +37,22 @@ Style: Direct and precise, every word earns its place`;
  */
 export const PROFILE_DOCUMENT_DEFS = {
     character: {
-        name: "Carmenta",
-        description: "Customize how Carmenta presents itself",
+        name: "Voice & Style",
+        description: "Shape how we interact (Carmenta by default)",
         promptLabel: "character",
         promptHint: "The AI's personality—name, voice, patterns",
         promptOrder: 1,
     },
     identity: {
-        name: "Who I Am",
-        description: "Tell Carmenta about yourself",
+        name: "About You",
+        description: "Help us understand who you are",
         promptLabel: "about",
         promptHint: "Who the user is—identity, role, current focus",
         promptOrder: 2,
     },
     preferences: {
-        name: "How We Interact",
-        description: "How you'd like Carmenta to respond",
+        name: "Working Together",
+        description: "Define how we collaborate",
         promptLabel: "preferences",
         promptHint: "How the user prefers to collaborate—tone, format, depth",
         promptOrder: 3,

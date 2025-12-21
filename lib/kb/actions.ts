@@ -352,7 +352,7 @@ export async function getValuesDocument(): Promise<KBDocument> {
     return {
         id: "philosophy-heart-centered",
         path: "philosophy.heart-centered",
-        name: "Our Foundation",
+        name: "Heart-Centered AI",
         content: VALUES_CONTENT,
         description: "The heart-centered values that guide how we work together",
         promptLabel: null,

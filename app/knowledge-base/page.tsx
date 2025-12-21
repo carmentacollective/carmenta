@@ -85,10 +85,30 @@ export default async function KnowledgeBasePage() {
         });
     }
 
-    // 3. Knowledge folder (from user folders, if exists)
+    // 3. Knowledge folder (from user folders, or placeholder if not yet created)
     const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
     if (knowledgeFolder) {
         allFolders.push(knowledgeFolder);
+    } else {
+        // Show "coming soon" placeholder
+        allFolders.push({
+            id: "knowledge",
+            name: "knowledge",
+            path: "knowledge",
+            documents: [
+                {
+                    id: "knowledge-placeholder",
+                    path: "_placeholder.knowledge",
+                    name: "Coming Soon",
+                    content:
+                        "What we remember together will appear here.\n\nSoon we'll be able to add documents, notes, and context that persist across all connections.",
+                    description: "What we remember together",
+                    promptLabel: null,
+                    editable: false,
+                    updatedAt: new Date(),
+                },
+            ],
+        });
     }
 
     return (
