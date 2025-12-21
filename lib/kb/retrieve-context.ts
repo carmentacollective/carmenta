@@ -146,8 +146,8 @@ async function searchByEntities(
         const normalized = normalizeEntity(entity);
         const likePattern = `%${escapeLikePattern(normalized)}%`;
         return sql`(
-            LOWER(REPLACE(path, '.', '')) LIKE ${likePattern}
-            OR LOWER(REPLACE(name, ' ', '')) LIKE ${likePattern}
+            LOWER(REGEXP_REPLACE(path, '[^a-z0-9]', '', 'g')) LIKE ${likePattern}
+            OR LOWER(REGEXP_REPLACE(name, '[^a-z0-9]', '', 'g')) LIKE ${likePattern}
         )`;
     });
 
@@ -463,7 +463,7 @@ export function formatRetrievedContext(context: RetrievedContext): string | null
 
             // Build document XML
             const parts = [
-                `  <document path="${displayPath}" relevance="${doc.relevance.toFixed(2)}" reason="${doc.retrievalReason}">`,
+                `  <document path="${escapeXml(displayPath)}" relevance="${doc.relevance.toFixed(2)}" reason="${doc.retrievalReason}">`,
             ];
 
             if (doc.summary) {
