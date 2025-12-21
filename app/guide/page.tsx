@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     description: "Learn how we work together.",
 };
 
+// Dynamic rendering since we fetch from database
+export const dynamic = "force-dynamic";
+
 /**
  * Guide Page
  *
