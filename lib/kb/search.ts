@@ -397,17 +397,26 @@ export async function searchKnowledge(
                     const budgeted: SearchResult[] = [];
 
                     for (const result of results) {
-                        const contentTokens = estimateTokens(
-                            includeContent ? result.content : result.description || ""
-                        );
+                        const textToCount = includeContent
+                            ? result.content
+                            : result.description || "";
+                        const contentTokens = estimateTokens(textToCount);
 
                         if (tokenCount + contentTokens > tokenBudget) {
                             const remainingTokens = tokenBudget - tokenCount;
                             if (remainingTokens > 50) {
-                                result.content = truncateContent(
-                                    result.content,
-                                    remainingTokens
-                                );
+                                // Truncate the field we're actually counting
+                                if (includeContent) {
+                                    result.content = truncateContent(
+                                        result.content,
+                                        remainingTokens
+                                    );
+                                } else {
+                                    result.description = truncateContent(
+                                        result.description || "",
+                                        remainingTokens
+                                    );
+                                }
                                 budgeted.push(result);
                             }
                             break;
