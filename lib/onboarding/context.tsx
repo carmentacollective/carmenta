@@ -138,6 +138,9 @@ export function OnboardingProvider({
     }, []);
 
     const reset = useCallback(async () => {
+        // Prevent concurrent resets
+        if (isPending) return;
+
         setIsPending(true);
 
         try {
@@ -152,7 +155,7 @@ export function OnboardingProvider({
         } finally {
             setIsPending(false);
         }
-    }, [router]);
+    }, [router, isPending]);
 
     const value = useMemo<OnboardingContextValue>(
         () => ({

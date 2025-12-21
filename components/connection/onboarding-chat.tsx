@@ -15,6 +15,7 @@ import { Send, SkipForward, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOnboarding } from "@/lib/onboarding/context";
 import { ThemeSelector } from "@/components/tool-ui/theme-selector";
+import type { ThemeVariant } from "@/lib/theme/theme-context";
 import { Button } from "@/components/ui/button";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 
@@ -204,6 +205,7 @@ export function OnboardingChat() {
         useOnboarding();
 
     const [submittedResponse, setSubmittedResponse] = useState<string | null>(null);
+    const [confirmedTheme, setConfirmedTheme] = useState<ThemeVariant | null>(null);
 
     // Handle text response submission
     const handleTextSubmit = useCallback(
@@ -218,6 +220,7 @@ export function OnboardingChat() {
     // Handle theme selection
     const handleThemeConfirm = useCallback(
         async (theme: string) => {
+            setConfirmedTheme(theme as ThemeVariant);
             await selectTheme(theme);
         },
         [selectTheme]
@@ -267,11 +270,14 @@ export function OnboardingChat() {
                 <div className="mx-auto max-w-2xl">
                     {currentItem.inputType === "theme_selection" ? (
                         <ThemeSelector
+                            key={currentItem.key}
                             id={`onboarding-theme-${currentItem.key}`}
+                            confirmed={confirmedTheme ?? undefined}
                             onConfirm={handleThemeConfirm}
                         />
                     ) : (
                         <OnboardingInput
+                            key={currentItem.key}
                             onSubmit={handleTextSubmit}
                             isPending={isPending}
                             canSkip={canSkip}
