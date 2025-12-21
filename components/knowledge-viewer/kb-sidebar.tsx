@@ -29,9 +29,10 @@ const FOLDER_ICONS: Record<string, typeof User> = {
 };
 
 // Display names for folders (overrides capitalized path names)
-const FOLDER_DISPLAY_NAMES: Record<string, string> = {
-    philosophy: "Heart-Centered Philosophy",
-    personality: "AI Personality",
+const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
+    philosophy: "Our Foundation",
+    personality: "Our Partnership",
+    knowledge: "What We Remember",
 };
 
 // Map document paths to icons
@@ -144,11 +145,11 @@ export function KBSidebar({
                                                         onClick={() =>
                                                             onSelect(doc.path)
                                                         }
-                                                        title={
+                                                        data-tooltip={
                                                             doc.description ?? undefined
                                                         }
                                                         className={cn(
-                                                            "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
+                                                            "tooltip flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
                                                             selectedPath === doc.path
                                                                 ? "bg-primary/10 text-primary"
                                                                 : "text-foreground/60 hover:bg-foreground/5"

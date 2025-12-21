@@ -277,10 +277,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert - now has values folder + profile folder = 2 folders
+            // Assert - now has philosophy + personality + knowledge (coming soon) = 3 folders
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "2");
+            expect(viewer).toHaveAttribute("data-folder-count", "3");
         });
 
         it("always includes values folder even when no user folders exist", async () => {
@@ -292,10 +292,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should still render viewer with values folder
+            // Assert: Should still render viewer with philosophy + knowledge (coming soon) folders
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "1"); // values folder only
+            expect(viewer).toHaveAttribute("data-folder-count", "2"); // philosophy + knowledge placeholder
         });
 
         it("renders with folders when they exist", async () => {
@@ -388,12 +388,12 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Values folder always present, so viewer renders (never empty state)
+            // Assert: Philosophy + knowledge (coming soon) folders always present, so viewer renders (never empty state)
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
             expect(getByTestId("knowledge-viewer")).toHaveAttribute(
                 "data-folder-count",
-                "1"
+                "2"
             );
         });
 
