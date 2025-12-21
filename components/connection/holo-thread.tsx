@@ -353,8 +353,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             if (status === "running") {
                 const progressState = createInitialProgressState(toolName);
                 if (progressState) {
-                    // Add search query as context
-                    progressState.context = (input?.query as string) ?? undefined;
                     return (
                         <ToolWrapper
                             toolName={toolName}
@@ -362,7 +360,12 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             status={status}
                             input={input}
                         >
-                            <ToolProgress progress={progressState} />
+                            <ToolProgress
+                                progress={{
+                                    ...progressState,
+                                    context: (input?.query as string) ?? undefined,
+                                }}
+                            />
                         </ToolWrapper>
                     );
                 }
@@ -397,8 +400,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             if (status === "running") {
                 const progressState = createInitialProgressState(toolName);
                 if (progressState) {
-                    // Add URL as context
-                    progressState.context = (input?.url as string) ?? undefined;
                     return (
                         <ToolWrapper
                             toolName={toolName}
@@ -406,7 +407,12 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             status={status}
                             input={input}
                         >
-                            <ToolProgress progress={progressState} />
+                            <ToolProgress
+                                progress={{
+                                    ...progressState,
+                                    context: (input?.url as string) ?? undefined,
+                                }}
+                            />
                         </ToolWrapper>
                     );
                 }
@@ -436,8 +442,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             if (status === "running") {
                 const progressState = createInitialProgressState(toolName);
                 if (progressState) {
-                    // Add research objective as context
-                    progressState.context = (input?.objective as string) ?? undefined;
                     return (
                         <ToolWrapper
                             toolName={toolName}
@@ -445,7 +449,12 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             status={status}
                             input={input}
                         >
-                            <ToolProgress progress={progressState} />
+                            <ToolProgress
+                                progress={{
+                                    ...progressState,
+                                    context: (input?.objective as string) ?? undefined,
+                                }}
+                            />
                         </ToolWrapper>
                     );
                 }
