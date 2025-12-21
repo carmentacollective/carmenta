@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { DocsViewer } from "@/components/docs-viewer";
 import { getGlobalDocs, type KBDocument } from "@/lib/kb/actions";
+import { logger } from "@/lib/logger";
 
 export const metadata: Metadata = {
     title: "Guide · Carmenta",
@@ -22,7 +23,16 @@ export const dynamic = "force-dynamic";
  */
 export default async function GuidePage() {
     // Fetch global documentation (public page - no auth required)
-    const docs = await getGlobalDocs();
+    // Gracefully handle database unavailability (e.g., in CI E2E tests)
+    let docs: KBDocument[] = [];
+    try {
+        docs = await getGlobalDocs();
+    } catch (error) {
+        logger.warn(
+            { error },
+            "Failed to fetch global docs - database may be unavailable"
+        );
+    }
 
     // Organize docs into sections based on path prefix
     const sections = organizeDocs(docs);
