@@ -2,8 +2,7 @@
  * Knowledge Base Context Retrieval
  *
  * Retrieves relevant documents from the knowledge base based on concierge-extracted
- * search queries. Uses multi-signal retrieval combining entity lookup and full-text
- * search for high-quality context injection.
+ * search queries. Uses the unified search module for multi-signal retrieval.
  *
  * ## Design Principles
  *
@@ -21,13 +20,12 @@
  * 5. **Recency awareness**: Recent documents may be more relevant for some queries.
  */
 
-import { sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 
-import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import type { KBSearchConfig } from "@/lib/concierge/types";
 import type { Document } from "@/lib/db/schema";
+import { searchKnowledge, type SearchResult } from "./search";
 
 // ============================================================================
 // Types
@@ -94,196 +92,7 @@ export interface RetrievedContext {
 const DEFAULT_MAX_DOCUMENTS = 5;
 const DEFAULT_MAX_TOKENS = 2000;
 const DEFAULT_MIN_RELEVANCE = 0.1;
-const CHARS_PER_TOKEN = 4; // Rough estimate for English text
-
-/**
- * Columns to select for retrieved documents.
- */
-const RETRIEVAL_COLUMNS = sql`
-    id, user_id, path, name, content, description,
-    source_type, source_id, updated_at
-`;
-
-// ============================================================================
-// SQL Utilities
-// ============================================================================
-
-/**
- * Escape special characters for PostgreSQL LIKE patterns.
- */
-function escapeLikePattern(input: string): string {
-    return input.replace(/\\/g, "\\\\").replace(/[%_]/g, "\\$&");
-}
-
-/**
- * Normalize entity name for matching.
- * Converts to lowercase and replaces spaces/special chars with patterns.
- */
-function normalizeEntity(entity: string): string {
-    return entity
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]/g, ""); // Remove all non-alphanumeric for fuzzy matching
-}
-
-// ============================================================================
-// Core Retrieval Functions
-// ============================================================================
-
-/**
- * Search for documents matching entity names.
- * Entities get priority matching on path and name.
- */
-async function searchByEntities(
-    userId: string,
-    entities: string[],
-    limit: number
-): Promise<RetrievedDocument[]> {
-    if (entities.length === 0) return [];
-
-    // Build OR conditions for each entity, filtering out empty normalized values
-    const entityConditions = entities
-        .map((entity) => {
-            const normalized = normalizeEntity(entity);
-            // Skip entities that normalize to empty string (e.g., "---")
-            if (!normalized) return null;
-            const likePattern = `%${escapeLikePattern(normalized)}%`;
-            // Use [^a-zA-Z0-9] to preserve uppercase letters before lowercasing
-            return sql`(
-                LOWER(REGEXP_REPLACE(path, '[^a-zA-Z0-9]', '', 'g')) LIKE ${likePattern}
-                OR LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]', '', 'g')) LIKE ${likePattern}
-            )`;
-        })
-        .filter((condition) => condition !== null);
-
-    // If all entities normalized to empty, return no results
-    if (entityConditions.length === 0) return [];
-
-    const combinedCondition = sql.join(entityConditions, sql` OR `);
-
-    const result = await db.execute(sql`
-        SELECT ${RETRIEVAL_COLUMNS},
-               1.0 as rank
-        FROM documents
-        WHERE user_id = ${userId}
-          AND (${combinedCondition})
-          AND content IS NOT NULL
-          AND content != ''
-        ORDER BY updated_at DESC
-        LIMIT ${limit}
-    `);
-
-    const rows = normalizeExecuteResult(result);
-
-    return rows.map((row) => ({
-        id: row.id as string,
-        path: row.path as string,
-        name: row.name as string,
-        content: row.content as string,
-        summary: row.description as string | null,
-        retrievalReason: "entity_match" as const,
-        relevance: 1.0, // Entity matches get max relevance
-        source: {
-            type: row.source_type as Document["sourceType"],
-            id: row.source_id as string | null,
-            updatedAt: row.updated_at as Date,
-        },
-    }));
-}
-
-/**
- * Search for documents using full-text search.
- */
-async function searchByQueries(
-    userId: string,
-    queries: string[],
-    limit: number
-): Promise<RetrievedDocument[]> {
-    if (queries.length === 0) return [];
-
-    const allResults: RetrievedDocument[] = [];
-
-    // Run each query and collect results
-    for (const query of queries) {
-        if (!query.trim()) continue;
-
-        const result = await db.execute(sql`
-            SELECT ${RETRIEVAL_COLUMNS},
-                   ts_rank(search_vector, websearch_to_tsquery('english', ${query})) as rank
-            FROM documents
-            WHERE user_id = ${userId}
-              AND search_vector @@ websearch_to_tsquery('english', ${query})
-              AND content IS NOT NULL
-              AND content != ''
-            ORDER BY rank DESC
-            LIMIT ${limit}
-        `);
-
-        const rows = normalizeExecuteResult(result);
-
-        for (const row of rows) {
-            allResults.push({
-                id: row.id as string,
-                path: row.path as string,
-                name: row.name as string,
-                content: row.content as string,
-                summary: row.description as string | null,
-                retrievalReason: "search_match" as const,
-                relevance: Math.min((row.rank as number) * 10, 1), // Normalize rank to 0-1
-                source: {
-                    type: row.source_type as Document["sourceType"],
-                    id: row.source_id as string | null,
-                    updatedAt: row.updated_at as Date,
-                },
-            });
-        }
-    }
-
-    return allResults;
-}
-
-/**
- * Normalize db.execute() result to array of rows.
- * Handles both postgres-js and PGlite return formats.
- */
-function normalizeExecuteResult(result: unknown): Record<string, unknown>[] {
-    if (result && typeof result === "object" && "rows" in result) {
-        return (result as { rows: Record<string, unknown>[] }).rows;
-    }
-    if (Array.isArray(result)) {
-        return result as Record<string, unknown>[];
-    }
-    return [];
-}
-
-/**
- * Deduplicate documents by ID, keeping the highest relevance version.
- */
-function deduplicateDocuments(docs: RetrievedDocument[]): RetrievedDocument[] {
-    const byId = new Map<string, RetrievedDocument>();
-
-    for (const doc of docs) {
-        const existing = byId.get(doc.id);
-        if (!existing || doc.relevance > existing.relevance) {
-            byId.set(doc.id, doc);
-        }
-    }
-
-    return Array.from(byId.values());
-}
-
-/**
- * Truncate content to fit within token budget.
- */
-function truncateContent(content: string, maxTokens: number): string {
-    const maxChars = maxTokens * CHARS_PER_TOKEN;
-    if (content.length <= maxChars) return content;
-
-    // Truncate at word boundary
-    const truncated = content.slice(0, maxChars);
-    const lastSpace = truncated.lastIndexOf(" ");
-    return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated) + "...";
-}
+const CHARS_PER_TOKEN = 4;
 
 /**
  * Estimate token count for text.
@@ -297,10 +106,27 @@ function estimateTokens(text: string): number {
 // ============================================================================
 
 /**
+ * Map unified search result to RetrievedDocument format.
+ */
+function mapToRetrievedDocument(result: SearchResult): RetrievedDocument {
+    return {
+        id: result.id,
+        path: result.path,
+        name: result.name,
+        content: result.content,
+        summary: result.description,
+        retrievalReason:
+            result.reason === "entity_match" ? "entity_match" : "search_match",
+        relevance: result.relevance,
+        source: result.source,
+    };
+}
+
+/**
  * Retrieve relevant context from the knowledge base.
  *
- * Combines entity matching and full-text search for multi-signal retrieval.
- * Returns documents formatted for Layer 3 context injection.
+ * Uses the unified search module for multi-signal retrieval (entity matching +
+ * full-text search). Returns documents formatted for Layer 3 context injection.
  *
  * @param userId - User ID to search within
  * @param searchConfig - Search configuration from the concierge
@@ -336,55 +162,31 @@ export async function retrieveContext(
                 span.setAttribute("query_count", searchConfig.queries.length);
                 span.setAttribute("entity_count", searchConfig.entities.length);
 
-                // Run entity and query searches in parallel
-                const [entityResults, queryResults] = await Promise.all([
-                    searchByEntities(userId, searchConfig.entities, maxDocuments),
-                    searchByQueries(userId, searchConfig.queries, maxDocuments * 2),
-                ]);
+                // Use unified search with all options
+                const query = searchConfig.queries.join(" OR ");
+                const results = await searchKnowledge(userId, query, {
+                    entities: searchConfig.entities,
+                    maxResults: maxDocuments,
+                    minRelevance,
+                    tokenBudget: maxTokens,
+                    includeContent,
+                });
 
-                // Combine and deduplicate
-                const allResults = [...entityResults, ...queryResults];
-                const deduplicated = deduplicateDocuments(allResults);
-                const totalMatches = deduplicated.length;
+                // Map to RetrievedDocument format
+                const documents = results.map(mapToRetrievedDocument);
 
-                // Filter by relevance threshold
-                const filtered = deduplicated.filter(
-                    (doc) => doc.relevance >= minRelevance
+                // Calculate token count
+                const tokenCount = documents.reduce(
+                    (sum, doc) =>
+                        sum +
+                        estimateTokens(
+                            includeContent ? doc.content : doc.summary || ""
+                        ),
+                    0
                 );
 
-                // Sort by relevance (descending)
-                filtered.sort((a, b) => b.relevance - a.relevance);
-
-                // Apply document limit
-                const limited = filtered.slice(0, maxDocuments);
-
-                // Apply token budget
-                let tokenCount = 0;
-                const budgeted: RetrievedDocument[] = [];
-
-                for (const doc of limited) {
-                    const contentTokens = estimateTokens(
-                        includeContent ? doc.content : doc.summary || ""
-                    );
-
-                    if (tokenCount + contentTokens > maxTokens) {
-                        // Try to fit with truncated content
-                        const remainingTokens = maxTokens - tokenCount;
-                        if (remainingTokens > 50) {
-                            // Worth including
-                            doc.content = truncateContent(doc.content, remainingTokens);
-                            budgeted.push(doc);
-                            tokenCount += remainingTokens;
-                        }
-                        break;
-                    }
-
-                    budgeted.push(doc);
-                    tokenCount += contentTokens;
-                }
-
-                span.setAttribute("total_matches", totalMatches);
-                span.setAttribute("returned_documents", budgeted.length);
+                span.setAttribute("total_matches", results.length);
+                span.setAttribute("returned_documents", documents.length);
                 span.setAttribute("estimated_tokens", tokenCount);
 
                 logger.info(
@@ -392,17 +194,17 @@ export async function retrieveContext(
                         userId,
                         queries: searchConfig.queries,
                         entities: searchConfig.entities,
-                        totalMatches,
-                        returnedDocuments: budgeted.length,
+                        totalMatches: results.length,
+                        returnedDocuments: documents.length,
                         estimatedTokens: tokenCount,
                     },
                     "📚 Knowledge base context retrieved"
                 );
 
                 return {
-                    documents: budgeted,
+                    documents,
                     success: true,
-                    totalMatches,
+                    totalMatches: results.length,
                     estimatedTokens: tokenCount,
                 };
             } catch (error) {

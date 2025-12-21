@@ -34,6 +34,7 @@ import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
+import { searchKnowledge } from "@/lib/kb/search";
 
 /**
  * Route segment config for Vercel
@@ -211,6 +212,52 @@ const tools = {
         },
     }),
 };
+
+/**
+ * Create the searchKnowledge tool with user context.
+ * This tool allows the AI to explicitly query the knowledge base mid-conversation.
+ */
+function createSearchKnowledgeTool(userId: string) {
+    return tool({
+        description:
+            "Search our knowledge base for relevant information about preferences, projects, decisions, or anything we've stored together. Use when context wasn't provided upfront or when the conversation evolves.",
+        inputSchema: z.object({
+            query: z.string().describe("What to search for in natural language"),
+            entities: z
+                .array(z.string())
+                .optional()
+                .describe(
+                    "Specific names to match with high precision (people, projects, integrations)"
+                ),
+        }),
+        execute: async ({ query, entities }) => {
+            const results = await searchKnowledge(userId, query, {
+                entities,
+                maxResults: 5,
+                tokenBudget: 2000,
+            });
+
+            if (results.length === 0) {
+                return {
+                    found: false,
+                    message: "Nothing in our knowledge base matches that query.",
+                };
+            }
+
+            return {
+                found: true,
+                count: results.length,
+                documents: results.map((r) => ({
+                    path: r.path,
+                    name: r.name,
+                    content: r.content,
+                    relevance: r.relevance,
+                    reason: r.reason,
+                })),
+            };
+        },
+    });
+}
 
 export async function POST(req: Request) {
     let userEmail: string | null = null;
@@ -453,8 +500,16 @@ export async function POST(req: Request) {
             ? await getIntegrationTools(userEmail!)
             : {};
 
-        // Merge built-in tools with integration tools
-        const allTools = { ...tools, ...integrationTools };
+        // Create searchKnowledge tool with user context
+        // This allows the AI to explicitly query the knowledge base mid-conversation
+        const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
+
+        // Merge built-in tools, integration tools, and searchKnowledge tool
+        const allTools = {
+            ...tools,
+            ...integrationTools,
+            searchKnowledge: searchKnowledgeTool,
+        };
 
         logger.info(
             {
