@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { logger } from "@/lib/client-logger";
 import type { Action } from "./schema";
 
@@ -33,6 +33,7 @@ export function useActionButtons(
 
     const [confirmingActionId, setConfirmingActionId] = useState<string | null>(null);
     const [executingActionId, setExecutingActionId] = useState<string | null>(null);
+    const executingRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!confirmingActionId) return;
@@ -57,8 +58,8 @@ export function useActionButtons(
             const action = actions.find((a) => a.id === actionId);
             if (!action) return;
 
-            const isAnyActionExecuting = executingActionId !== null;
-            if (action.disabled || action.loading || isAnyActionExecuting) {
+            // Use ref for synchronous check to prevent race conditions on rapid clicks
+            if (action.disabled || action.loading || executingRef.current !== null) {
                 return;
             }
 
@@ -76,6 +77,7 @@ export function useActionButtons(
             }
 
             try {
+                executingRef.current = action.id;
                 setExecutingActionId(action.id);
                 await onAction(action.id);
             } catch (error) {
@@ -85,6 +87,7 @@ export function useActionButtons(
                 );
                 throw error;
             } finally {
+                executingRef.current = null;
                 setExecutingActionId(null);
                 setConfirmingActionId(null);
             }

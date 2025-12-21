@@ -59,7 +59,7 @@ export type OptionListProps = Omit<
 export const SerializableOptionListSchema = OptionListPropsSchema.omit({
     value: true,
 }).extend({
-    options: z.array(OptionListOptionSchema.omit({ icon: true })),
+    options: z.array(OptionListOptionSchema.omit({ icon: true })).min(1),
     responseActions: z
         .union([z.array(SerializableActionSchema), SerializableActionsConfigSchema])
         .optional(),
