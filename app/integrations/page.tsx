@@ -104,7 +104,7 @@ function IntegrationsContent() {
             const serviceName = serviceDefinition?.name ?? service;
             setGlobalMessage({
                 type: "success",
-                text: `Successfully connected to ${serviceName}!`,
+                text: `We're connected to ${serviceName}!`,
             });
             // Clear URL params without reload
             window.history.replaceState({}, "", "/integrations");
@@ -311,7 +311,8 @@ function IntegrationsContent() {
                                         Integrations
                                     </h1>
                                     <p className="text-foreground/70">
-                                        Connect services to unlock new capabilities
+                                        Connect your tools. We'll remember how to use
+                                        them.
                                     </p>
                                 </div>
                             </div>
@@ -359,10 +360,10 @@ function IntegrationsContent() {
                             <div className="flex flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
                                 <Plug className="mb-4 h-12 w-12 text-foreground/30" />
                                 <h3 className="text-lg font-medium text-foreground/80">
-                                    No integrations available
+                                    No connections yet
                                 </h3>
                                 <p className="mt-2 text-sm text-foreground/60">
-                                    Check back soon for new integrations.
+                                    We're adding more integrations soon.
                                 </p>
                             </div>
                         ) : (
