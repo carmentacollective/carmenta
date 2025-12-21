@@ -39,6 +39,21 @@ vi.mock("@/components/ui/holographic-background", () => ({
     HolographicBackground: () => <div data-testid="holographic-bg">Background</div>,
 }));
 
+// Mock onboarding
+vi.mock("@/lib/onboarding", () => ({
+    getOnboardingStatus: vi.fn().mockResolvedValue({
+        isComplete: true,
+        nextItem: null,
+        completedItems: [],
+        skippedItems: [],
+        progress: 100,
+    }),
+    OnboardingProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Default searchParams for tests
+const defaultSearchParams = Promise.resolve({});
+
 describe("/connection page", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -70,7 +85,7 @@ describe("/connection page", () => {
 
     it("renders new chat interface for authenticated users", async () => {
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: defaultSearchParams });
 
         // Should render, not redirect
         expect(result).toBeDefined();
@@ -107,7 +122,7 @@ describe("/connection page", () => {
         mocks.mockGetRecentConnections.mockResolvedValue(recentConnections);
 
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        await ConnectionPage();
+        await ConnectionPage({ searchParams: defaultSearchParams });
 
         // Verify it fetched recent connections
         expect(mocks.mockGetRecentConnections).toHaveBeenCalledWith(10);
@@ -117,7 +132,7 @@ describe("/connection page", () => {
         mocks.mockGetRecentConnections.mockResolvedValue([]);
 
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: defaultSearchParams });
 
         // Should still render (not redirect to /connection/new)
         expect(result).toBeDefined();
@@ -129,7 +144,7 @@ describe("/connection page", () => {
 
     it("passes activeConnection as null for new chat", async () => {
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: defaultSearchParams });
 
         // The page should render with activeConnection: null
         // This signals it's a new chat, not an existing one

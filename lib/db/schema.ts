@@ -111,17 +111,31 @@ export const toolStateEnum = pgEnum("tool_state", [
 // ============================================================================
 
 /**
+ * Onboarding tracking state
+ */
+export interface OnboardingState {
+    /** Items the user has completed */
+    completed: string[];
+    /** Items the user explicitly skipped */
+    skipped: string[];
+}
+
+/**
  * User Preferences Type
  */
 export interface UserPreferences {
     defaultModel?: string;
     theme?: "light" | "dark" | "system";
+    /** Visual theme variant (e.g., "carmenta", "warm-earth") */
+    themeVariant?: string;
     showKeyboardHints?: boolean;
     customSystemPrompt?: string;
     notifications?: {
         email?: boolean;
         push?: boolean;
     };
+    /** Onboarding progress tracking */
+    onboarding?: OnboardingState;
 }
 
 export const users = pgTable(
