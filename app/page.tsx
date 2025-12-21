@@ -61,8 +61,8 @@ const FEATURES = [
     {
         headline: "Your world, connected.",
         subheading:
-            "Gmail, Slack, Notion, Calendar, GitHub—unified. When AI has access to your tools and data, it stops being a chatbot and becomes a collaborator.",
-        available: false,
+            "11 integrations working now. Search your Gmail, query your calendar, browse your Notion—ClickUp, Slack, Dropbox, Fireflies, and more. Read access to everything. Two-way sync coming next.",
+        available: true,
     },
     {
         headline: "Your AI team.",
@@ -79,8 +79,8 @@ const FEATURES = [
     {
         headline: "Beyond the chat window.",
         subheading:
-            "Research produces reports. Scheduling shows calendars. Comparisons become tables. We respond with the interface the task deserves.",
-        available: false,
+            "Research produces structured reports with citations. Comparisons become data tables. Web search results display with sources and summaries. We respond with the interface the information deserves.",
+        available: true,
     },
 ];
 
