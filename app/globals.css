@@ -866,6 +866,16 @@
         animation: shimmer 2s ease-in-out infinite;
     }
 
+    /* Indeterminate progress bar - sweeping gradient for tool execution */
+    @keyframes indeterminate-progress {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
     /*
      * Watermark Presence Animation
      *

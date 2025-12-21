@@ -45,6 +45,10 @@ import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
+import {
+    ToolProgress,
+    createInitialProgressState,
+} from "@/components/generative-ui/tool-progress";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
@@ -344,6 +348,26 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 snippet: string;
                 publishedDate?: string;
             };
+
+            // Show beautiful progress during execution
+            if (status === "running") {
+                const progressState = createInitialProgressState(toolName);
+                if (progressState) {
+                    // Add search query as context
+                    progressState.context = (input?.query as string) ?? undefined;
+                    return (
+                        <ToolWrapper
+                            toolName={toolName}
+                            toolCallId={part.toolCallId}
+                            status={status}
+                            input={input}
+                        >
+                            <ToolProgress progress={progressState} />
+                        </ToolWrapper>
+                    );
+                }
+            }
+
             return (
                 <WebSearchResults
                     toolCallId={part.toolCallId}
@@ -368,7 +392,26 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
-        case "fetchPage":
+        case "fetchPage": {
+            // Show beautiful progress during execution
+            if (status === "running") {
+                const progressState = createInitialProgressState(toolName);
+                if (progressState) {
+                    // Add URL as context
+                    progressState.context = (input?.url as string) ?? undefined;
+                    return (
+                        <ToolWrapper
+                            toolName={toolName}
+                            toolCallId={part.toolCallId}
+                            status={status}
+                            input={input}
+                        >
+                            <ToolProgress progress={progressState} />
+                        </ToolWrapper>
+                    );
+                }
+            }
+
             return (
                 <FetchPageResult
                     toolCallId={part.toolCallId}
@@ -379,6 +422,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={getToolError(part, output, "Failed to fetch")}
                 />
             );
+        }
 
         case "deepResearch": {
             type Finding = {
@@ -387,6 +431,26 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 confidence: "high" | "medium" | "low";
             };
             type Source = { url: string; title: string; relevance: string };
+
+            // Show beautiful progress during execution
+            if (status === "running") {
+                const progressState = createInitialProgressState(toolName);
+                if (progressState) {
+                    // Add research objective as context
+                    progressState.context = (input?.objective as string) ?? undefined;
+                    return (
+                        <ToolWrapper
+                            toolName={toolName}
+                            toolCallId={part.toolCallId}
+                            status={status}
+                            input={input}
+                        >
+                            <ToolProgress progress={progressState} />
+                        </ToolWrapper>
+                    );
+                }
+            }
+
             return (
                 <DeepResearchResult
                     toolCallId={part.toolCallId}
