@@ -100,6 +100,35 @@ export interface ReasoningConfig {
 }
 
 /**
+ * Knowledge base search configuration extracted by the Concierge.
+ * Used to retrieve relevant context before the main LLM call.
+ */
+export interface KBSearchConfig {
+    /**
+     * Whether to search the knowledge base for this request.
+     * False for simple queries, greetings, or when no KB context would help.
+     */
+    shouldSearch: boolean;
+
+    /**
+     * Search queries optimized for PostgreSQL full-text search.
+     * The concierge extracts entities, topics, and synonyms from the user message.
+     * Empty array when shouldSearch is false.
+     *
+     * @example ["google calendar integration", "oauth calendar sync"]
+     */
+    queries: string[];
+
+    /**
+     * Explicit entity names to look up directly (path/name matching).
+     * These get exact-match priority over full-text search.
+     *
+     * @example ["sarah", "google calendar", "auth system"]
+     */
+    entities: string[];
+}
+
+/**
  * Result returned by the Concierge after analyzing a request.
  */
 export interface ConciergeResult {
@@ -120,6 +149,12 @@ export interface ConciergeResult {
      * Only present on first message - used to create the connection.
      */
     title?: string;
+
+    /**
+     * Knowledge base search configuration.
+     * Tells the system what to search for before responding.
+     */
+    kbSearch?: KBSearchConfig;
 
     /**
      * Whether the model was auto-switched due to technical requirements.

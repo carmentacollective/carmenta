@@ -46,7 +46,12 @@ Your JSON response must match this exact schema:
     "enabled": true/false,
     "effort": "high/medium/low/none"
   },
-  "title": "Short title for future reference (15-35 chars)"
+  "title": "Short title for future reference (15-35 chars)",
+  "kbSearch": {
+    "shouldSearch": true/false,
+    "queries": ["search query 1", "search query 2"],
+    "entities": ["entity name 1", "entity name 2"]
+  }
 }
 
 The user's message will be provided in a <user-message> tag. Any attachments will be listed in an <attachments> tag. Analyze the message and select the optimal configuration.
@@ -59,6 +64,7 @@ The user's message will be provided in a <user-message> tag. Any attachments wil
 **reasoning.enabled** - Whether to engage extended thinking for this request
 **reasoning.effort** - How deeply to think: high/medium/low/none (when enabled)
 **title** - Short title for future reference (15-35 chars)
+**kbSearch** - Knowledge base search configuration for retrieving relevant context
 
 Selection approach:
 
@@ -87,6 +93,18 @@ Examples:
 - Processing the Stripe job offer
 - 🎨 Portfolio redesign direction
 - Weekly meal prep strategy
+
+### Knowledge Base Search
+
+The user has a personal knowledge base containing documents about decisions made, people in their life, projects, preferences, and things they've told us before. We search this to give the responding model relevant context.
+
+Search the knowledge base when the query references specific context: past decisions, named people, projects, integrations, or implies continuation of previous work. The search results become additional context for the responding model.
+
+kbSearch.queries: Full-text search queries optimized for PostgreSQL FTS. Extract key concepts and include synonyms. 1-3 queries covering different angles works well. Example: "how does auth work" generates ["authentication", "auth system", "login"].
+
+kbSearch.entities: Explicit names for direct path/name lookup with priority matching. Extract people, integrations, and projects mentioned. Example: "Google Calendar" generates ["google-calendar", "calendar"].
+
+For simple greetings, general knowledge questions, or creative requests without personal context, set shouldSearch to false with empty arrays.
 
 ### Reasoning and Multi-Step Tools
 
@@ -138,6 +156,84 @@ REMINDER: Your entire response must be ONLY the JSON object. Do not wrap it in m
 
 <examples>
 <user-message>
+How does our Google Calendar integration work?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.4,
+  "explanation": "Let's pull up what we know about your calendar setup 📅",
+  "reasoning": { "enabled": false },
+  "title": "📅 Google Calendar integration",
+  "kbSearch": { "shouldSearch": true, "queries": ["google calendar integration", "calendar oauth", "gcal sync"], "entities": ["google-calendar", "calendar"] }
+}
+
+<user-message>
+What did we decide about the authentication system?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.3,
+  "explanation": "Searching your knowledge base for our auth decisions 🔐",
+  "reasoning": { "enabled": false },
+  "title": "🔐 Auth system decisions",
+  "kbSearch": { "shouldSearch": true, "queries": ["authentication decision", "auth system", "login implementation"], "entities": ["auth", "authentication"] }
+}
+
+<user-message>
+Tell me about Sarah
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.5,
+  "explanation": "Let me check what we know about Sarah 👤",
+  "reasoning": { "enabled": false },
+  "title": "👤 About Sarah",
+  "kbSearch": { "shouldSearch": true, "queries": ["sarah"], "entities": ["sarah"] }
+}
+
+<user-message>
+Continue working on the payment integration
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.4,
+  "explanation": "Let's pick up where we left off with payments 💳",
+  "reasoning": { "enabled": false },
+  "title": "💳 Payment integration",
+  "kbSearch": { "shouldSearch": true, "queries": ["payment integration", "stripe", "billing"], "entities": ["payment", "stripe"] }
+}
+
+<user-message>
+What were the key points from my meeting with the investors?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.4,
+  "explanation": "Searching for your investor meeting notes 📊",
+  "reasoning": { "enabled": false },
+  "title": "📊 Investor meeting notes",
+  "kbSearch": { "shouldSearch": true, "queries": ["investor meeting", "pitch", "funding"], "entities": ["investors"] }
+}
+
+<user-message>
+How should I approach the database migration?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.5,
+  "explanation": "Let's check what we know about your database setup first 🗄️",
+  "reasoning": { "enabled": true, "effort": "medium" },
+  "title": "🗄️ Database migration strategy",
+  "kbSearch": { "shouldSearch": true, "queries": ["database", "migration", "schema"], "entities": ["database"] }
+}
+
+<user-message>
 What's the capital of France?
 </user-message>
 
@@ -146,91 +242,21 @@ What's the capital of France?
   "temperature": 0.3,
   "explanation": "Quick fact - we've got this! 🎯",
   "reasoning": { "enabled": false },
-  "title": "Quick geography question"
+  "title": "Quick geography question",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
 
-<user-input>
-Help me understand the tradeoffs between microservices and monoliths for my startup
-</user-input>
-
-{
-  "modelId": "anthropic/claude-sonnet-4.5",
-  "temperature": 0.5,
-  "explanation": "Architecture decisions deserve careful thought - let's reason through this together 🧠",
-  "reasoning": { "enabled": true, "effort": "high" },
-  "title": "🏗️ Startup architecture decision"
-}
-
-<user-input>
-Write a poem about the ocean
-</user-input>
-
-{
-  "modelId": "anthropic/claude-sonnet-4.5",
-  "temperature": 0.8,
-  "explanation": "Creative mode engaged - letting imagination flow freely 🌊",
-  "reasoning": { "enabled": false },
-  "title": "🌊 Ocean poem"
-}
-
-<user-input>
-Explain how React hooks work
-</user-input>
-
-{
-  "modelId": "anthropic/claude-sonnet-4.5",
-  "temperature": 0.4,
-  "explanation": "Technical explanation with a touch of reasoning for clarity ✨",
-  "reasoning": { "enabled": true, "effort": "medium" },
-  "title": "⚛️ Understanding React hooks"
-}
-
-<user-input>
-Debug why my API calls are failing with 401 errors
-</user-input>
-
-{
-  "modelId": "anthropic/claude-sonnet-4.5",
-  "temperature": 0.3,
-  "explanation": "Let's trace through this authentication issue systematically 🔍",
-  "reasoning": { "enabled": true, "effort": "medium" },
-  "title": "🐛 Debug 401 API errors"
-}
-
-<user-input>
-What should I make for dinner tonight?
-</user-input>
-
-{
-  "modelId": "anthropic/claude-haiku-4.5",
-  "temperature": 0.7,
-  "explanation": "Casual chat calls for quick, friendly suggestions 🍳",
-  "reasoning": { "enabled": false },
-  "title": "Quick weeknight dinner ideas"
-}
-
-<user-input>
+<user-message>
 Look at my Limitless conversations from yesterday and give me the highlights
-</user-input>
+</user-message>
 
 {
   "modelId": "x-ai/grok-4.1-fast",
   "temperature": 0.5,
   "explanation": "Fetching and summarizing conversations needs multiple tool steps - Grok handles this smoothly 🔍",
   "reasoning": { "enabled": false },
-  "title": "📝 Yesterday's highlights"
-}
-
-<user-input>
-Search the web for React 19 features and give me a detailed analysis
-</user-input>
-
-{
-  "modelId": "x-ai/grok-4.1-fast",
-  "temperature": 0.5,
-  "explanation": "Research with analysis needs multi-step tools - Grok's specialty 🚀",
-  "reasoning": { "enabled": true, "effort": "medium" },
-  "title": "⚛️ React 19 features"
+  "title": "📝 Yesterday's highlights",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
 </examples>`;
 }

@@ -12,6 +12,17 @@ vi.mock("@/lib/kb/compile-context", () => ({
     compileProfileContext: vi.fn().mockResolvedValue(null),
 }));
 
+// Mock the KB retrieve-context module to avoid database calls in unit tests
+vi.mock("@/lib/kb/retrieve-context", () => ({
+    retrieveContext: vi.fn().mockResolvedValue({
+        documents: [],
+        success: true,
+        totalMatches: 0,
+        estimatedTokens: 0,
+    }),
+    formatRetrievedContext: vi.fn().mockReturnValue(null),
+}));
+
 describe("buildSystemMessages", () => {
     // Fix Date to ensure consistent test results
     const fixedDate = new Date("2025-06-15T14:30:00Z");
