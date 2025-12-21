@@ -381,6 +381,8 @@ export async function POST(req: Request) {
             autoSwitched: routingResult.wasChanged,
             autoSwitchReason: routingResult.reason,
             contextUtilization: routingResult.contextUtilization,
+            // Knowledge base search configuration from concierge
+            kbSearch: conciergeResult.kbSearch,
         };
 
         // Create new connection now that we have final concierge data
@@ -569,12 +571,14 @@ export async function POST(req: Request) {
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can
         // use providerOptions for cache_control.
-        // Includes profile context from Knowledge Base (V1 memory).
+        // Includes profile context from Knowledge Base (Layer 2) and
+        // retrieved context based on concierge query analysis (Layer 3).
         const systemMessages = await buildSystemMessages({
             user,
             userEmail,
             userId: dbUser.id, // Internal UUID for Knowledge Base lookup
             timezone: undefined, // TODO: Get from client in future
+            kbSearch: concierge.kbSearch, // Query-based knowledge retrieval
         });
 
         const result = await streamText({

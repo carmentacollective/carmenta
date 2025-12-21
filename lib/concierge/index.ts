@@ -29,6 +29,7 @@ import {
     REASONING_TOKEN_BUDGETS,
     TOKEN_BUDGET_MODELS,
     type ConciergeResult,
+    type KBSearchConfig,
     type ReasoningConfig,
     type ReasoningEffort,
 } from "./types";
@@ -36,6 +37,7 @@ import {
 export type {
     ConciergeResult,
     ConciergeInput,
+    KBSearchConfig,
     ReasoningConfig,
     ReasoningEffort,
     OpenRouterEffort,
@@ -212,6 +214,27 @@ function parseEffortLevel(effort: unknown): ReasoningEffort {
 }
 
 /**
+ * Zod schema for KB search configuration.
+ */
+const kbSearchSchema = z.object({
+    shouldSearch: z
+        .boolean()
+        .describe(
+            "Whether to search the knowledge base. False for greetings, simple facts, or when no stored context would help."
+        ),
+    queries: z
+        .array(z.string())
+        .describe(
+            "Search queries optimized for full-text search. Include synonyms and related terms. Empty when shouldSearch is false."
+        ),
+    entities: z
+        .array(z.string())
+        .describe(
+            "Explicit entity names for direct lookup (people, projects, integrations). These get priority matching."
+        ),
+});
+
+/**
  * Zod schema for the concierge LLM response.
  * Defines the expected structure for structured output generation.
  */
@@ -242,6 +265,11 @@ const conciergeSchema = z.object({
         .min(2, "Title must be at least 2 characters")
         .max(MAX_TITLE_LENGTH)
         .describe("Short title for future reference (15-35 chars ideal)"),
+    kbSearch: kbSearchSchema
+        .optional()
+        .describe(
+            "Knowledge base search configuration for retrieving relevant context"
+        ),
 });
 
 /**
@@ -251,7 +279,14 @@ const conciergeSchema = z.object({
 function processConciergeResponse(
     raw: z.infer<typeof conciergeSchema>
 ): ConciergeResult {
-    const { modelId, temperature, explanation, reasoning: rawReasoning, title } = raw;
+    const {
+        modelId,
+        temperature,
+        explanation,
+        reasoning: rawReasoning,
+        title,
+        kbSearch: rawKbSearch,
+    } = raw;
 
     // Validate model against whitelist
     if (!ALLOWED_MODELS.includes(modelId as (typeof ALLOWED_MODELS)[number])) {
@@ -284,12 +319,27 @@ function processConciergeResponse(
         }
     }
 
+    // Process KB search config
+    let kbSearch: KBSearchConfig | undefined;
+    if (rawKbSearch?.shouldSearch) {
+        kbSearch = {
+            shouldSearch: true,
+            queries: rawKbSearch.queries?.filter((q) => q.trim().length > 0) ?? [],
+            entities: rawKbSearch.entities?.filter((e) => e.trim().length > 0) ?? [],
+        };
+        // If no queries or entities, disable search
+        if (kbSearch.queries.length === 0 && kbSearch.entities.length === 0) {
+            kbSearch = undefined;
+        }
+    }
+
     return {
         modelId,
         temperature,
         explanation,
         reasoning,
         title: cleanTitle,
+        kbSearch,
     };
 }
 

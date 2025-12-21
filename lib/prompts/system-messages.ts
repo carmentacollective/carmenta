@@ -3,6 +3,8 @@ import type { SystemModelMessage } from "ai";
 import { SYSTEM_PROMPT } from "./system";
 import { renderSessionContext } from "./templates";
 import { compileProfileContext } from "@/lib/kb/compile-context";
+import { retrieveContext, formatRetrievedContext } from "@/lib/kb/retrieve-context";
+import type { KBSearchConfig } from "@/lib/concierge/types";
 
 /**
  * System message builder with 4-layer architecture and Anthropic prompt caching.
@@ -48,6 +50,8 @@ export interface UserContext {
     userEmail: string;
     userId?: string; // User's internal UUID for KB lookup
     timezone?: string;
+    /** Knowledge base search configuration from concierge */
+    kbSearch?: KBSearchConfig;
 }
 
 /**
@@ -150,8 +154,24 @@ export async function buildSystemMessages(
         }
     }
 
-    // Layer 3: Retrieved Context (V2 - not implemented)
-    // Future: Add relevant docs/* or knowledge/* documents based on query
+    // Layer 3: Retrieved Context (dynamic per-query)
+    // Searches knowledge base for relevant documents based on concierge analysis
+    if (context.userId && context.kbSearch?.shouldSearch) {
+        const retrievedContext = await retrieveContext(
+            context.userId,
+            context.kbSearch
+        );
+
+        const formattedContext = formatRetrievedContext(retrievedContext);
+
+        if (formattedContext) {
+            messages.push({
+                role: "system",
+                content: formattedContext,
+                // No providerOptions = no caching (changes per-query)
+            });
+        }
+    }
 
     // Layer 4: Session Context (NOT cached - changes every request)
     const sessionContext = buildSessionContext(context);
