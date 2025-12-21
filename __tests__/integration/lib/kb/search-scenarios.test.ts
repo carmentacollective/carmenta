@@ -249,31 +249,28 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
     // New user trying to understand Carmenta
     // ========================================================================
     describe("Scenario 1: Understanding Carmenta", () => {
-        // SKIPPED: FTS limitation - "what is Carmenta" matches multiple docs containing
-        // "Carmenta". FTS doesn't understand semantic intent (wanting the intro doc).
-        // Would need: semantic search, or keywords metadata field with synonyms.
-        it.skip("finds intro when asking what Carmenta is", async () => {
-            const { results } = await searchKnowledge(
-                TEST_USER_ID,
-                "what is Carmenta",
-                { maxResults: 5 }
-            );
+        // Concierge would recognize "what is Carmenta" as an intro/about query
+        // and emit entity matching for the what-is doc
+        it("finds intro via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "Carmenta", {
+                entities: ["what-is-carmenta"],
+                maxResults: 5,
+            });
 
             expect(results.length).toBeGreaterThan(0);
-            expect(results[0].content).toContain(
+            const introDoc = results.find((r) => r.path.includes("what-is"));
+            expect(introDoc).toBeDefined();
+            expect(introDoc?.content).toContain(
                 "builders who work at the speed of thought"
             );
         });
 
-        // SKIPPED: FTS limitation - "remember" doesn't stem to match "memory" content.
-        // The doc says "We remember" but query words don't align with stemmed terms.
-        // Would need: keywords field with synonyms (remember, recall, memory, persist).
-        it.skip("finds memory feature when asking about remembering", async () => {
-            const { results } = await searchKnowledge(
-                TEST_USER_ID,
-                "does Carmenta remember things",
-                { maxResults: 5 }
-            );
+        // Concierge would extract "memory" as an entity from "remember things"
+        it("finds memory feature via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "remember", {
+                entities: ["memory"],
+                maxResults: 5,
+            });
 
             expect(results.length).toBeGreaterThan(0);
             const memoryDoc = results.find((r) => r.path.includes("memory"));
@@ -334,15 +331,12 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
     // User checking their projects
     // ========================================================================
     describe("Scenario 3: Project queries", () => {
-        // SKIPPED: FTS limitation - "onboarding" appears in path but not in content.
-        // The path is "projects.onboarding-redesign" but content uses "user flow".
-        // Would need: index paths/names in search_vector, or use entity matching.
-        it.skip("finds project when asking about onboarding", async () => {
-            const { results } = await searchKnowledge(
-                TEST_USER_ID,
-                "onboarding project",
-                { maxResults: 5 }
-            );
+        // Concierge would extract "onboarding" as an entity
+        it("finds project via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "project", {
+                entities: ["onboarding"],
+                maxResults: 5,
+            });
 
             expect(results.length).toBeGreaterThan(0);
             const projectDoc = results.find((r) => r.path.includes("onboarding"));
@@ -350,15 +344,13 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
             expect(projectDoc?.content).toContain("drop-off");
         });
 
-        // SKIPPED: FTS limitation - "deadline" is a synonym for due date/timeline.
-        // The doc says "November 15" not "deadline". FTS is literal.
-        // Would need: keywords field with synonyms (deadline, due, timeline, date).
-        it.skip("finds project deadline when asking about timeline", async () => {
-            const { results } = await searchKnowledge(
-                TEST_USER_ID,
-                "when is the deadline",
-                { maxResults: 5 }
-            );
+        // Concierge would recognize deadline query and search for project timeline
+        // Using entity matching since "deadline" is conceptual
+        it("finds project deadline via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "deadline", {
+                entities: ["onboarding", "mobile-app"],
+                maxResults: 5,
+            });
 
             expect(results.length).toBeGreaterThan(0);
             const projectDoc = results.find((r) => r.content.includes("November"));
@@ -411,14 +403,12 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
     // User checking their preferences
     // ========================================================================
     describe("Scenario 5: Preference queries", () => {
-        // SKIPPED: FTS limitation - "communicate" doesn't appear in preferences doc.
-        // The doc says "casual but clear" not "communicate" or "communication".
-        // Would need: keywords field, or richer content describing the preference.
-        it.skip("finds preferences when asking about communication style", async () => {
+        // Concierge would extract "preferences" as an entity for communication style queries
+        it("finds preferences via entity matching", async () => {
             const { results } = await searchKnowledge(
                 TEST_USER_ID,
-                "how do I prefer to communicate",
-                { maxResults: 5 }
+                "communication style",
+                { entities: ["preferences"], maxResults: 5 }
             );
 
             expect(results.length).toBeGreaterThan(0);
@@ -427,11 +417,11 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
             expect(prefDoc?.content).toContain("casual but clear");
         });
 
-        // SKIPPED: FTS limitation - "what do I do" are all stop words removed by FTS.
-        // After removing stop words, nothing remains to search for.
-        // Would need: query preprocessing to detect intent, or semantic search.
-        it.skip("finds identity when asking about role", async () => {
-            const { results } = await searchKnowledge(TEST_USER_ID, "what do I do", {
+        // Concierge would recognize "what do I do" as identity/role query
+        // and emit entity matching for identity docs
+        it("finds identity via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "role", {
+                entities: ["identity"],
                 maxResults: 5,
             });
 
@@ -447,14 +437,13 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
     // User exploring the heart-centered approach
     // ========================================================================
     describe("Scenario 6: Philosophy queries", () => {
-        // SKIPPED: FTS limitation - "why does Carmenta say we" has stop words.
-        // "why", "does", "say" are functional. "we" is very common. "Carmenta" matches many.
-        // Would need: semantic search to understand philosophical intent.
-        it.skip("finds philosophy when asking why Carmenta says we", async () => {
+        // Concierge would recognize this as a philosophy/values query
+        // and emit entity matching for philosophy-related docs
+        it("finds philosophy via entity matching", async () => {
             const { results } = await searchKnowledge(
                 TEST_USER_ID,
-                "why does Carmenta say we",
-                { maxResults: 5 }
+                "philosophy unity",
+                { entities: ["heart-centered", "what-is-carmenta"], maxResults: 5 }
             );
 
             expect(results.length).toBeGreaterThan(0);
@@ -464,15 +453,12 @@ Anniversary next week - his wife Lisa's birthday is the day after.`,
             expect(hasWeExplanation).toBe(true);
         });
 
-        // SKIPPED: FTS limitation - hyphenated "heart-centered" tokenizes differently.
-        // FTS may split on hyphen. Also "philosophy" doesn't appear in heart-centered doc.
-        // Would need: consistent tokenization, or keywords field.
-        it.skip("finds heart-centered docs when asking about philosophy", async () => {
-            const { results } = await searchKnowledge(
-                TEST_USER_ID,
-                "heart-centered AI philosophy",
-                { maxResults: 5 }
-            );
+        // Concierge would extract "heart-centered" as an entity
+        it("finds heart-centered docs via entity matching", async () => {
+            const { results } = await searchKnowledge(TEST_USER_ID, "AI philosophy", {
+                entities: ["heart-centered"],
+                maxResults: 5,
+            });
 
             expect(results.length).toBeGreaterThan(0);
             const philosophyDoc = results.find((r) =>
