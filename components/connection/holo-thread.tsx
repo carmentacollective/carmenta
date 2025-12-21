@@ -56,6 +56,13 @@ import { GiphyToolResult } from "@/components/generative-ui/giphy";
 import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { NotionToolResult } from "@/components/generative-ui/notion";
+import { Plan } from "@/components/tool-ui/plan";
+import type { PlanTodo } from "@/components/tool-ui/plan/schema";
+import { LinkPreview } from "@/components/tool-ui/link-preview";
+import { OptionList } from "@/components/tool-ui/option-list";
+import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
+import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
+import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
 import { UploadProgressDisplay } from "./upload-progress";
@@ -526,6 +533,304 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={getToolError(part, output, "Notion request failed")}
                 />
             );
+
+        // Tool-UI Components - Rich interactive displays
+        case "plan":
+        case "taskPlan": {
+            // Plan component for showing task progress and workflow steps
+            // Maps TodoWrite-style data to a visual progress display
+            const planOutput = output as
+                | {
+                      title?: string;
+                      description?: string;
+                      todos?: Array<{
+                          id: string;
+                          label?: string;
+                          content?: string;
+                          status: "pending" | "in_progress" | "completed" | "cancelled";
+                          description?: string;
+                          activeForm?: string;
+                      }>;
+                  }
+                | undefined;
+
+            // Transform todos to match Plan component schema
+            // Support both 'label' (Plan schema) and 'content' (TodoWrite schema)
+            const todos: PlanTodo[] = (planOutput?.todos ?? []).map((todo, idx) => ({
+                id: todo.id || `todo-${idx}`,
+                label: todo.label || todo.content || todo.activeForm || "Task",
+                status: todo.status,
+                description: todo.description,
+            }));
+
+            const planError = getToolError(part, output, "Plan creation failed");
+
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={planError}
+                >
+                    {status === "running" ? (
+                        <div className="p-4">
+                            <div className="animate-pulse text-sm text-muted-foreground">
+                                Creating task plan...
+                            </div>
+                        </div>
+                    ) : status === "error" ? (
+                        <div className="p-4 text-sm text-destructive">
+                            {planError ?? "Failed to create plan"}
+                        </div>
+                    ) : todos.length > 0 ? (
+                        <Plan
+                            id={`plan-${part.toolCallId}`}
+                            title={planOutput?.title ?? "Task Plan"}
+                            description={planOutput?.description}
+                            todos={todos}
+                            showProgress={true}
+                            maxVisibleTodos={6}
+                        />
+                    ) : (
+                        <div className="p-4 text-sm text-muted-foreground">
+                            No tasks in plan
+                        </div>
+                    )}
+                </ToolWrapper>
+            );
+        }
+
+        case "linkPreview":
+        case "previewLink": {
+            // LinkPreview component for rich URL cards
+            // Shows Open Graph data with image, title, description
+            const previewOutput = output as
+                | {
+                      href?: string;
+                      url?: string;
+                      title?: string;
+                      description?: string;
+                      image?: string;
+                      domain?: string;
+                      favicon?: string;
+                  }
+                | undefined;
+
+            const href =
+                previewOutput?.href || previewOutput?.url || (input?.url as string);
+            const previewError = getToolError(part, output, "Link preview failed");
+
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={previewError}
+                >
+                    <div className="p-4">
+                        <LinkPreview
+                            id={`link-preview-${part.toolCallId}`}
+                            href={href ?? ""}
+                            title={previewOutput?.title}
+                            description={previewOutput?.description}
+                            image={previewOutput?.image}
+                            domain={previewOutput?.domain}
+                            favicon={previewOutput?.favicon}
+                            isLoading={status === "running"}
+                        />
+                    </div>
+                </ToolWrapper>
+            );
+        }
+
+        case "optionList":
+        case "selectOption":
+        case "presentOptions": {
+            // OptionList component for interactive user selection
+            // Shows options with checkboxes/radio buttons for user choice
+            const optionsOutput = output as
+                | {
+                      options?: Array<{
+                          id: string;
+                          label: string;
+                          description?: string;
+                          disabled?: boolean;
+                      }>;
+                      selectionMode?: "single" | "multi";
+                      confirmed?: string | string[] | null;
+                      title?: string;
+                  }
+                | undefined;
+
+            const optionsInput = input as
+                | {
+                      options?: Array<{
+                          id: string;
+                          label: string;
+                          description?: string;
+                          disabled?: boolean;
+                      }>;
+                      selectionMode?: "single" | "multi";
+                      title?: string;
+                  }
+                | undefined;
+
+            // Use options from output if available, otherwise from input
+            const options: OptionListOption[] = (
+                optionsOutput?.options ??
+                optionsInput?.options ??
+                []
+            ).map((opt, idx) => ({
+                id: opt.id || `option-${idx}`,
+                label: opt.label,
+                description: opt.description,
+                disabled: opt.disabled,
+            }));
+
+            const selectionMode =
+                optionsOutput?.selectionMode ?? optionsInput?.selectionMode ?? "single";
+            const optionsError = getToolError(part, output, "Options display failed");
+
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={optionsError}
+                >
+                    <div className="p-4">
+                        {status === "running" ? (
+                            <div className="animate-pulse text-sm text-muted-foreground">
+                                Loading options...
+                            </div>
+                        ) : status === "error" ? (
+                            <div className="text-sm text-destructive">
+                                {optionsError ?? "Failed to load options"}
+                            </div>
+                        ) : options.length > 0 ? (
+                            <OptionList
+                                id={`option-list-${part.toolCallId}`}
+                                options={options}
+                                selectionMode={selectionMode}
+                                confirmed={optionsOutput?.confirmed}
+                            />
+                        ) : (
+                            <div className="text-sm text-muted-foreground">
+                                No options available
+                            </div>
+                        )}
+                    </div>
+                </ToolWrapper>
+            );
+        }
+
+        case "poiMap":
+        case "showLocations":
+        case "mapLocations": {
+            // POIMap component for interactive location maps
+            // Shows points of interest on a map with list, favorites, filtering
+            const mapOutput = output as
+                | {
+                      pois?: Array<{
+                          id: string;
+                          name: string;
+                          description?: string;
+                          category?: string;
+                          lat: number;
+                          lng: number;
+                          address?: string;
+                          rating?: number;
+                          imageUrl?: string;
+                          tags?: string[];
+                      }>;
+                      center?: { lat: number; lng: number };
+                      zoom?: number;
+                      title?: string;
+                  }
+                | undefined;
+
+            const mapInput = input as
+                | {
+                      pois?: Array<{
+                          id: string;
+                          name: string;
+                          description?: string;
+                          category?: string;
+                          lat: number;
+                          lng: number;
+                          address?: string;
+                          rating?: number;
+                          imageUrl?: string;
+                          tags?: string[];
+                      }>;
+                      center?: { lat: number; lng: number };
+                      zoom?: number;
+                      title?: string;
+                  }
+                | undefined;
+
+            // Use POIs from output if available, otherwise from input
+            const pois: POI[] = (mapOutput?.pois ?? mapInput?.pois ?? []).map(
+                (poi, idx) => ({
+                    id: poi.id || `poi-${idx}`,
+                    name: poi.name,
+                    description: poi.description,
+                    category: (poi.category as POI["category"]) ?? "other",
+                    lat: poi.lat,
+                    lng: poi.lng,
+                    address: poi.address,
+                    rating: poi.rating,
+                    imageUrl: poi.imageUrl,
+                    tags: poi.tags,
+                })
+            );
+
+            const center: MapCenter | undefined = mapOutput?.center ?? mapInput?.center;
+            const zoom = mapOutput?.zoom ?? mapInput?.zoom;
+            const title = mapOutput?.title ?? mapInput?.title;
+            const mapError = getToolError(part, output, "Map display failed");
+
+            return (
+                <ToolWrapper
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={mapError}
+                >
+                    {status === "running" ? (
+                        <div className="flex h-64 items-center justify-center">
+                            <div className="animate-pulse text-sm text-muted-foreground">
+                                Loading map...
+                            </div>
+                        </div>
+                    ) : status === "error" ? (
+                        <div className="p-4 text-sm text-destructive">
+                            {mapError ?? "Failed to load map"}
+                        </div>
+                    ) : pois.length > 0 ? (
+                        <POIMapWrapper
+                            id={`poi-map-${part.toolCallId}`}
+                            pois={pois}
+                            initialCenter={center}
+                            initialZoom={zoom}
+                            title={title}
+                        />
+                    ) : (
+                        <div className="p-4 text-sm text-muted-foreground">
+                            No locations to display
+                        </div>
+                    )}
+                </ToolWrapper>
+            );
+        }
 
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
