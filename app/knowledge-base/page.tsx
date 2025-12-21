@@ -8,7 +8,6 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
 import {
     getKBFolders,
-    getGlobalDocs,
     getValuesDocument,
     initializeKBWithClerkData,
     hasKBProfile,
@@ -32,7 +31,14 @@ export const metadata: Metadata = {
  */
 export default async function KnowledgeBasePage() {
     // Get current user from Clerk
-    const user = await currentUser();
+    // Handle CI environments where Clerk may not be properly initialized
+    let user;
+    try {
+        user = await currentUser();
+    } catch {
+        // In CI/test environments, Clerk may throw - treat as unauthenticated
+        redirect("/sign-in?redirect_url=/knowledge-base");
+    }
 
     if (!user) {
         // Redirect to sign-in if not authenticated
@@ -50,46 +56,39 @@ export default async function KnowledgeBasePage() {
         });
     }
 
-    // Fetch all KB data in parallel
-    const [userFolders, globalDocs, valuesDoc] = await Promise.all([
+    // Fetch KB data in parallel
+    const [userFolders, valuesDoc] = await Promise.all([
         getKBFolders(),
-        getGlobalDocs(),
         getValuesDocument(),
     ]);
 
-    // Build folder structure in order: values, profile, knowledge, docs
+    // Build folder structure in order: philosophy, personality, knowledge
+    // Note: System documentation moved to /guide page
     const allFolders: KBFolder[] = [];
 
-    // 1. Values folder (always present)
+    // 1. Heart-Centered Philosophy (top-level, not nested under Values)
     allFolders.push({
-        id: "values",
-        name: "values",
-        path: "values",
+        id: "philosophy",
+        name: "philosophy",
+        path: "philosophy",
         documents: [valuesDoc],
     });
 
-    // 2. Profile folder (from user folders)
+    // 2. AI Personality folder (from user profile folders)
     const profileFolder = userFolders.find((f) => f.path === "profile");
     if (profileFolder) {
-        allFolders.push(profileFolder);
+        allFolders.push({
+            ...profileFolder,
+            id: "personality",
+            name: "personality",
+            path: "personality",
+        });
     }
 
     // 3. Knowledge folder (from user folders, if exists)
     const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
     if (knowledgeFolder) {
         allFolders.push(knowledgeFolder);
-    }
-
-    // 4. Docs folder (global system docs, last)
-    if (globalDocs.length > 0) {
-        // Group docs by parent path for nested structure
-        const docsFolder: KBFolder = {
-            id: "docs",
-            name: "docs",
-            path: "docs",
-            documents: globalDocs,
-        };
-        allFolders.push(docsFolder);
     }
 
     return (

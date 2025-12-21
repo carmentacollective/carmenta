@@ -340,7 +340,7 @@ export async function getGlobalDocs(): Promise<KBDocument[]> {
 // ============================================================================
 
 /**
- * Get the values pseudo-document
+ * Get the heart-centered philosophy document
  *
  * This is not stored in the database - it's the heart-centered philosophy
  * baked into the code from the heart-centered-prompts package.
@@ -350,11 +350,11 @@ export async function getGlobalDocs(): Promise<KBDocument[]> {
  */
 export async function getValuesDocument(): Promise<KBDocument> {
     return {
-        id: "values-heart-centered",
-        path: "values.heart-centered",
-        name: "Heart-Centered Philosophy",
+        id: "philosophy-heart-centered",
+        path: "philosophy.heart-centered",
+        name: "Our Foundation",
         content: VALUES_CONTENT,
-        description: "The foundational values that guide how we work together",
+        description: "The heart-centered values that guide how we work together",
         promptLabel: null,
         editable: false,
         updatedAt: new Date(),

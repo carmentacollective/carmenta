@@ -16,28 +16,28 @@ import {
     Sparkles,
     MessageSquare,
     Heart,
-    BookOpen,
     Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 
-// Map folder paths to icons (order: values, profile, knowledge, docs)
+// Map folder paths to icons (order: philosophy, personality, knowledge)
 const FOLDER_ICONS: Record<string, typeof User> = {
-    values: Heart,
-    profile: User,
+    philosophy: Heart,
+    personality: Sparkles,
     knowledge: Brain,
-    docs: BookOpen,
 };
 
 // Display names for folders (overrides capitalized path names)
 const FOLDER_DISPLAY_NAMES: Record<string, string> = {
-    docs: "Carmenta Documentation",
+    philosophy: "Heart-Centered Philosophy",
+    personality: "AI Personality",
 };
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
-    "values.heart-centered": Heart,
+    "philosophy.heart-centered": Heart,
+    "values.heart-centered": Heart, // fallback for old path
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,
@@ -78,7 +78,7 @@ export function KBSidebar({
     return (
         <nav
             className={cn(
-                "glass-card flex min-h-[400px] w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
+                "glass-card flex h-full max-h-[calc(100vh-16rem)] w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
                 dimmed && "opacity-30",
                 className
             )}
@@ -143,6 +143,9 @@ export function KBSidebar({
                                                         key={doc.id}
                                                         onClick={() =>
                                                             onSelect(doc.path)
+                                                        }
+                                                        title={
+                                                            doc.description ?? undefined
                                                         }
                                                         className={cn(
                                                             "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",

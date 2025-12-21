@@ -30,7 +30,8 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
-    "values.heart-centered": Heart,
+    "philosophy.heart-centered": Heart,
+    "values.heart-centered": Heart, // fallback for old path
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,
@@ -38,7 +39,8 @@ const PATH_ICONS: Record<string, typeof FileText> = {
 
 // Character limits (~2,000 tokens for LLM context efficiency)
 const CHAR_LIMIT = 8000;
-const CHAR_WARNING_THRESHOLD = 0.8; // Show warning at 80%
+const CHAR_SHOW_THRESHOLD = 0.6; // Show counter when content reaches 60% of limit
+const CHAR_WARNING_THRESHOLD = 0.8; // Show warning color at 80%
 
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
@@ -67,6 +69,7 @@ export function KBContent({
     const charPercentage = (charCount / CHAR_LIMIT) * 100;
     const isOverLimit = charCount > CHAR_LIMIT;
     const isNearLimit = charPercentage >= CHAR_WARNING_THRESHOLD * 100;
+    const shouldShowCounter = charPercentage >= CHAR_SHOW_THRESHOLD * 100;
     const hasChanges = editContent !== originalContent;
 
     // Derive display save state from hasChanges and saveState
@@ -248,7 +251,7 @@ export function KBContent({
         return (
             <main
                 className={cn(
-                    "glass-card flex min-h-[400px] flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
+                    "glass-card flex h-full max-h-[calc(100vh-16rem)] flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
                     dimmed && "opacity-30"
                 )}
             >
@@ -263,7 +266,7 @@ export function KBContent({
     return (
         <main
             className={cn(
-                "glass-card relative flex min-h-[400px] flex-1 flex-col rounded-xl transition-opacity duration-200",
+                "glass-card relative flex h-full max-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
                 dimmed && "opacity-30"
             )}
         >
@@ -311,8 +314,8 @@ export function KBContent({
                 )}
             </AnimatePresence>
 
-            {/* Content Area - uses absolute positioning to fill flex space */}
-            <div className="relative min-h-0 flex-1">
+            {/* Content Area - scrollable within fixed height */}
+            <div className="relative min-h-0 flex-1 overflow-hidden">
                 {isEditable ? (
                     <textarea
                         ref={textareaRef}
@@ -324,7 +327,7 @@ export function KBContent({
                         aria-describedby="character-count error-message"
                         aria-invalid={isOverLimit}
                         className={cn(
-                            "absolute inset-0 resize-none bg-transparent px-6 py-5",
+                            "h-full w-full resize-none overflow-y-auto bg-transparent px-6 py-5",
                             "font-sans text-[15px] leading-[1.7] text-foreground/80",
                             "placeholder:italic placeholder:text-foreground/30",
                             "focus:outline-none",
@@ -338,7 +341,7 @@ export function KBContent({
                         }}
                     />
                 ) : (
-                    <div className="absolute inset-0 overflow-y-auto px-6 py-5">
+                    <div className="h-full overflow-y-auto px-6 py-5">
                         <MarkdownRenderer
                             content={kbDocument.content}
                             className="text-[15px] leading-[1.7] text-foreground/80"
@@ -347,48 +350,61 @@ export function KBContent({
                 )}
             </div>
 
-            {/* Footer: Character Count + Save Actions */}
+            {/* Footer: Character Count (when approaching limit) + Save Actions */}
             {isEditable && (
                 <footer className="flex items-center justify-between border-t border-foreground/5 px-6 py-3">
-                    {/* Character Counter */}
-                    <div className="flex items-center gap-3">
-                        {/* Progress Bar */}
-                        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-foreground/10 sm:h-2 sm:w-40">
+                    {/* Character Counter - only shown when approaching or exceeding limit */}
+                    <AnimatePresence>
+                        {shouldShowCounter ? (
                             <motion.div
-                                className={cn(
-                                    "h-full rounded-full transition-colors duration-300",
-                                    isOverLimit
-                                        ? "bg-red-500"
-                                        : isNearLimit
-                                          ? "bg-amber-500"
-                                          : "bg-primary/60"
-                                )}
-                                initial={false}
-                                animate={{
-                                    width: `${Math.min(charPercentage, 100)}%`,
-                                }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
-                            />
-                        </div>
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center gap-3"
+                            >
+                                {/* Progress Bar */}
+                                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-foreground/10 sm:h-2 sm:w-40">
+                                    <motion.div
+                                        className={cn(
+                                            "h-full rounded-full transition-colors duration-300",
+                                            isOverLimit
+                                                ? "bg-red-500"
+                                                : isNearLimit
+                                                  ? "bg-amber-500"
+                                                  : "bg-primary/60"
+                                        )}
+                                        initial={false}
+                                        animate={{
+                                            width: `${Math.min(charPercentage, 100)}%`,
+                                        }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                    />
+                                </div>
 
-                        {/* Character Count Text */}
-                        <span
-                            id="character-count"
-                            role="status"
-                            aria-live="polite"
-                            className={cn(
-                                "text-xs tabular-nums transition-colors duration-200",
-                                isOverLimit
-                                    ? "font-medium text-red-500"
-                                    : isNearLimit
-                                      ? "text-amber-600 dark:text-amber-400"
-                                      : "text-foreground/40"
-                            )}
-                        >
-                            {charCount.toLocaleString()} / {CHAR_LIMIT.toLocaleString()}
-                            {isNearLimit && ` (${Math.round(charPercentage)}%)`}
-                        </span>
-                    </div>
+                                {/* Character Count Text */}
+                                <span
+                                    id="character-count"
+                                    role="status"
+                                    aria-live="polite"
+                                    className={cn(
+                                        "text-xs tabular-nums transition-colors duration-200",
+                                        isOverLimit
+                                            ? "font-medium text-red-500"
+                                            : isNearLimit
+                                              ? "text-amber-600 dark:text-amber-400"
+                                              : "text-foreground/40"
+                                    )}
+                                >
+                                    {charCount.toLocaleString()} /{" "}
+                                    {CHAR_LIMIT.toLocaleString()}
+                                    {isNearLimit && ` (${Math.round(charPercentage)}%)`}
+                                </span>
+                            </motion.div>
+                        ) : (
+                            <div />
+                        )}
+                    </AnimatePresence>
 
                     {/* Save Actions */}
                     <AnimatePresence mode="wait">

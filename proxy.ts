@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
  *
  * Protected routes (require authentication):
  * - /connection/* (all conversation routes)
+ * - /knowledge-base/* (user knowledge base)
  * - /integrations (service connections dashboard)
  * - /connect/* (OAuth connection flows)
  * - /api/* (all API routes except webhooks)
@@ -30,6 +31,7 @@ import { NextResponse } from "next/server";
  */
 const isProtectedRoute = createRouteMatcher([
     "/connection(.*)",
+    "/knowledge-base(.*)",
     "/integrations(.*)",
     "/connect(.*)",
     "/api(.*)",

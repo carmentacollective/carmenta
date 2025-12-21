@@ -213,6 +213,16 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                     </Link>
 
                                     <Link
+                                        href="/guide"
+                                        onClick={() => setIsOpen(false)}
+                                        className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                    >
+                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <BookOpen className="relative h-4 w-4 text-foreground/60" />
+                                        <span className="relative">Guide</span>
+                                    </Link>
+
+                                    <Link
                                         href="/integrations"
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"

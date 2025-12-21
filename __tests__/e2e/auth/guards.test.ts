@@ -39,6 +39,16 @@ test.describe("Protected Route Guards", () => {
         await page.waitForURL(/sign-in/, { timeout: 10000 });
         expect(page.url()).toContain("sign-in");
     });
+
+    test("/knowledge-base redirects to sign-in when not authenticated", async ({
+        page,
+    }) => {
+        await page.goto("/knowledge-base");
+
+        // Should redirect to sign-in
+        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        expect(page.url()).toContain("sign-in");
+    });
 });
 
 test.describe("Navigation to Protected Routes", () => {
