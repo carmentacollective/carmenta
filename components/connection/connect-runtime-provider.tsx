@@ -205,19 +205,55 @@ export function useModelOverrides() {
 
 /**
  * Parses an error message and extracts a user-friendly message.
- * Handles JSON error responses, HTML error pages, and plain text.
+ * Handles JSON error responses, HTML error pages, provider errors, and plain text.
+ *
+ * All messages follow Carmenta voice: warm, direct, confident, helpful.
+ * No technical jargon. Focus on what the user can do next.
  */
 function parseErrorMessage(message: string | undefined): string {
     if (!message) return "We couldn't complete that request.";
 
     const trimmed = message.trim();
+    const lowerMessage = trimmed.toLowerCase();
+
+    // Provider/model errors - translate technical messages to helpful ones
+    if (
+        lowerMessage.includes("provider returned error") ||
+        lowerMessage.includes("ai_apicallerror")
+    ) {
+        // Check for specific patterns in the full message
+        if (lowerMessage.includes("thinking") && lowerMessage.includes("block")) {
+            return "We hit a conversation glitch. Try sending your message again.";
+        }
+        if (lowerMessage.includes("rate limit") || lowerMessage.includes("429")) {
+            return "The model is busy right now. Give it a moment and try again.";
+        }
+        if (lowerMessage.includes("overloaded") || lowerMessage.includes("503")) {
+            return "High demand right now. Try a different model or wait a moment.";
+        }
+        if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
+            return "The response took too long. Try a simpler question or a faster model.";
+        }
+        // Generic provider error
+        return "We couldn't reach the model. Try again or switch models.";
+    }
+
+    // Connection/network errors
+    if (
+        lowerMessage.includes("fetch failed") ||
+        lowerMessage.includes("network error") ||
+        lowerMessage.includes("econnrefused")
+    ) {
+        return "Connection dropped. Check your network and try again.";
+    }
 
     // Handle JSON error responses
     if (trimmed.startsWith("{")) {
         try {
             const parsed = JSON.parse(trimmed);
             if (typeof parsed.error === "string") {
-                return parsed.error;
+                // Recursively parse the inner error message
+                return parseErrorMessage(parsed.error);
             }
         } catch {
             // Not valid JSON
@@ -230,16 +266,24 @@ function parseErrorMessage(message: string | undefined): string {
         const statusMatch = trimmed.match(/<h1[^>]*>(\d{3})<\/h1>/);
         if (statusMatch) {
             const status = statusMatch[1];
-            if (status === "404") return "The requested endpoint was not found.";
-            if (status === "500") return "The server encountered an error.";
-            return `Server returned status ${status}.`;
+            if (status === "404") return "We lost the thread. Refresh and try again.";
+            if (status === "500") return "We hit a snag. Try again in a moment.";
+            return "Unexpected response. Refresh and try again.";
         }
-        return "The server returned an unexpected response.";
+        return "Unexpected response. Refresh and try again.";
     }
 
     // If the message is very long (likely a stack trace or HTML), truncate it
     if (trimmed.length > 200) {
-        return "An unexpected error occurred.";
+        return "We hit a snag. Try again or start a new conversation.";
+    }
+
+    // Final pass: check for any remaining technical patterns
+    if (lowerMessage.includes("error")) {
+        // Make generic "error" messages more helpful
+        if (trimmed.length < 50 && !lowerMessage.includes("please")) {
+            return `${trimmed}. Try again or switch models.`;
+        }
     }
 
     return message;
