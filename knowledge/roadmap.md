@@ -143,17 +143,19 @@ return because Carmenta knows them, not just because it's capable.
 
 ### Components
 
-| Component            | Status | Notes                                                   |
-| -------------------- | ------ | ------------------------------------------------------- |
-| **Auth**             | ✅     | Clerk integration complete, sessions, profiles          |
-| **Memory**           | 🔨     | Context compilation architecture (5 phases - see below) |
-| **Conversations**    | ✅     | History via Connection Chooser, search past             |
-| **Reasoning Tokens** | 🔨     | Extended thinking display, auto-collapse, warm messages |
-| **Model Selection**  | ✅     | User choice per conversation with stepped slider        |
-| **File Attachments** | ✅     | Upload, validation, image processing, model routing     |
-| **Onboarding**       | ⏳     | Profile collection, quick capability demo               |
-| **Analytics**        | ⏳     | PostHog integration - who uses what, retention          |
-| **Usage Metering**   | ⏳     | Token counting, cost attribution (no billing yet)       |
+| Component                | Status | Notes                                                             |
+| ------------------------ | ------ | ----------------------------------------------------------------- |
+| **Auth**                 | ✅     | Clerk integration complete, sessions, profiles                    |
+| **Memory**               | 🔨     | KB foundation done, profile injection working, extraction pending |
+| **Conversations**        | ✅     | History via Connection Chooser, search past                       |
+| **Reasoning Tokens**     | ✅     | Extended thinking display in message parts, streaming support     |
+| **Model Selection**      | ✅     | Concierge routing + user choice with stepped slider               |
+| **File Attachments**     | ✅     | Upload, validation, multimodal routing (built ahead)              |
+| **Service Integrations** | ✅     | 11 integrations with OAuth/API key, encrypted storage             |
+| **Generative UI**        | ✅     | Research, tables, comparisons (foundation for AG-UI)              |
+| **Onboarding**           | 🔨     | Basic profile init working, full flow pending                     |
+| **Analytics**            | ⏳     | PostHog integration - who uses what, retention                    |
+| **Usage Metering**       | ⏳     | Token counting, cost attribution (no billing yet)                 |
 
 ### Memory Implementation Phases
 
@@ -233,18 +235,33 @@ complete spec.
 
 ### Not Yet
 
-- No voice
-- No dynamic/automatic model routing (M3)
-- No service integrations
-- No AI team
+- No voice (M3)
+- No AI team (M4)
+- No scheduled agents (M4)
+- Service integrations are read-only (two-way sync in M4)
 
 ### Built Ahead of Schedule
 
-- **File Attachments** - Originally planned for M3, built in M2
+Features originally planned for later milestones that are already working:
+
+- **File Attachments** (M3 → M2)
   - Upload handling (lib/storage/upload.ts)
   - File validation and processing (lib/storage/file-validator.ts, image-processor.ts)
   - Model routing for vision and documents (lib/storage/model-routing.ts)
   - UI components (file-picker-button.tsx, file-preview.tsx, upload-progress.tsx)
+
+- **Service Integrations** (M4 → M2)
+  - 11 working integrations (ClickUp, Notion, Gmail, Slack, etc.)
+  - OAuth and API key authentication
+  - Encrypted credential storage (AES-256-GCM)
+  - Integration lifecycle management
+  - Generative UI components for each service
+
+- **Generative UI** (M3/M4 → M2)
+  - Research reports with citations
+  - Data table comparisons
+  - Web search result displays
+  - Foundation for full AG-UI protocol
 
 ---
 
@@ -270,13 +287,13 @@ capability, not just because it has more features.
 
 ### Components
 
-| Component                 | Status | Notes                                                          |
-| ------------------------- | ------ | -------------------------------------------------------------- |
-| **Voice**                 | ⏳     | STT, TTS, natural conversation, push-to-talk                   |
-| **Model Intelligence**    | ⏳     | Routing rubric, task classification, automatic model selection |
-| **Concierge (Full)**      | ⏳     | Query classification, context assembly, intelligent routing    |
-| **Interface (Polished)**  | ⏳     | Responsive, accessible, voice UI                               |
-| **Concierge Improvement** | ⏳     | Live query evaluation, pattern detection, self-improvement     |
+| Component                 | Status | Notes                                                           |
+| ------------------------- | ------ | --------------------------------------------------------------- |
+| **Voice**                 | ⏳     | STT, TTS, natural conversation, push-to-talk                    |
+| **Model Intelligence**    | ✅     | Routing rubric working, concierge selects model/temp/reasoning  |
+| **Concierge (Full)**      | ✅     | Query classification, context assembly, intelligent routing     |
+| **Interface (Polished)**  | 🔨     | Responsive and accessible done, voice UI pending                |
+| **Concierge Improvement** | ⏳     | Live query evaluation, pattern detection, self-improvement loop |
 
 ### Architecture: Model Intelligence
 
@@ -354,14 +371,14 @@ and people pay for genuine leverage.
 
 ### Components
 
-| Component                | Status | Notes                                               |
-| ------------------------ | ------ | --------------------------------------------------- |
-| **Service Connectivity** | ⏳     | Gmail, Calendar, Notion, GitHub via Nango           |
-| **External Tools**       | ⏳     | MCP marketplace - featured, community, custom tools |
-| **AI Team**              | ⏳     | Digital Chief of Staff, Researcher, Analyst         |
-| **Scheduled Agents**     | ⏳     | Daily briefings, meeting prep, monitoring           |
-| **Usage Metering**       | ⏳     | Pricing tiers, Stripe payment processing            |
-| **Onboarding (Full)**    | ⏳     | Service connection, AI team intro, value demo       |
+| Component                | Status | Notes                                                      |
+| ------------------------ | ------ | ---------------------------------------------------------- |
+| **Service Connectivity** | 🔨     | 11 integrations working (read-only), two-way sync pending  |
+| **External Tools**       | ⏳     | MCP marketplace - featured, community, custom tools        |
+| **AI Team**              | ⏳     | Digital Chief of Staff, Researcher, Analyst                |
+| **Scheduled Agents**     | ⏳     | Daily briefings, meeting prep, monitoring                  |
+| **Usage Metering**       | ⏳     | Pricing tiers, Stripe payment processing                   |
+| **Onboarding (Full)**    | ⏳     | Service connection working, AI team intro and demo pending |
 
 ### Infrastructure Ready
 

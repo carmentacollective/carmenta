@@ -52,88 +52,96 @@ important and executing on it dissolves. You describe what you want to create, a
 AI partner orchestrates the entire execution - analysis, development, validation, and
 deployment.
 
-## Core Capabilities
+## What We Built
 
-### Memory
+### Intelligent Model Selection
 
-The best context and memory management available. Carmenta remembers what matters - who
-you are, what you're working on, what you've decided, who you know, what you've learned.
-The AI always has the context it needs. No more explaining your situation every
-conversation.
+The concierge automatically selects the right model for each request. Claude Opus,
+Sonnet, ChatGPT, Gemini, Grok, Perplexity—7 frontier models across 5 providers. One
+interface, unified context. We analyze complexity, domain, and requirements to route to
+the optimal model at the optimal temperature with the optimal reasoning depth.
 
-### Voice
+Manual control available: stepped quality slider (Precise → Balanced → Creative →
+Expressive) and direct model selection when you want it.
 
-The best voice experience available. Talk to Carmenta, talk with Carmenta. Voice as a
-first-class citizen, not an afterthought. The deep dive comes separately, but the
-promise is clear: voice that feels natural and actually works.
+### Multimodal Intelligence
 
-### Interface
+Share images, PDFs, audio, video—we route each to the model that understands it best.
+Audio and video go to Gemini. Images and documents go to Claude or Gemini based on the
+model you're using. Context-aware file handling that just works.
 
-Web application first, then PWA for notifications, then Electron for desktop, then
-mobile.
+### Knowledge Foundation
 
-AG-UI protocol means Carmenta responds with purpose-built interfaces, not chat bubbles:
+Your profile lives in a knowledge base that persists across conversations. Who you are,
+what you prefer, what matters to you. The AI always has this context—no more
+re-explaining yourself.
 
-- Restaurant query produces a page with maps, reviews, photos, booking buttons
-- Research query produces a structured report with citations and visualizations
-- Scheduling query produces a calendar view with availability
-- Person query produces their profile, recent interactions, context
+The knowledge base architecture supports hierarchical organization with full-text
+search. Profile documents are automatically injected into every conversation. The
+foundation for memory that learns and grows over time.
 
-### Model Selection
+### Service Connectivity (Early Access)
 
-Default: Let Carmenta choose. A preprocessing layer analyzes the request, picks the
-right model, the right temperature, the right response strategy. The user doesn't think
-about models.
+11 integrations currently available:
 
-Optional control:
+- **Productivity**: Notion, ClickUp
+- **Communication**: Gmail, Slack, X/Twitter
+- **Storage**: Dropbox
+- **Media**: Giphy
+- **AI & Data**: Limitless Pendant, Fireflies.ai, CoinMarketCap
+- **Calendar**: Google Calendar & Contacts
 
-- Speed/quality slider: swift, balanced, deep
-- Manual override for specific model selection
+Read access to your connected services. Search your email, find calendar events, query
+your notes. The foundation for an AI that knows your world.
 
-The preprocessing layer enhances requests automatically. A casual question becomes a
-well-structured query.
+Two-way sync and AI team orchestration coming next—the infrastructure is ready.
 
-### AI Team
+### Generative UI
 
-The [Digital Chief of Staff](./components/ai-team.md) is the first team member. She
-tracks commitments across conversations, maintains the knowledge base, anticipates needs
-before they're expressed, handles operational coordination while you focus on what only
-you can do.
+Research queries produce structured reports with citations. Comparisons become data
+tables. Web search results display with source links and summaries. We respond with the
+interface the information deserves, not just text bubbles.
 
-Additional team members follow: Researcher, Analyst, Creator, Reviewer. Each
-specialized. All working from shared context.
+Full AG-UI protocol (calendar views, interactive maps, booking interfaces) coming as we
+expand beyond research and analysis tasks.
 
-### Scheduled Agents
+### Honest Intelligence
 
-Agents that run on your schedule, not just when you ask. Daily briefings. Hourly
-monitoring. Weekly research digests. Carmenta works while you sleep, surfaces what
-matters when you wake.
+When accuracy matters, we search for current information rather than guessing. The
+webSearch and fetchPage tools give us access to up-to-date data. We'd rather say "let me
+check" than fabricate an answer.
 
-Combined with proactive intelligence: preparing for upcoming meetings, watching for
-signals that need attention, escalating what matters, handling what doesn't. The shift
-from reactive to proactive.
+## What's Next
 
-### Browser Automation
+### Voice (M3: Flow State)
 
-Carmenta can browse the web as you, with your sessions and logins. Deep research that
-requires authentication. Task execution across web applications. This differentiates
-from tools that only access public web.
+Voice as a first-class interface. Speak your thoughts, hear responses. Push-to-talk and
+wake-word support. The interface that matches the speed of human thought.
 
-### Service Connectivity
+### AI Team (M4: Ready for Everyone)
 
-Native integrations for services that matter:
+The Digital Chief of Staff: tracks commitments, maintains context, anticipates needs,
+handles coordination. One person becomes a team of ten.
 
-- Productivity: Notion, ClickUp, Miro, Linear
-- Communication: Gmail, Slack, LinkedIn, X/Twitter
-- Storage: Google Drive, Dropbox
-- Media: YouTube, Instagram, Google Photos, Spotify
-- AI and Data: Limitless, Fireflies.ai, Exa
-- Dev and Ops: GitHub, Sentry
-- Finance: Monarch Money, CoinMarketCap
-- Calendar and Contacts: Google Calendar, Google Contacts
+Additional specialists follow: Researcher for deep dives, Analyst for synthesis, Creator
+for execution. All working from shared context, all multiplying your capacity.
 
-One subscription covers full connectivity. MCP servers remain supported for custom
-integrations.
+### Scheduled Agents (M4)
+
+Daily briefings before you ask. Meeting prep that happens automatically. Monitoring that
+runs while you sleep. The shift from reactive to proactive—Carmenta works continuously,
+surfaces what matters.
+
+### Self-Building Product (Future)
+
+AI processes user feedback into product improvements. Simulated users test continuously.
+Issues become PRs. The system builds itself—you provide judgment on what ships.
+
+## Platform Evolution
+
+Web application today. PWA for notifications and offline support next. Then Electron for
+desktop, then mobile native apps. Starting with the web, expanding to meet you wherever
+you work.
 
 ## The Name
 
