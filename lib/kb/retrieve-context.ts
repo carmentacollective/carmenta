@@ -53,6 +53,7 @@ export interface RetrievedDocument {
     source: {
         type: Document["sourceType"];
         id: string | null;
+        createdAt: Date;
         updatedAt: Date;
     };
 }
@@ -164,7 +165,7 @@ export async function retrieveContext(
 
                 // Use unified search with all options
                 const query = searchConfig.queries.join(" OR ");
-                const results = await searchKnowledge(userId, query, {
+                const { results, metadata } = await searchKnowledge(userId, query, {
                     entities: searchConfig.entities,
                     maxResults: maxDocuments,
                     minRelevance,
@@ -185,7 +186,7 @@ export async function retrieveContext(
                     0
                 );
 
-                span.setAttribute("total_matches", results.length);
+                span.setAttribute("total_matches", metadata.totalBeforeFiltering);
                 span.setAttribute("returned_documents", documents.length);
                 span.setAttribute("estimated_tokens", tokenCount);
 
@@ -194,7 +195,7 @@ export async function retrieveContext(
                         userId,
                         queries: searchConfig.queries,
                         entities: searchConfig.entities,
-                        totalMatches: results.length,
+                        totalMatches: metadata.totalBeforeFiltering,
                         returnedDocuments: documents.length,
                         estimatedTokens: tokenCount,
                     },
@@ -204,7 +205,7 @@ export async function retrieveContext(
                 return {
                     documents,
                     success: true,
-                    totalMatches: results.length,
+                    totalMatches: metadata.totalBeforeFiltering,
                     estimatedTokens: tokenCount,
                 };
             } catch (error) {

@@ -231,7 +231,7 @@ function createSearchKnowledgeTool(userId: string) {
                 ),
         }),
         execute: async ({ query, entities }) => {
-            const results = await searchKnowledge(userId, query, {
+            const { results } = await searchKnowledge(userId, query, {
                 entities,
                 maxResults: 5,
                 tokenBudget: 2000,

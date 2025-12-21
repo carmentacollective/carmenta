@@ -498,7 +498,7 @@ export async function search(
     }
 
     // Use unified search with snippets enabled
-    const results = await searchKnowledge(userId, query, {
+    const { results } = await searchKnowledge(userId, query, {
         maxResults: limit,
         includeSnippets: true,
     });
@@ -529,7 +529,7 @@ function mapUnifiedToSearchResult(result: UnifiedSearchResult): SearchResult {
         sourceType: result.source.type,
         sourceId: result.source.id,
         tags: [], // Not exposed in unified search
-        createdAt: result.source.updatedAt, // Use updatedAt as fallback
+        createdAt: result.source.createdAt,
         updatedAt: result.source.updatedAt,
         // SearchResult fields
         rank: result.relevance,

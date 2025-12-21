@@ -69,6 +69,7 @@ export interface SearchResult {
     source: {
         type: Document["sourceType"];
         id: string | null;
+        createdAt: Date;
         updatedAt: Date;
     };
     /** Highlighted snippet (only if includeSnippets) */
@@ -77,6 +78,21 @@ export interface SearchResult {
     promptLabel: string | null;
     /** Whether the document is editable */
     editable: boolean;
+}
+
+/**
+ * Search response with results and metadata.
+ */
+export interface SearchResponse {
+    /** Search results */
+    results: SearchResult[];
+    /** Metadata about the search */
+    metadata: {
+        /** Total matches before relevance filtering and limits */
+        totalBeforeFiltering: number;
+        /** Total after relevance filter, before limit/budget */
+        totalAfterFiltering: number;
+    };
 }
 
 // ============================================================================
@@ -93,7 +109,7 @@ const CHARS_PER_TOKEN = 4;
 const SEARCH_COLUMNS = sql`
     id, user_id, path, name, content, description,
     prompt_label, editable,
-    source_type, source_id, updated_at
+    source_type, source_id, created_at, updated_at
 `;
 
 // ============================================================================
@@ -214,6 +230,7 @@ async function searchByEntities(
         source: {
             type: row.source_type as Document["sourceType"],
             id: row.source_id as string | null,
+            createdAt: row.created_at as Date,
             updatedAt: row.updated_at as Date,
         },
         promptLabel: row.prompt_label as string | null,
@@ -273,6 +290,7 @@ async function searchByQuery(
             source: {
                 type: row.source_type as Document["sourceType"],
                 id: row.source_id as string | null,
+                createdAt: row.created_at as Date,
                 updatedAt: row.updated_at as Date,
             },
             promptLabel: row.prompt_label as string | null,
@@ -334,7 +352,7 @@ export async function searchKnowledge(
     userId: string,
     query: string,
     options: SearchOptions = {}
-): Promise<SearchResult[]> {
+): Promise<SearchResponse> {
     const {
         entities = [],
         maxResults = DEFAULT_MAX_RESULTS,
@@ -421,7 +439,13 @@ export async function searchKnowledge(
                     "📚 Knowledge base search completed"
                 );
 
-                return results;
+                return {
+                    results,
+                    metadata: {
+                        totalBeforeFiltering: deduplicated.length,
+                        totalAfterFiltering: filtered.length,
+                    },
+                };
             } catch (error) {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
@@ -437,7 +461,13 @@ export async function searchKnowledge(
                 });
 
                 // Return empty results on error - don't break the main flow
-                return [];
+                return {
+                    results: [],
+                    metadata: {
+                        totalBeforeFiltering: 0,
+                        totalAfterFiltering: 0,
+                    },
+                };
             }
         }
     );
