@@ -31,7 +31,14 @@ export const metadata: Metadata = {
  */
 export default async function KnowledgeBasePage() {
     // Get current user from Clerk
-    const user = await currentUser();
+    // Handle CI environments where Clerk may not be properly initialized
+    let user;
+    try {
+        user = await currentUser();
+    } catch {
+        // In CI/test environments, Clerk may throw - treat as unauthenticated
+        redirect("/sign-in?redirect_url=/knowledge-base");
+    }
 
     if (!user) {
         // Redirect to sign-in if not authenticated
