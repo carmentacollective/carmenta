@@ -29,12 +29,11 @@ const FOLDER_ICONS: Record<string, typeof User> = {
 };
 
 // Display names for folders (overrides capitalized path names)
-const FOLDER_DISPLAY_NAMES: Record<"philosophy" | "personality" | "knowledge", string> =
-    {
-        philosophy: "Our Foundation",
-        personality: "Our Partnership",
-        knowledge: "What We Remember",
-    };
+const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
+    philosophy: "Our Foundation",
+    personality: "Our Partnership",
+    knowledge: "What We Remember",
+};
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
