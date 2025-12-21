@@ -141,15 +141,23 @@ async function searchByEntities(
 ): Promise<RetrievedDocument[]> {
     if (entities.length === 0) return [];
 
-    // Build OR conditions for each entity
-    const entityConditions = entities.map((entity) => {
-        const normalized = normalizeEntity(entity);
-        const likePattern = `%${escapeLikePattern(normalized)}%`;
-        return sql`(
-            LOWER(REGEXP_REPLACE(path, '[^a-z0-9]', '', 'g')) LIKE ${likePattern}
-            OR LOWER(REGEXP_REPLACE(name, '[^a-z0-9]', '', 'g')) LIKE ${likePattern}
-        )`;
-    });
+    // Build OR conditions for each entity, filtering out empty normalized values
+    const entityConditions = entities
+        .map((entity) => {
+            const normalized = normalizeEntity(entity);
+            // Skip entities that normalize to empty string (e.g., "---")
+            if (!normalized) return null;
+            const likePattern = `%${escapeLikePattern(normalized)}%`;
+            // Use [^a-zA-Z0-9] to preserve uppercase letters before lowercasing
+            return sql`(
+                LOWER(REGEXP_REPLACE(path, '[^a-zA-Z0-9]', '', 'g')) LIKE ${likePattern}
+                OR LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]', '', 'g')) LIKE ${likePattern}
+            )`;
+        })
+        .filter((condition) => condition !== null);
+
+    // If all entities normalized to empty, return no results
+    if (entityConditions.length === 0) return [];
 
     const combinedCondition = sql.join(entityConditions, sql` OR `);
 
