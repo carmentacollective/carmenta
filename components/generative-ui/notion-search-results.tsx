@@ -66,8 +66,11 @@ export function NotionSearchResults({
 
             {/* Results list */}
             <div className="space-y-2">
-                {results.slice(0, 5).map((page) => (
-                    <NotionPageCard key={page.id} page={page} />
+                {results.slice(0, 5).map((page, index) => (
+                    <NotionPageCard
+                        key={page.id || `notion-page-${index}`}
+                        page={page}
+                    />
                 ))}
             </div>
 
