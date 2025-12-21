@@ -4,6 +4,7 @@ import {
     Globe,
     BrainCircuit,
     CloudSun,
+    BookOpen,
     type LucideIcon,
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
@@ -106,6 +107,20 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Forecast ready", "Weather check done", "Climate confirmed"],
             fast: ["Quick forecast!", "Instant weather"],
+        },
+    },
+    searchKnowledge: {
+        displayName: "Knowledge Base",
+        icon: BookOpen,
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching what we know...",
+            completed: "Found what we needed",
+            error: "Couldn't search our knowledge. The robots have been notified. 🤖",
+        },
+        delightMessages: {
+            completed: ["Memory retrieved", "Found it", "Here's what we have"],
+            fast: ["Quick recall!", "Found that fast"],
         },
     },
     limitless: {

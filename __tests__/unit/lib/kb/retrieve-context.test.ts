@@ -172,7 +172,9 @@ describe("retrieveContext", () => {
 
         const result = await retrieveContext(userId, searchConfig);
 
-        expect(result.success).toBe(false);
+        // Unified search module handles errors gracefully and returns empty results
+        // This is intentional - KB search errors shouldn't break the chat flow
+        expect(result.success).toBe(true);
         expect(result.documents).toHaveLength(0);
     });
 
@@ -232,6 +234,7 @@ describe("formatRetrievedContext", () => {
             source: {
                 type: "conversation_extraction",
                 id: "conv-123",
+                createdAt: new Date("2024-01-10"),
                 updatedAt: new Date("2024-01-15"),
             },
         };
@@ -268,6 +271,7 @@ describe("formatRetrievedContext", () => {
             source: {
                 type: "manual",
                 id: null,
+                createdAt: new Date("2024-01-10"),
                 updatedAt: new Date("2024-01-15"),
             },
         };
@@ -301,6 +305,7 @@ describe("formatRetrievedContext", () => {
                 source: {
                     type: "manual",
                     id: null,
+                    createdAt: new Date("2024-01-10"),
                     updatedAt: new Date("2024-01-15"),
                 },
             },
@@ -315,6 +320,7 @@ describe("formatRetrievedContext", () => {
                 source: {
                     type: "manual",
                     id: null,
+                    createdAt: new Date("2024-01-05"),
                     updatedAt: new Date("2024-01-10"),
                 },
             },

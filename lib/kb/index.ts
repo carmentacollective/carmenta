@@ -459,6 +459,11 @@ export async function exists(userId: string, path: string): Promise<boolean> {
 // Search Operations
 // ============================================================================
 
+import { searchKnowledge, type SearchResult as UnifiedSearchResult } from "./search";
+
+// Re-export unified search for direct use
+export { searchKnowledge, type SearchResult as KBSearchResult } from "./search";
+
 export interface SearchResult extends Document {
     /** Relevance rank (0-1, higher = more relevant) */
     rank: number;
@@ -468,6 +473,9 @@ export interface SearchResult extends Document {
 
 /**
  * Full-text search across user's documents using PostgreSQL FTS
+ *
+ * Uses the unified search module which combines entity matching (high precision)
+ * with full-text search (higher recall).
  *
  * Uses websearch_to_tsquery for natural query syntax:
  * - "exact phrase"
@@ -489,41 +497,44 @@ export async function search(
         return [];
     }
 
-    // PostgreSQL full-text search with ranking and snippets
-    // Searches both content (via search_vector) and name (direct match)
-    // Note: search_vector is used for matching but not returned to application
-    const result = await db.execute(sql`
-        SELECT
-            d.id, d.user_id, d.path, d.name, d.content, d.description,
-            d.prompt_label, d.prompt_hint, d.prompt_order,
-            d.always_include, d.searchable, d.editable,
-            d.source_type, d.source_id, d.tags,
-            d.created_at, d.updated_at,
-            ts_rank(d.search_vector, query) as rank,
-            ts_headline(
-                'english',
-                d.content,
-                query,
-                'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=25'
-            ) as snippet
-        FROM documents d,
-             websearch_to_tsquery('english', ${query}) query
-        WHERE d.user_id = ${userId}
-          AND (
-            d.search_vector @@ query
-            OR d.name ILIKE ${`%${escapeLikePattern(query)}%`}
-          )
-        ORDER BY rank DESC, d.updated_at DESC
-        LIMIT ${limit}
-    `);
+    // Use unified search with snippets enabled
+    const { results } = await searchKnowledge(userId, query, {
+        maxResults: limit,
+        includeSnippets: true,
+    });
 
-    const rows = normalizeExecuteResult(result);
+    // Map to backward-compatible SearchResult format
+    return results.map((result) => mapUnifiedToSearchResult(result));
+}
 
-    return rows.map((row) => ({
-        ...mapRowToDocument(row),
-        rank: (row.rank as number) ?? 0,
-        snippet: (row.snippet as string) ?? "",
-    }));
+/**
+ * Map unified search result to Document-based SearchResult for backward compat.
+ */
+function mapUnifiedToSearchResult(result: UnifiedSearchResult): SearchResult {
+    return {
+        // Document fields
+        id: result.id,
+        userId: null, // Not exposed in unified search
+        path: result.path,
+        name: result.name,
+        content: result.content,
+        searchVector: "", // Not selected
+        description: result.description,
+        promptLabel: result.promptLabel,
+        promptHint: null, // Not exposed in unified search
+        promptOrder: null, // Not exposed in unified search
+        alwaysInclude: false, // Not exposed in unified search
+        searchable: true, // Implied by being in results
+        editable: result.editable,
+        sourceType: result.source.type,
+        sourceId: result.source.id,
+        tags: [], // Not exposed in unified search
+        createdAt: result.source.createdAt,
+        updatedAt: result.source.updatedAt,
+        // SearchResult fields
+        rank: result.relevance,
+        snippet: result.snippet ?? "",
+    };
 }
 
 // ============================================================================
@@ -570,4 +581,5 @@ export const kb = {
 
     // Search
     search,
+    searchKnowledge,
 };
