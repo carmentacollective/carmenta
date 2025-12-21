@@ -1,11 +1,10 @@
 "use client";
 
 /**
- * Notion Tool UI - Compact Status Display
+ * Notion Tool UI - Visual Search Results
  *
- * Notion results are intermediate data the AI processes. The user cares about
- * the AI's synthesized response, not raw API output. This component shows
- * minimal status: what happened, with optional expansion for debugging.
+ * Renders Notion search results as clickable page cards for visual clarity.
+ * Other actions show compact status with optional JSON expansion for debugging.
  */
 
 import { useState } from "react";
@@ -13,6 +12,8 @@ import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolIcon } from "./tool-icon";
+import { NotionSearchResults } from "./notion-search-results";
+import type { NotionPageData } from "./notion-page-card";
 
 interface NotionToolResultProps {
     toolCallId: string;
@@ -56,7 +57,24 @@ export function NotionToolResult({
         );
     }
 
-    // Success - compact summary with optional JSON expansion
+    // For search action with results, render visual cards
+    if (action === "search" && output?.results) {
+        const results = parseSearchResults(output);
+        const query = input.query as string | undefined;
+        const totalCount = output.totalCount as number | undefined;
+
+        return (
+            <div className="py-2">
+                <NotionSearchResults
+                    results={results}
+                    query={query}
+                    totalCount={totalCount ?? results.length}
+                />
+            </div>
+        );
+    }
+
+    // Success - compact summary with optional JSON expansion for other actions
     const summary = getStatusMessage(action, input, "completed", output);
 
     return (
@@ -267,5 +285,28 @@ function extractUserName(output?: Record<string, unknown>): string | undefined {
 
 function truncate(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength - 1) + "…";
+    return text.slice(0, maxLength - 1) + "...";
+}
+
+/**
+ * Parse Notion search API response into NotionPageData array
+ */
+function parseSearchResults(output: Record<string, unknown>): NotionPageData[] {
+    const results = output.results as Array<{
+        id?: string;
+        type?: string;
+        title?: string;
+        url?: string;
+        last_edited?: string;
+    }>;
+
+    if (!Array.isArray(results)) return [];
+
+    return results.map((item) => ({
+        id: item.id || "",
+        type: (item.type as "page" | "database") || "page",
+        title: item.title || "Untitled",
+        url: item.url || "",
+        last_edited: item.last_edited,
+    }));
 }

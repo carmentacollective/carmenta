@@ -114,7 +114,12 @@ function getStatusMessage(
             if (isRunning)
                 return symbols ? `Checking ${symbols}...` : "Getting quotes...";
             const count = countQuotes(output);
-            return count === 1 ? `Got quote for ${symbols}` : `Got ${count} quotes`;
+            if (count === 1 && symbols) {
+                return `Got quote for ${symbols}`;
+            }
+            return count > 0
+                ? `Got ${count} quote${count === 1 ? "" : "s"}`
+                : "Quote ready";
         }
 
         case "get_crypto_info": {
