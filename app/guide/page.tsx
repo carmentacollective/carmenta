@@ -9,23 +9,23 @@ import { DocsViewer } from "@/components/docs-viewer";
 import { getGlobalDocs, type KBDocument } from "@/lib/kb/actions";
 
 export const metadata: Metadata = {
-    title: "Carmenta Documentation",
-    description: "Learn how to work with Carmenta effectively.",
+    title: "Guide · Carmenta",
+    description: "Learn how we work together.",
 };
 
 /**
- * Carmenta Documentation Page
+ * Guide Page
  *
  * Displays system documentation with TOC-style navigation.
  * Read-only documentation synced from /docs folder.
  */
-export default async function CarmentaDocsPage() {
+export default async function GuidePage() {
     // Get current user from Clerk
     const user = await currentUser();
 
     if (!user) {
         // Redirect to sign-in if not authenticated
-        redirect("/sign-in?redirect_url=/carmenta-docs");
+        redirect("/sign-in?redirect_url=/guide");
     }
 
     // Fetch global documentation
@@ -51,7 +51,7 @@ export default async function CarmentaDocsPage() {
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-light tracking-tight text-foreground">
-                                        Carmenta Documentation
+                                        Guide
                                     </h1>
                                     <p className="text-foreground/70">
                                         Learn how we work together

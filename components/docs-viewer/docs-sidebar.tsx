@@ -19,7 +19,7 @@ import {
     Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DocSection } from "@/app/carmenta-docs/page";
+import type { DocSection } from "@/app/guide/page";
 
 // Map section IDs to icons
 const SECTION_ICONS: Record<string, typeof FileText> = {

@@ -56,7 +56,7 @@ export default async function KnowledgeBasePage() {
     ]);
 
     // Build folder structure in order: philosophy, personality, knowledge
-    // Note: Carmenta Documentation moved to its own page (/carmenta-docs)
+    // Note: System documentation moved to /guide page
     const allFolders: KBFolder[] = [];
 
     // 1. Heart-Centered Philosophy (top-level, not nested under Values)

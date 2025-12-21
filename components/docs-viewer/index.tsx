@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { DocsSidebar } from "./docs-sidebar";
 import { DocsContent } from "./docs-content";
-import type { DocSection } from "@/app/carmenta-docs/page";
+import type { DocSection } from "@/app/guide/page";
 
 export interface DocsViewerProps {
     sections: DocSection[];
