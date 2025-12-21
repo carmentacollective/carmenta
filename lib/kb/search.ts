@@ -209,7 +209,7 @@ async function searchByEntities(
                1.0 as rank
                ${snippetColumn}
         FROM documents
-        WHERE user_id = ${userId}
+        WHERE (user_id = ${userId} OR user_id IS NULL)
           AND (${combinedCondition})
           AND content IS NOT NULL
           AND content != ''
@@ -262,7 +262,7 @@ async function searchByQuery(
                ${snippetColumn}
         FROM documents d,
              websearch_to_tsquery('english', ${query}) query
-        WHERE d.user_id = ${userId}
+        WHERE (d.user_id = ${userId} OR d.user_id IS NULL)
           AND (
             d.search_vector @@ query
             OR d.name ILIKE ${`%${escapeLikePattern(query)}%`}
