@@ -22,30 +22,30 @@ export interface ToolStepConfig {
  */
 const TOOL_PROGRESS_CONFIG: Record<string, ToolStepConfig> = {
     webSearch: {
-        runningMessage: "Searching the web...",
+        runningMessage: "Searching...",
         steps: [
-            { id: "query", label: "Preparing search query" },
-            { id: "search", label: "Searching sources" },
-            { id: "read", label: "Reading results" },
-            { id: "rank", label: "Ranking relevance" },
+            { id: "query", label: "Shaping the query" },
+            { id: "search", label: "Finding sources" },
+            { id: "read", label: "Reading what we found" },
+            { id: "rank", label: "Picking the best" },
         ],
     },
     fetchPage: {
-        runningMessage: "Fetching page content...",
+        runningMessage: "Reading...",
         steps: [
-            { id: "fetch", label: "Fetching page" },
-            { id: "parse", label: "Parsing content" },
-            { id: "extract", label: "Extracting text" },
+            { id: "fetch", label: "Reaching the page" },
+            { id: "parse", label: "Understanding the content" },
+            { id: "extract", label: "Pulling out what matters" },
         ],
     },
     deepResearch: {
-        runningMessage: "Conducting deep research...",
+        runningMessage: "Researching...",
         steps: [
-            { id: "understand", label: "Understanding query" },
-            { id: "plan", label: "Planning research" },
-            { id: "search", label: "Searching sources" },
-            { id: "analyze", label: "Analyzing findings" },
-            { id: "synthesize", label: "Synthesizing conclusions" },
+            { id: "understand", label: "Understanding what you need" },
+            { id: "plan", label: "Mapping out the research" },
+            { id: "search", label: "Searching" },
+            { id: "analyze", label: "Making sense of it" },
+            { id: "synthesize", label: "Connecting the insights" },
         ],
     },
 };
