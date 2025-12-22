@@ -207,7 +207,8 @@ export function ThemeSelector({
     className,
 }: ThemeSelectorProps) {
     const { themeVariant, setThemeVariant } = useThemeVariant();
-    const [selected, setSelected] = useState<ThemeVariant>(value ?? defaultValue);
+    // Initialize to user's current theme, not defaultValue, to avoid overriding on mount
+    const [selected, setSelected] = useState<ThemeVariant>(value ?? themeVariant);
     const [hoveredTheme, setHoveredTheme] = useState<ThemeVariant | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 

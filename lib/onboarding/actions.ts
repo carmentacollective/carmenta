@@ -148,8 +148,12 @@ export async function completeOnboardingItem(
         await storeOnboardingData(user.id, item, data);
     }
 
+    // Re-fetch user to get current preferences (storeOnboardingData may have modified them)
+    const freshUser = await findUserByClerkId(clerkId);
+    const currentPreferences = freshUser?.preferences ?? {};
+
     // Update onboarding state
-    const currentOnboarding = user.preferences?.onboarding ?? {
+    const currentOnboarding = currentPreferences.onboarding ?? {
         completed: [],
         skipped: [],
     };
@@ -163,7 +167,7 @@ export async function completeOnboardingItem(
         .update(users)
         .set({
             preferences: {
-                ...user.preferences,
+                ...currentPreferences,
                 onboarding: updatedOnboarding,
             },
             updatedAt: new Date(),
