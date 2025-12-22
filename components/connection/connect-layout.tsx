@@ -79,7 +79,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const connectionKey = activeConnection?.id ?? "new";
 
     // Hide connection chooser until we have at least one conversation
-    // On mobile, it's shown in the bottom bar instead of header
+    // On mobile, it's shown near the composer instead of in header
     const showConnectionChooser = connections.length > 0 && !isMobile;
 
     return (
