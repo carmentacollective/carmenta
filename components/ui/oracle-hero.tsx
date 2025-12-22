@@ -97,15 +97,17 @@ export function OracleHero() {
                 ))}
 
                 {/* Logo container - lifts and glows on hover */}
-                <div className="oracle-breathing relative flex h-40 w-40 items-center justify-center rounded-full bg-white/70 shadow-xl ring-1 ring-white/80 backdrop-blur-xl transition-all duration-500 group-hover:-translate-y-2 group-hover:bg-white/90 group-hover:shadow-2xl md:h-44 md:w-44">
-                    <Image
-                        src="/logos/icon-transparent.png"
-                        alt="Carmenta"
-                        width={110}
-                        height={110}
-                        className="drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
-                        priority
-                    />
+                <div className="relative transition-transform duration-500 group-hover:-translate-y-2">
+                    <div className="oracle-breathing flex h-40 w-40 items-center justify-center rounded-full bg-white/70 shadow-xl ring-1 ring-white/80 backdrop-blur-xl transition-all duration-500 group-hover:bg-white/90 group-hover:shadow-2xl md:h-44 md:w-44">
+                        <Image
+                            src="/logos/icon-transparent.png"
+                            alt="Carmenta"
+                            width={110}
+                            height={110}
+                            className="drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
+                            priority
+                        />
+                    </div>
                 </div>
             </div>
 

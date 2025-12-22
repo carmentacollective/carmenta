@@ -14,6 +14,7 @@ const marketingPages = [
     "/ai-first-development",
     "/brand",
     "/guide",
+    "/home", // Landing page accessible to authenticated users (/ redirects them)
     "/offline",
     "/privacy",
     "/security",
