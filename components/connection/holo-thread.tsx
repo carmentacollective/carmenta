@@ -1388,7 +1388,7 @@ function PendingAssistantMessage({
                 {hasSelected && (
                     <div className="relative mt-2">
                         {/* Model avatar positioned outside bubble */}
-                        <div className="absolute -left-10 top-3 hidden sm:block">
+                        <div className="absolute -left-10 top-2 hidden sm:block">
                             <ModelAvatar modelId={concierge?.modelId} />
                         </div>
                         <motion.div
