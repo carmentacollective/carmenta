@@ -599,6 +599,10 @@ export function HolographicBackground({
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const isDark = isClient && resolvedTheme === "dark";
 
+    // Get current theme background for canvas fallback (prevents flash on resize)
+    const palette = THEME_PALETTES[themeVariant] || THEME_PALETTES.carmenta;
+    const canvasBgColor = isDark ? palette.darkBg : LIGHT_BACKGROUND;
+
     // Theme-aware warm presence colors
     const presenceColors =
         WARM_PRESENCE_COLORS[themeVariant] || WARM_PRESENCE_COLORS.carmenta;
@@ -612,6 +616,7 @@ export function HolographicBackground({
             <canvas
                 ref={holoCanvasRef}
                 className="fixed inset-0 z-0"
+                style={{ backgroundColor: canvasBgColor }}
                 aria-hidden="true"
             />
 
