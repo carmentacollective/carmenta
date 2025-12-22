@@ -7,6 +7,7 @@ import { ActionButtons, normalizeActionsConfig } from "../shared";
 import type { Action } from "../shared";
 import { cn, Button, Separator } from "./_adapter";
 import { Check } from "lucide-react";
+import { glass, border } from "@/lib/design-tokens";
 
 function parseSelectionToIdSet(
     value: OptionListSelection | undefined,
@@ -175,7 +176,9 @@ function OptionListConfirmation({
         >
             <div
                 className={cn(
-                    "shadow-xs flex w-full flex-col overflow-hidden rounded-2xl border bg-card/60 px-5 py-2.5"
+                    "flex w-full flex-col overflow-hidden rounded-2xl px-5 py-2.5",
+                    glass.standard,
+                    border.container
                 )}
             >
                 {confirmedOptions.map((option, index) => (
@@ -531,7 +534,9 @@ export function OptionList({
         >
             <div
                 className={cn(
-                    "group/list shadow-xs flex w-full flex-col overflow-hidden rounded-2xl border bg-card px-4 py-1.5"
+                    "group/list flex w-full flex-col overflow-hidden rounded-2xl px-4 py-1.5",
+                    glass.standard,
+                    border.container
                 )}
                 role="listbox"
                 aria-multiselectable={selectionMode === "multi"}

@@ -3,16 +3,12 @@
 /**
  * CoinMarketCap Tool UI - Compact Status Display
  *
- * Tool results are intermediate data the AI processes. The user cares about
- * the AI's synthesized response, not raw API output. This component shows
- * minimal status: what happened, with optional expansion for debugging.
+ * Uses ToolWrapper for consistent status display.
+ * All actions use compact variant (crypto data is processed by AI).
  */
 
-import { useState } from "react";
-import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { ToolIcon } from "./tool-icon";
+import { ToolWrapper } from "./tool-wrapper";
 
 interface CoinMarketCapToolResultProps {
     toolCallId: string;
@@ -24,67 +20,27 @@ interface CoinMarketCapToolResultProps {
 }
 
 /**
- * Compact CoinMarketCap tool result.
- * Shows a single line summary with optional raw data expansion.
+ * CoinMarketCap tool result using ToolWrapper for consistent status display.
+ * All actions use compact variant since crypto data is processed by the AI.
  */
 export function CoinMarketCapToolResult({
+    toolCallId,
     status,
     action,
     input,
     output,
     error,
 }: CoinMarketCapToolResultProps) {
-    const [expanded, setExpanded] = useState(false);
-
-    // Loading state - single line with pulse animation
-    if (status === "running") {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <ToolIcon
-                    toolName="coinmarketcap"
-                    className="h-3.5 w-3.5 animate-pulse"
-                />
-                <span>{getStatusMessage(action, input, "running")}</span>
-            </div>
-        );
-    }
-
-    // Error state - red text, clear message
-    if (status === "error" || error) {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                <span>{error || `CoinMarketCap ${action} failed`}</span>
-            </div>
-        );
-    }
-
-    // Success - compact summary with optional JSON expansion
-    const summary = getStatusMessage(action, input, "completed", output);
-
     return (
-        <div className="py-1">
-            <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ToolIcon toolName="coinmarketcap" className="h-3.5 w-3.5" />
-                <span className="flex-1">{summary}</span>
-                {output &&
-                    (expanded ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                    ))}
-            </button>
-
-            {expanded && output && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
+        <ToolWrapper
+            toolName="coinmarketcap"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+            variant="compact"
+        />
     );
 }
 

@@ -7,27 +7,21 @@
  * Shows compact status for simple operations and visual cards for list results.
  */
 
-import { useState } from "react";
 import {
-    AlertCircle,
     Calendar,
-    ChevronDown,
-    ChevronUp,
     Clock,
     ExternalLink,
     Mail,
     MapPin,
     Phone,
     Plus,
-    Search,
     Trash2,
     User,
     Users,
 } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { cn } from "@/lib/utils";
-import { ToolIcon } from "./tool-icon";
+import { ToolWrapper } from "./tool-wrapper";
 
 // ============================================================================
 // Types
@@ -410,87 +404,37 @@ function ContactConfirmation({
 // ============================================================================
 
 /**
- * Google Calendar & Contacts tool result display.
+ * Google Calendar & Contacts tool result using ToolWrapper for consistent status display.
  *
- * Shows compact status for simple operations, rich visual cards for lists.
+ * - List/search actions: Shows visual cards in standard wrapper
+ * - Other actions: Compact inline status
  */
 export function GoogleCalendarContactsToolResult({
+    toolCallId,
     status,
     action,
     input,
     output,
     error,
 }: GoogleCalendarContactsToolResultProps) {
-    const [expanded, setExpanded] = useState(false);
+    // Check if this action produces rich visual content
+    const richContent =
+        status === "completed" ? renderOutput(action, input, output) : null;
+    const hasRichContent = richContent !== null;
+    const variant = hasRichContent ? "standard" : "compact";
 
-    // Loading state
-    if (status === "running") {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <ToolIcon
-                    toolName="google-calendar-contacts"
-                    className="h-3.5 w-3.5 animate-pulse"
-                />
-                <span>{getStatusMessage(action, input, "running")}</span>
-            </div>
-        );
-    }
-
-    // Error state
-    if (status === "error" || error) {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                <span>{error || `Google operation failed`}</span>
-            </div>
-        );
-    }
-
-    // Success - render based on action type
-    const content = renderOutput(action, input, output);
-    const summary = getStatusMessage(action, input, "completed", output);
-    const hasRichContent = content !== null;
-
-    // For rich content, show it directly
-    if (hasRichContent) {
-        return (
-            <div className="py-2">
-                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <ToolIcon
-                        toolName="google-calendar-contacts"
-                        className="h-3.5 w-3.5"
-                    />
-                    <span>{summary}</span>
-                </div>
-                {content}
-            </div>
-        );
-    }
-
-    // For simple operations, show compact with optional expansion
     return (
-        <div className="py-1">
-            <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ToolIcon toolName="google-calendar-contacts" className="h-3.5 w-3.5" />
-                <span className="flex-1">{summary}</span>
-                {output &&
-                    (expanded ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                    ))}
-            </button>
-
-            {expanded && output && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
+        <ToolWrapper
+            toolName="google-calendar-contacts"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+            variant={variant}
+        >
+            {hasRichContent && richContent}
+        </ToolWrapper>
     );
 }
 

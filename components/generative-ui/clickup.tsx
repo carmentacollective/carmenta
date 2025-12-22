@@ -3,36 +3,25 @@
 /**
  * ClickUp Tool UI - Rich Task Management Display
  *
- * ClickUp is visual project management. Users want to SEE their tasks, status,
- * priorities, and team members - not parse JSON. This component renders:
- *
- * - Task cards with status colors, priority badges, assignees
- * - Hierarchy navigation (Teams → Spaces → Lists)
- * - Comments thread with authors
- * - Time tracking entries
- * - Direct links to ClickUp
+ * Uses ToolWrapper for consistent status display.
+ * Rich visual displays for tasks, lists, comments, time tracking.
  */
 
 import { useState } from "react";
 import Image from "next/image";
 import {
-    AlertCircle,
-    Check,
-    CheckCircle2,
     ChevronDown,
     ChevronRight,
     Clock,
     ExternalLink,
     Flag,
-    Loader2,
     MessageSquare,
-    Plus,
-    Trash2,
     Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { ToolWrapper } from "./tool-wrapper";
 
 interface ClickUpToolResultProps {
     toolCallId: string;
@@ -87,92 +76,60 @@ function getStatusColor(status: string): string {
 }
 
 /**
- * Main ClickUp tool result component
+ * Main ClickUp tool result component using ToolWrapper for consistent status display.
  */
 export function ClickUpToolResult({
+    toolCallId,
     status,
     action,
     input,
     output,
     error,
 }: ClickUpToolResultProps) {
-    // Loading state
-    if (status === "running") {
-        return (
-            <div className="flex items-center gap-3 px-4 py-3">
-                <Image
-                    src="/logos/clickup.svg"
-                    alt="ClickUp"
-                    width={20}
-                    height={20}
-                    className="h-5 w-5"
-                />
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                    {getLoadingMessage(action, input)}
-                </span>
-            </div>
-        );
-    }
+    // Determine if this action has rich visual content
+    const hasVisualContent = isVisualAction(action) && status === "completed";
+    const variant = hasVisualContent ? "standard" : "compact";
 
-    // Error state
-    if (status === "error" || error) {
-        return (
-            <div className="flex items-center gap-3 px-4 py-3 text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span className="text-sm">{error || `ClickUp ${action} failed`}</span>
-            </div>
-        );
-    }
-
-    // Success - render based on action
-    return renderContent(action, input, output);
+    return (
+        <ToolWrapper
+            toolName="clickup"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+            variant={variant}
+        >
+            {hasVisualContent && <ClickUpContent action={action} output={output} />}
+        </ToolWrapper>
+    );
 }
 
 /**
- * Generate loading message based on action
+ * Check if this action type produces rich visual content
  */
-function getLoadingMessage(action: string, input: Record<string, unknown>): string {
-    switch (action) {
-        case "list_teams":
-            return "Loading workspaces...";
-        case "list_spaces":
-            return "Loading spaces...";
-        case "list_lists":
-            return "Loading lists...";
-        case "list_tasks": {
-            const listId = input.list_id as string;
-            return listId ? "Loading tasks..." : "Searching tasks...";
-        }
-        case "get_task":
-            return "Loading task details...";
-        case "create_task":
-            return "Creating task...";
-        case "update_task":
-            return "Updating task...";
-        case "delete_task":
-            return "Deleting task...";
-        case "create_comment":
-            return "Adding comment...";
-        case "list_comments":
-            return "Loading comments...";
-        case "list_time_entries":
-            return "Loading time entries...";
-        case "describe":
-            return "Loading capabilities...";
-        default:
-            return `Running ${action}...`;
-    }
+function isVisualAction(action: string): boolean {
+    return [
+        "list_teams",
+        "list_spaces",
+        "list_lists",
+        "list_tasks",
+        "get_task",
+        "list_comments",
+        "list_time_entries",
+    ].includes(action);
 }
 
 /**
- * Render content based on action type
+ * Render rich content for visual actions
  */
-function renderContent(
-    action: string,
-    input: Record<string, unknown>,
-    output?: Record<string, unknown>
-) {
+function ClickUpContent({
+    action,
+    output,
+}: {
+    action: string;
+    output?: Record<string, unknown>;
+}) {
     switch (action) {
         case "list_teams":
             return <TeamsDisplay output={output} />;
@@ -184,24 +141,12 @@ function renderContent(
             return <TasksDisplay output={output} />;
         case "get_task":
             return <TaskDetailDisplay output={output} />;
-        case "create_task":
-            return <TaskCreatedDisplay output={output} />;
-        case "update_task":
-            return <TaskUpdatedDisplay output={output} />;
-        case "delete_task":
-            return <TaskDeletedDisplay output={output} />;
-        case "create_comment":
-            return <CommentCreatedDisplay output={output} />;
         case "list_comments":
             return <CommentsDisplay output={output} />;
         case "list_time_entries":
             return <TimeEntriesDisplay output={output} />;
-        case "describe":
-            return <DescribeDisplay />;
-        case "raw_api":
-            return <RawApiDisplay output={output} />;
         default:
-            return <GenericDisplay action={action} output={output} />;
+            return null;
     }
 }
 
@@ -647,76 +592,6 @@ function CustomFieldsSection({ customFields }: { customFields: unknown }) {
 }
 
 // ============================================================================
-// SUCCESS DISPLAYS (Create, Update, Delete)
-// ============================================================================
-
-function TaskCreatedDisplay({ output }: { output?: Record<string, unknown> }) {
-    const title = output?.title as string;
-    const url = output?.url as string;
-    const taskId = output?.taskId as string;
-
-    return (
-        <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="flex-1">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">Task created</span>
-                    {url && (
-                        <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                        >
-                            <ExternalLink className="h-4 w-4" />
-                        </a>
-                    )}
-                </div>
-                <p className="text-sm text-muted-foreground">{title || taskId}</p>
-            </div>
-        </div>
-    );
-}
-
-function TaskUpdatedDisplay({ output }: { output?: Record<string, unknown> }) {
-    const title = output?.title as string;
-    const status = output?.status as string;
-
-    return (
-        <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1">
-                <span className="font-medium text-foreground">Task updated</span>
-                <p className="text-sm text-muted-foreground">
-                    {title}
-                    {status && ` → ${status}`}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function TaskDeletedDisplay({ output }: { output?: Record<string, unknown> }) {
-    const taskId = output?.taskId as string;
-
-    return (
-        <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-            </div>
-            <div className="flex-1">
-                <span className="font-medium text-foreground">Task deleted</span>
-                <p className="text-sm text-muted-foreground">ID: {taskId}</p>
-            </div>
-        </div>
-    );
-}
-
-// ============================================================================
 // COMMENTS DISPLAY
 // ============================================================================
 
@@ -725,22 +600,6 @@ interface Comment {
     text: string;
     author: string;
     date: string;
-}
-
-function CommentCreatedDisplay({ output }: { output?: Record<string, unknown> }) {
-    return (
-        <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="flex-1">
-                <span className="font-medium text-foreground">Comment added</span>
-                <p className="text-sm text-muted-foreground">
-                    {(output?.note as string) || "Comment posted successfully"}
-                </p>
-            </div>
-        </div>
-    );
 }
 
 function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
@@ -867,102 +726,6 @@ function TimeEntriesDisplay({ output }: { output?: Record<string, unknown> }) {
                     </div>
                 ))}
             </div>
-        </div>
-    );
-}
-
-// ============================================================================
-// UTILITY DISPLAYS
-// ============================================================================
-
-function DescribeDisplay() {
-    return (
-        <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1">
-                <span className="font-medium text-foreground">ClickUp connected</span>
-                <p className="text-sm text-muted-foreground">
-                    Ready to manage tasks, lists, and workspaces
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function RawApiDisplay({ output }: { output?: Record<string, unknown> }) {
-    const [expanded, setExpanded] = useState(false);
-
-    return (
-        <div className="px-4 py-3">
-            <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground hover:text-foreground"
-            >
-                <Image
-                    src="/logos/clickup.svg"
-                    alt="ClickUp"
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 opacity-60"
-                />
-                <span className="flex-1">API call completed</span>
-                {output && (
-                    <ChevronDown
-                        className={cn(
-                            "h-4 w-4 transition-transform",
-                            expanded && "rotate-180"
-                        )}
-                    />
-                )}
-            </button>
-            {expanded && output && (
-                <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
-    );
-}
-
-function GenericDisplay({
-    action,
-    output,
-}: {
-    action: string;
-    output?: Record<string, unknown>;
-}) {
-    const [expanded, setExpanded] = useState(false);
-
-    return (
-        <div className="px-4 py-3">
-            <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground hover:text-foreground"
-            >
-                <Image
-                    src="/logos/clickup.svg"
-                    alt="ClickUp"
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 opacity-60"
-                />
-                <span className="flex-1">Completed {action}</span>
-                {output && (
-                    <ChevronDown
-                        className={cn(
-                            "h-4 w-4 transition-transform",
-                            expanded && "rotate-180"
-                        )}
-                    />
-                )}
-            </button>
-            {expanded && output && (
-                <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
         </div>
     );
 }
