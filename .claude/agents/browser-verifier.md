@@ -1,9 +1,6 @@
 ---
 name: browser-verifier
-description:
-  Evaluate product functionality via browser as an end user would. Returns findings
-  across 5 dimensions (Works, Looks, Clear, Polished, Fast). Does not fix issues -
-  reports them for the orchestrator.
+description: "Browser verification agent for end-user functionality testing"
 model: sonnet
 ---
 
