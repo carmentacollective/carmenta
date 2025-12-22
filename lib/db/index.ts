@@ -88,6 +88,7 @@ export {
 // Re-export connection operations
 export {
     createConnection,
+    getConnection,
     getConnectionWithMessages,
     getRecentConnections,
     updateConnection,
