@@ -4,6 +4,7 @@
 import * as React from "react";
 import { Globe } from "lucide-react";
 import { cn } from "./_adapter";
+import { glass, border } from "@/lib/design-tokens";
 import { ActionButtons, normalizeActionsConfig, type ActionsProp } from "../shared";
 import { RATIO_CLASS_MAP, getFitClass, sanitizeHref } from "../shared/media";
 import type { SerializableLinkPreview } from "./schema";
@@ -93,8 +94,9 @@ export function LinkPreview(props: LinkPreviewProps) {
         >
             <div
                 className={cn(
-                    "@container group relative isolate flex w-full min-w-0 flex-col overflow-hidden rounded-xl",
-                    "border border-white/20 bg-white/50 text-sm backdrop-blur-md dark:border-white/10 dark:bg-black/30",
+                    "@container group relative isolate flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm",
+                    glass.standard,
+                    border.container,
                     sanitizedHref && "cursor-pointer"
                 )}
                 onClick={sanitizedHref ? handleClick : undefined}

@@ -28,6 +28,7 @@ import {
     CollapsibleContent,
 } from "./_adapter";
 import { ActionButtons, normalizeActionsConfig } from "../shared";
+import { glass, border } from "@/lib/design-tokens";
 
 const INITIAL_VISIBLE_TODO_COUNT = 4;
 
@@ -216,7 +217,13 @@ export function Plan({
             </CardHeader>
 
             <CardContent className="px-4">
-                <div className="rounded-lg border border-white/10 bg-white/20 px-4 py-3 backdrop-blur-sm dark:bg-black/20">
+                <div
+                    className={cn(
+                        "rounded-lg px-4 py-3",
+                        glass.subtle,
+                        border.container
+                    )}
+                >
                     {showProgress && (
                         <>
                             <div className="mb-2 text-sm text-muted-foreground">

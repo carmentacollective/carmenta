@@ -60,6 +60,9 @@ export const spacing = {
  * - bg: Background color for containers
  * - text: Text/icon color
  * - animation: Optional animation class
+ *
+ * @reserved Currently used by ToolStatusBadge. Will be adopted by more
+ * components as the design system matures.
  */
 export const status = {
     pending: {
@@ -86,6 +89,9 @@ export const status = {
 
 /**
  * Combined glass + border presets for common patterns.
+ *
+ * @reserved Convenience presets combining glass + border tokens.
+ * Use these for new components to ensure consistent surface styling.
  */
 export const surface = {
     /** Tool wrapper container */
@@ -103,6 +109,9 @@ export const surface = {
 
 /**
  * Animation presets for consistent motion.
+ *
+ * @reserved Standard animations for enter/exit transitions.
+ * Adopt these in components using animate-in/animate-out patterns.
  */
 export const animation = {
     /** Enter from top with fade */
