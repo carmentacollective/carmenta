@@ -302,10 +302,10 @@ export function ConnectionProvider({
                 if (originalTitle === undefined) return;
 
                 try {
-                    await updateConnectionAction(id, { title });
+                    await updateConnectionAction(id, { title, titleEdited: true });
                     logger.debug(
                         { connectionId: id, title },
-                        "Updated connection title"
+                        "Updated connection title (manual edit, evolution disabled)"
                     );
                 } catch (err) {
                     // Revert on error

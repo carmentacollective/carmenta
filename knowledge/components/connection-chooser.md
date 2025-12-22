@@ -81,6 +81,7 @@ As conversations develop, titles can evolve to stay relevant:
 5. Bias toward "keep" - only evolve when conversation has clearly shifted
 
 Evolution prompt guidance:
+
 - Titles should be specific and descriptive (40 char limit)
 - Capture the essence, not just keywords
 - Evolve when the topic has genuinely shifted, not for minor tangents
@@ -96,6 +97,7 @@ Users can edit titles directly via double-click:
 5. User's explicit choice is always respected
 
 This ensures:
+
 - If someone takes time to craft a title, we don't overwrite it
 - Automatic evolution only happens for auto-generated titles
 - Clear, predictable behavior

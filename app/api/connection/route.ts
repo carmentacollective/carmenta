@@ -798,6 +798,10 @@ export async function POST(req: Request) {
                             try {
                                 const connection =
                                     await getConnection(currentConnectionId);
+                                // Skip evolution if user has manually edited the title
+                                if (connection?.titleEdited) {
+                                    return;
+                                }
                                 if (connection?.title) {
                                     // Build summary from recent messages for evaluation
                                     const recentMsgs = messages.slice(-10).map((m) => ({

@@ -194,6 +194,12 @@ export const connections = pgTable(
         title: varchar("title", { length: 500 }),
 
         /**
+         * True if the user has manually edited the title.
+         * When true, automatic title evolution is disabled.
+         */
+        titleEdited: boolean("title_edited").notNull().default(false),
+
+        /**
          * URL-friendly slug: "title-slug-id"
          * Auto-generated from title + id. Updated when title changes.
          */

@@ -140,6 +140,7 @@ describe("POST /api/connection", () => {
                     id, // Integer, not string
                     userId,
                     title: title ?? null,
+                    titleEdited: false,
                     slug: title
                         ? `fix-authentication-bug-${publicId}`
                         : `connection-${publicId}`,
@@ -371,6 +372,7 @@ describe("POST /api/connection", () => {
                     id: testId,
                     userId,
                     title: title ?? null,
+                    titleEdited: false,
                     slug: `debug-api-errors-${testPublicId}`,
                     status: "active" as const,
                     streamingStatus: "idle" as const,
@@ -426,6 +428,7 @@ describe("POST /api/connection", () => {
                     id: testId,
                     userId,
                     title: null,
+                    titleEdited: false,
                     slug: `connection-${testPublicId}`, // Fallback slug
                     status: "active" as const,
                     streamingStatus: "idle" as const,

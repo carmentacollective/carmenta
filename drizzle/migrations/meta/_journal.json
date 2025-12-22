@@ -85,6 +85,13 @@
       "when": 1766159901837,
       "tag": "0011_kb-full-text-search",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1766429987434,
+      "tag": "0012_narrow_betty_brant",
+      "breakpoints": true
     }
   ]
 }
