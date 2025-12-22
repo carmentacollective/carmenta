@@ -38,6 +38,9 @@ import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { useUserContext } from "@/lib/auth/user-context";
+import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
+import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
@@ -121,7 +124,7 @@ function HoloThreadInner() {
             <div
                 ref={containerRef}
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-4 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -1016,6 +1019,59 @@ function MessageActions({
 }
 
 /**
+ * Model avatar - shows provider logo with CSS tooltip displaying model name.
+ * Hidden on mobile to maximize content space.
+ * Uses h-6 w-6 to match CarmentaAvatar size="sm" (24px).
+ */
+function ModelAvatar({ modelId }: { modelId?: string }) {
+    const model = modelId ? getModel(modelId) : undefined;
+
+    if (!model) {
+        // Fallback to Carmenta avatar if no model info
+        return <CarmentaAvatar size="sm" state="idle" />;
+    }
+
+    return (
+        <div
+            className="tooltip flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
+            data-tooltip={model.displayName}
+        >
+            <ProviderIcon provider={model.provider} className="h-3.5 w-3.5" />
+        </div>
+    );
+}
+
+/**
+ * User avatar - shows Clerk profile image or initials fallback.
+ * Hidden on mobile to maximize content space.
+ * Uses h-6 w-6 to match CarmentaAvatar size="sm" (24px).
+ */
+function UserAvatar() {
+    const { user } = useUserContext();
+    const [imgError, setImgError] = useState(false);
+    const imageUrl = user?.imageUrl;
+    const initials = user?.firstName?.charAt(0) || user?.fullName?.charAt(0) || "U";
+
+    if (imageUrl && !imgError) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={imageUrl}
+                alt="You"
+                className="h-6 w-6 rounded-full object-cover"
+                onError={() => setImgError(true)}
+            />
+        );
+    }
+
+    return (
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
+            {initials}
+        </div>
+    );
+}
+
+/**
  * User message bubble with holographic gradient and action toolbar.
  */
 function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean }) {
@@ -1024,8 +1080,13 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
 
     return (
         <div className="my-4 flex w-full justify-end">
-            <div className="group max-w-full sm:max-w-[80%]">
-                <div className="user-message-bubble rounded-2xl rounded-br-md px-4 py-4">
+            <div className="group relative max-w-full sm:max-w-[80%]">
+                {/* User avatar - positioned outside bubble, hidden on mobile */}
+                <div className="absolute -right-10 top-2 hidden sm:block">
+                    <UserAvatar />
+                </div>
+
+                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1135,90 +1196,103 @@ function AssistantMessage({
             {/* Appears after concierge selection with smooth entrance */}
             <AnimatePresence>
                 {hasSelected && hasLlmOutput && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{
-                            duration: 0.35,
-                            ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
-                        }}
-                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
-                    >
-                        {/* Reasoning - nested inside LLM zone */}
-                        {reasoning && (
-                            <div className="border-b border-foreground/10">
-                                <ReasoningDisplay
-                                    content={reasoning}
-                                    isStreaming={isStreaming}
-                                    variant="nested"
-                                />
-                            </div>
-                        )}
+                    <div className="relative mt-2">
+                        {/* Model avatar - positioned outside bubble, hidden on mobile */}
+                        <div className="absolute -left-10 top-2 hidden sm:block">
+                            <ModelAvatar modelId={concierge?.modelId} />
+                        </div>
 
-                        {/* Tool UIs - nested inside LLM zone */}
-                        {toolParts.length > 0 && (
-                            <div className="overflow-x-auto border-b border-foreground/10">
-                                {toolParts.map((part, idx) => (
-                                    <div
-                                        key={part.toolCallId}
-                                        className={cn(
-                                            "max-w-full",
-                                            idx > 0 && "border-t border-foreground/5"
-                                        )}
-                                    >
-                                        <ToolPartRenderer part={part} />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* File previews */}
-                        {fileParts.length > 0 && (
-                            <div className="border-b border-foreground/10 p-4">
-                                <div className="flex flex-col gap-2">
-                                    {fileParts.map((file, idx) => (
-                                        <FilePreview
-                                            key={idx}
-                                            url={file.url}
-                                            mediaType={file.mediaType}
-                                            filename={file.name || "file"}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Thinking indicator - inside LLM zone while waiting for content */}
-                        {showThinking && (
-                            <div className="px-4 py-3">
-                                <ThinkingIndicator />
-                            </div>
-                        )}
-
-                        {/* Message content - primary output */}
-                        {hasContent && (
-                            <div className="group">
-                                <div className="px-4 pb-2 pt-4">
-                                    <MarkdownRenderer content={content} />
-                                </div>
-                                <div className="px-4 pb-1">
-                                    <MessageActions
-                                        content={content}
-                                        isLast={isLast}
+                        <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
+                                duration: 0.35,
+                                ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
+                            }}
+                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                        >
+                            {/* Reasoning - nested inside LLM zone */}
+                            {reasoning && (
+                                <div className="border-b border-foreground/10">
+                                    <ReasoningDisplay
+                                        content={reasoning}
                                         isStreaming={isStreaming}
-                                        align="left"
+                                        variant="nested"
                                     />
                                 </div>
-                            </div>
-                        )}
-                    </motion.div>
+                            )}
+
+                            {/* Tool UIs - nested inside LLM zone */}
+                            {toolParts.length > 0 && (
+                                <div className="overflow-x-auto border-b border-foreground/10">
+                                    {toolParts.map((part, idx) => (
+                                        <div
+                                            key={part.toolCallId}
+                                            className={cn(
+                                                "max-w-full",
+                                                idx > 0 &&
+                                                    "border-t border-foreground/5"
+                                            )}
+                                        >
+                                            <ToolPartRenderer part={part} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* File previews */}
+                            {fileParts.length > 0 && (
+                                <div className="border-b border-foreground/10 p-4">
+                                    <div className="flex flex-col gap-2">
+                                        {fileParts.map((file, idx) => (
+                                            <FilePreview
+                                                key={idx}
+                                                url={file.url}
+                                                mediaType={file.mediaType}
+                                                filename={file.name || "file"}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Thinking indicator - inside LLM zone while waiting for content */}
+                            {showThinking && (
+                                <div className="px-4 py-3">
+                                    <ThinkingIndicator />
+                                </div>
+                            )}
+
+                            {/* Message content - primary output */}
+                            {hasContent && (
+                                <div className="group">
+                                    <div className="px-4 pb-2 pt-4">
+                                        <MarkdownRenderer content={content} />
+                                    </div>
+                                    <div className="px-4 pb-1">
+                                        <MessageActions
+                                            content={content}
+                                            isLast={isLast}
+                                            isStreaming={isStreaming}
+                                            align="left"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
 
             {/* Fallback: Show content without LLM zone wrapper when no concierge (e.g., history messages) */}
             {!showConcierge && hasContent && (
-                <div className="group max-w-full sm:max-w-[85%]">
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md px-4 py-4">
+                <div className="group relative max-w-full sm:max-w-[85%]">
+                    {/* Carmenta avatar - positioned outside bubble, hidden on mobile */}
+                    <div className="absolute -left-10 top-2 hidden sm:block">
+                        <CarmentaAvatar size="sm" state="idle" />
+                    </div>
+
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-4">
                         <MarkdownRenderer content={content} />
                     </div>
                     <MessageActions
@@ -1307,7 +1381,7 @@ function PendingAssistantMessage({
                             duration: 0.35,
                             ease: [0.16, 1, 0.3, 1],
                         }}
-                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-foreground/10 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                     >
                         <div className="px-4 py-3">
                             <ThinkingIndicator />
