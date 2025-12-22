@@ -1,11 +1,9 @@
 "use client";
 
-import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { ConnectRuntimeProvider } from "./connect-runtime-provider";
 import { HoloThread } from "./holo-thread";
-import { OnboardingChat } from "./onboarding-chat";
-import { useOnboardingOptional } from "@/lib/onboarding";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -58,67 +56,23 @@ class ChatErrorBoundary extends Component<
     }
 }
 
-interface ChatProps {
-    /** Whether to reset onboarding (from URL param) */
-    shouldResetOnboarding?: boolean;
-}
-
-/**
- * Inner chat content that can access onboarding context.
- */
-function ChatContent({ shouldResetOnboarding }: ChatProps) {
-    const onboarding = useOnboardingOptional();
-
-    // Handle reset onboarding when flag is set
-    useEffect(() => {
-        if (shouldResetOnboarding && onboarding) {
-            onboarding
-                .reset()
-                .then(() => {
-                    // Clear the URL param after resetting
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete("reset-onboarding");
-                    window.history.replaceState({}, "", url.toString());
-                })
-                .catch((error) => {
-                    logger.error(
-                        { error },
-                        "Failed to reset onboarding from URL param"
-                    );
-                });
-        }
-    }, [shouldResetOnboarding, onboarding]);
-
-    // Show onboarding chat if user hasn't completed onboarding
-    if (onboarding?.isOnboarding) {
-        return <OnboardingChat />;
-    }
-
-    // Normal chat
-    return (
-        <div className="scrollbar-holo h-full">
-            <HoloThread />
-        </div>
-    );
-}
-
 /**
  * Main Chat component for the Connect page.
  *
  * Uses our custom HoloThread built with plain React components.
  * Chat state is managed via ChatContext from ConnectRuntimeProvider.
  *
- * Onboarding: If the user hasn't completed onboarding, shows the
- * OnboardingChat instead of the normal chat interface.
- *
  * Tool UIs (search, comparison, etc.) will be rendered inline when
- * we encounter tool call parts in assistant messages.
+ * we encounter tool call parts in assistant messages. For now,
+ * we focus on text content rendering which was the core issue.
  */
-export function Chat({ shouldResetOnboarding }: ChatProps) {
+export function Chat() {
     return (
         <ChatErrorBoundary>
             <ConnectRuntimeProvider>
-                <ChatContent shouldResetOnboarding={shouldResetOnboarding} />
+                <div className="scrollbar-holo h-full">
+                    <HoloThread />
+                </div>
             </ConnectRuntimeProvider>
         </ChatErrorBoundary>
     );
