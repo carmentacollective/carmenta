@@ -22,7 +22,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import { Square, ArrowDown, CornerDownLeft } from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft, MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -77,6 +77,7 @@ import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
+import { MobileConnectionBar } from "./mobile-connection-bar";
 
 export function HoloThread() {
     return (
@@ -1459,6 +1460,9 @@ function Composer({ isNewConversation }: ComposerProps) {
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
 
+    // Mobile tools expansion state
+    const [showMobileTools, setShowMobileTools] = useState(false);
+
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     // Track if initial autofocus has been applied (prevents re-focus on resize)
@@ -1756,6 +1760,9 @@ function Composer({ isNewConversation }: ComposerProps) {
 
     return (
         <div className="flex w-full flex-col gap-2">
+            {/* Mobile connection bar - title strip + new button */}
+            {isMobile && <MobileConnectionBar />}
+
             {/* Upload progress display */}
             {hasPendingFiles && (
                 <UploadProgressDisplay onInsertInline={handleInsertInline} />
@@ -1810,13 +1817,56 @@ function Composer({ isNewConversation }: ComposerProps) {
                         </ComposerButton>
                     )}
 
-                    <FilePickerButton />
+                    {/* Desktop: show tools directly */}
+                    {!isMobile && (
+                        <>
+                            <FilePickerButton />
+                            <ModelSelectorTrigger
+                                overrides={overrides}
+                                onChange={setOverrides}
+                                conciergeModel={conciergeModel}
+                            />
+                        </>
+                    )}
 
-                    <ModelSelectorTrigger
-                        overrides={overrides}
-                        onChange={setOverrides}
-                        conciergeModel={conciergeModel}
-                    />
+                    {/* Mobile: tools behind ••• button on right */}
+                    {isMobile && (
+                        <div className="relative flex items-center">
+                            <AnimatePresence>
+                                {showMobileTools && (
+                                    <motion.div
+                                        initial={{ width: 0, opacity: 0 }}
+                                        animate={{ width: "auto", opacity: 1 }}
+                                        exit={{ width: 0, opacity: 0 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="flex items-center gap-1.5 overflow-hidden"
+                                    >
+                                        <FilePickerButton />
+                                        <ModelSelectorTrigger
+                                            overrides={overrides}
+                                            onChange={setOverrides}
+                                            conciergeModel={conciergeModel}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                            <button
+                                type="button"
+                                onClick={() => setShowMobileTools(!showMobileTools)}
+                                className={cn(
+                                    "btn-icon-glass flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                                    showMobileTools && "bg-primary/20 text-primary"
+                                )}
+                                aria-label="Toggle tools"
+                            >
+                                {showMobileTools ? (
+                                    <X className="h-4 w-4" />
+                                ) : (
+                                    <MoreHorizontal className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </form>
         </div>

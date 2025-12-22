@@ -18,6 +18,7 @@
 
 import { type ReactNode } from "react";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectionChooser } from "./connection-chooser";
@@ -72,12 +73,14 @@ function CarmentaOracle() {
 
 function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const { activeConnection, connections } = useConnection();
+    const isMobile = useIsMobile();
 
     // Simple: key only changes on real navigation (when activeConnection changes)
     const connectionKey = activeConnection?.id ?? "new";
 
     // Hide connection chooser until we have at least one conversation
-    const showConnectionChooser = connections.length > 0;
+    // On mobile, it's shown in the bottom bar instead of header
+    const showConnectionChooser = connections.length > 0 && !isMobile;
 
     return (
         <div className="flex h-full items-center justify-center p-0 sm:p-4">
