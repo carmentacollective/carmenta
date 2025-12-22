@@ -4,14 +4,11 @@
  * Notion Tool UI - Visual Search Results
  *
  * Renders Notion search results as clickable page cards for visual clarity.
- * Other actions show compact status with optional JSON expansion for debugging.
+ * Other actions show compact status via ToolWrapper.
  */
 
-import { useState } from "react";
-import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { ToolIcon } from "./tool-icon";
+import { ToolWrapper } from "./tool-wrapper";
 import { NotionSearchResults } from "./notion-search-results";
 import type { NotionPageData } from "./notion-page-card";
 
@@ -25,81 +22,57 @@ interface NotionToolResultProps {
 }
 
 /**
- * Compact Notion tool result.
- * Shows a single line summary with optional raw data expansion.
+ * Notion tool result using ToolWrapper for consistent status display.
+ *
+ * - Search action: Shows visual page cards in standard wrapper
+ * - Other actions: Compact inline status
  */
 export function NotionToolResult({
+    toolCallId,
     status,
     action,
     input,
     output,
     error,
 }: NotionToolResultProps) {
-    const [expanded, setExpanded] = useState(false);
+    // For search action with results, render visual cards in standard wrapper
+    const isSearchWithResults = action === "search" && output?.results;
 
-    // Loading state - single line with pulse animation
-    if (status === "running") {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <ToolIcon toolName="notion" className="h-3.5 w-3.5 animate-pulse" />
-                <span>{getStatusMessage(action, input, "running")}</span>
-            </div>
-        );
-    }
-
-    // Error state - red text, clear message
-    if (status === "error" || error) {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                <span>{error || `Notion ${action} failed`}</span>
-            </div>
-        );
-    }
-
-    // For search action with results, render visual cards
-    if (action === "search" && output?.results) {
+    if (isSearchWithResults) {
         const results = parseSearchResults(output);
         const query = input.query as string | undefined;
         const totalCount = output.totalCount as number | undefined;
 
         return (
-            <div className="py-2">
+            <ToolWrapper
+                toolName="notion"
+                toolCallId={toolCallId}
+                status={status}
+                input={input}
+                output={output}
+                error={error}
+                variant="standard"
+            >
                 <NotionSearchResults
                     results={results}
                     query={query}
                     totalCount={totalCount ?? results.length}
                 />
-            </div>
+            </ToolWrapper>
         );
     }
 
-    // Success - compact summary with optional JSON expansion for other actions
-    const summary = getStatusMessage(action, input, "completed", output);
-
+    // All other actions: compact inline status
     return (
-        <div className="py-1">
-            <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ToolIcon toolName="notion" className="h-3.5 w-3.5" />
-                <span className="flex-1">{summary}</span>
-                {output &&
-                    (expanded ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                    ))}
-            </button>
-
-            {expanded && output && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
+        <ToolWrapper
+            toolName="notion"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+            variant="compact"
+        />
     );
 }
 

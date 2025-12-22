@@ -94,7 +94,7 @@ export function LinkPreview(props: LinkPreviewProps) {
             <div
                 className={cn(
                     "@container group relative isolate flex w-full min-w-0 flex-col overflow-hidden rounded-xl",
-                    "shadow-xs border border-border bg-card text-sm",
+                    "border border-white/20 bg-white/50 text-sm backdrop-blur-md dark:border-white/10 dark:bg-black/30",
                     sanitizedHref && "cursor-pointer"
                 )}
                 onClick={sanitizedHref ? handleClick : undefined}

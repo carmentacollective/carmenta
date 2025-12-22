@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
+import { glass, border, spacing } from "@/lib/design-tokens";
 import {
     Collapsible,
     CollapsibleContent,
@@ -35,8 +36,14 @@ interface ToolWrapperProps {
     output?: unknown;
     /** Error message (when failed) */
     error?: string;
-    /** The rendered tool result (e.g., ComparisonTable) */
-    children: React.ReactNode;
+    /** The rendered tool result (e.g., ComparisonTable). Optional for compact variant. */
+    children?: React.ReactNode;
+    /**
+     * Visual variant:
+     * - standard: Full collapsible container with header, status badge, debug panel
+     * - compact: Single-line status, minimal chrome, inline display
+     */
+    variant?: "standard" | "compact";
     className?: string;
 }
 
@@ -164,6 +171,7 @@ export function ToolWrapper({
     output,
     error,
     children,
+    variant = "standard",
     className,
 }: ToolWrapperProps) {
     const permissions = usePermissions();
@@ -207,37 +215,76 @@ export function ToolWrapper({
             : getStatusMessage(toolName, status, toolCallId, timing.durationMs);
 
     // Render icon: either a Lucide component or an SVG logo
-    const renderIcon = () => {
+    const renderIcon = (size: "sm" | "md" = "md") => {
+        const sizeClass = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
         if (typeof config.icon === "string") {
             // Logo path (decorative - display name is adjacent)
             return (
                 <Image
                     src={config.icon}
                     alt=""
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 shrink-0"
+                    width={size === "sm" ? 14 : 16}
+                    height={size === "sm" ? 14 : 16}
+                    className={cn(sizeClass, "shrink-0")}
                 />
             );
         } else {
             // Lucide icon component
             const Icon = config.icon;
-            return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />;
+            return <Icon className={cn(sizeClass, "shrink-0 text-muted-foreground")} />;
         }
     };
 
+    // Compact variant: minimal inline display
+    if (variant === "compact") {
+        return (
+            <div className={cn("not-prose", spacing.inlineResult, className)}>
+                <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+                    <CollapsibleTrigger className="group flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground">
+                        {renderIcon("sm")}
+                        <span className="flex-1">{statusLabel}</span>
+                        {status === "running" && (
+                            <span className="animate-pulse text-xs">...</span>
+                        )}
+                        {status === "completed" && children && (
+                            <ChevronDown
+                                className={cn(
+                                    "h-3.5 w-3.5 transition-transform duration-200",
+                                    isOpen ? "rotate-180" : "rotate-0"
+                                )}
+                            />
+                        )}
+                    </CollapsibleTrigger>
+
+                    {status === "completed" && children && (
+                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+                            <div className="mt-2 text-sm">{children}</div>
+                        </CollapsibleContent>
+                    )}
+                </Collapsible>
+            </div>
+        );
+    }
+
+    // Standard variant: full collapsible container
     return (
         <Collapsible
             open={isOpen}
             onOpenChange={handleOpenChange}
             className={cn(
-                "not-prose mb-4 w-full rounded-lg border border-white/20",
-                "bg-white/30 backdrop-blur-sm",
+                "not-prose mb-4 w-full rounded-lg",
+                glass.subtle,
+                border.container,
                 className
             )}
         >
             {/* Header */}
-            <CollapsibleTrigger className="flex w-full min-w-0 items-center justify-between gap-2 p-3">
+            <CollapsibleTrigger
+                className={cn(
+                    "flex w-full min-w-0 items-center justify-between gap-2",
+                    spacing.toolHeader
+                )}
+            >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     {renderIcon()}
                     <span className="truncate text-sm font-medium">
@@ -269,7 +316,7 @@ export function ToolWrapper({
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
                 )}
             >
-                <div className="border-t border-white/10 p-4">
+                <div className={cn("border-t border-white/10", spacing.toolContent)}>
                     {/* Tool result UI */}
                     {children}
 

@@ -198,6 +198,7 @@ export function Plan({
 
     return (
         <Card
+            variant="glass"
             className={cn("w-full min-w-80 max-w-xl gap-4 py-4", className)}
             data-tool-ui-id={id}
             data-slot="plan"
@@ -215,7 +216,7 @@ export function Plan({
             </CardHeader>
 
             <CardContent className="px-4">
-                <div className="rounded-lg border bg-muted/70 px-4 py-3">
+                <div className="rounded-lg border border-white/10 bg-white/20 px-4 py-3 backdrop-blur-sm dark:bg-black/20">
                     {showProgress && (
                         <>
                             <div className="mb-2 text-sm text-muted-foreground">

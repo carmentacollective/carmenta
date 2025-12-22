@@ -175,7 +175,7 @@ function OptionListConfirmation({
         >
             <div
                 className={cn(
-                    "shadow-xs flex w-full flex-col overflow-hidden rounded-2xl border bg-card/60 px-5 py-2.5"
+                    "flex w-full flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/50 px-5 py-2.5 backdrop-blur-md dark:border-white/10 dark:bg-black/30"
                 )}
             >
                 {confirmedOptions.map((option, index) => (
@@ -531,7 +531,7 @@ export function OptionList({
         >
             <div
                 className={cn(
-                    "group/list shadow-xs flex w-full flex-col overflow-hidden rounded-2xl border bg-card px-4 py-1.5"
+                    "group/list flex w-full flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/50 px-4 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-black/30"
                 )}
                 role="listbox"
                 aria-multiselectable={selectionMode === "multi"}
