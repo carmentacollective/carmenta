@@ -80,7 +80,8 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
 
     // Hide connection chooser until we have at least one conversation
     // On mobile, it's shown near the composer instead of in header
-    const showConnectionChooser = connections.length > 0 && !isMobile;
+    // Guard against undefined during SSR/hydration to prevent layout flash
+    const showConnectionChooser = connections.length > 0 && isMobile !== true;
 
     return (
         <div className="flex h-full items-center justify-center p-0 sm:p-4">
