@@ -153,9 +153,10 @@ variants:
 
 ### Phase 5: Message Container Polish
 
-- [ ] Audit avatar positioning consistency
-- [ ] Standardize message padding across user/assistant
-- [ ] Verify spacing tokens applied consistently in holo-thread.tsx
+- [x] Audit avatar positioning consistency
+- [x] Fix PendingAssistantMessage avatar (top-3 → top-2 to match others)
+- [ ] Standardize message padding across user/assistant (deferred - works well as-is)
+- [ ] Verify spacing tokens applied consistently in holo-thread.tsx (deferred)
 
 ## File Structure
 
