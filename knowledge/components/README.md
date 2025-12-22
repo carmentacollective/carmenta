@@ -108,6 +108,13 @@ driving, cooking, or thinking out loud. Not an afterthought - a core modality.
 Browse the web as the user with their sessions. Deep research behind authentication,
 task execution in web apps without APIs. Access what matters, not just what's public.
 
+### [Dev Mode](dev-mode.md)
+
+Code in Carmenta instead of external tools. Claude Agent SDK powers file operations,
+shell execution, codebase understanding - all through the chat interface. Voice-first
+development, visual diffs, persistent workspace context. Initially dev-only for
+dogfooding.
+
 ## Self-Building Layer
 
 ### [Concierge Improvement Loop](concierge-improvement-loop.md)
