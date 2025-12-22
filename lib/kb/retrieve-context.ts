@@ -270,7 +270,9 @@ export function formatRetrievedContext(context: RetrievedContext): string | null
     const documents = context.documents
         .map((doc) => {
             const displayPath = "/" + doc.path.replace(/\./g, "/");
-            const updatedDate = doc.source.updatedAt.toISOString().split("T")[0];
+            const updatedDate = new Date(doc.source.updatedAt)
+                .toISOString()
+                .split("T")[0];
 
             // Build document XML
             const parts = [

@@ -316,8 +316,7 @@ function RuntimeErrorBanner({
         >
             <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
             <div className="flex-1">
-                <p className="text-sm font-medium text-red-800">Something went wrong</p>
-                <p className="text-xs text-red-600/80">{displayMessage}</p>
+                <p className="text-sm font-medium text-red-800">{displayMessage}</p>
             </div>
             <div className="flex items-center gap-1">
                 <button
