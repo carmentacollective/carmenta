@@ -36,7 +36,9 @@ export function NotionToolResult({
     error,
 }: NotionToolResultProps) {
     // For search action with results, render visual cards in standard wrapper
-    const isSearchWithResults = action === "search" && output?.results;
+    // Only show visual content when completed to prevent stale data during running state
+    const isSearchWithResults =
+        status === "completed" && action === "search" && output?.results;
 
     if (isSearchWithResults) {
         const results = parseSearchResults(output);

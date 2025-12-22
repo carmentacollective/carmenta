@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
@@ -237,11 +237,24 @@ export function ToolWrapper({
 
     // Compact variant: minimal inline display
     if (variant === "compact") {
+        const isError = status === "error";
+
         return (
             <div className={cn("not-prose", spacing.inlineResult, className)}>
                 <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
-                    <CollapsibleTrigger className="group flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground">
-                        {renderIcon("sm")}
+                    <CollapsibleTrigger
+                        className={cn(
+                            "group flex w-full items-center gap-2 text-left text-sm transition-colors",
+                            isError
+                                ? "text-destructive"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        {isError ? (
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                            renderIcon("sm")
+                        )}
                         <span className="flex-1">{statusLabel}</span>
                         {status === "running" && (
                             <span className="animate-pulse text-xs">...</span>

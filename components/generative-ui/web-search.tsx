@@ -47,7 +47,8 @@ export function WebSearchResults({
     error,
 }: WebSearchResultsProps) {
     // Use compact wrapper for inline status, standard when we have results
-    const hasResults = results && results.length > 0;
+    // Only show visual content when completed to prevent stale data during running state
+    const hasResults = status === "completed" && results && results.length > 0;
     const variant = hasResults ? "standard" : "compact";
 
     return (

@@ -42,7 +42,9 @@ export function GiphyToolResult({
     error,
 }: GiphyToolResultProps) {
     // Determine if this action has visual content
-    const hasVisualContent = isVisualAction(action) && hasResults(action, output);
+    // Only show visual content when completed to prevent stale data during running state
+    const hasVisualContent =
+        status === "completed" && isVisualAction(action) && hasResults(action, output);
     const variant = hasVisualContent ? "standard" : "compact";
 
     return (
