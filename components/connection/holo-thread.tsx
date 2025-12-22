@@ -1021,6 +1021,7 @@ function MessageActions({
 /**
  * Model avatar - shows provider logo with CSS tooltip displaying model name.
  * Hidden on mobile to maximize content space.
+ * Uses h-6 w-6 to match CarmentaAvatar size="sm" (24px).
  */
 function ModelAvatar({ modelId }: { modelId?: string }) {
     const model = modelId ? getModel(modelId) : undefined;
@@ -1032,10 +1033,10 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
 
     return (
         <div
-            className="tooltip flex h-7 w-7 items-center justify-center rounded-full bg-foreground/5"
+            className="tooltip flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
             data-tooltip={model.displayName}
         >
-            <ProviderIcon provider={model.provider} className="h-4 w-4" />
+            <ProviderIcon provider={model.provider} className="h-3.5 w-3.5" />
         </div>
     );
 }
@@ -1043,25 +1044,28 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
 /**
  * User avatar - shows Clerk profile image or initials fallback.
  * Hidden on mobile to maximize content space.
+ * Uses h-6 w-6 to match CarmentaAvatar size="sm" (24px).
  */
 function UserAvatar() {
     const { user } = useUserContext();
+    const [imgError, setImgError] = useState(false);
     const imageUrl = user?.imageUrl;
     const initials = user?.firstName?.charAt(0) || user?.fullName?.charAt(0) || "U";
 
-    if (imageUrl) {
+    if (imageUrl && !imgError) {
         return (
             // eslint-disable-next-line @next/next/no-img-element
             <img
                 src={imageUrl}
                 alt="You"
-                className="h-7 w-7 rounded-full object-cover"
+                className="h-6 w-6 rounded-full object-cover"
+                onError={() => setImgError(true)}
             />
         );
     }
 
     return (
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
             {initials}
         </div>
     );
