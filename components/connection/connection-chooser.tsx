@@ -185,7 +185,10 @@ function EditableTitle({
                     placeholder="Connection title..."
                 />
                 <button
-                    onClick={handleSave}
+                    onMouseDown={(e) => {
+                        e.preventDefault(); // Prevents blur from firing first
+                        handleSave();
+                    }}
                     className="rounded-md p-1 text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
                     aria-label="Save title"
                 >
