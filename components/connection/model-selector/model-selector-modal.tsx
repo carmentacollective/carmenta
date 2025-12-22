@@ -51,6 +51,14 @@ const TAG_EMOJI: Record<ModelTag, string> = {
     Tools: "🔧",
 };
 
+/** Format context window for display (e.g., 200000 → "200K", 1000000 → "1M") */
+function formatContextWindow(tokens: number): string {
+    if (tokens >= 1_000_000) {
+        return `${tokens / 1_000_000}M`;
+    }
+    return `${tokens / 1_000}K`;
+}
+
 /** Creativity presets with emojis for the slider (4 levels) */
 const CREATIVITY_SLIDER_PRESETS = TEMPERATURE_PRESETS.map((p) => ({
     label: p.label,
@@ -248,28 +256,35 @@ export function ModelSelectorModal({
                                                     handleModelSelect(model.id)
                                                 }
                                                 className={cn(
-                                                    "flex items-start gap-3 rounded-xl p-4 text-left transition-all",
+                                                    "group flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-200",
                                                     isSelected
-                                                        ? "bg-primary/12 ring-2 ring-primary/50"
-                                                        : "bg-foreground/5 hover:bg-foreground/15"
+                                                        ? "bg-primary/12 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
+                                                        : "bg-foreground/5 hover:-translate-y-0.5 hover:bg-foreground/10 hover:shadow-md"
                                                 )}
                                             >
                                                 <ProviderIcon
                                                     provider={model.provider}
-                                                    className="mt-0.5 h-6 w-6 shrink-0"
+                                                    className="mt-0.5 h-6 w-6 shrink-0 transition-transform duration-200 group-hover:scale-110"
                                                 />
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-foreground/90">
-                                                            {model.displayName}
-                                                        </span>
-                                                        <span
-                                                            className={cn(
-                                                                "text-sm",
-                                                                speedQuality.color
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-foreground/90">
+                                                                {model.displayName}
+                                                            </span>
+                                                            <span
+                                                                className={cn(
+                                                                    "text-sm",
+                                                                    speedQuality.color
+                                                                )}
+                                                            >
+                                                                {speedQuality.emoji}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] tabular-nums text-foreground/40">
+                                                            {formatContextWindow(
+                                                                model.contextWindow
                                                             )}
-                                                        >
-                                                            {speedQuality.emoji}
                                                         </span>
                                                     </div>
                                                     <p className="mt-1 text-xs leading-relaxed text-foreground/50">
