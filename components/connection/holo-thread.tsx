@@ -1823,8 +1823,8 @@ function Composer({ isNewConversation }: ComposerProps) {
                         </ComposerButton>
                     )}
 
-                    {/* Desktop: show tools directly */}
-                    {!isMobile && (
+                    {/* Desktop: show tools directly (guard against undefined during SSR) */}
+                    {isMobile === false && (
                         <>
                             <FilePickerButton />
                             <ModelSelectorTrigger
@@ -1835,8 +1835,8 @@ function Composer({ isNewConversation }: ComposerProps) {
                         </>
                     )}
 
-                    {/* Mobile: tools behind ••• button */}
-                    {isMobile && (
+                    {/* Mobile: tools behind ••• button (strict check for SSR) */}
+                    {isMobile === true && (
                         <div className="relative flex items-center">
                             <AnimatePresence>
                                 {showMobileTools && (
