@@ -101,7 +101,7 @@ export function StarButton({
                             style={{
                                 animation: `sparkle-burst 0.6s ease-out forwards`,
                                 animationDelay: `${i * 0.05}s`,
-                                transform: `rotate(${i * 60}deg) translateY(-8px)`,
+                                transform: `rotate(${i * 60}deg)`,
                             }}
                         />
                     ))}
