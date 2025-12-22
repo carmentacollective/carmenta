@@ -532,7 +532,7 @@
 
     /* Glassmorphism input dock */
     .glass-input-dock {
-        @apply rounded-3xl p-1.5 sm:p-2;
+        @apply rounded-3xl p-1 sm:p-2;
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(32px);
         -webkit-backdrop-filter: blur(32px);
