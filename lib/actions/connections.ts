@@ -254,6 +254,7 @@ export async function updateConnection(
     connectionId: string,
     updates: {
         title?: string;
+        titleEdited?: boolean;
         status?: "active" | "background" | "archived";
         modelId?: string;
     }

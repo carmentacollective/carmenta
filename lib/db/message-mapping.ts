@@ -56,6 +56,7 @@ export interface ConnectionWithMessages {
     id: number;
     userId: string;
     title: string | null;
+    titleEdited: boolean;
     slug: string;
     status: "active" | "background" | "archived";
     streamingStatus: "idle" | "streaming" | "completed" | "failed";

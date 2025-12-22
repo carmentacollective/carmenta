@@ -95,6 +95,20 @@ export async function createConnection(
 }
 
 /**
+ * Gets a connection by ID (without messages).
+ * Lightweight function for when you just need connection metadata.
+ *
+ * @param connectionId - ID of the connection
+ * @returns Connection record, or null if not found
+ */
+export async function getConnection(connectionId: number): Promise<Connection | null> {
+    const connection = await db.query.connections.findFirst({
+        where: eq(connections.id, connectionId),
+    });
+    return connection ?? null;
+}
+
+/**
  * Gets a connection by ID with all messages and parts
  *
  * @param connectionId - ID of the connection

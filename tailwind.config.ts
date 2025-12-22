@@ -100,6 +100,15 @@ const config: Config = {
                     },
                     "50%": { boxShadow: "0 0 40px hsl(280 40% 75% / 0.5)" },
                 },
+                "sparkle-burst": {
+                    "0%": { opacity: "1", transform: "translateY(0) scale(1)" },
+                    "100%": { opacity: "0", transform: "translateY(-12px) scale(0)" },
+                },
+                "star-pop": {
+                    "0%": { transform: "scale(1)" },
+                    "50%": { transform: "scale(1.3)" },
+                    "100%": { transform: "scale(1)" },
+                },
             },
             animation: {
                 "fade-in": "fade-in 0.5s ease-out",
@@ -107,6 +116,7 @@ const config: Config = {
                 "drawer-down": "drawer-down 0.2s ease-out",
                 float: "float 6s ease-in-out infinite",
                 "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+                "star-pop": "star-pop 0.3s ease-out",
             },
         },
     },

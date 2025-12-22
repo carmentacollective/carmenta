@@ -261,9 +261,9 @@ export const MAX_EXPLANATION_LENGTH = 500;
 
 /**
  * Maximum length for generated titles.
- * Short enough for clean URLs, long enough to be descriptive.
+ * 40 chars keeps titles scannable in lists while allowing specificity.
  */
-export const MAX_TITLE_LENGTH = 50;
+export const MAX_TITLE_LENGTH = 40;
 
 /**
  * OpenRouter reasoning effort levels (excludes "none" which disables reasoning).

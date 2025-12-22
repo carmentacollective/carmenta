@@ -25,6 +25,8 @@ import {
     ChevronDown,
     ChevronRight,
     Star,
+    Pencil,
+    Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -104,6 +106,116 @@ function AnimatedTitle({ title }: { title: string }) {
                 </motion.span>
             ))}
         </motion.span>
+    );
+}
+
+/**
+ * Editable title with inline editing support.
+ * Double-click to edit, Enter to save, Escape to cancel.
+ */
+function EditableTitle({
+    title,
+    onSave,
+    onOpenDropdown,
+}: {
+    title: string;
+    onSave: (newTitle: string) => void;
+    onOpenDropdown: () => void;
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(title);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus input when entering edit mode
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
+
+    const handleStartEdit = useCallback(
+        (e: React.MouseEvent) => {
+            e.stopPropagation();
+            // Initialize with current title when starting edit
+            setEditValue(title);
+            setIsEditing(true);
+        },
+        [title]
+    );
+
+    const handleSave = useCallback(() => {
+        const trimmed = editValue.trim();
+        if (trimmed && trimmed !== title) {
+            onSave(trimmed);
+        }
+        setIsEditing(false);
+    }, [editValue, title, onSave]);
+
+    const handleCancel = useCallback(() => {
+        setEditValue(title);
+        setIsEditing(false);
+    }, [title]);
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleSave();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                handleCancel();
+            }
+        },
+        [handleSave, handleCancel]
+    );
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-1.5">
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={handleKeyDown}
+                    maxLength={40}
+                    className="w-[200px] rounded-md border border-primary/30 bg-background/50 px-2 py-0.5 text-sm text-foreground/90 outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
+                    placeholder="Connection title..."
+                />
+                <button
+                    onMouseDown={(e) => {
+                        e.preventDefault(); // Prevents blur from firing first
+                        handleSave();
+                    }}
+                    className="rounded-md p-1 text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
+                    aria-label="Save title"
+                >
+                    <Check className="h-3.5 w-3.5" />
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="group/title flex items-center gap-1.5">
+            <button
+                onClick={onOpenDropdown}
+                onDoubleClick={handleStartEdit}
+                className="btn-subtle-text flex items-center gap-2"
+                title="Click to open connections, double-click to edit title"
+            >
+                <AnimatedTitle title={title} />
+            </button>
+            <button
+                onClick={handleStartEdit}
+                className="rounded-md p-1 text-foreground/30 opacity-0 transition-all hover:bg-foreground/5 hover:text-foreground/60 group-hover/title:opacity-100"
+                aria-label="Edit title"
+            >
+                <Pencil className="h-3 w-3" />
+            </button>
+        </div>
     );
 }
 
@@ -556,6 +668,7 @@ export function ConnectionChooser() {
         createNewConnection,
         deleteConnection,
         toggleStarConnection,
+        updateConnectionTitle,
         isPending,
     } = useConnection();
 
@@ -576,6 +689,15 @@ export function ConnectionChooser() {
             closeDropdown();
         },
         [setActiveConnection, closeDropdown]
+    );
+
+    const handleSaveTitle = useCallback(
+        (newTitle: string) => {
+            if (activeConnection) {
+                updateConnectionTitle(activeConnection.id, newTitle);
+            }
+        },
+        [activeConnection, updateConnectionTitle]
     );
 
     // Focus input when dropdown opens
@@ -645,14 +767,15 @@ export function ConnectionChooser() {
                             {/* Divider */}
                             <div className="h-4 w-px bg-foreground/10" />
 
-                            {/* Title */}
-                            <button
-                                onClick={openDropdown}
-                                className="btn-subtle-text flex items-center gap-2"
-                            >
+                            {/* Title - editable */}
+                            <div className="flex items-center gap-2">
                                 {isStreaming && <RunningIndicator />}
-                                <AnimatedTitle title={title} />
-                            </button>
+                                <EditableTitle
+                                    title={title}
+                                    onSave={handleSaveTitle}
+                                    onOpenDropdown={openDropdown}
+                                />
+                            </div>
 
                             {/* Star button for active connection */}
                             {activeConnection && (

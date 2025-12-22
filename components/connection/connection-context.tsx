@@ -27,6 +27,7 @@ import {
     archiveConnection,
     deleteConnection as deleteConnectionAction,
     toggleStarConnection as toggleStarAction,
+    updateConnection as updateConnectionAction,
     type PublicConnection,
     type PersistedConciergeData,
 } from "@/lib/actions/connections";
@@ -57,6 +58,7 @@ interface ConnectionContextValue {
     archiveActiveConnection: () => void;
     deleteConnection: (id: string) => void;
     toggleStarConnection: (id: string) => void;
+    updateConnectionTitle: (id: string, title: string) => void;
     clearError: () => void;
     addNewConnection: (
         connection: Partial<PublicConnection> & { id: string; slug: string }
@@ -275,6 +277,55 @@ export function ConnectionProvider({
         });
     }, []); // Empty deps - uses functional updates and closures
 
+    const handleUpdateConnectionTitle = useCallback(
+        (id: string, title: string) => {
+            // Capture original value for revert
+            let originalTitle: string | null | undefined;
+
+            // Optimistic update
+            setConnections((prev) => {
+                const connection = prev.find((c) => c.id === id);
+                if (!connection) return prev;
+
+                originalTitle = connection.title;
+
+                return prev.map((c) => (c.id === id ? { ...c, title } : c));
+            });
+
+            // Also update displayTitle if this is the active connection
+            if (id === activeConnectionId) {
+                setDisplayTitle(title);
+            }
+
+            // Server action
+            startTransition(async () => {
+                if (originalTitle === undefined) return;
+
+                try {
+                    await updateConnectionAction(id, { title, titleEdited: true });
+                    logger.debug(
+                        { connectionId: id, title },
+                        "Updated connection title (manual edit, evolution disabled)"
+                    );
+                } catch (err) {
+                    // Revert on error
+                    setConnections((current) =>
+                        current.map((c) =>
+                            c.id === id ? { ...c, title: originalTitle! } : c
+                        )
+                    );
+                    if (id === activeConnectionId) {
+                        setDisplayTitle(originalTitle);
+                    }
+                    const error = err instanceof Error ? err : new Error(String(err));
+                    logger.error({ error, connectionId: id }, "Failed to update title");
+                    setError(error);
+                }
+            });
+        },
+        [activeConnectionId]
+    );
+
     // Computed: starred connections sorted by lastActivityAt
     const starredConnections = useMemo(
         () =>
@@ -323,6 +374,7 @@ export function ConnectionProvider({
             archiveActiveConnection,
             deleteConnection: handleDeleteConnection,
             toggleStarConnection: handleToggleStarConnection,
+            updateConnectionTitle: handleUpdateConnectionTitle,
             clearError,
             addNewConnection,
             setIsStreaming,
@@ -348,6 +400,7 @@ export function ConnectionProvider({
             archiveActiveConnection,
             handleDeleteConnection,
             handleToggleStarConnection,
+            handleUpdateConnectionTitle,
             clearError,
             addNewConnection,
         ]

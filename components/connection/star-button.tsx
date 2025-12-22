@@ -5,10 +5,12 @@
  *
  * A toggle button for starring/unstarring connections.
  * Shows filled star when starred, outline when not.
+ * Sparkle animation on starring for delight.
  * Uses consistent icon sizing with other connection actions.
  */
 
 import { Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface StarButtonProps {
@@ -35,10 +37,36 @@ export function StarButton({
     const iconSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
     const padding = size === "sm" ? "p-1.5" : "p-2";
 
+    // Track sparkle animation state
+    const [showSparkle, setShowSparkle] = useState(false);
+    const sparkleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Trigger sparkle when starring (called from onClick)
+    const triggerSparkle = () => {
+        if (sparkleTimeoutRef.current) {
+            clearTimeout(sparkleTimeoutRef.current);
+        }
+        setShowSparkle(true);
+        sparkleTimeoutRef.current = setTimeout(() => setShowSparkle(false), 600);
+    };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (sparkleTimeoutRef.current) {
+                clearTimeout(sparkleTimeoutRef.current);
+            }
+        };
+    }, []);
+
     return (
         <button
             onClick={(e) => {
                 e.stopPropagation();
+                // Trigger sparkle only when starring (not unstarring)
+                if (!isStarred) {
+                    triggerSparkle();
+                }
                 onToggle();
             }}
             className={cn(
@@ -63,13 +91,31 @@ export function StarButton({
             aria-label={label || (isStarred ? "Unstar connection" : "Star connection")}
             aria-pressed={isStarred}
         >
+            {/* Sparkle burst on starring */}
+            {showSparkle && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    {[...Array(6)].map((_, i) => (
+                        <span
+                            key={i}
+                            className="absolute h-1 w-1 rounded-full bg-amber-400"
+                            style={{
+                                animation: `sparkle-burst 0.6s ease-out forwards`,
+                                animationDelay: `${i * 0.05}s`,
+                                transform: `rotate(${i * 60}deg)`,
+                            }}
+                        />
+                    ))}
+                </span>
+            )}
             <Star
                 className={cn(
                     iconSize,
                     "transition-all duration-150",
                     isStarred
                         ? "fill-amber-400 text-amber-400"
-                        : "fill-transparent text-foreground/30 hover:text-foreground/50"
+                        : "fill-transparent text-foreground/30 hover:text-foreground/50",
+                    // Pop animation on starring
+                    showSparkle && "animate-star-pop"
                 )}
             />
         </button>

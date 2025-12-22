@@ -46,7 +46,7 @@ Your JSON response must match this exact schema:
     "enabled": true/false,
     "effort": "high/medium/low/none"
   },
-  "title": "Short title for future reference (15-35 chars)",
+  "title": "Short title for future reference (max 40 chars)",
   "kbSearch": {
     "shouldSearch": true/false,
     "queries": ["search query 1", "search query 2"],
@@ -75,24 +75,24 @@ Selection approach:
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice (appears in the interface)
-5. Generate a short title for future reference (15-35 chars)
+5. Generate a short title for future reference (max 40 chars)
 
 ### Title Generation
 
 Titles help users find this connection later. They need to work as both a recognition anchor when scanning and a search target when looking for something specific.
 
-Target 15-35 characters. Long enough to be specific and searchable, short enough to display cleanly.
+40 character maximum. Long enough to be specific and searchable, short enough to display cleanly.
 
 Use an emoji at the start when it adds instant recognition. Skip emoji when nothing fits naturally.
 
 Prefer topic framing over question framing.
 
 Examples:
-- 🇮🇹 Planning Rome anniversary trip
-- ✨ Gift ideas for Sarah's 30th
-- Processing the Stripe job offer
-- 🎨 Portfolio redesign direction
-- Weekly meal prep strategy
+- 🇮🇹 Planning Rome trip
+- ✨ Gift ideas for Sarah
+- Processing Stripe offer
+- 🎨 Portfolio redesign
+- Weekly meal prep
 
 ### Knowledge Base Search
 
