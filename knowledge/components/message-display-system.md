@@ -137,7 +137,11 @@ variants:
 - [x] Refactor `WebSearchResults` to use ToolWrapper
 - [x] Refactor `NotionToolResult` to use ToolWrapper
 - [x] Refactor `GiphyToolResult` to use ToolWrapper
-- [ ] Refactor remaining: ClickUp, CoinMarketCap, Fireflies, etc.
+- [x] Refactor `ClickUpToolResult` to use ToolWrapper
+- [x] Refactor `CoinMarketCapToolResult` to use ToolWrapper
+- [x] Refactor `FirefliesToolResult` to use ToolWrapper
+- [x] Refactor `GoogleCalendarContactsToolResult` to use ToolWrapper
+- [x] Refactor `LimitlessToolResult` to use ToolWrapper
 
 ### Phase 4: Tool-UI Glass Adaptation
 
