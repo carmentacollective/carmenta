@@ -646,9 +646,11 @@ export function HolographicBackground({
                             className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-all duration-500"
                             style={{
                                 // Boost opacity and brightness when cursor approaches center
+                                // Base opacity matches CSS animation: 0.09 light, 0.07 dark
                                 opacity:
                                     watermarkPresence > 0
-                                        ? 0.09 + watermarkPresence * 0.12
+                                        ? (isDark ? 0.07 : 0.09) +
+                                          watermarkPresence * 0.12
                                         : undefined,
                                 filter:
                                     watermarkPresence > 0
