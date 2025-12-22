@@ -18,6 +18,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 1,
         },
         {
+            url: `${baseUrl}/home`,
+            changeFrequency: "weekly",
+            priority: 0.9, // Alternative landing page for authenticated users
+        },
+        {
             url: `${baseUrl}/connection/new`,
             changeFrequency: "monthly",
             priority: 0.8,

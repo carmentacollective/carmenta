@@ -163,8 +163,60 @@ const THEME_PALETTES: Record<
 };
 
 const BLOB_COUNT = 8; // Reduced from 12 for performance
-const PARTICLE_COUNT = 20; // Reduced from 35 for performance
+const PARTICLE_COUNT_LIGHT = 20; // Subtle sparkle in light mode
+const PARTICLE_COUNT_DARK = 30; // More sparkle against dark backgrounds
 const LIGHT_BACKGROUND = "#F8F4F8";
+
+/**
+ * Theme-aware warm presence colors.
+ * These create the radial gradient that follows the cursor.
+ */
+const WARM_PRESENCE_COLORS: Record<
+    ThemeVariant,
+    { light: { inner: string; outer: string }; dark: { inner: string; outer: string } }
+> = {
+    carmenta: {
+        light: {
+            inner: "rgba(255, 180, 210, 0.4)",
+            outer: "rgba(230, 200, 255, 0.25)",
+        },
+        dark: {
+            inner: "rgba(180, 110, 200, 0.25)",
+            outer: "rgba(140, 120, 200, 0.12)",
+        },
+    },
+    "warm-earth": {
+        light: {
+            inner: "rgba(220, 160, 120, 0.4)",
+            outer: "rgba(200, 180, 140, 0.25)",
+        },
+        dark: { inner: "rgba(200, 120, 80, 0.28)", outer: "rgba(180, 100, 60, 0.15)" },
+    },
+    "arctic-clarity": {
+        light: {
+            inner: "rgba(180, 220, 255, 0.4)",
+            outer: "rgba(200, 230, 255, 0.25)",
+        },
+        dark: { inner: "rgba(100, 160, 220, 0.28)", outer: "rgba(80, 140, 200, 0.15)" },
+    },
+    "forest-wisdom": {
+        light: {
+            inner: "rgba(180, 220, 180, 0.4)",
+            outer: "rgba(200, 210, 180, 0.25)",
+        },
+        dark: { inner: "rgba(100, 160, 110, 0.28)", outer: "rgba(80, 140, 90, 0.15)" },
+    },
+    monochrome: {
+        light: {
+            inner: "rgba(200, 200, 210, 0.35)",
+            outer: "rgba(180, 180, 190, 0.2)",
+        },
+        dark: {
+            inner: "rgba(140, 145, 160, 0.25)",
+            outer: "rgba(120, 125, 140, 0.12)",
+        },
+    },
+};
 
 interface Blob {
     x: number;
@@ -320,10 +372,11 @@ export function HolographicBackground({
         window.addEventListener("resize", handleResize);
 
         // Create blobs and particles once on mount
+        // Particles: create max count, render subset based on theme
         blobsRef.current = Array.from({ length: BLOB_COUNT }, (_, i) =>
             createBlob(i, holoCanvas.width, holoCanvas.height)
         );
-        particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () =>
+        particlesRef.current = Array.from({ length: PARTICLE_COUNT_DARK }, () =>
             createParticle(shimmerCanvas.width, shimmerCanvas.height)
         );
 
@@ -475,10 +528,16 @@ export function HolographicBackground({
 
             holoCtx.globalCompositeOperation = "source-over";
 
-            // Draw shimmer particles
+            // Draw shimmer particles - more sparkles in dark mode
             shimmerCtx.clearRect(0, 0, shimmerCanvas.width, shimmerCanvas.height);
+            const isDarkTheme = bg !== LIGHT_BACKGROUND;
+            const particleCount = isDarkTheme
+                ? PARTICLE_COUNT_DARK
+                : PARTICLE_COUNT_LIGHT;
 
-            particlesRef.current.forEach((p) => {
+            for (let i = 0; i < particleCount; i++) {
+                const p = particlesRef.current[i];
+
                 // Update particle
                 p.x += p.vx;
                 p.y += p.vy;
@@ -510,8 +569,6 @@ export function HolographicBackground({
                 // Draw particle - theme-aware opacity with goddess presence
                 // Dark mode: visible shimmer against cosmic depths (max ~65% opacity)
                 // Light mode: delicate but present sparkle (max ~40% opacity)
-                // Compare to light background since all themes share the same light bg
-                const isDarkTheme = bg !== LIGHT_BACKGROUND;
                 const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.5;
                 const twinkleOpacity =
                     p.opacity *
@@ -521,7 +578,7 @@ export function HolographicBackground({
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 shimmerCtx.fillStyle = `rgba(255, 255, 255, ${twinkleOpacity})`;
                 shimmerCtx.fill();
-            });
+            }
 
             animationFrameRef.current = requestAnimationFrame(animate);
         };
@@ -542,6 +599,13 @@ export function HolographicBackground({
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const isDark = isClient && resolvedTheme === "dark";
 
+    // Theme-aware warm presence colors
+    const presenceColors =
+        WARM_PRESENCE_COLORS[themeVariant] || WARM_PRESENCE_COLORS.carmenta;
+    const { inner: presenceInner, outer: presenceOuter } = isDark
+        ? presenceColors.dark
+        : presenceColors.light;
+
     return (
         <>
             {/* Holographic blobs layer */}
@@ -551,25 +615,18 @@ export function HolographicBackground({
                 aria-hidden="true"
             />
 
-            {/* Warm presence gradient - follows mouse when present */}
+            {/* Warm presence gradient - follows mouse when present, theme-aware colors */}
             <div
                 className="pointer-events-none fixed inset-0 z-[4]"
                 style={{
                     opacity: isMousePresent ? 1 : 0,
                     transition: "opacity 700ms ease-out",
-                    background: isDark
-                        ? `radial-gradient(
-                            ellipse 60% 60% at ${gradientPos.x}% ${gradientPos.y}%,
-                            rgba(180, 110, 200, 0.25) 0%,
-                            rgba(140, 120, 200, 0.12) 40%,
-                            transparent 70%
-                        )`
-                        : `radial-gradient(
-                            ellipse 60% 60% at ${gradientPos.x}% ${gradientPos.y}%,
-                            rgba(255, 180, 210, 0.4) 0%,
-                            rgba(230, 200, 255, 0.25) 40%,
-                            transparent 70%
-                        )`,
+                    background: `radial-gradient(
+                        ellipse 60% 60% at ${gradientPos.x}% ${gradientPos.y}%,
+                        ${presenceInner} 0%,
+                        ${presenceOuter} 40%,
+                        transparent 70%
+                    )`,
                 }}
                 aria-hidden="true"
             />
