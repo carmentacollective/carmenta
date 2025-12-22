@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
@@ -8,6 +8,19 @@ import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
+
+// Spring physics for smooth gradient following
+function springLerp(
+    current: number,
+    target: number,
+    velocity: number,
+    stiffness: number,
+    damping: number
+): { value: number; velocity: number } {
+    const force = (target - current) * stiffness;
+    const newVelocity = (velocity + force) * damping;
+    return { value: current + newVelocity, velocity: newVelocity };
+}
 
 /**
  * Light mode holographic colors - soft pastels
@@ -149,8 +162,8 @@ const THEME_PALETTES: Record<
     },
 };
 
-const BLOB_COUNT = 12;
-const PARTICLE_COUNT = 35; // Reduced from 80 for subtler effect
+const BLOB_COUNT = 8; // Reduced from 12 for performance
+const PARTICLE_COUNT = 20; // Reduced from 35 for performance
 const LIGHT_BACKGROUND = "#F8F4F8";
 
 interface Blob {
@@ -255,6 +268,17 @@ export function HolographicBackground({
         colors: readonly ColorPalette[];
     }>({ bg: LIGHT_BACKGROUND, colors: LIGHT_COLORS });
 
+    // Warm presence: gradient follows mouse with spring physics
+    const [gradientPos, setGradientPos] = useState({ x: 50, y: 50 });
+    const [isMousePresent, setIsMousePresent] = useState(false);
+    const gradientPosRef = useRef({ x: 50, y: 50 });
+    const gradientVelocityRef = useRef({ x: 0, y: 0 });
+    const targetGradientRef = useRef({ x: 50, y: 50 });
+    const lastGradientUpdateRef = useRef(0);
+
+    // Watermark presence: brightens when mouse is near center
+    const [watermarkPresence, setWatermarkPresence] = useState(0);
+
     // Update theme colors when theme or theme variant changes
     useEffect(() => {
         const isDark = resolvedTheme === "dark";
@@ -303,18 +327,75 @@ export function HolographicBackground({
             createParticle(shimmerCanvas.width, shimmerCanvas.height)
         );
 
-        // Track mouse position
+        // Track mouse position with presence detection
         const handleMouseMove = (e: MouseEvent) => {
             mouseRef.current = { x: e.clientX, y: e.clientY };
-        };
-        document.addEventListener("mousemove", handleMouseMove);
+            setIsMousePresent(true);
 
-        // Animation loop
+            // Update target gradient position (as percentage)
+            targetGradientRef.current = {
+                x: (e.clientX / window.innerWidth) * 100,
+                y: (e.clientY / window.innerHeight) * 100,
+            };
+
+            // Calculate watermark presence based on distance from center
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const distFromCenter = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+            const maxDist = Math.min(centerX, centerY) * 0.8;
+            const presence = Math.max(0, 1 - distFromCenter / maxDist);
+            setWatermarkPresence(presence);
+        };
+
+        const handleMouseLeave = () => {
+            setIsMousePresent(false);
+            setWatermarkPresence(0);
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseleave", handleMouseLeave);
+
+        // Animation loop - throttled to ~30fps for performance
         const animate = () => {
             timeRef.current++;
             const time = timeRef.current;
+
+            // Skip 2 of every 3 frames (~20fps) - slow dreamy blobs don't need 60fps
+            if (time % 3 !== 0) {
+                animationFrameRef.current = requestAnimationFrame(animate);
+                return;
+            }
+
             const mouse = mouseRef.current;
             const { bg, colors } = themeColorsRef.current;
+
+            // Update gradient position with spring physics (slow, warm follow)
+            const springX = springLerp(
+                gradientPosRef.current.x,
+                targetGradientRef.current.x,
+                gradientVelocityRef.current.x,
+                0.02,
+                0.85
+            );
+            const springY = springLerp(
+                gradientPosRef.current.y,
+                targetGradientRef.current.y,
+                gradientVelocityRef.current.y,
+                0.02,
+                0.85
+            );
+            gradientVelocityRef.current = {
+                x: springX.velocity,
+                y: springY.velocity,
+            };
+            gradientPosRef.current = { x: springX.value, y: springY.value };
+
+            // Throttle React state updates to every 10 frames (~167ms at 60fps)
+            // CSS transition on the gradient div smooths between updates
+            if (time - lastGradientUpdateRef.current >= 10) {
+                lastGradientUpdateRef.current = time;
+                setGradientPos({ x: springX.value, y: springY.value });
+            }
 
             // Draw holographic blobs
             holoCtx.fillStyle = bg;
@@ -450,6 +531,7 @@ export function HolographicBackground({
         return () => {
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseleave", handleMouseLeave);
             if (animationFrameRef.current !== null) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
@@ -469,7 +551,30 @@ export function HolographicBackground({
                 aria-hidden="true"
             />
 
-            {/* Logo watermark - subtle brand presence with gentle entrance and breathing */}
+            {/* Warm presence gradient - follows mouse when present */}
+            <div
+                className="pointer-events-none fixed inset-0 z-[4]"
+                style={{
+                    opacity: isMousePresent ? 1 : 0,
+                    transition: "opacity 700ms ease-out",
+                    background: isDark
+                        ? `radial-gradient(
+                            ellipse 60% 60% at ${gradientPos.x}% ${gradientPos.y}%,
+                            rgba(180, 110, 200, 0.25) 0%,
+                            rgba(140, 120, 200, 0.12) 40%,
+                            transparent 70%
+                        )`
+                        : `radial-gradient(
+                            ellipse 60% 60% at ${gradientPos.x}% ${gradientPos.y}%,
+                            rgba(255, 180, 210, 0.4) 0%,
+                            rgba(230, 200, 255, 0.25) 40%,
+                            transparent 70%
+                        )`,
+                }}
+                aria-hidden="true"
+            />
+
+            {/* Logo watermark - subtle brand presence with gentle entrance, breathing, and mouse awareness */}
             {!hideWatermark && (
                 <div
                     className="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden"
@@ -481,7 +586,18 @@ export function HolographicBackground({
                         <img
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain"
+                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-all duration-500"
+                            style={{
+                                // Boost opacity and brightness when cursor approaches center
+                                opacity:
+                                    watermarkPresence > 0
+                                        ? 0.09 + watermarkPresence * 0.12
+                                        : undefined,
+                                filter:
+                                    watermarkPresence > 0
+                                        ? `brightness(${1 + watermarkPresence * 0.3})`
+                                        : undefined,
+                            }}
                         />
                     </div>
                 </div>

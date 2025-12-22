@@ -247,7 +247,7 @@ export default function HomePage() {
 
                 {/* Main content - centered */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
-                    {/* Logo - breathing, no container */}
+                    {/* Logo - breathing, no hover interaction */}
                     <div ref={heroLogoRef} className="mb-8 sm:mb-10">
                         <div className="relative">
                             {/* Breathing glow */}
@@ -260,7 +260,7 @@ export default function HomePage() {
                                         "oracle-breathe-glow-2 4s ease-in-out infinite",
                                 }}
                             />
-                            {/* Logo with breathing scale - 15% larger */}
+                            {/* Logo with breathing scale */}
                             <div className="oracle-breathing relative h-36 w-36 sm:h-44 sm:w-44">
                                 <Image
                                     src="/logos/icon-transparent.png"

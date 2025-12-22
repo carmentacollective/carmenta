@@ -1021,11 +1021,6 @@
         animation: oracle-breathe 8.8s ease-in-out infinite;
     }
 
-    /* On hover: stop breathing, reset to base scale, let btn-hoverable handle the rest */
-    .oracle-breathing:hover {
-        animation: none;
-    }
-
     /* ===== WORKING: Rainbow + Glow "Slow" - 3s ===== */
     @keyframes oracle-rainbow-spin {
         from {
