@@ -1048,9 +1048,21 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
  */
 function UserAvatar() {
     const { user } = useUserContext();
-    const [imgError, setImgError] = useState(false);
     const imageUrl = user?.imageUrl;
     const initials = user?.firstName?.charAt(0) || user?.fullName?.charAt(0) || "U";
+
+    // Key on imageUrl to remount when URL changes (resets error state)
+    return <UserAvatarInner key={imageUrl} imageUrl={imageUrl} initials={initials} />;
+}
+
+function UserAvatarInner({
+    imageUrl,
+    initials,
+}: {
+    imageUrl: string | undefined;
+    initials: string;
+}) {
+    const [imgError, setImgError] = useState(false);
 
     if (imageUrl && !imgError) {
         return (
@@ -1374,19 +1386,25 @@ function PendingAssistantMessage({
             {/* LLM ZONE - Show thinking indicator after model selected */}
             <AnimatePresence>
                 {hasSelected && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{
-                            duration: 0.35,
-                            ease: [0.16, 1, 0.3, 1],
-                        }}
-                        className="mt-2 max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
-                    >
-                        <div className="px-4 py-3">
-                            <ThinkingIndicator />
+                    <div className="relative mt-2">
+                        {/* Model avatar positioned outside bubble */}
+                        <div className="absolute -left-10 top-3 hidden sm:block">
+                            <ModelAvatar modelId={concierge?.modelId} />
                         </div>
-                    </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
+                                duration: 0.35,
+                                ease: [0.16, 1, 0.3, 1],
+                            }}
+                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                        >
+                            <div className="px-4 py-3">
+                                <ThinkingIndicator />
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>
