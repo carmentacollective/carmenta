@@ -12,6 +12,8 @@ interface MarkdownRendererProps {
     className?: string;
     /** Inline mode - removes paragraph margins for compact display */
     inline?: boolean;
+    /** Whether content is actively streaming (disables copy/download buttons) */
+    isStreaming?: boolean;
 }
 
 /**
@@ -20,10 +22,23 @@ interface MarkdownRendererProps {
  * Uses Streamdown (Vercel's AI-optimized markdown renderer) for streaming-aware
  * parsing. Handles incomplete markdown syntax gracefully during streaming.
  *
- * Supports GitHub Flavored Markdown (tables, strikethrough, task lists).
+ * Features:
+ * - GitHub Flavored Markdown (tables, strikethrough, task lists)
+ * - Shiki syntax highlighting with github-light/dark themes
+ * - Built-in copy & download buttons for code blocks
+ * - KaTeX math rendering (lazy-loaded when $$ detected)
+ * - Mermaid diagram support
+ *
+ * The `isStreaming` prop disables interactive buttons during active streaming
+ * to prevent copying incomplete content.
  */
 export const MarkdownRenderer = memo(
-    ({ content, className, inline = false }: MarkdownRendererProps) => {
+    ({
+        content,
+        className,
+        inline = false,
+        isStreaming = false,
+    }: MarkdownRendererProps) => {
         return (
             <div
                 className={cn(
@@ -32,14 +47,17 @@ export const MarkdownRenderer = memo(
                     className
                 )}
             >
-                <Streamdown>{content}</Streamdown>
+                <Streamdown mode="streaming" isAnimating={isStreaming} controls={true}>
+                    {content}
+                </Streamdown>
             </div>
         );
     },
     (prev, next) =>
         prev.content === next.content &&
         prev.className === next.className &&
-        prev.inline === next.inline
+        prev.inline === next.inline &&
+        prev.isStreaming === next.isStreaming
 );
 
 MarkdownRenderer.displayName = "MarkdownRenderer";
