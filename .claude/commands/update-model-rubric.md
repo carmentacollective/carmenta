@@ -1,7 +1,7 @@
 # Update Model Rubric
 
-Research the current LLM landscape and update Carmenta's model routing rubric. This is a
-deep research task that should take several minutes to run thoroughly.
+Research the current LLM landscape and update Carmenta's model routing rubrics. This is
+a deep research task that should take several minutes to run thoroughly.
 
 ## Avoiding Hallucination
 
@@ -21,8 +21,58 @@ rubric. A smaller accurate rubric beats a comprehensive hallucinated one.
 
 ## Your Mission
 
-You are updating `knowledge/model-rubric.md` - the source of truth that Carmenta's
-Concierge reads when deciding which model to route requests to. This rubric must be:
+You are updating TWO rubric files:
+
+1. **`knowledge/model-rubric.md`** — Slim routing version (~800-1K tokens) used by the
+   Concierge for quick routing decisions. Keep this minimal and focused.
+
+2. **`knowledge/model-rubric-detailed.md`** — Full reference with research basis,
+   detailed model profiles, fallback chains, and update history.
+
+### Why Two Files?
+
+The slim rubric runs on every routing call — it's injected into the Concierge prompt
+that decides which model handles each request. Every token in that file costs latency
+and money at scale. The detailed rubric is reference material for humans and research
+updates.
+
+### Slim Rubric: Token Efficiency Rules
+
+Read @.cursor/rules/prompt-engineering.mdc for full context.
+
+The slim rubric (~800-1K tokens) must be ruthlessly efficient:
+
+**Content to include:**
+
+- User hints (highest priority)
+- Speed routing table (compact)
+- Primary models (one line each: name, context, speed, cost, use cases)
+- Attachment routing (bullet list)
+- Sensitivity routing (one paragraph)
+- Temperature/reasoning (brief bullets)
+- Fallback default
+
+**Token efficiency techniques:**
+
+- No redundant phrasing ("The model is..." → just state the facts)
+- No markdown formatting for decoration — only when it aids parsing (tables, bullets)
+- Combine related information (don't repeat model names across sections)
+- Use abbreviations where clear (t/s, 1M context, $3/$15)
+- One table instead of multiple sections when data overlaps
+- No examples in the slim rubric — the Concierge prompt has examples separately
+- No research citations — those go in the detailed version
+- No update log or version history
+
+**What NOT to include (goes in detailed version):**
+
+- Research basis and source citations
+- Detailed model profiles with benchmark numbers
+- Extended prose explaining decision flows
+- Fallback chain documentation
+- Update log with version history
+- "Why" explanations — just state the rules
+
+Both rubrics must be:
 
 - Current: Reflect the latest models and their actual capabilities
 - Accurate: Based on real benchmark data, not assumptions
@@ -206,10 +256,11 @@ Version, date, what changed, sources used.
 
 ## Process
 
-- Read current rubric (if exists): `knowledge/model-rubric.md`
+- Read current rubrics: `knowledge/model-rubric.md` and
+  `knowledge/model-rubric-detailed.md`
 - Research all sources listed above
-- Compare findings to current rubric
-- Draft updates with clear reasoning
+- Compare findings to current rubrics
+- Draft updates for BOTH files
 - Present to user for approval
 - Apply changes if approved
 
@@ -218,11 +269,12 @@ Version, date, what changed, sources used.
 After research, present:
 
 - Summary of findings: What's new, what changed, what's stable
-- Proposed rubric: The full updated markdown
+- Proposed slim rubric: Token-efficient routing version
+- Proposed detailed rubric: Full reference with research citations
 - Change rationale: Why each significant change was made
 - Sources: Links to data that informed decisions
 
-Wait for user approval before writing the file.
+Wait for user approval before writing the files.
 
 ## Important Notes
 
@@ -234,11 +286,14 @@ Wait for user approval before writing the file.
 - Speed (tokens/second) is needed for every model - users need quick answers
 - Focus on output tokens/second for speed, not TTFT (time to first token)
 - Cost is tracked for awareness, not optimized aggressively
-- Update both `knowledge/model-rubric.md` and `lib/model-config.ts`
+- Update THREE files:
+  - `knowledge/model-rubric.md` (slim routing version)
+  - `knowledge/model-rubric-detailed.md` (full reference)
+  - `lib/model-config.ts` (TypeScript config)
 
 ## Example Invocation
 
 User runs `/update-model-rubric`
 
-You respond with research findings and proposed rubric, then wait for approval before
-writing to `knowledge/model-rubric.md`.
+You respond with research findings and proposed rubrics (both slim and detailed), then
+wait for approval before writing to both files.
