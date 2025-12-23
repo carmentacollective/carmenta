@@ -22,26 +22,15 @@ Either a merged PR resolving the issue, or a well-explained triage decision clos
 ## Usage
 
 ```
-/do-issue           # Auto-detect from branch name (do-issue-123)
-/do-issue 123       # Work on issue #123
+/do-issue           # Auto-detect from branch name
+                    # Patterns: do-issue-123, fix-issue-123, issue-123, fix-123
+/do-issue 123       # Explicit issue number
 ```
 
 ## Workflow
 
 <fetch-and-analyze>
-Read the issue to understand what's being requested:
-
-```bash
-gh issue view {number} --json title,body,labels,assignees,state,comments,url
-```
-
-Check for existing work:
-
-- Is there a PR already addressing this?
-- Is it assigned to someone else?
-- Is it closed?
-
-Extract the core request, user impact, and any reproduction steps or requirements.
+Read the issue to understand what's being requested. Check for existing work (open PRs, other assignees, closed state). Extract the core request, user impact, and any reproduction steps or requirements.
 </fetch-and-analyze>
 
 <triage>
@@ -60,16 +49,9 @@ For Fix: continue to implementation. </triage>
 <prepare>
 When proceeding with a fix:
 
-Assign the issue to yourself:
-
-```bash
-gh issue edit {number} --add-assignee @me
-```
-
-Add "in-progress" label if it exists in the repo.
-
-Comment on the issue with your implementation approach (brief - 2-3 bullet points). This
-shows users their issue is being worked on. </prepare>
+Take ownership of the issue: assign yourself, add in-progress label if available,
+comment with your implementation approach (2-3 bullets). This shows users their issue is
+being worked on. </prepare>
 
 <implement>
 Use /autotask to handle the implementation:
@@ -98,31 +80,28 @@ This gets the PR to "ready to merge" state without human intervention for bot-re
 feedback. </polish>
 
 <finalize>
-Comment on the issue with the PR link:
-
-```bash
-gh issue comment {number} --body "Fixed in #{pr-number} 🎉"
-```
-
-The issue will auto-close when the PR merges due to the "Fixes #" keyword. </finalize>
+Comment on the issue with the PR link. The issue will auto-close when the PR merges due to the "Fixes #" keyword in the PR description.
+</finalize>
 
 ## Progress Tracking
 
-Use TodoWrite to track progress throughout the workflow. Create todos at the start and
-update them as you complete each phase. This ensures you don't lose track of where you
-are in long-running tasks.
+Use TodoWrite to maintain visibility through the workflow. Create semantic todos that
+reflect workflow phases at the start, mark each in_progress when you begin, completed
+when done. This ensures transparency and prevents dropping work mid-cycle.
 
 Example todo structure:
 
-1. Fetch and analyze issue
-2. Make triage decision
-3. Prepare for implementation (assign, label, comment)
-4. Run /autotask for implementation
-5. Run /address-pr-comments for bot feedback
-6. Finalize and link PR to issue
+```
+[
+  { content: "Analyze issue and make triage decision", activeForm: "Analyzing issue and making triage decision" },
+  { content: "Implement fix via /autotask", activeForm: "Implementing fix via /autotask" },
+  { content: "Address bot feedback via /address-pr-comments", activeForm: "Addressing bot feedback" },
+  { content: "Link PR to issue and finalize", activeForm: "Linking PR and finalizing" }
+]
+```
 
-Mark each todo as in_progress when starting, completed when done. This creates
-transparency about progress and ensures completion.
+Adapt the structure to your specific workflow - the goal is progress transparency, not
+rigid adherence to a template.
 
 ## Edge Cases
 
@@ -149,6 +128,19 @@ You're done when:
 - All todos are marked completed
 
 Don't stop mid-workflow. The todos help ensure you complete all phases.
+
+## Error Recovery
+
+If /autotask or /address-pr-comments fail, evaluate whether the failure is recoverable:
+
+**Recoverable** (transient API error, missing dependency): Retry with additional context
+or constraints.
+
+**Fundamental** (architectural blocker, unclear requirements that need user input):
+Comment on the issue explaining the blocker and ask for guidance.
+
+Don't silently abandon the workflow. Either complete it or clearly communicate why you
+cannot.
 
 ## Key Principles
 
