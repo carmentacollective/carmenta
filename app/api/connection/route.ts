@@ -41,6 +41,7 @@ import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { searchKnowledge } from "@/lib/kb/search";
+import { triggerFollowUpIngestion } from "@/lib/ingestion/triggers/follow-up";
 
 /**
  * Route segment config for Vercel
@@ -852,6 +853,44 @@ export async function POST(req: Request) {
                                 );
                             }
                         })();
+                    }
+
+                    // Knowledge Ingestion: Extract learnings from conversation
+                    // Fire-and-forget - handles async internally, won't block response
+                    if (currentConnectionId) {
+                        // Extract text content from messages
+                        const extractText = (msg: UIMessage): string =>
+                            msg.parts
+                                ?.filter(
+                                    (p): p is { type: "text"; text: string } =>
+                                        p.type === "text"
+                                )
+                                .map((p) => p.text)
+                                .join(" ") ?? "";
+
+                        const userMessages = messages
+                            .filter((m) => m.role === "user")
+                            .map(extractText);
+
+                        // Include the just-generated assistant response
+                        const assistantMessages = [
+                            ...messages
+                                .filter((m) => m.role === "assistant")
+                                .map(extractText),
+                            text, // Current response
+                        ];
+
+                        void triggerFollowUpIngestion(
+                            dbUser.id,
+                            currentConnectionId.toString(),
+                            userMessages,
+                            assistantMessages
+                        ).catch((error) => {
+                            logger.error(
+                                { error, connectionId: currentConnectionId },
+                                "Knowledge ingestion failed (non-blocking)"
+                            );
+                        });
                     }
 
                     // Log production trace to Braintrust
