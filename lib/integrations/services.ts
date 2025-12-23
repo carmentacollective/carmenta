@@ -7,6 +7,9 @@
  * - OAuth provider ID
  * - Rollout status (available, beta, internal)
  * - Service metadata (logos, descriptions, docs)
+ *
+ * SYNC REQUIREMENTS - When adding/removing services, also update:
+ * - lib/tips/tips-config.ts (service-integrations tip mentions service count/names)
  */
 
 export type AuthMethod = "oauth" | "api_key";
