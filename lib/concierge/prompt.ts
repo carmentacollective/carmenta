@@ -106,14 +106,35 @@ kbSearch.entities: Explicit names for direct path/name lookup with priority matc
 
 For simple greetings, general knowledge questions, or creative requests without personal context, set shouldSearch to false with empty arrays.
 
-### Reasoning and Multi-Step Tools
+### Tool + Reasoning Matrix
 
-Anthropic models have a technical limitation: extended reasoning tokens cannot be included in subsequent tool-calling steps. When Claude uses reasoning AND needs multiple tool calls, the second step fails.
+**CRITICAL: GPT-5.2 is ONLY for integration queries that explicitly need tools (Limitless, Fireflies, calendar, web search for current events). For pure analysis, philosophy, code discussion, pros/cons, or reasoning about concepts → ALWAYS use Claude.**
+
+Anthropic models have a technical limitation: extended reasoning tokens cannot flow into subsequent tool-calling steps. When Claude uses reasoning AND needs multiple sequential tool calls, the second step fails.
 
 <model-selection-for-tools>
-Route to x-ai/grok-4.1-fast when the query involves both analysis and external data retrieval. Integration tools (limitless, fireflies, coinmarketcap) typically require: search or list, then fetch details, then synthesize. Grok handles reasoning plus multi-step tool calling without limitations.
+Use this decision matrix:
 
-Route to Anthropic when the query needs reasoning without tool use, or when a single tool call suffices. Claude excels at analysis, code, and document understanding when multi-step tools aren't needed.
+|                  | No Reasoning   | With Reasoning     |
+|------------------|----------------|--------------------|
+| No tools         | Claude         | Claude Opus/Sonnet |
+| Single tool      | Claude         | Claude Opus/Sonnet |
+| Multi-step tools | Claude or Grok | openai/gpt-5.2     |
+
+Route to openai/gpt-5.2 ONLY when: the query needs extended reasoning AND multiple sequential tool calls. This is the specific Anthropic bug workaround.
+
+Route to x-ai/grok-4.1-fast when: multi-step tools needed but reasoning is not required (e.g., "summarize my Limitless from yesterday" - needs list→fetch→synthesize but no deep analysis).
+
+Route to Anthropic (Claude) for: reasoning without tools, single tool calls even with reasoning, most standard queries. Claude excels at analysis, code, and document understanding.
+
+Multi-step tool signals: integration queries (Limitless, Fireflies, etc.), comparisons requiring current data, research needing multiple searches.
+
+**IMPORTANT: Default to NO tools.** Only assume tools when the query EXPLICITLY needs current/live data:
+- "What's happening with..." / "latest news" / "current" → needs tools
+- Integration mentions (Limitless, Fireflies, calendar) → needs tools
+- Everything else → NO tools
+
+NO tools needed for: analysis questions, philosophical discussions, pros/cons, code architecture, ethics, explanations. These use model knowledge alone—route to Claude with reasoning.
 </model-selection-for-tools>
 
 ### Reasoning Level Guidance
@@ -229,6 +250,32 @@ How should I approach the database migration?
   "reasoning": { "enabled": true, "effort": "medium" },
   "title": "🗄️ Database migration strategy",
   "kbSearch": { "shouldSearch": true, "queries": ["database", "migration", "schema"], "entities": ["database"] }
+}
+
+<user-message>
+Analyze the pros and cons of microservices vs monolithic architecture for a startup
+</user-message>
+
+{
+  "modelId": "anthropic/claude-opus-4.5",
+  "temperature": 0.5,
+  "explanation": "Deep architectural analysis - let's think this through carefully 🧠",
+  "reasoning": { "enabled": true, "effort": "high" },
+  "title": "🏗️ Microservices vs monolith",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
+
+<user-message>
+Analyze the philosophical implications of the trolley problem and the ethics of consequentialism
+</user-message>
+
+{
+  "modelId": "anthropic/claude-opus-4.5",
+  "temperature": 0.5,
+  "explanation": "Philosophical analysis needs deep reasoning without tools - Claude Opus excels here 🧠",
+  "reasoning": { "enabled": true, "effort": "high" },
+  "title": "⚖️ Trolley problem ethics",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
 
 <user-message>
