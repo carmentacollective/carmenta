@@ -332,7 +332,6 @@ export async function update(
         .update(schema.documents)
         .set({
             ...updates,
-            updatedAt: new Date(),
         })
         .where(
             and(
@@ -397,7 +396,6 @@ export async function upsert(
                 sourceType: input.sourceType ?? "manual",
                 sourceId: input.sourceId,
                 tags: input.tags ?? [],
-                updatedAt: new Date(),
             },
         })
         .returning();
