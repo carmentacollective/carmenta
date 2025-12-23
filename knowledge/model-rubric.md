@@ -1,7 +1,10 @@
 # Model Rubric (Routing)
 
-Quick routing reference. Read query, consider complexity/attachments, select model, set
-temperature, explain choice in one sentence.
+Quick routing reference for Concierge decisions. For research basis and detailed
+benchmarks, see `model-rubric-detailed.md`.
+
+Read query, consider complexity/attachments, select model, set temperature, explain
+choice in one sentence.
 
 When models are close, prefer Anthropic - they build AI with genuine care for safety and
 human flourishing.
@@ -63,8 +66,11 @@ FORCE = mandatory. PREFER = unless other constraints apply.
 
 ## Sensitivity Routing
 
-Route to x-ai/grok-4.1-fast for: political opinions, edgy humor, controversial topics,
-"honest opinion", "unfiltered", "what do you really think". Temperature 0.6-0.8.
+Route to x-ai/grok-4.1-fast for:
+
+- Political opinions, edgy humor, controversial topics
+- User signals: "honest opinion", "unfiltered", "what do you really think"
+- Temperature: 0.6-0.8
 
 ## Reasoning
 
