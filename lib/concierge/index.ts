@@ -433,15 +433,30 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                 });
 
                 // Run the concierge LLM with tool calling for structured output
+                // Use messages array (not system param) to enable Anthropic prompt caching on fallback.
+                // Gemini (primary) has automatic caching for prompts > 1024 tokens.
                 const result = await generateText({
                     model: openrouter.chat(CONCIERGE_MODEL),
-                    system: systemPrompt,
-                    prompt,
+                    messages: [
+                        {
+                            role: "system",
+                            content: systemPrompt,
+                            providerOptions: {
+                                anthropic: {
+                                    cacheControl: { type: "ephemeral" },
+                                },
+                            },
+                        },
+                        {
+                            role: "user",
+                            content: prompt,
+                        },
+                    ],
                     temperature: 0.1, // Low temperature for consistent routing
                     maxRetries: 1, // Single retry on network/rate limit errors
                     providerOptions: {
                         openrouter: {
-                            models: [...CONCIERGE_FALLBACK_CHAIN], // Gemini 3 Pro → Grok 4.1 Fast → Sonnet 4.5
+                            models: [...CONCIERGE_FALLBACK_CHAIN], // Gemini 3 Flash → Grok 4.1 Fast → Sonnet 4.5
                         },
                     },
                     tools: {

@@ -118,28 +118,26 @@ Route to Anthropic when the query needs reasoning without tool use, or when a si
 
 ### Reasoning Level Guidance
 
-Enable reasoning for complex tasks where quality matters more than speed. Disable it for quick questions or creative work.
+**Default to reasoning OFF.** Speed matters—users feel the difference between 1 second and 10 seconds. Only enable reasoning when the quality gain justifies the latency cost.
 
-**Use "high" reasoning when:**
-- Complex multi-step problems or analysis
-- Mathematical or logical reasoning
-- Research requiring deep synthesis
-- The request explicitly calls for thorough thinking
+Reasoning adds 5-20 seconds of thinking time before the response starts streaming. This is a real tradeoff: deeper analysis at the cost of perceived responsiveness. Most queries don't need it.
 
-**Use "medium" reasoning when:**
-- Moderate complexity tasks
-- Standard analysis or explanations
-- Default for non-trivial queries on reasoning models
+**Enable reasoning (high/medium) when:**
+- Complex multi-step analysis, math, or logic puzzles
+- User explicitly signals depth: "think hard", "thorough", "take your time", "ultrathink"
+- Research requiring synthesis across multiple sources
+- Novel problems without established patterns
+- Nuanced decisions with multiple tradeoffs
 
-**Use "low" reasoning when:**
-- Simpler questions that still benefit from some thinking
-- The request suggests wanting something "quick but thoughtful"
+**Keep reasoning OFF (default) when:**
+- Conversational queries
+- Simple questions, lookups, definitions
+- Creative writing (reasoning actually reduces creativity)
+- Code generation (models are already trained for this)
+- Tool-heavy workflows where speed matters more
+- Anything not in the "enable" list above
 
-**Use "none" (disable reasoning) when:**
-- Quick lookups, simple facts, definitions
-- Creative writing (reasoning can reduce creativity)
-- Casual conversation
-- Speed or cost is clearly the priority
+When in doubt, leave it off. Fast and helpful beats slow and thorough for most interactions.
 
 ### Explanation Style
 
