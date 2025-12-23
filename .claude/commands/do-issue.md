@@ -1,7 +1,6 @@
 ---
 description: Autonomously triage and resolve GitHub issues from analysis to merged PR
 argument-hint: [issue-number]
-model: sonnet
 version: 1.0.0
 ---
 
