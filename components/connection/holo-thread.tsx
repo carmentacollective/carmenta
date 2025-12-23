@@ -94,6 +94,16 @@ function HoloThreadInner() {
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
 
+    // Track messages that were stopped mid-stream (for visual indicator)
+    const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(
+        () => new Set()
+    );
+
+    // Callback for Composer to mark a message as stopped
+    const handleMarkMessageStopped = useCallback((messageId: string) => {
+        setStoppedMessageIds((prev) => new Set(prev).add(messageId));
+    }, []);
+
     // Optimal chat scroll behavior
     const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
         isStreaming: isLoading,
@@ -144,6 +154,7 @@ function HoloThreadInner() {
                                     !needsPendingAssistant
                                 }
                                 isStreaming={isLoading && index === messages.length - 1}
+                                wasStopped={stoppedMessageIds.has(message.id)}
                             />
                         ))}
 
@@ -179,7 +190,10 @@ function HoloThreadInner() {
                             <ArrowDown className="h-5 w-5 text-foreground/70" />
                         </button>
                     )}
-                    <Composer isNewConversation={isEmpty} />
+                    <Composer
+                        isNewConversation={isEmpty}
+                        onMarkMessageStopped={handleMarkMessageStopped}
+                    />
                 </motion.div>
             </div>
         </div>
@@ -954,10 +968,12 @@ function MessageBubble({
     message,
     isLast,
     isStreaming,
+    wasStopped = false,
 }: {
     message: UIMessage;
     isLast: boolean;
     isStreaming: boolean;
+    wasStopped?: boolean;
 }) {
     if (message.role === "user") {
         return <UserMessage message={message} isLast={isLast} />;
@@ -969,6 +985,7 @@ function MessageBubble({
                 message={message}
                 isLast={isLast}
                 isStreaming={isStreaming}
+                wasStopped={wasStopped}
             />
         );
     }
@@ -994,6 +1011,7 @@ function MessageActions({
     messageId,
     onRegenerate,
     isRegenerating,
+    wasStopped = false,
 }: {
     content: string;
     isLast: boolean;
@@ -1005,6 +1023,8 @@ function MessageActions({
     onRegenerate?: (messageId: string) => Promise<void>;
     /** Whether a regeneration is currently in progress */
     isRegenerating?: boolean;
+    /** Whether this message was stopped mid-stream */
+    wasStopped?: boolean;
 }) {
     // Hide during streaming - content is incomplete
     if (isStreaming) return null;
@@ -1027,6 +1047,12 @@ function MessageActions({
                 align === "right" && "justify-end"
             )}
         >
+            {/* Stopped indicator - subtle badge showing response was interrupted */}
+            {wasStopped && (
+                <span className="mr-1 text-xs text-foreground/40">
+                    Response stopped
+                </span>
+            )}
             <CopyButton
                 text={content}
                 ariaLabel="Copy message"
@@ -1169,10 +1195,12 @@ function AssistantMessage({
     message,
     isLast,
     isStreaming,
+    wasStopped = false,
 }: {
     message: UIMessage;
     isLast: boolean;
     isStreaming: boolean;
+    wasStopped?: boolean;
 }) {
     const { concierge } = useConcierge();
     const { regenerateFrom, isLoading } = useChatContext();
@@ -1322,6 +1350,7 @@ function AssistantMessage({
                                             messageId={message.id}
                                             onRegenerate={regenerateFrom}
                                             isRegenerating={isLoading}
+                                            wasStopped={wasStopped}
                                         />
                                     </div>
                                 </div>
@@ -1350,6 +1379,7 @@ function AssistantMessage({
                         messageId={message.id}
                         onRegenerate={regenerateFrom}
                         isRegenerating={isLoading}
+                        wasStopped={wasStopped}
                     />
                 </div>
             )}
@@ -1460,12 +1490,14 @@ function PendingAssistantMessage({
  */
 interface ComposerProps {
     isNewConversation: boolean;
+    /** Callback to mark a message as stopped (for visual indicator) */
+    onMarkMessageStopped: (messageId: string) => void;
 }
 
-function Composer({ isNewConversation }: ComposerProps) {
+function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge, setConcierge } = useConcierge();
-    const { append, isLoading, stop, input, setInput, handleInputChange } =
+    const { messages, append, isLoading, stop, input, setInput, handleInputChange } =
         useChatContext();
     const {
         addFiles,
@@ -1721,12 +1753,28 @@ function Composer({ isNewConversation }: ComposerProps) {
         // The effect in runtime provider should also do this, but explicit is safer
         setConcierge(null);
 
+        // Mark the last assistant message as stopped (for visual indicator)
+        const lastAssistant = [...messages]
+            .reverse()
+            .find((m) => m.role === "assistant");
+        if (lastAssistant) {
+            onMarkMessageStopped(lastAssistant.id);
+        }
+
         // Restore message for quick correction (only if user hasn't typed new content)
         if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
-    }, [isLoading, stop, setConcierge, input, setInput]);
+    }, [
+        isLoading,
+        stop,
+        setConcierge,
+        messages,
+        onMarkMessageStopped,
+        input,
+        setInput,
+    ]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
