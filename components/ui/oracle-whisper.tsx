@@ -24,11 +24,16 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
-import { getRandomTip, type Feature } from "@/lib/features/feature-catalog";
+import {
+    getRandomTip,
+    getConnectPageFeatures,
+    type Feature,
+} from "@/lib/features/feature-catalog";
 import { useSettingsModal } from "@/components/connection/connect-runtime-provider";
 import { useConnection } from "@/components/connection/connection-context";
 
 const STORAGE_KEY = "carmenta_whisper_state";
+const SESSION_TRACKED_KEY = "carmenta_session_tracked";
 
 interface WhisperState {
     sessionCount: number;
@@ -92,25 +97,43 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
         const timer = setTimeout(() => {
             const state = getWhisperState();
 
-            // Increment session count
-            const newState = {
-                ...state,
-                sessionCount: state.sessionCount + 1,
-            };
+            // Check if we've already tracked this browser session
+            // This prevents incrementing the counter on every component mount
+            const sessionAlreadyTracked =
+                typeof window !== "undefined" &&
+                sessionStorage.getItem(SESSION_TRACKED_KEY) === "true";
+
+            let newState = state;
+            if (!sessionAlreadyTracked) {
+                // First mount in this browser session - increment counter
+                newState = {
+                    ...state,
+                    sessionCount: state.sessionCount + 1,
+                };
+                if (typeof window !== "undefined") {
+                    sessionStorage.setItem(SESSION_TRACKED_KEY, "true");
+                }
+            }
 
             // Check if we should show a tip
-            if (!shouldShowTip(state)) {
+            if (!shouldShowTip(newState)) {
                 saveWhisperState(newState);
                 return;
             }
 
             // Get a tip, avoiding the last one shown
-            let selectedTip = getRandomTip();
-            let attempts = 0;
-            while (selectedTip.id === state.lastTipId && attempts < 5) {
-                selectedTip = getRandomTip();
-                attempts++;
-            }
+            // Filter out last tip before selection to guarantee no repeat
+            const availableTips = getConnectPageFeatures();
+            const tipsToChooseFrom = state.lastTipId
+                ? availableTips.filter((t) => t.id !== state.lastTipId)
+                : availableTips;
+
+            const selectedTip =
+                tipsToChooseFrom.length > 0
+                    ? tipsToChooseFrom[
+                          Math.floor(Math.random() * tipsToChooseFrom.length)
+                      ]
+                    : getRandomTip(); // Fallback if somehow we filtered everything
 
             // Update state with this tip
             saveWhisperState({
