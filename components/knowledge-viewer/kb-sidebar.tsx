@@ -145,11 +145,16 @@ export function KBSidebar({
                                                         onClick={() =>
                                                             onSelect(doc.path)
                                                         }
-                                                        data-tooltip={
+                                                        data-tooltip-id={
+                                                            doc.description
+                                                                ? "tip"
+                                                                : undefined
+                                                        }
+                                                        data-tooltip-content={
                                                             doc.description ?? undefined
                                                         }
                                                         className={cn(
-                                                            "tooltip flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
+                                                            "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
                                                             selectedPath === doc.path
                                                                 ? "bg-primary/10 text-primary"
                                                                 : "text-foreground/60 hover:bg-foreground/5"
