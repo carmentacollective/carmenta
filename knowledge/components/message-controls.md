@@ -105,15 +105,27 @@ Continue (append more content) is complex:
 
 Regenerate covers the common case. Continue can be added in V2 if users request it.
 
-## Future Enhancements
-
-### Stopped Message Indicator (Planned)
+### Stopped Message Indicator (PR #312)
 
 Visual cue that a message was stopped mid-stream:
 
-- Subtle "..." or truncation indicator
-- Or soft badge: "Response was stopped"
-- Helps users understand why content might be incomplete
+**Location:** Appears in MessageActions toolbar, before the copy/regenerate buttons.
+
+**Implementation:**
+
+- `stoppedMessageIds` state (Set<string>) in HoloThreadInner tracks stopped messages
+- `handleStop` marks the last assistant message as stopped
+- `wasStopped` prop passed through MessageBubble → AssistantMessage → MessageActions
+- Subtle "Response stopped" text in foreground/40 opacity
+
+**User Flow:**
+
+1. User clicks stop button (or presses Escape) during streaming
+2. Generation stops, partial response remains
+3. "Response stopped" indicator appears below the message
+4. User can regenerate for a fresh response
+
+## Future Enhancements
 
 ### Continue Button (V2)
 
