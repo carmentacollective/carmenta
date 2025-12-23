@@ -648,7 +648,7 @@ export async function POST(req: Request) {
             // System messages are in the messages array with providerOptions for caching
             messages: [
                 ...systemMessages,
-                ...convertToModelMessages(messagesWithoutReasoning),
+                ...(await convertToModelMessages(messagesWithoutReasoning)),
             ],
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services

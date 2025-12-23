@@ -9,7 +9,7 @@
  */
 
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import type { ConciergeTestInput } from "../concierge-test-data";
@@ -134,9 +134,9 @@ export async function TitleQualityScorer({
     try {
         const openrouter = createOpenRouter({ apiKey });
 
-        const result = await generateObject({
+        const { output: scores } = await generateText({
             model: openrouter.chat(JUDGE_MODEL),
-            schema: titleQualitySchema,
+            output: Output.object({ schema: titleQualitySchema }),
             prompt: `You are evaluating the quality of a title generated for a conversation.
 
 <user-query>
@@ -164,8 +164,6 @@ Rate this title on each dimension from 0.0 to 1.0. Consider:
 Be honest and critical. Most titles should score between 0.5 and 0.9. Reserve 1.0 for truly excellent titles.`,
             temperature: 0.1,
         });
-
-        const scores = result.object;
 
         return [
             {

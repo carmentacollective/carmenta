@@ -8,7 +8,7 @@
  * - Authority: Is this source authoritative?
  */
 
-import { generateObject, type LanguageModel } from "ai";
+import { generateText, Output, type LanguageModel } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
 
@@ -73,16 +73,16 @@ export async function evaluateForIngestion(
                     rawContent.sourceType
                 );
 
-                const { object } = await generateObject({
+                const { output } = await generateText({
                     model: getSonnet(),
+                    output: Output.object({ schema: ingestionResultSchema }),
                     prompt,
-                    schema: ingestionResultSchema,
                 });
 
                 const duration = Date.now() - startTime;
 
                 // Enrich items with source metadata
-                const enrichedItems = object.items.map((item) => ({
+                const enrichedItems = output.items.map((item) => ({
                     ...item,
                     sourceType: rawContent.sourceType,
                     sourceId: rawContent.sourceId,
@@ -90,7 +90,7 @@ export async function evaluateForIngestion(
                 }));
 
                 const result: IngestionResult = {
-                    ...object,
+                    ...output,
                     items: enrichedItems,
                 };
 
