@@ -224,12 +224,14 @@ export function useModelOverrides() {
  * Context for settings modal - allows any component to open the model selector.
  * Used by feature tips to open settings when user clicks "Adjust settings" CTA.
  */
-interface SettingsModalContextType {
+export interface SettingsModalContextType {
     settingsOpen: boolean;
     setSettingsOpen: (open: boolean) => void;
 }
 
-const SettingsModalContext = createContext<SettingsModalContextType | null>(null);
+export const SettingsModalContext = createContext<SettingsModalContextType | null>(
+    null
+);
 
 export function useSettingsModal() {
     const context = useContext(SettingsModalContext);
