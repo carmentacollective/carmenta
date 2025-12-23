@@ -1,0 +1,177 @@
+---
+description: Guidelines for triaging GitHub issues - when to fix, decline, or ask for more info
+alwaysApply: false
+version: 1.0.0
+---
+
+# Issue Triage Guidelines
+
+When evaluating GitHub issues, make professional decisions about what to work on and what to decline. Quality triage is as valuable as quality code.
+
+## Triage Categories
+
+Issues fall into one of four categories:
+
+**Fix** - Proceed with implementation
+**Won't Fix** - Close with explanation
+**Need More Info** - Ask clarifying questions
+**Invalid** - Close immediately (spam, duplicate)
+
+## When to Fix
+
+<security-issues>
+Security vulnerabilities, CVEs, authentication/authorization bugs.
+
+Priority: Immediate
+Action: Fix quickly, follow security disclosure practices if needed
+</security-issues>
+
+<bugs-with-reproduction>
+Runtime errors, broken functionality, user-facing bugs with clear reproduction steps.
+
+Priority: High
+Action: Validate reproduction, implement fix, add regression test
+</bugs-with-reproduction>
+
+<high-value-enhancements>
+Feature requests that:
+- Align with product direction
+- Clear user benefit
+- Reasonable effort (can estimate < 4 hours)
+- No major architectural changes required
+
+Priority: Medium
+Action: Implement with appropriate tests and documentation
+</high-value-enhancements>
+
+<technical-debt>
+Code quality improvements with clear ROI:
+- Performance issues backed by metrics
+- Deprecated API migrations
+- Maintenance burden reduction
+
+Priority: Medium-Low
+Action: Fix when capacity allows, measure improvement
+</technical-debt>
+
+## When to Won't Fix
+
+<out-of-scope>
+Feature requests misaligned with product vision.
+
+Comment: "Thanks for the suggestion! This doesn't align with our current roadmap. We're focusing on {actual priorities} instead."
+</out-of-scope>
+
+<working-as-intended>
+Misunderstanding of expected behavior.
+
+Comment: "This is working as designed. {Explanation of why}. Let us know if you're experiencing a different issue!"
+</working-as-intended>
+
+<low-value-high-cost>
+Edge cases affecting < 1% of users, or requiring architectural rewrites.
+
+Comment: "While we understand the concern, the effort required doesn't justify the impact. We're prioritizing {alternatives that provide more value}."
+</low-value-high-cost>
+
+<stale-issues>
+No activity in 90+ days, no longer relevant.
+
+Comment: "Closing due to inactivity. Please reopen if this is still relevant!"
+</stale-issues>
+
+## When to Need More Info
+
+<unclear-requirements>
+Issue lacks essential details to implement.
+
+Ask:
+- "What should happen when {scenario}?"
+- "Can you share a screenshot or example?"
+- "Which use case does this address?"
+</unclear-requirements>
+
+<missing-reproduction>
+Bug report without steps to reproduce.
+
+Ask:
+- "Can you provide steps to reproduce this?"
+- "What were you doing when this occurred?"
+- "What's your environment? (OS, browser, version)"
+</missing-reproduction>
+
+<ambiguous-scope>
+Unclear boundaries for the requested work.
+
+Ask:
+- "Should this also handle {edge case}?"
+- "Is this specific to {context} or general?"
+</ambiguous-scope>
+
+## When to Invalid
+
+<duplicates>
+Same issue already tracked elsewhere.
+
+Comment: "Duplicate of #{original}. Closing in favor of that issue."
+Link to original and close.
+</duplicates>
+
+<spam-abuse>
+Obviously spam or abusive.
+
+Close without comment, report if needed.
+</spam-abuse>
+
+## Communication Tone
+
+**Professional and respectful**: Users are contributing their time.
+
+**Clear and direct**: Explain reasoning, don't hedge.
+
+**Constructive when declining**: Offer alternatives or explain rationale.
+
+**Grateful for contributions**: Thank users for bug reports and suggestions.
+
+## Examples
+
+<example-fix>
+Issue: "Login button doesn't work on mobile Safari"
+- Type: Bug
+- Reproduction: Clear steps provided
+- Impact: High (blocks mobile users)
+- Decision: Fix
+- Comment: "Good catch! I can reproduce this on iOS 18. Taking this one."
+</example-fix>
+
+<example-wont-fix>
+Issue: "Add support for 47 different date formats"
+- Type: Enhancement
+- Impact: Low (edge case)
+- Cost: High (maintenance burden)
+- Decision: Won't Fix
+- Comment: "We support ISO 8601 and localized formats via Intl.DateTimeFormat. Supporting 47 formats would add significant complexity for minimal benefit. Documentation update to clarify supported formats would be more valuable - would that help?"
+</example-wont-fix>
+
+<example-need-info>
+Issue: "App is slow"
+- Type: Bug (maybe)
+- Missing: Specific scenario, reproduction, metrics
+- Decision: Need More Info
+- Comment: "Can you help us narrow this down? Which specific page or operation feels slow? What device/browser? Are you seeing this consistently or intermittently?"
+</example-need-info>
+
+## Triage Speed vs Quality
+
+Fast triage is good. Thoughtful triage is better.
+
+Spend 2-3 minutes understanding the issue. If you need more time to evaluate, mark it for later review rather than making a rushed decision.
+
+## Learning from Triage
+
+Track patterns:
+- Which issues get fixed quickly?
+- Which decisions generate pushback?
+- What could have been clearer upfront?
+
+Good triage improves product quality by ensuring the right work gets done.
