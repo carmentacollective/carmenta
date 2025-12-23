@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -46,6 +46,16 @@ export function RegenerateButton({
     className,
 }: RegenerateButtonProps) {
     const [isAnimating, setIsAnimating] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleClick = useCallback(async () => {
         if (disabled || isRegenerating || isAnimating) return;
@@ -54,8 +64,15 @@ export function RegenerateButton({
         try {
             await onRegenerate();
         } finally {
+            // Clear any existing timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
             // Keep spinning briefly for visual feedback
-            setTimeout(() => setIsAnimating(false), 500);
+            timeoutRef.current = setTimeout(() => {
+                setIsAnimating(false);
+                timeoutRef.current = null;
+            }, 500);
         }
     }, [onRegenerate, disabled, isRegenerating, isAnimating]);
 
