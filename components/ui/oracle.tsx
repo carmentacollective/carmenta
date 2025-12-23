@@ -58,6 +58,8 @@ export function Oracle({
                 config.container,
                 // Breathing animation
                 state === "breathing" && "oracle-breathing",
+                // View transition for persistent navigation element
+                href && "vt-oracle-home",
                 className
             )}
             data-tooltip-id={href ? "tip" : undefined}

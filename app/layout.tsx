@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 
+import { ViewTransitions } from "next-view-transitions";
 import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { ThemeProvider } from "@/lib/theme";
@@ -114,23 +115,25 @@ export default function RootLayout({
         >
             <UserProvider>
                 <PostHogProvider>
-                    <html
-                        lang="en"
-                        className={`${outfit.variable} ${jetbrainsMono.variable}`}
-                        suppressHydrationWarning
-                    >
-                        <body className="min-h-screen bg-background font-sans antialiased">
-                            <ThemeProvider>
-                                <MarkerProvider>
-                                    <PWARegistration />
-                                    <StructuredData />
-                                    <Toaster />
-                                    <GlobalTooltip />
-                                    {children}
-                                </MarkerProvider>
-                            </ThemeProvider>
-                        </body>
-                    </html>
+                    <ViewTransitions>
+                        <html
+                            lang="en"
+                            className={`${outfit.variable} ${jetbrainsMono.variable}`}
+                            suppressHydrationWarning
+                        >
+                            <body className="min-h-screen bg-background font-sans antialiased">
+                                <ThemeProvider>
+                                    <MarkerProvider>
+                                        <PWARegistration />
+                                        <StructuredData />
+                                        <Toaster />
+                                        <GlobalTooltip />
+                                        {children}
+                                    </MarkerProvider>
+                                </ThemeProvider>
+                            </body>
+                        </html>
+                    </ViewTransitions>
                 </PostHogProvider>
             </UserProvider>
         </ClerkProvider>
