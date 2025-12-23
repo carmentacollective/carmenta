@@ -15,6 +15,8 @@ import type { ReactElement } from "react";
 const mocks = vi.hoisted(() => ({
     mockCurrentUser: vi.fn(),
     mockGetRecentConnections: vi.fn(),
+    mockResetDiscoveryState: vi.fn(),
+    mockFindUserByClerkId: vi.fn(),
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({
@@ -24,6 +26,16 @@ vi.mock("@clerk/nextjs/server", () => ({
 // Mock connections actions
 vi.mock("@/lib/actions/connections", () => ({
     getRecentConnections: mocks.mockGetRecentConnections,
+}));
+
+// Mock discovery module
+vi.mock("@/lib/discovery", () => ({
+    resetDiscoveryState: mocks.mockResetDiscoveryState,
+}));
+
+// Mock user lookup
+vi.mock("@/lib/db/users", () => ({
+    findUserByClerkId: mocks.mockFindUserByClerkId,
 }));
 
 // Mock the Chat and ConnectLayout components
@@ -38,6 +50,11 @@ vi.mock("@/components/connection", () => ({
 vi.mock("@/components/ui/holographic-background", () => ({
     HolographicBackground: () => <div data-testid="holographic-bg">Background</div>,
 }));
+
+// Helper to create searchParams promise
+const createSearchParams = (
+    params: Record<string, string | string[] | undefined> = {}
+) => Promise.resolve(params);
 
 describe("/connection page", () => {
     beforeEach(() => {
@@ -70,7 +87,7 @@ describe("/connection page", () => {
 
     it("renders new chat interface for authenticated users", async () => {
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: createSearchParams() });
 
         // Should render, not redirect
         expect(result).toBeDefined();
@@ -107,7 +124,7 @@ describe("/connection page", () => {
         mocks.mockGetRecentConnections.mockResolvedValue(recentConnections);
 
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        await ConnectionPage();
+        await ConnectionPage({ searchParams: createSearchParams() });
 
         // Verify it fetched recent connections
         expect(mocks.mockGetRecentConnections).toHaveBeenCalledWith(10);
@@ -117,7 +134,7 @@ describe("/connection page", () => {
         mocks.mockGetRecentConnections.mockResolvedValue([]);
 
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: createSearchParams() });
 
         // Should still render (not redirect to /connection/new)
         expect(result).toBeDefined();
@@ -129,7 +146,7 @@ describe("/connection page", () => {
 
     it("passes activeConnection as null for new chat", async () => {
         const ConnectionPage = (await import("@/app/connection/page")).default;
-        const result = await ConnectionPage();
+        const result = await ConnectionPage({ searchParams: createSearchParams() });
 
         // The page should render with activeConnection: null
         // This signals it's a new chat, not an existing one
