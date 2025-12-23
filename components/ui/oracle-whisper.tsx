@@ -34,6 +34,13 @@ import { useConnection } from "@/components/connection/connection-context";
 
 const STORAGE_KEY = "carmenta_whisper_state";
 const SESSION_TRACKED_KEY = "carmenta_session_tracked";
+const SESSION_DISMISSED_KEY = "carmenta_whisper_dismissed";
+
+/** How long the whisper stays visible before auto-dismissing (ms) */
+const AUTO_DISMISS_TIMEOUT_MS = 25000;
+
+/** Custom event emitted when user engages with the chat */
+export const USER_ENGAGED_EVENT = "carmenta:user-engaged";
 
 interface WhisperState {
     sessionCount: number;
@@ -86,9 +93,27 @@ interface OracleWhisperProps {
     className?: string;
 }
 
+/**
+ * Check if whisper was already dismissed this browser session.
+ */
+function isSessionDismissed(): boolean {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(SESSION_DISMISSED_KEY) === "true";
+}
+
+/**
+ * Mark the whisper as dismissed for this browser session.
+ * This prevents it from reappearing after streaming cycles.
+ */
+function markSessionDismissed(): void {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(SESSION_DISMISSED_KEY, "true");
+}
+
 export function OracleWhisper({ className }: OracleWhisperProps) {
     const [tip, setTip] = useState<Feature | null>(null);
-    const [isDismissed, setIsDismissed] = useState(false);
+    // Initialize from sessionStorage to persist dismissal across streaming cycles
+    const [isDismissed, setIsDismissed] = useState(isSessionDismissed);
     const [shouldShow, setShouldShow] = useState(false);
     const { setSettingsOpen } = useSettingsModal();
     const { isStreaming } = useConnection();
@@ -150,14 +175,41 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
 
     const handleDismiss = useCallback(() => {
         setIsDismissed(true);
+        markSessionDismissed();
     }, []);
 
     const handleCtaClick = useCallback(() => {
         if (tip?.cta?.action === "settings") {
             setSettingsOpen(true);
             setIsDismissed(true);
+            markSessionDismissed();
         }
     }, [tip, setSettingsOpen]);
+
+    // Auto-dismiss after timeout (user saw it, didn't interact)
+    useEffect(() => {
+        if (!tip || isDismissed || !shouldShow) return;
+
+        const timer = setTimeout(() => {
+            setIsDismissed(true);
+            markSessionDismissed();
+        }, AUTO_DISMISS_TIMEOUT_MS);
+
+        return () => clearTimeout(timer);
+    }, [tip, isDismissed, shouldShow]);
+
+    // Listen for user engagement events (typing, sending messages)
+    useEffect(() => {
+        const handleUserEngaged = () => {
+            if (!isDismissed) {
+                setIsDismissed(true);
+                markSessionDismissed();
+            }
+        };
+
+        window.addEventListener(USER_ENGAGED_EVENT, handleUserEngaged);
+        return () => window.removeEventListener(USER_ENGAGED_EVENT, handleUserEngaged);
+    }, [isDismissed]);
 
     const showWhisper = tip && !isDismissed && shouldShow;
     const isSpeaking = showWhisper && !isStreaming;
