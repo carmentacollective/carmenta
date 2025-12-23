@@ -1,7 +1,7 @@
 ---
 description: Set up or update AI coding configurations
 argument-hint: [update]
-version: 2.1.0
+version: 4.0.0
 ---
 
 # AI Coding Configuration
@@ -58,8 +58,8 @@ test -d .continue && echo "continue"
 Based on detection, use AskUserQuestion to confirm which tools to set up. Pre-select
 detected tools. Options:
 
-- Claude Code (plugin marketplace)
-- Cursor (rules + commands via symlinks)
+- Claude Code (plugin marketplace - auto-updates)
+- Cursor (rules + commands copied to project)
 - Aider (AGENTS.md context)
 - Other (explain what you're using)
 
@@ -89,12 +89,8 @@ For Claude Code users, guide them through the plugin marketplace:
    the plugins you want, and they'll stay updated automatically."
 
 2. Show available plugins from `~/.ai_coding_config/.claude-plugin/marketplace.json`:
-   - **core** - Essential commands (autotask, troubleshoot, load-rules, etc.)
-   - **agents** - Specialized AI agents (debugger, code-reviewer, autonomous-developer,
-     etc.)
-   - **skills** - Autonomous capabilities (research, brainstorming,
-     systematic-debugging)
-   - **personalities** - Pick one that matches your style
+   - **ai-coding-config** - Commands, agents, and skills for AI-assisted development
+   - **personality-{name}** - Pick one that matches your style
 
 3. Provide the commands to add the marketplace and install plugins:
 
@@ -102,8 +98,8 @@ For Claude Code users, guide them through the plugin marketplace:
 # Add the marketplace (one time)
 /plugin marketplace add https://github.com/TechNickAI/ai-coding-config
 
-# Install plugins
-/plugin install ai-coding-config agents skills
+# Install the core plugin
+/plugin install ai-coding-config
 
 # Optional: Install a personality
 /plugin install personality-samantha
@@ -115,55 +111,43 @@ For Claude Code users, guide them through the plugin marketplace:
 </claude-code-setup>
 
 <cursor-setup>
-For Cursor users, set up symlinks to the plugin content.
+For Cursor users, copy files to the project. Cursor needs files physically present in
+the repository for portability and team collaboration.
 
 <existing-config-detection>
 Before installing, detect what already exists:
 
 1. **Fresh project** (no existing configs)
-   - Create `.cursor/rules/` directory
+   - Create `.cursor/rules/` and `.cursor/commands/` directories
    - Create `AGENTS.md`, symlink `CLAUDE.md` → `AGENTS.md`
 
 2. **Existing rules, no AI coding config yet**
-   - Has `.cursor/rules/` or `rules/` as real directory
-   - Offer choice: migrate to cross-tool structure OR merge alongside existing
-   - ALWAYS preserve existing rules
+   - Has `.cursor/rules/` as real directory
+   - Offer choice: merge new rules alongside existing OR skip rule installation
+   - ALWAYS preserve existing rules and commands
 
 3. **Already has AI coding config**
-   - Check for symlinks pointing to `~/.ai_coding_config`
-   - Proceed with update/refresh
-
-Note: `.cursor/rules/` is the canonical location for Cursor rules. In user projects,
-rules live directly in `.cursor/rules/` with no root-level symlink. In the
-ai-coding-config repo itself, `rules/` exists as a symlink to `.cursor/rules/` for
-visibility.
+   - Check for existing copied files from `~/.ai_coding_config`
+   - Proceed with update/refresh via version comparison
 
 Detection:
 
 ```bash
 test -d .cursor/rules && echo "has .cursor/rules"
-test -L .cursor/rules && echo ".cursor/rules is symlink"
-test -d rules && echo "has rules/"
+test -d .cursor/commands && echo "has .cursor/commands"
 test -f AGENTS.md && echo "has AGENTS.md"
 ```
 
 </existing-config-detection>
 
 <file-installation>
-Copy from `~/.ai_coding_config/plugins/` to project:
+Copy files from `~/.ai_coding_config/` to project for portability:
 
-Installation mapping:
+- Rules: `~/.ai_coding_config/.cursor/rules/` → `.cursor/rules/`
+- Commands: `~/.ai_coding_config/plugins/core/commands/` → `.cursor/commands/`
+- Personality: ONE selected file → `.cursor/rules/personalities/`
 
-- Rules → `.cursor/rules/` (copy from `~/.ai_coding_config/.cursor/rules/`)
-- Commands → `.claude/commands/` symlink to `~/.ai_coding_config/plugins/core/commands/`
-- Agents → `.claude/agents/` symlink to `~/.ai_coding_config/plugins/core/agents/`
-- Skills → `.claude/skills/` symlink to `~/.ai_coding_config/plugins/core/skills/`
-- Personalities → `.cursor/rules/personalities/` (copy selected personality, set
-  `alwaysApply: true`)
-
-For Cursor:
-
-- `.cursor/commands/` → symlink to `.claude/commands/`
+Cursor does not support agents or skills directories.
 
 Handle conflicts with AskUserQuestion: overwrite, skip, show diff. </file-installation>
 
@@ -187,13 +171,20 @@ Use AskUserQuestion to present personality options:
 - **Luminous** - Heart-centered, spiritual, love-based
 - **None** - Use default Claude personality
 
-For Claude Code: Install the selected personality plugin. For Cursor: Copy personality
-file to `.cursor/rules/personalities/` with `alwaysApply: true`.
+For Claude Code: Install the selected personality plugin via marketplace.
+
+For Cursor: Copy the ONE selected personality file to `.cursor/rules/personalities/` and
+set `alwaysApply: true` in its frontmatter. Only one personality should be active.
+
+For hybrid users (both Claude Code and Cursor): Do both. Install the plugin AND copy the
+file. This ensures the personality works in both environments.
+
+Source files are in `~/.ai_coding_config/plugins/personalities/personality-{name}/`.
 </personality-selection>
 
 <installation-verification>
 Confirm files are in expected locations. For Claude Code, confirm plugins are installed.
-For Cursor, confirm symlinks point correctly.
+For Cursor, confirm copied files exist in `.cursor/rules/` and `.cursor/commands/`.
 </installation-verification>
 
 <recommendations>
@@ -202,8 +193,7 @@ Provide a warm summary of what was installed.
 For Claude Code users: "You're set up with the ai-coding-config plugin marketplace.
 Installed: [list plugins]"
 
-For Cursor users: "Your project is configured with [X] rules, [Y] commands, and [Z]
-agents."
+For Cursor users: "Your project is configured with [X] rules and [Y] commands."
 
 Key commands to highlight:
 
@@ -219,295 +209,264 @@ End with: "Run `/ai-coding-config update` anytime to get the latest improvements
 ---
 
 <update-mode>
-Update all configurations to latest versions.
 
-<marketplace-update>
-Update the Claude Code plugin marketplace first. This pulls the latest plugin definitions and updates any installed plugins.
+<objective>
+Bring all AI coding configurations to a healthy, up-to-date state. The end result is a
+working setup with the latest versions and auto-update enabled.
+</objective>
 
-The `/plugin` command is a native Claude Code CLI command that only works at the
-terminal level. Since this command executes within Claude Code itself, we invoke the CLI
-via bash using the `claude` command:
+<environment-detection>
+Determine which AI coding tools are in use before proceeding.
+
+Detection signals:
+
+- Claude Code: `~/.claude/plugins/` directory exists
+- Cursor: `.cursor/` directory exists in current project
+- Both: proceed with both flows
+- Neither: guide user to run setup mode instead
+
+For Cursor-only users, skip all marketplace and plugin operations.
+</environment-detection>
+
+<repository-sync>
+Pull latest source files regardless of environment:
 
 ```bash
-claude /plugin marketplace update ai-coding-config
+git -C ~/.ai_coding_config pull
 ```
 
-This tells the Claude Code CLI to update the marketplace at
-`~/.claude/plugins/marketplaces/ai-coding-config/` and refresh all installed plugins.
+This updates the source repository that both Claude Code marketplace and Cursor file
+copies draw from. </repository-sync>
 
-</marketplace-update>
+<self-update>
+Immediately after pulling, check if this command file was updated.
 
-<repository-update>
-For bootstrap users (Cursor-only or manual setup), pull latest from `~/.ai_coding_config`:
+Compare versions:
+
+- Source: `~/.ai_coding_config/plugins/core/commands/ai-coding-config.md`
+- Running: The version in YAML frontmatter of the file currently being executed
+
+If the source version is newer:
+
+1. Read the updated file from the source repository
+2. If the project has a local copy at `.claude/commands/ai-coding-config.md`, update it
+   with the new version (this keeps the local copy current for discoverability)
+3. Continue execution using the updated instructions
+
+This check happens before any other operations so that marketplace doctor, plugin
+updates, and all subsequent steps use current instructions. </self-update>
+
+<marketplace-doctor>
+For Claude Code users, ensure the ai-coding-config marketplace is healthy.
+
+<health-checks>
+A healthy marketplace has:
+- Entry in `~/.claude/plugins/known_marketplaces.json` with source pointing to ai-coding-config
+- Install location at `~/.claude/plugins/marketplaces/ai-coding-config/` with valid `.claude-plugin/marketplace.json`
+- Plugins in `~/.claude/plugins/cache/ai-coding-config/` matching installed_plugins.json
+- ai-coding-config plugin enabled in `~/.claude/settings.json`
+- No deprecated plugins installed (see deprecated plugin check below)
+
+Read these files to assess current state. Compare installed plugin versions against
+marketplace.json versions. </health-checks>
+
+<deprecated-plugin-check>
+Check `~/.claude/plugins/installed_plugins.json` for plugins from the ai-coding-config
+marketplace that no longer exist in the current marketplace.json.
+
+Previously, the marketplace had separate plugins that were later consolidated:
+
+- `agents@ai-coding-config` → merged into ai-coding-config
+- `skills@ai-coding-config` → merged into ai-coding-config
+- `commands@ai-coding-config` → merged into ai-coding-config
+
+If any deprecated plugins are found, the marketplace needs a reset. The reset will
+remove these stale entries and install the current consolidated plugin.
+
+This check is future-proof: compare installed plugin names against the current
+marketplace.json rather than maintaining a hardcoded list. </deprecated-plugin-check>
+
+<major-version-check>
+Compare the installed plugin version against the source marketplace.json version. If
+the major version changed (e.g., 6.x.x → 7.x.x), trigger a full reset.
+
+Major version changes often involve structural changes that `plugin update` may not
+handle cleanly. A reset ensures a clean slate.
+
+Before resetting for major version:
+
+1. Note which plugins from this marketplace are currently installed (ai-coding-config,
+   any personality plugins)
+2. After reset, reinstall all of them
+
+The reset is fast and prevents weird state from version mismatches.
+</major-version-check>
+
+<reset-to-healthy>
+If any health check fails (deprecated plugins, major version change, corruption), reset
+the marketplace. This is fast and reliable.
+
+Before resetting, note which plugins from this marketplace are installed (check
+installed_plugins.json for keys ending in `@ai-coding-config`). Common ones:
+
+- ai-coding-config (core)
+- personality-samantha, personality-sherlock, etc.
+
+Execute plugin commands via subshell for reliability:
 
 ```bash
-cd ~/.ai_coding_config && git pull
+# Remove the marketplace
+claude "/plugin marketplace remove ai-coding-config"
+
+# Re-add it fresh
+claude "/plugin marketplace add https://github.com/TechNickAI/ai-coding-config"
+
+# Install the core plugin
+claude "/plugin install ai-coding-config"
+
+# Reinstall any personality plugins the user had
+claude "/plugin install personality-samantha"  # if they had it before
 ```
 
-</repository-update>
+Resetting takes seconds and eliminates debugging time. Use this approach when:
 
-<self-update-check>
-After pulling from the repository, detect if this command file (commands/ai-coding-config.md) was updated. If it was, read the new version and continue executing with the updated instructions.
-</self-update-check>
+- Deprecated plugins detected
+- Major version change (6.x → 7.x)
+- Marketplace entry is missing or corrupted
+- Plugin cache is incomplete or mismatched
+- Version conflicts or install errors occur
+- Any uncertainty about marketplace state
 
-<plugin-migration-check>
-Dynamically detect and clean up deprecated or renamed plugins.
+After reset, verify the plugin is working by checking that expected components exist in
+the cache directory. Track that a restart will be needed. Then proceed to auto-update
+check. </reset-to-healthy>
 
-**Detection method:**
+<update-healthy-marketplace>
+If the marketplace is healthy but potentially outdated, update it.
 
-1. Read `~/.claude/plugins/installed_plugins.json` to find all plugins installed from
-   the `ai-coding-config` marketplace (keys ending in `@ai-coding-config`)
+Execute plugin commands via subshell for reliability:
 
-2. Read the current marketplace.json from the repo at
-   `~/.ai_coding_config/.claude-plugin/marketplace.json` to get the list of valid plugin
-   names
+```bash
+# Update marketplace catalog
+claude "/plugin marketplace update ai-coding-config"
 
-3. Compare: Any installed plugin name that doesn't exist in the current marketplace =
-   deprecated/removed
+# Update installed plugins to latest versions
+claude "/plugin update ai-coding-config"
+```
 
-This approach is future-proof and doesn't require maintaining a hardcoded list.
+Report version changes: "Updated ai-coding-config: 5.2.0 → 6.0.0"
 
-**Migration execution:**
+If plugins were updated, track that a restart will be needed.
+</update-healthy-marketplace>
 
-For each deprecated plugin found:
+<auto-update-check>
+Third-party marketplaces have auto-update disabled by default. Check if the user wants
+to enable it for convenience.
 
-1. Try to uninstall it: `claude plugin uninstall {plugin}@ai-coding-config`
+Auto-update means Claude Code refreshes the marketplace at startup and updates installed
+plugins automatically. Users stay current without running manual updates.
 
-2. If uninstall fails (plugin already gone from marketplace), manually remove the entry
-   from `~/.claude/plugins/installed_plugins.json`
+Guide the user to enable auto-update through the plugin manager:
 
-3. After cleanup, install the current plugins that aren't already installed
+1. Run `/plugin` to open the plugin manager
+2. Select the Marketplaces tab
+3. Choose ai-coding-config
+4. Select "Enable auto-update"
 
-**Error handling:** If install fails with "Unrecognized key" errors, the plugin manifest
-format may be incompatible with the current Claude Code version. Report this to the user
-and suggest they update Claude Code or file an issue on the ai-coding-config repository.
+Use AskUserQuestion to offer this:
 
-Offer: "Clean up deprecated plugins (Recommended)" or "Skip cleanup"
-</plugin-migration-check>
+- "Enable auto-update (Recommended)" - Plugins stay current automatically
+- "Keep manual updates" - Run `/ai-coding-config update` when you want updates
+  </auto-update-check>
+
+<verification>
+Confirm the marketplace is healthy by checking:
+- ai-coding-config plugin is installed and enabled
+- Expected agents are available (check for 10+ agents in cache)
+- Expected commands are available (check for 10+ commands in cache)
+- Expected skills are available (check for 5+ skills in cache)
+
+Report the healthy state: "Marketplace healthy: 14 agents, 15 commands, 6 skills"
+</verification>
+
+</marketplace-doctor>
 
 <local-duplicate-cleanup>
-Check for local file duplication when marketplace plugins are installed.
+After marketplace is healthy, check for outdated local files that duplicate marketplace
+content. Local files override marketplace versions, causing confusion and preventing
+auto-updates.
 
-**Detection method:** Read `~/.claude/plugins/installed_plugins.json` to see if
-marketplace plugins are installed (ai-coding-config, agents, skills). If plugins are
-installed, check if the user also has local copies in their project.
+Compare files in `.claude/commands/`, `.claude/agents/`, `.claude/skills/` against the
+marketplace cache. Identify duplicates by filename match.
 
-Check for these local directories:
+Preserve custom files that exist only locally. The ai-coding-config.md command file
+stays in projects for discoverability.
 
-- `.claude/commands/` (as a real directory, not symlink)
-- `.claude/agents/` (as a real directory, not symlink)
-- `.claude/skills/` (as a real directory, not symlink)
-
-**Why this happens:** Some projects were set up before the marketplace approach. They
-have local copies of commands/agents/skills that are now outdated and create confusion
-because they override the marketplace versions.
-
-**Critical constraint:** Only remove files that are duplicates of marketplace content.
-Preserve any custom commands, agents, or skills the user created themselves.
-
-**Duplicate identification strategy:**
-
-For each directory type (commands, agents, skills):
-
-1. Use Glob to list files in the marketplace plugin install path
-2. Use Glob to list files in the local project directory
-3. Compare the two lists to identify exact filename matches
-4. Only remove the duplicates
-
-Example paths to check:
-
-- Commands: `~/.claude/plugins/cache/ai-coding-config/core/*/commands/` vs
-  `.claude/commands/`
-- Agents: `~/.claude/plugins/cache/ai-coding-config/core/*/agents/` vs `.claude/agents/`
-- Skills: `~/.claude/plugins/cache/ai-coding-config/core/*/skills/` vs `.claude/skills/`
-
-Get the plugin version from installed_plugins.json to construct the correct path.
-
-**Exception:** Never remove `.claude/commands/ai-coding-config.md` even if it's a
-duplicate - this file needs to stay in the project.
-
-**User communication and choice:**
-
-If duplicates are found, explain the situation clearly:
-
-"I found duplicate files in your project. You have local copies of
-commands/agents/skills that are also available through the Claude Code plugin
-marketplace.
-
-**What's the plugin marketplace?**
-
-The Claude Code plugin marketplace is a centralized system where commands, agents, and
-skills are installed once globally and automatically stay up to date. Instead of copying
-files into each project, plugins are installed to `~/.claude/plugins/` and shared across
-all your projects.
-
-Benefits:
-
-- Auto-updates when you run `/ai-coding-config update`
-- One source of truth across all projects
-- No manual file copying or syncing needed
-
-Read more: https://github.com/TechNickAI/ai-coding-config#plugin-marketplace
-
-**Your situation:**
-
-You have local files that duplicate marketplace content. Local files override
-marketplace versions, which means:
-
-- Your local copies don't auto-update
-- You might be using outdated versions
-- It's confusing which version is actually running
-
-**Found duplicates:** [List specific duplicate files with their locations, e.g.:]
-
-- `.claude/commands/autotask.md`
-- `.claude/agents/code-reviewer.md`
-- `.claude/skills/research.md`
-
-**Custom files that will be preserved:** [List files that exist locally but not in
-marketplace, e.g.:]
-
-- `.claude/agents/logo-fetcher.md` (your custom agent)
-- `.claude/commands/ai-coding-config.md` (required in project)
-
-**Recommendation:** Remove the duplicate files and rely on the marketplace plugins. Your
-custom files will be preserved."
-
-Use AskUserQuestion to present the choice:
-
-- "Remove duplicates and use marketplace (Recommended)" - Explanation: "Delete duplicate
-  files, keep custom files, rely on marketplace for updates"
-- "Keep both" - Explanation: "Local files will continue to override marketplace
-  versions"
-
-If user chooses to remove duplicates:
-
-- Use individual `rm` commands for each duplicate file
-- Confirm what was removed
-- Confirm what was preserved (ai-coding-config.md + any custom files)
-- Remind: "You're now using marketplace plugins. Run `/ai-coding-config update` anytime
-  to get the latest versions."
-
-The goal is to eliminate confusion by removing duplicates while preserving custom work
-and educating the user about the marketplace approach. </local-duplicate-cleanup>
-
-<claude-code-update>
-For Claude Code users with plugins installed:
-
-1. Check which plugins are installed (list installed plugins)
-2. Update all installed plugins:
-
-```bash
-# Update all plugins from the marketplace
-/plugin update ai-coding-config
-/plugin update agents
-/plugin update skills
-# Update personality if installed
-/plugin update personality-samantha  # or whichever is installed
-```
-
-3. Report what was updated with version changes.
-
-</claude-code-update>
+If duplicates exist, explain the situation and offer to remove them so the user gets
+marketplace auto-updates. </local-duplicate-cleanup>
 
 <cursor-update>
-For Cursor users with symlinks:
+For Cursor users, update copied configuration files.
 
-<architecture-check>
-Check for legacy v2 architecture (rules/ at root):
-- `rules/` is a real directory
-- `.cursor/rules/` is a symlink to `../rules/`
+Pull latest from source repository, then compare versions using YAML frontmatter. Update
+files where the source version is newer than the installed version.
 
-If detected, offer migration back to standard architecture:
-
-1. "Migrate to standard architecture (Recommended)" - Moves rules back to
-   `.cursor/rules/`, removes root symlink
-2. "Skip migration, just update configs" - Updates within current structure
-
-Migration steps if accepted: a. `rm .cursor/rules` (remove symlink) b.
-`mv rules .cursor/rules` (move real directory back) c. Update configs to point to
-`.cursor/rules/`
-
-Current architecture (no migration needed):
-
-- `.cursor/rules/` is a real directory
-- No `rules/` directory at root in user projects </architecture-check>
-
-<deprecated-files-check>
-Check for deprecated files in the user's PROJECT:
-
-- `rules/git-commit-message.mdc` → merged into `git-interaction.mdc`
-- `rules/marianne-williamson.mdc` → renamed to `luminous.mdc`
-
-If found, offer removal/rename with explanation.
-
-Note: Files in `~/.ai_coding_config` are updated via git pull automatically.
-</deprecated-files-check>
-
-<symlink-compatibility-check>
-Existing symlinks should continue working after the 1.2.0 update because the source
-repo's `.claude/` directories are now symlinks themselves (to `plugins/`).
-
-Chain example: `project/.claude/commands/` → `~/.ai_coding_config/.claude/commands/` →
-`../plugins/core/commands/`
-
-This resolves correctly. Only check symlinks if they point directly to old paths like:
-
-- `~/.ai_coding_config/plugins/code-review/` (deleted)
-- `~/.ai_coding_config/plugins/dev-agents/` (deleted)
-- `~/.ai_coding_config/plugins/skills/` (deleted)
-- `~/.ai_coding_config/plugins/agents/` (deleted)
-
-If direct symlinks to deleted paths found, offer to update:
-
-- `.claude/commands/` → `~/.ai_coding_config/plugins/core/commands/`
-- `.claude/agents/` → `~/.ai_coding_config/plugins/core/agents/`
-- `.claude/skills/` → `~/.ai_coding_config/plugins/core/skills/`
-  </symlink-compatibility-check>
-
-<file-updates>
-All configuration files (rules, agents, skills, commands, personalities) use `version: X.Y.Z` in YAML frontmatter. Files without version metadata count as v0.0.0.
-
-**Version comparison strategy:** Use the Grep tool (not bash grep) to extract version
-metadata. Run one Grep call for source files with an absolute path like
-`~/.ai_coding_config/.cursor/rules/` and one for installed files. The Grep tool handles
-file iteration internally and returns clean results without shell parsing issues.
-
-For Cursor, compare COPIED files:
+Files to compare:
 
 - Rules: `~/.ai_coding_config/.cursor/rules/` vs `.cursor/rules/`
-- Personalities: `~/.ai_coding_config/plugins/personalities/` vs
+- Commands: `~/.ai_coding_config/plugins/core/commands/` vs `.cursor/commands/`
+- Personality: `~/.ai_coding_config/plugins/personalities/` vs
   `.cursor/rules/personalities/`
 
-Symlinked files (commands, agents, skills) are already current from repository git pull.
+Report updates with version progression: "git-interaction.mdc: 1.0.0 → 1.1.0"
 
-Identify files where source version is newer. Report updates with clear version
-progression (e.g., "git-interaction.mdc: 1.0.0 → 1.1.0").
+For personalities, preserve the user's `alwaysApply` setting when updating content.
 
-When updates available, use AskUserQuestion with options: Update all, Select
-individually, Show diffs first, Skip updates.
+Check for deprecated files and offer removal:
 
-When everything is current: "All files are up to date."
+- `.cursor/rules/git-commit-message.mdc` merged into git-interaction.mdc
+- `.cursor/rules/marianne-williamson.mdc` renamed to luminous.mdc
 
-For personalities, preserve the user's `alwaysApply` setting. Never silently overwrite
-customizations.
+<legacy-symlink-migration>
+Check if the project has old symlinks from before the copy-based architecture:
 
-**Copying files:** When copying updated files, use absolute paths for both source and
-destination. A single `cp` command with full paths is safer than changing directories.
-</file-updates>
+- `.cursor/commands/` as symlink → should be a real directory with copied files
+- `.cursor/rules/` as symlink → should be a real directory with copied files
+
+If symlinks found, remove them and copy files from `~/.ai_coding_config/` instead. The
+copy-based approach ensures portability when the repo is cloned elsewhere.
+
+For Claude Code users who are Cursor-only (no marketplace):
+
+- `.claude/commands/` as symlink → remove and skip (not needed for Cursor)
+- `.claude/agents/` as symlink → remove and skip
+- `.claude/skills/` as symlink → remove and skip </legacy-symlink-migration>
 
 </cursor-update>
 
 <update-summary>
-For Claude Code:
-"Updated core, agents, skills plugins to version 1.2.0"
+Report what was accomplished:
 
-For Cursor: "Update complete:
+For Claude Code: "Marketplace healthy. ai-coding-config v6.0.0 installed. Auto-update
+enabled."
 
-- git-interaction.mdc: 1.0.0 → 1.1.0
-- prompt-engineering.mdc: 1.0.0 → 1.2.0
-- Installed new-rule.mdc (v1.0.0)
-- 12 files already current" </update-summary>
+For Cursor: "Updated 3 rules, 2 commands. 12 files already current."
+
+For both: Combine the summaries. </update-summary>
+
+<restart-guidance>
+Tell the user to restart Claude Code when any of these occurred:
+- Marketplace was reset or reinstalled
+- Plugins were updated to new versions
+- Auto-update setting was changed
+
+Plugins are loaded at startup, so changes take effect after restart.
+
+Message: "Restart Claude Code to load the updated plugins. Run `claude` in a new
+terminal, or use Cmd+Shift+P → 'Claude Code: Restart' in your IDE."
+
+If nothing changed (already up to date, no reset needed), skip the restart message.
+</restart-guidance>
 
 </update-mode>
 
