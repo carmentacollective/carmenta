@@ -45,7 +45,6 @@ import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
-import { FeatureTip } from "@/components/ui/feature-tip";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useUserContext } from "@/lib/auth/user-context";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
@@ -211,7 +210,7 @@ function HoloThreadInner() {
 
 /**
  * Welcome screen shown when thread is empty.
- * Includes a rotating feature tip below the greeting to help users discover capabilities.
+ * Feature tips now appear via OracleWhisper in the header.
  */
 function ThreadWelcome() {
     return (
@@ -220,7 +219,6 @@ function ThreadWelcome() {
                 className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
                 subtitleClassName="mt-2 text-base text-foreground/60"
             />
-            <FeatureTip className="mt-8" />
         </div>
     );
 }
