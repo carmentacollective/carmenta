@@ -165,7 +165,7 @@ function slugify(text: string): string {
             .replace(/-+/g, "-")
             // Trim hyphens from start and end
             .replace(/^-|-$/g, "")
-            // Limit length (60 chars for slug + 1 hyphen + 6+ for ID)
+            // Limit length to 60 chars for clean, readable URLs
             .slice(0, 60)
             // Trim trailing hyphen if we cut mid-word
             .replace(/-$/, "")
