@@ -255,6 +255,7 @@ describe("Ingestion Engine", () => {
                     id: "doc-existing",
                     path: "profile.preferences",
                     content: "Nick prefers TypeScript over JavaScript",
+                    sourceType: "conversation",
                     updatedAt: new Date("2024-01-01"),
                 },
                 reasoning: "Found conflicting preference",

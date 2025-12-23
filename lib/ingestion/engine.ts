@@ -49,10 +49,11 @@ export async function ingest(
             "Searching for related knowledge"
         );
 
+        // Limit array sizes before concatenation to prevent memory spikes
         const searchQuery = [
-            ...extracted.topics,
-            ...extracted.people,
-            ...extracted.projects,
+            ...extracted.topics.slice(0, 10),
+            ...extracted.people.slice(0, 10),
+            ...extracted.projects.slice(0, 10),
         ]
             .join(" ")
             .slice(0, 200); // Limit query length
@@ -120,7 +121,7 @@ export async function ingest(
                             id: dedupResult.existingDoc.id,
                             path: dedupResult.existingDoc.path,
                             content: dedupResult.existingDoc.content,
-                            sourceType: item.sourceType, // Assume same for now
+                            sourceType: dedupResult.existingDoc.sourceType,
                             updatedAt: dedupResult.existingDoc.updatedAt,
                         },
                         conflict

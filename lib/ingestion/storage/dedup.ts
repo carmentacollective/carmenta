@@ -10,7 +10,25 @@
 import { searchKnowledge } from "@/lib/kb/search";
 import { read } from "@/lib/kb";
 import { logger } from "@/lib/logger";
-import type { IngestableItem, DeduplicationResult } from "../types";
+import type { Document } from "@/lib/db/schema";
+import type { IngestableItem, DeduplicationResult, SourceType } from "../types";
+
+/**
+ * Map DB sourceType enum back to ingestion SourceType
+ */
+function mapDbSourceType(dbSourceType: Document["sourceType"]): SourceType {
+    const mapping: Partial<Record<Document["sourceType"], SourceType>> = {
+        conversation_extraction: "conversation",
+        conversation_decision: "conversation",
+        conversation_commitment: "conversation",
+        integration_limitless: "limitless",
+        integration_fireflies: "fireflies",
+        integration_gmail: "gmail",
+        integration_notion: "notion",
+        manual: "user_explicit",
+    };
+    return mapping[dbSourceType] ?? "conversation";
+}
 
 /**
  * Check if an item is a duplicate and determine action
@@ -40,35 +58,29 @@ export async function checkDuplication(
         "🔍 Checking for duplicates"
     );
 
-    // Step 1: Check by source ID (exact match)
-    if (item.sourceId) {
-        const { results } = await searchKnowledge(userId, "", {
-            maxResults: 1,
-            includeContent: true,
-        });
+    // Step 1: Check by path first (most reliable)
+    // If path already exists, we should update it
+    const existingByPath = await read(userId, path);
+    if (existingByPath) {
+        logger.info(
+            {
+                path,
+                existingId: existingByPath.id,
+            },
+            "🔗 Found existing document at path"
+        );
 
-        const sourceMatch = results.find((doc) => doc.source.id === item.sourceId);
-
-        if (sourceMatch) {
-            logger.info(
-                {
-                    sourceId: item.sourceId,
-                    existingPath: sourceMatch.path,
-                },
-                "🔗 Found exact source ID match"
-            );
-
-            return {
-                action: "update",
-                existingDoc: {
-                    id: sourceMatch.id,
-                    path: sourceMatch.path,
-                    content: sourceMatch.content,
-                    updatedAt: sourceMatch.source.updatedAt,
-                },
-                reasoning: `Found existing document with same source ID (${item.sourceId})`,
-            };
-        }
+        return {
+            action: "update",
+            existingDoc: {
+                id: existingByPath.id,
+                path: existingByPath.path,
+                content: existingByPath.content,
+                sourceType: mapDbSourceType(existingByPath.sourceType),
+                updatedAt: existingByPath.updatedAt,
+            },
+            reasoning: `Found existing document at path ${path}`,
+        };
     }
 
     // Step 2: Check by entity + category match
@@ -116,6 +128,7 @@ export async function checkDuplication(
                 id: bestMatch.id,
                 path: bestMatch.path,
                 content: bestMatch.content,
+                sourceType: mapDbSourceType(bestMatch.source.type),
                 updatedAt: bestMatch.source.updatedAt,
             },
             reasoning: `Found very similar document (${Math.round(similarity * 100)}% similar) at ${bestMatch.path}`,
@@ -138,6 +151,7 @@ export async function checkDuplication(
                 id: bestMatch.id,
                 path: bestMatch.path,
                 content: bestMatch.content,
+                sourceType: mapDbSourceType(bestMatch.source.type),
                 updatedAt: bestMatch.source.updatedAt,
             },
             reasoning: `Found related document (${Math.round(similarity * 100)}% similar) - may need merging`,

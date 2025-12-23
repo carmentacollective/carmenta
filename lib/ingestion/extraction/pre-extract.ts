@@ -27,6 +27,15 @@ function getHaiku(): LanguageModel {
  * This is a quick pass to identify search targets before main ingestion
  */
 export async function preExtract(content: string): Promise<PreExtractionResult> {
+    // Validate input type
+    if (typeof content !== "string") {
+        logger.error(
+            { contentType: typeof content },
+            "Invalid content type for pre-extraction"
+        );
+        return { people: [], projects: [], topics: [] };
+    }
+
     try {
         const { object } = await generateObject({
             model: getHaiku(),

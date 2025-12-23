@@ -79,6 +79,7 @@ export interface DeduplicationResult {
         id: string;
         path: string;
         content: string;
+        sourceType: SourceType;
         updatedAt: Date;
     };
     reasoning: string;
