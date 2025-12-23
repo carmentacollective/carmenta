@@ -15,6 +15,7 @@ import {
     useRef,
     useEffect,
     useCallback,
+    memo,
     type FormEvent,
     type KeyboardEvent,
     type ComponentProps,
@@ -203,8 +204,9 @@ function HoloThreadInner() {
 /**
  * Scroll-to-bottom button using use-stick-to-bottom context.
  * Only renders when user has scrolled up from the bottom.
+ * Memoized to prevent unnecessary rerenders of the icon during scroll events.
  */
-function ScrollToBottomButton() {
+const ScrollToBottomButton = memo(function ScrollToBottomButton() {
     const { isAtBottom, scrollToBottom } = useStickToBottomContext();
 
     if (isAtBottom) return null;
@@ -218,7 +220,7 @@ function ScrollToBottomButton() {
             <ArrowDown className="h-5 w-5 text-foreground/70" />
         </button>
     );
-}
+});
 
 /**
  * Welcome screen shown when thread is empty.
