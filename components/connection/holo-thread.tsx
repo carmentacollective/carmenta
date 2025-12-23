@@ -22,7 +22,15 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
-import { Square, ArrowDown, CornerDownLeft, MoreHorizontal, X } from "lucide-react";
+import {
+    Square,
+    ArrowDown,
+    CornerDownLeft,
+    MoreHorizontal,
+    X,
+    Pencil,
+    Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { UIMessage } from "@ai-sdk/react";
@@ -47,7 +55,7 @@ import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
-import { RegenerateButton } from "@/components/ui/regenerate-button";
+import { RegenerateMenu } from "@/components/ui/regenerate-menu";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import {
     ToolProgress,
@@ -1010,8 +1018,11 @@ function MessageActions({
     align = "left",
     messageId,
     onRegenerate,
+    onRegenerateWithModel,
+    currentModelId,
     isRegenerating,
     wasStopped = false,
+    onEdit,
 }: {
     content: string;
     isLast: boolean;
@@ -1021,10 +1032,16 @@ function MessageActions({
     messageId?: string;
     /** Callback to regenerate from this message */
     onRegenerate?: (messageId: string) => Promise<void>;
+    /** Callback to regenerate with a specific model */
+    onRegenerateWithModel?: (messageId: string, modelId: string) => Promise<void>;
+    /** Currently active model ID (for showing selection in menu) */
+    currentModelId?: string;
     /** Whether a regeneration is currently in progress */
     isRegenerating?: boolean;
     /** Whether this message was stopped mid-stream */
     wasStopped?: boolean;
+    /** Callback to enter edit mode (user messages only) */
+    onEdit?: () => void;
 }) {
     // Hide during streaming - content is incomplete
     if (isStreaming) return null;
@@ -1032,6 +1049,12 @@ function MessageActions({
     const handleRegenerate = async () => {
         if (messageId && onRegenerate) {
             await onRegenerate(messageId);
+        }
+    };
+
+    const handleRegenerateWithModel = async (modelId: string) => {
+        if (messageId && onRegenerateWithModel) {
+            await onRegenerateWithModel(messageId, modelId);
         }
     };
 
@@ -1053,6 +1076,21 @@ function MessageActions({
                     Response stopped
                 </span>
             )}
+            {/* Edit button for user messages */}
+            {onEdit && (
+                <button
+                    onClick={onEdit}
+                    aria-label="Edit message"
+                    className={cn(
+                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "hover:bg-foreground/10 active:bg-foreground/15",
+                        "text-foreground/60 hover:text-foreground/90"
+                    )}
+                >
+                    <Pencil className="h-3.5 w-3.5" />
+                </button>
+            )}
             <CopyButton
                 text={content}
                 ariaLabel="Copy message"
@@ -1061,11 +1099,14 @@ function MessageActions({
                 showMenu={true}
             />
             {messageId && onRegenerate && (
-                <RegenerateButton
+                <RegenerateMenu
                     onRegenerate={handleRegenerate}
+                    onRegenerateWithModel={
+                        onRegenerateWithModel ? handleRegenerateWithModel : undefined
+                    }
+                    currentModelId={currentModelId}
                     isRegenerating={isRegenerating}
                     disabled={isStreaming}
-                    ariaLabel="Regenerate this response"
                 />
             )}
         </div>
@@ -1139,10 +1180,86 @@ function UserAvatarInner({
 
 /**
  * User message bubble with holographic gradient and action toolbar.
+ * Supports inline edit mode for modifying the message and regenerating.
  */
 function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean }) {
     const content = getMessageContent(message);
     const fileParts = getFileParts(message);
+    const { editMessageAndRegenerate, isLoading } = useChatContext();
+
+    // Edit mode state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState(content);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Focus textarea when entering edit mode
+    useEffect(() => {
+        if (isEditing && textareaRef.current) {
+            textareaRef.current.focus();
+            // Move cursor to end
+            textareaRef.current.selectionStart = textareaRef.current.value.length;
+        }
+    }, [isEditing]);
+
+    // Reset edit content when exiting edit mode or when original content changes
+    useEffect(() => {
+        if (!isEditing) {
+            setEditContent(content);
+        }
+    }, [isEditing, content]);
+
+    const handleEdit = useCallback(() => {
+        setEditContent(content);
+        setIsEditing(true);
+    }, [content]);
+
+    const handleCancel = useCallback(() => {
+        setIsEditing(false);
+        setEditContent(content);
+    }, [content]);
+
+    const handleSave = useCallback(async () => {
+        if (!editContent.trim() || isSubmitting || isLoading) return;
+
+        // No changes made - just exit edit mode
+        if (editContent.trim() === content.trim()) {
+            setIsEditing(false);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await editMessageAndRegenerate(message.id, editContent.trim());
+            setIsEditing(false);
+        } catch (err) {
+            logger.error({ error: err }, "Failed to save edit");
+            toast.error("Failed to save edit");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [
+        editContent,
+        content,
+        message.id,
+        editMessageAndRegenerate,
+        isSubmitting,
+        isLoading,
+    ]);
+
+    // Handle keyboard shortcuts in textarea
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent<HTMLTextAreaElement>) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                handleCancel();
+            } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleSave();
+            }
+        },
+        [handleCancel, handleSave]
+    );
 
     return (
         <div className="my-4 flex w-full justify-end">
@@ -1168,14 +1285,79 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                         </div>
                     )}
 
-                    {/* Text content with expansion for long messages */}
-                    {content && (
-                        <ExpandableText>
-                            <MarkdownRenderer content={content} />
-                        </ExpandableText>
+                    {/* Edit mode: textarea with controls */}
+                    {isEditing ? (
+                        <div className="flex flex-col gap-2">
+                            <textarea
+                                ref={textareaRef}
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isSubmitting}
+                                className={cn(
+                                    "w-full resize-none rounded-lg border border-foreground/10 bg-background/50 px-3 py-2 text-sm",
+                                    "focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50",
+                                    "placeholder:text-foreground/40",
+                                    isSubmitting && "opacity-50"
+                                )}
+                                rows={Math.min(10, editContent.split("\n").length + 1)}
+                                placeholder="Edit your message..."
+                            />
+                            <div className="flex items-center justify-end gap-2">
+                                <span className="mr-auto text-xs text-foreground/40">
+                                    ⌘↵ to save
+                                </span>
+                                <button
+                                    onClick={handleCancel}
+                                    disabled={isSubmitting}
+                                    className={cn(
+                                        "inline-flex h-7 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+                                        "hover:bg-foreground/10 active:bg-foreground/15",
+                                        "text-foreground/60 hover:text-foreground/90",
+                                        isSubmitting && "cursor-not-allowed opacity-50"
+                                    )}
+                                >
+                                    <X className="h-3 w-3" />
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={
+                                        isSubmitting || isLoading || !editContent.trim()
+                                    }
+                                    className={cn(
+                                        "inline-flex h-7 items-center justify-center gap-1.5 rounded-md bg-primary/10 px-2.5 text-xs font-medium transition-all",
+                                        "hover:bg-primary/20 active:bg-primary/25",
+                                        "text-primary",
+                                        (isSubmitting ||
+                                            isLoading ||
+                                            !editContent.trim()) &&
+                                            "cursor-not-allowed opacity-50"
+                                    )}
+                                >
+                                    <Check className="h-3 w-3" />
+                                    {isSubmitting ? "Saving..." : "Save & Regenerate"}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Normal mode: rendered content */
+                        content && (
+                            <ExpandableText>
+                                <MarkdownRenderer content={content} />
+                            </ExpandableText>
+                        )
                     )}
                 </div>
-                <MessageActions content={content} isLast={isLast} align="right" />
+                {/* Hide actions during edit mode */}
+                {!isEditing && (
+                    <MessageActions
+                        content={content}
+                        isLast={isLast}
+                        align="right"
+                        onEdit={handleEdit}
+                    />
+                )}
             </div>
         </div>
     );
@@ -1203,7 +1385,8 @@ function AssistantMessage({
     wasStopped?: boolean;
 }) {
     const { concierge } = useConcierge();
-    const { regenerateFrom, isLoading } = useChatContext();
+    const { regenerateFrom, regenerateFromWithModel, isLoading } = useChatContext();
+    const { overrides } = useModelOverrides();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
@@ -1237,6 +1420,9 @@ function AssistantMessage({
     // Show thinking indicator only when streaming AND no content yet AND this is the last message
     // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
     const showThinking = isStreaming && !hasContent && isLast && hasSelected;
+
+    // Current model ID for regenerate menu - prefer override, fallback to concierge selection
+    const currentModelId = overrides.modelId ?? concierge?.modelId;
 
     // Determine if we have LLM output to show (any of: reasoning, tools, files, content, or thinking)
     const hasLlmOutput =
@@ -1349,6 +1535,10 @@ function AssistantMessage({
                                             align="left"
                                             messageId={message.id}
                                             onRegenerate={regenerateFrom}
+                                            onRegenerateWithModel={
+                                                regenerateFromWithModel
+                                            }
+                                            currentModelId={currentModelId}
                                             isRegenerating={isLoading}
                                             wasStopped={wasStopped}
                                         />
@@ -1378,6 +1568,8 @@ function AssistantMessage({
                         align="left"
                         messageId={message.id}
                         onRegenerate={regenerateFrom}
+                        onRegenerateWithModel={regenerateFromWithModel}
+                        currentModelId={currentModelId}
                         isRegenerating={isLoading}
                         wasStopped={wasStopped}
                     />
