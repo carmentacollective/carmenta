@@ -88,6 +88,7 @@ import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
+import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 
 export function HoloThread() {
     return (
@@ -1738,6 +1739,29 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
     // Track if initial autofocus has been applied (prevents re-focus on resize)
     const hasInitialFocusRef = useRef(false);
 
+    // Track if we've emitted user engagement event this session
+    // (once whisper is dismissed, no need to emit again)
+    const hasEmittedEngagementRef = useRef(false);
+
+    // Emit user engagement event (dismisses feature tips whisper)
+    const emitUserEngaged = useCallback(() => {
+        if (hasEmittedEngagementRef.current) return;
+        hasEmittedEngagementRef.current = true;
+        window.dispatchEvent(new CustomEvent(USER_ENGAGED_EVENT));
+    }, []);
+
+    // Wrap handleInputChange to detect first keystroke (dismisses feature tips)
+    const handleInputChangeWithEngagement = useCallback(
+        (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            // Emit engagement on first character typed
+            if (e.target.value.length > 0) {
+                emitUserEngaged();
+            }
+            handleInputChange(e);
+        },
+        [handleInputChange, emitUserEngaged]
+    );
+
     // Paste handler - detect images and large text from clipboard
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
@@ -1898,6 +1922,9 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             // Don't send while uploading or already loading
             if (isLoading || isComposing || isUploading) return;
 
+            // Signal user engagement (dismisses feature tips whisper)
+            emitUserEngaged();
+
             const message = input.trim();
             lastSentMessageRef.current = message;
             wasStoppedRef.current = false; // Reset stop flag for new message
@@ -1938,6 +1965,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             setInput,
             append,
             clearFiles,
+            emitUserEngaged,
         ]
     );
 
@@ -2064,7 +2092,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
                 <textarea
                     ref={inputRef}
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={handleInputChangeWithEngagement}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     onCompositionStart={() => setIsComposing(true)}
