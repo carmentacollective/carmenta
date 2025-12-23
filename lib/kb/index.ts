@@ -396,6 +396,7 @@ export async function upsert(
                 sourceType: input.sourceType ?? "manual",
                 sourceId: input.sourceId,
                 tags: input.tags ?? [],
+                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
             },
         })
         .returning();

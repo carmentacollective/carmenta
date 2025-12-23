@@ -107,6 +107,7 @@ async function handleUserCreated(user: ClerkUserData): Promise<void> {
                 lastName: user.last_name,
                 displayName,
                 imageUrl: user.image_url,
+                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
             },
         });
 

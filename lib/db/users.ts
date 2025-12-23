@@ -83,6 +83,7 @@ export async function getOrCreateUser(
                 lastName: profile?.lastName,
                 imageUrl: profile?.imageUrl,
                 lastSignedInAt: new Date(),
+                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
             },
         })
         .returning();
