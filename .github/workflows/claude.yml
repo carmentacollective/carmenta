@@ -55,7 +55,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Skip permission prompts - GitHub Actions is non-interactive with no human to approve
           # Quality gates below (lint, type-check, tests) catch any issues before merge
-          claude_args: --dangerously-skip-permissions
+          claude_args: --model opus --dangerously-skip-permissions
           additional_permissions: |
             actions: read
 
