@@ -26,10 +26,16 @@ Either a merged PR resolving the issue, or a well-explained triage decision clos
 /do-issue 123       # Explicit issue number
 ```
 
+## GitHub Interaction
+
+Use `gh` CLI for all GitHub operations. Use reactions to communicate progress: 👀 when
+analyzing, 🚀 when starting work, ❤️ on helpful user comments.
+
 ## Workflow
 
 <fetch-and-analyze>
-Read the issue to understand what's being requested. Check for existing work (open PRs, other assignees, closed state). Extract the core request, user impact, and any reproduction steps or requirements.
+Fetch the issue with `gh`. Check for existing PRs, assignees, and state. Extract the
+core request, user impact, and requirements. Add 👀 reaction.
 </fetch-and-analyze>
 
 <triage>
@@ -46,31 +52,14 @@ appropriate. Done.
 For Fix: continue to implementation. </triage>
 
 <prepare>
-When proceeding with a fix:
-
-Take ownership of the issue: assign yourself, add in-progress label if available,
-comment with your implementation approach (2-3 bullets). This shows users their issue is
-being worked on. </prepare>
+When proceeding with a fix: self-assign the issue, add in-progress label if available,
+add 🚀 reaction, and comment with your implementation approach (2-3 bullets).
+</prepare>
 
 <implement>
-Use /autotask to handle the implementation:
-
-```
-/autotask "Resolve issue #{number}: {title}
-
-Context from issue:
-{relevant details from issue body and comments}
-
-Requirements:
-{extracted requirements}
-
-Acceptance criteria:
-{what success looks like}
-"
-```
-
-The PR description created by /autotask must include "Fixes #{number}" so GitHub
-auto-links and closes the issue when merged. </implement>
+Use /autotask to implement the fix. Ensure the PR description includes "Fixes #{number}"
+so GitHub auto-links and closes the issue when merged.
+</implement>
 
 <polish>
 Use /address-pr-comments to handle bot feedback autonomously.
@@ -79,42 +68,19 @@ This gets the PR to "ready to merge" state without human intervention for bot-re
 feedback. </polish>
 
 <finalize>
-Comment on the issue with the PR link. The issue will auto-close when the PR merges due to the "Fixes #" keyword in the PR description.
+Comment on the issue with the PR link. Add ❤️ to helpful user comments. The issue
+auto-closes when the PR merges due to the "Fixes #" keyword.
 </finalize>
 
 ## Progress Tracking
 
-Use TodoWrite to maintain visibility through the workflow. Create semantic todos that
-reflect workflow phases at the start, mark each in_progress when you begin, completed
-when done. This ensures transparency and prevents dropping work mid-cycle.
-
-Example todo structure:
-
-```
-[
-  { content: "Analyze issue and make triage decision", activeForm: "Analyzing issue and making triage decision" },
-  { content: "Implement fix via /autotask", activeForm: "Implementing fix via /autotask" },
-  { content: "Address bot feedback via /address-pr-comments", activeForm: "Addressing bot feedback" },
-  { content: "Link PR to issue and finalize", activeForm: "Linking PR and finalizing" }
-]
-```
-
-Adapt the structure to your specific workflow - the goal is progress transparency, not
-rigid adherence to a template.
+Use TodoWrite to track workflow phases. Create todos at the start, update status as you
+progress. The goal is transparency and ensuring you complete all phases.
 
 ## Edge Cases
 
-<already-assigned>
-If the issue is assigned to someone else, ask before taking it over. Don't assume it's abandoned.
-</already-assigned>
-
-<pr-exists>
-If a PR already exists for the issue, check if it's stale (no activity in 7+ days). If active, skip this issue. If stale, ask before taking over.
-</pr-exists>
-
-<issue-closed>
-If the issue is closed, ask before reopening and working on it. May have been closed for a reason.
-</issue-closed>
+If assigned to someone else, ask before taking over. If a PR already exists, skip if
+active or ask if stale (7+ days). If closed, ask before reopening.
 
 ## Completion Criteria
 
@@ -130,30 +96,17 @@ Don't stop mid-workflow. The todos help ensure you complete all phases.
 
 ## Error Recovery
 
-If /autotask or /address-pr-comments fail, evaluate whether the failure is recoverable:
-
-**Recoverable** (transient API error, missing dependency): Retry with additional context
-or constraints.
-
-**Fundamental** (architectural blocker, unclear requirements that need user input):
-Comment on the issue explaining the blocker and ask for guidance.
-
-Don't silently abandon the workflow. Either complete it or clearly communicate why you
-cannot.
+If /autotask or /address-pr-comments fail, evaluate recoverability. Transient errors
+(API failures, missing dependencies): retry with additional context. Fundamental
+blockers (architectural issues, unclear requirements): comment on the issue explaining
+the blocker and ask for guidance. Never silently abandon the workflow.
 
 ## Key Principles
 
-**Autonomous but transparent**: Make decisions independently, but document them clearly
-for users.
-
-**Professional communication**: Users took time to file issues. Treat their
-contributions with respect whether accepting or declining.
-
-**Bias toward action**: When triaging as "fix", move quickly to implementation. When
-triaging as "won't fix", explain thoughtfully but concisely.
-
-**Complete the cycle**: Don't leave issues half-done. Either deliver the PR or close
-with explanation.
+Autonomous but transparent: make decisions independently, document them clearly.
+Professional communication: users took time to file issues, treat them with respect.
+Bias toward action: move quickly to implementation or explain thoughtfully why not.
+Complete the cycle: deliver the PR or close with explanation, never leave half-done.
 
 ## Integration Points
 
@@ -166,10 +119,3 @@ Follows existing rules:
 
 - `@.cursor/rules/issue-triage.mdc` - Triage decisions
 - `@.cursor/rules/git-commit-message.mdc` - Commit formatting (via /autotask)
-
-## Notes
-
-This command creates real commits, PRs, and modifies issue state. It's designed for
-autonomous operation but can ask for guidance on ambiguous decisions.
-
-The goal is ultra-tight development loop: point at an issue, get a merged PR.
