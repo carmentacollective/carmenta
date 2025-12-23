@@ -1081,8 +1081,9 @@ function MessageActions({
                 <button
                     onClick={onEdit}
                     aria-label="Edit message"
+                    data-tooltip="Revise this and get a fresh response"
                     className={cn(
-                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "tooltip inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"

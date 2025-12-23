@@ -58,8 +58,11 @@ export function Oracle({
                 config.container,
                 // Breathing animation
                 state === "breathing" && "oracle-breathing",
+                // Tooltip
+                href && "tooltip",
                 className
             )}
+            data-tooltip={href ? "Return to Carmenta home" : undefined}
         >
             <Image
                 src="/logos/icon-transparent.png"
