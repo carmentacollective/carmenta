@@ -11,15 +11,17 @@
  * - Contextual: appears naturally below the greeting
  * - Concise: one tip at a time, brief content
  * - Beautiful: glass morphism matching Carmenta's aesthetic
+ * - Actionable: CTAs help users discover how to use features
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, ExternalLink } from "lucide-react";
+import { X, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { getRandomTip, type Tip } from "@/lib/tips/tips-config";
+import { getRandomTip, type Feature } from "@/lib/features/feature-catalog";
+import { useSettingsModal } from "@/components/connection/connect-runtime-provider";
 
 interface FeatureTipProps {
     className?: string;
@@ -28,8 +30,9 @@ interface FeatureTipProps {
 export function FeatureTip({ className }: FeatureTipProps) {
     // Select tip on client-side only to avoid hydration mismatch
     // Server renders null, client picks a random tip on mount
-    const [tip, setTip] = useState<Tip | null>(null);
+    const [tip, setTip] = useState<Feature | null>(null);
     const [isDismissed, setIsDismissed] = useState(false);
+    const { setSettingsOpen } = useSettingsModal();
 
     useEffect(() => {
         // Defer to next tick to avoid React Compiler lint warning
@@ -41,6 +44,13 @@ export function FeatureTip({ className }: FeatureTipProps) {
     const handleDismiss = useCallback(() => {
         setIsDismissed(true);
     }, []);
+
+    const handleCtaClick = useCallback(() => {
+        if (tip?.cta?.action === "settings") {
+            setSettingsOpen(true);
+            setIsDismissed(true); // Dismiss tip after opening settings
+        }
+    }, [tip, setSettingsOpen]);
 
     // Show the tip if we have one and it hasn't been dismissed
     const showTip = tip && !isDismissed;
@@ -72,7 +82,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                         <Sparkles className="h-3.5 w-3.5 text-primary" />
                                     </div>
                                     <h3 className="text-sm font-semibold text-foreground/90">
-                                        {tip.title}
+                                        {tip.tipTitle}
                                     </h3>
                                 </div>
 
@@ -88,8 +98,16 @@ export function FeatureTip({ className }: FeatureTipProps) {
 
                             {/* Description */}
                             <p className="text-sm leading-relaxed text-foreground/70">
-                                {tip.description}
+                                {tip.tipDescription}
                             </p>
+
+                            {/* Coming soon badge */}
+                            {!tip.available && (
+                                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                                    Coming soon
+                                </span>
+                            )}
 
                             {/* Optional media */}
                             {tip.media && (
@@ -103,15 +121,37 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                 </div>
                             )}
 
-                            {/* Optional doc link */}
-                            {tip.docUrl && (
-                                <Link
-                                    href={tip.docUrl}
-                                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
-                                >
-                                    Learn more
-                                    <ExternalLink className="h-3 w-3" />
-                                </Link>
+                            {/* CTA button - only show for available features */}
+                            {tip.cta && tip.available && (
+                                <div className="mt-3">
+                                    {tip.cta.action === "link" && tip.cta.href && (
+                                        <Link
+                                            href={tip.cta.href}
+                                            target={
+                                                tip.cta.external ? "_blank" : undefined
+                                            }
+                                            rel={
+                                                tip.cta.external
+                                                    ? "noopener noreferrer"
+                                                    : undefined
+                                            }
+                                            className="btn-glass-interactive inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+                                        >
+                                            {tip.cta.label}
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </Link>
+                                    )}
+                                    {tip.cta.action === "settings" && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCtaClick}
+                                            className="btn-glass-interactive inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+                                        >
+                                            {tip.cta.label}
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

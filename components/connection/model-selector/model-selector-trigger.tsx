@@ -5,14 +5,17 @@
  *
  * A composer button that opens the full model selection modal.
  * Shows the current model icon or sparkles for Auto mode.
+ *
+ * The modal open state is managed by ConnectRuntimeProvider so that
+ * other components (like feature tips) can also trigger the modal.
  */
 
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
 
 import { MODELS, type ModelConfig } from "@/lib/model-config";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { cn } from "@/lib/utils";
+import { useSettingsModal } from "@/components/connection/connect-runtime-provider";
 import { ModelSelectorModal } from "./model-selector-modal";
 
 import type { ModelOverrides } from "./types";
@@ -37,7 +40,7 @@ export function ModelSelectorTrigger({
     className,
     conciergeModel,
 }: ModelSelectorTriggerProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const { settingsOpen, setSettingsOpen } = useSettingsModal();
 
     // Determine which icon to show
     const manualModel = overrides.modelId
@@ -57,7 +60,7 @@ export function ModelSelectorTrigger({
         <div className={cn("relative", className)}>
             {/* Trigger Button */}
             <button
-                onClick={() => setIsOpen(true)}
+                onClick={() => setSettingsOpen(true)}
                 disabled={disabled}
                 className={cn(
                     "btn-icon-glass tooltip group relative",
@@ -86,8 +89,8 @@ export function ModelSelectorTrigger({
 
             {/* Modal */}
             <ModelSelectorModal
-                isOpen={isOpen}
-                onClose={() => setIsOpen(false)}
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
                 overrides={overrides}
                 onChange={onChange}
                 conciergeModel={conciergeModel}
