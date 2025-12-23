@@ -75,9 +75,9 @@ export async function createConnection(
         })
         .returning();
 
-    // Generate slug from the auto-generated ID
+    // Generate slug from title only (ID is now a separate URL segment)
     const publicId = encodeConnectionId(connection.id);
-    const slug = generateSlug(title, publicId);
+    const slug = generateSlug(title);
 
     // Update with the real slug
     const [updated] = await db
@@ -182,8 +182,8 @@ export async function updateConnection(
     };
 
     if (updates.title !== undefined) {
-        const publicId = encodeConnectionId(connectionId);
-        updateData.slug = generateSlug(updates.title, publicId);
+        // Slug is title-only (ID is now a separate URL segment)
+        updateData.slug = generateSlug(updates.title);
     }
 
     const [updated] = await db

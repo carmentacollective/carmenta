@@ -53,7 +53,7 @@ interface ConnectionContextValue {
     initialMessages: UIMessageLike[];
     /** Persisted concierge data for hydrating UI on page load */
     initialConcierge: PersistedConciergeData | null;
-    setActiveConnection: (slug: string) => void;
+    setActiveConnection: (id: string, slug: string) => void;
     createNewConnection: () => void;
     archiveActiveConnection: () => void;
     deleteConnection: (id: string) => void;
@@ -115,10 +115,10 @@ export function ConnectionProvider({
     const isLoaded = initialConnections.length > 0 || activeConnection !== null;
 
     const setActiveConnectionNav = useCallback(
-        (slug: string) => {
+        (id: string, slug: string) => {
             // Clear display title on navigation - server will provide the real one
             setDisplayTitle(null);
-            router.push(`/connection/${slug}`);
+            router.push(`/connection/${slug}/${id}`);
         },
         [router]
     );

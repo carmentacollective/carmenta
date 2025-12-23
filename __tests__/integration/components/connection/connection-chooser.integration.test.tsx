@@ -121,8 +121,10 @@ describe("ConnectionChooser Integration", () => {
             const publicConn1 = toPublicConnection(updatedConn1!);
             const publicConn2 = toPublicConnection(conn2);
 
-            // Set pathname to the titled connection
-            mockPathname.mockReturnValue(`/connection/${publicConn1.slug}`);
+            // Set pathname to the titled connection (new URL format: /connection/slug/id)
+            mockPathname.mockReturnValue(
+                `/connection/${publicConn1.slug}/${publicConn1.id}`
+            );
 
             // 2. Render with real provider
             render(
@@ -202,8 +204,10 @@ describe("ConnectionChooser Integration", () => {
             const publicConn1 = toPublicConnection(updatedConn1!);
             const publicConn2 = toPublicConnection(updatedConn2!);
 
-            // Active connection is conn1
-            mockPathname.mockReturnValue(`/connection/${publicConn1.slug}`);
+            // Active connection is conn1 (new URL format: /connection/slug/id)
+            mockPathname.mockReturnValue(
+                `/connection/${publicConn1.slug}/${publicConn1.id}`
+            );
 
             render(
                 <ConnectionProvider
@@ -261,7 +265,9 @@ describe("ConnectionChooser Integration", () => {
             const updatedConn = await getConnectionWithMessages(conn.id);
             const publicConn = toPublicConnection(updatedConn!);
 
-            mockPathname.mockReturnValue(`/connection/${publicConn.slug}`);
+            mockPathname.mockReturnValue(
+                `/connection/${publicConn.slug}/${publicConn.id}`
+            );
 
             render(
                 <ConnectionProvider
@@ -321,7 +327,9 @@ describe("ConnectionChooser Integration", () => {
             const updatedConn = await getConnectionWithMessages(conn.id);
             const publicConn = toPublicConnection(updatedConn!);
 
-            mockPathname.mockReturnValue(`/connection/${publicConn.slug}`);
+            mockPathname.mockReturnValue(
+                `/connection/${publicConn.slug}/${publicConn.id}`
+            );
 
             const { container } = render(
                 <ConnectionProvider
@@ -377,7 +385,9 @@ describe("ConnectionChooser Integration", () => {
             const updatedConn = await getConnectionWithMessages(conn.id);
             const publicConn = toPublicConnection(updatedConn!);
 
-            mockPathname.mockReturnValue(`/connection/${publicConn.slug}`);
+            mockPathname.mockReturnValue(
+                `/connection/${publicConn.slug}/${publicConn.id}`
+            );
 
             render(
                 <ConnectionProvider

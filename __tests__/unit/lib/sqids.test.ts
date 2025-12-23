@@ -3,7 +3,7 @@ import {
     encodeConnectionId,
     decodeConnectionId,
     generateSlug,
-    extractIdFromSlug,
+    isValidConnectionId,
 } from "@/lib/sqids";
 
 describe("encodeConnectionId", () => {
@@ -61,123 +61,104 @@ describe("decodeConnectionId", () => {
 });
 
 describe("generateSlug", () => {
-    it("generates slug from title and ID", () => {
-        const slug = generateSlug("Fix authentication bug", "2ot9ib");
-        expect(slug).toBe("fix-authentication-bug-2ot9ib");
+    it("generates slug from title only (no ID appended)", () => {
+        const slug = generateSlug("Fix authentication bug");
+        expect(slug).toBe("fix-authentication-bug");
     });
 
     it("handles null title", () => {
-        const slug = generateSlug(null, "2ot9ib");
-        expect(slug).toBe("connection-2ot9ib");
+        const slug = generateSlug(null);
+        expect(slug).toBe("connection");
     });
 
     it("handles undefined title", () => {
-        const slug = generateSlug(undefined, "2ot9ib");
-        expect(slug).toBe("connection-2ot9ib");
+        const slug = generateSlug(undefined);
+        expect(slug).toBe("connection");
     });
 
     it("handles empty string title", () => {
-        const slug = generateSlug("", "2ot9ib");
-        expect(slug).toBe("connection-2ot9ib");
+        const slug = generateSlug("");
+        expect(slug).toBe("connection");
     });
 
     it("handles emoji-only title with fallback", () => {
-        const slug = generateSlug("✨🎉🔥", "xyz789");
-        expect(slug).toBe("connection-xyz789");
+        const slug = generateSlug("✨🎉🔥");
+        expect(slug).toBe("connection");
     });
 
     it("strips emojis but keeps text", () => {
-        const slug = generateSlug("✨ Add dark mode", "xyz789");
-        expect(slug).toBe("add-dark-mode-xyz789");
+        const slug = generateSlug("✨ Add dark mode");
+        expect(slug).toBe("add-dark-mode");
     });
 
     it("converts to lowercase", () => {
-        const slug = generateSlug("FIX Auth BUG", "2ot9ib");
-        expect(slug).toBe("fix-auth-bug-2ot9ib");
+        const slug = generateSlug("FIX Auth BUG");
+        expect(slug).toBe("fix-auth-bug");
     });
 
     it("replaces spaces with hyphens", () => {
-        const slug = generateSlug("multiple   spaces   here", "2ot9ib");
-        expect(slug).toBe("multiple-spaces-here-2ot9ib");
+        const slug = generateSlug("multiple   spaces   here");
+        expect(slug).toBe("multiple-spaces-here");
     });
 
     it("removes special characters", () => {
-        const slug = generateSlug("What's the bug? Fix it!", "2ot9ib");
-        expect(slug).toBe("whats-the-bug-fix-it-2ot9ib");
+        const slug = generateSlug("What's the bug? Fix it!");
+        expect(slug).toBe("whats-the-bug-fix-it");
     });
 
     it("truncates very long titles", () => {
         const longTitle = "a".repeat(100);
-        const slug = generateSlug(longTitle, "2ot9ib");
-        // 60 char max for title + hyphen + 6+ char ID
-        expect(slug.length).toBeLessThanOrEqual(67);
-        expect(slug.endsWith("-2ot9ib")).toBe(true);
+        const slug = generateSlug(longTitle);
+        // 60 char max for title
+        expect(slug.length).toBeLessThanOrEqual(60);
     });
 
     it("handles title with only special characters", () => {
-        const slug = generateSlug("!@#$%^&*()", "2ot9ib");
-        expect(slug).toBe("connection-2ot9ib");
+        const slug = generateSlug("!@#$%^&*()");
+        expect(slug).toBe("connection");
     });
 });
 
-describe("extractIdFromSlug", () => {
-    it("extracts ID from slug with title", () => {
-        const id = extractIdFromSlug("fix-auth-bug-2ot9ib");
-        expect(id).toBe("2ot9ib");
+describe("isValidConnectionId", () => {
+    it("returns true for valid Sqid format", () => {
+        expect(isValidConnectionId("2ot9ib")).toBe(true);
+        expect(isValidConnectionId("abc123")).toBe(true);
+        expect(isValidConnectionId("a1b2c3d4e5f6")).toBe(true);
     });
 
-    it("extracts ID from slug without title", () => {
-        const id = extractIdFromSlug("connection-2ot9ib");
-        expect(id).toBe("2ot9ib");
+    it("returns false for IDs that are too short", () => {
+        expect(isValidConnectionId("abc")).toBe(false);
+        expect(isValidConnectionId("12345")).toBe(false);
     });
 
-    it("extracts ID from ID-only slug", () => {
-        const id = extractIdFromSlug("2ot9ib");
-        expect(id).toBe("2ot9ib");
+    it("returns false for uppercase characters", () => {
+        expect(isValidConnectionId("ABCDEF")).toBe(false);
+        expect(isValidConnectionId("Abc123")).toBe(false);
     });
 
-    it("extracts longer Sqids (variable length)", () => {
-        // Sqids can generate IDs longer than minLength
-        const id = extractIdFromSlug("fix-bug-2ot9ib12ab");
-        expect(id).toBe("2ot9ib12ab");
+    it("returns false for special characters", () => {
+        expect(isValidConnectionId("abc-123")).toBe(false);
+        expect(isValidConnectionId("abc_123")).toBe(false);
+        expect(isValidConnectionId("abc!123")).toBe(false);
     });
 
-    it("throws on slug that is too short", () => {
-        expect(() => extractIdFromSlug("abc")).toThrow("too short");
-    });
-
-    it("throws on empty slug", () => {
-        expect(() => extractIdFromSlug("")).toThrow("too short");
-    });
-
-    it("throws on slug with invalid ID characters", () => {
-        expect(() => extractIdFromSlug("title-ABCDEF")).toThrow(
-            "lowercase alphanumeric"
-        );
-    });
-
-    it("throws on slug with uppercase ID", () => {
-        expect(() => extractIdFromSlug("title-A1B2C3")).toThrow(
-            "lowercase alphanumeric"
-        );
-    });
-
-    it("throws on slug with special characters in ID", () => {
-        expect(() => extractIdFromSlug("title-a1b2c!")).toThrow(
-            "lowercase alphanumeric"
-        );
+    it("returns false for empty string", () => {
+        expect(isValidConnectionId("")).toBe(false);
     });
 });
 
 describe("encode/decode integration", () => {
-    it("works with generateSlug and extractIdFromSlug", () => {
-        // Simulate the full flow: DB ID → Sqid → Slug → Extract → Decode
+    it("works with generateSlug and isValidConnectionId", () => {
+        // Simulate the full flow: DB ID → Sqid → validate → decode
         const dbId = 123;
         const sqid = encodeConnectionId(dbId);
-        const slug = generateSlug("Test Connection", sqid);
-        const extractedSqid = extractIdFromSlug(slug);
-        const decodedId = decodeConnectionId(extractedSqid);
+        const slug = generateSlug("Test Connection");
 
+        // URL would be /connection/{slug}/{sqid}
+        expect(isValidConnectionId(sqid)).toBe(true);
+        expect(slug).toBe("test-connection");
+
+        const decodedId = decodeConnectionId(sqid);
         expect(decodedId).toBe(dbId);
     });
 });

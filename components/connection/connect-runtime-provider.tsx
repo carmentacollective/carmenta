@@ -371,7 +371,11 @@ function createFetchWrapper(
         title: string | null;
         modelId: string | null;
     }) => void,
-    onNewConnectionCreated: (title: string | null, slug: string | null) => void
+    onNewConnectionCreated: (
+        title: string | null,
+        slug: string | null,
+        id: string | null
+    ) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const url = typeof input === "string" ? input : input.toString();
@@ -474,7 +478,7 @@ function createFetchWrapper(
                         title: decodedTitle,
                         modelId: conciergeData?.modelId ?? null,
                     });
-                    onNewConnectionCreated(decodedTitle, connectionSlug);
+                    onNewConnectionCreated(decodedTitle, connectionSlug, connectionId);
 
                     // Update the ref so subsequent requests (regenerate, follow-up messages)
                     // use this connection instead of creating new ones
@@ -533,15 +537,15 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
     const handleNewConnectionCreated = useCallback(
-        (title: string | null, slug: string | null) => {
+        (title: string | null, slug: string | null, id: string | null) => {
             if (title) {
                 document.title = `${title} | Carmenta`;
             }
-            if (slug) {
+            if (slug && id) {
                 window.history.replaceState(
                     { ...window.history.state },
                     "",
-                    `/connection/${slug}`
+                    `/connection/${slug}/${id}`
                 );
             }
         },

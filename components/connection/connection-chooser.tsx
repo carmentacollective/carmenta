@@ -237,7 +237,7 @@ function ConnectionRow({
     isFresh: boolean;
     isConfirming: boolean;
     index: number;
-    onSelect: (slug: string) => void;
+    onSelect: (id: string, slug: string) => void;
     onDelete: (id: string) => void;
     onToggleStar: (id: string) => void;
     onDeleteClick: (e: React.MouseEvent, id: string) => void;
@@ -310,7 +310,7 @@ function ConnectionRow({
 
             {/* Connection info - clickable */}
             <button
-                onClick={() => onSelect(conn.slug)}
+                onClick={() => onSelect(conn.id, conn.slug)}
                 className="relative flex flex-1 items-center gap-3 text-left transition-all group-hover:translate-x-0.5"
             >
                 <span
@@ -373,7 +373,7 @@ function ConnectionDropdown({
     unstarredConnections: PublicConnection[];
     activeConnection: PublicConnection | null;
     freshConnectionIds: Set<string>;
-    onSelect: (slug: string) => void;
+    onSelect: (id: string, slug: string) => void;
     onDelete: (id: string) => void;
     onToggleStar: (id: string) => void;
     query: string;
@@ -704,8 +704,8 @@ export function ConnectionChooser({
     }, []);
 
     const handleSelect = useCallback(
-        (slug: string) => {
-            setActiveConnection(slug);
+        (id: string, slug: string) => {
+            setActiveConnection(id, slug);
             closeDropdown();
         },
         [setActiveConnection, closeDropdown]

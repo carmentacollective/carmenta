@@ -175,8 +175,8 @@ export async function createNewConnection(): Promise<CreateConnectionResult> {
  * Creates a new connection and redirects to the connection page
  */
 export async function createAndRedirect(): Promise<void> {
-    const { slug } = await createNewConnection();
-    redirect(`/connection/${slug}`);
+    const { id, slug } = await createNewConnection();
+    redirect(`/connection/${slug}/${id}`);
 }
 
 /**
