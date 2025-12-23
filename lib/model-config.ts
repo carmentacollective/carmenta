@@ -6,7 +6,9 @@
  * - The UI for displaying model options
  * - The API for validation
  *
- * Keep in sync with knowledge/model-rubric.md
+ * SYNC REQUIREMENTS - When adding/removing models, also update:
+ * - knowledge/model-rubric.md (detailed model documentation)
+ * - lib/tips/tips-config.ts (multi-model tip mentions model names)
  */
 
 export type ModelProvider = "anthropic" | "google" | "x-ai" | "openai" | "perplexity";

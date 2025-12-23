@@ -35,6 +35,14 @@ export interface Tip {
  * Add new tips here as features are released.
  */
 export const TIPS: Tip[] = [
+    /**
+     * SYNC WITH MODEL CONFIG: This tip references specific model names.
+     * When updating lib/model-config.ts or knowledge/model-rubric.md,
+     * update the model names mentioned in this description to match.
+     *
+     * Current models: Claude, GPT-4, Gemini, Grok, Perplexity
+     * See: lib/model-config.ts (MODELS array)
+     */
     {
         id: "multi-model",
         title: "Every Model, One Interface",
