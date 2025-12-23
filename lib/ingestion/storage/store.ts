@@ -28,10 +28,18 @@ function mapSourceType(sourceType: SourceType): Document["sourceType"] {
         fireflies: "integration_fireflies",
         notion: "integration_notion",
         gmail: "integration_gmail",
-        calendar: "manual", // Calendar events map to manual until integration_calendar is added
+        calendar: "manual", // Calendar maps to manual (no integration_calendar type yet)
         user_explicit: "manual",
     };
-    return mapping[sourceType] ?? "manual";
+    const result = mapping[sourceType];
+    if (!result) {
+        logger.warn(
+            { sourceType },
+            "Unknown source type in store - defaulting to manual"
+        );
+        return "manual";
+    }
+    return result;
 }
 
 /**

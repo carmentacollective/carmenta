@@ -74,7 +74,6 @@ export const ingestableItemSchema = z.object({
         "insight",
     ]),
     entities: extractedEntitiesSchema,
-    primaryEntity: z.string().describe("The main entity this content is about"),
     confidence: z
         .number()
         .min(0)

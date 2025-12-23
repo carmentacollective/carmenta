@@ -15,6 +15,12 @@ import type { IngestableItem, DeduplicationResult, SourceType } from "../types";
 
 /**
  * Map DB sourceType enum back to ingestion SourceType
+ *
+ * NOTE: `manual` maps to `calendar` not `user_explicit` because both calendar
+ * and user_explicit store as `manual` in the DB (no integration_calendar type yet).
+ * We default to calendar (authority 50) rather than user_explicit (authority 100)
+ * to avoid false authority inflation. This means user_explicit items lose their
+ * authority after storage - acceptable for MVP.
  */
 function mapDbSourceType(dbSourceType: Document["sourceType"]): SourceType {
     const mapping: Partial<Record<Document["sourceType"], SourceType>> = {
@@ -25,9 +31,17 @@ function mapDbSourceType(dbSourceType: Document["sourceType"]): SourceType {
         integration_fireflies: "fireflies",
         integration_gmail: "gmail",
         integration_notion: "notion",
-        manual: "user_explicit",
+        manual: "calendar", // Conservative: calendar not user_explicit (avoids authority inflation)
     };
-    return mapping[dbSourceType] ?? "conversation";
+    const result = mapping[dbSourceType];
+    if (!result) {
+        logger.warn(
+            { dbSourceType },
+            "Unknown DB source type in dedup - defaulting to conversation"
+        );
+        return "conversation";
+    }
+    return result;
 }
 
 /**

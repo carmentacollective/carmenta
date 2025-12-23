@@ -59,7 +59,10 @@ export async function ingest(
             .slice(0, 200); // Limit query length
 
         const searchResponse = await searchKnowledge(userId, searchQuery, {
-            entities: [...extracted.people, ...extracted.projects],
+            entities: [
+                ...extracted.people.slice(0, 10),
+                ...extracted.projects.slice(0, 10),
+            ],
             maxResults: 10,
             includeContent: true,
         });
@@ -147,10 +150,16 @@ export async function ingest(
                 }
 
                 // 4d. Store document
+                // Use existing doc's path if updating/merging, otherwise use proposed path
+                const finalPath =
+                    dedupResult.existingDoc && finalAction !== "create"
+                        ? dedupResult.existingDoc.path
+                        : path;
+
                 const result = await storeDocument(
                     userId,
                     item,
-                    path,
+                    finalPath,
                     finalAction,
                     dedupResult.existingDoc?.id
                 );
