@@ -768,9 +768,14 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
      */
     const regenerateFromWithModel = useCallback(
         async (messageId: string, modelId: string) => {
-            // Set the model override - this will be picked up by the fetch wrapper
-            setOverrides((prev) => ({ ...prev, modelId }));
-            // Now regenerate (the override ref will be read at fetch time)
+            // Update both state and ref to avoid race condition
+            // The ref needs to be updated immediately so regenerateFrom reads the new value
+            setOverrides((prev) => {
+                const newOverrides = { ...prev, modelId };
+                overridesRef.current = newOverrides; // Sync ref immediately
+                return newOverrides;
+            });
+            // Now regenerate (the override ref will have the new value)
             await regenerateFrom(messageId);
         },
         [regenerateFrom, setOverrides]
@@ -787,23 +792,33 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             setDisplayError(null);
             setConcierge(null);
 
-            // Find the message index
+            // Find the message and its index
             const messageIndex = messages.findIndex((m) => m.id === messageId);
             if (messageIndex === -1) {
                 logger.error({ messageId }, "Message not found for edit");
                 return;
             }
 
+            const originalMessage = messages[messageIndex];
+
+            // Preserve non-text parts (file attachments) from the original message
+            const nonTextParts = originalMessage.parts.filter(
+                (part) => part.type !== "text"
+            );
+
             // Create updated messages array:
             // - Keep messages before the edited one
-            // - Update the edited message's content
+            // - Update the edited message's content while preserving file attachments
             // - Remove all messages after (they'll be regenerated)
             const updatedMessages = messages.slice(0, messageIndex + 1).map((m) => {
                 if (m.id === messageId) {
-                    // Update the user message content
+                    // Update text content while preserving file attachments
                     return {
                         ...m,
-                        parts: [{ type: "text" as const, text: newContent }],
+                        parts: [
+                            { type: "text" as const, text: newContent },
+                            ...nonTextParts,
+                        ],
                     };
                 }
                 return m;
@@ -812,13 +827,10 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             // Set the truncated and updated messages
             setMessages(updatedMessages);
 
-            // Now send the edited message to get a new response
-            // We use sendMessage directly since the message is already in the array
+            // Trigger regeneration from the edited message
+            // Use regenerate() instead of sendMessage() to avoid duplicating the user message
             try {
-                await sendMessage({
-                    role: "user",
-                    parts: [{ type: "text", text: newContent }],
-                });
+                await regenerate();
             } catch (err) {
                 logger.error(
                     { error: err, messageId },
@@ -827,7 +839,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 throw err;
             }
         },
-        [messages, setMessages, sendMessage, setConcierge]
+        [messages, setMessages, regenerate, setConcierge]
     );
 
     // Build context value
