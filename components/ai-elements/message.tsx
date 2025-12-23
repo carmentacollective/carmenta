@@ -180,12 +180,10 @@ export const MessageBranchContent = ({
         [children]
     );
 
-    // Use useEffect to update branches when they change
+    // Update branches whenever children change (not just length)
     useEffect(() => {
-        if (branches.length !== childrenArray.length) {
-            setBranches(childrenArray);
-        }
-    }, [childrenArray, branches, setBranches]);
+        setBranches(childrenArray);
+    }, [childrenArray, setBranches]);
 
     return childrenArray.map((branch, index) => (
         <div
@@ -358,16 +356,18 @@ export function MessageAttachment({
                 </>
             ) : (
                 <>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                <PaperclipIcon className="size-4" />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{attachmentLabel}</p>
-                        </TooltipContent>
-                    </Tooltip>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                    <PaperclipIcon className="size-4" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{attachmentLabel}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     {onRemove && (
                         <Button
                             aria-label="Remove attachment"
