@@ -144,6 +144,12 @@ interface ChatContextType {
     stop: () => void;
     /** Regenerate the last response */
     reload: () => void;
+    /**
+     * Regenerate response from a specific assistant message.
+     * Uses AI SDK 5.0's regenerate({ messageId }) to re-run from that point,
+     * discarding subsequent messages and generating a new response.
+     */
+    regenerateFrom: (messageId: string) => Promise<void>;
     /** Error from the last request */
     error: Error | null;
     /** Clear error */
@@ -723,6 +729,27 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         composer?.focus();
     }, [clearError]);
 
+    /**
+     * Regenerate from a specific assistant message.
+     * Wraps the AI SDK's regenerate({ messageId }) which handles:
+     * - Finding the message
+     * - Removing subsequent messages
+     * - Re-running generation from that point
+     */
+    const regenerateFrom = useCallback(
+        async (messageId: string) => {
+            setDisplayError(null);
+            setConcierge(null);
+            try {
+                await regenerate({ messageId });
+            } catch (err) {
+                logger.error({ error: err, messageId }, "Failed to regenerate");
+                throw err;
+            }
+        },
+        [regenerate, setConcierge]
+    );
+
     // Build context value
     const chatContextValue = useMemo<ChatContextType>(
         () => ({
@@ -731,6 +758,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             isLoading,
             stop,
             reload: regenerate,
+            regenerateFrom,
             error: displayError,
             clearError,
             input,
@@ -744,6 +772,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             isLoading,
             stop,
             regenerate,
+            regenerateFrom,
             displayError,
             clearError,
             input,

@@ -47,6 +47,7 @@ import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
+import { RegenerateButton } from "@/components/ui/regenerate-button";
 import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
 import {
     ToolProgress,
@@ -982,20 +983,37 @@ function MessageBubble({
  * - Last message: Always visible (teaches the pattern)
  * - Older messages: Hover-reveal on desktop, always visible on mobile
  * - During streaming: Hidden (don't show actions for incomplete content)
+ *
+ * For assistant messages, also shows regenerate button.
  */
 function MessageActions({
     content,
     isLast,
     isStreaming,
     align = "left",
+    messageId,
+    onRegenerate,
+    isRegenerating,
 }: {
     content: string;
     isLast: boolean;
     isStreaming?: boolean;
     align?: "left" | "right";
+    /** Message ID for regeneration (assistant messages only) */
+    messageId?: string;
+    /** Callback to regenerate from this message */
+    onRegenerate?: (messageId: string) => Promise<void>;
+    /** Whether a regeneration is currently in progress */
+    isRegenerating?: boolean;
 }) {
     // Hide during streaming - content is incomplete
     if (isStreaming) return null;
+
+    const handleRegenerate = async () => {
+        if (messageId && onRegenerate) {
+            await onRegenerate(messageId);
+        }
+    };
 
     return (
         <div
@@ -1016,6 +1034,14 @@ function MessageActions({
                 size="sm"
                 showMenu={true}
             />
+            {messageId && onRegenerate && (
+                <RegenerateButton
+                    onRegenerate={handleRegenerate}
+                    isRegenerating={isRegenerating}
+                    disabled={isStreaming}
+                    ariaLabel="Regenerate this response"
+                />
+            )}
         </div>
     );
 }
@@ -1149,6 +1175,7 @@ function AssistantMessage({
     isStreaming: boolean;
 }) {
     const { concierge } = useConcierge();
+    const { regenerateFrom, isLoading } = useChatContext();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
@@ -1289,6 +1316,9 @@ function AssistantMessage({
                                             isLast={isLast}
                                             isStreaming={isStreaming}
                                             align="left"
+                                            messageId={message.id}
+                                            onRegenerate={regenerateFrom}
+                                            isRegenerating={isLoading}
                                         />
                                     </div>
                                 </div>
@@ -1314,6 +1344,9 @@ function AssistantMessage({
                         isLast={isLast}
                         isStreaming={isStreaming}
                         align="left"
+                        messageId={message.id}
+                        onRegenerate={regenerateFrom}
+                        isRegenerating={isLoading}
                     />
                 </div>
             )}
