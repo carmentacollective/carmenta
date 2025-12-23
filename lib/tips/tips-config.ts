@@ -46,14 +46,14 @@ export const TIPS: Tip[] = [
         id: "drag-drop-files",
         title: "Drop Files Anywhere",
         description:
-            "Drag and drop images, PDFs, or documents directly into the chat. Paste screenshots with ⌘V. We'll handle the rest.",
+            "Drag and drop images, PDFs, or documents directly into the chat. Paste screenshots from your clipboard. We'll handle the rest.",
         priority: 9,
     },
     {
         id: "star-conversations",
         title: "Star Important Conversations",
         description:
-            "Keep your most valuable conversations at your fingertips. Use ⌘⇧S to star any conversation for quick access.",
+            "Keep your most valuable conversations at your fingertips. Star any conversation from the menu for quick access later.",
         priority: 8,
     },
     {

@@ -13,100 +13,110 @@
  * - Beautiful: glass morphism matching Carmenta's aesthetic
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { getRandomTip } from "@/lib/tips/tips-config";
+import { getRandomTip, type Tip } from "@/lib/tips/tips-config";
 
 interface FeatureTipProps {
     className?: string;
 }
 
 export function FeatureTip({ className }: FeatureTipProps) {
-    // Select a random tip once on component mount
-    // useMemo with empty deps ensures stable selection across re-renders
-    const tip = useMemo(() => getRandomTip(), []);
+    // Select tip on client-side only to avoid hydration mismatch
+    // Server renders null, client picks a random tip on mount
+    const [tip, setTip] = useState<Tip | null>(null);
     const [isDismissed, setIsDismissed] = useState(false);
+
+    useEffect(() => {
+        // Defer to next tick to avoid React Compiler lint warning
+        // about synchronous setState in effects
+        const timer = setTimeout(() => setTip(getRandomTip()), 0);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleDismiss = useCallback(() => {
         setIsDismissed(true);
     }, []);
 
-    // Don't render until we have a tip (avoids hydration mismatch)
-    if (!tip || isDismissed) return null;
+    // Show the tip if we have one and it hasn't been dismissed
+    const showTip = tip && !isDismissed;
 
     return (
         <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{
-                    duration: 0.5,
-                    delay: 0.3, // Slight delay after greeting appears
-                    ease: [0.16, 1, 0.3, 1], // expo-out for smooth entrance
-                }}
-                className={cn("w-full max-w-md", className)}
-            >
-                <div className="feature-tip-card group relative overflow-hidden rounded-2xl border border-white/20 bg-white/50 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-black/30">
-                    {/* Subtle gradient accent */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-cyan-500/5 opacity-60" />
+            {showTip && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{
+                        duration: 0.5,
+                        delay: 0.3, // Slight delay after greeting appears
+                        ease: [0.16, 1, 0.3, 1], // expo-out for smooth entrance
+                    }}
+                    className={cn("w-full max-w-md", className)}
+                >
+                    <div className="feature-tip-card group relative overflow-hidden rounded-2xl border border-white/20 bg-white/50 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-black/30">
+                        {/* Subtle gradient accent */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-cyan-500/5 opacity-60" />
 
-                    {/* Content */}
-                    <div className="relative z-10">
-                        {/* Header with icon and dismiss */}
-                        <div className="mb-2 flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        {/* Content */}
+                        <div className="relative z-10">
+                            {/* Header with icon and dismiss */}
+                            <div className="mb-2 flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                    </div>
+                                    <h3 className="text-sm font-semibold text-foreground/90">
+                                        {tip.title}
+                                    </h3>
                                 </div>
-                                <h3 className="text-sm font-semibold text-foreground/90">
-                                    {tip.title}
-                                </h3>
+
+                                <button
+                                    type="button"
+                                    onClick={handleDismiss}
+                                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60 focus:outline-none focus-visible:bg-foreground/10 focus-visible:text-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/50"
+                                    aria-label="Dismiss tip"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
                             </div>
 
-                            <button
-                                onClick={handleDismiss}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60"
-                                aria-label="Dismiss tip"
-                            >
-                                <X className="h-3.5 w-3.5" />
-                            </button>
+                            {/* Description */}
+                            <p className="text-sm leading-relaxed text-foreground/70">
+                                {tip.description}
+                            </p>
+
+                            {/* Optional media */}
+                            {tip.media && (
+                                <div className="mt-3 overflow-hidden rounded-lg border border-foreground/10">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={tip.media.src}
+                                        alt={tip.media.alt}
+                                        className="h-auto w-full"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Optional doc link */}
+                            {tip.docUrl && (
+                                <Link
+                                    href={tip.docUrl}
+                                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+                                >
+                                    Learn more
+                                    <ExternalLink className="h-3 w-3" />
+                                </Link>
+                            )}
                         </div>
-
-                        {/* Description */}
-                        <p className="text-sm leading-relaxed text-foreground/70">
-                            {tip.description}
-                        </p>
-
-                        {/* Optional media */}
-                        {tip.media && (
-                            <div className="mt-3 overflow-hidden rounded-lg border border-foreground/10">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={tip.media.src}
-                                    alt={tip.media.alt}
-                                    className="h-auto w-full"
-                                />
-                            </div>
-                        )}
-
-                        {/* Optional doc link */}
-                        {tip.docUrl && (
-                            <Link
-                                href={tip.docUrl}
-                                className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
-                            >
-                                Learn more
-                                <ExternalLink className="h-3 w-3" />
-                            </Link>
-                        )}
                     </div>
-                </div>
-            </motion.div>
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 }
