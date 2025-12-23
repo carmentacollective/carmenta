@@ -70,7 +70,7 @@ export function StarButton({
                 onToggle();
             }}
             className={cn(
-                "relative z-10 rounded-md transition-all",
+                "tooltip relative z-10 rounded-md transition-all",
                 padding,
                 // Visibility: always show if starred, otherwise follow showOnHover
                 isStarred
@@ -87,7 +87,7 @@ export function StarButton({
                     : "focus-visible:ring-foreground/20",
                 className
             )}
-            title={label || (isStarred ? "Unstar connection" : "Star connection")}
+            data-tooltip={label || "Keep this connection at the top of your list"}
             aria-label={label || (isStarred ? "Unstar connection" : "Star connection")}
             aria-pressed={isStarred}
         >

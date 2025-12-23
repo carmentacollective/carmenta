@@ -60,11 +60,12 @@ export function ModelSelectorTrigger({
                 onClick={() => setIsOpen(true)}
                 disabled={disabled}
                 className={cn(
-                    "btn-icon-glass group relative",
+                    "btn-icon-glass tooltip group relative",
                     hasOverrides && !isAuto ? "ring-2 ring-primary/40" : "",
                     disabled && "btn-disabled"
                 )}
                 aria-label="Model settings"
+                data-tooltip="Choose AI model and adjust how we respond"
             >
                 {displayModel ? (
                     <ProviderIcon
