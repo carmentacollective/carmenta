@@ -77,39 +77,40 @@ export function decodeConnectionId(id: string): number | null {
 }
 
 /**
- * Default slug prefix when title is empty or contains only special characters.
+ * Default slug when title is empty or contains only special characters.
  */
-const DEFAULT_SLUG_PREFIX = "connection";
+const DEFAULT_SLUG = "connection";
 
 /**
- * Generate a URL-safe slug from a title and ID.
+ * Generate a URL-safe slug from a title.
+ *
+ * URL structure is now /connection/[slug]/[id] so the slug is title-only.
  *
  * @param title - The connection title (can be null/undefined)
- * @param id - The connection Sqid
- * @returns SEO-friendly slug: "title-slug-id" or "connection-id"
+ * @returns SEO-friendly slug from title, or "connection" as fallback
  *
  * @example
- * generateSlug("Fix authentication bug", "2ot9ib")
- * // => "fix-authentication-bug-2ot9ib"
+ * generateSlug("Fix authentication bug")
+ * // => "fix-authentication-bug"
  *
- * generateSlug(null, "2ot9ib")
- * // => "connection-2ot9ib"
+ * generateSlug(null)
+ * // => "connection"
  *
- * generateSlug("✨ Add dark mode", "xyz789")
- * // => "add-dark-mode-xyz789"
+ * generateSlug("✨ Add dark mode")
+ * // => "add-dark-mode"
  *
- * generateSlug("✨🎉🔥", "xyz789")
- * // => "connection-xyz789" (fallback for emoji-only titles)
+ * generateSlug("✨🎉🔥")
+ * // => "connection" (fallback for emoji-only titles)
  */
-export function generateSlug(title: string | null | undefined, id: string): string {
+export function generateSlug(title: string | null | undefined): string {
     const baseSlug = slugify(title ?? "");
 
     // Fallback if title was empty or contained only special characters
     if (!baseSlug) {
-        return `${DEFAULT_SLUG_PREFIX}-${id}`;
+        return DEFAULT_SLUG;
     }
 
-    return `${baseSlug}-${id}`;
+    return baseSlug;
 }
 
 /**
@@ -119,48 +120,20 @@ export function generateSlug(title: string | null | undefined, id: string): stri
 const SQID_PATTERN = /^[0-9a-z]{6,}$/;
 
 /**
- * Extract the connection ID from a slug.
+ * Validate a connection ID format.
  *
- * Sqids can vary in length (6+ characters), so we find the ID by looking
- * for the last segment after a hyphen that matches our pattern.
+ * With the URL structure /connection/[slug]/[id], the ID comes from
+ * a dedicated route parameter, so we just need to validate its format.
  *
- * @param slug - The full slug from URL
- * @returns The connection ID (6+ characters)
- * @throws Error if slug is malformed
+ * @param id - The ID to validate
+ * @returns true if valid Sqid format
  *
  * @example
- * extractIdFromSlug("fix-auth-bug-2ot9ib")
- * // => "2ot9ib"
+ * isValidConnectionId("2ot9ib") // => true
+ * isValidConnectionId("INVALID") // => false
  */
-export function extractIdFromSlug(slug: string): string {
-    // Slug must be at least MIN_LENGTH characters (ID only, no title)
-    if (slug.length < MIN_LENGTH) {
-        throw new Error(`Invalid slug: too short (minimum ${MIN_LENGTH} characters)`);
-    }
-
-    // Try to find the ID - it's the last segment that matches our pattern
-    // First, try the entire slug as just an ID
-    if (SQID_PATTERN.test(slug)) {
-        return slug;
-    }
-
-    // Otherwise, find the last hyphen and check if what follows is a valid ID
-    const lastHyphenIndex = slug.lastIndexOf("-");
-    if (lastHyphenIndex === -1) {
-        throw new Error(
-            `Invalid slug: ID portion must be ${MIN_LENGTH}+ lowercase alphanumeric characters`
-        );
-    }
-
-    const potentialId = slug.slice(lastHyphenIndex + 1);
-
-    if (!SQID_PATTERN.test(potentialId)) {
-        throw new Error(
-            `Invalid slug: ID portion must be ${MIN_LENGTH}+ lowercase alphanumeric characters`
-        );
-    }
-
-    return potentialId;
+export function isValidConnectionId(id: string): boolean {
+    return SQID_PATTERN.test(id);
 }
 
 /**
@@ -192,7 +165,7 @@ function slugify(text: string): string {
             .replace(/-+/g, "-")
             // Trim hyphens from start and end
             .replace(/^-|-$/g, "")
-            // Limit length (60 chars for slug + 1 hyphen + 6+ for ID)
+            // Limit length to 60 chars for clean, readable URLs
             .slice(0, 60)
             // Trim trailing hyphen if we cut mid-word
             .replace(/-$/, "")

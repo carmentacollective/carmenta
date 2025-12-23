@@ -274,7 +274,10 @@ describe("ConnectionChooser", () => {
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
-            expect(mockSetActiveConnection).toHaveBeenCalledWith("second-conversation");
+            expect(mockSetActiveConnection).toHaveBeenCalledWith(
+                "conn-2",
+                "second-conversation"
+            );
         });
 
         it("closes dropdown after selection", async () => {
@@ -298,7 +301,10 @@ describe("ConnectionChooser", () => {
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
-            expect(mockSetActiveConnection).toHaveBeenCalledWith("second-conversation");
+            expect(mockSetActiveConnection).toHaveBeenCalledWith(
+                "conn-2",
+                "second-conversation"
+            );
         });
 
         it("shows fresh badge for recently created connections", () => {

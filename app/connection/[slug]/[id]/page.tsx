@@ -4,22 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import { Chat, ConnectLayout } from "@/components/connection";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { loadConnection, getRecentConnections } from "@/lib/actions/connections";
-import { extractIdFromSlug } from "@/lib/sqids";
+import { isValidConnectionId, generateSlug } from "@/lib/sqids";
 
 interface ConnectionPageProps {
-    params: Promise<{ slug: string }>;
-}
-
-/**
- * Safely extract connection ID from slug.
- * Returns null if slug is malformed (triggers 404).
- */
-function safeExtractId(slug: string): string | null {
-    try {
-        return extractIdFromSlug(slug);
-    } catch {
-        return null;
-    }
+    params: Promise<{ slug: string; id: string }>;
 }
 
 /**
@@ -30,14 +18,13 @@ function safeExtractId(slug: string): string | null {
 export async function generateMetadata({
     params,
 }: ConnectionPageProps): Promise<Metadata> {
-    const { slug } = await params;
-    const connectionId = safeExtractId(slug);
+    const { id } = await params;
 
-    if (!connectionId) {
+    if (!isValidConnectionId(id)) {
         return { title: "Lost · Carmenta" };
     }
 
-    const result = await loadConnection(connectionId);
+    const result = await loadConnection(id);
 
     if (!result) {
         return {
@@ -58,16 +45,15 @@ export async function generateMetadata({
 }
 
 export default async function ConnectionPage({ params }: ConnectionPageProps) {
-    const { slug } = await params;
-    const connectionId = safeExtractId(slug);
+    const { slug, id } = await params;
 
-    // Invalid slug format - show 404
-    if (!connectionId) {
+    // Invalid ID format - show 404
+    if (!isValidConnectionId(id)) {
         notFound();
     }
 
     // Load the connection, messages, and concierge data
-    const result = await loadConnection(connectionId);
+    const result = await loadConnection(id);
 
     if (!result) {
         notFound();
@@ -77,8 +63,9 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
 
     // If the slug doesn't match the current connection slug, redirect to canonical URL
     // This handles cases where the title changed and old URLs need updating
-    if (connection.slug !== slug) {
-        redirect(`/connection/${connection.slug}`);
+    const expectedSlug = generateSlug(connection.title);
+    if (slug !== expectedSlug) {
+        redirect(`/connection/${expectedSlug}/${id}`);
     }
 
     // Also load recent connections for the header dropdown
