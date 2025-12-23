@@ -171,7 +171,9 @@ export async function getRecentConnections(
  */
 export async function updateConnection(
     connectionId: number,
-    updates: Partial<Pick<NewConnection, "title" | "status" | "modelId">>
+    updates: Partial<
+        Pick<NewConnection, "title" | "status" | "modelId" | "titleEdited">
+    >
 ): Promise<Connection | null> {
     // If title is being updated, regenerate the slug with encoded ID
     const updateData: Record<string, unknown> = {
