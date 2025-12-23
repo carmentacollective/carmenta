@@ -1491,12 +1491,24 @@
             view-transition-name: user-auth;
         }
 
-        /* Persistent elements don't animate - they morph position */
+        /* Persistent elements morph position without fade animation */
         ::view-transition-group(app-logo),
         ::view-transition-group(oracle-home),
         ::view-transition-group(theme-switcher),
         ::view-transition-group(user-auth) {
             animation-duration: 350ms;
+        }
+
+        /* Disable fade for persistent elements - they should only morph */
+        ::view-transition-old(app-logo),
+        ::view-transition-new(app-logo),
+        ::view-transition-old(oracle-home),
+        ::view-transition-new(oracle-home),
+        ::view-transition-old(theme-switcher),
+        ::view-transition-new(theme-switcher),
+        ::view-transition-old(user-auth),
+        ::view-transition-new(user-auth) {
+            animation: none;
         }
     }
 
