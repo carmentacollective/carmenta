@@ -1,5 +1,10 @@
+import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+
+const withBundleAnalyzer = bundleAnalyzer({
+    enabled: process.env.ANALYZE === "true",
+});
 
 const config: NextConfig = {
     // Create a standalone build with minimal dependencies
@@ -35,6 +40,13 @@ const config: NextConfig = {
         ],
     },
 
+    // Image optimization config
+    // Next.js 16 defaults: minimumCacheTTL 4h (was 60s), qualities [75] only
+    // Remote patterns for next/image optimization:
+    // - carmenta.ai: Marketing assets
+    // - *.supabase.co: User-uploaded files (KB attachments)
+    // Note: Clerk profile images use native <img> elements (various OAuth providers)
+    // Note: GIFs use next/image with unoptimized={true} for animation support
     images: {
         remotePatterns: [
             {
@@ -144,4 +156,4 @@ const sentryConfig = {
     // No special configuration needed
 };
 
-export default withSentryConfig(config, sentryConfig);
+export default withBundleAnalyzer(withSentryConfig(config, sentryConfig));
