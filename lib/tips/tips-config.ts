@@ -51,39 +51,43 @@ export const TIPS: Tip[] = [
         priority: 10,
     },
     {
-        id: "drag-drop-files",
-        title: "Drop Files Anywhere",
+        id: "file-understanding",
+        title: "PDFs. Screenshots. Code. Bring Everything.",
         description:
-            "Drag and drop images, PDFs, or documents directly into the chat. Paste screenshots from your clipboard. We'll handle the rest.",
+            "Images, documents, spreadsheets, code files—drop them in or paste from your clipboard. We understand them all.",
         priority: 9,
     },
     {
-        id: "star-conversations",
-        title: "Star Important Conversations",
+        id: "star-connections",
+        title: "Star What Matters",
         description:
-            "Keep your most valuable conversations at your fingertips. Star any conversation from the menu for quick access later.",
+            "Keep your most valuable connections within reach. Star any connection for quick access later.",
         priority: 8,
     },
+    /**
+     * SYNC WITH SERVICE REGISTRY: This tip references service count and names.
+     * When updating lib/integrations/services.ts, update this description.
+     *
+     * Current services (11 total):
+     * - Available: ClickUp, CoinMarketCap, Fireflies, Giphy, Google Calendar & Contacts, Limitless, Notion
+     * - Beta: Dropbox, Slack, X (Twitter)
+     * - Internal: Gmail
+     *
+     * See: lib/integrations/services.ts (SERVICE_REGISTRY array)
+     */
     {
         id: "service-integrations",
-        title: "Connected to Your Tools",
+        title: "Your Data, In the Conversation",
         description:
-            "Link your calendar, Notion, Slack, and 20+ services. Carmenta works with your existing workflow, not around it.",
+            "Connect Google Calendar, Notion, Slack, Dropbox, and more. Your data flows into the conversation—no copy-pasting between tabs.",
         docUrl: "/integrations",
         priority: 9,
-    },
-    {
-        id: "deep-research",
-        title: "Deep Research Mode",
-        description:
-            "Ask Carmenta to research any topic in depth. We'll search multiple sources, synthesize findings, and cite everything.",
-        priority: 7,
     },
     {
         id: "reasoning-visible",
         title: "See the Thinking",
         description:
-            "When reasoning models are used, you can expand to see the full thought process. Transparency in how conclusions are reached.",
+            "When we use reasoning models, you can expand to see every step of the thought process. No black boxes.",
         priority: 6,
     },
 ];
