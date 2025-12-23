@@ -103,6 +103,12 @@ digests. Carmenta works while you sleep and surfaces what matters when you're re
 First-class voice interaction. STT, TTS, natural conversation. Talk to Carmenta while
 driving, cooking, or thinking out loud. Not an afterthought - a core modality.
 
+### [Knowledge Ingestion Engine](knowledge-ingestion-engine.md)
+
+Autonomous extraction of valuable information from conversations and external sources.
+Determines what to store, where to store it, and keeps the knowledge base fresh.
+Integrates with follow-up engine and external integrations (Limitless, Fireflies, etc.).
+
 ### [Browser Automation](browser-automation.md)
 
 Browse the web as the user with their sessions. Deep research behind authentication,
