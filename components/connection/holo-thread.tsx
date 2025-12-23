@@ -1754,11 +1754,10 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         setConcierge(null);
 
         // Mark the last assistant message as stopped (for visual indicator)
-        const lastAssistant = [...messages]
-            .reverse()
-            .find((m) => m.role === "assistant");
-        if (lastAssistant) {
-            onMarkMessageStopped(lastAssistant.id);
+        // Only if the last message is actually an assistant message (not during pending state)
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.role === "assistant") {
+            onMarkMessageStopped(lastMessage.id);
         }
 
         // Restore message for quick correction (only if user hasn't typed new content)
