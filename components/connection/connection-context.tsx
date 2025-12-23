@@ -359,7 +359,7 @@ export function ConnectionProvider({
             unstarredConnections,
             activeConnection,
             activeConnectionId,
-            displayTitle: activeConnection?.title ?? displayTitle,
+            displayTitle: displayTitle ?? activeConnection?.title ?? null,
             freshConnectionIds,
             runningCount,
             isStreaming,
