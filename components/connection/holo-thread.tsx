@@ -1717,7 +1717,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         pendingFiles,
         removeFile,
         addPastedText,
-        getNextPastedFileName,
+        getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
     const { connections } = useConnection();
@@ -1775,13 +1775,38 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         [handleInputChange, emitUserEngaged]
     );
 
+    // Helper to insert text at cursor position and update input
+    const insertAtCursor = useCallback(
+        (text: string) => {
+            if (!inputRef.current) return;
+
+            const start = inputRef.current.selectionStart;
+            const end = inputRef.current.selectionEnd;
+            const currentValue = inputRef.current.value;
+
+            const newValue =
+                currentValue.substring(0, start) + text + currentValue.substring(end);
+
+            setInput(newValue);
+
+            // Position cursor after inserted text
+            setTimeout(() => {
+                const newPosition = start + text.length;
+                inputRef.current?.setSelectionRange(newPosition, newPosition);
+                inputRef.current?.focus();
+            }, 0);
+        },
+        [setInput]
+    );
+
     // Paste handler - detect images and large text from clipboard
+    // Inserts Claude Code-style placeholders: [Pasted Text #1], [Pasted Image #1]
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             const items = e.clipboardData?.items;
             if (!items) return;
 
-            // Priority 1: Handle images (existing behavior)
+            // Priority 1: Handle images
             const imageFiles: File[] = [];
             for (const item of Array.from(items)) {
                 if (item.type.startsWith("image/")) {
@@ -1798,17 +1823,34 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             if (imageFiles.length > 0 || hasLargeText) {
                 e.preventDefault();
 
-                // Process images
+                // Collect placeholders to insert at cursor
+                const placeholders: string[] = [];
+
+                // Process images - each gets its own placeholder
                 if (imageFiles.length > 0) {
-                    addFiles(imageFiles);
+                    for (const imageFile of imageFiles) {
+                        const { placeholder, filename } = getNextPlaceholder("image");
+                        // Rename file to match placeholder naming
+                        const renamedFile = new File([imageFile], filename, {
+                            type: imageFile.type,
+                        });
+                        addFiles([renamedFile], placeholder);
+                        placeholders.push(placeholder);
+                    }
                 }
 
                 // Process large text as attachment
                 if (hasLargeText) {
-                    const fileName = getNextPastedFileName("text");
+                    const { placeholder, filename } = getNextPlaceholder("text");
                     const blob = new Blob([plainText], { type: "text/plain" });
-                    const file = new File([blob], fileName, { type: "text/plain" });
-                    addPastedText([file], plainText);
+                    const file = new File([blob], filename, { type: "text/plain" });
+                    addPastedText([file], plainText, placeholder);
+                    placeholders.push(placeholder);
+                }
+
+                // Insert all placeholders at cursor position
+                if (placeholders.length > 0) {
+                    insertAtCursor(placeholders.join(" "));
                 }
 
                 return;
@@ -1816,7 +1858,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
 
             // Small text or no special content: let browser handle normally
         },
-        [addFiles, addPastedText, getNextPastedFileName]
+        [addFiles, addPastedText, getNextPlaceholder, insertAtCursor]
     );
 
     // Insert inline handler - converts file attachment back to textarea text
