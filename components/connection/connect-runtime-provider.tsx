@@ -475,6 +475,10 @@ function createFetchWrapper(
                         modelId: conciergeData?.modelId ?? null,
                     });
                     onNewConnectionCreated(decodedTitle, connectionSlug);
+
+                    // Update the ref so subsequent requests (regenerate, follow-up messages)
+                    // use this connection instead of creating new ones
+                    connectionIdRef.current = connectionId;
                 }
             }
 
