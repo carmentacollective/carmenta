@@ -46,8 +46,9 @@ Speed-first decision flow:
 1. User signals speed → Route to fastest model that handles the task
 2. Simple question, no attachments → Haiku (100 t/s, Anthropic values)
 3. Simple question + audio/video → Gemini Pro (124 t/s, required for media)
-4. Need tools + speed → GPT-5.2 (95 t/s, best tool accuracy)
-5. Maximum speed, don't care about provider → Grok (151 t/s)
+4. Simple tool use + speed → Haiku or Sonnet (Claude handles single tools fine)
+5. Multi-step tools + speed (no reasoning) → Grok (151 t/s, handles tool chains)
+6. Maximum speed, don't care about provider → Grok (151 t/s)
 
 When speed is priority, set reasoning to "none" or "minimal". Reasoning tokens add
 latency. A 100-token response at 100 t/s takes 1 second. The same response with 2K
@@ -97,15 +98,21 @@ Temperature: 0.2-0.4 factual, 0.5 conversational.
 
 ### openai/gpt-5.2
 
-Tool-calling champion (98.7% accuracy - highest measured). Default for all tool use.
-Professional work leader (GDPval ELO 1474, 70.9% vs experts). Intelligence: 73 (tied
-#1). Context: 400K tokens. Speed: 95 t/s (moderate - fast for a frontier model). Cost:
-$1.75/$14 per million. Images, PDFs, files. Adaptive reasoning (xhigh level). Released
-Dec 11, 2025.
+Tool-calling champion (98.7% accuracy - highest measured). Professional work leader
+(GDPval ELO 1474, 70.9% vs experts). Intelligence: 73 (tied #1). Context: 400K tokens.
+Speed: 95 t/s (moderate - fast for a frontier model). Cost: $1.75/$14 per million.
+Images, PDFs, files. Adaptive reasoning (xhigh level). Released Dec 11, 2025.
 
-Choose when: ANY tool calling. Multi-step agentic workflows. Function calling accuracy
-critical. Professional knowledge work. Research with tools. Software engineering
-(SWE-Bench 80%). Extended reasoning + tools.
+**Critical: NOT the default for all tool use.** Claude handles single tool calls and
+multi-step tools without reasoning just fine. GPT-5.2 is specifically for the case where
+Anthropic models fail: extended reasoning combined with multi-step tool orchestration.
+
+Choose when: Multi-step tool workflows that ALSO require extended reasoning. This is the
+specific case where Claude fails due to reasoning tokens not flowing into subsequent
+tool steps. Also good for: professional knowledge work, complex agentic workflows.
+
+Do NOT choose for: Single tool calls (Claude handles these). Multi-step tools without
+reasoning (Claude/Grok handle these). Simple queries that happen to use a tool.
 
 Temperature: 0.4-0.5 tools/code, 0.5-0.7 analysis.
 
@@ -134,6 +141,36 @@ For tool calling, use GPT 5.2 instead (98.7% vs Grok's 99% - functionally equiva
 GPT has better overall capability).
 
 Temperature: 0.4-0.6.
+
+## Tool + Reasoning Matrix
+
+Anthropic models have a technical limitation: extended reasoning tokens cannot flow into
+subsequent tool-calling steps. When Claude uses reasoning AND needs multiple sequential
+tool calls, the second step fails.
+
+**Routing decision matrix:**
+
+|                  | No Reasoning   | With Reasoning         |
+| ---------------- | -------------- | ---------------------- |
+| No tools         | Claude (any)   | Claude Opus/Sonnet     |
+| Single tool call | Claude (any)   | Claude Opus/Sonnet     |
+| Multi-step tools | Claude or Grok | **GPT-5.2** (required) |
+
+**Examples:**
+
+- "What's the weather?" → Single tool, no reasoning → Claude Haiku
+- "Analyze this PDF thoroughly" → No tools, reasoning → Claude Opus
+- "Summarize my Limitless from yesterday" → Multi-step tools (list→fetch→synthesize), no
+  deep reasoning → Grok
+- "Compare React vs Vue with current benchmarks and deep analysis" → Multi-step tools +
+  reasoning → GPT-5.2
+
+**How to detect multi-step tool workflows:**
+
+- Integration queries (Limitless, Fireflies, etc.) typically need: list/search → fetch
+  details → synthesize
+- Comparison queries with current data need: web search → compare tool → analysis
+- Research queries need: multiple searches → synthesis
 
 ## Reasoning
 
