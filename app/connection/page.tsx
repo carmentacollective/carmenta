@@ -36,9 +36,9 @@ export default async function ConnectionPage({ searchParams }: ConnectionPagePro
     // Load recent connections for the header dropdown (auth protected by middleware)
     const recentConnections = await getRecentConnections(10);
 
-    // Handle discovery reset for testing
+    // Handle discovery reset for testing (development only)
     const params = await searchParams;
-    if (params["reset-discovery"] === "true") {
+    if (params["reset-discovery"] === "true" && process.env.NODE_ENV !== "production") {
         const user = await currentUser();
         if (user) {
             const dbUser = await findUserByClerkId(user.id);

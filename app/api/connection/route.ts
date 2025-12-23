@@ -298,18 +298,18 @@ function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[
             }),
             execute: async ({ itemKey, content }) => {
                 try {
-                    const item = getItemByKey(itemKey);
-                    if (!item) {
-                        return { saved: false, error: "Unknown discovery item" };
-                    }
-
-                    // Validate itemKey is in known config (prevents prototype pollution)
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
                     if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
                         logger.warn(
                             { itemKey, userId },
                             "Invalid discovery item key attempted"
                         );
                         return { saved: false, error: "Invalid discovery item key" };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { saved: false, error: "Unknown discovery item" };
                     }
 
                     // Save to appropriate location based on item config
@@ -401,12 +401,7 @@ function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[
             }),
             execute: async ({ itemKey }) => {
                 try {
-                    const item = getItemByKey(itemKey);
-                    if (!item) {
-                        return { completed: false, error: "Unknown discovery item" };
-                    }
-
-                    // Validate itemKey is in known config
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
                     if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
                         logger.warn(
                             { itemKey, userId },
@@ -416,6 +411,11 @@ function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[
                             completed: false,
                             error: "Invalid discovery item key",
                         };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { completed: false, error: "Unknown discovery item" };
                     }
 
                     await completeDiscovery(userId, itemKey);
@@ -455,18 +455,18 @@ function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[
             }),
             execute: async ({ itemKey }) => {
                 try {
-                    const item = getItemByKey(itemKey);
-                    if (!item) {
-                        return { skipped: false, error: "Unknown discovery item" };
-                    }
-
-                    // Validate itemKey is in known config
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
                     if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
                         logger.warn(
                             { itemKey, userId },
                             "Invalid discovery item key attempted"
                         );
                         return { skipped: false, error: "Invalid discovery item key" };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { skipped: false, error: "Unknown discovery item" };
                     }
 
                     if (item.required) {
