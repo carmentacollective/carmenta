@@ -47,7 +47,7 @@ export function ThemeSwitcher() {
         <Button
             variant="ghost"
             size="icon-sm"
-            className="relative"
+            className="vt-theme-switcher relative"
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
         >

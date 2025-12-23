@@ -128,7 +128,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     );
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("vt-user-auth relative", className)}>
             {/* Trigger button - UserCircle icon */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
