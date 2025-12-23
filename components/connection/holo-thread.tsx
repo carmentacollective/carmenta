@@ -1322,12 +1322,16 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    disabled={isSubmitting || !editContent.trim()}
+                                    disabled={
+                                        isSubmitting || isLoading || !editContent.trim()
+                                    }
                                     className={cn(
                                         "inline-flex h-7 items-center justify-center gap-1.5 rounded-md bg-primary/10 px-2.5 text-xs font-medium transition-all",
                                         "hover:bg-primary/20 active:bg-primary/25",
                                         "text-primary",
-                                        (isSubmitting || !editContent.trim()) &&
+                                        (isSubmitting ||
+                                            isLoading ||
+                                            !editContent.trim()) &&
                                             "cursor-not-allowed opacity-50"
                                     )}
                                 >
