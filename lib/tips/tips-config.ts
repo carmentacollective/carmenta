@@ -90,6 +90,42 @@ export const TIPS: Tip[] = [
             "When we use reasoning models, you can expand to see every step of the thought process. No black boxes.",
         priority: 6,
     },
+    {
+        id: "knowledge-base",
+        title: "We Remember You",
+        description:
+            "Your preferences, projects, people—saved in your personal knowledge base. No more re-explaining who you are every connection.",
+        docUrl: "/knowledge",
+        priority: 8,
+    },
+    {
+        id: "edit-regenerate",
+        title: "Edit Any Message",
+        description:
+            "Change what you said, regenerate from there. Try a different model while you're at it—without losing your conversation.",
+        priority: 7,
+    },
+    {
+        id: "temperature-control",
+        title: "Dial In the Creativity",
+        description:
+            "Precise for code, expressive for brainstorming. Four temperature presets let you control how the AI thinks.",
+        priority: 6,
+    },
+    {
+        id: "knowledge-ingestion",
+        title: "Learning as We Go",
+        description:
+            "We automatically extract important details from our conversations—names, preferences, decisions—and remember them for next time.",
+        priority: 7,
+    },
+    {
+        id: "web-intelligence",
+        title: "Live Web Access",
+        description:
+            "Real-time search, page fetching, deep research. We pull from the actual web, not just training data.",
+        priority: 8,
+    },
 ];
 
 /**
