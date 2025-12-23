@@ -203,10 +203,10 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                         "hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
                         "focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
                         isStreaming && "oracle-working",
-                        !isStreaming && "oracle-breathing",
-                        "tooltip"
+                        !isStreaming && "oracle-breathing"
                     )}
-                    data-tooltip="Return to Carmenta home"
+                    data-tooltip-id="tip"
+                    data-tooltip-content="Home"
                 >
                     <Image
                         src="/logos/icon-transparent.png"

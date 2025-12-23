@@ -10,6 +10,7 @@ import { clerkAppearance } from "@/lib/clerk-appearance";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import { MarkerProvider } from "@/components/feedback/marker-provider";
 import { Toaster } from "sonner";
+import { GlobalTooltip } from "@/components/ui/global-tooltip";
 import "./globals.css";
 
 /**
@@ -124,6 +125,7 @@ export default function RootLayout({
                                     <PWARegistration />
                                     <StructuredData />
                                     <Toaster />
+                                    <GlobalTooltip />
                                     {children}
                                 </MarkerProvider>
                             </ThemeProvider>

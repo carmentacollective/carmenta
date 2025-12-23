@@ -83,9 +83,10 @@ export function RegenerateButton({
             onClick={handleClick}
             aria-label={ariaLabel}
             disabled={disabled || isRegenerating}
-            data-tooltip="Ask for a different take on this"
+            data-tooltip-id="tip"
+            data-tooltip-content="Another angle?"
             className={cn(
-                "tooltip inline-flex h-7 shrink-0 items-center justify-center rounded-md transition-all",
+                "inline-flex h-7 shrink-0 items-center justify-center rounded-md transition-all",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 "hover:bg-foreground/10 active:bg-foreground/15",
                 disabled || isRegenerating

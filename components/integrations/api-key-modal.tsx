@@ -135,8 +135,11 @@ export function ApiKeyModal({
                             <button
                                 type="button"
                                 onClick={() => setShowKey(!showKey)}
-                                className="tooltip absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground/80"
-                                data-tooltip={showKey ? "Hide API key" : "Show API key"}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground/80"
+                                data-tooltip-id="tip"
+                                data-tooltip-content={
+                                    showKey ? "Hide key" : "Reveal key"
+                                }
                             >
                                 {showKey ? (
                                     <EyeOff className="h-4 w-4" />

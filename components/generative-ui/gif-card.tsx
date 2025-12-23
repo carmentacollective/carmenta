@@ -165,8 +165,9 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                 <div className="flex justify-end gap-1 p-2">
                     <button
                         onClick={handleCopy}
-                        className="tooltip rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
-                        data-tooltip="Copy GIF URL"
+                        className="rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+                        data-tooltip-id="tip"
+                        data-tooltip-content="Copy link"
                     >
                         {copied ? (
                             <Check className="h-4 w-4" />
@@ -178,8 +179,9 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         href={gif.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="tooltip rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
-                        data-tooltip="View on Giphy"
+                        className="rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+                        data-tooltip-id="tip"
+                        data-tooltip-content="Open in Giphy"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <ExternalLink className="h-4 w-4" />

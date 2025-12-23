@@ -7,16 +7,18 @@ sensible defaults. Keep components focused—loading, error, empty, and success 
 
 ## Tooltips
 
-Use CSS-only tooltips, NOT Radix `<Tooltip>`. Zero JS, zero dependencies.
+Use react-tooltip with the global `tip` ID for automatic positioning and viewport
+handling.
 
 ```tsx
-<button className="tooltip" data-tooltip="Copy to clipboard">
+<button data-tooltip-id="tip" data-tooltip-content="Copy">
   <CopyIcon />
 </button>
 ```
 
-The `.tooltip` class and `data-tooltip` attribute are defined in `globals.css`. Works
-automatically with light/dark themes. See `/app/brand` page for examples.
+The `<GlobalTooltip />` component in `app/layout.tsx` provides the tooltip container.
+Tooltips automatically flip and shift to stay in viewport. See `/app/brand` for
+examples.
 
 ## Relevant Rules
 
