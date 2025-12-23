@@ -515,9 +515,9 @@ export function HolographicBackground({
                     blob.y,
                     blob.radius
                 );
-                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.7)`);
-                gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.4)`);
-                gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.15)`);
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+                gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.5)`);
+                gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.2)`);
                 gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
 
                 holoCtx.beginPath();
@@ -569,14 +569,18 @@ export function HolographicBackground({
                 // Draw particle - theme-aware opacity with goddess presence
                 // Dark mode: visible shimmer against cosmic depths (max ~65% opacity)
                 // Light mode: delicate but present sparkle (max ~40% opacity)
-                const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.5;
+                const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.65;
                 const twinkleOpacity =
                     p.opacity *
                     (0.4 + Math.sin(p.twinkle) * 0.6) *
                     themeOpacityMultiplier;
                 shimmerCtx.beginPath();
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                shimmerCtx.fillStyle = `rgba(255, 255, 255, ${twinkleOpacity})`;
+                // White particles in dark mode, soft lavender tint in light mode for contrast
+                const particleColor = isDarkTheme
+                    ? `rgba(255, 255, 255, ${twinkleOpacity})`
+                    : `rgba(180, 160, 200, ${twinkleOpacity})`;
+                shimmerCtx.fillStyle = particleColor;
                 shimmerCtx.fill();
             }
 
