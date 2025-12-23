@@ -2,12 +2,14 @@ import type { User } from "@clerk/nextjs/server";
 import type { SystemModelMessage } from "ai";
 import { SYSTEM_PROMPT } from "./system";
 import { renderSessionContext } from "./templates";
+import { buildDiscoveryPrompt } from "./discovery";
 import { compileProfileContext } from "@/lib/kb/compile-context";
 import { retrieveContext, formatRetrievedContext } from "@/lib/kb/retrieve-context";
 import type { KBSearchConfig } from "@/lib/concierge/types";
+import type { DiscoveryItem } from "@/lib/discovery/config";
 
 /**
- * System message builder with 4-layer architecture and Anthropic prompt caching.
+ * System message builder with 5-layer architecture and Anthropic prompt caching.
  *
  * Layer Structure:
  * 1. VALUES + PATTERNS (CACHED) - ~800 tokens
@@ -21,11 +23,16 @@ import type { KBSearchConfig } from "@/lib/concierge/types";
  *    - Preferences (how they want to collaborate)
  *    - Compiled to XML format from Knowledge Base
  *
- * 3. RETRIEVED CONTEXT (V2 - not implemented yet)
+ * 3. DISCOVERY (conditional) - ~200-400 tokens
+ *    - Active when user has pending discovery items
+ *    - Instructions for gathering profile info, introducing features
+ *    - Tool usage guidance for discovery tools
+ *
+ * 4. RETRIEVED CONTEXT (dynamic per-query)
  *    - Searched docs/* or knowledge/* documents
  *    - Dynamic per-request based on query relevance
  *
- * 4. SESSION (NOT cached) - ~50 tokens
+ * 5. SESSION (NOT cached) - ~50 tokens
  *    - Current date/time and timezone
  *    - Request-specific context
  *
@@ -52,6 +59,8 @@ export interface UserContext {
     timezone?: string;
     /** Knowledge base search configuration from concierge */
     kbSearch?: KBSearchConfig;
+    /** Pending discovery items for this user */
+    pendingDiscoveries?: DiscoveryItem[];
 }
 
 /**
@@ -154,7 +163,20 @@ export async function buildSystemMessages(
         }
     }
 
-    // Layer 3: Retrieved Context (dynamic per-query)
+    // Layer 3: Discovery Context (conditional - active when pending items exist)
+    if (context.pendingDiscoveries && context.pendingDiscoveries.length > 0) {
+        const discoveryPrompt = buildDiscoveryPrompt(context.pendingDiscoveries);
+
+        if (discoveryPrompt) {
+            messages.push({
+                role: "system",
+                content: discoveryPrompt,
+                // No providerOptions = no caching (changes per-session)
+            });
+        }
+    }
+
+    // Layer 4: Retrieved Context (dynamic per-query)
     // Searches knowledge base for relevant documents based on concierge analysis
     if (context.userId && context.kbSearch?.shouldSearch) {
         const retrievedContext = await retrieveContext(
@@ -173,7 +195,7 @@ export async function buildSystemMessages(
         }
     }
 
-    // Layer 4: Session Context (NOT cached - changes every request)
+    // Layer 5: Session Context (NOT cached - changes every request)
     const sessionContext = buildSessionContext(context);
     messages.push({
         role: "system",

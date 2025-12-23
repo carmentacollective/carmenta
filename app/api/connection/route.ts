@@ -27,7 +27,10 @@ import {
     updateStreamingStatus,
     updateConnection,
     type UIMessageLike,
+    db,
 } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import {
     evaluateTitleEvolution,
     summarizeRecentMessages,
@@ -42,6 +45,15 @@ import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { searchKnowledge } from "@/lib/kb/search";
 import { triggerFollowUpIngestion } from "@/lib/ingestion/triggers/follow-up";
+import {
+    getPendingDiscoveries,
+    completeDiscovery,
+    skipDiscovery,
+    getItemByKey,
+    DISCOVERY_ITEMS,
+    type DiscoveryItem,
+} from "@/lib/discovery";
+import { updateProfileSection } from "@/lib/kb/profile";
 
 /**
  * Route segment config for Vercel
@@ -264,6 +276,222 @@ function createSearchKnowledgeTool(userId: string) {
             };
         },
     });
+}
+
+/**
+ * Create discovery tools for gathering profile information and surfacing features.
+ * These tools are only available when the user has pending discovery items.
+ */
+function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[]) {
+    return {
+        updateDiscovery: tool({
+            description:
+                "Save information gathered during discovery. Use when you learn something about the user (name, role, preferences) or they make a choice (theme, settings).",
+            inputSchema: z.object({
+                itemKey: z
+                    .string()
+                    .describe("The discovery item key (e.g., 'profile_identity')"),
+                content: z
+                    .string()
+                    .max(10000, "Content exceeds maximum length (10KB)")
+                    .describe("The information to save - extracted from conversation"),
+            }),
+            execute: async ({ itemKey, content }) => {
+                try {
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
+                    if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
+                        logger.warn(
+                            { itemKey, userId },
+                            "Invalid discovery item key attempted"
+                        );
+                        return { saved: false, error: "Invalid discovery item key" };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { saved: false, error: "Unknown discovery item" };
+                    }
+
+                    // Save to appropriate location based on item config
+                    if (item.storesTo) {
+                        if (item.storesTo.type === "kb") {
+                            // Map KB path to profile section
+                            const pathParts = item.storesTo.path.split(".");
+                            const validSections = [
+                                "identity",
+                                "preferences",
+                                "character",
+                            ] as const;
+                            const section = pathParts[1];
+
+                            if (
+                                pathParts[0] === "profile" &&
+                                section &&
+                                validSections.includes(
+                                    section as (typeof validSections)[number]
+                                )
+                            ) {
+                                await updateProfileSection(
+                                    userId,
+                                    section as "identity" | "preferences" | "character",
+                                    content
+                                );
+                            } else {
+                                logger.error(
+                                    { path: item.storesTo.path, itemKey },
+                                    "Invalid KB path for discovery item"
+                                );
+                                return {
+                                    saved: false,
+                                    error: `Unsupported KB path: ${item.storesTo.path}`,
+                                };
+                            }
+                        } else if (item.storesTo.type === "preferences") {
+                            // Implement preferences storage
+                            const user = await db.query.users.findFirst({
+                                where: eq(users.id, userId),
+                                columns: { preferences: true },
+                            });
+
+                            const currentPreferences = (user?.preferences ??
+                                {}) as Record<string, unknown>;
+
+                            await db
+                                .update(users)
+                                .set({
+                                    preferences: {
+                                        ...currentPreferences,
+                                        [item.storesTo.key]: content,
+                                    },
+                                    updatedAt: new Date(),
+                                })
+                                .where(eq(users.id, userId));
+
+                            logger.info(
+                                { userId, itemKey, key: item.storesTo.key },
+                                "Discovery preferences saved"
+                            );
+                        }
+                    }
+
+                    logger.info(
+                        { userId, itemKey, contentLength: content.length },
+                        "Discovery item saved"
+                    );
+                    return { saved: true, itemKey };
+                } catch (error) {
+                    logger.error(
+                        { error, itemKey, userId },
+                        "Failed to save discovery item"
+                    );
+                    Sentry.captureException(error, {
+                        tags: { component: "discovery", action: "update", itemKey },
+                        extra: { userId, contentLength: content.length },
+                    });
+                    return { saved: false, error: "Failed to save" };
+                }
+            },
+        }),
+
+        completeDiscovery: tool({
+            description:
+                "Mark a discovery item as complete. Call this when you have gathered the information needed for an item.",
+            inputSchema: z.object({
+                itemKey: z.string().describe("The discovery item key to mark complete"),
+            }),
+            execute: async ({ itemKey }) => {
+                try {
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
+                    if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
+                        logger.warn(
+                            { itemKey, userId },
+                            "Invalid discovery item key attempted"
+                        );
+                        return {
+                            completed: false,
+                            error: "Invalid discovery item key",
+                        };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { completed: false, error: "Unknown discovery item" };
+                    }
+
+                    await completeDiscovery(userId, itemKey);
+
+                    // Check for more pending items
+                    const remainingRequired = pendingDiscoveries.filter(
+                        (d) => d.key !== itemKey && d.required
+                    );
+
+                    logger.info({ userId, itemKey }, "Discovery item completed");
+
+                    return {
+                        completed: true,
+                        itemKey,
+                        hasMoreRequired: remainingRequired.length > 0,
+                        nextItem: remainingRequired[0]?.key ?? null,
+                    };
+                } catch (error) {
+                    logger.error(
+                        { error, itemKey, userId },
+                        "Failed to complete discovery item"
+                    );
+                    Sentry.captureException(error, {
+                        tags: { component: "discovery", action: "complete", itemKey },
+                        extra: { userId },
+                    });
+                    return { completed: false, error: "Failed to mark complete" };
+                }
+            },
+        }),
+
+        skipDiscovery: tool({
+            description:
+                "Skip an optional discovery item. Only use for items that are not required.",
+            inputSchema: z.object({
+                itemKey: z.string().describe("The discovery item key to skip"),
+            }),
+            execute: async ({ itemKey }) => {
+                try {
+                    // Validate itemKey is in known config FIRST (prevents prototype pollution)
+                    if (!DISCOVERY_ITEMS.some((i) => i.key === itemKey)) {
+                        logger.warn(
+                            { itemKey, userId },
+                            "Invalid discovery item key attempted"
+                        );
+                        return { skipped: false, error: "Invalid discovery item key" };
+                    }
+
+                    const item = getItemByKey(itemKey);
+                    if (!item) {
+                        return { skipped: false, error: "Unknown discovery item" };
+                    }
+
+                    if (item.required) {
+                        return { skipped: false, error: "Cannot skip required items" };
+                    }
+
+                    await skipDiscovery(userId, itemKey);
+
+                    logger.info({ userId, itemKey }, "Discovery item skipped");
+
+                    return { skipped: true, itemKey };
+                } catch (error) {
+                    logger.error(
+                        { error, itemKey, userId },
+                        "Failed to skip discovery item"
+                    );
+                    Sentry.captureException(error, {
+                        tags: { component: "discovery", action: "skip", itemKey },
+                        extra: { userId },
+                    });
+                    return { skipped: false, error: "Failed to skip" };
+                }
+            },
+        }),
+    };
 }
 
 export async function POST(req: Request) {
@@ -511,11 +739,20 @@ export async function POST(req: Request) {
         // This allows the AI to explicitly query the knowledge base mid-conversation
         const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
 
-        // Merge built-in tools, integration tools, and searchKnowledge tool
+        // Get pending discoveries for the user
+        // Discovery tools are only included when there are items to surface
+        const pendingDiscoveries = await getPendingDiscoveries(dbUser.id);
+        const discoveryTools =
+            pendingDiscoveries.length > 0
+                ? createDiscoveryTools(dbUser.id, pendingDiscoveries)
+                : {};
+
+        // Merge built-in tools, integration tools, searchKnowledge, and discovery tools
         const allTools = {
             ...tools,
             ...integrationTools,
             searchKnowledge: searchKnowledgeTool,
+            ...discoveryTools,
         };
 
         logger.info(
@@ -528,6 +765,8 @@ export async function POST(req: Request) {
                 reasoning: concierge.reasoning,
                 toolsAvailable: modelSupportsTools ? Object.keys(allTools) : [],
                 integrationTools: Object.keys(integrationTools),
+                discoveryMode: pendingDiscoveries.length > 0,
+                pendingDiscoveryCount: pendingDiscoveries.length,
             },
             "Starting connect stream"
         );
@@ -633,14 +872,16 @@ export async function POST(req: Request) {
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can
         // use providerOptions for cache_control.
-        // Includes profile context from Knowledge Base (Layer 2) and
-        // retrieved context based on concierge query analysis (Layer 3).
+        // Includes profile context from Knowledge Base (Layer 2),
+        // discovery context when items are pending (Layer 3), and
+        // retrieved context based on concierge query analysis (Layer 4).
         const systemMessages = await buildSystemMessages({
             user,
             userEmail,
             userId: dbUser.id, // Internal UUID for Knowledge Base lookup
             timezone: undefined, // TODO: Get from client in future
             kbSearch: concierge.kbSearch, // Query-based knowledge retrieval
+            pendingDiscoveries, // Discovery items to surface
         });
 
         const result = await streamText({

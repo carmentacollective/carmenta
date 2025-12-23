@@ -111,6 +111,21 @@ export const toolStateEnum = pgEnum("tool_state", [
 // ============================================================================
 
 /**
+ * Discovery item state - tracks completion/skip status
+ */
+export interface DiscoveryItemState {
+    completedAt?: string; // ISO date string
+    skippedAt?: string; // ISO date string
+}
+
+/**
+ * User's discovery state - tracks which items have been addressed
+ */
+export interface UserDiscoveryState {
+    [itemKey: string]: DiscoveryItemState;
+}
+
+/**
  * User Preferences Type
  */
 export interface UserPreferences {
@@ -122,6 +137,8 @@ export interface UserPreferences {
         email?: boolean;
         push?: boolean;
     };
+    /** Discovery system state - tracks completed/skipped items */
+    discoveryState?: UserDiscoveryState;
 }
 
 export const users = pgTable(
