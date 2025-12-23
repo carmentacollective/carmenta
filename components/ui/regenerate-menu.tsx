@@ -129,17 +129,21 @@ export function RegenerateMenu({
             <motion.button
                 onClick={handleRegenerate}
                 aria-label="Regenerate this response"
-                disabled={disabled || isRegenerating}
+                disabled={disabled || isRegenerating || isAnimating}
                 className={cn(
                     "inline-flex h-7 shrink-0 items-center justify-center transition-all",
                     showDropdown ? "rounded-l-md pl-2 pr-1" : "rounded-md px-2",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "hover:bg-foreground/10 active:bg-foreground/15",
-                    disabled || isRegenerating
+                    disabled || isRegenerating || isAnimating
                         ? "cursor-not-allowed opacity-40"
                         : "text-foreground/60 hover:text-foreground/90"
                 )}
-                whileTap={!disabled && !isRegenerating ? { scale: 0.95 } : undefined}
+                whileTap={
+                    !disabled && !isRegenerating && !isAnimating
+                        ? { scale: 0.95 }
+                        : undefined
+                }
             >
                 <AnimatePresence mode="wait">
                     {isSpinning ? (
