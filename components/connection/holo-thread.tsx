@@ -21,7 +21,7 @@ import {
     forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
+import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import {
     Square,
     ArrowDown,
@@ -113,11 +113,6 @@ function HoloThreadInner() {
         setStoppedMessageIds((prev) => new Set(prev).add(messageId));
     }, []);
 
-    // Optimal chat scroll behavior
-    const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
-        isStreaming: isLoading,
-    });
-
     // Stable callback ref to prevent effect re-runs during drag
     const handleDragError = useCallback((error: string) => toast.error(error), []);
 
@@ -139,12 +134,16 @@ function HoloThreadInner() {
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
 
     return (
-        <div className="flex h-full flex-col bg-transparent">
+        <StickToBottom
+            className="flex h-full flex-col bg-transparent"
+            initial="smooth"
+            resize="smooth"
+            role="log"
+        >
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
-            {/* Viewport with fade mask and mobile touch optimizations */}
-            <div
-                ref={containerRef}
+            {/* Viewport with fade mask and mobile touch optimizations - powered by use-stick-to-bottom */}
+            <StickToBottom.Content
                 className={cn(
                     "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
@@ -176,7 +175,7 @@ function HoloThreadInner() {
                         )}
                     </div>
                 )}
-            </div>
+            </StickToBottom.Content>
 
             {/* Input container with safe area for notched devices */}
             <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
@@ -190,22 +189,34 @@ function HoloThreadInner() {
                         ease: [0.16, 1, 0.3, 1],
                     }}
                 >
-                    {!isAtBottom && (
-                        <button
-                            onClick={() => scrollToBottom("smooth")}
-                            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
-                            aria-label="Scroll to bottom"
-                        >
-                            <ArrowDown className="h-5 w-5 text-foreground/70" />
-                        </button>
-                    )}
+                    <ScrollToBottomButton />
                     <Composer
                         isNewConversation={isEmpty}
                         onMarkMessageStopped={handleMarkMessageStopped}
                     />
                 </motion.div>
             </div>
-        </div>
+        </StickToBottom>
+    );
+}
+
+/**
+ * Scroll-to-bottom button using use-stick-to-bottom context.
+ * Only renders when user has scrolled up from the bottom.
+ */
+function ScrollToBottomButton() {
+    const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+
+    if (isAtBottom) return null;
+
+    return (
+        <button
+            onClick={() => scrollToBottom()}
+            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
+            aria-label="Scroll to bottom"
+        >
+            <ArrowDown className="h-5 w-5 text-foreground/70" />
+        </button>
     );
 }
 
