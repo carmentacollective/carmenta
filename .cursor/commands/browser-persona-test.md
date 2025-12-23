@@ -200,11 +200,11 @@ Misaligned elements, inconsistent styles, typos, mixed tone
 
 2. **Start the app**: Check if dev server is running at localhost:3000. If not:
 
-   ```
-   cd /Users/nick/src/carmenta-concierge && pnpm dev
+   ```bash
+   pnpm dev
    ```
 
-   Wait for "Ready" message.
+   Wait for "Ready" message. (Run from the current repository directory)
 
 3. **Navigate**: Use browser_navigate to http://localhost:3000/connect
 
@@ -325,7 +325,7 @@ details} </work_remaining>
 </handoff-format>
 
 <context>
-- Worktree: /Users/nick/src/carmenta-concierge
+- Repository: Current working directory (git worktree)
 - Chat interface: /connect route
 - Auth: Clerk (should auto-login in dev)
 - Available tools: Compare, WebSearch, FetchPage, DeepResearch
