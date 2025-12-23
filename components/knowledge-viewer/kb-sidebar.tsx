@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
-import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import { transitions, variants } from "@/lib/motion/presets";
 
 // Map folder paths to icons (order: philosophy, personality, knowledge)
@@ -65,7 +64,6 @@ export function KBSidebar({
     const [expanded, setExpanded] = useState<Set<string>>(
         new Set(folders.map((f) => f.path))
     );
-    const shouldReduceMotion = useReducedMotion();
 
     const toggle = useCallback((folderId: string) => {
         setExpanded((prev) => {
@@ -124,11 +122,7 @@ export function KBSidebar({
                                     <motion.div
                                         variants={variants.rotateChevron}
                                         animate={isExpanded ? "expanded" : "collapsed"}
-                                        transition={
-                                            shouldReduceMotion
-                                                ? transitions.instant
-                                                : transitions.quick
-                                        }
+                                        transition={transitions.quick}
                                     >
                                         <ChevronRight className="h-4 w-4 text-foreground/30" />
                                     </motion.div>
@@ -140,11 +134,7 @@ export function KBSidebar({
                                             initial={{ maxHeight: 0, opacity: 0 }}
                                             animate={{ maxHeight: 1000, opacity: 1 }}
                                             exit={{ maxHeight: 0, opacity: 0 }}
-                                            transition={
-                                                shouldReduceMotion
-                                                    ? transitions.instant
-                                                    : transitions.standard
-                                            }
+                                            transition={transitions.standard}
                                             className="ml-6 overflow-hidden border-l-2 border-foreground/10"
                                         >
                                             {folder.documents.map((doc) => {

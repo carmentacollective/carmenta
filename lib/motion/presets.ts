@@ -11,7 +11,7 @@
  * - > 500ms: Feels slow (avoid unless critical)
  */
 
-import type { Transition, Variants } from "framer-motion";
+import type { Variants } from "framer-motion";
 
 /**
  * Standard durations in seconds
@@ -194,47 +194,3 @@ export const stagger = {
         animate: { y: 0, opacity: 1 },
     } satisfies Variants,
 } as const;
-
-/**
- * Helper to create reduced motion variants
- *
- * Usage:
- * ```tsx
- * const shouldReduce = useReducedMotion();
- * <motion.div
- *   variants={shouldReduce ? reduceMotion(variants.slideUp) : variants.slideUp}
- * />
- * ```
- */
-export function reduceMotion(variants: Variants): Variants {
-    const reduced: Variants = {};
-    for (const key in variants) {
-        if (key === "initial" || key === "exit") {
-            // Keep initial/exit states but remove animations
-            reduced[key] = { opacity: 1 };
-        } else {
-            // Instant transition to final state
-            reduced[key] = variants[key];
-        }
-    }
-    return reduced;
-}
-
-/**
- * Helper to get transition with reduced motion support
- *
- * Usage:
- * ```tsx
- * const shouldReduce = useReducedMotion();
- * transition={getTransition(transitions.standard, shouldReduce)}
- * ```
- */
-export function getTransition(
-    transition: Transition,
-    shouldReduce: boolean
-): Transition {
-    if (shouldReduce) {
-        return { duration: 0 };
-    }
-    return transition;
-}

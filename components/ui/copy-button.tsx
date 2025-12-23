@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import { transitions } from "@/lib/motion/presets";
 import {
     copyToClipboard,
@@ -159,7 +158,6 @@ export function CopyButton({
     const [isOpen, setIsOpen] = useState(false);
     const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentMessage, triggerDelight, scheduleClear } = useCopyDelight();
-    const shouldReduceMotion = useReducedMotion();
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -252,11 +250,7 @@ export function CopyButton({
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: "auto" }}
                             exit={{ opacity: 0, width: 0 }}
-                            transition={
-                                shouldReduceMotion
-                                    ? transitions.instant
-                                    : transitions.quick
-                            }
+                            transition={transitions.quick}
                             className="whitespace-nowrap text-xs font-medium"
                             aria-live="polite"
                         >
@@ -292,11 +286,7 @@ export function CopyButton({
                                 initial={{ opacity: 0, width: 0 }}
                                 animate={{ opacity: 1, width: "auto" }}
                                 exit={{ opacity: 0, width: 0 }}
-                                transition={
-                                    shouldReduceMotion
-                                        ? transitions.instant
-                                        : transitions.quick
-                                }
+                                transition={transitions.quick}
                                 className="whitespace-nowrap text-xs font-medium"
                                 aria-live="polite"
                             >

@@ -66,40 +66,6 @@ variants.buttonPress; // Button micro-interaction
 variants.breathe; // Pulsing effect for loading states
 ```
 
-## Accessibility: Reduced Motion
-
-**CRITICAL**: All animations MUST respect `prefers-reduced-motion`.
-
-### Using the Hook
-
-```typescript
-import { useReducedMotion } from "@/lib/hooks/use-reduced-motion"
-import { transitions } from "@/lib/motion/presets"
-
-function Component() {
-  const shouldReduceMotion = useReducedMotion()
-
-  return (
-    <motion.div
-      animate={{ x: 100 }}
-      transition={shouldReduceMotion ? transitions.instant : transitions.standard}
-    />
-  )
-}
-```
-
-### Helper Functions
-
-```typescript
-import { getTransition, reduceMotion } from "@/lib/motion/presets"
-
-// For transitions:
-transition={getTransition(transitions.standard, shouldReduceMotion)}
-
-// For variants:
-variants={shouldReduceMotion ? reduceMotion(variants.slideUp) : variants.slideUp}
-```
-
 ## Performance Best Practices
 
 ### GPU-Accelerated Properties
@@ -228,15 +194,13 @@ import { variants } from "@/lib/motion/presets"
 
 ### Copy Button (`components/ui/copy-button.tsx`)
 
-- Uses `useReducedMotion` hook
 - Applies `transitions.quick` for feedback animation
-- Respects accessibility preferences
+- Smooth text expansion with layout animation
 
 ### KB Sidebar (`components/knowledge-viewer/kb-sidebar.tsx`)
 
 - Uses `variants.rotateChevron` for expand indicator
 - Fixed height animation to use `max-height` (no layout thrashing)
-- Proper reduced motion support
 
 ## Testing
 
@@ -244,16 +208,6 @@ import { variants } from "@/lib/motion/presets"
 
 - Test all animations at 60fps (use browser DevTools Performance tab)
 - Verify no jank or layout shifts during animations
-
-### Accessibility Testing
-
-1. Enable "Reduce motion" in system preferences:
-   - **macOS**: System Preferences → Accessibility → Display → Reduce motion
-   - **Windows**: Settings → Ease of Access → Display → Show animations
-   - **Browser DevTools**: Rendering → Emulate CSS media feature
-     `prefers-reduced-motion`
-2. Verify all animations become instant (no movement)
-3. Ensure functionality still works without animations
 
 ### Performance Testing
 
@@ -269,13 +223,10 @@ npm run lighthouse
 
 When updating existing animations:
 
-- [ ] Import `useReducedMotion` hook
-- [ ] Add `shouldReduceMotion` check
 - [ ] Use `transitions.*` from presets
 - [ ] Use `variants.*` for common patterns
 - [ ] Replace `height: auto` with `maxHeight: 1000`
 - [ ] Ensure only GPU-accelerated properties are animated
-- [ ] Test with reduced motion enabled
 
 ## Questions?
 
