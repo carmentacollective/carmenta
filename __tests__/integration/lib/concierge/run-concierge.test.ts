@@ -250,12 +250,14 @@ describe("runConcierge integration", () => {
         await runConcierge(messages);
 
         // Verify generateText was called with the last user message wrapped in our prompt structure
+        // Note: we now use messages array instead of prompt param for caching support
         expect(generateText).toHaveBeenCalledTimes(1);
         const call = (generateText as any).mock.calls[0][0];
-        expect(call.prompt).toContain("<user-message>");
-        expect(call.prompt).toContain("Write a creative story");
-        expect(call.prompt).toContain("</user-message>");
-        expect(call.prompt).toContain("Do NOT answer the message");
+        const userMessage = call.messages.find((m: any) => m.role === "user");
+        expect(userMessage.content).toContain("<user-message>");
+        expect(userMessage.content).toContain("Write a creative story");
+        expect(userMessage.content).toContain("</user-message>");
+        expect(userMessage.content).toContain("Do NOT answer the message");
     });
 
     it("calls generateText with correct parameters including tool", async () => {
