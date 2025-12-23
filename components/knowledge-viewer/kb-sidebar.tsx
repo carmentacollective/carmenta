@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
+import { transitions, variants } from "@/lib/motion/presets";
 
 // Map folder paths to icons (order: philosophy, personality, knowledge)
 const FOLDER_ICONS: Record<string, typeof User> = {
@@ -119,8 +120,9 @@ export function KBSidebar({
                                         </span>
                                     )}
                                     <motion.div
-                                        animate={{ rotate: isExpanded ? 90 : 0 }}
-                                        transition={{ duration: 0.15 }}
+                                        variants={variants.rotateChevron}
+                                        animate={isExpanded ? "expanded" : "collapsed"}
+                                        transition={transitions.quick}
                                     >
                                         <ChevronRight className="h-4 w-4 text-foreground/30" />
                                     </motion.div>
@@ -129,10 +131,10 @@ export function KBSidebar({
                                 <AnimatePresence>
                                     {isExpanded && (
                                         <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2 }}
+                                            initial={{ maxHeight: 0, opacity: 0 }}
+                                            animate={{ maxHeight: 1000, opacity: 1 }}
+                                            exit={{ maxHeight: 0, opacity: 0 }}
+                                            transition={transitions.standard}
                                             className="ml-6 overflow-hidden border-l-2 border-foreground/10"
                                         >
                                             {folder.documents.map((doc) => {

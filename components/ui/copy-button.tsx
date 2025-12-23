@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { transitions } from "@/lib/motion/presets";
 import {
     copyToClipboard,
     copyMarkdownWithFormats,
@@ -249,6 +250,7 @@ export function CopyButton({
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: "auto" }}
                             exit={{ opacity: 0, width: 0 }}
+                            transition={transitions.quick}
                             className="whitespace-nowrap text-xs font-medium"
                             aria-live="polite"
                         >
@@ -284,6 +286,7 @@ export function CopyButton({
                                 initial={{ opacity: 0, width: 0 }}
                                 animate={{ opacity: 1, width: "auto" }}
                                 exit={{ opacity: 0, width: 0 }}
+                                transition={transitions.quick}
                                 className="whitespace-nowrap text-xs font-medium"
                                 aria-live="polite"
                             >
