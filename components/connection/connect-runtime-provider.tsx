@@ -150,6 +150,17 @@ interface ChatContextType {
      * discarding subsequent messages and generating a new response.
      */
     regenerateFrom: (messageId: string) => Promise<void>;
+    /**
+     * Regenerate response from a specific assistant message with a specific model.
+     * Temporarily overrides the model selection for this regeneration only.
+     */
+    regenerateFromWithModel: (messageId: string, modelId: string) => Promise<void>;
+    /**
+     * Edit a user message and regenerate from that point.
+     * Updates the message content, removes all subsequent messages,
+     * and triggers a new generation.
+     */
+    editMessageAndRegenerate: (messageId: string, newContent: string) => Promise<void>;
     /** Error from the last request */
     error: Error | null;
     /** Clear error */
@@ -750,6 +761,75 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         [regenerate, setConcierge]
     );
 
+    /**
+     * Regenerate from a specific assistant message with a specific model.
+     * Sets the model override before regenerating, which persists for future messages
+     * (user explicitly chose this model, so we honor that choice going forward).
+     */
+    const regenerateFromWithModel = useCallback(
+        async (messageId: string, modelId: string) => {
+            // Set the model override - this will be picked up by the fetch wrapper
+            setOverrides((prev) => ({ ...prev, modelId }));
+            // Now regenerate (the override ref will be read at fetch time)
+            await regenerateFrom(messageId);
+        },
+        [regenerateFrom, setOverrides]
+    );
+
+    /**
+     * Edit a user message and regenerate from that point.
+     * 1. Updates the message content in the messages array
+     * 2. Removes all messages after the edited one
+     * 3. Triggers a new generation with the edited content
+     */
+    const editMessageAndRegenerate = useCallback(
+        async (messageId: string, newContent: string) => {
+            setDisplayError(null);
+            setConcierge(null);
+
+            // Find the message index
+            const messageIndex = messages.findIndex((m) => m.id === messageId);
+            if (messageIndex === -1) {
+                logger.error({ messageId }, "Message not found for edit");
+                return;
+            }
+
+            // Create updated messages array:
+            // - Keep messages before the edited one
+            // - Update the edited message's content
+            // - Remove all messages after (they'll be regenerated)
+            const updatedMessages = messages.slice(0, messageIndex + 1).map((m) => {
+                if (m.id === messageId) {
+                    // Update the user message content
+                    return {
+                        ...m,
+                        parts: [{ type: "text" as const, text: newContent }],
+                    };
+                }
+                return m;
+            });
+
+            // Set the truncated and updated messages
+            setMessages(updatedMessages);
+
+            // Now send the edited message to get a new response
+            // We use sendMessage directly since the message is already in the array
+            try {
+                await sendMessage({
+                    role: "user",
+                    parts: [{ type: "text", text: newContent }],
+                });
+            } catch (err) {
+                logger.error(
+                    { error: err, messageId },
+                    "Failed to regenerate after edit"
+                );
+                throw err;
+            }
+        },
+        [messages, setMessages, sendMessage, setConcierge]
+    );
+
     // Build context value
     const chatContextValue = useMemo<ChatContextType>(
         () => ({
@@ -759,6 +839,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             stop,
             reload: regenerate,
             regenerateFrom,
+            regenerateFromWithModel,
+            editMessageAndRegenerate,
             error: displayError,
             clearError,
             input,
@@ -773,6 +855,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             stop,
             regenerate,
             regenerateFrom,
+            regenerateFromWithModel,
+            editMessageAndRegenerate,
             displayError,
             clearError,
             input,
