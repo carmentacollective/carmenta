@@ -40,7 +40,7 @@ knowledge/
 │   ├── personas.md            M0-M4 user personas with switching triggers
 │   └── boundaries.md          What we're NOT building
 │
-├── components/                Feature specifications (63 files)
+├── components/                Feature specifications (73+ files)
 │   ├── README.md              Index organized by layer
 │   ├── concierge.md           Pre/post query processing, model selection
 │   ├── memory.md              Context retrieval and compilation
@@ -66,6 +66,7 @@ knowledge/
 │   └── milestones.md          M1-M8 implementation phases
 │
 ├── research/                  Research notes and findings
+│   └── 2025-12-22-knowledge-ingestion-design.md
 ├── incidents/                 Operational learnings
 │
 ├── roadmap.md                 Product milestones and sequencing
@@ -87,18 +88,20 @@ knowledge/
 
 ## Key Files by Purpose
 
-| If you need to...                   | Read this                                                                              |
-| ----------------------------------- | -------------------------------------------------------------------------------------- |
-| Understand what we're building      | [product/vision.md](./product/vision.md)                                               |
-| Know who we're building for         | [product/personas.md](./product/personas.md)                                           |
-| Check if something is in scope      | [product/boundaries.md](./product/boundaries.md)                                       |
-| See what's next                     | [roadmap.md](./roadmap.md)                                                             |
-| Build a specific feature            | [components/](./components/)                                                           |
-| Understand an architecture decision | [decisions/](./decisions/)                                                             |
-| Analyze a competitor                | [competitors/](./competitors/)                                                         |
-| Design UI                           | [design-principles.md](./design-principles.md), [design-system.md](./design-system.md) |
-| Write copy                          | [language-audit.md](./language-audit.md), [brand-essence.md](./brand-essence.md)       |
-| Choose a model                      | [model-rubric.md](./model-rubric.md)                                                   |
+| If you need to...                   | Read this                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Understand what we're building      | [product/vision.md](./product/vision.md)                                                               |
+| Know who we're building for         | [product/personas.md](./product/personas.md)                                                           |
+| Check if something is in scope      | [product/boundaries.md](./product/boundaries.md)                                                       |
+| See what's next                     | [roadmap.md](./roadmap.md)                                                                             |
+| Build a specific feature            | [components/](./components/)                                                                           |
+| Understand an architecture decision | [decisions/](./decisions/)                                                                             |
+| Analyze a competitor                | [competitors/](./competitors/)                                                                         |
+| Design UI                           | [design-principles.md](./design-principles.md), [design-system.md](./design-system.md)                 |
+| Write copy                          | [language-audit.md](./language-audit.md), [brand-essence.md](./brand-essence.md)                       |
+| Choose a model                      | [model-rubric.md](./model-rubric.md)                                                                   |
+| Understand knowledge ingestion      | [components/knowledge-ingestion-engine.md](./components/knowledge-ingestion-engine.md)                 |
+| Understand knowledge organization   | [decisions/knowledge-organization-architecture.md](./decisions/knowledge-organization-architecture.md) |
 
 ---
 
@@ -108,6 +111,10 @@ knowledge/
 
 **Recent completions:** M0, M0.5, M1 (Soul Proven)
 
-**Active work:** Memory architecture (5-phase implementation), reasoning tokens display
+**Active work:**
+
+- Memory architecture (5-phase implementation)
+- Knowledge ingestion engine design (complete - ready for implementation)
+- Reasoning tokens display
 
 See [roadmap.md](./roadmap.md) for full status and dependency graph.
