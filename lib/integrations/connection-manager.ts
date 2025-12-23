@@ -447,7 +447,7 @@ export async function disconnectService(
             if (remainingAccounts.length > 0) {
                 await db
                     .update(schema.integrations)
-                    .set({ isDefault: true, updatedAt: new Date() })
+                    .set({ isDefault: true })
                     .where(eq(schema.integrations.id, remainingAccounts[0].id));
             }
         }

@@ -158,7 +158,8 @@ export const users = pgTable(
             .defaultNow(),
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         index("users_email_idx").on(table.email),
@@ -270,7 +271,8 @@ export const connections = pgTable(
 
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary query: recent connections for a user */
@@ -574,7 +576,8 @@ export const integrations = pgTable(
         /** Last update time */
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary query: user's integrations */
@@ -863,7 +866,8 @@ export const documents = pgTable(
 
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary lookup: user's documents by path prefix */

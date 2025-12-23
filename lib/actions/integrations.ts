@@ -230,7 +230,6 @@ export async function connectApiKeyService(
                         encryptedCredentials,
                         status: "connected",
                         errorMessage: null,
-                        updatedAt: new Date(),
                     })
                     .where(eq(schema.integrations.id, existing.id));
 
@@ -270,7 +269,6 @@ export async function connectApiKeyService(
                     isDefault,
                     status: "connected",
                     connectedAt: new Date(),
-                    updatedAt: new Date(),
                 });
 
                 logger.info(
@@ -517,7 +515,7 @@ export async function testIntegration(
 
                 await db
                     .update(schema.integrations)
-                    .set({ status: "error", updatedAt: new Date() })
+                    .set({ status: "error" })
                     .where(and(...whereConditions));
             }
 
@@ -574,7 +572,7 @@ export async function testIntegration(
 
             await db
                 .update(schema.integrations)
-                .set({ status: "error", updatedAt: new Date() })
+                .set({ status: "error" })
                 .where(and(...whereConditions));
         }
 
