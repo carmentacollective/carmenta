@@ -1281,7 +1281,10 @@ function AssistantMessage({
                             {hasContent && (
                                 <div className="group">
                                     <div className="px-4 pb-2 pt-4">
-                                        <MarkdownRenderer content={content} />
+                                        <MarkdownRenderer
+                                            content={content}
+                                            isStreaming={isStreaming}
+                                        />
                                     </div>
                                     <div className="px-4 pb-1">
                                         <MessageActions
@@ -1307,7 +1310,7 @@ function AssistantMessage({
                     </div>
 
                     <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-4">
-                        <MarkdownRenderer content={content} />
+                        <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
                         content={content}
