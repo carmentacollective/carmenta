@@ -178,7 +178,6 @@ export async function updateConnection(
     // If title is being updated, regenerate the slug with encoded ID
     const updateData: Record<string, unknown> = {
         ...updates,
-        updatedAt: new Date(),
     };
 
     if (updates.title !== undefined) {
@@ -203,7 +202,6 @@ export async function archiveConnection(connectionId: number): Promise<void> {
         .update(connections)
         .set({
             status: "archived",
-            updatedAt: new Date(),
         })
         .where(eq(connections.id, connectionId));
 
@@ -238,7 +236,6 @@ export async function toggleStar(
         .set({
             isStarred,
             starredAt: isStarred ? new Date() : null,
-            updatedAt: new Date(),
         })
         .where(eq(connections.id, connectionId))
         .returning();
@@ -328,7 +325,6 @@ export async function saveMessage(
             .update(connections)
             .set({
                 lastActivityAt: new Date(),
-                updatedAt: new Date(),
             })
             .where(eq(connections.id, connectionId));
     });
@@ -409,7 +405,6 @@ export async function upsertMessage(
             .update(connections)
             .set({
                 lastActivityAt: new Date(),
-                updatedAt: new Date(),
             })
             .where(eq(connections.id, connectionId));
     });
@@ -454,7 +449,6 @@ export async function updateStreamingStatus(
         .update(connections)
         .set({
             streamingStatus: status,
-            updatedAt: new Date(),
         })
         .where(eq(connections.id, connectionId));
 
@@ -472,7 +466,6 @@ export async function markAsBackground(connectionId: number): Promise<void> {
         .update(connections)
         .set({
             status: "background",
-            updatedAt: new Date(),
         })
         .where(eq(connections.id, connectionId));
 

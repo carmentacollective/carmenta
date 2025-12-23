@@ -111,6 +111,21 @@ export const toolStateEnum = pgEnum("tool_state", [
 // ============================================================================
 
 /**
+ * Discovery item state - tracks completion/skip status
+ */
+export interface DiscoveryItemState {
+    completedAt?: string; // ISO date string
+    skippedAt?: string; // ISO date string
+}
+
+/**
+ * User's discovery state - tracks which items have been addressed
+ */
+export interface UserDiscoveryState {
+    [itemKey: string]: DiscoveryItemState;
+}
+
+/**
  * User Preferences Type
  */
 export interface UserPreferences {
@@ -122,6 +137,8 @@ export interface UserPreferences {
         email?: boolean;
         push?: boolean;
     };
+    /** Discovery system state - tracks completed/skipped items */
+    discoveryState?: UserDiscoveryState;
 }
 
 export const users = pgTable(
@@ -141,7 +158,8 @@ export const users = pgTable(
             .defaultNow(),
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         index("users_email_idx").on(table.email),
@@ -253,7 +271,8 @@ export const connections = pgTable(
 
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary query: recent connections for a user */
@@ -557,7 +576,8 @@ export const integrations = pgTable(
         /** Last update time */
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary query: user's integrations */
@@ -846,7 +866,8 @@ export const documents = pgTable(
 
         updatedAt: timestamp("updated_at", { withTimezone: true })
             .notNull()
-            .defaultNow(),
+            .defaultNow()
+            .$onUpdate(() => new Date()),
     },
     (table) => [
         /** Primary lookup: user's documents by path prefix */

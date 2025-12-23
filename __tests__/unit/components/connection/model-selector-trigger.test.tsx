@@ -1,9 +1,29 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/react";
+import { type ReactNode, useState } from "react";
 
 import { ModelSelectorTrigger } from "@/components/connection/model-selector/model-selector-trigger";
 import { DEFAULT_OVERRIDES } from "@/components/connection/model-selector/types";
 import { getModel } from "@/lib/model-config";
+import {
+    SettingsModalContext,
+    type SettingsModalContextType,
+} from "@/components/connection/connect-runtime-provider";
+
+// Test wrapper that provides required context
+function TestWrapper({ children }: { children: ReactNode }) {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const contextValue: SettingsModalContextType = {
+        settingsOpen,
+        setSettingsOpen,
+    };
+
+    return (
+        <SettingsModalContext.Provider value={contextValue}>
+            {children}
+        </SettingsModalContext.Provider>
+    );
+}
 
 describe("ModelSelectorTrigger", () => {
     const defaultProps = {
@@ -18,7 +38,11 @@ describe("ModelSelectorTrigger", () => {
 
     describe("trigger button", () => {
         it("renders trigger button with sparkles icon when auto", () => {
-            const { container } = render(<ModelSelectorTrigger {...defaultProps} />);
+            const { container } = render(
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} />
+                </TestWrapper>
+            );
 
             const button = container.querySelector("button");
             expect(button).toBeInTheDocument();
@@ -32,10 +56,12 @@ describe("ModelSelectorTrigger", () => {
         it("shows provider icon when conciergeModel is provided", () => {
             const conciergeModel = getModel("anthropic/claude-sonnet-4.5");
             const { container } = render(
-                <ModelSelectorTrigger
-                    {...defaultProps}
-                    conciergeModel={conciergeModel}
-                />
+                <TestWrapper>
+                    <ModelSelectorTrigger
+                        {...defaultProps}
+                        conciergeModel={conciergeModel}
+                    />
+                </TestWrapper>
             );
 
             const button = container.querySelector("button");
@@ -46,13 +72,15 @@ describe("ModelSelectorTrigger", () => {
 
         it("shows provider icon when manual model is selected", () => {
             const { container } = render(
-                <ModelSelectorTrigger
-                    {...defaultProps}
-                    overrides={{
-                        ...DEFAULT_OVERRIDES,
-                        modelId: "anthropic/claude-opus-4.5",
-                    }}
-                />
+                <TestWrapper>
+                    <ModelSelectorTrigger
+                        {...defaultProps}
+                        overrides={{
+                            ...DEFAULT_OVERRIDES,
+                            modelId: "anthropic/claude-opus-4.5",
+                        }}
+                    />
+                </TestWrapper>
             );
 
             const button = container.querySelector("button");
@@ -61,13 +89,15 @@ describe("ModelSelectorTrigger", () => {
 
         it("has ring highlight when overrides are set", () => {
             const { container } = render(
-                <ModelSelectorTrigger
-                    {...defaultProps}
-                    overrides={{
-                        ...DEFAULT_OVERRIDES,
-                        modelId: "anthropic/claude-opus-4.5",
-                    }}
-                />
+                <TestWrapper>
+                    <ModelSelectorTrigger
+                        {...defaultProps}
+                        overrides={{
+                            ...DEFAULT_OVERRIDES,
+                            modelId: "anthropic/claude-opus-4.5",
+                        }}
+                    />
+                </TestWrapper>
             );
 
             const button = container.querySelector("button");
@@ -76,7 +106,9 @@ describe("ModelSelectorTrigger", () => {
 
         it("is disabled when disabled prop is true", () => {
             const { container } = render(
-                <ModelSelectorTrigger {...defaultProps} disabled />
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} disabled />
+                </TestWrapper>
             );
 
             const button = container.querySelector("button");
@@ -87,7 +119,11 @@ describe("ModelSelectorTrigger", () => {
 
     describe("modal opening", () => {
         it("opens modal when trigger is clicked", () => {
-            const { container } = render(<ModelSelectorTrigger {...defaultProps} />);
+            const { container } = render(
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} />
+                </TestWrapper>
+            );
 
             const trigger = container.querySelector("button")!;
             fireEvent.click(trigger);
@@ -100,7 +136,11 @@ describe("ModelSelectorTrigger", () => {
         });
 
         it("has backdrop that can be clicked", () => {
-            const { container } = render(<ModelSelectorTrigger {...defaultProps} />);
+            const { container } = render(
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} />
+                </TestWrapper>
+            );
 
             // Open modal
             const trigger = container.querySelector("button")!;
@@ -120,7 +160,9 @@ describe("ModelSelectorTrigger", () => {
         it("calls onChange when model is selected", () => {
             const onChange = vi.fn();
             const { container } = render(
-                <ModelSelectorTrigger {...defaultProps} onChange={onChange} />
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} onChange={onChange} />
+                </TestWrapper>
             );
 
             // Open modal
@@ -141,7 +183,11 @@ describe("ModelSelectorTrigger", () => {
 
     describe("accessibility", () => {
         it("trigger has aria-label", () => {
-            const { container } = render(<ModelSelectorTrigger {...defaultProps} />);
+            const { container } = render(
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} />
+                </TestWrapper>
+            );
 
             const button = container.querySelector("button");
             expect(button).toHaveAttribute("aria-label", "Model settings");
@@ -149,7 +195,9 @@ describe("ModelSelectorTrigger", () => {
 
         it("applies custom className", () => {
             const { container } = render(
-                <ModelSelectorTrigger {...defaultProps} className="custom-class" />
+                <TestWrapper>
+                    <ModelSelectorTrigger {...defaultProps} className="custom-class" />
+                </TestWrapper>
             );
 
             expect(container.firstChild).toHaveClass("custom-class");

@@ -46,7 +46,6 @@ import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
-import { FeatureTip } from "@/components/ui/feature-tip";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useUserContext } from "@/lib/auth/user-context";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
@@ -224,7 +223,7 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton() {
 
 /**
  * Welcome screen shown when thread is empty.
- * Includes a rotating feature tip below the greeting to help users discover capabilities.
+ * Feature tips now appear via OracleWhisper in the header.
  */
 function ThreadWelcome() {
     return (
@@ -233,7 +232,6 @@ function ThreadWelcome() {
                 className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
                 subtitleClassName="mt-2 text-base text-foreground/60"
             />
-            <FeatureTip className="mt-8" />
         </div>
     );
 }
@@ -1097,9 +1095,10 @@ function MessageActions({
                 <button
                     onClick={onEdit}
                     aria-label="Edit message"
-                    data-tooltip="Revise this and get a fresh response"
+                    data-tooltip-id="tip"
+                    data-tooltip-content="Let's try that differently"
                     className={cn(
-                        "tooltip inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
@@ -1145,8 +1144,9 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
 
     return (
         <div
-            className="tooltip flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
-            data-tooltip={model.displayName}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
+            data-tooltip-id="tip"
+            data-tooltip-content={model.displayName}
         >
             <ProviderIcon provider={model.provider} className="h-3.5 w-3.5" />
         </div>

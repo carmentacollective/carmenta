@@ -367,7 +367,6 @@ export async function storeTokens(
                 accountDisplayName: accountInfo.displayName,
                 status: "connected",
                 errorMessage: null,
-                updatedAt: new Date(),
             })
             .where(eq(integrations.id, existing.id));
 
@@ -619,7 +618,6 @@ async function refreshAccessToken(
         .update(integrations)
         .set({
             encryptedCredentials: encrypted,
-            updatedAt: new Date(),
         })
         .where(
             and(
@@ -659,7 +657,6 @@ async function markAsExpired(
         .set({
             status: "expired",
             errorMessage: "Token expired - please reconnect",
-            updatedAt: new Date(),
         })
         .where(eq(integrations.id, integrationId));
 

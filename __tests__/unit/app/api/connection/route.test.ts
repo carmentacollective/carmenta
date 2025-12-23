@@ -88,6 +88,22 @@ vi.mock("@/lib/db", () => ({
     updateStreamingStatus: vi.fn(),
 }));
 
+// Mock discovery functions
+vi.mock("@/lib/discovery", () => ({
+    getPendingDiscoveries: vi.fn().mockResolvedValue([]),
+    completeDiscovery: vi.fn(),
+    skipDiscovery: vi.fn(),
+}));
+
+// Mock user lookup for discovery
+vi.mock("@/lib/db/users", () => ({
+    findUserByClerkId: vi.fn().mockResolvedValue({
+        id: "db-user-123",
+        clerkId: "test-user-123",
+        email: "test@example.com",
+    }),
+}));
+
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
 import { currentUser } from "@clerk/nextjs/server";

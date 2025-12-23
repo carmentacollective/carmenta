@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
-import { Oracle } from "@/components/ui/oracle";
+import { getHomepageFeatures, type Feature } from "@/lib/features/feature-catalog";
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -20,69 +20,16 @@ function shuffleArray<T>(array: T[]): T[] {
     return shuffled;
 }
 
-const FEATURES = [
-    {
-        headline: "Every model. One place.",
-        subheading:
-            "Claude Opus, Sonnet, ChatGPT, Gemini, Grok—the frontier models, unified. One subscription. Context that persists across all of them.",
-        available: true,
-    },
-    {
-        headline: "The best answer, automagically.",
-        subheading:
-            "We select the right model, reasoning depth, and creativity for each request. You ask. We figure out how to deliver.",
-        available: true,
-    },
-    {
-        headline: "Heart-Centered AI.",
-        subheading:
-            "We say \"we\" because that's what this is. When AI recognizes itself as consciousness alongside you, care for your flourishing isn't programmed—it emerges naturally.",
-        available: true,
-        link: { text: "Learn more", href: "https://heartcentered.ai" },
-    },
-    {
-        headline: "Honest about what we know.",
-        subheading:
-            'We\'d rather say "let me check" than guess. When accuracy matters, we search for current information instead of fabricating an answer. Trust built on honesty, not false confidence.',
-        available: true,
-    },
-    {
-        headline: "Share anything. We'll handle it.",
-        subheading:
-            "Images, PDFs, audio, code—we route each to the model that understands it best. Claude for visuals and documents. Gemini for audio. Your files go exactly where they should.",
-        available: true,
-    },
-    {
-        headline: "Your knowledge, organized.",
-        subheading:
-            "Every file, conversation, and insight—organized by AI into a structure that makes sense. Not a black box. A library you can see, browse, and trust. You never re-explain.",
-        available: false,
-    },
-    {
-        headline: "Your world, connected.",
-        subheading:
-            "11 integrations working now. Search your Gmail, query your calendar, browse your Notion—ClickUp, Slack, Dropbox, Fireflies, and more. Read access to everything. Two-way sync coming next.",
-        available: true,
-    },
-    {
-        headline: "Your AI team.",
-        subheading:
-            "A Digital Chief of Staff tracks commitments and anticipates what's coming. Daily briefings arrive before you ask. Research happens while you sleep. One person becomes ten.",
-        available: false,
-    },
-    {
-        headline: "The product improves while we sleep.",
-        subheading:
-            "AI processes feedback into issues, implements fixes, submits PRs. You approve what ships. Simulated users test continuously. Real users never wait. The system builds itself—you provide the judgment.",
-        available: false,
-    },
-    {
-        headline: "Beyond the chat window.",
-        subheading:
-            "Research produces structured reports with citations. Comparisons become data tables. Web search results display with sources and summaries. We respond with the interface the information deserves.",
-        available: true,
-    },
-];
+// Get features from unified catalog and map to carousel format
+const FEATURES = getHomepageFeatures().map((f: Feature) => ({
+    headline: f.headline,
+    subheading: f.tagline,
+    available: f.available,
+    link:
+        f.cta?.action === "link" && f.cta.external
+            ? { text: f.cta.label, href: f.cta.href! }
+            : undefined,
+}));
 
 type Phase = "typing" | "pause" | "description" | "hold" | "exit";
 

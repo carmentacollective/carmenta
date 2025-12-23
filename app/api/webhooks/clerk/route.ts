@@ -107,7 +107,7 @@ async function handleUserCreated(user: ClerkUserData): Promise<void> {
                 lastName: user.last_name,
                 displayName,
                 imageUrl: user.image_url,
-                updatedAt: new Date(),
+                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
             },
         });
 
@@ -136,7 +136,6 @@ async function handleUserUpdated(user: ClerkUserData): Promise<void> {
             lastName: user.last_name,
             displayName,
             imageUrl: user.image_url,
-            updatedAt: new Date(),
         })
         .where(eq(schema.users.clerkId, user.id))
         .returning({ id: schema.users.id });
@@ -162,7 +161,6 @@ async function handleSessionCreated(session: ClerkSessionData): Promise<void> {
         .update(schema.users)
         .set({
             lastSignedInAt: new Date(),
-            updatedAt: new Date(),
         })
         .where(eq(schema.users.clerkId, session.user_id))
         .returning({ email: schema.users.email });

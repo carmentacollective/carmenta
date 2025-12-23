@@ -1429,50 +1429,95 @@
     }
 
     /*
-     * CSS-Only Tooltip
+     * View Transitions (React 19 + next-view-transitions)
      *
-     * Zero JS, zero dependencies. Uses data-tooltip attribute.
-     * Glass effect with slide animation. Auto light/dark via CSS vars.
-     *
-     * Usage: <button data-tooltip="Copy to clipboard" class="tooltip">...</button>
+     * Smooth page transitions that match Carmenta's ethereal motion design.
+     * Uses the same timing curves as our watermark-presence animation for
+     * consistency across all motion in the interface.
      */
-    .tooltip {
-        position: relative;
+    @supports (view-transition-name: none) {
+        /* Global transition timing - matches Carmenta's motion language */
+        ::view-transition-group(*) {
+            animation-duration: 400ms;
+            animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Old content fades and scales down slightly */
+        ::view-transition-old(*) {
+            animation: view-fade-out 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* New content fades in and scales up from slightly smaller */
+        ::view-transition-new(*) {
+            animation: view-fade-in 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes view-fade-out {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+        }
+
+        @keyframes view-fade-in {
+            from {
+                opacity: 0;
+                transform: scale(1.02);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Named view transitions for persistent elements */
+        .vt-app-logo {
+            view-transition-name: app-logo;
+        }
+
+        .vt-oracle-home {
+            view-transition-name: oracle-home;
+        }
+
+        .vt-theme-switcher {
+            view-transition-name: theme-switcher;
+        }
+
+        .vt-user-auth {
+            view-transition-name: user-auth;
+        }
+
+        /* Persistent elements morph position without fade animation */
+        ::view-transition-group(app-logo),
+        ::view-transition-group(oracle-home),
+        ::view-transition-group(theme-switcher),
+        ::view-transition-group(user-auth) {
+            animation-duration: 350ms;
+        }
+
+        /* Disable fade for persistent elements - they should only morph */
+        ::view-transition-old(app-logo),
+        ::view-transition-new(app-logo),
+        ::view-transition-old(oracle-home),
+        ::view-transition-new(oracle-home),
+        ::view-transition-old(theme-switcher),
+        ::view-transition-new(theme-switcher),
+        ::view-transition-old(user-auth),
+        ::view-transition-new(user-auth) {
+            animation: none;
+        }
     }
 
-    .tooltip::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: calc(100% + 8px);
-        left: 50%;
-        transform: translateX(-50%) translateY(4px);
-        padding: 8px 14px;
-        border-radius: 8px; /* rounded-lg */
-        background: hsl(var(--background) / 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid hsl(var(--foreground) / 0.1);
-        color: hsl(var(--foreground) / 0.9);
-        font-size: 12px;
-        font-weight: 500;
-        line-height: 1;
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-        transition:
-            opacity 200ms ease-out,
-            transform 200ms ease-out;
-        z-index: 50;
-    }
-
-    .tooltip:hover::after,
-    .tooltip:focus::after {
-        opacity: 1;
-        transform: translateX(-50%) translateY(-4px);
-    }
-
-    /* Hide tooltip when empty */
-    .tooltip[data-tooltip=""]::after {
-        display: none;
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+        ::view-transition-group(*),
+        ::view-transition-old(*),
+        ::view-transition-new(*) {
+            animation: none !important;
+        }
     }
 }

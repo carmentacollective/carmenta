@@ -58,11 +58,12 @@ export function Oracle({
                 config.container,
                 // Breathing animation
                 state === "breathing" && "oracle-breathing",
-                // Tooltip
-                href && "tooltip",
+                // View transition for persistent navigation element
+                href && "vt-oracle-home",
                 className
             )}
-            data-tooltip={href ? "Return to Carmenta home" : undefined}
+            data-tooltip-id={href ? "tip" : undefined}
+            data-tooltip-content={href ? "Home" : undefined}
         >
             <Image
                 src="/logos/icon-transparent.png"

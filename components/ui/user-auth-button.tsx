@@ -128,13 +128,14 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     );
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("vt-user-auth relative", className)}>
             {/* Trigger button - UserCircle icon */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="btn-icon-glass tooltip group relative"
+                className="btn-icon-glass group relative"
                 aria-label="User menu"
-                data-tooltip="Your account, integrations, and appearance"
+                data-tooltip-id="tip"
+                data-tooltip-content="Settings & integrations"
             >
                 <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7 md:h-8 md:w-8" />
             </button>
@@ -257,12 +258,13 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                                     )
                                                                 }
                                                                 className={cn(
-                                                                    "tooltip flex items-center justify-center rounded-md px-2 py-1 transition-all",
+                                                                    "flex items-center justify-center rounded-md px-2 py-1 transition-all",
                                                                     isSelected
                                                                         ? "bg-background text-foreground shadow-sm"
                                                                         : "text-foreground/40 hover:text-foreground/70"
                                                                 )}
-                                                                data-tooltip={
+                                                                data-tooltip-id="tip"
+                                                                data-tooltip-content={
                                                                     option.label
                                                                 }
                                                             >
@@ -306,7 +308,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                                 );
                                                             }}
                                                             className={cn(
-                                                                "tooltip h-10 w-10 rounded-full transition-all",
+                                                                "h-10 w-10 rounded-full transition-all",
                                                                 isCommitted
                                                                     ? "ring-2 ring-foreground/60 ring-offset-2 ring-offset-background"
                                                                     : "opacity-60 hover:scale-110 hover:opacity-100"
@@ -315,7 +317,10 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                                 backgroundColor:
                                                                     variant.color,
                                                             }}
-                                                            data-tooltip={variant.label}
+                                                            data-tooltip-id="tip"
+                                                            data-tooltip-content={
+                                                                variant.label
+                                                            }
                                                         />
                                                     );
                                                 })}
