@@ -4,12 +4,22 @@ import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
+
+interface ThemeSwitcherProps {
+    /**
+     * Apply view transition name for persistent animation across pages.
+     * Only use this for the primary theme switcher (e.g., in header).
+     * Don't use for secondary instances (e.g., footer) to avoid duplicate view-transition-name values.
+     */
+    enableViewTransition?: boolean;
+}
 
 /**
  * Theme Switcher - Simple toggle between light and dark mode.
@@ -18,7 +28,9 @@ const getServerSnapshot = () => false;
  * Light mode: soft pastel holographic
  * Dark mode: warm deeper holographic
  */
-export function ThemeSwitcher() {
+export function ThemeSwitcher({
+    enableViewTransition = false,
+}: ThemeSwitcherProps = {}) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { resolvedTheme, setTheme } = useTheme();
 
@@ -47,7 +59,7 @@ export function ThemeSwitcher() {
         <Button
             variant="ghost"
             size="icon-sm"
-            className="vt-theme-switcher relative"
+            className={cn("relative", enableViewTransition && "vt-theme-switcher")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
         >

@@ -48,7 +48,7 @@ export function SiteHeader({
                 </span>
             </Link>
             <div className="flex items-center gap-4">
-                {showThemeSwitcher && <ThemeSwitcher />}
+                {showThemeSwitcher && <ThemeSwitcher enableViewTransition />}
                 <UserAuthButton />
                 {rightContent}
             </div>
