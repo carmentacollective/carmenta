@@ -566,19 +566,116 @@
             0 6px 24px hsl(var(--primary) / 0.5);
     }
 
-    /* Greeting text styles */
-    .greeting-title {
-        @apply text-4xl font-light tracking-tight text-foreground/85 md:text-5xl;
-        letter-spacing: -1.5px;
-        text-shadow: 0 2px 20px rgba(255, 255, 255, 0.5);
+    /* =============================================
+     * Greeting Styles - Theme-Adaptive Gradient Text
+     * =============================================
+     * Uses CSS custom properties for gradient colors so each theme
+     * can define its own gradient stops. Text shadow improves
+     * legibility against gradient backgrounds.
+     */
+
+    /* Gradient color tokens - default carmenta theme */
+    :root {
+        --greeting-gradient-start: hsl(270 50% 45%);
+        --greeting-gradient-mid: hsl(280 55% 55%);
+        --greeting-gradient-end: hsl(320 50% 50%);
+        --greeting-subtitle-color: hsl(285 20% 45%);
     }
 
-    .dark .greeting-title {
-        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    .dark {
+        --greeting-gradient-start: hsl(275 65% 72%);
+        --greeting-gradient-mid: hsl(285 60% 78%);
+        --greeting-gradient-end: hsl(320 55% 70%);
+        --greeting-subtitle-color: hsl(280 20% 70%);
+    }
+
+    /* Warm Earth theme gradient */
+    :root[data-theme="warm-earth"] {
+        --greeting-gradient-start: hsl(15 55% 45%);
+        --greeting-gradient-mid: hsl(25 60% 55%);
+        --greeting-gradient-end: hsl(40 55% 50%);
+        --greeting-subtitle-color: hsl(25 25% 40%);
+    }
+
+    :root[data-theme="warm-earth"].dark {
+        --greeting-gradient-start: hsl(15 70% 65%);
+        --greeting-gradient-mid: hsl(25 65% 70%);
+        --greeting-gradient-end: hsl(40 60% 65%);
+        --greeting-subtitle-color: hsl(30 20% 68%);
+    }
+
+    /* Arctic Clarity theme gradient */
+    :root[data-theme="arctic-clarity"] {
+        --greeting-gradient-start: hsl(200 55% 40%);
+        --greeting-gradient-mid: hsl(185 50% 45%);
+        --greeting-gradient-end: hsl(210 55% 50%);
+        --greeting-subtitle-color: hsl(200 25% 42%);
+    }
+
+    :root[data-theme="arctic-clarity"].dark {
+        --greeting-gradient-start: hsl(195 60% 65%);
+        --greeting-gradient-mid: hsl(180 55% 68%);
+        --greeting-gradient-end: hsl(205 60% 70%);
+        --greeting-subtitle-color: hsl(195 20% 68%);
+    }
+
+    /* Forest Wisdom theme gradient */
+    :root[data-theme="forest-wisdom"] {
+        --greeting-gradient-start: hsl(140 40% 35%);
+        --greeting-gradient-mid: hsl(120 35% 42%);
+        --greeting-gradient-end: hsl(80 45% 45%);
+        --greeting-subtitle-color: hsl(130 20% 38%);
+    }
+
+    :root[data-theme="forest-wisdom"].dark {
+        --greeting-gradient-start: hsl(140 45% 58%);
+        --greeting-gradient-mid: hsl(125 40% 62%);
+        --greeting-gradient-end: hsl(85 50% 60%);
+        --greeting-subtitle-color: hsl(130 18% 65%);
+    }
+
+    /* Monochrome theme gradient */
+    :root[data-theme="monochrome"] {
+        --greeting-gradient-start: hsl(220 10% 35%);
+        --greeting-gradient-mid: hsl(220 12% 45%);
+        --greeting-gradient-end: hsl(220 8% 50%);
+        --greeting-subtitle-color: hsl(220 8% 42%);
+    }
+
+    :root[data-theme="monochrome"].dark {
+        --greeting-gradient-start: hsl(220 8% 72%);
+        --greeting-gradient-mid: hsl(220 10% 78%);
+        --greeting-gradient-end: hsl(220 6% 82%);
+        --greeting-subtitle-color: hsl(220 6% 68%);
+    }
+
+    .greeting-container {
+        @apply text-center;
+    }
+
+    .greeting-gradient {
+        @apply text-[44px] font-semibold leading-tight tracking-tight md:text-5xl;
+        letter-spacing: -1.5px;
+        background: linear-gradient(
+            135deg,
+            var(--greeting-gradient-start) 0%,
+            var(--greeting-gradient-mid) 50%,
+            var(--greeting-gradient-end) 100%
+        );
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        /* Subtle text shadow for depth - uses the gradient start color */
+        filter: drop-shadow(
+            0 2px 8px
+                color-mix(in srgb, var(--greeting-gradient-start) 25%, transparent)
+        );
     }
 
     .greeting-subtitle {
-        @apply text-base text-foreground/70;
+        @apply mt-3 text-lg font-light md:text-xl;
+        color: var(--greeting-subtitle-color);
+        letter-spacing: -0.3px;
     }
 }
 

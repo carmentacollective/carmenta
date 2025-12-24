@@ -228,11 +228,8 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton() {
  */
 function ThreadWelcome() {
     return (
-        <div className="flex w-full flex-grow flex-col items-center justify-center text-center">
-            <Greeting
-                className="text-[44px] font-light leading-tight tracking-tight text-foreground/85"
-                subtitleClassName="mt-2 text-base text-foreground/60"
-            />
+        <div className="flex w-full flex-grow flex-col items-center justify-center">
+            <Greeting />
         </div>
     );
 }

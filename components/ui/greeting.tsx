@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useUserContext } from "@/lib/auth/user-context";
 
 /** Birthday config - month is 0-indexed (December = 11) */
@@ -27,6 +28,9 @@ interface GreetingProps {
  * Birthday: "Happy Birthday, Nick! 🎂" + celebratory subtitle
  * Logged in: "Hey, Nick" + "What are we creating together?"
  * Logged out: "Hey" + landing-appropriate subtitle
+ *
+ * Features theme-adaptive gradient text that adjusts colors based on
+ * light/dark mode and theme variant via CSS custom properties.
  *
  * Waits for auth state to load before rendering, so the greeting animates in
  * with the complete content—no awkward "Hey" → "Hey, Nick" flash.
@@ -68,9 +72,13 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
     if (!isLoaded) return null;
 
     return (
-        <div>
-            <h1 className={className}>{greetingText}</h1>
-            {displaySubtitle && <p className={subtitleClassName}>{displaySubtitle}</p>}
+        <div className="greeting-container">
+            <h1 className={cn("greeting-gradient", className)}>{greetingText}</h1>
+            {displaySubtitle && (
+                <p className={cn("greeting-subtitle", subtitleClassName)}>
+                    {displaySubtitle}
+                </p>
+            )}
         </div>
     );
 }
