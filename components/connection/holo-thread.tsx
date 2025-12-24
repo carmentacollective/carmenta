@@ -72,6 +72,10 @@ import { GiphyToolResult } from "@/components/generative-ui/giphy";
 import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { NotionToolResult } from "@/components/generative-ui/notion";
+import { DropboxToolResult } from "@/components/generative-ui/dropbox";
+import { GmailToolResult } from "@/components/generative-ui/gmail";
+import { SlackToolResult } from "@/components/generative-ui/slack";
+import { TwitterToolResult } from "@/components/generative-ui/twitter";
 import { Plan } from "@/components/tool-ui/plan";
 import type { PlanTodo } from "@/components/tool-ui/plan/schema";
 import { LinkPreview } from "@/components/tool-ui/link-preview";
@@ -523,6 +527,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 />
             );
 
+        case "dropbox":
+            return (
+                <DropboxToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Dropbox request failed")}
+                />
+            );
+
         case "fireflies":
             return (
                 <FirefliesToolResult
@@ -544,6 +560,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "gmail":
+            return (
+                <GmailToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Gmail request failed")}
                 />
             );
 
@@ -580,6 +608,46 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Notion request failed")}
+                />
+            );
+
+        case "slack":
+            return (
+                <SlackToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Slack request failed")}
+                />
+            );
+
+        case "twitter":
+            return (
+                <TwitterToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Twitter request failed")}
+                />
+            );
+
+        // Knowledge & Discovery tools - internal tools for context management
+        case "searchKnowledge":
+        case "updateDiscovery":
+        case "completeDiscovery":
+        case "skipDiscovery":
+            return (
+                <ToolRenderer
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Knowledge operation failed")}
                 />
             );
 
