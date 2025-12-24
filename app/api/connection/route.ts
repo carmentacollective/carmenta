@@ -420,10 +420,9 @@ function createDiscoveryTools(userId: string, pendingDiscoveries: DiscoveryItem[
 
                     await completeDiscovery(userId, itemKey);
 
-                    // Check for more pending items
-                    const remainingRequired = pendingDiscoveries.filter(
-                        (d) => d.key !== itemKey && d.required
-                    );
+                    // Check for more pending items (fetch fresh state, not from closure)
+                    const freshPending = await getPendingDiscoveries(userId);
+                    const remainingRequired = freshPending.filter((d) => d.required);
 
                     logger.info({ userId, itemKey }, "Discovery item completed");
 
