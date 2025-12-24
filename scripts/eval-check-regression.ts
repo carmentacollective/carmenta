@@ -16,6 +16,7 @@ import * as path from "path";
 import { logger } from "@/lib/logger";
 
 const BASELINE_FILE = path.join(process.cwd(), "knowledge/evals/baseline-benchmark.md");
+const EVAL_OUTPUT_FILE = path.join(process.cwd(), "eval-output.txt");
 const BRAINTRUST_API_KEY = process.env.BRAINTRUST_API_KEY;
 const PROJECT_NAME = "Carmenta Nightly"; // This is the project name, not experiment
 
@@ -169,6 +170,68 @@ function updateBaseline(metrics: {
     fs.writeFileSync(BASELINE_FILE, updated, "utf-8");
 
     logger.info({ metrics, date: now }, "Updated baseline file with improved metrics");
+}
+
+/**
+ * Parse scores from Braintrust CLI output (eval-output.txt)
+ *
+ * The CLI output contains lines like:
+ * │ ◯ HTTP Success          0.00%      0.00%             -            -          │
+ * │ ◯ Infrastructure …      0.00%      0.00%             -            -          │
+ */
+function parseEvalOutput(): {
+    httpSuccess?: number;
+    infrastructureHealth?: number;
+    responseSubstance?: number;
+    reasoning?: number;
+    routing?: number;
+    toolInvocation?: number;
+} | null {
+    if (!fs.existsSync(EVAL_OUTPUT_FILE)) {
+        logger.warn({ file: EVAL_OUTPUT_FILE }, "Eval output file not found");
+        return null;
+    }
+
+    const content = fs.readFileSync(EVAL_OUTPUT_FILE, "utf-8");
+    const scores: Record<string, number> = {};
+
+    // Parse lines like: │ ◯ HTTP Success          0.00%      0.00%
+    // The format is: │ ◯ <MetricName>  <Value>  <Change>  ...
+    const lines = content.split("\n");
+    for (const line of lines) {
+        // Match pattern: ◯ <Name> <Number>% or <Number>tok or just <Number>
+        const match = line.match(/◯\s+([A-Za-z][A-Za-z\s…]+?)\s+(\d+\.?\d*)(%|tok|s)?/);
+        if (match) {
+            const rawName = match[1].trim().replace(/…$/, "").trim();
+            const value = parseFloat(match[2]);
+
+            // Normalize metric names
+            const nameMap: Record<string, string> = {
+                "HTTP Success": "httpSuccess",
+                Infrastructure: "infrastructureHealth",
+                "Infrastructure Health": "infrastructureHealth",
+                "Response Substa": "responseSubstance",
+                "Response Substance": "responseSubstance",
+                Reasoning: "reasoning",
+                Routing: "routing",
+                "Model Selection": "routing",
+                "Tool Invocation": "toolInvocation",
+            };
+
+            const normalizedName = nameMap[rawName];
+            if (normalizedName && !isNaN(value)) {
+                scores[normalizedName] = value;
+            }
+        }
+    }
+
+    if (Object.keys(scores).length === 0) {
+        logger.warn("No scores found in eval output");
+        return null;
+    }
+
+    logger.info({ scores }, "Parsed scores from eval output");
+    return scores;
 }
 
 /**
@@ -433,12 +496,57 @@ async function main(): Promise<void> {
 
     // Step 1: Parse baseline
     const baseline = parseBaseline();
-    logger.info({ baseline }, "Loaded baseline metrics");
+    const isFirstRun = Object.values(baseline).every((v) => v === null);
+    logger.info({ baseline, isFirstRun }, "Loaded baseline metrics");
 
-    // Step 2: Fetch latest experiment
-    const current = await fetchLatestExperiment();
+    // Step 2: Get current metrics - try CLI output first, then API
+    let current: {
+        overall: number;
+        reasoning?: number;
+        creative?: number;
+        realWorld?: number;
+        routing?: number;
+        toolInvocation?: number;
+    } | null = null;
 
+    // Try parsing CLI output first (more reliable than API right after eval)
+    const cliScores = parseEvalOutput();
+    if (cliScores) {
+        // Compute overall as average of key infrastructure metrics
+        const httpSuccess = cliScores.httpSuccess ?? 0;
+        const infraHealth = cliScores.infrastructureHealth ?? 0;
+        const responseSubstance = cliScores.responseSubstance ?? 0;
+        const overall = (httpSuccess + infraHealth + responseSubstance) / 3;
+
+        current = {
+            overall,
+            reasoning: cliScores.reasoning,
+            routing: cliScores.routing,
+            toolInvocation: cliScores.toolInvocation,
+        };
+        logger.info({ current, source: "cli" }, "Using scores from CLI output");
+    }
+
+    // Fall back to API if CLI parsing failed
     if (!current) {
+        current = await fetchLatestExperiment();
+        if (current) {
+            logger.info({ current, source: "api" }, "Using scores from Braintrust API");
+        }
+    }
+
+    // Handle case where we can't get any metrics
+    if (!current) {
+        if (isFirstRun) {
+            logger.info(
+                "First run with no baseline - no metrics available yet, passing"
+            );
+            console.log("\nFirst Run - No baseline established yet");
+            console.log(
+                "Status: PASSED - baseline will be established on next successful run"
+            );
+            process.exit(0);
+        }
         logger.error("No experiment data available");
         process.exit(1);
     }
@@ -449,9 +557,10 @@ async function main(): Promise<void> {
     // Step 4: Format output
     formatOutput(results);
 
-    // Step 5: Handle first-run case
+    // Step 5: Handle first-run case (establish baseline)
     const noBaseline = results.filter((r) => r.status === "no-baseline");
     if (noBaseline.length === results.length) {
+        logger.info("First run - establishing baseline");
         updateBaseline(current);
         process.exit(0);
     }
