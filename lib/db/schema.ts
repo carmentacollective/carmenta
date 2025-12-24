@@ -126,6 +126,18 @@ export interface UserDiscoveryState {
 }
 
 /**
+ * Search filter preferences for the command palette
+ */
+export interface SearchFilters {
+    /** Filter by date range */
+    dateRange?: "today" | "week" | "month" | "all";
+    /** Filter by starred status */
+    starredOnly?: boolean;
+    /** Filter by model used (for conversation sources) */
+    model?: string;
+}
+
+/**
  * User Preferences Type
  */
 export interface UserPreferences {
@@ -139,6 +151,10 @@ export interface UserPreferences {
     };
     /** Discovery system state - tracks completed/skipped items */
     discoveryState?: UserDiscoveryState;
+    /** Recent search queries (most recent first, max 5) */
+    recentSearches?: string[];
+    /** Saved search filter preferences */
+    searchFilters?: SearchFilters;
 }
 
 export const users = pgTable(
