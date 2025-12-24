@@ -31,11 +31,8 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { ValidationError } from "@/lib/errors";
 
 // Constants for Notion API
 const NOTION_API_BASE = "https://api.notion.com";
@@ -756,27 +753,12 @@ export class NotionAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's Notion credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (!credentials.accessToken) {
-                return this.createErrorResponse(
-                    `No access token found for Notion. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations`
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        // Get user's Notion credentials via base adapter helper
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult; // Error response
         }
+        const { accessToken } = tokenResult;
 
         // Route to appropriate handler
         try {
@@ -830,62 +812,12 @@ export class NotionAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            // Comprehensive error logging
-            this.logError(
-                `[NOTION ADAPTER] Failed to execute ${action} for user ${userId}:`,
-                {
-                    error: error instanceof Error ? error.message : String(error),
-                    stack: error instanceof Error ? error.stack : undefined,
-                    params,
-                    accessToken: accessToken ? "***" : undefined, // Redacted for security
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            return this.handleOperationError(
+                error,
                 action,
-                params: params as Record<string, unknown>,
-                userId,
-            });
-
-            // User-friendly error message
-            let errorMessage = `We couldn't ${action}: `;
-            if (error instanceof Error) {
-                // Parse common error types
-                const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-                if (error.message.includes("404")) {
-                    errorMessage +=
-                        "That resource doesn't exist. Check that the page/database ID is correct and that the integration has access.";
-                } else if (error.message.includes("401")) {
-                    errorMessage += `Your Notion connection expired. Reconnect at: ${appUrl}/integrations/notion`;
-                } else if (error.message.includes("403")) {
-                    // 403 is permission-specific, not authentication
-                    errorMessage +=
-                        "Permission denied. This usually means the page or database isn't shared with the Carmenta integration. " +
-                        "To fix this:\n" +
-                        "1. Open the page in Notion\n" +
-                        "2. Click the ••• menu (top right)\n" +
-                        "3. Select 'Connections' → Add 'Carmenta'\n\n" +
-                        "If you've already shared the page, you may not have edit permissions for write operations. " +
-                        `Check your workspace settings or reconnect at: ${appUrl}/integrations/notion`;
-                } else if (error.message.includes("429")) {
-                    errorMessage +=
-                        "Notion rate limit hit (3 requests/second). Please wait a moment.";
-                } else if (
-                    error.message.includes("500") ||
-                    error.message.includes("503")
-                ) {
-                    errorMessage +=
-                        "Notion is temporarily unavailable. Please try again later.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "The bots have been alerted. 🤖";
-            }
-
-            return this.createErrorResponse(errorMessage);
+                params as Record<string, unknown>,
+                userId
+            );
         }
     }
 
@@ -1143,52 +1075,37 @@ export class NotionAdapter extends ServiceAdapter {
             include_blocks?: boolean;
         };
 
-        // Normalize the page_id to ensure it has hyphens
         const normalizedPageId = normalizeNotionId(page_id);
 
-        try {
-            // Get page metadata
-            const page = await httpClient
-                .get(`${NOTION_API_BASE}/v1/pages/${normalizedPageId}`, {
+        const page = await httpClient
+            .get(`${NOTION_API_BASE}/v1/pages/${normalizedPageId}`, {
+                headers: this.buildHeaders(accessToken),
+            })
+            .json<{
+                id: string;
+                properties: Record<string, unknown>;
+                url: string;
+                created_time: string;
+                last_edited_time: string;
+            }>();
+
+        let blocks: Array<Record<string, unknown>> = [];
+        if (include_blocks !== false) {
+            const blocksResponse = await httpClient
+                .get(`${NOTION_API_BASE}/v1/blocks/${normalizedPageId}/children`, {
                     headers: this.buildHeaders(accessToken),
                 })
-                .json<{
-                    id: string;
-                    properties: Record<string, unknown>;
-                    url: string;
-                    created_time: string;
-                    last_edited_time: string;
-                }>();
-
-            let blocks: Array<Record<string, unknown>> = [];
-            if (include_blocks !== false) {
-                const blocksResponse = await httpClient
-                    .get(`${NOTION_API_BASE}/v1/blocks/${normalizedPageId}/children`, {
-                        headers: this.buildHeaders(accessToken),
-                    })
-                    .json<{
-                        results: Array<Record<string, unknown>>;
-                    }>();
-                blocks = blocksResponse.results;
-            }
-
-            return this.createJSONResponse({
-                page,
-                blocks,
-                note: include_blocks
-                    ? "Page content included - properties show metadata, blocks contain the page content."
-                    : "Page metadata only - set include_blocks:true to see the page content.",
-            });
-        } catch (error) {
-            // Handle 404 errors gracefully
-            if (error instanceof Error && error.message.includes("404")) {
-                return this.createErrorResponse(
-                    `Page '${page_id}' not found. This page ID may be incorrect, or the page may have been deleted or archived. ` +
-                        `Please verify the page_id is correct by using the search tool to find the page.`
-                );
-            }
-            throw error; // Re-throw unexpected errors
+                .json<{ results: Array<Record<string, unknown>> }>();
+            blocks = blocksResponse.results;
         }
+
+        return this.createJSONResponse({
+            page,
+            blocks,
+            note: include_blocks
+                ? "Page content included - properties show metadata, blocks contain the page content."
+                : "Page metadata only - set include_blocks:true to see the page content.",
+        });
     }
 
     private async handleCreatePage(
@@ -1372,38 +1289,25 @@ export class NotionAdapter extends ServiceAdapter {
         accessToken: string
     ): Promise<MCPToolResponse> {
         const { database_id } = params as { database_id: string };
-
-        // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
 
-        try {
-            const response = await httpClient
-                .get(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
-                    headers: this.buildHeaders(accessToken),
-                })
-                .json<{
-                    id: string;
-                    title?: Array<{ plain_text: string }>;
-                    properties: Record<string, unknown>;
-                    url: string;
-                    created_time: string;
-                    last_edited_time: string;
-                }>();
+        const response = await httpClient
+            .get(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
+                headers: this.buildHeaders(accessToken),
+            })
+            .json<{
+                id: string;
+                title?: Array<{ plain_text: string }>;
+                properties: Record<string, unknown>;
+                url: string;
+                created_time: string;
+                last_edited_time: string;
+            }>();
 
-            return this.createJSONResponse({
-                ...response,
-                note: "Database schema included - the 'properties' field shows column definitions. Use query_database to retrieve entries.",
-            });
-        } catch (error) {
-            // Handle 404 errors gracefully
-            if (error instanceof Error && error.message.includes("404")) {
-                return this.createErrorResponse(
-                    `Database '${database_id}' not found. This database ID may be incorrect, or the database may have been deleted or archived. ` +
-                        `Please verify the database_id is correct by using list_databases or search to find the database.`
-                );
-            }
-            throw error; // Re-throw unexpected errors
-        }
+        return this.createJSONResponse({
+            ...response,
+            note: "Database schema included - the 'properties' field shows column definitions. Use query_database to retrieve entries.",
+        });
     }
 
     private async handleCreateDatabase(
@@ -1455,17 +1359,13 @@ export class NotionAdapter extends ServiceAdapter {
             cover?: Record<string, unknown>;
         };
 
-        // Validate that at least one update parameter is provided
         if (!title && !properties && !icon && !cover) {
             return this.createErrorResponse(
                 "Must provide at least one parameter to update: title, properties, icon, or cover"
             );
         }
 
-        // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
-
-        // Build request body with only provided parameters
         const requestBody: {
             title?: Array<Record<string, unknown>>;
             properties?: Record<string, unknown>;
@@ -1478,39 +1378,28 @@ export class NotionAdapter extends ServiceAdapter {
         if (icon) requestBody.icon = icon;
         if (cover) requestBody.cover = cover;
 
-        try {
-            const response = await httpClient
-                .patch(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
-                    headers: {
-                        ...this.buildHeaders(accessToken),
-                        "Content-Type": "application/json",
-                    },
-                    json: requestBody,
-                })
-                .json<{
-                    id: string;
-                    url: string;
-                    title?: Array<{ plain_text: string }>;
-                    properties: Record<string, unknown>;
-                }>();
+        const response = await httpClient
+            .patch(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}`, {
+                headers: {
+                    ...this.buildHeaders(accessToken),
+                    "Content-Type": "application/json",
+                },
+                json: requestBody,
+            })
+            .json<{
+                id: string;
+                url: string;
+                title?: Array<{ plain_text: string }>;
+                properties: Record<string, unknown>;
+            }>();
 
-            return this.createJSONResponse({
-                success: true,
-                database_id: response.id,
-                url: response.url,
-                title: response.title?.[0]?.plain_text || "Untitled",
-                properties: response.properties,
-            });
-        } catch (error) {
-            // Handle 404 errors gracefully
-            if (error instanceof Error && error.message.includes("404")) {
-                return this.createErrorResponse(
-                    `Database '${database_id}' not found. This database ID may be incorrect, or the database may have been deleted or archived. ` +
-                        `Please verify the database_id is correct by using list_databases or search to find the database.`
-                );
-            }
-            throw error; // Re-throw unexpected errors
-        }
+        return this.createJSONResponse({
+            success: true,
+            database_id: response.id,
+            url: response.url,
+            title: response.title?.[0]?.plain_text || "Untitled",
+            properties: response.properties,
+        });
     }
 
     private async handleQueryDatabase(
@@ -1529,72 +1418,43 @@ export class NotionAdapter extends ServiceAdapter {
             page_size?: number;
         };
 
-        // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
-
         const cappedPageSize = Math.min(Math.max(1, page_size), MAX_PAGE_SIZE);
 
         const requestBody: {
             filter?: Record<string, unknown>;
             sorts?: Array<Record<string, unknown>>;
             page_size: number;
-        } = {
-            page_size: cappedPageSize,
-        };
+        } = { page_size: cappedPageSize };
 
-        if (filter) {
-            requestBody.filter = filter;
-        }
-        if (sorts) {
-            requestBody.sorts = sorts;
-        }
+        if (filter) requestBody.filter = filter;
+        if (sorts) requestBody.sorts = sorts;
 
-        try {
-            // API Version 2025-09-03 Migration Notes:
-            // The official docs describe a new /v1/data_sources/{id}/query endpoint where
-            // databases act as containers for data sources. However, testing shows:
-            //   ❌ POST /v1/data_sources/{id}/query → 400 Bad Request
-            //   ❌ PATCH /v1/databases/{id}/query → 400 Bad Request
-            //   ✅ POST /v1/databases/{id}/query → Works perfectly
-            // The GET /v1/databases/{id} response also doesn't include the documented
-            // `data_sources` array. This indicates the new endpoints aren't live yet,
-            // likely due to staged rollout.
-            // TODO: Migrate to /v1/data_sources/{id}/query once it's actually available.
-            const response = await httpClient
-                .post(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}/query`, {
-                    headers: {
-                        ...this.buildHeaders(accessToken),
-                        "Content-Type": "application/json",
-                    },
-                    json: requestBody,
-                })
-                .json<{
-                    results: Array<Record<string, unknown>>;
-                    has_more: boolean;
-                    next_cursor: string | null;
-                }>();
+        const response = await httpClient
+            .post(`${NOTION_API_BASE}/v1/databases/${normalizedDatabaseId}/query`, {
+                headers: {
+                    ...this.buildHeaders(accessToken),
+                    "Content-Type": "application/json",
+                },
+                json: requestBody,
+            })
+            .json<{
+                results: Array<Record<string, unknown>>;
+                has_more: boolean;
+                next_cursor: string | null;
+            }>();
 
-            return this.createJSONResponse({
-                database_id,
-                totalCount: response.results.length,
-                has_more: response.has_more,
-                results: response.results,
-                note: response.has_more
-                    ? "More entries available - use pagination (start_cursor) to retrieve additional results."
-                    : response.results.length === 0
-                      ? "No entries match the filter criteria. Adjust filters or check the database."
-                      : "All matching entries included - entries contain full property values.",
-            });
-        } catch (error) {
-            // Handle 404 errors gracefully
-            if (error instanceof Error && error.message.includes("404")) {
-                return this.createErrorResponse(
-                    `Database '${database_id}' not found. This database ID may be incorrect, or the database may have been deleted or archived. ` +
-                        `Please verify the database_id is correct by using list_databases or search to find the database.`
-                );
-            }
-            throw error; // Re-throw unexpected errors
-        }
+        return this.createJSONResponse({
+            database_id,
+            totalCount: response.results.length,
+            has_more: response.has_more,
+            results: response.results,
+            note: response.has_more
+                ? "More entries available - use pagination (start_cursor) to retrieve additional results."
+                : response.results.length === 0
+                  ? "No entries match the filter criteria. Adjust filters or check the database."
+                  : "All matching entries included - entries contain full property values.",
+        });
     }
 
     private async handleCreateDatabaseEntry(
@@ -1607,7 +1467,6 @@ export class NotionAdapter extends ServiceAdapter {
             children?: Array<Record<string, unknown>>;
         };
 
-        // Normalize the database_id to ensure it has hyphens
         const normalizedDatabaseId = normalizeNotionId(database_id);
 
         const requestBody: {
@@ -1623,46 +1482,26 @@ export class NotionAdapter extends ServiceAdapter {
             requestBody.children = children;
         }
 
-        try {
-            const response = await httpClient
-                .post(`${NOTION_API_BASE}/v1/pages`, {
-                    headers: {
-                        ...this.buildHeaders(accessToken),
-                        "Content-Type": "application/json",
-                    },
-                    json: requestBody,
-                })
-                .json<{
-                    id: string;
-                    url: string;
-                    properties: Record<string, unknown>;
-                }>();
+        const response = await httpClient
+            .post(`${NOTION_API_BASE}/v1/pages`, {
+                headers: {
+                    ...this.buildHeaders(accessToken),
+                    "Content-Type": "application/json",
+                },
+                json: requestBody,
+            })
+            .json<{
+                id: string;
+                url: string;
+                properties: Record<string, unknown>;
+            }>();
 
-            return this.createJSONResponse({
-                success: true,
-                entry_id: response.id,
-                url: response.url,
-                properties: response.properties,
-            });
-        } catch (error) {
-            // Handle 400/404 errors gracefully
-            if (error instanceof Error) {
-                if (error.message.includes("400")) {
-                    return this.createErrorResponse(
-                        `Cannot create entry in database '${database_id}': The database ID may be incorrect, you may not have access, ` +
-                            `or the properties don't match the database schema. Please verify the database_id using list_databases, and ` +
-                            `check that the properties match the database's property definitions (use get_database to see the schema).`
-                    );
-                }
-                if (error.message.includes("404")) {
-                    return this.createErrorResponse(
-                        `Database '${database_id}' not found. This database ID may be incorrect, or the database may have been deleted or archived. ` +
-                            `Please verify the database_id is correct by using list_databases or search to find the database.`
-                    );
-                }
-            }
-            throw error; // Re-throw unexpected errors
-        }
+        return this.createJSONResponse({
+            success: true,
+            entry_id: response.id,
+            url: response.url,
+            properties: response.properties,
+        });
     }
 
     private async handleAppendBlocks(
@@ -1722,13 +1561,9 @@ export class NotionAdapter extends ServiceAdapter {
             archived?: boolean;
         };
 
-        // Normalize the block_id to ensure it has hyphens
         const normalizedBlockId = normalizeNotionId(block_id);
-
-        // Build request body based on what's being updated
         const requestBody: Record<string, unknown> = {};
 
-        // If updating content, need both block_type and content
         if (block_type && content) {
             requestBody[block_type] = content;
         } else if (block_type || content) {
@@ -1738,42 +1573,30 @@ export class NotionAdapter extends ServiceAdapter {
             );
         }
 
-        // Archive parameter is independent
         if (archived !== undefined) {
             requestBody.archived = archived;
         }
 
-        // Must have at least one thing to update
         if (Object.keys(requestBody).length === 0) {
             return this.createErrorResponse(
                 "Must provide either content (block_type + content) or archived parameter to update"
             );
         }
 
-        try {
-            const response = await httpClient
-                .patch(`${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}`, {
-                    headers: {
-                        ...this.buildHeaders(accessToken),
-                        "Content-Type": "application/json",
-                    },
-                    json: requestBody,
-                })
-                .json<Record<string, unknown>>();
+        const response = await httpClient
+            .patch(`${NOTION_API_BASE}/v1/blocks/${normalizedBlockId}`, {
+                headers: {
+                    ...this.buildHeaders(accessToken),
+                    "Content-Type": "application/json",
+                },
+                json: requestBody,
+            })
+            .json<Record<string, unknown>>();
 
-            return this.createJSONResponse({
-                success: true,
-                block: response,
-            });
-        } catch (error) {
-            // Handle 404 errors gracefully
-            if (error instanceof Error && error.message.includes("404")) {
-                return this.createErrorResponse(
-                    `Block '${block_id}' not found. The block may have been deleted or you may not have access to it.`
-                );
-            }
-            throw error; // Re-throw unexpected errors
-        }
+        return this.createJSONResponse({
+            success: true,
+            block: response,
+        });
     }
 
     private async handleGetChildBlocks(
@@ -1968,34 +1791,17 @@ export class NotionAdapter extends ServiceAdapter {
         }
 
         // Normalize UUIDs in endpoint path
-        // This handles endpoints like /v1/pages/{page_id}, /v1/databases/{database_id}, etc.
-        // Notion API requires UUIDs with hyphens (8-4-4-4-12 format)
         const normalizedEndpoint = endpoint.replace(
             /\/([0-9a-f]{32})(?=\/|$)/gi,
             (match, uuid) => `/${normalizeNotionId(uuid)}`
         );
 
-        // Get user credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (!credentials.accessToken) {
-                return this.createErrorResponse(
-                    `No access token found for Notion. Please reconnect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/notion`
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        // Get user credentials via base adapter helper
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult; // Error response
         }
+        const { accessToken } = tokenResult;
 
         // Build request options
         const requestOptions: {
@@ -2029,39 +1835,25 @@ export class NotionAdapter extends ServiceAdapter {
 
             return this.createJSONResponse(response);
         } catch (error) {
-            this.logError(
-                `[NOTION ADAPTER] Raw API request failed for user ${userId}:`,
-                {
-                    endpoint,
-                    method,
-                    error: error instanceof Error ? error.message : String(error),
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            // Log and capture using base adapter helper
+            this.captureAndLogError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
+            // raw_api-specific error messaging (includes API doc links)
             let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
-                const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
                 if (error.message.includes("404")) {
                     errorMessage +=
-                        "Endpoint not found. Check the Notion API documentation for the correct endpoint path: " +
+                        "Endpoint not found. Check the Notion API documentation: " +
                         "https://developers.notion.com/reference/intro";
-                } else if (error.message.includes("401")) {
-                    errorMessage += `Authentication failed. Your Notion connection may have expired. Please reconnect at: ${appUrl}/integrations/notion`;
-                } else if (error.message.includes("403")) {
-                    errorMessage +=
-                        "Permission denied. The resource isn't shared with the Carmenta integration. " +
-                        "Share the page/database in Notion via Connections → Add 'Carmenta'. " +
-                        `If already shared, check workspace settings or reconnect at: ${appUrl}/integrations/notion`;
                 } else {
-                    errorMessage += error.message;
+                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
+                        "We couldn't raw_api: ",
+                        ""
+                    );
                 }
             } else {
                 errorMessage += "Unknown error";

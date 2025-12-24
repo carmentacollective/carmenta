@@ -322,6 +322,101 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Get OAuth access token for execution
+     * Consolidates the repeated OAuth credential retrieval pattern from all adapters
+     *
+     * @param userId - User's email address
+     * @param accountId - Optional account ID for multi-account services
+     * @returns Access token string or error response if credentials invalid/missing
+     */
+    protected async getOAuthAccessToken(
+        userId: string,
+        accountId?: string
+    ): Promise<{ accessToken: string } | MCPToolResponse> {
+        const { getCredentials } =
+            await import("@/lib/integrations/connection-manager");
+        const { ValidationError } = await import("@/lib/errors");
+
+        try {
+            const credentials = await getCredentials(
+                userId,
+                this.serviceName,
+                accountId
+            );
+            if (!credentials.accessToken) {
+                return this.createErrorResponse(
+                    `No access token found for ${this.serviceDisplayName}. ` +
+                        `Please reconnect at: ${this.getIntegrationUrl()}`
+                );
+            }
+            return { accessToken: credentials.accessToken };
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                return this.createErrorResponse(error.message);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Combined logging and Sentry capture for operation errors
+     * Use this in catch blocks to reduce repetition
+     *
+     * @param error - The error that occurred
+     * @param context - Context about the operation
+     */
+    protected captureAndLogError(
+        error: unknown,
+        context: {
+            action: string;
+            params?: Record<string, unknown>;
+            userId?: string;
+            redactedFields?: Record<string, string>;
+        }
+    ): void {
+        this.logError(
+            `[${this.serviceName.toUpperCase()} ADAPTER] Failed to execute ${context.action}`,
+            {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                params: context.params,
+                ...context.redactedFields,
+            }
+        );
+
+        this.captureError(error, {
+            action: context.action,
+            params: context.params,
+            userId: context.userId,
+        });
+    }
+
+    /**
+     * Handle common operation errors with logging, Sentry capture, and user-friendly messages
+     * Use this at the top level of execute() to reduce repetition
+     *
+     * @param error - The error that occurred
+     * @param action - The action that failed
+     * @param params - Parameters passed to the action
+     * @param userId - User's email address
+     * @returns MCPToolResponse with user-friendly error message
+     */
+    protected handleOperationError(
+        error: unknown,
+        action: string,
+        params?: Record<string, unknown>,
+        userId?: string
+    ): MCPToolResponse {
+        // Log and capture in one call
+        this.captureAndLogError(error, { action, params, userId });
+
+        // Generate user-friendly message using existing helper
+        const message = this.handleCommonAPIError(error, action);
+
+        return this.createErrorResponse(message);
+    }
+
+    /**
      * Execute an operation
      *
      * @param action - The operation to execute

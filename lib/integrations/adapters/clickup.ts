@@ -14,9 +14,7 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { CLICKUP_API_BASE } from "../oauth/providers/clickup";
@@ -495,11 +493,10 @@ export class ClickUpAdapter extends ServiceAdapter {
         userId: string,
         accountId?: string
     ): Promise<MCPToolResponse> {
-        // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
             this.logError(
-                `📋 [CLICKUP ADAPTER] Validation failed for action '${action}':`,
+                `[CLICKUP ADAPTER] Validation failed for action '${action}':`,
                 validation.errors
             );
             return this.createErrorResponse(
@@ -507,30 +504,13 @@ export class ClickUpAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's ClickUp credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                this.logInfo(
-                    `📝 [CLICKUP ADAPTER] User ${userId} attempted to use ClickUp but no connection found`
-                );
-                return this.createErrorResponse(this.createNotConnectedError());
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        // Get credentials via base adapter helper
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
-        // Route to appropriate handler
         try {
             switch (action) {
                 case "list_teams":
@@ -563,61 +543,19 @@ export class ClickUpAdapter extends ServiceAdapter {
                     );
                 default:
                     this.logError(
-                        `📋 [CLICKUP ADAPTER] Unknown action '${action}' requested by user ${userId}`
+                        `[CLICKUP ADAPTER] Unknown action '${action}' requested by user ${userId}`
                     );
                     return this.createErrorResponse(
                         `Unknown action: ${action}. Use action='describe' to see available operations.`
                     );
             }
         } catch (error) {
-            // Comprehensive error logging
-            this.logError(
-                `📋 [CLICKUP ADAPTER] Failed to execute ${action} for user ${userId}:`,
-                {
-                    error: error instanceof Error ? error.message : String(error),
-                    stack: error instanceof Error ? error.stack : undefined,
-                    params,
-                    accessToken: accessToken ? "***" : undefined, // Redacted for security
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            return this.handleOperationError(
+                error,
                 action,
-                params: params as Record<string, unknown>,
-                userId,
-            });
-
-            // Warm, actionable error message
-            let errorMessage = "";
-            if (error instanceof Error) {
-                // Parse common error types
-                if (error.message.includes("404")) {
-                    errorMessage =
-                        "We couldn't find that item. Double-check the ID - ClickUp may have moved or deleted it.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage =
-                        "Our connection to ClickUp needs a refresh. Head to integrations and reconnect - we'll be back in business.";
-                } else if (error.message.includes("429")) {
-                    errorMessage =
-                        "We're moving too fast for ClickUp's rate limits. Let's take a breath and try again in a moment.";
-                } else if (
-                    error.message.includes("500") ||
-                    error.message.includes("503")
-                ) {
-                    errorMessage =
-                        "ClickUp's having a moment. This happens sometimes - try again in a few minutes and we should be good.";
-                } else {
-                    errorMessage = `Something went wrong: ${error.message}`;
-                }
-            } else {
-                errorMessage = "Something unexpected happened. Try again?";
-            }
-
-            return this.createErrorResponse(errorMessage);
+                params as Record<string, unknown>,
+                userId
+            );
         }
     }
 
@@ -1105,7 +1043,6 @@ export class ClickUpAdapter extends ServiceAdapter {
 
     /**
      * Execute a raw ClickUp API request
-     * This provides an escape hatch for operations not covered by standard actions
      */
     async executeRawAPI(
         params: RawAPIParams,
@@ -1114,7 +1051,6 @@ export class ClickUpAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const { endpoint, method, body, query } = params;
 
-        // Validate parameters
         if (!endpoint || typeof endpoint !== "string") {
             return this.createErrorResponse(
                 "raw_api requires 'endpoint' parameter (string)"
@@ -1126,37 +1062,19 @@ export class ClickUpAdapter extends ServiceAdapter {
             );
         }
 
-        // Security: validate endpoint starts with /api/v2
         if (!endpoint.startsWith("/api/v2")) {
             return this.createErrorResponse(
                 "Invalid endpoint: must start with '/api/v2'. " +
-                    `Got: ${endpoint}. ` +
-                    "Example: '/api/v2/team'"
+                    `Got: ${endpoint}. Example: '/api/v2/team'`
             );
         }
 
-        // Get user credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                return this.createErrorResponse(this.createNotConnectedError());
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
-        this.logInfo(`🔧 [CLICKUP] Raw API call: ${method} ${endpoint}`);
-
-        // Build request options
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
@@ -1165,14 +1083,12 @@ export class ClickUpAdapter extends ServiceAdapter {
             headers: this.buildHeaders(accessToken),
         };
 
-        // Add query parameters if provided
         if (query && typeof query === "object") {
             requestOptions.searchParams = Object.fromEntries(
                 Object.entries(query).map(([k, v]) => [k, String(v)])
             );
         }
 
-        // Add body for POST/PUT/PATCH
         if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
             requestOptions.json = body;
         }
@@ -1190,42 +1106,27 @@ export class ClickUpAdapter extends ServiceAdapter {
                 Record<string, unknown>
             >();
 
-            this.logInfo(`✅ [CLICKUP] Raw API call successful`);
-
             return this.createJSONResponse(response);
         } catch (error) {
-            this.logError(
-                `❌ [CLICKUP ADAPTER] Raw API request failed for user ${userId}:`,
-                {
-                    endpoint,
-                    method,
-                    error: error instanceof Error ? error.message : String(error),
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            this.captureAndLogError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
-            let errorMessage = "";
+            let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
-                    errorMessage =
-                        "That endpoint doesn't exist. Check the ClickUp API docs at https://clickup.com/api for the right path.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage =
-                        "Our ClickUp connection needs a refresh. Reconnect through integrations and we'll be back on track.";
+                    errorMessage +=
+                        "Endpoint not found. Check the ClickUp API docs: https://clickup.com/api";
                 } else {
-                    errorMessage = `API request failed: ${error.message}`;
+                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
+                        "We couldn't raw_api: ",
+                        ""
+                    );
                 }
             } else {
-                errorMessage = "Something went wrong with that API call.";
+                errorMessage += "Unknown error";
             }
 
             return this.createErrorResponse(errorMessage);
