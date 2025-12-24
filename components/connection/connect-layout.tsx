@@ -17,7 +17,9 @@
  */
 
 import { type ReactNode } from "react";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, Home } from "lucide-react";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
@@ -67,11 +69,40 @@ function CarmentaOracleWithWhisper() {
 }
 
 // ============================================================
+// Breadcrumb - Contextual navigation when viewing a connection
+// ============================================================
+
+function ConnectionBreadcrumb({ title }: { title: string }) {
+    return (
+        <motion.nav
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-1.5 text-xs text-foreground/40"
+            aria-label="Breadcrumb"
+        >
+            <Link
+                href="/connection"
+                className="flex items-center gap-1 transition-colors hover:text-foreground/60"
+            >
+                <Home className="h-3 w-3" />
+                <span className="hidden sm:inline">Home</span>
+            </Link>
+            <ChevronRight className="h-3 w-3" />
+            <span className="max-w-[150px] truncate text-foreground/60 sm:max-w-[200px]">
+                {title}
+            </span>
+        </motion.nav>
+    );
+}
+
+// ============================================================
 // Inner Layout (needs to be inside ConnectionProvider)
 // ============================================================
 
 function ConnectLayoutInner({ children }: { children: ReactNode }) {
-    const { activeConnection, connections } = useConnection();
+    const { activeConnection, connections, displayTitle } = useConnection();
     const isMobile = useIsMobile();
 
     // Simple: key only changes on real navigation (when activeConnection changes)
@@ -82,6 +113,9 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
     // Guard against undefined during SSR/hydration to prevent layout flash
     const showConnectionChooser = connections.length > 0 && isMobile !== true;
 
+    // Show breadcrumb when viewing a specific connection with a title
+    const showBreadcrumb = activeConnection && displayTitle && !isMobile;
+
     return (
         <ConnectRuntimeProvider>
             <div className="flex h-full items-center justify-center p-0 sm:p-4">
@@ -90,14 +124,20 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
                     {/* Mobile: increased padding (px-4) + right safe area for curved corners */}
                     <header className="flex items-center justify-between pb-2 pl-4 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
-                        {/* Oracle with whisper - Carmenta speaks */}
+                        {/* Oracle with whisper - Carmenta speaks, plus breadcrumb when viewing connection */}
                         <motion.div
                             variants={entranceVariants}
                             initial="hidden"
                             animate="visible"
                             custom={0}
+                            className="flex flex-col gap-1"
                         >
                             <CarmentaOracleWithWhisper />
+                            <AnimatePresence>
+                                {showBreadcrumb && (
+                                    <ConnectionBreadcrumb title={displayTitle} />
+                                )}
+                            </AnimatePresence>
                         </motion.div>
 
                         {/* Center section - maintains spacing even when chooser is hidden */}

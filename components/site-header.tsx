@@ -33,14 +33,14 @@ export function SiteHeader({
         <header className="flex items-center justify-between px-6 py-4">
             <Link
                 href="/"
-                className="vt-app-logo flex items-center gap-3 transition-opacity hover:opacity-80"
+                className="vt-app-logo group flex items-center gap-3 transition-all duration-300"
             >
                 <Image
                     src="/logos/icon-transparent.png"
                     alt="Carmenta"
                     width={48}
                     height={48}
-                    className="h-12 w-12"
+                    className="h-12 w-12 transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(var(--primary),0.4)]"
                     priority
                 />
                 <span className="text-xl font-semibold tracking-tight text-foreground/90">
