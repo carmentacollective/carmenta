@@ -24,8 +24,22 @@ jobs:
     name: Run Eval Suite
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Skip if required secrets aren't available (e.g., forks)
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
     steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.TEST_USER_TOKEN }}" ]; then
+            echo "::error::TEST_USER_TOKEN secret is not set. Evals require a valid Clerk JWT."
+            echo "See evals/nightly/README.md for setup instructions."
+            exit 1
+          fi
+          if [ -z "${{ secrets.BRAINTRUST_API_KEY }}" ]; then
+            echo "::error::BRAINTRUST_API_KEY secret is not set."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
