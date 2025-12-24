@@ -5,6 +5,7 @@ import {
     BrainCircuit,
     CloudSun,
     BookOpen,
+    Sparkles,
     type LucideIcon,
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
@@ -164,6 +165,48 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Memory retrieved", "Found it", "Here's what we have"],
             fast: ["Quick recall!", "Found that fast"],
+        },
+    },
+    // Discovery tools - progressive context building
+    updateDiscovery: {
+        displayName: "Discovery",
+        icon: Sparkles,
+        getDescription: (args) => {
+            const key = args.key as string | undefined;
+            return key ? truncate(key, 30) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Learning something new...",
+            completed: "Discovery saved",
+            error: "Couldn't save that discovery",
+        },
+        delightMessages: {
+            completed: ["Captured", "Noted", "Got it"],
+            fast: ["Quick capture!"],
+        },
+    },
+    completeDiscovery: {
+        displayName: "Discovery",
+        icon: Sparkles,
+        messages: {
+            pending: "Getting ready...",
+            running: "Completing discovery...",
+            completed: "Discovery complete",
+            error: "Couldn't complete discovery",
+        },
+        delightMessages: {
+            completed: ["All done", "Wrapped up", "Complete"],
+        },
+    },
+    skipDiscovery: {
+        displayName: "Discovery",
+        icon: Sparkles,
+        messages: {
+            pending: "Getting ready...",
+            running: "Skipping discovery...",
+            completed: "Skipped",
+            error: "Couldn't skip discovery",
         },
     },
     limitless: {
