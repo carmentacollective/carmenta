@@ -65,11 +65,18 @@ describe("ThinkingIndicator", () => {
             vi.advanceTimersByTime(6000);
         });
 
+        // Wait for animation to complete (300ms fade transition)
+        await act(async () => {
+            vi.advanceTimersByTime(500);
+        });
+
         // Should show a message (may be same or different due to random selection)
-        const hasMessage = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES].some((msg) =>
-            screen.queryByText(msg)
+        // Use queryAllByText since AnimatePresence may leave exiting elements briefly
+        const allMessages = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES];
+        const foundMessages = allMessages.filter(
+            (msg) => screen.queryAllByText(msg).length > 0
         );
-        expect(hasMessage).toBe(true);
+        expect(foundMessages.length).toBeGreaterThan(0);
     });
 
     it("switches to long wait messages after 8 seconds", async () => {
@@ -80,11 +87,18 @@ describe("ThinkingIndicator", () => {
             vi.advanceTimersByTime(9000);
         });
 
+        // Wait for animation to complete
+        await act(async () => {
+            vi.advanceTimersByTime(500);
+        });
+
         // Should show one of the long wait or thinking messages
         // (the pool switches after 8s, but we may still be mid-rotation)
         const allMessages = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES];
-        const hasMessage = allMessages.some((msg) => screen.queryByText(msg));
-        expect(hasMessage).toBe(true);
+        const foundMessages = allMessages.filter(
+            (msg) => screen.queryAllByText(msg).length > 0
+        );
+        expect(foundMessages.length).toBeGreaterThan(0);
     });
 
     it("applies custom className", () => {

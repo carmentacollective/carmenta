@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
@@ -39,31 +39,19 @@ function pickRandomMessage(messages: string[], lastMessage: string): string {
  */
 export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
     const [elapsedMs, setElapsedMs] = useState(0);
-    // Initialize with a random message immediately (no waiting for effect)
     const [currentMessage, setCurrentMessage] = useState(() =>
         pickRandomMessage(THINKING_MESSAGES, "")
     );
-    const [messageIndex, setMessageIndex] = useState(0);
     const lastMessageRef = useRef<string>(currentMessage);
+    const elapsedMsRef = useRef<number>(0);
     const [startTime] = useState(() => Date.now());
-
-    // Get the appropriate message pool based on elapsed time
-    const getMessagePool = useCallback(() => {
-        return getThinkingMessages(elapsedMs);
-    }, [elapsedMs]);
-
-    // Pick a random message, avoiding the last one shown
-    const pickNextMessage = useCallback(() => {
-        const messages = getMessagePool();
-        const selected = pickRandomMessage(messages, lastMessageRef.current);
-        lastMessageRef.current = selected;
-        return selected;
-    }, [getMessagePool]);
 
     // Track elapsed time
     useEffect(() => {
         const interval = setInterval(() => {
-            setElapsedMs(Date.now() - startTime);
+            const elapsed = Date.now() - startTime;
+            elapsedMsRef.current = elapsed;
+            setElapsedMs(elapsed);
         }, 100);
 
         return () => clearInterval(interval);
@@ -75,13 +63,16 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
         const rotationInterval = 3000 + Math.random() * 2000;
 
         const timeout = setTimeout(() => {
-            const next = pickNextMessage();
+            // Get current message pool based on latest elapsed time
+            const messages = getThinkingMessages(elapsedMsRef.current);
+            const next = pickRandomMessage(messages, lastMessageRef.current);
+            lastMessageRef.current = next;
             setCurrentMessage(next);
-            setMessageIndex((i) => i + 1);
         }, rotationInterval);
 
         return () => clearTimeout(timeout);
-    }, [messageIndex, pickNextMessage]);
+        // Only re-run when message changes (after rotation completes)
+    }, [currentMessage]);
 
     const showTime = elapsedMs >= 2000;
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
