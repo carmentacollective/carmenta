@@ -35,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
+import { useMessageEffects } from "@/lib/hooks/use-message-effects";
 import type { UIMessage } from "@ai-sdk/react";
 
 import * as Sentry from "@sentry/nextjs";
@@ -1722,6 +1723,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
     const { triggerHaptic } = useHapticFeedback();
+    const { checkMessage } = useMessageEffects();
 
     // Show connection chooser on mobile when user has connections
     // Guard against undefined during SSR/hydration to prevent layout flash
@@ -2004,6 +2006,9 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
             isSubmittingRef.current = true; // Set synchronously before async
             setInput("");
 
+            // Check for secret phrases (easter egg effects)
+            checkMessage(message);
+
             try {
                 await append({
                     role: "user",
@@ -2042,6 +2047,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
             clearFiles,
             emitUserEngaged,
             triggerHaptic,
+            checkMessage,
         ]
     );
 

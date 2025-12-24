@@ -134,6 +134,23 @@ const config: Config = {
                     "50%": { transform: "scale(1.3)" },
                     "100%": { transform: "scale(1)" },
                 },
+                // Easter egg: floating emoji rising effect (iMessage-style)
+                "float-up": {
+                    "0%": {
+                        opacity: "1",
+                        transform: "translateY(0) translateX(0)",
+                    },
+                    "100%": {
+                        opacity: "0",
+                        transform: "translateY(-100vh) translateX(var(--drift, 0px))",
+                    },
+                },
+                // Easter egg: shake wiggle for device shake response
+                wiggle: {
+                    "0%, 100%": { transform: "rotate(0deg)" },
+                    "25%": { transform: "rotate(-5deg)" },
+                    "75%": { transform: "rotate(5deg)" },
+                },
             },
             animation: {
                 "fade-in": "fade-in 0.5s ease-out",
@@ -142,6 +159,9 @@ const config: Config = {
                 float: "float 6s ease-in-out infinite",
                 "pulse-glow": "pulse-glow 3s ease-in-out infinite",
                 "star-pop": "star-pop 0.3s ease-out",
+                // Easter eggs
+                "float-up": "float-up 3s ease-out forwards",
+                wiggle: "wiggle 0.5s ease-in-out",
             },
         },
     },

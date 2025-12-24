@@ -1,8 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
 import { ThemeSwitcher, UserAuthButton } from "@/components/ui";
+import { InteractiveLogo } from "@/components/delight/interactive-logo";
 
 interface SiteHeaderProps {
     /**
@@ -26,7 +25,7 @@ interface SiteHeaderProps {
  */
 export function SiteHeader({
     rightContent,
-    bordered = false,
+    bordered: _bordered = false,
     showThemeSwitcher = false,
 }: SiteHeaderProps) {
     return (
@@ -35,14 +34,7 @@ export function SiteHeader({
                 href="/"
                 className="vt-app-logo group flex items-center gap-3 transition-all duration-300"
             >
-                <Image
-                    src="/logos/icon-transparent.png"
-                    alt="Carmenta"
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 transition-[transform,filter] duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_hsl(var(--primary)/0.4)]"
-                    priority
-                />
+                <InteractiveLogo />
                 <span className="text-xl font-semibold tracking-tight text-foreground/90">
                     Carmenta
                 </span>
