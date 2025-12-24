@@ -51,7 +51,7 @@ describe("UploadProgressDisplay", () => {
             expect(screen.queryByText("Complete")).not.toBeInTheDocument();
         });
 
-        it("shows 'Complete' when no placeholder exists", () => {
+        it("shows 'Ready' when no placeholder exists", () => {
             mockState.pendingFiles.push({
                 id: "upload-1",
                 file: new File([""], "regular-file.png", { type: "image/png" }),
@@ -61,7 +61,7 @@ describe("UploadProgressDisplay", () => {
 
             render(<UploadProgressDisplay />);
 
-            expect(screen.getByText("Complete")).toBeInTheDocument();
+            expect(screen.getByText("Ready")).toBeInTheDocument();
         });
 
         it("shows placeholder for text files", () => {
@@ -202,9 +202,9 @@ describe("UploadProgressDisplay", () => {
 
             render(<UploadProgressDisplay />);
 
-            const completeElement = screen.getByText("Complete");
+            const readyElement = screen.getByText("Ready");
             // Check for green color class (light or dark mode)
-            expect(completeElement.className).toMatch(/text-green/);
+            expect(readyElement.className).toMatch(/text-green/);
         });
     });
 });
