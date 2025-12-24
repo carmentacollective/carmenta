@@ -191,10 +191,7 @@ function HoloThreadInner() {
                     }}
                 >
                     <ScrollToBottomButton />
-                    <Composer
-                        isNewConversation={isEmpty}
-                        onMarkMessageStopped={handleMarkMessageStopped}
-                    />
+                    <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </motion.div>
             </div>
         </StickToBottom>
@@ -1696,17 +1693,17 @@ function PendingAssistantMessage({
  * - Enter = send, Shift+Enter = newline, Escape = stop
  * - IME composition detection (prevents sending mid-composition)
  * - Stop returns last message to input for quick correction
- * - Smart autofocus: new conversations always focus, existing on mobile don't
+ * - Autofocus on mount (all devices), re-focus after send
+ * - One-time Shift+Enter hint for new users
  */
 interface ComposerProps {
-    isNewConversation: boolean;
     /** Callback to mark a message as stopped (for visual indicator) */
     onMarkMessageStopped: (messageId: string) => void;
 }
 
 const SHIFT_ENTER_HINT_KEY = "carmenta:shift-enter-hint-shown";
 
-function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
+function Composer({ onMarkMessageStopped }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge, setConcierge } = useConcierge();
     const { messages, append, isLoading, stop, input, setInput, handleInputChange } =
