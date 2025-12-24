@@ -13,7 +13,7 @@ import {
     calculateContextUtilization,
 } from "@/lib/context/token-estimation";
 
-import type { ConciergeInput } from "./types";
+import type { ConciergeInput, QueryComplexitySignals, SessionContext } from "./types";
 
 /** Maximum characters for text previews in recent context */
 const PREVIEW_MAX_LENGTH = 200;
@@ -90,11 +90,151 @@ function getAttachmentTypes(messages: UIMessage[]): string[] {
     return Array.from(types);
 }
 
+/**
+ * Analyzes message text and extracts complexity signals for reasoning decisions.
+ */
+function analyzeQueryComplexity(text: string): QueryComplexitySignals {
+    const lowerText = text.toLowerCase();
+
+    // Count questions by looking for question marks
+    const questionCount = (text.match(/\?/g) || []).length;
+
+    // Check for structured formatting (lists, bullets, numbered items)
+    const hasStructuredFormatting =
+        /^[\s]*[-*•]\s/m.test(text) || // Bullet points
+        /^[\s]*\d+[.)]\s/m.test(text) || // Numbered lists
+        /\n\s*[-*•]\s/m.test(text); // Multi-line bullets
+
+    // Depth indicators - words that suggest user wants thorough analysis
+    const depthPatterns = [
+        /\bwhy\b/,
+        /\bhow does\b/,
+        /\bhow do\b/,
+        /\bexplain\b/,
+        /\banalyze\b/,
+        /\bcompare\b/,
+        /\bcontrast\b/,
+        /\bpros and cons\b/,
+        /\btradeoffs?\b/,
+        /\bimplications?\b/,
+        /\bunderstand\b/,
+        /\bbreak down\b/,
+    ];
+    const hasDepthIndicators = depthPatterns.some((pattern) => pattern.test(lowerText));
+
+    // Conditional logic - suggests complex reasoning needed
+    // Use non-greedy matching with length limit to prevent ReDoS
+    const conditionalPatterns = [
+        /\bif\s+.{1,100}?\s+then\b/,
+        /\bbut if\b/,
+        /\bwhat if\b/,
+        /\bin case\b/,
+        /\bdepending on\b/,
+        /\bassuming\b/,
+        /\bgiven that\b/,
+        /\bon the other hand\b/,
+    ];
+    const hasConditionalLogic = conditionalPatterns.some((pattern) =>
+        pattern.test(lowerText)
+    );
+
+    // References to previous context - suggests continuation of complex topic
+    const contextPatterns = [
+        /\blike we discussed\b/,
+        /\bas i mentioned\b/,
+        /\bearlier\b/,
+        /\bbefore\b.*\bsaid\b/,
+        /\bcontinue\b/,
+        /\bpick up where\b/,
+        /\bgoing back to\b/,
+        /\bas we talked about\b/,
+    ];
+    const referencesPreviousContext = contextPatterns.some((pattern) =>
+        pattern.test(lowerText)
+    );
+
+    // Speed signals - user wants quick response
+    // Be specific with "just" to avoid false positives like "I just want to understand..."
+    const speedPatterns = [
+        /\bquick\b/,
+        /\bjust (tell|show|give|check|confirm|verify|remind)\b/, // "just" in speed context
+        /\bsimply put\b/,
+        /\bbriefly\b/,
+        /\bshort (answer|version|summary)\b/,
+        /\bfast\b/,
+        /\breal quick\b/,
+        /\basap\b/,
+        /\bin a nutshell\b/,
+        /\btl;?dr\b/,
+    ];
+    const hasSpeedSignals = speedPatterns.some((pattern) => pattern.test(lowerText));
+
+    // Explicit depth signals - user explicitly wants thorough reasoning
+    const explicitDepthPatterns = [
+        /\bthink hard\b/,
+        /\bthorough\b/,
+        /\btake your time\b/,
+        /\bultrathink\b/,
+        /\bcarefully\b/,
+        /\bin depth\b/,
+        /\bdetailed\b/,
+        /\bcomprehensive\b/,
+        /\bstep by step\b/,
+    ];
+    const hasExplicitDepthSignals = explicitDepthPatterns.some((pattern) =>
+        pattern.test(lowerText)
+    );
+
+    return {
+        characterCount: text.length,
+        hasStructuredFormatting,
+        questionCount,
+        hasDepthIndicators,
+        hasConditionalLogic,
+        referencesPreviousContext,
+        hasSpeedSignals,
+        hasExplicitDepthSignals,
+    };
+}
+
+/**
+ * Builds session context from conversation state and optional request metadata.
+ */
+function buildSessionContext(
+    messages: UIMessage[],
+    options: BuildConciergeInputOptions
+): SessionContext {
+    const messageCount = messages.length;
+
+    // Calculate turn count (pairs of user/assistant exchanges)
+    const userMessages = messages.filter((m) => m.role === "user").length;
+    const turnCount = Math.ceil(userMessages);
+
+    // Check if this is the first message
+    const isFirstMessage = messageCount <= 1;
+
+    // Note: UIMessage doesn't have createdAt - if caller wants time since last message,
+    // they should pass it via options.timeSinceLastMessage
+    return {
+        turnCount,
+        isFirstMessage,
+        deviceType: options.deviceType,
+        hourOfDay: options.hourOfDay,
+        timeSinceLastMessage: options.timeSinceLastMessage,
+    };
+}
+
 export interface BuildConciergeInputOptions {
     /** The current model being considered (for context limit calculations) */
     currentModel?: string;
     /** User overrides from request */
     userSignals?: ConciergeInput["userSignals"];
+    /** Device type (mobile/desktop) - affects expected response speed */
+    deviceType?: "mobile" | "desktop" | "unknown";
+    /** Hour of day in user's timezone (0-23) */
+    hourOfDay?: number;
+    /** Milliseconds since last message (provided by caller since UIMessage lacks timestamps) */
+    timeSinceLastMessage?: number;
 }
 
 /**
@@ -157,6 +297,12 @@ export function buildConciergeInput(
     const estimatedTokens = estimateConversationTokens(messages, provider);
     const utilization = calculateContextUtilization(messages, contextLimit, provider);
 
+    // Analyze query complexity signals
+    const querySignals = analyzeQueryComplexity(currentContent);
+
+    // Build session context
+    const sessionContext = buildSessionContext(messages, options);
+
     return {
         currentMessage: {
             content: currentContent,
@@ -187,6 +333,8 @@ export function buildConciergeInput(
             utilizationPercent: utilization.utilizationPercent,
         },
         userSignals,
+        querySignals,
+        sessionContext,
     };
 }
 
@@ -198,4 +346,10 @@ export function getAttachmentTypesFromInput(input: ConciergeInput): string[] {
     return input.attachments.map((a) => a.type);
 }
 
-export { extractMessageText, extractAttachmentMetadata, getAttachmentTypes };
+export {
+    extractMessageText,
+    extractAttachmentMetadata,
+    getAttachmentTypes,
+    analyzeQueryComplexity,
+    buildSessionContext,
+};

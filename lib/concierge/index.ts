@@ -18,7 +18,8 @@ import { logger } from "@/lib/logger";
 import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
 import { generateTitle } from "@/lib/db/title-generator";
-import { buildConciergePrompt } from "./prompt";
+import { buildConciergePrompt, formatQuerySignals } from "./prompt";
+import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
 import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
@@ -40,6 +41,8 @@ export type {
     ReasoningConfig,
     ReasoningEffort,
     OpenRouterEffort,
+    QueryComplexitySignals,
+    SessionContext,
 } from "./types";
 export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
 
@@ -343,12 +346,24 @@ function processConciergeResponse(
 }
 
 /**
+ * Options for the runConcierge function.
+ * Re-exports BuildConciergeInputOptions for API compatibility.
+ */
+export type RunConciergeOptions = BuildConciergeInputOptions;
+
+/**
  * Runs the Concierge to select the optimal model, temperature, and reasoning config.
  *
- * Uses Haiku 4.5 for fast inference (~200ms). If the concierge fails,
+ * Uses Gemini 3 Flash for fast inference with prompt caching. If the concierge fails,
  * returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
+ *
+ * Now accepts optional context signals (device type, time of day) that inform
+ * reasoning level decisions.
  */
-export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResult> {
+export async function runConcierge(
+    messages: UIMessage[],
+    options: RunConciergeOptions = {}
+): Promise<ConciergeResult> {
     return Sentry.startSpan(
         { op: "concierge.route", name: "Concierge Model Selection" },
         async (span) => {
@@ -361,6 +376,9 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 // Build the prompt
                 const systemPrompt = buildConciergePrompt(rubricContent);
 
+                // Build structured input with query signals
+                const conciergeInput = buildConciergeInput(messages, options);
+
                 // Format the user's query and detect attachments
                 const { text: userQuery, attachments } =
                     formatQueryForConcierge(messages);
@@ -369,6 +387,9 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                     logger.warn({}, "No user query found, using defaults");
                     return CONCIERGE_DEFAULTS;
                 }
+
+                // Format query signals for the prompt
+                const querySignalsBlock = formatQuerySignals(conciergeInput);
 
                 // AUDIO ROUTING: Force Gemini if audio attachments present
                 // Audio files can ONLY be processed by Gemini (native support)
@@ -391,10 +412,13 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
                 }
 
                 // Build the prompt with clear framing to prevent the model from answering directly
-                // Sandwich the user message between explicit instructions
+                // Include query signals to inform reasoning level decision
                 let messageBlock = `<user-message>\n${userQuery}\n</user-message>`;
                 if (attachments.length > 0) {
                     messageBlock = `<attachments>${attachments.join(", ")}</attachments>\n\n${messageBlock}`;
+                }
+                if (querySignalsBlock) {
+                    messageBlock = `${querySignalsBlock}\n\n${messageBlock}`;
                 }
 
                 const prompt = `Analyze the following user message and select the optimal configuration (model, temperature, reasoning, title). Do NOT answer the message - only return the configuration JSON.
@@ -413,8 +437,10 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                         conciergeModel: CONCIERGE_MODEL,
                         queryLength: userQuery.length,
                         attachments: attachments.length > 0 ? attachments : undefined,
+                        querySignals: conciergeInput.querySignals,
+                        sessionContext: conciergeInput.sessionContext,
                     },
-                    "Running concierge"
+                    "Running concierge with query signals"
                 );
 
                 // Define the routing tool - forces structured output via tool calling

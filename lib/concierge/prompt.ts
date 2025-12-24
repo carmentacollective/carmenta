@@ -1,5 +1,7 @@
 import { getPrompt } from "heart-centered-prompts";
 
+import type { ConciergeInput } from "./types";
+
 /**
  * Concierge prompt for model, temperature, and reasoning selection.
  *
@@ -18,6 +20,86 @@ import { getPrompt } from "heart-centered-prompts";
  * recommendations). This keeps the prompt effectively static for caching.
  */
 const HEART_CENTERED_PHILOSOPHY = getPrompt("terse");
+
+/**
+ * Formats query signals into a readable block for the concierge.
+ */
+function formatQuerySignals(input: ConciergeInput): string {
+    const { querySignals, sessionContext } = input;
+
+    if (!querySignals && !sessionContext) {
+        return "";
+    }
+
+    const lines: string[] = ["<query-signals>"];
+
+    if (querySignals) {
+        lines.push(`Message length: ${querySignals.characterCount} characters`);
+        if (querySignals.hasStructuredFormatting) {
+            lines.push("Has structured formatting (lists/bullets): yes");
+        }
+        if (querySignals.questionCount > 1) {
+            lines.push(`Multiple questions: ${querySignals.questionCount}`);
+        }
+        if (querySignals.hasDepthIndicators) {
+            lines.push("Depth indicators detected: yes (why/how/explain/analyze)");
+        }
+        if (querySignals.hasConditionalLogic) {
+            lines.push("Conditional logic detected: yes (if/then, what if)");
+        }
+        if (querySignals.referencesPreviousContext) {
+            lines.push("References previous context: yes");
+        }
+        if (querySignals.hasSpeedSignals) {
+            lines.push("Speed signals detected: yes (quick/just/simply)");
+        }
+        if (querySignals.hasExplicitDepthSignals) {
+            lines.push(
+                "Explicit depth signals detected: yes (think hard/thorough/ultrathink)"
+            );
+        }
+    }
+
+    if (sessionContext) {
+        lines.push(`Conversation turn: ${sessionContext.turnCount}`);
+        if (sessionContext.isFirstMessage) {
+            lines.push("First message in conversation: yes");
+        }
+        if (sessionContext.deviceType && sessionContext.deviceType !== "unknown") {
+            lines.push(`Device: ${sessionContext.deviceType}`);
+        }
+        if (sessionContext.hourOfDay !== undefined) {
+            const hour = sessionContext.hourOfDay;
+            const timeOfDay =
+                hour >= 22 || hour < 6
+                    ? "late night"
+                    : hour >= 6 && hour < 12
+                      ? "morning"
+                      : hour >= 12 && hour < 17
+                        ? "afternoon"
+                        : "evening";
+            lines.push(`Time of day: ${timeOfDay} (${hour}:00)`);
+        }
+        if (sessionContext.timeSinceLastMessage !== undefined) {
+            const seconds = Math.round(sessionContext.timeSinceLastMessage / 1000);
+            if (seconds < 60) {
+                lines.push(`Time since last message: ${seconds}s (quick follow-up)`);
+            } else if (seconds < 300) {
+                lines.push(
+                    `Time since last message: ${Math.round(seconds / 60)}min (ongoing flow)`
+                );
+            } else {
+                lines.push(
+                    `Time since last message: ${Math.round(seconds / 60)}min (new thought)`
+                );
+            }
+        }
+    }
+
+    lines.push("</query-signals>");
+
+    return lines.join("\n");
+}
 
 /**
  * Builds the concierge system prompt with the rubric injected.
@@ -143,22 +225,40 @@ NO tools needed for: analysis questions, philosophical discussions, pros/cons, c
 
 Reasoning adds 5-20 seconds of thinking time before the response starts streaming. This is a real tradeoff: deeper analysis at the cost of perceived responsiveness. Most queries don't need it.
 
+**Use query signals to calibrate reasoning.** The <query-signals> block provides structured data to inform your decision. Use these signals in combination:
+
+Signals that suggest MORE reasoning:
+- Long messages (500+ characters) with structured formatting = user invested effort
+- Multiple questions = complex request
+- Depth indicators (why/how/explain/analyze) = analysis expected
+- Conditional logic (if/then, what if) = nuanced thinking needed
+- References to previous context + depth indicators = building on complex topic
+- Explicit depth signals (think hard, thorough, ultrathink) = ALWAYS enable high
+
+Signals that suggest LESS reasoning:
+- Short messages (<100 characters) = quick question
+- Speed signals (quick, just, simply) = fast response expected
+- Mobile device = generally less patience for delays
+- Quick follow-up (<30 seconds since last message) = ongoing flow, keep pace
+- Late night + short message = likely quick fix, not deep analysis
+- First message in conversation + no depth indicators = probably exploratory
+
 **Enable reasoning (high/medium) when:**
+- Explicit depth signals detected (always honor these)
 - Complex multi-step analysis, math, or logic puzzles
-- User explicitly signals depth: "think hard", "thorough", "take your time", "ultrathink"
+- Long message with depth indicators and structured formatting
 - Research requiring synthesis across multiple sources
-- Novel problems without established patterns
 - Nuanced decisions with multiple tradeoffs
 
 **Keep reasoning OFF (default) when:**
-- Conversational queries
-- Simple questions, lookups, definitions
-- Creative writing (reasoning actually reduces creativity)
-- Code generation (models are already trained for this)
+- Speed signals detected (quick/just/simply)
+- Mobile + short message + no depth indicators
+- Quick follow-up in ongoing conversation
+- Conversational queries, simple lookups
+- Creative writing (reasoning reduces creativity)
 - Tool-heavy workflows where speed matters more
-- Anything not in the "enable" list above
 
-When in doubt, leave it off. Fast and helpful beats slow and thorough for most interactions.
+When signals conflict (e.g., long message + speed signals), prefer the explicit user intent (speed signals) over implicit effort signals.
 
 ### Explanation Style
 
@@ -171,6 +271,8 @@ The explanation should feel friendly and collaborative:
 Use "we" language. Add an emoji when it fits the energy. Keep it to one sentence.
 
 REMINDER: Your entire response must be ONLY the JSON object. Do not wrap it in markdown code fences. Do not add any text before or after the JSON. Just return the raw JSON object.
+
+The user's message will be provided with optional <query-signals> metadata. Use these signals to inform your reasoning level decision.
 </instructions>
 
 <examples>
@@ -305,3 +407,5 @@ Look at my Limitless conversations from yesterday and give me the highlights
 }
 </examples>`;
 }
+
+export { formatQuerySignals };
