@@ -2162,12 +2162,28 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
         // If user stopped, wasStoppedRef is true so we skip the checkmark
     }, [isLoading]);
 
+    // Track concierge selection phase explicitly
+    // This is true ONLY when we're actively selecting a model (loading + no concierge data yet)
+    // Using explicit state prevents the bug where sparkles persist after loading ends
+    const [isConciergeSelecting, setIsConciergeSelecting] = useState(false);
+
+    useEffect(() => {
+        // Start selecting: loading just started and no concierge data yet
+        if (isLoading && !concierge) {
+            setIsConciergeSelecting(true);
+        }
+        // Stop selecting: either got concierge data OR loading stopped
+        // This ensures sparkles ALWAYS stop when loading ends, regardless of concierge state
+        else {
+            setIsConciergeSelecting(false);
+        }
+    }, [isLoading, concierge]);
+
     // Compute pipeline state for button styling
-    // Note: concierge requires BOTH isLoading AND isConciergeRunning
-    // This prevents sparkles from getting stuck if isConciergeRunning lingers after loading ends
+    // Uses explicit isConciergeSelecting state rather than inferring from !concierge
     const pipelineState: PipelineState = showComplete
         ? "complete"
-        : isLoading && !concierge
+        : isConciergeSelecting
           ? "concierge"
           : isLoading
             ? "streaming"
@@ -2450,7 +2466,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
         return (
             <div className="relative">
                 {/* Sparkles during concierge - 3 cardinal points with button gradient colors */}
-                <AnimatePresence>
+                <AnimatePresence mode="sync">
                     {variant === "stop" &&
                         pipelineState === "concierge" &&
                         sparklePositions.map((pos, i) => (
@@ -2465,13 +2481,17 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                                 animate={{
                                     opacity: [0.5, 1, 0.5],
                                     scale: [0.8, 1.2, 0.8],
+                                    transition: {
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        delay: i * 0.2,
+                                        ease: "easeInOut",
+                                    },
                                 }}
-                                exit={{ opacity: 0, scale: 0 }}
-                                transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    delay: i * 0.2,
-                                    ease: "easeInOut",
+                                exit={{
+                                    opacity: 0,
+                                    scale: 0,
+                                    transition: { duration: 0.15, ease: "easeOut" },
                                 }}
                             />
                         ))}
