@@ -196,7 +196,18 @@ export const appendToDocumentTool = tool({
         const updatedContent = document.content + "\n\n" + content;
 
         // Update the document
-        await kb.update(userId, path, { content: updatedContent });
+        const updated = await kb.update(userId, path, { content: updatedContent });
+
+        if (!updated) {
+            logger.warn(
+                { userId, path },
+                "Document was deleted between read and update (TOCTOU)"
+            );
+            return {
+                success: false,
+                message: `Document not found at ${path} - it may have been deleted`,
+            };
+        }
 
         logger.info({ userId, path }, "➕ Appended to document");
 
@@ -234,12 +245,21 @@ export const moveDocumentTool = tool({
                 };
             }
 
-            // Create at new path
+            // Create at new path - preserve all metadata
             await kb.create(userId, {
                 path: toPath,
                 name: document.name,
                 content: document.content,
                 description: document.description ?? undefined,
+                promptLabel: document.promptLabel ?? undefined,
+                promptHint: document.promptHint ?? undefined,
+                promptOrder: document.promptOrder ?? undefined,
+                alwaysInclude: document.alwaysInclude,
+                searchable: document.searchable,
+                editable: document.editable,
+                sourceType: document.sourceType,
+                sourceId: document.sourceId ?? undefined,
+                tags: document.tags,
             });
 
             // Delete from old path - rollback if this fails
@@ -264,6 +284,21 @@ export const moveDocumentTool = tool({
                 message: `Moved document from ${fromPath} to ${toPath}`,
             };
         } catch (error) {
+            // If kb.remove throws after kb.create succeeded, clean up
+            // to avoid leaving duplicate documents
+            try {
+                await kb.remove(userId, toPath);
+                logger.warn(
+                    { userId, fromPath, toPath },
+                    "Rolled back document creation after move failure"
+                );
+            } catch (rollbackError) {
+                logger.error(
+                    { error: rollbackError, userId, fromPath, toPath },
+                    "Rollback failed - document may exist at both paths"
+                );
+            }
+
             logger.error(
                 { error, userId, fromPath, toPath },
                 "Failed to move document"

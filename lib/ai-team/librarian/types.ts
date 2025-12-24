@@ -2,8 +2,6 @@
  * Type definitions for the Knowledge Librarian agent
  */
 
-import type { Document } from "@/lib/db/schema";
-
 /**
  * Tool input/output types
  */
