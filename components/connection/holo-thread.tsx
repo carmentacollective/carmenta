@@ -1931,32 +1931,28 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
 
             // Find pasted text files (have content in pastedTextContent Map)
-            const pastedTextFileIds = pendingFiles
-                .filter(
-                    (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
-                )
-                .map((p) => p.id);
+            const pastedTextFiles = pendingFiles.filter(
+                (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
+            );
 
-            if (pastedTextFileIds.length > 0) {
-                // Collect all pasted text content
-                const textContents: string[] = [];
-                for (const fileId of pastedTextFileIds) {
-                    const content = getTextContent(fileId);
-                    if (content) {
-                        textContents.push(content);
-                        removeFile(fileId);
+            if (pastedTextFiles.length > 0) {
+                // Replace each placeholder with its actual content
+                let newInput = input;
+                for (const file of pastedTextFiles) {
+                    const content = getTextContent(file.id);
+                    if (content && file.placeholder) {
+                        // Replace placeholder with actual content
+                        newInput = newInput.replace(file.placeholder, content);
+                    } else if (content) {
+                        // No placeholder (shouldn't happen, but handle gracefully)
+                        newInput = newInput ? `${newInput}\n\n${content}` : content;
                     }
+                    removeFile(file.id);
                 }
 
-                // Append to input and re-submit
-                if (textContents.length > 0) {
-                    const combinedText = textContents.join("\n\n");
-                    const newInput = input
-                        ? `${input}\n\n${combinedText}`
-                        : combinedText;
+                // Re-submit with expanded content
+                if (newInput !== input) {
                     setInput(newInput);
-
-                    // Wait for state update, then submit again
                     setTimeout(() => {
                         formRef.current?.requestSubmit();
                     }, 0);
