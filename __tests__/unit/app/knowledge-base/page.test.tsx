@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
     mockGetValuesDocument: vi.fn(),
     mockInitializeKBWithClerkData: vi.fn(),
     mockHasKBProfile: vi.fn(),
+    mockGetRecentActivity: vi.fn(),
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({
@@ -30,6 +31,7 @@ vi.mock("@/lib/kb/actions", () => ({
     getValuesDocument: mocks.mockGetValuesDocument,
     initializeKBWithClerkData: mocks.mockInitializeKBWithClerkData,
     hasKBProfile: mocks.mockHasKBProfile,
+    getRecentActivity: mocks.mockGetRecentActivity,
 }));
 
 // Mock Next.js navigation
@@ -55,6 +57,14 @@ vi.mock("@/components/knowledge-viewer", () => ({
     KnowledgeViewer: ({ initialFolders }: { initialFolders: unknown[] }) => (
         <div data-testid="knowledge-viewer" data-folder-count={initialFolders.length}>
             Knowledge Viewer
+        </div>
+    ),
+}));
+
+vi.mock("@/components/knowledge-viewer/activity-feed", () => ({
+    ActivityFeed: ({ initialItems }: { initialItems: unknown[] }) => (
+        <div data-testid="activity-feed" data-item-count={initialItems.length}>
+            Activity Feed
         </div>
     ),
 }));
@@ -119,6 +129,8 @@ describe("/knowledge-base page", () => {
             editable: false,
             updatedAt: new Date(),
         });
+        // Default: no activity items
+        mocks.mockGetRecentActivity.mockResolvedValue([]);
     });
 
     describe("Authentication", () => {

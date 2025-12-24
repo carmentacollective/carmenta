@@ -378,6 +378,17 @@ describe("Knowledge Librarian Tools", () => {
 
             expect(result.success).toBe(true);
             expect(result.message).toBe("Notification queued");
+
+            // Verify notification was created in DB
+            const notifications = await db.query.notifications.findMany({
+                where: (n, { eq }) => eq(n.userId, user.id),
+            });
+            expect(notifications).toHaveLength(1);
+            expect(notifications[0].message).toBe(
+                "Important update about your knowledge base"
+            );
+            expect(notifications[0].type).toBe("insight");
+            expect(notifications[0].read).toBe(false);
         });
 
         it("should handle any message content", async () => {
@@ -389,6 +400,24 @@ describe("Knowledge Librarian Tools", () => {
             });
 
             expect(result.success).toBe(true);
+        });
+
+        it("should include document path if provided", async () => {
+            const user = await createTestUser();
+
+            const result = await executeTool<NotifyUserOutput>(notifyUserTool, {
+                userId: user.id,
+                message: "Document created",
+                documentPath: "knowledge.people.Sarah",
+            });
+
+            expect(result.success).toBe(true);
+
+            // Verify document path was saved
+            const notifications = await db.query.notifications.findMany({
+                where: (n, { eq }) => eq(n.userId, user.id),
+            });
+            expect(notifications[0].documentPath).toBe("knowledge.people.Sarah");
         });
     });
 });

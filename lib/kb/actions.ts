@@ -15,6 +15,7 @@ import { kb, PROFILE_PATHS } from "./index";
 import { initializeProfile } from "./profile";
 import { logger } from "@/lib/logger";
 import { findUserByClerkId } from "@/lib/db/users";
+import { getRecentNotifications } from "@/lib/db/notifications";
 import { db } from "@/lib/db";
 import { documents, users } from "@/lib/db/schema";
 import { VALUES_CONTENT } from "@/lib/prompts/system";
@@ -449,4 +450,43 @@ export async function clearRecentSearches(): Promise<void> {
         .where(eq(users.id, userId));
 
     logger.info({ userId }, "Cleared recent searches");
+}
+
+// ============================================================================
+// Activity Feed
+// ============================================================================
+
+/**
+ * Activity item for the KB activity feed
+ */
+export interface ActivityItem {
+    id: string;
+    type: "knowledge_created" | "knowledge_updated" | "knowledge_moved" | "insight";
+    message: string;
+    documentPath: string | null;
+    read: boolean;
+    createdAt: Date;
+}
+
+/**
+ * Get recent activity for the KB activity feed
+ */
+export async function getRecentActivity(limit = 20): Promise<ActivityItem[]> {
+    try {
+        const userId = await getDbUserId();
+        const notifications = await getRecentNotifications(userId, limit);
+
+        return notifications.map((n) => ({
+            id: n.id,
+            type: n.type as ActivityItem["type"],
+            message: n.message,
+            documentPath: n.documentPath,
+            read: n.read,
+            createdAt: n.createdAt,
+        }));
+    } catch (error) {
+        // If user not authenticated or not found, return empty
+        logger.debug({ error }, "Could not fetch activity - likely unauthenticated");
+        return [];
+    }
 }

@@ -9,6 +9,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { kb } from "@/lib/kb";
 import { logger } from "@/lib/logger";
+import { createNotification } from "@/lib/db";
 import type {
     ListKnowledgeOutput,
     ReadDocumentOutput,
@@ -328,14 +329,30 @@ export const notifyUserTool = tool({
     inputSchema: z.object({
         userId: z.string().describe("User ID to notify"),
         message: z.string().describe("Notification message to send to the user"),
+        documentPath: z
+            .string()
+            .optional()
+            .describe("Optional path of the document this notification relates to"),
     }),
-    execute: async ({ userId, message }): Promise<NotifyUserOutput> => {
-        // V1: Just log it (DB queue will be added in PR 2)
-        logger.info({ userId, message }, "🔔 User notification queued");
+    execute: async ({ userId, message, documentPath }): Promise<NotifyUserOutput> => {
+        try {
+            await createNotification(userId, "insight", message, documentPath);
 
-        return {
-            success: true,
-            message: "Notification queued",
-        };
+            logger.info(
+                { userId, message, documentPath },
+                "🔔 User notification queued"
+            );
+
+            return {
+                success: true,
+                message: "Notification queued",
+            };
+        } catch (error) {
+            logger.error({ error, userId, message }, "Failed to queue notification");
+            return {
+                success: false,
+                message: `Failed to queue notification: ${error instanceof Error ? error.message : "Unknown error"}`,
+            };
+        }
     },
 });
