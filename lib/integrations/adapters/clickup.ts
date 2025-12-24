@@ -1120,10 +1120,7 @@ export class ClickUpAdapter extends ServiceAdapter {
                     errorMessage +=
                         "Endpoint not found. Check the ClickUp API docs: https://clickup.com/api";
                 } else {
-                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
-                        "We couldn't raw_api: ",
-                        ""
-                    );
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
                 errorMessage += "Unknown error";

@@ -1850,10 +1850,7 @@ export class NotionAdapter extends ServiceAdapter {
                         "Endpoint not found. Check the Notion API documentation: " +
                         "https://developers.notion.com/reference/intro";
                 } else {
-                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
-                        "We couldn't raw_api: ",
-                        ""
-                    );
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
                 errorMessage += "Unknown error";

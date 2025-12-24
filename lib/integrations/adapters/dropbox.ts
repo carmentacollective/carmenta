@@ -859,10 +859,7 @@ export class DropboxAdapter extends ServiceAdapter {
                         "Endpoint not found. Check the Dropbox API docs: " +
                         "https://www.dropbox.com/developers/documentation/http/documentation";
                 } else {
-                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
-                        "We couldn't raw_api: ",
-                        ""
-                    );
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
                 errorMessage += "Unknown error";
@@ -870,5 +867,27 @@ export class DropboxAdapter extends ServiceAdapter {
 
             return this.createErrorResponse(errorMessage);
         }
+    }
+
+    /**
+     * Handle Dropbox-specific API errors before falling back to common handling
+     */
+    protected override handleCommonAPIError(error: unknown, action: string): string {
+        if (error instanceof Error) {
+            const errMsg = error.message;
+
+            // Dropbox-specific: file/folder conflict
+            if (errMsg.includes("conflict")) {
+                return `We couldn't ${action}: A file or folder with that name already exists at this location.`;
+            }
+
+            // Dropbox-specific: storage quota exceeded
+            if (errMsg.includes("insufficient_space")) {
+                return `We couldn't ${action}: Not enough space in your Dropbox account to complete this operation.`;
+            }
+        }
+
+        // Fall back to common error handling
+        return super.handleCommonAPIError(error, action);
     }
 }

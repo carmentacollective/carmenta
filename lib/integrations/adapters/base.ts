@@ -644,6 +644,57 @@ export abstract class ServiceAdapter {
     }
 
     /**
+     * Get just the error description without the "We couldn't X:" prefix
+     * Useful for raw_api handlers that build their own error messages
+     *
+     * @param error The error object
+     * @returns User-friendly error description (without prefix)
+     */
+    protected getAPIErrorDescription(error: unknown): string {
+        if (!(error instanceof Error)) {
+            return "The bots have been alerted. 🤖";
+        }
+
+        const errMsg = error.message;
+
+        // API not enabled errors (Google APIs)
+        if (
+            errMsg.includes("API has not been used") ||
+            errMsg.includes("Enable it by visiting")
+        ) {
+            return errMsg;
+        }
+
+        if (errMsg.includes("404")) {
+            return "That resource doesn't exist. Check the ID.";
+        }
+
+        if (errMsg.includes("401")) {
+            return (
+                `Authentication failed. Your ${this.serviceDisplayName} connection may have expired. ` +
+                `Reconnect at: ${this.getIntegrationUrl()}`
+            );
+        }
+
+        if (errMsg.includes("403")) {
+            return (
+                errMsg +
+                `. If this is an authentication issue, try reconnecting at: ${this.getIntegrationUrl()}`
+            );
+        }
+
+        if (errMsg.includes("429")) {
+            return `${this.serviceDisplayName} rate limit hit. Please wait a moment.`;
+        }
+
+        if (errMsg.includes("500") || errMsg.includes("503")) {
+            return `${this.serviceDisplayName} is temporarily unavailable. Please try again later.`;
+        }
+
+        return errMsg;
+    }
+
+    /**
      * Create error response
      */
     protected createErrorResponse(message: string): MCPToolResponse {

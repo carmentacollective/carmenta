@@ -922,10 +922,7 @@ export class GmailAdapter extends ServiceAdapter {
                         "Endpoint not found. Check the Gmail API docs: " +
                         "https://developers.google.com/gmail/api/reference/rest";
                 } else {
-                    errorMessage += this.handleCommonAPIError(error, "raw_api").replace(
-                        "We couldn't raw_api: ",
-                        ""
-                    );
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
                 errorMessage += "Unknown error";
