@@ -129,7 +129,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/fireflies.svg",
         authMethod: "api_key",
         status: "available",
-        getApiKeyUrl: "https://app.fireflies.ai/integrations/custom/api",
+        getApiKeyUrl: "https://app.fireflies.ai/settings",
         apiKeyPlaceholder: "Enter your Fireflies API key",
         supportsMultipleAccounts: false,
         docsUrl: "https://docs.fireflies.ai/",
