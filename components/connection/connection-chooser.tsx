@@ -111,16 +111,14 @@ function AnimatedTitle({ title }: { title: string }) {
 
 /**
  * Editable title with inline editing support.
- * Double-click to edit, Enter to save, Escape to cancel.
+ * Click anywhere on title to edit. Enter to save, Escape to cancel.
  */
 function EditableTitle({
     title,
     onSave,
-    onOpenDropdown,
 }: {
     title: string;
     onSave: (newTitle: string) => void;
-    onOpenDropdown: () => void;
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(title);
@@ -200,19 +198,15 @@ function EditableTitle({
 
     return (
         <div className="group/title flex items-center gap-1.5">
-            <button
-                onClick={onOpenDropdown}
-                onDoubleClick={handleStartEdit}
-                className="btn-subtle-text flex items-center gap-2"
-            >
-                <AnimatedTitle title={title} />
-            </button>
+            {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="rounded-md p-1 text-foreground/30 opacity-0 transition-all hover:bg-foreground/5 hover:text-foreground/60 group-hover/title:opacity-100"
-                aria-label="Edit title"
+                className="btn-subtle-text flex items-center gap-2 rounded-md border border-transparent px-1.5 py-0.5 transition-all hover:border-foreground/10 hover:bg-foreground/[0.03]"
+                aria-label="Click to edit title"
             >
-                <Pencil className="h-3 w-3" />
+                <AnimatedTitle title={title} />
+                {/* Pencil icon - more visible on hover */}
+                <Pencil className="h-3 w-3 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
             </button>
         </div>
     );
@@ -287,7 +281,8 @@ function ConnectionRow({
             layout
             className={cn(
                 "group relative flex min-h-[52px] items-center gap-2 overflow-hidden px-4 transition-all",
-                isActive && "bg-primary/5",
+                // Active connection has stronger visual distinction
+                isActive && "bg-primary/8 ring-1 ring-inset ring-primary/20",
                 isFresh &&
                     "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
             )}
@@ -296,15 +291,28 @@ function ConnectionRow({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, delay: index * 0.03 }}
         >
-            {/* Hover background indicator */}
-            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+            {/* Hover background - more visible shift */}
+            <div
+                className={cn(
+                    "absolute inset-0 transition-all duration-200",
+                    isActive
+                        ? "bg-primary/3 opacity-0 group-hover:opacity-100"
+                        : "bg-foreground/[0.04] opacity-0 group-hover:opacity-100"
+                )}
+            />
 
-            {/* Star button */}
+            {/* Left accent bar for active connection */}
+            {isActive && (
+                <div className="absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-primary/60" />
+            )}
+
+            {/* Star button - always visible at 40% opacity, full on hover for a11y */}
             <StarButton
                 isStarred={conn.isStarred}
                 onToggle={() => onToggleStar(conn.id)}
                 showOnHover
                 size="sm"
+                className={cn(!conn.isStarred && "opacity-40 group-hover:opacity-100")}
             />
 
             {/* Connection info - clickable */}
@@ -316,8 +324,8 @@ function ConnectionRow({
                     className={cn(
                         "min-w-0 flex-1 truncate text-sm font-medium transition-colors",
                         isActive
-                            ? "text-foreground"
-                            : "text-foreground/80 group-hover:text-foreground"
+                            ? "font-semibold text-foreground"
+                            : "text-foreground/75 group-hover:text-foreground"
                     )}
                 >
                     {conn.title || "New connection"}
@@ -327,12 +335,12 @@ function ConnectionRow({
                         new
                     </span>
                 )}
-                <span className="shrink-0 text-xs text-foreground/40">
+                <span className="shrink-0 text-xs text-foreground/40 transition-colors group-hover:text-foreground/60">
                     {isFresh ? "Just now" : getRelativeTime(conn.lastActivityAt)}
                 </span>
             </button>
 
-            {/* Delete button */}
+            {/* Delete button - appears on hover */}
             <button
                 onClick={(e) => onDeleteClick(e, conn.id)}
                 className="relative z-content rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
@@ -813,11 +821,7 @@ export function ConnectionChooser({
                                 )}
                             >
                                 {isStreaming && <RunningIndicator />}
-                                <EditableTitle
-                                    title={title}
-                                    onSave={handleSaveTitle}
-                                    onOpenDropdown={openDropdown}
-                                />
+                                <EditableTitle title={title} onSave={handleSaveTitle} />
                             </div>
 
                             {/* Star button for active connection */}

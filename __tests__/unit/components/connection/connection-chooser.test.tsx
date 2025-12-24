@@ -182,14 +182,18 @@ describe("ConnectionChooser", () => {
             expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
         });
 
-        it("opens dropdown when title is clicked", () => {
+        it("enters edit mode when title is clicked (not dropdown)", () => {
             render(<ConnectionChooser />);
 
             // Title is animated with words in separate spans - click on a word (bubbles to button)
             const titleWord = screen.getByText("First");
             fireEvent.click(titleWord);
 
-            expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
+            // Clicking title now enters edit mode (not opening dropdown)
+            // Edit mode shows an input with the current title
+            expect(
+                screen.getByPlaceholderText("Connection title...")
+            ).toBeInTheDocument();
         });
 
         it("displays recent connections in dropdown", () => {
