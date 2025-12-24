@@ -29,7 +29,7 @@ export default function OfflinePage() {
         <div className="relative min-h-screen bg-background">
             <HolographicBackground />
 
-            <div className="relative z-10 flex min-h-screen flex-col">
+            <div className="relative z-content flex min-h-screen flex-col">
                 <SiteHeader bordered showThemeSwitcher />
 
                 <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">

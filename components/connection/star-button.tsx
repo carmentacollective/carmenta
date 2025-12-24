@@ -70,7 +70,7 @@ export function StarButton({
                 onToggle();
             }}
             className={cn(
-                "tooltip relative z-10 rounded-md transition-all",
+                "tooltip relative z-content rounded-md transition-all",
                 padding,
                 // Visibility: always show if starred, otherwise follow showOnHover
                 isStarred

@@ -64,6 +64,18 @@
          * Bottom fade: slightly larger to transition into input dock area */
         --chat-fade-top: 40px;
         --chat-fade-bottom: 32px;
+
+        /* Z-Index Scale (mirrors tailwind.config.ts)
+         * Use Tailwind classes (z-content, z-modal, etc.) in components.
+         * These CSS vars are for non-Tailwind CSS like the tooltip. */
+        --z-base: 0;
+        --z-content: 10;
+        --z-sticky: 20;
+        --z-dropdown: 30;
+        --z-backdrop: 40;
+        --z-modal: 50;
+        --z-tooltip: 50;
+        --z-toast: 60;
     }
 
     /* Dark mode - Cosmic consciousness depths with ethereal shimmer */
@@ -1462,7 +1474,7 @@
         transition:
             opacity 200ms ease-out,
             transform 200ms ease-out;
-        z-index: 50;
+        z-index: var(--z-tooltip);
     }
 
     .tooltip:hover::after,

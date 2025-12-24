@@ -295,7 +295,7 @@ function IntegrationsContent() {
         <div className="relative min-h-screen">
             <HolographicBackground />
 
-            <div className="relative z-10">
+            <div className="relative z-content">
                 <SiteHeader bordered />
 
                 <main className="py-12">
@@ -449,7 +449,7 @@ export default function IntegrationsPage() {
             fallback={
                 <div className="relative min-h-screen">
                     <HolographicBackground />
-                    <div className="relative z-10">
+                    <div className="relative z-content">
                         <SiteHeader bordered />
                         <main className="py-12">
                             <div className="mx-auto max-w-3xl px-6">

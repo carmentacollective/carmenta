@@ -14,7 +14,7 @@ export default function KnowledgeBaseLoading() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-10 flex flex-1 flex-col">
+            <div className="relative z-content flex flex-1 flex-col">
                 <SiteHeader bordered />
 
                 <main className="flex-1 px-6 py-8">

@@ -42,7 +42,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
             {/* Mobile hamburger button - top left */}
             <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="absolute left-0 top-0 z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-background/80 text-foreground/70 shadow-md backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground md:hidden"
+                className="absolute left-0 top-0 z-content flex h-12 w-12 items-center justify-center rounded-xl bg-background/80 text-foreground/70 shadow-md backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground md:hidden"
                 aria-label="Open navigation"
             >
                 <Menu className="h-5 w-5" />
@@ -63,7 +63,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                     <>
                         {/* Backdrop */}
                         <motion.div
-                            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+                            className="fixed inset-0 z-backdrop bg-black/50 backdrop-blur-sm md:hidden"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -72,7 +72,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
 
                         {/* Slide-over drawer */}
                         <motion.div
-                            className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] md:hidden"
+                            className="fixed inset-y-0 left-0 z-modal w-80 max-w-[85vw] md:hidden"
                             initial={{ x: "-100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "-100%" }}
@@ -81,7 +81,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                             {/* Close button */}
                             <button
                                 onClick={() => setMobileSidebarOpen(false)}
-                                className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 transition-colors hover:bg-foreground/20"
+                                className="absolute right-3 top-3 z-content flex h-10 w-10 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 transition-colors hover:bg-foreground/20"
                                 aria-label="Close navigation"
                             >
                                 <X className="h-5 w-5" />

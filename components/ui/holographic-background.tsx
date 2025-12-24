@@ -615,7 +615,7 @@ export function HolographicBackground({
             {/* Holographic blobs layer */}
             <canvas
                 ref={holoCanvasRef}
-                className="fixed inset-0 z-0"
+                className="fixed inset-0 z-base"
                 style={{ backgroundColor: canvasBgColor }}
                 aria-hidden="true"
             />

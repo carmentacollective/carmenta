@@ -28,7 +28,7 @@ export function UndoToast({ service, onUndo, visible }: UndoToastProps) {
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+                    className="fixed bottom-6 left-1/2 z-toast -translate-x-1/2"
                 >
                     <div className="flex items-center gap-4 rounded-xl bg-zinc-900 px-4 py-3 text-white shadow-2xl dark:bg-zinc-800">
                         <p className="text-sm">{service.name} disconnected</p>

@@ -77,6 +77,31 @@ const config: Config = {
             backdropBlur: {
                 glass: "var(--glass-blur)",
             },
+            /**
+             * Semantic Z-Index Scale
+             *
+             * Centralized stacking order - use these instead of arbitrary values.
+             * See lib/z-index.ts for documentation on when to use each level.
+             *
+             * base (0)     - Default, background elements
+             * content (10) - Page content, relatively positioned elements
+             * sticky (20)  - Sticky headers, sidebars
+             * dropdown (30)- Dropdown menus, select options
+             * backdrop (40)- Modal/drawer backdrop overlays
+             * modal (50)   - Modals, dialogs, drawers, popovers
+             * tooltip (50) - Tooltips (same level as modals)
+             * toast (60)   - Toast notifications (always visible)
+             */
+            zIndex: {
+                base: "0",
+                content: "10",
+                sticky: "20",
+                dropdown: "30",
+                backdrop: "40",
+                modal: "50",
+                tooltip: "50",
+                toast: "60",
+            },
             keyframes: {
                 "fade-in": {
                     from: { opacity: "0" },

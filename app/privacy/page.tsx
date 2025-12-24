@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     return (
         <div className="relative min-h-screen bg-background">
             <HolographicBackground />
-            <div className="relative z-10">
+            <div className="relative z-content">
                 <SiteHeader bordered />
                 {/* Content */}
                 <article className="mx-auto max-w-4xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">

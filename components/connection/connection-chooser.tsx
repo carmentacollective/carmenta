@@ -335,7 +335,7 @@ function ConnectionRow({
             {/* Delete button */}
             <button
                 onClick={(e) => onDeleteClick(e, conn.id)}
-                className="relative z-10 rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                className="relative z-content rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
                 aria-label={`Delete ${conn.title || "connection"}`}
             >
                 <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
@@ -472,7 +472,7 @@ function ConnectionDropdown({
                 <>
                     {/* Backdrop */}
                     <motion.div
-                        className="fixed inset-0 z-40"
+                        className="fixed inset-0 z-backdrop"
                         onClick={handleClose}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -483,7 +483,7 @@ function ConnectionDropdown({
                     {/* Dropdown panel */}
                     <motion.div
                         className={cn(
-                            "fixed inset-x-0 z-50 mx-auto w-[calc(100vw-2rem)] sm:w-[420px]",
+                            "fixed inset-x-0 z-modal mx-auto w-[calc(100vw-2rem)] sm:w-[420px]",
                             placement === "header" ? "top-24" : "bottom-36"
                         )}
                         initial={{

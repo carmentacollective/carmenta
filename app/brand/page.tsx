@@ -30,7 +30,7 @@ export default function BrandPage() {
             <HolographicBackground />
 
             {/* Content layer */}
-            <div className="relative z-10">
+            <div className="relative z-content">
                 <SiteHeader bordered showThemeSwitcher />
 
                 <main className="py-12">

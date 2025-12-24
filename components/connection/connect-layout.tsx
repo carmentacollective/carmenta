@@ -125,7 +125,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                 {/* Chat (messages + input) fills the rest */}
                 <motion.main
                     key={connectionKey}
-                    className="relative z-0 flex-1 overflow-hidden"
+                    className="relative z-base flex-1 overflow-hidden"
                     variants={mainEntranceVariants}
                     initial="hidden"
                     animate="visible"

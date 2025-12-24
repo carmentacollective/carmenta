@@ -64,7 +64,7 @@ export default function ConnectServicePage() {
         return (
             <>
                 <HolographicBackground />
-                <div className="relative z-10 flex min-h-screen items-center justify-center">
+                <div className="relative z-content flex min-h-screen items-center justify-center">
                     <div className="glass-card mx-auto max-w-md p-8 text-center">
                         <div className="mb-4 text-4xl">⚠️</div>
                         <h1 className="mb-4 text-2xl font-semibold text-foreground">
@@ -94,7 +94,7 @@ export default function ConnectServicePage() {
     return (
         <>
             <HolographicBackground />
-            <div className="relative z-10 flex min-h-screen items-center justify-center">
+            <div className="relative z-content flex min-h-screen items-center justify-center">
                 <div className="glass-card mx-auto max-w-md p-8 text-center">
                     <div className="mb-4 flex justify-center">
                         <Sparkles className="h-12 w-12 animate-pulse text-primary" />
