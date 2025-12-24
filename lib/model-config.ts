@@ -486,7 +486,7 @@ export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
  *
  * Run evals to validate: pnpm braintrust eval evals/librarian/eval.ts
  */
-export const LIBRARIAN_FALLBACK_CHAIN: readonly string[] = [
+export const LIBRARIAN_FALLBACK_CHAIN: readonly ModelId[] = [
     "anthropic/claude-haiku-4.5",
     "anthropic/claude-sonnet-4.5",
 ] as const;
