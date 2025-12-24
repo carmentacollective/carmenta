@@ -88,8 +88,8 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                 {/* ONE container for everything - header, chat, input - all same width */}
                 <div className="relative flex h-full w-full max-w-4xl flex-col">
                     {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
-                    {/* Mobile: increased padding (px-4) + right safe area for curved corners */}
-                    <header className="flex items-center justify-between pb-2 pl-4 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
+                    {/* Mobile: tighter vertical padding to maximize chat space */}
+                    <header className="flex items-center justify-between pb-1 pl-3 pr-[max(0.75rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
                         {/* Oracle with whisper - Carmenta speaks */}
                         <motion.div
                             variants={entranceVariants}
