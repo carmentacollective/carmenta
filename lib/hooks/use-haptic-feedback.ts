@@ -1,33 +1,25 @@
 /**
  * Haptic Feedback Hook
  *
- * Provides unified haptic feedback API for mobile devices.
- * Uses Vibration API on Android/Chrome, hidden checkbox workaround on iOS 18+ Safari.
+ * Provides haptic feedback on iOS Safari using the native Taptic Engine.
+ * Uses the hidden checkbox switch workaround for iOS 18+ Safari.
  *
- * Gracefully degrades to no-op on unsupported devices.
- * Respects device settings automatically.
+ * Gracefully degrades to no-op on non-iOS devices.
+ * No permissions required - uses native iOS haptics.
  */
 
 "use client";
 
 import { useCallback, useRef } from "react";
 
+// Type kept for API compatibility, though iOS haptic is always a single tap
 export type HapticType =
-    | "light" // 30ms - routine button presses, selections
-    | "medium" // 50ms - significant actions (star, copy success)
-    | "heavy" // 100ms - emphasis, important confirmations
-    | "success" // pattern - successful completion
-    | "error" // pattern - errors, failures
-    | "selection"; // 20ms - slider/toggle changes
-
-const HAPTIC_PATTERNS: Record<HapticType, number | number[]> = {
-    light: 30,
-    medium: 50,
-    heavy: 100,
-    success: [30, 60, 30],
-    error: [50, 30, 50, 30, 50],
-    selection: 20,
-};
+    | "light" // routine button presses, selections
+    | "medium" // significant actions (star, copy success)
+    | "heavy" // emphasis, important confirmations
+    | "success" // successful completion
+    | "error" // errors, failures
+    | "selection"; // slider/toggle changes
 
 function detectIOSSafari(): boolean {
     if (typeof navigator === "undefined") return false;
@@ -35,10 +27,6 @@ function detectIOSSafari(): boolean {
     const isIOS = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
     const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
     return isIOS && isSafari;
-}
-
-function detectVibrationSupport(): boolean {
-    return typeof navigator !== "undefined" && "vibrate" in navigator;
 }
 
 /**
@@ -80,7 +68,7 @@ export interface UseHapticFeedbackReturn {
      */
     triggerHaptic: (type: HapticType) => void;
     /**
-     * Stop any ongoing vibration pattern (Android only).
+     * Stop any ongoing haptic pattern (no-op, kept for API compatibility).
      */
     stop: () => void;
     /**
@@ -91,58 +79,32 @@ export interface UseHapticFeedbackReturn {
 
 export function useHapticFeedback(): UseHapticFeedbackReturn {
     const isIOSRef = useRef<boolean | null>(null);
-    const hasVibrateRef = useRef<boolean | null>(null);
 
     // Lazy initialization to avoid SSR issues
-    const getCapabilities = useCallback(() => {
+    const getIsIOS = useCallback(() => {
         if (isIOSRef.current === null) {
             isIOSRef.current = detectIOSSafari();
         }
-        if (hasVibrateRef.current === null) {
-            hasVibrateRef.current = detectVibrationSupport();
-        }
-        return {
-            isIOS: isIOSRef.current,
-            hasVibrate: hasVibrateRef.current,
-        };
+        return isIOSRef.current;
     }, []);
 
     const trigger = useCallback(
-        (type: HapticType) => {
-            const { isIOS, hasVibrate } = getCapabilities();
-
-            if (hasVibrate) {
-                // Android/Chrome - use Vibration API
-                try {
-                    navigator.vibrate(HAPTIC_PATTERNS[type]);
-                } catch {
-                    // Silently fail
-                }
-            } else if (isIOS) {
-                // iOS Safari - use checkbox workaround
-                // Note: iOS workaround doesn't support patterns/duration
-                // All haptics trigger as single tap on iOS
+        (_type: HapticType) => {
+            // Only trigger on iOS Safari - uses native Taptic Engine
+            // Note: iOS workaround doesn't support patterns/duration
+            // All haptics trigger as single tap on iOS
+            if (getIsIOS()) {
                 triggerIOSHaptic();
             }
-            // Unsupported devices: silently no-op
+            // Non-iOS devices: silently no-op
         },
-        [getCapabilities]
+        [getIsIOS]
     );
 
-    const stop = useCallback(() => {
-        const { hasVibrate } = getCapabilities();
-        if (hasVibrate) {
-            try {
-                navigator.vibrate(0);
-            } catch {
-                // Silently fail
-            }
-        }
-    }, [getCapabilities]);
+    // No-op, kept for API compatibility
+    const stop = useCallback(() => {}, []);
 
-    const isSupported =
-        typeof window !== "undefined" &&
-        (detectVibrationSupport() || detectIOSSafari());
+    const isSupported = typeof window !== "undefined" && detectIOSSafari();
 
     return { trigger, triggerHaptic: trigger, stop, isSupported };
 }
@@ -151,17 +113,10 @@ export function useHapticFeedback(): UseHapticFeedbackReturn {
  * Standalone trigger function for use outside React components.
  * Useful for event handlers that don't have hook access.
  */
-export function triggerHaptic(type: HapticType): void {
-    const hasVibrate = detectVibrationSupport();
-    const isIOS = detectIOSSafari();
 
-    if (hasVibrate) {
-        try {
-            navigator.vibrate(HAPTIC_PATTERNS[type]);
-        } catch {
-            // Silently fail
-        }
-    } else if (isIOS) {
+export function triggerHaptic(_type: HapticType): void {
+    // Only trigger on iOS Safari - uses native Taptic Engine
+    if (detectIOSSafari()) {
         triggerIOSHaptic();
     }
 }
