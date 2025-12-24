@@ -435,6 +435,87 @@
         --glass-surface: rgba(16, 18, 20, 0.97);
         --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
+
+    /* ===== CHRISTMAS THEME ===== */
+    /* Festive warmth - deep reds, forest greens, warm golds */
+    :root[data-theme="christmas"] {
+        --background: 45 30% 96%; /* Warm cream like fresh snow */
+        --foreground: 350 35% 22%; /* Deep cranberry for text */
+
+        --card: 0 0% 100%;
+        --card-foreground: 350 35% 22%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 350 35% 22%;
+
+        --primary: 350 65% 45%; /* Deep holly red */
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 140 40% 88%; /* Soft pine needle */
+        --secondary-foreground: 350 35% 22%;
+
+        --muted: 45 20% 90%;
+        --muted-foreground: 350 20% 42%;
+
+        --accent: 42 85% 55%; /* Warm gold like candlelight */
+        --accent-foreground: 350 35% 22%;
+
+        --destructive: 0 60% 70%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 45 20% 82%;
+        --input: 45 20% 88%;
+        --ring: 350 65% 45%;
+
+        /* Glassmorphism - warm holiday tinted */
+        --glass-bg: rgba(180, 80, 80, 0.12);
+        --glass-bg-hover: rgba(180, 80, 80, 0.2);
+        --glass-bg-active: rgba(180, 80, 80, 0.28);
+        --glass-surface: rgba(255, 252, 245, 0.92);
+        --glass-shadow: 0 4px 16px rgba(140, 60, 60, 0.12);
+    }
+
+    :root[data-theme="christmas"].dark {
+        /* Fireside warmth - cozy ember glow, not cold winter */
+        --background: 350 40% 7%; /* Deep cranberry-tinged black */
+        --foreground: 45 25% 92%; /* Warm cream like candlelight */
+
+        /* Cards glow like wrapped presents by firelight */
+        --card: 350 35% 12%;
+        --card-foreground: 45 25% 92%;
+
+        --popover: 350 38% 9%;
+        --popover-foreground: 45 25% 92%;
+
+        /* Primary - Luminous holly berry */
+        --primary: 350 70% 58%;
+        --primary-foreground: 350 40% 7%;
+
+        /* Secondary - Deep evergreen shadow */
+        --secondary: 145 35% 18%;
+        --secondary-foreground: 45 25% 92%;
+
+        --muted: 350 28% 15%;
+        --muted-foreground: 45 18% 62%;
+
+        /* Accent - Glowing golden ornament */
+        --accent: 42 80% 58%;
+        --accent-foreground: 350 40% 7%;
+
+        --destructive: 0 50% 50%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 350 24% 24%;
+        --input: 350 26% 17%;
+        --ring: 350 70% 58%;
+
+        /* Fireside glassmorphism - warm and inviting */
+        --glass-bg: rgba(160, 70, 70, 0.18);
+        --glass-bg-hover: rgba(180, 85, 85, 0.28);
+        --glass-bg-active: rgba(200, 100, 100, 0.35);
+        --glass-surface: rgba(32, 18, 18, 0.96);
+        --glass-shadow: 0 4px 24px rgba(120, 50, 50, 0.3);
+    }
 }
 
 @layer base {

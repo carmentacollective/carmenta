@@ -146,7 +146,7 @@ function HoloThreadInner() {
             {/* Viewport with fade mask and mobile touch optimizations - powered by use-stick-to-bottom */}
             <StickToBottom.Content
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -179,7 +179,7 @@ function HoloThreadInner() {
             </StickToBottom.Content>
 
             {/* Input container with safe area for notched devices */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -691,13 +691,13 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={planError}
                 >
                     {status === "running" ? (
-                        <div className="p-4">
+                        <div className="p-3 sm:p-4">
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Creating task plan...
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {planError ?? "Failed to create plan"}
                         </div>
                     ) : todos.length > 0 ? (
@@ -710,7 +710,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             maxVisibleTodos={6}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No tasks in plan
                         </div>
                     )}
@@ -747,7 +747,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={previewError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         <LinkPreview
                             id={`link-preview-${part.toolCallId}`}
                             href={href ?? ""}
@@ -820,7 +820,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={optionsError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         {status === "running" ? (
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Loading options...
@@ -928,7 +928,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {mapError ?? "Failed to load map"}
                         </div>
                     ) : pois.length > 0 ? (
@@ -940,7 +940,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             title={title}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No locations to display
                         </div>
                     )}
@@ -1280,14 +1280,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     );
 
     return (
-        <div className="my-4 flex w-full justify-end">
+        <div className="my-1.5 flex w-full justify-end sm:my-4">
             <div className="group relative max-w-full sm:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
                 <div className="absolute -right-10 top-2 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-4">
+                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-3 py-2.5 sm:px-4 sm:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1451,7 +1451,7 @@ function AssistantMessage({
         showThinking;
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
                 <ConciergeDisplay
@@ -1515,7 +1515,7 @@ function AssistantMessage({
 
                             {/* File previews */}
                             {fileParts.length > 0 && (
-                                <div className="border-b border-foreground/10 p-4">
+                                <div className="border-b border-foreground/10 p-3 sm:p-4">
                                     <div className="flex flex-col gap-2">
                                         {fileParts.map((file, idx) => (
                                             <FilePreview
@@ -1531,7 +1531,7 @@ function AssistantMessage({
 
                             {/* Thinking indicator - inside LLM zone while waiting for content */}
                             {showThinking && (
-                                <div className="px-4 py-3">
+                                <div className="px-3 py-2 sm:px-4 sm:py-3">
                                     <ThinkingIndicator />
                                 </div>
                             )}
@@ -1539,13 +1539,13 @@ function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-4 pb-2 pt-4">
+                                    <div className="px-3 pb-1.5 pt-2.5 sm:px-4 sm:pb-2 sm:pt-4">
                                         <MarkdownRenderer
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
                                     </div>
-                                    <div className="px-4 pb-1">
+                                    <div className="px-3 pb-1 sm:px-4">
                                         <MessageActions
                                             content={content}
                                             isLast={isLast}
@@ -1576,7 +1576,7 @@ function AssistantMessage({
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-4">
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-3 py-2.5 sm:px-4 sm:py-4">
                         <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
@@ -1649,7 +1649,7 @@ function PendingAssistantMessage({
           : "idle";
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Always show during pending state */}
             <ConciergeDisplay
                 modelId={concierge?.modelId}
@@ -1678,7 +1678,7 @@ function PendingAssistantMessage({
                             }}
                             className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                         >
-                            <div className="px-4 py-3">
+                            <div className="px-3 py-2 sm:px-4 sm:py-3">
                                 <ThinkingIndicator />
                             </div>
                         </motion.div>
@@ -1717,7 +1717,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         pendingFiles,
         removeFile,
         addPastedText,
-        getNextPastedFileName,
+        getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
     const { connections } = useConnection();
@@ -1775,13 +1775,38 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         [handleInputChange, emitUserEngaged]
     );
 
+    // Helper to insert text at cursor position and update input
+    const insertAtCursor = useCallback(
+        (text: string) => {
+            if (!inputRef.current) return;
+
+            const start = inputRef.current.selectionStart;
+            const end = inputRef.current.selectionEnd;
+            const currentValue = inputRef.current.value;
+
+            const newValue =
+                currentValue.substring(0, start) + text + currentValue.substring(end);
+
+            setInput(newValue);
+
+            // Position cursor after inserted text
+            setTimeout(() => {
+                const newPosition = start + text.length;
+                inputRef.current?.setSelectionRange(newPosition, newPosition);
+                inputRef.current?.focus();
+            }, 0);
+        },
+        [setInput]
+    );
+
     // Paste handler - detect images and large text from clipboard
+    // Inserts Claude Code-style placeholders: [Pasted Text #1], [Pasted Image #1]
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             const items = e.clipboardData?.items;
             if (!items) return;
 
-            // Priority 1: Handle images (existing behavior)
+            // Priority 1: Handle images
             const imageFiles: File[] = [];
             for (const item of Array.from(items)) {
                 if (item.type.startsWith("image/")) {
@@ -1798,17 +1823,37 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             if (imageFiles.length > 0 || hasLargeText) {
                 e.preventDefault();
 
-                // Process images
+                // Collect placeholders to insert at cursor
+                const placeholders: string[] = [];
+
+                // Process images - each gets its own placeholder
                 if (imageFiles.length > 0) {
-                    addFiles(imageFiles);
+                    for (const imageFile of imageFiles) {
+                        const { placeholder, filename } = getNextPlaceholder(
+                            "image",
+                            imageFile.type
+                        );
+                        // Rename file to match placeholder naming
+                        const renamedFile = new File([imageFile], filename, {
+                            type: imageFile.type,
+                        });
+                        addFiles([renamedFile], placeholder);
+                        placeholders.push(placeholder);
+                    }
                 }
 
                 // Process large text as attachment
                 if (hasLargeText) {
-                    const fileName = getNextPastedFileName("text");
+                    const { placeholder, filename } = getNextPlaceholder("text");
                     const blob = new Blob([plainText], { type: "text/plain" });
-                    const file = new File([blob], fileName, { type: "text/plain" });
-                    addPastedText([file], plainText);
+                    const file = new File([blob], filename, { type: "text/plain" });
+                    addPastedText([file], plainText, placeholder);
+                    placeholders.push(placeholder);
+                }
+
+                // Insert all placeholders at cursor position
+                if (placeholders.length > 0) {
+                    insertAtCursor(placeholders.join(" "));
                 }
 
                 return;
@@ -1816,7 +1861,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
 
             // Small text or no special content: let browser handle normally
         },
-        [addFiles, addPastedText, getNextPastedFileName]
+        [addFiles, addPastedText, getNextPlaceholder, insertAtCursor]
     );
 
     // Insert inline handler - converts file attachment back to textarea text
@@ -1886,32 +1931,28 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
 
             // Find pasted text files (have content in pastedTextContent Map)
-            const pastedTextFileIds = pendingFiles
-                .filter(
-                    (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
-                )
-                .map((p) => p.id);
+            const pastedTextFiles = pendingFiles.filter(
+                (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
+            );
 
-            if (pastedTextFileIds.length > 0) {
-                // Collect all pasted text content
-                const textContents: string[] = [];
-                for (const fileId of pastedTextFileIds) {
-                    const content = getTextContent(fileId);
-                    if (content) {
-                        textContents.push(content);
-                        removeFile(fileId);
+            if (pastedTextFiles.length > 0) {
+                // Replace each placeholder with its actual content
+                let newInput = input;
+                for (const file of pastedTextFiles) {
+                    const content = getTextContent(file.id);
+                    if (content && file.placeholder) {
+                        // Replace placeholder with actual content
+                        newInput = newInput.replace(file.placeholder, content);
+                    } else if (content) {
+                        // No placeholder (shouldn't happen, but handle gracefully)
+                        newInput = newInput ? `${newInput}\n\n${content}` : content;
                     }
+                    removeFile(file.id);
                 }
 
-                // Append to input and re-submit
-                if (textContents.length > 0) {
-                    const combinedText = textContents.join("\n\n");
-                    const newInput = input
-                        ? `${input}\n\n${combinedText}`
-                        : combinedText;
+                // Re-submit with expanded content
+                if (newInput !== input) {
                     setInput(newInput);
-
-                    // Wait for state update, then submit again
                     setTimeout(() => {
                         formRef.current?.requestSubmit();
                     }, 0);

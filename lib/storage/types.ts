@@ -47,6 +47,8 @@ export interface UploadProgress {
     error?: string;
     /** Result if status is complete */
     result?: UploadedFile;
+    /** Placeholder text for this attachment (e.g., "[Pasted Image #1]") */
+    placeholder?: string;
 }
 
 /**
