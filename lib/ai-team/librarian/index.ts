@@ -8,7 +8,7 @@
  * This agent uses the Vercel AI SDK 6.0 Experimental_Agent framework.
  */
 
-import { Experimental_Agent as Agent, stepCountIs } from "ai";
+import { ToolLoopAgent, stepCountIs } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { logger } from "@/lib/logger";
 import { assertEnv } from "@/lib/env";
@@ -50,15 +50,16 @@ const MAX_STEPS = 10;
  * Create the Knowledge Librarian agent
  */
 export function createLibrarianAgent() {
-    assertEnv("OPENROUTER_API_KEY", process.env.OPENROUTER_API_KEY);
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    assertEnv(apiKey, "OPENROUTER_API_KEY");
 
     const openrouter = createOpenRouter({
-        apiKey: process.env.OPENROUTER_API_KEY,
+        apiKey,
     });
 
-    const agent = new Agent({
+    const agent = new ToolLoopAgent({
         model: openrouter(LIBRARIAN_MODEL),
-        system: librarianSystemPrompt,
+        instructions: librarianSystemPrompt,
         tools: {
             listKnowledge: listKnowledgeTool,
             readDocument: readDocumentTool,

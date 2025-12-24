@@ -17,6 +17,15 @@ import {
     moveDocumentTool,
     notifyUserTool,
 } from "@/lib/ai-team/librarian/tools";
+import type {
+    ListKnowledgeOutput,
+    ReadDocumentOutput,
+    CreateDocumentOutput,
+    UpdateDocumentOutput,
+    AppendToDocumentOutput,
+    MoveDocumentOutput,
+    NotifyUserOutput,
+} from "@/lib/ai-team/librarian/types";
 
 // Enable database for these tests
 setupTestDb();
@@ -37,6 +46,20 @@ async function createTestUser(email = `test-${uuid()}@example.com`) {
     return user;
 }
 
+/**
+ * Helper to call tool execute
+ * AI SDK tools have execute?: (params, context) => Output | AsyncIterable<Output>
+ * For our tools, we know execute exists and returns Output (not AsyncIterable)
+ * Using 'any' to simplify test typing - the runtime behavior is what matters
+ */
+
+async function executeTool<TOutput>(tool: any, params: unknown): Promise<TOutput> {
+    if (!tool.execute) {
+        throw new Error("Tool has no execute function");
+    }
+    return tool.execute(params, {}) as Promise<TOutput>;
+}
+
 describe("Knowledge Librarian Tools", () => {
     describe("listKnowledgeTool", () => {
         it("should list all documents for a user", async () => {
@@ -54,7 +77,9 @@ describe("Knowledge Librarian Tools", () => {
                 description: "Friend relationship",
             });
 
-            const result = await listKnowledgeTool.execute({ userId: user.id });
+            const result = await executeTool<ListKnowledgeOutput>(listKnowledgeTool, {
+                userId: user.id,
+            });
 
             expect(result.documents).toHaveLength(2);
             expect(result.documents[0]).toMatchObject({
@@ -73,7 +98,9 @@ describe("Knowledge Librarian Tools", () => {
         it("should return empty array for user with no documents", async () => {
             const user = await createTestUser();
 
-            const result = await listKnowledgeTool.execute({ userId: user.id });
+            const result = await executeTool<ListKnowledgeOutput>(listKnowledgeTool, {
+                userId: user.id,
+            });
 
             expect(result.documents).toEqual([]);
         });
@@ -90,7 +117,7 @@ describe("Knowledge Librarian Tools", () => {
                 description: "Core identity facts",
             });
 
-            const result = await readDocumentTool.execute({
+            const result = await executeTool<ReadDocumentOutput>(readDocumentTool, {
                 userId: user.id,
                 path: "knowledge.identity",
             });
@@ -107,7 +134,7 @@ describe("Knowledge Librarian Tools", () => {
         it("should return not found for non-existent document", async () => {
             const user = await createTestUser();
 
-            const result = await readDocumentTool.execute({
+            const result = await executeTool<ReadDocumentOutput>(readDocumentTool, {
                 userId: user.id,
                 path: "knowledge.nonexistent",
             });
@@ -121,7 +148,7 @@ describe("Knowledge Librarian Tools", () => {
         it("should create a new document", async () => {
             const user = await createTestUser();
 
-            const result = await createDocumentTool.execute({
+            const result = await executeTool<CreateDocumentOutput>(createDocumentTool, {
                 userId: user.id,
                 path: "knowledge.projects.carmenta",
                 name: "Carmenta Project",
@@ -144,7 +171,7 @@ describe("Knowledge Librarian Tools", () => {
             const user = await createTestUser();
 
             // Try to create with invalid path (contains disallowed characters)
-            const result = await createDocumentTool.execute({
+            const result = await executeTool<CreateDocumentOutput>(createDocumentTool, {
                 userId: user.id,
                 path: "knowledge%invalid%path", // % not allowed in paths
                 name: "Invalid",
@@ -166,7 +193,7 @@ describe("Knowledge Librarian Tools", () => {
                 content: "Original content",
             });
 
-            const result = await updateDocumentTool.execute({
+            const result = await executeTool<UpdateDocumentOutput>(updateDocumentTool, {
                 userId: user.id,
                 path: "knowledge.identity",
                 content: "Updated content with new details",
@@ -183,7 +210,7 @@ describe("Knowledge Librarian Tools", () => {
         it("should return failure for non-existent document", async () => {
             const user = await createTestUser();
 
-            const result = await updateDocumentTool.execute({
+            const result = await executeTool<UpdateDocumentOutput>(updateDocumentTool, {
                 userId: user.id,
                 path: "knowledge.nonexistent",
                 content: "New content",
@@ -204,11 +231,14 @@ describe("Knowledge Librarian Tools", () => {
                 content: "Met at college in 2010",
             });
 
-            const result = await appendToDocumentTool.execute({
-                userId: user.id,
-                path: "knowledge.people.Sarah",
-                content: "Now works as a software engineer at Google",
-            });
+            const result = await executeTool<AppendToDocumentOutput>(
+                appendToDocumentTool,
+                {
+                    userId: user.id,
+                    path: "knowledge.people.Sarah",
+                    content: "Now works as a software engineer at Google",
+                }
+            );
 
             expect(result.success).toBe(true);
             expect(result.message).toContain("Appended content");
@@ -223,11 +253,14 @@ describe("Knowledge Librarian Tools", () => {
         it("should return failure for non-existent document", async () => {
             const user = await createTestUser();
 
-            const result = await appendToDocumentTool.execute({
-                userId: user.id,
-                path: "knowledge.nonexistent",
-                content: "New content",
-            });
+            const result = await executeTool<AppendToDocumentOutput>(
+                appendToDocumentTool,
+                {
+                    userId: user.id,
+                    path: "knowledge.nonexistent",
+                    content: "New content",
+                }
+            );
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("not found");
@@ -245,7 +278,7 @@ describe("Knowledge Librarian Tools", () => {
                 description: "Test description",
             });
 
-            const result = await moveDocumentTool.execute({
+            const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
                 fromPath: "knowledge.old-path",
                 toPath: "knowledge.new-path",
@@ -269,7 +302,7 @@ describe("Knowledge Librarian Tools", () => {
         it("should return failure for non-existent source document", async () => {
             const user = await createTestUser();
 
-            const result = await moveDocumentTool.execute({
+            const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
                 fromPath: "knowledge.nonexistent",
                 toPath: "knowledge.new-path",
@@ -289,7 +322,7 @@ describe("Knowledge Librarian Tools", () => {
             });
 
             // Try to move to invalid path
-            const result = await moveDocumentTool.execute({
+            const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
                 fromPath: "knowledge.source",
                 toPath: "invalid%path%format", // % not allowed in paths
@@ -302,7 +335,7 @@ describe("Knowledge Librarian Tools", () => {
 
     describe("notifyUserTool", () => {
         it("should queue a notification", async () => {
-            const result = await notifyUserTool.execute({
+            const result = await executeTool<NotifyUserOutput>(notifyUserTool, {
                 message: "Important update about your knowledge base",
             });
 
@@ -311,7 +344,7 @@ describe("Knowledge Librarian Tools", () => {
         });
 
         it("should handle any message content", async () => {
-            const result = await notifyUserTool.execute({
+            const result = await executeTool<NotifyUserOutput>(notifyUserTool, {
                 message: "Complex message with\nnewlines and special chars: @#$%",
             });
 

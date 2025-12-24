@@ -25,7 +25,7 @@ import type {
 export const listKnowledgeTool = tool({
     description:
         "List all knowledge base documents for the user. Returns the full KB structure with paths, names, descriptions, and content.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID to list documents for"),
     }),
     execute: async ({ userId }): Promise<ListKnowledgeOutput> => {
@@ -52,7 +52,7 @@ export const listKnowledgeTool = tool({
  */
 export const readDocumentTool = tool({
     description: "Read a specific document from the knowledge base by its path.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID"),
         path: z
             .string()
@@ -88,7 +88,7 @@ export const readDocumentTool = tool({
 export const createDocumentTool = tool({
     description:
         "Create a new document in the knowledge base. Use this when you want to save new knowledge that doesn't fit into an existing document.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID"),
         path: z
             .string()
@@ -141,7 +141,7 @@ export const createDocumentTool = tool({
 export const updateDocumentTool = tool({
     description:
         "Update the content of an existing document. This replaces the entire content. Use appendToDocument if you want to add to existing content.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID"),
         path: z.string().describe("Document path in dot notation"),
         content: z.string().describe("New content to replace the existing content"),
@@ -172,7 +172,7 @@ export const updateDocumentTool = tool({
 export const appendToDocumentTool = tool({
     description:
         "Append content to an existing document. The new content is added to the end of the existing content with a newline separator.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID"),
         path: z.string().describe("Document path in dot notation"),
         content: z.string().describe("Content to append to the document"),
@@ -213,7 +213,7 @@ export const appendToDocumentTool = tool({
 export const moveDocumentTool = tool({
     description:
         "Move a document from one path to another. This is useful for reorganizing knowledge or correcting misplaced documents.",
-    parameters: z.object({
+    inputSchema: z.object({
         userId: z.string().describe("User ID"),
         fromPath: z.string().describe("Current document path"),
         toPath: z.string().describe("New document path"),
@@ -239,7 +239,7 @@ export const moveDocumentTool = tool({
                 path: toPath,
                 name: document.name,
                 content: document.content,
-                description: document.description,
+                description: document.description ?? undefined,
             });
 
             // Delete from old path
@@ -270,7 +270,7 @@ export const moveDocumentTool = tool({
 export const notifyUserTool = tool({
     description:
         "Queue a notification to inform the user about something important. Use this when you want to draw the user's attention to a significant change or insight.",
-    parameters: z.object({
+    inputSchema: z.object({
         message: z.string().describe("Notification message to send to the user"),
     }),
     execute: async ({ message }): Promise<NotifyUserOutput> => {
