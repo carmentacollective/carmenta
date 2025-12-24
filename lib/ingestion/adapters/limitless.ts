@@ -85,12 +85,14 @@ export class LimitlessAdapter implements IngestionAdapter {
         const adapterLogger = logger.child({ adapter: "limitless", userEmail });
 
         try {
-            // Get API credentials
-            const apiKey = await this.getApiKey(userEmail);
-            if (!apiKey) {
+            // Get API credentials and account ID
+            const credResult = await this.getApiKeyAndAccount(userEmail);
+            if (!credResult) {
                 adapterLogger.warn("No Limitless connection found for user");
                 return [];
             }
+
+            const { apiKey, accountId } = credResult;
 
             // Fetch lifelogs list
             const lifelogs = await this.fetchLifelogs(apiKey, since);
@@ -157,8 +159,15 @@ export class LimitlessAdapter implements IngestionAdapter {
 
     /**
      * Get last sync time from integrations table
+     * Uses the same account selection logic as getCredentials (default or oldest)
      */
     async getLastSyncTime(userEmail: string): Promise<Date | null> {
+        // Get the accountId that will actually be synced
+        const credResult = await this.getApiKeyAndAccount(userEmail);
+        if (!credResult) {
+            return null;
+        }
+
         const results = await db
             .select({ lastSyncAt: schema.integrations.lastSyncAt })
             .from(schema.integrations)
@@ -166,6 +175,7 @@ export class LimitlessAdapter implements IngestionAdapter {
                 and(
                     eq(schema.integrations.userEmail, userEmail),
                     eq(schema.integrations.service, "limitless"),
+                    eq(schema.integrations.accountId, credResult.accountId),
                     eq(schema.integrations.status, "connected")
                 )
             )
@@ -176,25 +186,40 @@ export class LimitlessAdapter implements IngestionAdapter {
 
     /**
      * Update sync timestamp after successful sync
+     * Only updates the specific account that was synced
      */
     async updateSyncTime(userEmail: string, time: Date): Promise<void> {
+        // Get the accountId that was actually synced
+        const credResult = await this.getApiKeyAndAccount(userEmail);
+        if (!credResult) {
+            logger.warn({ userEmail }, "Cannot update sync time - no connection found");
+            return;
+        }
+
         await db
             .update(schema.integrations)
             .set({ lastSyncAt: time })
             .where(
                 and(
                     eq(schema.integrations.userEmail, userEmail),
-                    eq(schema.integrations.service, "limitless")
+                    eq(schema.integrations.service, "limitless"),
+                    eq(schema.integrations.accountId, credResult.accountId)
                 )
             );
 
-        logger.debug({ userEmail, time }, "Updated Limitless sync time");
+        logger.debug(
+            { userEmail, accountId: credResult.accountId, time },
+            "Updated Limitless sync time"
+        );
     }
 
     /**
-     * Get decrypted API key for user
+     * Get decrypted API key and account ID for user
+     * Returns the account that getCredentials selects (default or oldest)
      */
-    private async getApiKey(userEmail: string): Promise<string | null> {
+    private async getApiKeyAndAccount(
+        userEmail: string
+    ): Promise<{ apiKey: string; accountId: string } | null> {
         try {
             const connectionCreds = await getCredentials(userEmail, "limitless");
 
@@ -206,7 +231,10 @@ export class LimitlessAdapter implements IngestionAdapter {
                 return null;
             }
 
-            return connectionCreds.credentials.apiKey;
+            return {
+                apiKey: connectionCreds.credentials.apiKey,
+                accountId: connectionCreds.accountId,
+            };
         } catch {
             // User doesn't have Limitless connected
             return null;
