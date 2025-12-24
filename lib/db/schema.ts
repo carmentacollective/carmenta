@@ -9,6 +9,24 @@
  * - Columns: snake_case, descriptive, avoid abbreviations
  * - Timestamps: use _at suffix (created_at, updated_at)
  * - Foreign keys: referenced_table_singular_id (user_id, connection_id)
+ *
+ * ID column patterns:
+ * - UUID: Use for user-facing entities needing globally unique, non-guessable IDs
+ *   Example: `uuid("id").primaryKey().defaultRandom()`
+ *   Used by: users, documents, notifications
+ *
+ * - Serial: Use for high-volume operational data (fast inserts, compact storage)
+ *   Example: `serial("id").primaryKey()`
+ *   Used by: connections, integrations (encoded via Sqids for public URLs)
+ *
+ * - Identity (NEW TABLES): Use for new tables needing auto-increment integers
+ *   Example: `integer("id").primaryKey().generatedAlwaysAsIdentity()`
+ *   Benefits: Modern PostgreSQL standard, explicit control over sequences
+ *   Note: Don't migrate existing serial columns; use for new tables only
+ *
+ * - Text: Use when IDs come from external systems (AI SDK message IDs, etc.)
+ *   Example: `text("id").primaryKey()`
+ *   Used by: messages (Vercel AI SDK provides nanoid-style IDs)
  */
 
 import {
