@@ -199,7 +199,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         }}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <User className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Manage account</span>
                                     </button>
@@ -209,7 +209,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <BookOpen className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Knowledge Base</span>
                                     </Link>
@@ -219,7 +219,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <BookOpen className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Guide</span>
                                     </Link>
@@ -229,7 +229,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <Plug className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Integrations</span>
                                     </Link>
@@ -348,7 +348,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                             disabled={!isMarkerReady}
                                             className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground disabled:opacity-50"
                                         >
-                                            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                            <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                             <Sparkles className="relative h-4 w-4 text-foreground/60" />
                                             <span className="relative">
                                                 Improve Carmenta
@@ -361,7 +361,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <LogOut className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Exit</span>
                                     </Link>
