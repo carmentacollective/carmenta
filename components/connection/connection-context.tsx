@@ -236,8 +236,8 @@ export function ConnectionProvider({
 
     const handleToggleStarConnection = useCallback(
         (id: string) => {
-            // Find connection to determine new state
-            const connection = connections.find((c) => c.id === id);
+            // Find connection from optimistic state to avoid race condition on rapid toggles
+            const connection = optimisticConnections.find((c) => c.id === id);
             if (!connection) return;
 
             const newIsStarred = !connection.isStarred;
@@ -268,7 +268,7 @@ export function ConnectionProvider({
                 }
             });
         },
-        [connections, updateOptimisticConnections]
+        [optimisticConnections, updateOptimisticConnections]
     );
 
     const handleUpdateConnectionTitle = useCallback(

@@ -38,6 +38,8 @@ export function ApiKeyModal({
 }: ApiKeyModalProps) {
     const [apiKey, setApiKey] = useState("");
     const [showKey, setShowKey] = useState(false);
+    // Reset key when modal closes to clear form state
+    const [resetKey, setResetKey] = useState(0);
 
     // React 19: useActionState consolidates loading + error state
     const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -71,6 +73,8 @@ export function ApiKeyModal({
         if (!isPending) {
             setApiKey("");
             setShowKey(false);
+            // Increment reset key to remount form and clear error state
+            setResetKey((k) => k + 1);
             onOpenChange(false);
         }
     };
@@ -97,7 +101,7 @@ export function ApiKeyModal({
                     </div>
                 </DialogHeader>
 
-                <form action={formAction} className="space-y-4">
+                <form key={resetKey} action={formAction} className="space-y-4">
                     {/* Get API Key Link */}
                     {service.getApiKeyUrl && (
                         <div className="rounded-lg bg-foreground/5 p-3">
