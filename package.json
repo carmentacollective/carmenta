@@ -42,7 +42,13 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "eval:nightly": "braintrust eval evals/nightly/eval.ts",
+    "eval:routing": "braintrust eval evals/routing/eval.ts",
+    "eval:competitive": "braintrust eval evals/competitive/eval.ts",
+    "eval:check-regression": "tsx scripts/eval-check-regression.ts",
+    "eval:compare-models": "tsx scripts/compare-models.ts",
+    "eval:analyze-gaps": "tsx scripts/analyze-gaps.ts"
   },
   "dependencies": {
     "@47ng/simple-e2ee": "^1.1.0",
