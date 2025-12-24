@@ -114,7 +114,7 @@ export function FloatingEmojiProvider({ children }: { children: React.ReactNode 
             {children}
             {mounted &&
                 createPortal(
-                    <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
+                    <div className="pointer-events-none fixed inset-0 z-toast overflow-hidden">
                         {effects.map((effect) => (
                             <div key={effect.id} className="absolute inset-0">
                                 {effect.particles.map((particle) => (
