@@ -5,7 +5,7 @@
  * Tests model routing for different file types and content processing.
  *
  * Usage:
- *   pnpm braintrust eval evals/attachments.eval.ts
+ *   pnpm braintrust eval evals/attachments/eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local

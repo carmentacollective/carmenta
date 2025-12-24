@@ -1,6 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import {
     convertToModelMessages,
     createUIMessageStream,
@@ -13,6 +12,9 @@ import {
 } from "ai";
 import { nanoid } from "nanoid";
 import { z } from "zod";
+
+import { filterReasoningFromMessages } from "@/lib/ai/messages";
+import { getOpenRouterClient } from "@/lib/ai/openrouter";
 
 import {
     runConcierge,
@@ -38,7 +40,7 @@ import {
     evaluateTitleEvolution,
     summarizeRecentMessages,
 } from "@/lib/concierge/title-evolution";
-import { assertEnv, env } from "@/lib/env";
+import { env } from "@/lib/env";
 import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { getModel, getFallbackChain } from "@/lib/model-config";
@@ -518,11 +520,7 @@ export async function POST(req: Request) {
         // Use actual email if authenticated, fallback for development
         userEmail = user?.emailAddresses[0]?.emailAddress ?? "dev-user@local";
 
-        assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
-
-        const openrouter = createOpenRouter({
-            apiKey: env.OPENROUTER_API_KEY,
-        });
+        const openrouter = getOpenRouterClient();
 
         // Initialize Braintrust logger for production tracing (gracefully degrades if not configured)
         await initBraintrustLogger();
@@ -835,42 +833,8 @@ export async function POST(req: Request) {
             };
         }
 
-        // Strip reasoning parts before sending to API
-        // Anthropic's thinking blocks ('thinking', 'redacted_thinking') cannot be modified
-        // in multi-turn conversations. We also strip our custom 'reasoning' type.
-        //
-        // The AI SDK's UIMessage type can have content as either a string or an array of parts.
-        // We need to filter thinking blocks from both the 'parts' array (our format) and
-        // the 'content' array (when it's an array) to ensure compatibility.
-        const messagesWithoutReasoning = messages.map((msg) => {
-            const filtered: any = { ...msg };
-
-            // Filter parts array if it exists
-            if (msg.parts) {
-                filtered.parts = msg.parts.filter((part) => {
-                    const partType = part.type as string;
-                    return (
-                        partType !== "reasoning" &&
-                        partType !== "thinking" &&
-                        partType !== "redacted_thinking"
-                    );
-                });
-            }
-
-            // Filter content array if it exists and is an array
-            if (Array.isArray((msg as any).content)) {
-                filtered.content = (msg as any).content.filter((part: any) => {
-                    const partType = part.type as string;
-                    return (
-                        partType !== "reasoning" &&
-                        partType !== "thinking" &&
-                        partType !== "redacted_thinking"
-                    );
-                });
-            }
-
-            return filtered;
-        });
+        // Strip reasoning parts before sending to API (Anthropic rejects modified thinking blocks)
+        const messagesWithoutReasoning = filterReasoningFromMessages(messages);
 
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can

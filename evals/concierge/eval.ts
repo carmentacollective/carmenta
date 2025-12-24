@@ -7,10 +7,10 @@
  *
  * Usage:
  *   # Run with all model candidates:
- *   pnpm braintrust eval evals/concierge.eval.ts
+ *   pnpm braintrust eval evals/concierge/eval.ts
  *
  *   # Run with specific model:
- *   CONCIERGE_MODEL=openai/gpt-5-nano pnpm braintrust eval evals/concierge.eval.ts
+ *   CONCIERGE_MODEL=openai/gpt-5-nano pnpm braintrust eval evals/concierge/eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
@@ -27,14 +27,14 @@
 import "dotenv/config";
 import { Eval } from "braintrust";
 
-import { ConciergeScorer, type ConciergeOutput } from "./scorers/concierge-scorer";
-import { TitleQualityScorer } from "./scorers/title-quality-scorer";
-import { conciergeTestData, type ConciergeTestInput } from "./concierge-test-data";
+import { ConciergeScorer, type ConciergeOutput } from "./scorer";
+import { TitleQualityScorer } from "./title-scorer";
+import { conciergeTestData, type ConciergeTestInput } from "./cases";
 import {
     runConciergeEval,
     CONCIERGE_MODEL_CANDIDATES,
     type ConciergeModelCandidate,
-} from "./lib/concierge-runner";
+} from "./runner";
 
 // LLM-as-judge scoring is expensive - enable with env var
 const ENABLE_LLM_JUDGE = process.env.ENABLE_LLM_JUDGE === "true";

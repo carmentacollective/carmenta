@@ -5,7 +5,7 @@
  * and scores responses on multiple dimensions.
  *
  * Usage:
- *   pnpm braintrust eval evals/competitive.eval.ts
+ *   pnpm braintrust eval evals/competitive/eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
@@ -15,7 +15,7 @@
 
 import "dotenv/config";
 import { Eval } from "braintrust";
-import { competitiveQueries, type CompetitiveQuery } from "./competitive-queries";
+import { competitiveQueries, type CompetitiveQuery } from "./queries";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";

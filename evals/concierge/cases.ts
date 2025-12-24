@@ -8,7 +8,7 @@
  * - Title generation (concise, descriptive)
  */
 
-import type { ConciergeExpectations } from "./scorers/concierge-scorer";
+import type { ConciergeExpectations } from "./scorer";
 
 export interface ConciergeTestInput {
     /** Unique test case identifier */

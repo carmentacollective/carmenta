@@ -9,7 +9,7 @@
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
-import { competitiveQueries, type CompetitiveQuery } from "./competitive-queries";
+import { competitiveQueries, type CompetitiveQuery } from "../competitive/queries";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;

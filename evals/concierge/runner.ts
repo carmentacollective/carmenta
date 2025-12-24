@@ -24,8 +24,8 @@ import {
     type ReasoningConfig,
     type ReasoningEffort,
 } from "@/lib/concierge/types";
-import type { ConciergeOutput } from "../scorers/concierge-scorer";
-import type { ConciergeTestInput } from "../concierge-test-data";
+import type { ConciergeOutput } from "./scorer";
+import type { ConciergeTestInput } from "./cases";
 
 /** Cache for the rubric content */
 let rubricCache: string | null = null;

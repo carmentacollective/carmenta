@@ -9,12 +9,11 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
 import { generateText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
-import { assertEnv, env } from "@/lib/env";
+import { getOpenRouterClient } from "@/lib/ai/openrouter";
 import { logger } from "@/lib/logger";
 import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
@@ -354,11 +353,7 @@ export async function runConcierge(messages: UIMessage[]): Promise<ConciergeResu
         { op: "concierge.route", name: "Concierge Model Selection" },
         async (span) => {
             try {
-                assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
-
-                const openrouter = createOpenRouter({
-                    apiKey: env.OPENROUTER_API_KEY,
-                });
+                const openrouter = getOpenRouterClient();
 
                 // Load the rubric
                 const rubricContent = await getRubricContent();

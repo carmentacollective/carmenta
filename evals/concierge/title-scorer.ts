@@ -12,8 +12,8 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
-import type { ConciergeTestInput } from "../concierge-test-data";
-import type { ConciergeOutput } from "./concierge-scorer";
+import type { ConciergeTestInput } from "./cases";
+import type { ConciergeOutput } from "./scorer";
 
 const JUDGE_MODEL = "anthropic/claude-haiku-4.5";
 
