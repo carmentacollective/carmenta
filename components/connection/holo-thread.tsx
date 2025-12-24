@@ -48,6 +48,7 @@ import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
+import { Sparks } from "./sparks";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useUserContext } from "@/lib/auth/user-context";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
@@ -103,9 +104,23 @@ export function HoloThread() {
 }
 
 function HoloThreadInner() {
-    const { messages, isLoading } = useChatContext();
+    const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
+
+    // Handle spark prefill - either fill input or auto-submit
+    const handleSparkPrefill = useCallback(
+        (prompt: string, autoSubmit: boolean) => {
+            if (autoSubmit) {
+                // Submit directly
+                append({ role: "user", content: prompt });
+            } else {
+                // Just fill the input for user to edit
+                setInput(prompt);
+            }
+        },
+        [append, setInput]
+    );
 
     // Track messages that were stopped mid-stream (for visual indicator)
     const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(
@@ -154,7 +169,7 @@ function HoloThreadInner() {
                 )}
             >
                 {isEmpty ? (
-                    <ThreadWelcome />
+                    <ThreadWelcome onPrefill={handleSparkPrefill} />
                 ) : (
                     <div className="flex w-full flex-col">
                         {messages.map((message, index) => (
@@ -222,15 +237,19 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton() {
     );
 });
 
+interface ThreadWelcomeProps {
+    onPrefill: (prompt: string, autoSubmit: boolean) => void;
+}
+
 /**
  * Welcome screen shown when thread is empty.
- * Feature tips now appear via OracleWhisper in the header.
+ * Features personalized Sparks for quick conversation starters.
  * Beautiful exit animation when user sends their first message.
  */
-function ThreadWelcome() {
+function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
     return (
         <motion.div
-            className="flex w-full flex-grow flex-col items-center justify-center"
+            className="flex min-h-full w-full flex-col items-center justify-center gap-8"
             initial={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
                 opacity: 0,
@@ -244,6 +263,7 @@ function ThreadWelcome() {
             }}
         >
             <Greeting />
+            <Sparks onPrefill={onPrefill} />
         </motion.div>
     );
 }
