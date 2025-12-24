@@ -1586,6 +1586,20 @@ function AssistantMessage({
                     ))}
                 </div>
             )}
+
+            {/* Fallback: Show file parts without LLM zone wrapper when no concierge */}
+            {!showConcierge && fileParts.length > 0 && (
+                <div className="mt-2 flex flex-col gap-2">
+                    {fileParts.map((file, idx) => (
+                        <FilePreview
+                            key={idx}
+                            url={file.url}
+                            mediaType={file.mediaType}
+                            filename={file.name || "file"}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
