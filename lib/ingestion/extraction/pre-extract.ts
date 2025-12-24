@@ -3,7 +3,7 @@
  * Uses smallest/fastest model (Haiku) to identify what to search for
  */
 
-import { generateObject, type LanguageModel } from "ai";
+import { generateText, Output, type LanguageModel } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -37,8 +37,9 @@ export async function preExtract(content: string): Promise<PreExtractionResult> 
     }
 
     try {
-        const { object } = await generateObject({
+        const { output } = await generateText({
             model: getHaiku(),
+            output: Output.object({ schema: preExtractionSchema }),
             prompt: `List entities and topics mentioned in this content for knowledge base search:
 
 ${content.slice(0, 2000)}
@@ -47,15 +48,14 @@ Extract:
 - People: Proper names of individuals (not roles like "the user" or "someone")
 - Projects: Names of projects, products, or systems
 - Topics: Technical concepts, technologies, or important subjects mentioned`,
-            schema: preExtractionSchema,
         });
 
         logger.debug(
-            { people: object.people, projects: object.projects, topics: object.topics },
+            { people: output.people, projects: output.projects, topics: output.topics },
             "Pre-extraction completed"
         );
 
-        return object;
+        return output;
     } catch (error) {
         logger.error({ error }, "Pre-extraction failed");
         // Return empty arrays rather than failing - we can still try ingestion

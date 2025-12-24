@@ -221,6 +221,27 @@ export function useModelOverrides() {
 }
 
 /**
+ * Context for settings modal - allows any component to open the model selector.
+ * Used by feature tips to open settings when user clicks "Adjust settings" CTA.
+ */
+export interface SettingsModalContextType {
+    settingsOpen: boolean;
+    setSettingsOpen: (open: boolean) => void;
+}
+
+export const SettingsModalContext = createContext<SettingsModalContextType | null>(
+    null
+);
+
+export function useSettingsModal() {
+    const context = useContext(SettingsModalContext);
+    if (!context) {
+        throw new Error("useSettingsModal must be used within ConnectRuntimeProvider");
+    }
+    return context;
+}
+
+/**
  * Parses an error message and extracts a user-friendly message.
  * Handles JSON error responses, HTML error pages, provider errors, and plain text.
  *
@@ -523,6 +544,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     // Generate a stable chat ID for new connections.
     // This matches Vercel's ai-chatbot pattern where the ID is known BEFORE sending.
@@ -895,21 +917,28 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         [overrides]
     );
 
+    const settingsModalContextValue = useMemo(
+        () => ({ settingsOpen, setSettingsOpen }),
+        [settingsOpen]
+    );
+
     return (
-        <ModelOverridesContext.Provider value={overridesContextValue}>
-            <ChatErrorContext.Provider value={errorContextValue}>
-                <ChatContext.Provider value={chatContextValue}>
-                    {children}
-                    {displayError && (
-                        <RuntimeErrorBanner
-                            error={displayError}
-                            onDismiss={clearError}
-                            onRetry={handleRetry}
-                        />
-                    )}
-                </ChatContext.Provider>
-            </ChatErrorContext.Provider>
-        </ModelOverridesContext.Provider>
+        <SettingsModalContext.Provider value={settingsModalContextValue}>
+            <ModelOverridesContext.Provider value={overridesContextValue}>
+                <ChatErrorContext.Provider value={errorContextValue}>
+                    <ChatContext.Provider value={chatContextValue}>
+                        {children}
+                        {displayError && (
+                            <RuntimeErrorBanner
+                                error={displayError}
+                                onDismiss={clearError}
+                                onRetry={handleRetry}
+                            />
+                        )}
+                    </ChatContext.Provider>
+                </ChatErrorContext.Provider>
+            </ModelOverridesContext.Provider>
+        </SettingsModalContext.Provider>
     );
 }
 

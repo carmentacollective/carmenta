@@ -1,8 +1,8 @@
 # Vercel AI SDK
 
-The foundational layer for AI model interactions. Vercel AI SDK v5 provides streaming,
-message management, and transport abstractions that power all chat experiences in
-Carmenta. This is the "how" of talking to models.
+The foundational layer for AI model interactions. Vercel AI SDK v6 provides streaming,
+message management, structured outputs, and transport abstractions that power all chat
+experiences in Carmenta. This is the "how" of talking to models.
 
 ## Why This Exists
 
@@ -18,16 +18,17 @@ This is distinct from model selection (Model Intelligence) and request routing
 (Concierge). AI SDK handles the mechanics of a conversation once we know what model to
 use and how to process the request.
 
-## Version: AI SDK 5.x
+## Version: AI SDK 6.0
 
-We use AI SDK v5, which introduced significant changes from v4:
+We use AI SDK v6, released December 2023. Key changes from v5:
 
-- **Transport-based architecture**: Configuration via transport objects, not direct
-  options
+- **`convertToModelMessages` is async**: Must use `await` when converting messages
+- **`generateObject` deprecated**: Use `generateText` with `Output.object()` for
+  structured output
+- **`MockLanguageModelV3` updates**: New usage structure with detailed token breakdown
+- **Transport-based architecture**: Configuration via transport objects
 - **Parts-based messages**: `UIMessage.parts[]` replaces `Message.content`
 - **SSE streaming**: Server-Sent Events via `toUIMessageStreamResponse()`
-- **Manual input state**: `useChat` no longer manages input internally
-- **Renamed APIs**: `sendMessage` (not `append`), `regenerate` (not `reload`)
 
 ## Core Patterns
 
@@ -59,7 +60,8 @@ Key points:
 
 ### Server-Side Streaming
 
-API routes use `streamText` with proper response format:
+API routes use `streamText` with proper response format. Note `convertToModelMessages`
+is async in v6:
 
 ```typescript
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
@@ -70,7 +72,7 @@ export async function POST(req: Request) {
   const result = await streamText({
     model: provider.chat("model-id"),
     system: SYSTEM_PROMPT,
-    messages: convertToModelMessages(messages),
+    messages: await convertToModelMessages(messages), // Now async in v6
   });
 
   return result.toUIMessageStreamResponse({
@@ -81,6 +83,38 @@ export async function POST(req: Request) {
 
 Critical: Use `toUIMessageStreamResponse()`, not `toTextStreamResponse()`. The former
 returns SSE events that `DefaultChatTransport` expects.
+
+### Structured Output with Output.object()
+
+For structured JSON responses, use `generateText` with `Output.object()`. The deprecated
+`generateObject` function should not be used:
+
+```typescript
+import { generateText, Output } from "ai";
+import { z } from "zod";
+
+const mySchema = z.object({
+  title: z.string(),
+  score: z.number().min(0).max(1),
+  tags: z.array(z.string()),
+});
+
+const { output } = await generateText({
+  model: provider.chat("model-id"),
+  output: Output.object({ schema: mySchema }),
+  prompt: "Analyze this content...",
+});
+
+// output is typed according to mySchema
+console.log(output.title, output.score, output.tags);
+```
+
+Key points:
+
+- Import `Output` from `ai` package
+- Use `output` property (not `object`) from result
+- Schema is passed via `Output.object({ schema })`
+- Works with Zod schemas for type safety
 
 ### Message Format
 
@@ -141,7 +175,7 @@ model: openrouter.chat("anthropic/claude-sonnet-4.5");
 
 ## Future Capabilities
 
-AI SDK v5 provides patterns we'll use as Carmenta evolves:
+AI SDK v6 provides patterns we'll use as Carmenta evolves:
 
 ### Tool Calling
 
@@ -156,6 +190,25 @@ const { addToolOutput } = useChat({
   },
 });
 ```
+
+### Tool Execution Approval
+
+For destructive operations (delete, modify), v6 supports human-in-the-loop approval:
+
+```typescript
+const tool = {
+  description: "Delete a file",
+  parameters: z.object({ path: z.string() }),
+  needsApproval: async ({ action }) => {
+    return action.startsWith("delete_");
+  },
+  execute: async ({ path }) => {
+    // Only runs after user approval
+  },
+};
+```
+
+See GitHub issue #339 for implementation plans.
 
 ### Message Persistence
 
@@ -183,6 +236,14 @@ const result = await streamText({
 });
 ```
 
+## Deferred Features
+
+These v6 features are tracked for future implementation:
+
+- **AI Elements**: 20+ production React components (#336)
+- **Transient Streaming**: Stream ephemeral status updates (#337)
+- **DevTools**: localhost:4983 debugging interface (#338)
+
 ## Success Criteria
 
 - Streaming responses appear token-by-token with no perceptible delay
@@ -203,14 +264,20 @@ const result = await streamText({
 - Message parts rendering
 - Session ID tracking with `useId()`
 - Completion logging via `onFinish`
+- Structured output with `Output.object()` pattern
+- Async `convertToModelMessages` usage
 
 ### Not Yet Implemented
 
 - Message persistence (database storage)
 - Tool calling / function execution
+- Tool execution approval (human-in-the-loop)
 - Multi-step agent workflows
 - Stream resumption on disconnect
 - Multiple concurrent chats
+- AI Elements components
+- Transient streaming
+- DevTools integration
 
 ---
 
@@ -236,10 +303,3 @@ const result = await streamText({
 - Message persistence schema (Prisma model for UIMessage storage)
 - Tool registry interface (mapping tool names to implementations)
 - Stream resumption flow (detecting disconnects, resuming cleanly)
-
-### Research Needed
-
-- AI SDK v5 tool calling patterns and best practices
-- CopilotKit integration with AI SDK (complementary or overlapping?)
-- Performance characteristics of SSE vs WebSocket for long responses
-- Message deduplication strategies for persistence

@@ -21,8 +21,9 @@ import { motion } from "framer-motion";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
+import { ConnectRuntimeProvider } from "./connect-runtime-provider";
 import { ConnectionChooser } from "./connection-chooser";
-import { Oracle } from "@/components/ui/oracle";
+import { OracleWhisper } from "@/components/ui/oracle-whisper";
 import { UserAuthButton } from "@/components/ui";
 import type {
     PublicConnection,
@@ -58,13 +59,11 @@ const mainEntranceVariants = {
 };
 
 // ============================================================
-// Oracle - Link to home, state-aware
+// Oracle with Whisper - Carmenta speaks to the user
 // ============================================================
 
-function CarmentaOracle() {
-    const { isStreaming } = useConnection();
-
-    return <Oracle href="/" size="sm" state={isStreaming ? "working" : "breathing"} />;
+function CarmentaOracleWithWhisper() {
+    return <OracleWhisper />;
 }
 
 // ============================================================
@@ -84,56 +83,58 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const showConnectionChooser = connections.length > 0 && isMobile !== true;
 
     return (
-        <div className="flex h-full items-center justify-center p-0 sm:p-4">
-            {/* ONE container for everything - header, chat, input - all same width */}
-            <div className="relative flex h-full w-full max-w-4xl flex-col">
-                {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
-                {/* Mobile: increased padding (px-4) + right safe area for curved corners */}
-                <header className="flex items-center justify-between pb-2 pl-4 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
-                    {/* Oracle - links to home */}
-                    <motion.div
-                        variants={entranceVariants}
+        <ConnectRuntimeProvider>
+            <div className="flex h-full items-center justify-center p-0 sm:p-4">
+                {/* ONE container for everything - header, chat, input - all same width */}
+                <div className="relative flex h-full w-full max-w-4xl flex-col">
+                    {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
+                    {/* Mobile: tighter vertical padding to maximize chat space */}
+                    <header className="flex items-center justify-between pb-1 pl-3 pr-[max(0.75rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
+                        {/* Oracle with whisper - Carmenta speaks */}
+                        <motion.div
+                            variants={entranceVariants}
+                            initial="hidden"
+                            animate="visible"
+                            custom={0}
+                        >
+                            <CarmentaOracleWithWhisper />
+                        </motion.div>
+
+                        {/* Center section - maintains spacing even when chooser is hidden */}
+                        <motion.div
+                            className="flex flex-1 items-center justify-center"
+                            variants={entranceVariants}
+                            initial="hidden"
+                            animate="visible"
+                            custom={0.05}
+                        >
+                            {showConnectionChooser && <ConnectionChooser />}
+                        </motion.div>
+
+                        {/* Account */}
+                        <motion.div
+                            variants={entranceVariants}
+                            initial="hidden"
+                            animate="visible"
+                            custom={0.1}
+                        >
+                            <UserAuthButton />
+                        </motion.div>
+                    </header>
+
+                    {/* Chat (messages + input) fills the rest */}
+                    <motion.main
+                        key={connectionKey}
+                        className="relative z-base flex-1 overflow-hidden"
+                        variants={mainEntranceVariants}
                         initial="hidden"
                         animate="visible"
-                        custom={0}
                     >
-                        <CarmentaOracle />
-                    </motion.div>
-
-                    {/* Center section - maintains spacing even when chooser is hidden */}
-                    <motion.div
-                        className="flex flex-1 items-center justify-center"
-                        variants={entranceVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={0.05}
-                    >
-                        {showConnectionChooser && <ConnectionChooser />}
-                    </motion.div>
-
-                    {/* Account */}
-                    <motion.div
-                        variants={entranceVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={0.1}
-                    >
-                        <UserAuthButton />
-                    </motion.div>
-                </header>
-
-                {/* Chat (messages + input) fills the rest */}
-                <motion.main
-                    key={connectionKey}
-                    className="relative z-base flex-1 overflow-hidden"
-                    variants={mainEntranceVariants}
-                    initial="hidden"
-                    animate="visible"
-                >
-                    {children}
-                </motion.main>
+                        {children}
+                    </motion.main>
+                </div>
             </div>
-        </div>
+        </ConnectRuntimeProvider>
     );
 }
 

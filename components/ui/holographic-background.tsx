@@ -160,6 +160,29 @@ const THEME_PALETTES: Record<
         ],
         darkBg: "#0A0B0D", // Pure void with cyan whisper
     },
+    christmas: {
+        light: [
+            { r: 230, g: 180, b: 180 }, // Rose Blush
+            { r: 200, g: 220, b: 200 }, // Pine Frost
+            { r: 255, g: 240, b: 200 }, // Candlelight Gold
+            { r: 220, g: 200, b: 190 }, // Warm Cream
+            { r: 240, g: 190, b: 190 }, // Soft Holly
+            { r: 210, g: 230, b: 210 }, // Mistletoe
+            { r: 255, g: 235, b: 210 }, // Warm Glow
+            { r: 225, g: 210, b: 200 }, // Eggnog
+        ],
+        dark: [
+            { r: 160, g: 70, b: 80 }, // Holly Berry
+            { r: 180, g: 90, b: 95 }, // Cranberry Glow
+            { r: 80, g: 120, b: 90 }, // Evergreen Shadow
+            { r: 200, g: 150, b: 90 }, // Golden Ornament
+            { r: 150, g: 65, b: 75 }, // Deep Garnet
+            { r: 170, g: 85, b: 90 }, // Mulled Wine
+            { r: 90, g: 130, b: 95 }, // Forest Pine
+            { r: 190, g: 140, b: 85 }, // Amber Glow
+        ],
+        darkBg: "#120808", // Deep fireside warmth
+    },
 };
 
 const BLOB_COUNT = 8; // Reduced from 12 for performance
@@ -214,6 +237,16 @@ const WARM_PRESENCE_COLORS: Record<
         dark: {
             inner: "rgba(140, 145, 160, 0.25)",
             outer: "rgba(120, 125, 140, 0.12)",
+        },
+    },
+    christmas: {
+        light: {
+            inner: "rgba(220, 160, 160, 0.4)",
+            outer: "rgba(255, 220, 180, 0.25)",
+        },
+        dark: {
+            inner: "rgba(180, 90, 95, 0.28)",
+            outer: "rgba(200, 150, 90, 0.15)",
         },
     },
 };
@@ -515,9 +548,9 @@ export function HolographicBackground({
                     blob.y,
                     blob.radius
                 );
-                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.7)`);
-                gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.4)`);
-                gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.15)`);
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+                gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.5)`);
+                gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.2)`);
                 gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
 
                 holoCtx.beginPath();
@@ -569,14 +602,18 @@ export function HolographicBackground({
                 // Draw particle - theme-aware opacity with goddess presence
                 // Dark mode: visible shimmer against cosmic depths (max ~65% opacity)
                 // Light mode: delicate but present sparkle (max ~40% opacity)
-                const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.5;
+                const themeOpacityMultiplier = isDarkTheme ? 0.85 : 0.65;
                 const twinkleOpacity =
                     p.opacity *
                     (0.4 + Math.sin(p.twinkle) * 0.6) *
                     themeOpacityMultiplier;
                 shimmerCtx.beginPath();
                 shimmerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                shimmerCtx.fillStyle = `rgba(255, 255, 255, ${twinkleOpacity})`;
+                // White particles in dark mode, soft lavender tint in light mode for contrast
+                const particleColor = isDarkTheme
+                    ? `rgba(255, 255, 255, ${twinkleOpacity})`
+                    : `rgba(180, 160, 200, ${twinkleOpacity})`;
+                shimmerCtx.fillStyle = particleColor;
                 shimmerCtx.fill();
             }
 

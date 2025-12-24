@@ -714,16 +714,16 @@ export default function BrandPage() {
                                 Tooltips
                             </h2>
                             <p className="text-foreground/70">
-                                CSS-only tooltips with glass effect and slide animation.
-                                Zero JS, zero dependencies—just add{" "}
+                                Tooltips with automatic positioning and viewport
+                                handling via react-tooltip. Add{" "}
                                 <code className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm">
-                                    data-tooltip
+                                    data-tooltip-id=&quot;tip&quot;
                                 </code>{" "}
                                 and{" "}
                                 <code className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm">
-                                    tooltip
+                                    data-tooltip-content
                                 </code>{" "}
-                                class.
+                                to any element.
                             </p>
 
                             <div className="glass-card">
@@ -738,26 +738,30 @@ export default function BrandPage() {
                                         </p>
                                         <div className="flex min-h-[100px] items-center justify-center gap-4 rounded-lg bg-foreground/5 p-6">
                                             <button
-                                                data-tooltip="Copy to clipboard"
-                                                className="tooltip btn-icon-glass"
+                                                data-tooltip-id="tip"
+                                                data-tooltip-content="Copy"
+                                                className="btn-icon-glass"
                                             >
                                                 <Copy className="h-5 w-5 text-foreground/60" />
                                             </button>
                                             <button
-                                                data-tooltip="Open link"
-                                                className="tooltip btn-icon-glass"
+                                                data-tooltip-id="tip"
+                                                data-tooltip-content="Open"
+                                                className="btn-icon-glass"
                                             >
                                                 <ExternalLink className="h-5 w-5 text-foreground/60" />
                                             </button>
                                             <button
-                                                data-tooltip="Settings"
-                                                className="tooltip btn-icon-glass"
+                                                data-tooltip-id="tip"
+                                                data-tooltip-content="Settings"
+                                                className="btn-icon-glass"
                                             >
                                                 <Settings className="h-5 w-5 text-foreground/60" />
                                             </button>
                                             <button
-                                                data-tooltip="Delete"
-                                                className="tooltip btn-icon-glass"
+                                                data-tooltip-id="tip"
+                                                data-tooltip-content="Delete"
+                                                className="btn-icon-glass"
                                             >
                                                 <Trash2 className="h-5 w-5 text-foreground/60" />
                                             </button>
@@ -772,8 +776,8 @@ export default function BrandPage() {
                                         <div className="rounded-lg bg-foreground/5 p-4">
                                             <code className="block whitespace-pre text-xs text-foreground/70">
                                                 {`<button
-  data-tooltip="Copy to clipboard"
-  className="tooltip"
+  data-tooltip-id="tip"
+  data-tooltip-content="Copy"
 >
   <CopyIcon />
 </button>`}

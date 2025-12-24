@@ -789,9 +789,10 @@ export function ConnectionChooser({
                             {/* Search button */}
                             <button
                                 onClick={openDropdown}
-                                className="btn-subtle-icon tooltip text-foreground/40 hover:text-foreground/60"
+                                className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
                                 aria-label="Search connections"
-                                data-tooltip="Browse recent conversations"
+                                data-tooltip-id="tip"
+                                data-tooltip-content="Find connections"
                             >
                                 <Search className="h-4 w-4" />
                             </button>
@@ -842,14 +843,15 @@ export function ConnectionChooser({
                                 onClick={createNewConnection}
                                 disabled={isPending}
                                 className={cn(
-                                    "tooltip flex items-center justify-center",
+                                    "flex items-center justify-center",
                                     isMobilePlacement
                                         ? "h-10 w-10 flex-shrink-0 rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25"
                                         : "btn-subtle-text gap-1.5 text-sm text-foreground/50 hover:text-foreground/80",
                                     "disabled:cursor-not-allowed disabled:opacity-50"
                                 )}
                                 aria-label="New connection"
-                                data-tooltip="Start fresh with a new conversation"
+                                data-tooltip-id="tip"
+                                data-tooltip-content="Start fresh"
                             >
                                 {isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -878,9 +880,10 @@ export function ConnectionChooser({
                         >
                             <button
                                 onClick={openDropdown}
-                                className="btn-subtle-icon tooltip text-foreground/40 hover:text-foreground/60"
+                                className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
                                 aria-label="Search connections"
-                                data-tooltip="Browse recent conversations"
+                                data-tooltip-id="tip"
+                                data-tooltip-content="Find connections"
                             >
                                 <Search className="h-4 w-4" />
                             </button>
@@ -899,9 +902,10 @@ export function ConnectionChooser({
                                 <button
                                     onClick={createNewConnection}
                                     disabled={isPending}
-                                    className="tooltip flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="New connection"
-                                    data-tooltip="Start fresh with a new conversation"
+                                    data-tooltip-id="tip"
+                                    data-tooltip-content="Start fresh"
                                 >
                                     {isPending ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />

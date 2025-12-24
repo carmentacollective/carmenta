@@ -83,7 +83,7 @@ export async function getOrCreateUser(
                 lastName: profile?.lastName,
                 imageUrl: profile?.imageUrl,
                 lastSignedInAt: new Date(),
-                updatedAt: new Date(),
+                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
             },
         })
         .returning();
@@ -117,7 +117,6 @@ export async function updateUserPreferences(
         .update(schema.users)
         .set({
             preferences: mergedPreferences,
-            updatedAt: new Date(),
         })
         .where(eq(schema.users.email, email))
         .returning();
@@ -133,7 +132,6 @@ export async function updateLastSignedIn(email: string): Promise<void> {
         .update(schema.users)
         .set({
             lastSignedInAt: new Date(),
-            updatedAt: new Date(),
         })
         .where(eq(schema.users.email, email));
 }

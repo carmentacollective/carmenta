@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
+import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { encodeConnectionId } from "@/lib/sqids";
 
 // Mock Clerk currentUser
@@ -9,8 +9,8 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 // Mock the OpenRouter provider to use a mock model
 vi.mock("@openrouter/ai-sdk-provider", async () => {
-    const { MockLanguageModelV2, simulateReadableStream } = await import("ai/test");
-    const mockModel = new MockLanguageModelV2({
+    const { MockLanguageModelV3, simulateReadableStream } = await import("ai/test");
+    const mockModel = new MockLanguageModelV3({
         doStream: async () => ({
             stream: simulateReadableStream({
                 chunks: [
@@ -21,8 +21,20 @@ vi.mock("@openrouter/ai-sdk-provider", async () => {
                     { type: "text-end", id: "text-1" },
                     {
                         type: "finish",
-                        finishReason: "stop",
-                        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+                        finishReason: { unified: "stop", raw: undefined },
+                        usage: {
+                            inputTokens: {
+                                total: 10,
+                                noCache: undefined,
+                                cacheRead: undefined,
+                                cacheWrite: undefined,
+                            },
+                            outputTokens: {
+                                total: 5,
+                                text: undefined,
+                                reasoning: undefined,
+                            },
+                        },
                     },
                 ],
             }),
@@ -74,6 +86,22 @@ vi.mock("@/lib/db", () => ({
     createConnection: vi.fn(),
     upsertMessage: vi.fn(),
     updateStreamingStatus: vi.fn(),
+}));
+
+// Mock discovery functions
+vi.mock("@/lib/discovery", () => ({
+    getPendingDiscoveries: vi.fn().mockResolvedValue([]),
+    completeDiscovery: vi.fn(),
+    skipDiscovery: vi.fn(),
+}));
+
+// Mock user lookup for discovery
+vi.mock("@/lib/db/users", () => ({
+    findUserByClerkId: vi.fn().mockResolvedValue({
+        id: "db-user-123",
+        clerkId: "test-user-123",
+        email: "test@example.com",
+    }),
 }));
 
 // Import after mocks are set up

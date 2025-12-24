@@ -15,13 +15,14 @@ import {
     useRef,
     useEffect,
     useCallback,
+    memo,
     type FormEvent,
     type KeyboardEvent,
     type ComponentProps,
     forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
+import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import {
     Square,
     ArrowDown,
@@ -88,6 +89,7 @@ import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
+import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 
 export function HoloThread() {
     return (
@@ -112,11 +114,6 @@ function HoloThreadInner() {
         setStoppedMessageIds((prev) => new Set(prev).add(messageId));
     }, []);
 
-    // Optimal chat scroll behavior
-    const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
-        isStreaming: isLoading,
-    });
-
     // Stable callback ref to prevent effect re-runs during drag
     const handleDragError = useCallback((error: string) => toast.error(error), []);
 
@@ -138,14 +135,18 @@ function HoloThreadInner() {
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
 
     return (
-        <div className="flex h-full flex-col bg-transparent">
+        <StickToBottom
+            className="flex h-full flex-col bg-transparent"
+            initial="smooth"
+            resize="smooth"
+            role="log"
+        >
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
-            {/* Viewport with fade mask and mobile touch optimizations */}
-            <div
-                ref={containerRef}
+            {/* Viewport with fade mask and mobile touch optimizations - powered by use-stick-to-bottom */}
+            <StickToBottom.Content
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -175,10 +176,10 @@ function HoloThreadInner() {
                         )}
                     </div>
                 )}
-            </div>
+            </StickToBottom.Content>
 
             {/* Input container with safe area for notched devices */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -189,27 +190,41 @@ function HoloThreadInner() {
                         ease: [0.16, 1, 0.3, 1],
                     }}
                 >
-                    {!isAtBottom && (
-                        <button
-                            onClick={() => scrollToBottom("smooth")}
-                            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
-                            aria-label="Scroll to bottom"
-                        >
-                            <ArrowDown className="h-5 w-5 text-foreground/70" />
-                        </button>
-                    )}
+                    <ScrollToBottomButton />
                     <Composer
                         isNewConversation={isEmpty}
                         onMarkMessageStopped={handleMarkMessageStopped}
                     />
                 </motion.div>
             </div>
-        </div>
+        </StickToBottom>
     );
 }
 
 /**
+ * Scroll-to-bottom button using use-stick-to-bottom context.
+ * Only renders when user has scrolled up from the bottom.
+ * Memoized to prevent unnecessary rerenders of the icon during scroll events.
+ */
+const ScrollToBottomButton = memo(function ScrollToBottomButton() {
+    const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+
+    if (isAtBottom) return null;
+
+    return (
+        <button
+            onClick={() => scrollToBottom()}
+            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
+            aria-label="Scroll to bottom"
+        >
+            <ArrowDown className="h-5 w-5 text-foreground/70" />
+        </button>
+    );
+});
+
+/**
  * Welcome screen shown when thread is empty.
+ * Feature tips now appear via OracleWhisper in the header.
  */
 function ThreadWelcome() {
     return (
@@ -676,13 +691,13 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={planError}
                 >
                     {status === "running" ? (
-                        <div className="p-4">
+                        <div className="p-3 sm:p-4">
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Creating task plan...
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {planError ?? "Failed to create plan"}
                         </div>
                     ) : todos.length > 0 ? (
@@ -695,7 +710,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             maxVisibleTodos={6}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No tasks in plan
                         </div>
                     )}
@@ -732,7 +747,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={previewError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         <LinkPreview
                             id={`link-preview-${part.toolCallId}`}
                             href={href ?? ""}
@@ -805,7 +820,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={optionsError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         {status === "running" ? (
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Loading options...
@@ -913,7 +928,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {mapError ?? "Failed to load map"}
                         </div>
                     ) : pois.length > 0 ? (
@@ -925,7 +940,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             title={title}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No locations to display
                         </div>
                     )}
@@ -1081,9 +1096,10 @@ function MessageActions({
                 <button
                     onClick={onEdit}
                     aria-label="Edit message"
-                    data-tooltip="Revise this and get a fresh response"
+                    data-tooltip-id="tip"
+                    data-tooltip-content="Let's try that differently"
                     className={cn(
-                        "tooltip inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
@@ -1129,8 +1145,9 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
 
     return (
         <div
-            className="tooltip flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
-            data-tooltip={model.displayName}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
+            data-tooltip-id="tip"
+            data-tooltip-content={model.displayName}
         >
             <ProviderIcon provider={model.provider} className="h-3.5 w-3.5" />
         </div>
@@ -1263,14 +1280,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     );
 
     return (
-        <div className="my-4 flex w-full justify-end">
+        <div className="my-1.5 flex w-full justify-end sm:my-4">
             <div className="group relative max-w-full sm:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
                 <div className="absolute -right-10 top-2 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-4">
+                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-3 py-2.5 sm:px-4 sm:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1434,7 +1451,7 @@ function AssistantMessage({
         showThinking;
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
                 <ConciergeDisplay
@@ -1498,7 +1515,7 @@ function AssistantMessage({
 
                             {/* File previews */}
                             {fileParts.length > 0 && (
-                                <div className="border-b border-foreground/10 p-4">
+                                <div className="border-b border-foreground/10 p-3 sm:p-4">
                                     <div className="flex flex-col gap-2">
                                         {fileParts.map((file, idx) => (
                                             <FilePreview
@@ -1514,7 +1531,7 @@ function AssistantMessage({
 
                             {/* Thinking indicator - inside LLM zone while waiting for content */}
                             {showThinking && (
-                                <div className="px-4 py-3">
+                                <div className="px-3 py-2 sm:px-4 sm:py-3">
                                     <ThinkingIndicator />
                                 </div>
                             )}
@@ -1522,13 +1539,13 @@ function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-4 pb-2 pt-4">
+                                    <div className="px-3 pb-1.5 pt-2.5 sm:px-4 sm:pb-2 sm:pt-4">
                                         <MarkdownRenderer
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
                                     </div>
-                                    <div className="px-4 pb-1">
+                                    <div className="px-3 pb-1 sm:px-4">
                                         <MessageActions
                                             content={content}
                                             isLast={isLast}
@@ -1559,7 +1576,7 @@ function AssistantMessage({
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-4">
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-3 py-2.5 sm:px-4 sm:py-4">
                         <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
@@ -1632,7 +1649,7 @@ function PendingAssistantMessage({
           : "idle";
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Always show during pending state */}
             <ConciergeDisplay
                 modelId={concierge?.modelId}
@@ -1661,7 +1678,7 @@ function PendingAssistantMessage({
                             }}
                             className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                         >
-                            <div className="px-4 py-3">
+                            <div className="px-3 py-2 sm:px-4 sm:py-3">
                                 <ThinkingIndicator />
                             </div>
                         </motion.div>
@@ -1734,6 +1751,29 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
 
     // Track if initial autofocus has been applied (prevents re-focus on resize)
     const hasInitialFocusRef = useRef(false);
+
+    // Track if we've emitted user engagement event this session
+    // (once whisper is dismissed, no need to emit again)
+    const hasEmittedEngagementRef = useRef(false);
+
+    // Emit user engagement event (dismisses feature tips whisper)
+    const emitUserEngaged = useCallback(() => {
+        if (hasEmittedEngagementRef.current) return;
+        hasEmittedEngagementRef.current = true;
+        window.dispatchEvent(new CustomEvent(USER_ENGAGED_EVENT));
+    }, []);
+
+    // Wrap handleInputChange to detect first keystroke (dismisses feature tips)
+    const handleInputChangeWithEngagement = useCallback(
+        (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            // Emit engagement on first character typed
+            if (e.target.value.length > 0) {
+                emitUserEngaged();
+            }
+            handleInputChange(e);
+        },
+        [handleInputChange, emitUserEngaged]
+    );
 
     // Paste handler - detect images and large text from clipboard
     const handlePaste = useCallback(
@@ -1895,6 +1935,9 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             // Don't send while uploading or already loading
             if (isLoading || isComposing || isUploading) return;
 
+            // Signal user engagement (dismisses feature tips whisper)
+            emitUserEngaged();
+
             const message = input.trim();
             lastSentMessageRef.current = message;
             wasStoppedRef.current = false; // Reset stop flag for new message
@@ -1935,6 +1978,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             setInput,
             append,
             clearFiles,
+            emitUserEngaged,
         ]
     );
 
@@ -2061,7 +2105,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
                 <textarea
                     ref={inputRef}
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={handleInputChangeWithEngagement}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     onCompositionStart={() => setIsComposing(true)}
