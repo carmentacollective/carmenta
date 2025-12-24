@@ -12,6 +12,7 @@ import { ToolLoopAgent, stepCountIs } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { logger } from "@/lib/logger";
 import { assertEnv } from "@/lib/env";
+import { LIBRARIAN_FALLBACK_CHAIN } from "@/lib/model-config";
 import { librarianSystemPrompt } from "./prompt";
 import {
     listKnowledgeTool,
@@ -22,17 +23,6 @@ import {
     moveDocumentTool,
     notifyUserTool,
 } from "./tools";
-
-/**
- * The Knowledge Librarian model
- *
- * Using GPT-4o for the librarian:
- * - Strong reasoning for what to extract
- * - Good at following structured conventions
- * - Reliable tool use
- * - Cost-effective for this use case
- */
-const LIBRARIAN_MODEL = "openai/gpt-4o";
 
 /**
  * Maximum agentic steps before stopping
@@ -57,8 +47,13 @@ export function createLibrarianAgent() {
         apiKey,
     });
 
+    // Use first model with fallback chain for automatic failover
+    const primaryModel = LIBRARIAN_FALLBACK_CHAIN[0];
+
     const agent = new ToolLoopAgent({
-        model: openrouter(LIBRARIAN_MODEL),
+        model: openrouter(primaryModel, {
+            models: [...LIBRARIAN_FALLBACK_CHAIN],
+        }),
         instructions: librarianSystemPrompt,
         tools: {
             listKnowledge: listKnowledgeTool,
@@ -73,7 +68,11 @@ export function createLibrarianAgent() {
     });
 
     logger.info(
-        { model: LIBRARIAN_MODEL, maxSteps: MAX_STEPS },
+        {
+            model: primaryModel,
+            fallbacks: LIBRARIAN_FALLBACK_CHAIN,
+            maxSteps: MAX_STEPS,
+        },
         "📚 Created Knowledge Librarian agent"
     );
 
