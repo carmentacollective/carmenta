@@ -85,11 +85,13 @@ export function StarButton({
                       : "opacity-100",
                 // Background on hover
                 isStarred ? "hover:bg-amber-50" : "hover:bg-foreground/5",
-                // Focus ring
-                "focus-visible:ring-2",
+                // Focus ring - standardized to ring-[3px]
+                "focus-visible:outline-none focus-visible:ring-[3px]",
                 isStarred
-                    ? "focus-visible:ring-amber-300"
+                    ? "focus-visible:ring-amber-300/50"
                     : "focus-visible:ring-foreground/20",
+                // Press state
+                "active:scale-[0.92]",
                 className
             )}
             data-tooltip-id="tip"

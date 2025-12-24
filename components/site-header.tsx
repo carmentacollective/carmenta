@@ -33,7 +33,7 @@ export function SiteHeader({
         <header className="flex items-center justify-between px-6 py-4">
             <Link
                 href="/"
-                className="vt-app-logo group flex items-center gap-3 transition-all duration-300"
+                className="vt-app-logo group flex items-center gap-3 rounded-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/40"
             >
                 <Image
                     src="/logos/icon-transparent.png"
