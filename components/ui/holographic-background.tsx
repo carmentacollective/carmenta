@@ -350,11 +350,13 @@ export function HolographicBackground({
     const cssTheme = resolveToCssTheme(themeVariant);
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
+    const watermarkRef = useRef<HTMLImageElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
     const blobsRef = useRef<Blob[]>([]);
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
+    const needsImmediateRedrawRef = useRef(false);
     const themeColorsRef = useRef<{
         bg: string;
         colors: readonly ColorPalette[];
@@ -370,6 +372,13 @@ export function HolographicBackground({
 
     // Watermark presence: brightens when mouse is near center
     const [watermarkPresence, setWatermarkPresence] = useState(0);
+
+    // Watermark size animation: smooth spring physics on resize
+    // We use a fixed base size and animate scale transform for smooth resizing
+    const watermarkBaseSizeRef = useRef(0);
+    const watermarkScaleRef = useRef(1);
+    const watermarkScaleVelocityRef = useRef(0);
+    const watermarkTargetSizeRef = useRef(0);
 
     // Update theme colors when theme or theme variant changes
     useEffect(() => {
@@ -398,6 +407,10 @@ export function HolographicBackground({
         const shimmerCtx = shimmerCanvas.getContext("2d");
         if (!holoCtx || !shimmerCtx) return;
 
+        // Calculate watermark size (matches CSS: min(80vh, 80vw))
+        const getWatermarkSize = () =>
+            Math.min(window.innerHeight * 0.8, window.innerWidth * 0.8);
+
         // Simple resize handler - just update canvas dimensions
         // The wrapping logic in the animation loop handles any out-of-bounds blobs
         const handleResize = () => {
@@ -405,10 +418,23 @@ export function HolographicBackground({
             holoCanvas.height = window.innerHeight;
             shimmerCanvas.width = window.innerWidth;
             shimmerCanvas.height = window.innerHeight;
+            // Force immediate redraw on next frame to prevent flicker
+            needsImmediateRedrawRef.current = true;
+            // Update watermark target size for spring animation
+            watermarkTargetSizeRef.current = getWatermarkSize();
         };
 
         // Initial canvas setup
         handleResize();
+        // Initialize watermark base size (used for scale calculation)
+        const initialSize = getWatermarkSize();
+        watermarkBaseSizeRef.current = initialSize;
+        watermarkTargetSizeRef.current = initialSize;
+        // Set initial watermark dimensions directly via ref
+        if (watermarkRef.current) {
+            watermarkRef.current.style.width = `${initialSize}px`;
+            watermarkRef.current.style.height = `${initialSize}px`;
+        }
         window.addEventListener("resize", handleResize);
 
         // Create blobs and particles once on mount
@@ -454,10 +480,13 @@ export function HolographicBackground({
             const time = timeRef.current;
 
             // Skip 2 of every 3 frames (~20fps) - slow dreamy blobs don't need 60fps
-            if (time % 3 !== 0) {
+            // BUT always draw immediately after resize to prevent flicker
+            const needsImmediateRedraw = needsImmediateRedrawRef.current;
+            if (time % 3 !== 0 && !needsImmediateRedraw) {
                 animationFrameRef.current = requestAnimationFrame(animate);
                 return;
             }
+            needsImmediateRedrawRef.current = false;
 
             const mouse = mouseRef.current;
             const { bg, colors } = themeColorsRef.current;
@@ -488,6 +517,26 @@ export function HolographicBackground({
             if (time - lastGradientUpdateRef.current >= 10) {
                 lastGradientUpdateRef.current = time;
                 setGradientPos({ x: springX.value, y: springY.value });
+            }
+
+            // Animate watermark size with spring physics
+            if (
+                watermarkRef.current &&
+                watermarkBaseSizeRef.current > 0 &&
+                watermarkTargetSizeRef.current > 0
+            ) {
+                const targetScale =
+                    watermarkTargetSizeRef.current / watermarkBaseSizeRef.current;
+                const scaleSpring = springLerp(
+                    watermarkScaleRef.current,
+                    targetScale,
+                    watermarkScaleVelocityRef.current,
+                    0.04, // Slightly stiffer than gradient for responsive feel
+                    0.82
+                );
+                watermarkScaleRef.current = scaleSpring.value;
+                watermarkScaleVelocityRef.current = scaleSpring.velocity;
+                watermarkRef.current.style.transform = `scale(${scaleSpring.value})`;
             }
 
             // Draw holographic blobs
@@ -690,10 +739,13 @@ export function HolographicBackground({
                     <div className="oracle-breathing">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
+                            ref={watermarkRef}
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-all duration-500"
+                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain"
                             style={{
+                                // Transform is animated via spring physics in the animation loop
+                                willChange: "transform",
                                 // Boost opacity and brightness when cursor approaches center
                                 // Base opacity matches CSS animation: 0.09 light, 0.07 dark
                                 opacity:
