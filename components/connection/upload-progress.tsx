@@ -3,15 +3,20 @@
 /**
  * Upload Progress Display
  *
- * Shows pending uploads above the composer:
- * - Filename with progress bar
- * - Cancel button
- * - Error state with retry
+ * Shows pending uploads above the composer with rich previews:
+ * - Image thumbnails using object URLs
+ * - File type icons for documents and audio
+ * - File size and status
+ * - Total attachment size summary
+ * - Cancel button per file
  */
 
-import { X, FileIcon, AlertCircle, CheckCircle2 } from "lucide-react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useEffect, useState } from "react";
+import { X, FileText, Music, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
 import { cn } from "@/lib/utils";
+import { formatFileSize, getFileCategory } from "@/lib/storage/file-config";
 import type { UploadProgress as UploadProgressType } from "@/lib/storage/types";
 
 export function UploadProgressDisplay({
@@ -20,6 +25,9 @@ export function UploadProgressDisplay({
     onInsertInline?: (fileId: string) => void;
 }) {
     const { pendingFiles, removeFile, getTextContent } = useFileAttachments();
+
+    // Calculate total size across all pending files
+    const totalSize = pendingFiles.reduce((sum, upload) => sum + upload.file.size, 0);
 
     if (pendingFiles.length === 0) return null;
 
@@ -34,6 +42,62 @@ export function UploadProgressDisplay({
                     hasTextContent={!!getTextContent(upload.id)}
                 />
             ))}
+            {/* Total size summary for multiple files */}
+            {pendingFiles.length > 1 && (
+                <div className="border-t border-foreground/10 pt-1 text-right text-xs text-foreground/50">
+                    {pendingFiles.length} files · {formatFileSize(totalSize)} total
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * File Preview Thumbnail
+ *
+ * Shows image thumbnail for images, file type icon for others.
+ * Manages object URL lifecycle to prevent memory leaks and StrictMode issues.
+ */
+function FilePreviewThumbnail({ file }: { file: File }) {
+    const category = getFileCategory(file.type);
+    const isImage = category === "image";
+    const [objectUrl, setObjectUrl] = useState<string | null>(null);
+
+    // Create and cleanup object URL within same effect for StrictMode compatibility
+    // StrictMode simulates unmount/remount - keeping creation and cleanup together
+    // ensures a fresh URL is created after cleanup on remount
+    useEffect(() => {
+        if (!isImage) return;
+
+        const url = URL.createObjectURL(file);
+        setObjectUrl(url);
+
+        return () => {
+            URL.revokeObjectURL(url);
+        };
+    }, [file, isImage]);
+
+    // Image thumbnail
+    if (isImage && objectUrl) {
+        return (
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-foreground/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={objectUrl}
+                    alt={file.name}
+                    className="h-full w-full object-cover"
+                />
+            </div>
+        );
+    }
+
+    // File type icon for non-images
+    const Icon =
+        category === "document" ? FileText : category === "audio" ? Music : File;
+
+    return (
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-foreground/5">
+            <Icon className="h-5 w-5 text-foreground/60" />
         </div>
     );
 }
@@ -51,6 +115,10 @@ function UploadItem({
 }) {
     const { id, file, status, error, placeholder } = upload;
     const isTextFile = file.type === "text/plain";
+    const isComplete = status === "complete";
+    const isError = status === "error";
+    const isProcessing =
+        status === "validating" || status === "optimizing" || status === "uploading";
 
     // Honest status messages - no fake progress bars
     const getStatusMessage = () => {
@@ -62,8 +130,7 @@ function UploadItem({
             case "uploading":
                 return "Uploading...";
             case "complete":
-                // Show placeholder reference if available
-                return placeholder || "Complete";
+                return placeholder || "Ready";
             case "error":
                 return error || "Upload failed";
         }
@@ -71,36 +138,40 @@ function UploadItem({
 
     return (
         <div className="flex items-center gap-3 rounded-lg bg-background/60 p-2">
-            {/* File icon */}
-            <div className="shrink-0">
-                {status === "complete" ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : status === "error" ? (
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                ) : (
-                    <FileIcon className="h-5 w-5 text-foreground/60" />
+            {/* File preview: thumbnail for images, icon for others */}
+            <div className="relative shrink-0">
+                {isComplete && (
+                    <div className="absolute -right-1 -top-1 z-10">
+                        <CheckCircle2 className="h-4 w-4 rounded-full bg-background text-green-500" />
+                    </div>
                 )}
+                {isError && (
+                    <div className="absolute -right-1 -top-1 z-10">
+                        <AlertCircle className="h-4 w-4 rounded-full bg-background text-destructive" />
+                    </div>
+                )}
+                <FilePreviewThumbnail file={file} />
             </div>
 
-            {/* Filename and status */}
+            {/* Filename, size, and status */}
             <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-foreground/90">
-                    {file.name}
+                <div className="flex items-baseline gap-2">
+                    <span className="truncate text-sm font-medium text-foreground/90">
+                        {file.name}
+                    </span>
+                    <span className="shrink-0 text-xs text-foreground/40">
+                        {formatFileSize(file.size)}
+                    </span>
                 </div>
                 <div
                     className={cn(
                         "text-xs",
-                        status === "error" && "text-destructive",
-                        status === "complete" &&
-                            placeholder &&
-                            "font-mono text-foreground/70",
-                        status === "complete" &&
+                        isError && "text-destructive",
+                        isComplete && placeholder && "font-mono text-foreground/70",
+                        isComplete &&
                             !placeholder &&
                             "text-green-600 dark:text-green-400",
-                        (status === "validating" ||
-                            status === "optimizing" ||
-                            status === "uploading") &&
-                            "text-foreground/60"
+                        isProcessing && "text-foreground/60"
                     )}
                 >
                     {getStatusMessage()}
