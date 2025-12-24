@@ -1,4 +1,4 @@
-import type { RoutingExpectations } from "./scorers/routing-scorer";
+import type { RoutingExpectations } from "./scorer";
 
 export interface TestInput {
     id: string;

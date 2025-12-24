@@ -5,7 +5,7 @@
  * Tests model selection, temperature, reasoning, and tool invocation.
  *
  * Usage:
- *   pnpm braintrust eval evals/routing.eval.ts
+ *   pnpm braintrust eval evals/routing/eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
@@ -16,12 +16,8 @@
 
 import "dotenv/config";
 import { Eval } from "braintrust";
-import {
-    RoutingScorer,
-    type RoutingExpectations,
-    type RoutingOutput,
-} from "./scorers/routing-scorer";
-import { testData, type TestInput } from "./routing-test-data";
+import { RoutingScorer, type RoutingExpectations, type RoutingOutput } from "./scorer";
+import { testData, type TestInput } from "./cases";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";

@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
-import { testData } from "./routing-test-data";
+import { testData } from "../routing/cases";
 
 const BASE_URL = "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
