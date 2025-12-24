@@ -49,7 +49,7 @@ function UploadItem({
     onInsertInline?: (fileId: string) => void;
     hasTextContent: boolean;
 }) {
-    const { id, file, status, error } = upload;
+    const { id, file, status, error, placeholder } = upload;
     const isTextFile = file.type === "text/plain";
 
     // Honest status messages - no fake progress bars
@@ -62,7 +62,8 @@ function UploadItem({
             case "uploading":
                 return "Uploading...";
             case "complete":
-                return "Complete";
+                // Show placeholder reference if available
+                return placeholder || "Complete";
             case "error":
                 return error || "Upload failed";
         }
@@ -90,7 +91,12 @@ function UploadItem({
                     className={cn(
                         "text-xs",
                         status === "error" && "text-destructive",
-                        status === "complete" && "text-green-600 dark:text-green-400",
+                        status === "complete" &&
+                            placeholder &&
+                            "font-mono text-foreground/70",
+                        status === "complete" &&
+                            !placeholder &&
+                            "text-green-600 dark:text-green-400",
                         (status === "validating" ||
                             status === "optimizing" ||
                             status === "uploading") &&

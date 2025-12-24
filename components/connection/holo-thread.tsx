@@ -1717,7 +1717,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         pendingFiles,
         removeFile,
         addPastedText,
-        getNextPastedFileName,
+        getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
     const { connections } = useConnection();
@@ -1775,13 +1775,38 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         [handleInputChange, emitUserEngaged]
     );
 
+    // Helper to insert text at cursor position and update input
+    const insertAtCursor = useCallback(
+        (text: string) => {
+            if (!inputRef.current) return;
+
+            const start = inputRef.current.selectionStart;
+            const end = inputRef.current.selectionEnd;
+            const currentValue = inputRef.current.value;
+
+            const newValue =
+                currentValue.substring(0, start) + text + currentValue.substring(end);
+
+            setInput(newValue);
+
+            // Position cursor after inserted text
+            setTimeout(() => {
+                const newPosition = start + text.length;
+                inputRef.current?.setSelectionRange(newPosition, newPosition);
+                inputRef.current?.focus();
+            }, 0);
+        },
+        [setInput]
+    );
+
     // Paste handler - detect images and large text from clipboard
+    // Inserts Claude Code-style placeholders: [Pasted Text #1], [Pasted Image #1]
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             const items = e.clipboardData?.items;
             if (!items) return;
 
-            // Priority 1: Handle images (existing behavior)
+            // Priority 1: Handle images
             const imageFiles: File[] = [];
             for (const item of Array.from(items)) {
                 if (item.type.startsWith("image/")) {
@@ -1798,17 +1823,37 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             if (imageFiles.length > 0 || hasLargeText) {
                 e.preventDefault();
 
-                // Process images
+                // Collect placeholders to insert at cursor
+                const placeholders: string[] = [];
+
+                // Process images - each gets its own placeholder
                 if (imageFiles.length > 0) {
-                    addFiles(imageFiles);
+                    for (const imageFile of imageFiles) {
+                        const { placeholder, filename } = getNextPlaceholder(
+                            "image",
+                            imageFile.type
+                        );
+                        // Rename file to match placeholder naming
+                        const renamedFile = new File([imageFile], filename, {
+                            type: imageFile.type,
+                        });
+                        addFiles([renamedFile], placeholder);
+                        placeholders.push(placeholder);
+                    }
                 }
 
                 // Process large text as attachment
                 if (hasLargeText) {
-                    const fileName = getNextPastedFileName("text");
+                    const { placeholder, filename } = getNextPlaceholder("text");
                     const blob = new Blob([plainText], { type: "text/plain" });
-                    const file = new File([blob], fileName, { type: "text/plain" });
-                    addPastedText([file], plainText);
+                    const file = new File([blob], filename, { type: "text/plain" });
+                    addPastedText([file], plainText, placeholder);
+                    placeholders.push(placeholder);
+                }
+
+                // Insert all placeholders at cursor position
+                if (placeholders.length > 0) {
+                    insertAtCursor(placeholders.join(" "));
                 }
 
                 return;
@@ -1816,7 +1861,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
 
             // Small text or no special content: let browser handle normally
         },
-        [addFiles, addPastedText, getNextPastedFileName]
+        [addFiles, addPastedText, getNextPlaceholder, insertAtCursor]
     );
 
     // Insert inline handler - converts file attachment back to textarea text
@@ -1886,32 +1931,28 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
 
             // Find pasted text files (have content in pastedTextContent Map)
-            const pastedTextFileIds = pendingFiles
-                .filter(
-                    (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
-                )
-                .map((p) => p.id);
+            const pastedTextFiles = pendingFiles.filter(
+                (p) => isTextFile(p.file.type) && getTextContent(p.id) !== undefined
+            );
 
-            if (pastedTextFileIds.length > 0) {
-                // Collect all pasted text content
-                const textContents: string[] = [];
-                for (const fileId of pastedTextFileIds) {
-                    const content = getTextContent(fileId);
-                    if (content) {
-                        textContents.push(content);
-                        removeFile(fileId);
+            if (pastedTextFiles.length > 0) {
+                // Replace each placeholder with its actual content
+                let newInput = input;
+                for (const file of pastedTextFiles) {
+                    const content = getTextContent(file.id);
+                    if (content && file.placeholder) {
+                        // Replace placeholder with actual content
+                        newInput = newInput.replace(file.placeholder, content);
+                    } else if (content) {
+                        // No placeholder (shouldn't happen, but handle gracefully)
+                        newInput = newInput ? `${newInput}\n\n${content}` : content;
                     }
+                    removeFile(file.id);
                 }
 
-                // Append to input and re-submit
-                if (textContents.length > 0) {
-                    const combinedText = textContents.join("\n\n");
-                    const newInput = input
-                        ? `${input}\n\n${combinedText}`
-                        : combinedText;
+                // Re-submit with expanded content
+                if (newInput !== input) {
                     setInput(newInput);
-
-                    // Wait for state update, then submit again
                     setTimeout(() => {
                         formRef.current?.requestSubmit();
                     }, 0);
