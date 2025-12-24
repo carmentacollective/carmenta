@@ -105,6 +105,29 @@ LLM-as-judge comparison
 Braintrust experiment
 ```
 
+## Implementation
+
+The model comparison script is implemented at `/scripts/compare-models.ts`.
+
+Usage:
+
+```bash
+pnpm eval:compare-models <model-a> <model-b>
+```
+
+Example:
+
+```bash
+pnpm eval:compare-models anthropic/claude-3.5-sonnet anthropic/claude-opus-4.5
+```
+
+The script:
+
+- Runs all 25 competitive queries against both models in parallel
+- Uses Claude 3.5 Sonnet as the LLM-as-judge
+- Generates a comparison report with win rates by category
+- Stores detailed results in Braintrust for analysis
+
 ## Trigger Options
 
 1. **Manual** - Run when new model is announced

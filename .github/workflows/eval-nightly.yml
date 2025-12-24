@@ -1,0 +1,152 @@
+name: Nightly Evals
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 2am UTC daily
+  workflow_dispatch:
+    inputs:
+      full_benchmark:
+        description: "Run full 750-question benchmark instead of nightly subset"
+        type: boolean
+        default: false
+
+# Cancel in-progress runs for the same workflow
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: "10"
+  BASE_URL: https://carmenta.ai
+
+jobs:
+  eval:
+    name: Run Eval Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run nightly eval suite
+        id: eval
+        run: |
+          pnpm dlx braintrust eval evals/nightly/eval.ts 2>&1 | tee eval-output.txt
+          EVAL_EXIT_CODE=${PIPESTATUS[0]}
+          echo "eval_exit_code=$EVAL_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Extract experiment URL from output
+          EXPERIMENT_URL=$(grep -oP 'https://www\.braintrust\.dev/app/[^\s]+' eval-output.txt | head -1 || echo "")
+          echo "experiment_url=$EXPERIMENT_URL" >> $GITHUB_OUTPUT
+        env:
+          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+          TEST_USER_TOKEN: ${{ secrets.TEST_USER_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BASE_URL: ${{ env.BASE_URL }}
+          COMMIT_SHA: ${{ github.sha }}
+          FULL_BENCHMARK: ${{ inputs.full_benchmark || 'false' }}
+
+      - name: Check for regressions
+        id: regression
+        run: |
+          pnpm tsx scripts/eval-check-regression.ts 2>&1 | tee regression-output.txt
+          REGRESSION_EXIT_CODE=${PIPESTATUS[0]}
+          echo "regression_exit_code=$REGRESSION_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Extract regression details for issue body
+          if [ $REGRESSION_EXIT_CODE -ne 0 ]; then
+            REGRESSION_DETAILS=$(cat regression-output.txt)
+            echo "regression_details<<EOF" >> $GITHUB_OUTPUT
+            echo "$REGRESSION_DETAILS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+        env:
+          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+
+      - name: Create GitHub issue on regression
+        if: steps.regression.outputs.regression_exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const regressionDetails = `${{ steps.regression.outputs.regression_details }}`;
+            const experimentUrl = `${{ steps.eval.outputs.experiment_url }}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '[Eval Regression] Nightly eval detected quality drop',
+              body: `## Regression Detected
+
+            The nightly eval run detected a quality regression that exceeded alert thresholds.
+
+            ### Details
+
+            \`\`\`
+            ${regressionDetails}
+            \`\`\`
+
+            ### Links
+
+            - **Braintrust Experiment**: ${experimentUrl || 'See Braintrust dashboard'}
+            - **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Commit**: ${{ github.sha }}
+
+            ### Next Steps
+
+            1. Review the experiment in Braintrust for failing cases
+            2. Check recent commits for routing or model changes
+            3. Run gap analyzer: \`pnpm tsx scripts/analyze-gaps.ts\`
+            `,
+              labels: ['eval-regression', 'urgent']
+            });
+
+      - name: Post success to Slack
+        if:
+          steps.regression.outputs.regression_exit_code == '0' && env.SLACK_WEBHOOK_URL
+          != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"Nightly evals passed\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Post regression to Slack
+        if:
+          steps.regression.outputs.regression_exit_code != '0' && env.SLACK_WEBHOOK_URL
+          != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"Eval Regression Detected\\nSee GitHub issue for details\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Upload eval output
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: eval-output
+          path: |
+            eval-output.txt
+            regression-output.txt
+          retention-days: 30
+
+      - name: Fail on regression
+        if: steps.regression.outputs.regression_exit_code != '0'
+        run: exit 1
