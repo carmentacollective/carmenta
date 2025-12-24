@@ -83,7 +83,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const regressionDetails = `${{ steps.regression.outputs.regression_details }}`;
+            const regressionDetails = String.raw`${{ steps.regression.outputs.regression_details }}`;
             const experimentUrl = `${{ steps.eval.outputs.experiment_url }}`;
 
             await github.rest.issues.create({

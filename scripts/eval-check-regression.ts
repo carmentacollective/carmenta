@@ -194,6 +194,7 @@ async function fetchLatestExperiment(): Promise<{
                     Authorization: `Bearer ${BRAINTRUST_API_KEY}`,
                     "Content-Type": "application/json",
                 },
+                signal: AbortSignal.timeout(30000),
             }
         );
 

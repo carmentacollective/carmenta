@@ -363,7 +363,7 @@ async function analyzeWithLLM(
 - **Total Experiments:** ${experiments.length}
 - **Total Tests:** ${aggregatedData.totalTests}
 - **Total Failures:** ${aggregatedData.totalFailures}
-- **Failure Rate:** ${((aggregatedData.totalFailures / aggregatedData.totalTests) * 100).toFixed(1)}%
+- **Failure Rate:** ${aggregatedData.totalTests > 0 ? ((aggregatedData.totalFailures / aggregatedData.totalTests) * 100).toFixed(1) : "0.0"}%
 
 ## Failures by Category
 ${Object.entries(aggregatedData.failuresByCategory)
@@ -634,10 +634,13 @@ async function main() {
         {
             totalTests: aggregatedData.totalTests,
             totalFailures: aggregatedData.totalFailures,
-            failureRate: (
-                (aggregatedData.totalFailures / aggregatedData.totalTests) *
-                100
-            ).toFixed(1),
+            failureRate:
+                aggregatedData.totalTests > 0
+                    ? (
+                          (aggregatedData.totalFailures / aggregatedData.totalTests) *
+                          100
+                      ).toFixed(1)
+                    : "0.0",
         },
         "Aggregated experiment data"
     );
