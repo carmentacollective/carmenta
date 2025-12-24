@@ -2017,7 +2017,8 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                 // Clear files after successful send
                 clearFiles();
                 // Re-focus input for quick follow-up messages
-                inputRef.current?.focus();
+                // Use preventScroll on mobile to avoid keyboard-induced scroll jank
+                inputRef.current?.focus({ preventScroll: isMobile });
             } catch (error) {
                 logger.error(
                     { error: error instanceof Error ? error.message : String(error) },
