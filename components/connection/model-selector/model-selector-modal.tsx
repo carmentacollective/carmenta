@@ -27,6 +27,7 @@ import {
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { cn } from "@/lib/utils";
 import { SteppedSlider } from "./stepped-slider";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
 import type { ModelOverrides, ReasoningOverride } from "./types";
 
@@ -108,6 +109,7 @@ export function ModelSelectorModal({
     conciergeModel,
 }: ModelSelectorModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
+    const { triggerHaptic } = useHapticFeedback();
 
     // Handle Escape key to close modal
     useEffect(() => {
@@ -155,6 +157,7 @@ export function ModelSelectorModal({
             : 0; // Default to "Quick" (index 0)
 
     const handleModelSelect = (modelId: string | null) => {
+        triggerHaptic("medium"); // Haptic feedback on model selection
         onChange({ ...overrides, modelId });
     };
 

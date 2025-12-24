@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
 interface RegenerateButtonProps {
     /**
@@ -47,6 +48,7 @@ export function RegenerateButton({
 }: RegenerateButtonProps) {
     const [isAnimating, setIsAnimating] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { triggerHaptic } = useHapticFeedback();
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -60,6 +62,7 @@ export function RegenerateButton({
     const handleClick = useCallback(async () => {
         if (disabled || isRegenerating || isAnimating) return;
 
+        triggerHaptic("light"); // Haptic feedback on regenerate
         setIsAnimating(true);
         try {
             await onRegenerate();
@@ -74,7 +77,7 @@ export function RegenerateButton({
                 timeoutRef.current = null;
             }, 500);
         }
-    }, [onRegenerate, disabled, isRegenerating, isAnimating]);
+    }, [onRegenerate, disabled, isRegenerating, isAnimating, triggerHaptic]);
 
     const isSpinning = isAnimating || isRegenerating;
 
