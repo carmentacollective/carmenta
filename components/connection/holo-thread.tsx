@@ -1704,6 +1704,8 @@ interface ComposerProps {
     onMarkMessageStopped: (messageId: string) => void;
 }
 
+const SHIFT_ENTER_HINT_KEY = "carmenta:shift-enter-hint-shown";
+
 function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge, setConcierge } = useConcierge();
@@ -1746,6 +1748,9 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
 
     // Mobile tools expansion state
     const [showMobileTools, setShowMobileTools] = useState(false);
+
+    // Shift+Enter hint: show once for new users, then never again
+    const [showShiftEnterHint, setShowShiftEnterHint] = useState(false);
 
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
@@ -1898,22 +1903,37 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         [getTextContent, removeFile, setInput]
     );
 
-    // Smart autofocus (runs once on initial mount):
-    // - New conversation: always focus (user intent is to type)
-    // - Existing conversation on desktop: focus (keyboard doesn't obscure)
-    // - Existing conversation on mobile: don't focus (let user read first)
+    // Autofocus on mount (all devices)
+    // User preference: keyboard should appear on mobile too
     useEffect(() => {
-        // Only run once after mobile detection completes
-        if (isMobile === undefined || hasInitialFocusRef.current) return;
+        if (hasInitialFocusRef.current) return;
         hasInitialFocusRef.current = true;
 
-        const shouldFocus = isNewConversation || !isMobile;
-
-        if (shouldFocus && inputRef.current) {
+        if (inputRef.current) {
             // Use preventScroll on mobile to avoid keyboard-induced scroll jank
             inputRef.current.focus({ preventScroll: isMobile });
         }
-    }, [isNewConversation, isMobile]);
+    }, [isMobile]);
+
+    // Show Shift+Enter hint on first focus (one-time, stored in localStorage)
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        // Check if hint was already shown
+        const alreadyShown = localStorage.getItem(SHIFT_ENTER_HINT_KEY) === "true";
+        if (alreadyShown) return;
+
+        // Show the hint
+        setShowShiftEnterHint(true);
+
+        // Mark as shown and auto-dismiss after 5 seconds
+        localStorage.setItem(SHIFT_ENTER_HINT_KEY, "true");
+        const timer = setTimeout(() => {
+            setShowShiftEnterHint(false);
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
@@ -1997,6 +2017,8 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
                 });
                 // Clear files after successful send
                 clearFiles();
+                // Re-focus input for quick follow-up messages
+                inputRef.current?.focus();
             } catch (error) {
                 logger.error(
                     { error: error instanceof Error ? error.message : String(error) },
@@ -2134,6 +2156,28 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             {hasPendingFiles && (
                 <UploadProgressDisplay onInsertInline={handleInsertInline} />
             )}
+
+            {/* Shift+Enter hint - shows once for new users */}
+            <AnimatePresence>
+                {showShiftEnterHint && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="flex items-center justify-center gap-1.5 text-xs text-foreground/50"
+                    >
+                        <span>Tip:</span>
+                        <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                            Shift
+                        </kbd>
+                        <span>+</span>
+                        <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                            Enter
+                        </kbd>
+                        <span>for new line</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <form
                 ref={formRef}
