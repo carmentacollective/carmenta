@@ -242,8 +242,9 @@ function generateDiscoverySparks(count: number): Spark[] {
     // Shuffle and pick random discovery sparks
     const shuffled = [...DISCOVERY_SPARKS].sort(() => Math.random() - 0.5);
 
-    return shuffled.slice(0, count).map((spark, index) => ({
-        id: `discovery-${index}`,
+    return shuffled.slice(0, count).map((spark) => ({
+        // Use stable ID based on label to prevent React key collisions across shuffles
+        id: `discovery-${spark.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
         label: spark.label,
         icon: spark.icon,
         category: "creative" as const,
@@ -281,7 +282,7 @@ function generateRecentThreadSpark(thread: RecentThread): Spark {
         category: "continue",
         action: {
             type: "deeplink",
-            value: thread.slug,
+            value: `${thread.slug}/${thread.id}`,
         },
         source: "recent",
     };
@@ -304,7 +305,7 @@ function generateStarredThreadSparks(
             category: "continue",
             action: {
                 type: "deeplink",
-                value: thread.slug,
+                value: `${thread.slug}/${thread.id}`,
             },
             source: "starred",
         };

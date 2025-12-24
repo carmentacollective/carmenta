@@ -42,17 +42,6 @@ export interface Spark {
 }
 
 /**
- * Context passed to the spark generator
- */
-export interface SparkContext {
-    userId: string;
-    timeOfDay: "morning" | "afternoon" | "evening";
-    connectedServices: string[]; // Service IDs like "gmail", "google-calendar"
-    hasStarredThreads: boolean;
-    hasRecentConversation: boolean;
-}
-
-/**
  * Integration-specific spark templates
  */
 export interface IntegrationSparkTemplate {
