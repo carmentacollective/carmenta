@@ -98,14 +98,17 @@ interface TransientStatusProps {
 export function TransientStatus({ className }: TransientStatusProps) {
     const messages = useTransientChat();
 
-    if (messages.length === 0) {
+    // Filter out empty messages that are being cleared
+    const activeMessages = messages.filter((msg) => msg.text.trim().length > 0);
+
+    if (activeMessages.length === 0) {
         return null;
     }
 
     return (
         <div className={cn("flex flex-wrap gap-2", className)}>
             <AnimatePresence mode="popLayout">
-                {messages.map((message) => (
+                {activeMessages.map((message) => (
                     <TransientMessageBubble key={message.id} message={message} />
                 ))}
             </AnimatePresence>

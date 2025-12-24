@@ -26,8 +26,10 @@ interface TransientOracleProps {
 export function TransientOracle({ className }: TransientOracleProps) {
     const messages = useTransientOracle();
 
-    // Only show the most recent oracle message
-    const latestMessage = messages[messages.length - 1];
+    // Only show the most recent oracle message with actual content
+    // Filter out empty messages that are being cleared
+    const activeMessages = messages.filter((msg) => msg.text.trim().length > 0);
+    const latestMessage = activeMessages[activeMessages.length - 1];
 
     if (!latestMessage) {
         return null;
