@@ -12,7 +12,15 @@
 
 import { useCallback, useRef } from "react";
 
-// Type kept for API compatibility, though iOS haptic is always a single tap
+/**
+ * Haptic feedback type.
+ *
+ * Note: On iOS Safari, all types trigger the same native tap feedback.
+ * The type parameter is preserved for API compatibility but does not
+ * affect the haptic intensity or pattern on iOS.
+ *
+ * On non-iOS devices, haptic calls are no-ops regardless of type.
+ */
 export type HapticType =
     | "light" // routine button presses, selections
     | "medium" // significant actions (star, copy success)
