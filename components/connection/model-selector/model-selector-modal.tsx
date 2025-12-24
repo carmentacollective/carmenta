@@ -11,9 +11,9 @@
  * - Slider footer for Creativity and Reasoning
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Check } from "lucide-react";
+import { X, Sparkles, Check, Info, Loader2 } from "lucide-react";
 
 import {
     MODELS,
@@ -51,6 +51,26 @@ const TAG_EMOJI: Record<ModelTag, string> = {
     Audio: "🎵",
     Tools: "🔧",
 };
+
+/** Generate tooltip HTML for a model's detailed info */
+function getModelTooltipHtml(model: ModelConfig): string {
+    const speedQuality = SPEED_QUALITY_DISPLAY[model.speedQuality];
+    const contextFormatted = formatContextWindow(model.contextWindow);
+    const attachmentTypes = model.attachments.join(", ") || "None";
+
+    return `
+<div style="max-width: 280px;">
+  <div style="font-weight: 600; margin-bottom: 6px;">${model.displayName}</div>
+  <div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${model.description}</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px;">
+    <div><span style="opacity: 0.6;">Context:</span> ${contextFormatted}</div>
+    <div><span style="opacity: 0.6;">Speed:</span> ${model.tokensPerSecond} tok/s</div>
+    <div><span style="opacity: 0.6;">Type:</span> ${speedQuality.label}</div>
+    <div><span style="opacity: 0.6;">Files:</span> ${attachmentTypes}</div>
+  </div>
+  ${model.tags.length > 0 ? `<div style="margin-top: 8px; font-size: 11px;">${model.tags.map((t) => TAG_EMOJI[t] + " " + t).join(" · ")}</div>` : ""}
+</div>`.trim();
+}
 
 /** Format context window for display (e.g., 200000 → "200K", 1000000 → "1M") */
 function formatContextWindow(tokens: number): string {
@@ -109,7 +129,18 @@ export function ModelSelectorModal({
     conciergeModel,
 }: ModelSelectorModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
+    const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+    const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { triggerHaptic } = useHapticFeedback();
+
+    // Clear switch timeout on unmount to prevent state updates after unmount
+    useEffect(() => {
+        return () => {
+            if (switchTimeoutRef.current) {
+                clearTimeout(switchTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Handle Escape key to close modal
     useEffect(() => {
@@ -158,7 +189,14 @@ export function ModelSelectorModal({
 
     const handleModelSelect = (modelId: string | null) => {
         triggerHaptic("medium"); // Haptic feedback on model selection
+        // Brief visual feedback during switch
+        setSwitchingTo(modelId ?? "auto");
         onChange({ ...overrides, modelId });
+        // Clear after animation completes (with cleanup ref for unmount safety)
+        if (switchTimeoutRef.current) {
+            clearTimeout(switchTimeoutRef.current);
+        }
+        switchTimeoutRef.current = setTimeout(() => setSwitchingTo(null), 300);
     };
 
     const handleCreativityChange = (index: number) => {
@@ -207,14 +245,22 @@ export function ModelSelectorModal({
                             <button
                                 onClick={() => handleModelSelect(null)}
                                 className={cn(
-                                    "flex w-full items-center gap-5 rounded-2xl p-5 text-left transition-all",
+                                    "relative flex w-full items-center gap-5 rounded-2xl p-5 text-left transition-all",
                                     overrides.modelId === null
                                         ? "bg-white/90 shadow-xl ring-2 ring-primary/50 dark:bg-white/15"
                                         : "bg-white/50 hover:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15"
                                 )}
                             >
+                                {/* Recommended badge */}
+                                <span className="absolute -top-2 left-4 rounded-full bg-gradient-to-r from-primary to-purple-500 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white shadow-sm">
+                                    Recommended
+                                </span>
                                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-purple-500 shadow-lg">
-                                    <Sparkles className="h-7 w-7 text-white" />
+                                    {switchingTo === "auto" ? (
+                                        <Loader2 className="h-7 w-7 animate-spin text-white" />
+                                    ) : (
+                                        <Sparkles className="h-7 w-7 text-white" />
+                                    )}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <span
@@ -251,6 +297,7 @@ export function ModelSelectorModal({
                                             SPEED_QUALITY_DISPLAY[model.speedQuality];
                                         const isSelected =
                                             overrides.modelId === model.id;
+                                        const isSwitching = switchingTo === model.id;
 
                                         return (
                                             <button
@@ -259,18 +306,35 @@ export function ModelSelectorModal({
                                                     handleModelSelect(model.id)
                                                 }
                                                 className={cn(
-                                                    "group flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-200",
+                                                    "group relative flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-200",
                                                     isSelected
                                                         ? "bg-primary/12 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
                                                         : "bg-foreground/5 hover:-translate-y-0.5 hover:bg-foreground/10 hover:shadow-md"
                                                 )}
                                             >
-                                                <ProviderIcon
-                                                    provider={model.provider}
-                                                    className="mt-0.5 h-6 w-6 shrink-0 transition-transform duration-200 group-hover:scale-110"
-                                                />
+                                                {/* Info icon - reveals on hover */}
+                                                <div
+                                                    className="absolute right-2 top-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                                                    data-tooltip-id="tip"
+                                                    data-tooltip-html={getModelTooltipHtml(
+                                                        model
+                                                    )}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <Info className="h-3.5 w-3.5 text-foreground/40 transition-colors hover:text-foreground/70" />
+                                                </div>
+                                                <div className="relative mt-0.5 h-6 w-6 shrink-0">
+                                                    {isSwitching ? (
+                                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                    ) : (
+                                                        <ProviderIcon
+                                                            provider={model.provider}
+                                                            className="h-6 w-6 transition-transform duration-200 group-hover:scale-110"
+                                                        />
+                                                    )}
+                                                </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center justify-between gap-2 pr-6">
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-semibold text-foreground/90">
                                                                 {model.displayName}
