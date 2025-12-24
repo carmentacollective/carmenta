@@ -7,4 +7,3 @@
 
 export { FloatingEmojiProvider, useFloatingEmoji } from "./floating-emoji";
 export { InteractiveLogo } from "./interactive-logo";
-export { ShakeEasterEgg } from "./shake-easter-egg";

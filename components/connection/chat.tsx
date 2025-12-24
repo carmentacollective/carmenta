@@ -3,7 +3,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { HoloThread } from "./holo-thread";
-import { ShakeEasterEgg } from "@/components/delight/shake-easter-egg";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -69,7 +68,6 @@ class ChatErrorBoundary extends Component<
 export function Chat() {
     return (
         <ChatErrorBoundary>
-            <ShakeEasterEgg />
             <div className="scrollbar-holo h-full">
                 <HoloThread />
             </div>
