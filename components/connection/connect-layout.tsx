@@ -151,12 +151,30 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                             {showConnectionChooser && <ConnectionChooser />}
                         </motion.div>
 
-                        {/* Account */}
+                        {/* Account - User dropdown menu
+
+                            ⚠️ CRITICAL Z-INDEX WARNING ⚠️
+
+                            This motion.div creates a stacking context because Framer Motion
+                            applies CSS transforms during animation. Without an explicit z-index,
+                            this stacking context defaults to z-auto (effectively 0).
+
+                            The <main> element below has z-base (0). Since main comes AFTER
+                            header in DOM order, main wins when z-indices are equal - blocking
+                            ALL clicks on the UserAuthButton dropdown menu.
+
+                            z-dropdown (30) ensures the dropdown renders above main content.
+                            DO NOT REMOVE THIS Z-INDEX or the dropdown will be unclickable.
+
+                            Bug was caused by: Framer Motion transform + DOM order + equal z-index
+                            See: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context
+                        */}
                         <motion.div
                             variants={entranceVariants}
                             initial="hidden"
                             animate="visible"
                             custom={0.1}
+                            className="z-dropdown"
                         >
                             <UserAuthButton />
                         </motion.div>
