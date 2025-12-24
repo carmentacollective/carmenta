@@ -9,6 +9,16 @@ import {
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
 
+// ============================================================================
+// Description extraction helpers
+// ============================================================================
+
+/** Truncate string to max length with ellipsis */
+function truncate(str: string, maxLength: number): string {
+    if (str.length <= maxLength) return str;
+    return str.slice(0, maxLength - 1) + "…";
+}
+
 /**
  * Tool status states matching Vercel AI SDK's tool part states
  */
@@ -21,6 +31,8 @@ export interface ToolConfig {
     displayName: string;
     /** Either a Lucide icon component or a path to a logo (e.g., "/logos/notion.svg") */
     icon: LucideIcon | string;
+    /** Extract a brief description from tool args for the collapsed view */
+    getDescription?: (args: Record<string, unknown>) => string | undefined;
     messages: {
         pending: string;
         running: string;
@@ -32,6 +44,8 @@ export interface ToolConfig {
         completed?: string[];
         fast?: string[]; // For completions under 500ms
     };
+    /** Auto-expand when tool errors (default: true) */
+    autoExpandOnError?: boolean;
 }
 
 /**
@@ -42,6 +56,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     compareOptions: {
         displayName: "Comparison",
         icon: Table,
+        getDescription: (args) => {
+            const title = args.title as string | undefined;
+            return title ? truncate(title, 40) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Putting this together...",
@@ -56,6 +74,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     webSearch: {
         displayName: "Web Search",
         icon: Search,
+        getDescription: (args) => {
+            const query = args.query as string | undefined;
+            return query ? truncate(query, 50) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Exploring the web together...",
@@ -70,6 +92,15 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     fetchPage: {
         displayName: "Fetch Page",
         icon: Globe,
+        getDescription: (args) => {
+            const url = args.url as string | undefined;
+            if (!url) return undefined;
+            try {
+                return new URL(url).hostname;
+            } catch {
+                return truncate(url, 40);
+            }
+        },
         messages: {
             pending: "Getting ready...",
             running: "Retrieving that page together...",
@@ -84,6 +115,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     deepResearch: {
         displayName: "Deep Research",
         icon: BrainCircuit,
+        getDescription: (args) => {
+            const topic = args.topic as string | undefined;
+            return topic ? truncate(topic, 50) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Diving into this...",
@@ -98,6 +133,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     getWeather: {
         displayName: "Weather",
         icon: CloudSun,
+        getDescription: (args) => {
+            const location = args.location as string | undefined;
+            return location ? truncate(location, 30) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Checking the weather...",
@@ -112,6 +151,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     searchKnowledge: {
         displayName: "Knowledge Base",
         icon: BookOpen,
+        getDescription: (args) => {
+            const query = args.query as string | undefined;
+            return query ? truncate(query, 50) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Searching what we know...",
@@ -126,6 +169,10 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     limitless: {
         displayName: "Limitless",
         icon: "/logos/limitless.svg",
+        getDescription: (args) => {
+            const query = args.query as string | undefined;
+            return query ? truncate(query, 50) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
             running: "Searching your conversations...",
@@ -343,6 +390,29 @@ export function getToolConfig(
     }
 
     return config;
+}
+
+/**
+ * Get a brief description for a tool call from its arguments.
+ *
+ * Used by ToolStatus for the collapsed view. Falls back gracefully
+ * if the tool doesn't have a getDescription function or args are malformed.
+ */
+export function getToolDescription(
+    toolName: string,
+    args: Record<string, unknown> | undefined
+): string | undefined {
+    if (!args) return undefined;
+
+    const config = getToolConfig(toolName, { fallbackToDefault: true });
+    if (!config.getDescription) return undefined;
+
+    try {
+        return config.getDescription(args);
+    } catch {
+        // Graceful degradation - don't crash if args are unexpected
+        return undefined;
+    }
 }
 
 // ============================================================================

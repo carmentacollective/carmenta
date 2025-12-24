@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { glass, border } from "@/lib/design-tokens";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { ToolWrapper } from "./tool-wrapper";
+import { ToolRenderer } from "./tool-renderer";
 
 interface SearchResultItem {
     title: string;
@@ -36,8 +36,8 @@ function extractDomain(url: string): string {
 /**
  * Tool UI for displaying web search results.
  *
- * Uses ToolWrapper for consistent status display.
- * Progressive disclosure design - expand individual results to see snippets.
+ * Uses ToolRenderer for consistent collapsed state.
+ * Progressive disclosure - click to expand, then expand individual results.
  */
 export function WebSearchResults({
     toolCallId,
@@ -46,23 +46,19 @@ export function WebSearchResults({
     results,
     error,
 }: WebSearchResultsProps) {
-    // Use compact wrapper for inline status, standard when we have results
-    // Only show visual content when completed to prevent stale data during running state
     const hasResults = status === "completed" && results && results.length > 0;
-    const variant = hasResults ? "standard" : "compact";
 
     return (
-        <ToolWrapper
+        <ToolRenderer
             toolName="webSearch"
             toolCallId={toolCallId}
             status={status}
             input={{ query }}
             output={results ? { results } : undefined}
             error={error}
-            variant={variant}
         >
             {hasResults && <SearchResultsList results={results} />}
-        </ToolWrapper>
+        </ToolRenderer>
     );
 }
 

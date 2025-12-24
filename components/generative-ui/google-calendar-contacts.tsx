@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { ToolWrapper } from "./tool-wrapper";
+import { ToolRenderer } from "./tool-renderer";
 
 // ============================================================================
 // Types
@@ -404,10 +404,10 @@ function ContactConfirmation({
 // ============================================================================
 
 /**
- * Google Calendar & Contacts tool result using ToolWrapper for consistent status display.
+ * Google Calendar & Contacts tool result using ToolRenderer for consistent collapsed state.
  *
- * - List/search actions: Shows visual cards in standard wrapper
- * - Other actions: Compact inline status
+ * - List/search actions: Expands to show visual cards
+ * - Other actions: Collapsed status only
  */
 export function GoogleCalendarContactsToolResult({
     toolCallId,
@@ -417,24 +417,20 @@ export function GoogleCalendarContactsToolResult({
     output,
     error,
 }: GoogleCalendarContactsToolResultProps) {
-    // Check if this action produces rich visual content
     const richContent =
         status === "completed" ? renderOutput(action, input, output) : null;
-    const hasRichContent = richContent !== null;
-    const variant = hasRichContent ? "standard" : "compact";
 
     return (
-        <ToolWrapper
+        <ToolRenderer
             toolName="google-calendar-contacts"
             toolCallId={toolCallId}
             status={status}
             input={input}
             output={output}
             error={error}
-            variant={variant}
         >
-            {hasRichContent && richContent}
-        </ToolWrapper>
+            {richContent}
+        </ToolRenderer>
     );
 }
 
@@ -545,103 +541,4 @@ function renderOutput(
         default:
             return null;
     }
-}
-
-/**
- * Generate human-readable status message based on action and result
- */
-function getStatusMessage(
-    action: string,
-    input: Record<string, unknown>,
-    status: "running" | "completed",
-    output?: Record<string, unknown>
-): string {
-    const isRunning = status === "running";
-
-    switch (action) {
-        // Calendar operations
-        case "list_accounts":
-            return isRunning ? "Loading accounts..." : "Accounts loaded";
-
-        case "list_calendars":
-            return isRunning ? "Loading calendars..." : "Calendars loaded";
-
-        case "list_events": {
-            if (isRunning) return "Fetching events...";
-            const count = ((output?.events ?? output?.items) as unknown[])?.length ?? 0;
-            return `Found ${count} event${count !== 1 ? "s" : ""}`;
-        }
-
-        case "search_events": {
-            const query = input.query as string;
-            if (isRunning) return `Searching "${query}"...`;
-            const count = ((output?.events ?? output?.items) as unknown[])?.length ?? 0;
-            return `Found ${count} event${count !== 1 ? "s" : ""} for "${query}"`;
-        }
-
-        case "create_event": {
-            if (isRunning) return "Creating event...";
-            const summary = (output?.summary as string) || "event";
-            return `Created "${truncate(summary, 30)}"`;
-        }
-
-        case "update_event":
-            return isRunning ? "Updating event..." : "Event updated";
-
-        case "delete_event":
-            return isRunning ? "Deleting event..." : "Event deleted";
-
-        case "get_freebusy":
-            return isRunning ? "Checking availability..." : "Availability checked";
-
-        // Contact operations
-        case "list_contacts": {
-            if (isRunning) return "Loading contacts...";
-            const count =
-                ((output?.contacts ?? output?.connections) as unknown[])?.length ?? 0;
-            return `Found ${count} contact${count !== 1 ? "s" : ""}`;
-        }
-
-        case "search_contacts": {
-            const query = input.query as string;
-            if (isRunning) return `Searching "${query}"...`;
-            const count =
-                (
-                    (output?.contacts ??
-                        output?.connections ??
-                        output?.results) as unknown[]
-                )?.length ?? 0;
-            return `Found ${count} contact${count !== 1 ? "s" : ""} for "${query}"`;
-        }
-
-        case "get_contact":
-            return isRunning ? "Loading contact..." : "Contact loaded";
-
-        case "create_contact": {
-            if (isRunning) return "Creating contact...";
-            const givenName = input.givenName as string;
-            const familyName = input.familyName as string;
-            const name = [givenName, familyName].filter(Boolean).join(" ") || "contact";
-            return `Created ${name}`;
-        }
-
-        case "update_contact":
-            return isRunning ? "Updating contact..." : "Contact updated";
-
-        case "raw_api":
-            return isRunning ? "Executing API request..." : "API request completed";
-
-        case "describe":
-            return isRunning
-                ? "Loading capabilities..."
-                : "Google Calendar & Contacts ready";
-
-        default:
-            return isRunning ? `Running ${action}...` : `Completed ${action}`;
-    }
-}
-
-function truncate(text: string, maxLength: number): string {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength - 1) + "…";
 }

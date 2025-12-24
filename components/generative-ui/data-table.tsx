@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolWrapper } from "./tool-wrapper";
+import { ToolRenderer } from "./tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 interface CompareOption {
@@ -73,46 +73,10 @@ function CompareTableContent({
 }
 
 /**
- * Loading skeleton for comparison table
- */
-function CompareTableSkeleton({ title }: { title: string }) {
-    return (
-        <div className="animate-pulse">
-            <div className="h-5 w-48 rounded bg-muted" />
-            <div className="mt-4 space-y-2">
-                <div className="h-8 w-full rounded bg-muted" />
-                <div className="h-8 w-full rounded bg-muted" />
-                <div className="h-8 w-full rounded bg-muted" />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">
-                Building your comparison for &quot;{title}&quot;...
-            </p>
-        </div>
-    );
-}
-
-/**
- * Error state for comparison table
- */
-function CompareTableError({ title }: { title: string }) {
-    return (
-        <div>
-            <p className="text-sm text-muted-foreground">
-                The comparison for &quot;{title}&quot; didn&apos;t come together. Want
-                to try again?
-            </p>
-        </div>
-    );
-}
-
-/**
  * Tool UI for displaying comparison data in a table format.
  *
- * Uses ToolWrapper for:
- * - Status indicators with delight
- * - Collapsible container
- * - Admin debug panel
- * - First-use celebration
+ * Uses ToolRenderer for consistent collapsed state.
+ * Expands to show the comparison table.
  */
 export function CompareTable({
     toolCallId,
@@ -121,20 +85,18 @@ export function CompareTable({
     options,
     error,
 }: CompareTableProps) {
+    const hasResults = status === "completed" && options && options.length > 0;
+
     return (
-        <ToolWrapper
+        <ToolRenderer
             toolName="compareOptions"
             toolCallId={toolCallId}
             status={status}
-            input={{ title, options }}
+            input={{ title }}
             output={options ? { title, options } : undefined}
             error={error}
         >
-            {status === "running" && <CompareTableSkeleton title={title} />}
-            {status === "error" && <CompareTableError title={title} />}
-            {options && status === "completed" && (
-                <CompareTableContent title={title} options={options} />
-            )}
-        </ToolWrapper>
+            {hasResults && <CompareTableContent title={title} options={options} />}
+        </ToolRenderer>
     );
 }

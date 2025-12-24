@@ -1,8 +1,9 @@
 "use client";
 
-import { FileText, ExternalLink, AlertCircle } from "lucide-react";
+import { FileText, ExternalLink } from "lucide-react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { ToolRenderer } from "./tool-renderer";
 
 interface FetchPageResultProps {
     toolCallId: string;
@@ -16,58 +17,52 @@ interface FetchPageResultProps {
 /**
  * Tool UI for displaying fetched page content.
  *
- * Shows page title with link and collapsible content preview.
+ * Uses ToolRenderer for consistent collapsed state.
+ * Expands to show page title, link, and content preview.
  */
 export function FetchPageResult({
+    toolCallId,
     status,
     url,
     title,
     content,
     error,
 }: FetchPageResultProps) {
-    // Loading state
-    if (status === "running") {
-        return (
-            <div className="glass-card max-w-2xl animate-pulse">
-                <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                        Reading page...
-                    </span>
-                </div>
-                <div className="mt-2 truncate text-xs text-muted-foreground/70">
-                    {url}
-                </div>
-                <div className="mt-4 space-y-2">
-                    <div className="h-3 w-full rounded bg-muted" />
-                    <div className="h-3 w-full rounded bg-muted" />
-                    <div className="h-3 w-3/4 rounded bg-muted" />
-                </div>
-            </div>
-        );
-    }
+    const hasContent = status === "completed" && (title || content);
 
-    // Error state
-    if (status === "error" || error) {
-        return (
-            <div className="glass-card max-w-2xl border-destructive/50 bg-destructive/10">
-                <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <p className="text-sm text-destructive">
-                        {error || "Failed to fetch page content."}
-                    </p>
-                </div>
-                <p className="mt-2 truncate text-xs text-muted-foreground">{url}</p>
-            </div>
-        );
-    }
+    return (
+        <ToolRenderer
+            toolName="fetchPage"
+            toolCallId={toolCallId}
+            status={status}
+            input={{ url }}
+            output={content ? { title, content } : undefined}
+            error={error}
+        >
+            {hasContent && (
+                <FetchPageContent url={url} title={title} content={content} />
+            )}
+        </ToolRenderer>
+    );
+}
 
-    // Success state - show compact confirmation
+/**
+ * Expanded content for fetch page results.
+ */
+function FetchPageContent({
+    url,
+    title,
+    content,
+}: {
+    url: string;
+    title?: string;
+    content?: string;
+}) {
     const contentPreview =
         content && content.length > 500 ? content.slice(0, 500) + "..." : content;
 
     return (
-        <div className="glass-card max-w-2xl">
+        <div className="max-w-2xl">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
