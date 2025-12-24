@@ -53,7 +53,7 @@ import {
     validationErrorResponse,
     serverErrorResponse,
 } from "@/lib/api/responses";
-import { triggerFollowUpIngestion } from "@/lib/ingestion/triggers/follow-up";
+import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 import {
     getPendingDiscoveries,
     completeDiscovery,
@@ -925,15 +925,16 @@ export async function POST(req: Request) {
                             text, // Current response
                         ];
 
-                        void triggerFollowUpIngestion(
+                        void triggerLibrarian(
                             dbUser.id,
                             currentConnectionId.toString(),
                             userMessages,
-                            assistantMessages
+                            assistantMessages,
+                            { async: true }
                         ).catch((error) => {
                             logger.error(
                                 { error, connectionId: currentConnectionId },
-                                "Knowledge ingestion failed (non-blocking)"
+                                "Knowledge Librarian failed (non-blocking)"
                             );
                         });
                     }

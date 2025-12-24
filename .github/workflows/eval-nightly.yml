@@ -61,6 +61,22 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
           FULL_BENCHMARK: ${{ inputs.full_benchmark || 'false' }}
 
+      - name: Run Librarian agent eval
+        id: librarian_eval
+        run: |
+          # Run Librarian eval with Haiku (fast, cost-effective for nightly)
+          LIBRARIAN_MODEL=anthropic/claude-haiku-4.5 pnpm dlx braintrust eval evals/librarian/eval.ts 2>&1 | tee librarian-eval-output.txt
+          LIBRARIAN_EXIT_CODE=${PIPESTATUS[0]}
+          echo "librarian_exit_code=$LIBRARIAN_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Extract Librarian experiment URL
+          LIBRARIAN_URL=$(grep -oP 'https://www\.braintrust\.dev/app/[^\s]+' librarian-eval-output.txt | head -1 || echo "")
+          echo "librarian_url=$LIBRARIAN_URL" >> $GITHUB_OUTPUT
+        env:
+          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          COMMIT_SHA: ${{ github.sha }}
+
       - name: Check for regressions
         id: regression
         run: |
@@ -144,6 +160,7 @@ jobs:
           name: eval-output
           path: |
             eval-output.txt
+            librarian-eval-output.txt
             regression-output.txt
           retention-days: 30
 
