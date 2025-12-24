@@ -169,7 +169,6 @@ jobs:
 
   # E2E Tests (OAuth flows, public URL validation)
   # Runs against production build to catch production-only bugs
-  # Skipped for Dependabot PRs (no access to secrets)
   e2e:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
@@ -224,20 +223,3 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
-
-  # Placeholder for Dependabot PRs - explains why E2E is skipped
-  e2e-skip-notice:
-    name: 🎭 E2E Tests
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.actor == 'dependabot[bot]'
-
-    steps:
-      - name: ⏭️ E2E skipped for Dependabot
-        run: |
-          echo "::warning::E2E tests skipped for Dependabot PRs (no access to secrets). The production build passed, which validates most dependency changes."
-          echo ""
-          echo "ℹ️  Why: Dependabot PRs run without access to repository secrets."
-          echo "   E2E tests require CLERK_SECRET_KEY and other secrets."
-          echo ""
-          echo "✅ What was validated: build, types, lint, unit tests"
