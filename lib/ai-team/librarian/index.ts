@@ -81,11 +81,6 @@ export function createLibrarianAgent() {
 }
 
 /**
- * Convenience export for default agent instance
- */
-export const librarianAgent = createLibrarianAgent();
-
-/**
  * Re-export types for consumers
  */
 export type * from "./types";

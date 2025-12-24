@@ -242,8 +242,20 @@ export const moveDocumentTool = tool({
                 description: document.description ?? undefined,
             });
 
-            // Delete from old path
-            await kb.remove(userId, fromPath);
+            // Delete from old path - rollback if this fails
+            const deleted = await kb.remove(userId, fromPath);
+            if (!deleted) {
+                // Rollback: remove the document we just created
+                await kb.remove(userId, toPath);
+                logger.error(
+                    { userId, fromPath, toPath },
+                    "Move failed - delete failed, rolled back"
+                );
+                return {
+                    success: false,
+                    message: `Failed to move document: could not delete original at ${fromPath}`,
+                };
+            }
 
             logger.info({ userId, fromPath, toPath }, "🚚 Moved document");
 
@@ -271,11 +283,12 @@ export const notifyUserTool = tool({
     description:
         "Queue a notification to inform the user about something important. Use this when you want to draw the user's attention to a significant change or insight.",
     inputSchema: z.object({
+        userId: z.string().describe("User ID to notify"),
         message: z.string().describe("Notification message to send to the user"),
     }),
-    execute: async ({ message }): Promise<NotifyUserOutput> => {
+    execute: async ({ userId, message }): Promise<NotifyUserOutput> => {
         // V1: Just log it (DB queue will be added in PR 2)
-        logger.info({ message }, "🔔 User notification queued");
+        logger.info({ userId, message }, "🔔 User notification queued");
 
         return {
             success: true,

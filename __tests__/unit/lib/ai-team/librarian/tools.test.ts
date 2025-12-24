@@ -335,7 +335,10 @@ describe("Knowledge Librarian Tools", () => {
 
     describe("notifyUserTool", () => {
         it("should queue a notification", async () => {
+            const user = await createTestUser();
+
             const result = await executeTool<NotifyUserOutput>(notifyUserTool, {
+                userId: user.id,
                 message: "Important update about your knowledge base",
             });
 
@@ -344,7 +347,10 @@ describe("Knowledge Librarian Tools", () => {
         });
 
         it("should handle any message content", async () => {
+            const user = await createTestUser();
+
             const result = await executeTool<NotifyUserOutput>(notifyUserTool, {
+                userId: user.id,
                 message: "Complex message with\nnewlines and special chars: @#$%",
             });
 

@@ -84,6 +84,7 @@ export interface MoveDocumentOutput {
 }
 
 export interface NotifyUserInput {
+    userId: string;
     message: string;
 }
 
