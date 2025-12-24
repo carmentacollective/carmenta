@@ -103,7 +103,7 @@ async function analyzeConversation(
     const response = await generateText({
         model: openrouter("anthropic/claude-sonnet-4"),
         prompt,
-        maxTokens: 1024,
+        maxOutputTokens: 1024,
     });
 
     const text = response.text;
