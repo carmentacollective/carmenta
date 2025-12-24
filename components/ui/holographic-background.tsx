@@ -744,7 +744,8 @@ export function HolographicBackground({
                             alt=""
                             className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain"
                             style={{
-                                // Transform is animated via spring physics in the animation loop
+                                // CSS size classes provide SSR fallback, then JS sets explicit px dimensions on mount
+                                // Transform scale is animated via spring physics in the animation loop
                                 willChange: "transform",
                                 // Boost opacity and brightness when cursor approaches center
                                 // Base opacity matches CSS animation: 0.09 light, 0.07 dark
