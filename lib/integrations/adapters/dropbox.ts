@@ -14,10 +14,7 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "../oauth/providers/dropbox";
 
@@ -300,7 +297,6 @@ export class DropboxAdapter extends ServiceAdapter {
         userId: string,
         accountId?: string
     ): Promise<MCPToolResponse> {
-        // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
             this.logError(
@@ -312,28 +308,12 @@ export class DropboxAdapter extends ServiceAdapter {
             );
         }
 
-        // Get user's Dropbox credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                return this.createErrorResponse(
-                    "Invalid credentials: OAuth required for Dropbox"
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
-        // Route to appropriate handler
         try {
             switch (action) {
                 case "list_folder":
@@ -369,61 +349,12 @@ export class DropboxAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            // Comprehensive error logging
-            this.logError(
-                `[DROPBOX ADAPTER] Failed to execute ${action} for user ${userId}:`,
-                {
-                    error: error instanceof Error ? error.message : String(error),
-                    stack: error instanceof Error ? error.stack : undefined,
-                    params,
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            return this.handleOperationError(
+                error,
                 action,
-                params: params as Record<string, unknown>,
-                userId,
-            });
-
-            // User-friendly error message
-            let errorMessage = `We couldn't ${action}: `;
-            if (error instanceof Error) {
-                // Parse common error types
-                if (
-                    error.message.includes("404") ||
-                    error.message.includes("not_found")
-                ) {
-                    errorMessage += "That file or folder doesn't exist.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage +=
-                        "Authentication failed. Your Dropbox connection may have expired. Reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`;
-                } else if (error.message.includes("429")) {
-                    errorMessage += "Dropbox rate limit hit. Please wait a moment.";
-                } else if (
-                    error.message.includes("500") ||
-                    error.message.includes("503")
-                ) {
-                    errorMessage +=
-                        "Dropbox is temporarily unavailable. Please try again later.";
-                } else if (error.message.includes("conflict")) {
-                    errorMessage +=
-                        "A file or folder with that name already exists at this location.";
-                } else if (error.message.includes("insufficient_space")) {
-                    errorMessage +=
-                        "Not enough space in your Dropbox account to complete this operation.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "The bots have been alerted. 🤖";
-            }
-
-            return this.createErrorResponse(errorMessage);
+                params as Record<string, unknown>,
+                userId
+            );
         }
     }
 
@@ -850,7 +781,6 @@ export class DropboxAdapter extends ServiceAdapter {
 
     /**
      * Execute a raw Dropbox API request
-     * This provides an escape hatch for operations not covered by standard actions
      */
     async executeRawAPI(
         params: RawAPIParams,
@@ -859,7 +789,6 @@ export class DropboxAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const { endpoint, method, body, query } = params;
 
-        // Validate parameters
         if (!endpoint || typeof endpoint !== "string") {
             return this.createErrorResponse(
                 "raw_api requires 'endpoint' parameter (string)"
@@ -871,37 +800,19 @@ export class DropboxAdapter extends ServiceAdapter {
             );
         }
 
-        // Security: validate endpoint starts with /2/ (Dropbox API v2)
         if (!endpoint.startsWith("/2/")) {
             return this.createErrorResponse(
                 "Invalid endpoint: must start with '/2/'. " +
-                    `Got: ${endpoint}. ` +
-                    "Example: '/2/files/get_metadata'"
+                    `Got: ${endpoint}. Example: '/2/files/get_metadata'`
             );
         }
 
-        // Get user credentials via connection manager
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                return this.createErrorResponse(
-                    "Invalid credentials: OAuth required for Dropbox"
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
-        // Build request options
         const requestOptions: {
             headers: Record<string, string>;
             searchParams?: Record<string, string>;
@@ -910,14 +821,12 @@ export class DropboxAdapter extends ServiceAdapter {
             headers: this.buildHeaders(accessToken),
         };
 
-        // Add query parameters if provided
         if (query && typeof query === "object") {
             requestOptions.searchParams = Object.fromEntries(
                 Object.entries(query).map(([k, v]) => [k, String(v)])
             );
         }
 
-        // Add body for POST/PUT/PATCH
         if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
             requestOptions.json = body;
         }
@@ -937,17 +846,7 @@ export class DropboxAdapter extends ServiceAdapter {
 
             return this.createJSONResponse(response);
         } catch (error) {
-            this.logError(
-                `[DROPBOX ADAPTER] Raw API request failed for user ${userId}:`,
-                {
-                    endpoint,
-                    method,
-                    error: error instanceof Error ? error.message : String(error),
-                }
-            );
-
-            // Capture error to Sentry for monitoring and alerting
-            this.captureError(error, {
+            this.captureAndLogError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
@@ -957,23 +856,38 @@ export class DropboxAdapter extends ServiceAdapter {
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
                     errorMessage +=
-                        "Endpoint not found. Check the Dropbox API documentation for the correct endpoint path: " +
+                        "Endpoint not found. Check the Dropbox API docs: " +
                         "https://www.dropbox.com/developers/documentation/http/documentation";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage +=
-                        "Authentication failed. Your Dropbox connection may have expired. Please reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/dropbox`;
                 } else {
-                    errorMessage += error.message;
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
-                errorMessage += "The bots have been alerted. 🤖";
+                errorMessage += "Unknown error";
             }
 
             return this.createErrorResponse(errorMessage);
         }
+    }
+
+    /**
+     * Handle Dropbox-specific API errors before falling back to common handling
+     */
+    protected override handleCommonAPIError(error: unknown, action: string): string {
+        if (error instanceof Error) {
+            const errMsg = error.message;
+
+            // Dropbox-specific: file/folder conflict
+            if (errMsg.includes("conflict")) {
+                return `We couldn't ${action}: A file or folder with that name already exists at this location.`;
+            }
+
+            // Dropbox-specific: storage quota exceeded
+            if (errMsg.includes("insufficient_space")) {
+                return `We couldn't ${action}: Not enough space in your Dropbox account to complete this operation.`;
+            }
+        }
+
+        // Fall back to common error handling
+        return super.handleCommonAPIError(error, action);
     }
 }

@@ -317,7 +317,7 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("connection expired");
+            expect(result.content[0].text).toContain("Authentication failed");
             expect(result.content[0].text).toContain("Reconnect");
         });
 
@@ -352,9 +352,8 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Permission denied");
-            expect(result.content[0].text).toContain("Connections");
-            expect(result.content[0].text).toContain("Carmenta");
+            expect(result.content[0].text).toContain("403");
+            expect(result.content[0].text).toContain("reconnecting");
         });
     });
 
