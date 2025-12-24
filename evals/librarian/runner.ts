@@ -238,32 +238,32 @@ export async function runLibrarianEval(
 
 /**
  * Model candidates for Librarian evaluation.
- * These are the models we're comparing for the Librarian role.
+ * Run evals to compare: pnpm braintrust eval evals/librarian/eval.ts
  */
 export const LIBRARIAN_MODEL_CANDIDATES = [
     {
-        id: "anthropic/claude-haiku-4.5",
-        name: "Claude Haiku 4.5",
-        description: "Fast and cheap - good for high-volume knowledge extraction",
-        costPer1M: { input: 1.0, output: 5.0 },
+        id: "anthropic/claude-haiku-4",
+        name: "Claude Haiku 4",
+        description: "Fast and cheap - good for high-volume if quality holds",
+        costPer1M: { input: 0.8, output: 4.0 },
     },
     {
-        id: "anthropic/claude-sonnet-4.5",
-        name: "Claude Sonnet 4.5",
-        description: "Balanced - current production candidate",
+        id: "anthropic/claude-sonnet-4",
+        name: "Claude Sonnet 4",
+        description: "Balanced - strong reasoning, reliable tool use",
         costPer1M: { input: 3.0, output: 15.0 },
     },
     {
-        id: "google/gemini-3-pro-preview",
-        name: "Gemini 3 Pro",
-        description: "Google's pro model - strong reasoning",
-        costPer1M: { input: 1.25, output: 5.0 },
+        id: "openai/gpt-4o",
+        name: "GPT-4o",
+        description: "OpenAI's flagship - good at structured extraction",
+        costPer1M: { input: 2.5, output: 10.0 },
     },
     {
-        id: "openai/gpt-5-mini",
-        name: "GPT-5 Mini",
-        description: "OpenAI's efficient model",
-        costPer1M: { input: 0.4, output: 1.6 },
+        id: "openai/gpt-4o-mini",
+        name: "GPT-4o Mini",
+        description: "OpenAI's efficient model - cheaper alternative",
+        costPer1M: { input: 0.15, output: 0.6 },
     },
 ] as const;
 

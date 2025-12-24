@@ -3,20 +3,11 @@
  *
  * Invokes the Knowledge Librarian agent after conversations to extract
  * worth-preserving knowledge into the knowledge base.
- *
- * Feature flagged via LIBRARIAN_ENABLED environment variable.
  */
 
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { createLibrarianAgent } from "./index";
-
-/**
- * Check if the librarian feature is enabled
- */
-export function isLibrarianEnabled(): boolean {
-    return process.env.LIBRARIAN_ENABLED === "true";
-}
 
 /**
  * Configuration for librarian trigger
@@ -65,12 +56,6 @@ export async function triggerLibrarian(
                     userMessages.length + assistantMessages.length
                 );
                 span.setAttribute("async", finalConfig.async);
-
-                // Check if feature is enabled
-                if (!isLibrarianEnabled()) {
-                    logger.debug({ conversationId }, "Librarian disabled, skipping");
-                    return;
-                }
 
                 // Check minimum message count
                 const totalMessages = userMessages.length + assistantMessages.length;

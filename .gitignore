@@ -60,3 +60,4 @@ scripts/evals/results/*.json
 app/design-lab/
 .vercel
 .env*.local
+evals/librarian/.claude/

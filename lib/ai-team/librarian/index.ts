@@ -26,13 +26,10 @@ import {
 /**
  * The Knowledge Librarian model
  *
- * Using GPT-4o for the librarian:
- * - Strong reasoning for what to extract
- * - Good at following structured conventions
- * - Reliable tool use
- * - Cost-effective for this use case
+ * Configurable via LIBRARIAN_MODEL env var. Default chosen based on
+ * eval performance (run: pnpm braintrust eval evals/librarian/eval.ts)
  */
-const LIBRARIAN_MODEL = "openai/gpt-4o";
+const LIBRARIAN_MODEL = process.env.LIBRARIAN_MODEL ?? "anthropic/claude-sonnet-4";
 
 /**
  * Maximum agentic steps before stopping
