@@ -48,7 +48,7 @@ export function RegenerateButton({
 }: RegenerateButtonProps) {
     const [isAnimating, setIsAnimating] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -62,7 +62,7 @@ export function RegenerateButton({
     const handleClick = useCallback(async () => {
         if (disabled || isRegenerating || isAnimating) return;
 
-        triggerHaptic("light"); // Haptic feedback on regenerate
+        triggerHaptic();
         setIsAnimating(true);
         try {
             await onRegenerate();

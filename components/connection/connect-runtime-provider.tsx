@@ -345,7 +345,7 @@ function RuntimeErrorBanner({
 
     // Trigger haptic on mount (error appeared)
     useEffect(() => {
-        triggerHaptic("error");
+        triggerHaptic();
     }, []);
 
     return (

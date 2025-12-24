@@ -24,8 +24,6 @@ import { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "../oauth/providers/d
 // Constants for Dropbox API limits
 const MAX_SEARCH_RESULTS = 100;
 const MAX_LIST_RESULTS = 100;
-// Reserved for future file size validation
-const _MAX_FILE_DOWNLOAD_SIZE = 150 * 1024 * 1024; // 150MB - Dropbox API limit
 
 export class DropboxAdapter extends ServiceAdapter {
     serviceName = "dropbox";

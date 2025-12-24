@@ -131,7 +131,7 @@ export function ModelSelectorModal({
     const modalRef = useRef<HTMLDivElement>(null);
     const [switchingTo, setSwitchingTo] = useState<string | null>(null);
     const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Clear switch timeout on unmount to prevent state updates after unmount
     useEffect(() => {
@@ -188,7 +188,7 @@ export function ModelSelectorModal({
             : 0; // Default to "Quick" (index 0)
 
     const handleModelSelect = (modelId: string | null) => {
-        triggerHaptic("medium"); // Haptic feedback on model selection
+        triggerHaptic();
         // Brief visual feedback during switch
         setSwitchingTo(modelId ?? "auto");
         onChange({ ...overrides, modelId });

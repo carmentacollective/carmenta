@@ -124,7 +124,7 @@ const SECRET_PHRASES: SecretPhrase[] = [
  */
 export function useMessageEffects() {
     const { trigger } = useFloatingEmoji();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     const checkMessage = useCallback(
         (message: string) => {
@@ -138,7 +138,7 @@ export function useMessageEffects() {
                             count: phrase.count,
                         });
                         // Gentle haptic feedback for the magic moment
-                        triggerHaptic("light");
+                        triggerHaptic();
                         return; // Only trigger one effect per message
                     }
                 }

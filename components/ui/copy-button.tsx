@@ -159,7 +159,7 @@ export function CopyButton({
     const [isOpen, setIsOpen] = useState(false);
     const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentMessage, triggerDelight, scheduleClear } = useCopyDelight();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -176,7 +176,7 @@ export function CopyButton({
             setCopied(mode);
             setIsOpen(false);
             triggerDelight();
-            triggerHaptic("medium"); // Tactile feedback on successful copy
+            triggerHaptic();
             scheduleClear();
             onCopySuccess?.();
 

@@ -37,7 +37,7 @@ export function StarButton({
 }: StarButtonProps) {
     const iconSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
     const padding = size === "sm" ? "p-1.5" : "p-2";
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Track sparkle animation state
     const [showSparkle, setShowSparkle] = useState(false);
@@ -68,9 +68,9 @@ export function StarButton({
                 // Trigger sparkle only when starring (not unstarring)
                 if (!isStarred) {
                     triggerSparkle();
-                    triggerHaptic("medium"); // Tactile feedback on starring
+                    triggerHaptic();
                 } else {
-                    triggerHaptic("light"); // Lighter feedback on unstarring
+                    triggerHaptic();
                 }
                 onToggle();
             }}

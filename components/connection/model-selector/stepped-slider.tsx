@@ -44,11 +44,11 @@ export function SteppedSlider({
     progressMode = false,
 }: SteppedSliderProps) {
     const isPrimary = theme === "primary";
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     const handleChange = (index: number) => {
         if (index !== value) {
-            triggerHaptic("selection"); // Tactile feedback on slider change
+            triggerHaptic();
             onChange(index);
         }
     };

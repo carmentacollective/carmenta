@@ -1614,7 +1614,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
     const { checkMessage } = useMessageEffects();
 
     // Show connection chooser on mobile when user has connections
@@ -1899,7 +1899,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
             emitUserEngaged();
 
             // Haptic feedback on send
-            triggerHaptic("medium");
+            triggerHaptic();
 
             const message = input.trim();
             lastSentMessageRef.current = message;
@@ -1955,7 +1955,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
 
     const handleStop = useCallback(() => {
         if (!isLoading) return;
-        triggerHaptic("light"); // Haptic feedback on stop
+        triggerHaptic();
         wasStoppedRef.current = true; // Mark as user-stopped (no success checkmark)
         stop();
         // Clear concierge state immediately for clean UI reset

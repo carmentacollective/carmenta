@@ -34,10 +34,10 @@ export function ThemeSwitcher({
 }: ThemeSwitcherProps = {}) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { resolvedTheme, setTheme } = useTheme();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     const toggleTheme = () => {
-        triggerHaptic("light"); // Tactile feedback on theme switch
+        triggerHaptic();
         setTheme(resolvedTheme === "dark" ? "light" : "dark");
     };
 

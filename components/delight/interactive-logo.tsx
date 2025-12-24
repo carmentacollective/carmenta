@@ -20,7 +20,7 @@ interface InteractiveLogoProps {
 
 export function InteractiveLogo({ className }: InteractiveLogoProps) {
     const { trigger } = useFloatingEmoji();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
     const sparkleRef = useRef<HTMLDivElement>(null);
     const hasTriggeredRef = useRef(false);
 
@@ -35,7 +35,7 @@ export function InteractiveLogo({ className }: InteractiveLogoProps) {
         if (isTriggered && !hasTriggeredRef.current) {
             hasTriggeredRef.current = true;
             trigger({ emoji: "💜", count: 8 });
-            triggerHaptic("medium");
+            triggerHaptic();
         }
         if (!isTriggered) {
             hasTriggeredRef.current = false;
