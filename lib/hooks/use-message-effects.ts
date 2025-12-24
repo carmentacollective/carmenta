@@ -38,7 +38,7 @@ const SECRET_PHRASES: SecretPhrase[] = [
         emoji: "❤️",
         count: 15,
     },
-    // Gratitude → sparkles
+    // Gratitude → praying hands
     {
         patterns: [
             /\bthank\s*you\b/i,
@@ -46,7 +46,7 @@ const SECRET_PHRASES: SecretPhrase[] = [
             /\bgrateful\b/i,
             /\bappreciate\s*(you|it|this)\b/i,
         ],
-        emoji: "✨",
+        emoji: "🙏",
         count: 12,
     },
     // Celebration → confetti
@@ -58,15 +58,17 @@ const SECRET_PHRASES: SecretPhrase[] = [
             /\bhooray\b/i,
             /\blet'?s\s*go\b/i,
             /\bhell\s*yeah\b/i,
+            /\bfuck\s*yeah\b/i,
+            /\bfuck\s*yes\b/i,
             /\byes+!+/i,
         ],
         emoji: "🎉",
         count: 18,
     },
-    // Magic → stars
+    // Magic → sparkles
     {
         patterns: [/\bmagic\b/i, /\bwizard\b/i, /\babracadabra\b/i, /\bspell\b/i],
-        emoji: "⭐",
+        emoji: "✨",
         count: 14,
     },
     // Hugs → hugging emoji
