@@ -21,7 +21,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { ToolWrapper } from "./tool-wrapper";
+import { ToolRenderer } from "./tool-renderer";
 
 interface ClickUpToolResultProps {
     toolCallId: string;
@@ -76,7 +76,7 @@ function getStatusColor(status: string): string {
 }
 
 /**
- * Main ClickUp tool result component using ToolWrapper for consistent status display.
+ * Main ClickUp tool result component using ToolRenderer for consistent collapsed state.
  */
 export function ClickUpToolResult({
     toolCallId,
@@ -86,22 +86,19 @@ export function ClickUpToolResult({
     output,
     error,
 }: ClickUpToolResultProps) {
-    // Determine if this action has rich visual content
     const hasVisualContent = isVisualAction(action) && status === "completed";
-    const variant = hasVisualContent ? "standard" : "compact";
 
     return (
-        <ToolWrapper
+        <ToolRenderer
             toolName="clickup"
             toolCallId={toolCallId}
             status={status}
             input={input}
             output={output}
             error={error}
-            variant={variant}
         >
             {hasVisualContent && <ClickUpContent action={action} output={output} />}
-        </ToolWrapper>
+        </ToolRenderer>
     );
 }
 

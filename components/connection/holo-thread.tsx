@@ -60,11 +60,7 @@ import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
-import { ToolWrapper } from "@/components/generative-ui/tool-wrapper";
-import {
-    ToolProgress,
-    createInitialProgressState,
-} from "@/components/generative-ui/tool-progress";
+import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import { WebSearchResults } from "@/components/generative-ui/web-search";
 import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
@@ -403,28 +399,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 publishedDate?: string;
             };
 
-            // Show beautiful progress during execution
-            if (status === "running") {
-                const progressState = createInitialProgressState(toolName);
-                if (progressState) {
-                    return (
-                        <ToolWrapper
-                            toolName={toolName}
-                            toolCallId={part.toolCallId}
-                            status={status}
-                            input={input}
-                        >
-                            <ToolProgress
-                                progress={{
-                                    ...progressState,
-                                    context: (input?.query as string) ?? undefined,
-                                }}
-                            />
-                        </ToolWrapper>
-                    );
-                }
-            }
-
             return (
                 <WebSearchResults
                     toolCallId={part.toolCallId}
@@ -450,28 +424,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         case "fetchPage": {
-            // Show beautiful progress during execution
-            if (status === "running") {
-                const progressState = createInitialProgressState(toolName);
-                if (progressState) {
-                    return (
-                        <ToolWrapper
-                            toolName={toolName}
-                            toolCallId={part.toolCallId}
-                            status={status}
-                            input={input}
-                        >
-                            <ToolProgress
-                                progress={{
-                                    ...progressState,
-                                    context: (input?.url as string) ?? undefined,
-                                }}
-                            />
-                        </ToolWrapper>
-                    );
-                }
-            }
-
             return (
                 <FetchPageResult
                     toolCallId={part.toolCallId}
@@ -492,28 +444,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             };
             type Source = { url: string; title: string; relevance: string };
 
-            // Show beautiful progress during execution
-            if (status === "running") {
-                const progressState = createInitialProgressState(toolName);
-                if (progressState) {
-                    return (
-                        <ToolWrapper
-                            toolName={toolName}
-                            toolCallId={part.toolCallId}
-                            status={status}
-                            input={input}
-                        >
-                            <ToolProgress
-                                progress={{
-                                    ...progressState,
-                                    context: (input?.objective as string) ?? undefined,
-                                }}
-                            />
-                        </ToolWrapper>
-                    );
-                }
-            }
-
             return (
                 <DeepResearchResult
                     toolCallId={part.toolCallId}
@@ -529,7 +459,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         case "getWeather": {
-            // Weather uses generic ToolWrapper with simple content display
             const weatherOutput = output as
                 | {
                       location?: string;
@@ -540,9 +469,10 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                   }
                 | undefined;
             const weatherError = getToolError(part, output, "Weather check failed");
+            const hasWeatherData = status === "completed" && weatherOutput;
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName="getWeather"
                     toolCallId={part.toolCallId}
                     status={status}
@@ -550,15 +480,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={weatherError}
                 >
-                    {status === "running" ? (
-                        <div className="animate-pulse text-sm text-muted-foreground">
-                            Checking weather for {input?.location as string}...
-                        </div>
-                    ) : status === "error" ? (
-                        <div className="text-sm text-destructive">
-                            {weatherError ?? "Weather check failed"}
-                        </div>
-                    ) : weatherOutput ? (
+                    {hasWeatherData && (
                         <div className="text-sm">
                             <div className="text-lg font-medium">
                                 {weatherOutput.temperature}°F {weatherOutput.condition}
@@ -571,8 +493,8 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                                 {weatherOutput.windSpeed} mph
                             </div>
                         </div>
-                    ) : null}
-                </ToolWrapper>
+                    )}
+                </ToolRenderer>
             );
         }
 
@@ -691,9 +613,10 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             }));
 
             const planError = getToolError(part, output, "Plan creation failed");
+            const hasPlan = status === "completed" && todos.length > 0;
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName={toolName}
                     toolCallId={part.toolCallId}
                     status={status}
@@ -701,17 +624,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={planError}
                 >
-                    {status === "running" ? (
-                        <div className="p-3 sm:p-4">
-                            <div className="animate-pulse text-sm text-muted-foreground">
-                                Creating task plan...
-                            </div>
-                        </div>
-                    ) : status === "error" ? (
-                        <div className="p-3 text-sm text-destructive sm:p-4">
-                            {planError ?? "Failed to create plan"}
-                        </div>
-                    ) : todos.length > 0 ? (
+                    {hasPlan && (
                         <Plan
                             id={`plan-${part.toolCallId}`}
                             title={planOutput?.title ?? "Task Plan"}
@@ -720,19 +633,13 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             showProgress={true}
                             maxVisibleTodos={6}
                         />
-                    ) : (
-                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
-                            No tasks in plan
-                        </div>
                     )}
-                </ToolWrapper>
+                </ToolRenderer>
             );
         }
 
         case "linkPreview":
         case "previewLink": {
-            // LinkPreview component for rich URL cards
-            // Shows Open Graph data with image, title, description
             const previewOutput = output as
                 | {
                       href?: string;
@@ -748,9 +655,10 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             const href =
                 previewOutput?.href || previewOutput?.url || (input?.url as string);
             const previewError = getToolError(part, output, "Link preview failed");
+            const hasPreview = status === "completed" && previewOutput;
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName={toolName}
                     toolCallId={part.toolCallId}
                     status={status}
@@ -758,19 +666,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={previewError}
                 >
-                    <div className="p-3 sm:p-4">
+                    {hasPreview && (
                         <LinkPreview
                             id={`link-preview-${part.toolCallId}`}
                             href={href ?? ""}
-                            title={previewOutput?.title}
-                            description={previewOutput?.description}
-                            image={previewOutput?.image}
-                            domain={previewOutput?.domain}
-                            favicon={previewOutput?.favicon}
-                            isLoading={status === "running"}
+                            title={previewOutput.title}
+                            description={previewOutput.description}
+                            image={previewOutput.image}
+                            domain={previewOutput.domain}
+                            favicon={previewOutput.favicon}
                         />
-                    </div>
-                </ToolWrapper>
+                    )}
+                </ToolRenderer>
             );
         }
 
@@ -823,7 +730,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             const optionsError = getToolError(part, output, "Options display failed");
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName={toolName}
                     toolCallId={part.toolCallId}
                     status={status}
@@ -831,29 +738,17 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={optionsError}
                 >
-                    <div className="p-3 sm:p-4">
-                        {status === "running" ? (
-                            <div className="animate-pulse text-sm text-muted-foreground">
-                                Loading options...
-                            </div>
-                        ) : status === "error" ? (
-                            <div className="text-sm text-destructive">
-                                {optionsError ?? "Failed to load options"}
-                            </div>
-                        ) : options.length > 0 ? (
+                    {status === "completed" && options.length > 0 && (
+                        <div className="p-3 sm:p-4">
                             <OptionList
                                 id={`option-list-${part.toolCallId}`}
                                 options={options}
                                 selectionMode={selectionMode}
                                 confirmed={optionsOutput?.confirmed}
                             />
-                        ) : (
-                            <div className="text-sm text-muted-foreground">
-                                No options available
-                            </div>
-                        )}
-                    </div>
-                </ToolWrapper>
+                        </div>
+                    )}
+                </ToolRenderer>
             );
         }
 
@@ -924,7 +819,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             const mapError = getToolError(part, output, "Map display failed");
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName={toolName}
                     toolCallId={part.toolCallId}
                     status={status}
@@ -932,17 +827,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={mapError}
                 >
-                    {status === "running" ? (
-                        <div className="flex h-64 items-center justify-center">
-                            <div className="animate-pulse text-sm text-muted-foreground">
-                                Loading map...
-                            </div>
-                        </div>
-                    ) : status === "error" ? (
-                        <div className="p-3 text-sm text-destructive sm:p-4">
-                            {mapError ?? "Failed to load map"}
-                        </div>
-                    ) : pois.length > 0 ? (
+                    {status === "completed" && pois.length > 0 && (
                         <POIMapWrapper
                             id={`poi-map-${part.toolCallId}`}
                             pois={pois}
@@ -950,12 +835,8 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             initialZoom={zoom}
                             title={title}
                         />
-                    ) : (
-                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
-                            No locations to display
-                        </div>
                     )}
-                </ToolWrapper>
+                </ToolRenderer>
             );
         }
 
@@ -975,21 +856,14 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
 
             return (
-                <ToolWrapper
+                <ToolRenderer
                     toolName={toolName}
                     toolCallId={part.toolCallId}
                     status="error"
                     input={input}
                     output={output}
                     error={`Tool "${toolName}" has no UI renderer. This is a bug.`}
-                >
-                    <div className="text-sm text-destructive">
-                        Tool &quot;{toolName}&quot; is missing a display component.
-                        <span className="mt-1 block text-xs text-muted-foreground">
-                            Add a case for this tool in ToolPartRenderer.
-                        </span>
-                    </div>
-                </ToolWrapper>
+                />
             );
         }
     }

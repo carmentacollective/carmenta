@@ -18,7 +18,7 @@ import Image from "next/image";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { GifCard, type GifData } from "./gif-card";
 import { GifGallery } from "./gif-gallery";
-import { ToolWrapper } from "./tool-wrapper";
+import { ToolRenderer } from "./tool-renderer";
 
 interface GiphyToolResultProps {
     toolCallId: string;
@@ -30,8 +30,8 @@ interface GiphyToolResultProps {
 }
 
 /**
- * Visual Giphy tool result using ToolWrapper for consistent status display.
- * Renders actual animated GIFs for visual actions.
+ * Visual Giphy tool result using ToolRenderer for consistent collapsed state.
+ * Expands to show actual animated GIFs for visual actions.
  */
 export function GiphyToolResult({
     toolCallId,
@@ -41,26 +41,22 @@ export function GiphyToolResult({
     output,
     error,
 }: GiphyToolResultProps) {
-    // Determine if this action has visual content
-    // Only show visual content when completed to prevent stale data during running state
     const hasVisualContent =
         status === "completed" && isVisualAction(action) && hasResults(action, output);
-    const variant = hasVisualContent ? "standard" : "compact";
 
     return (
-        <ToolWrapper
+        <ToolRenderer
             toolName="giphy"
             toolCallId={toolCallId}
             status={status}
             input={input}
             output={output}
             error={error}
-            variant={variant}
         >
             {hasVisualContent && (
                 <GifContent action={action} input={input} output={output} />
             )}
-        </ToolWrapper>
+        </ToolRenderer>
     );
 }
 
