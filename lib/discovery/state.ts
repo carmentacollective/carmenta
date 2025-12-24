@@ -11,7 +11,7 @@ import {
     type DiscoveryItemState,
     type UserDiscoveryState,
 } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 // Re-export types for convenience
@@ -37,30 +37,30 @@ export async function getDiscoveryState(userId: string): Promise<UserDiscoverySt
 
 /**
  * Update discovery state for a user (merge with existing)
+ *
+ * Uses atomic JSONB operations to prevent race conditions.
  */
 async function updateDiscoveryState(
     userId: string,
     updates: UserDiscoveryState
 ): Promise<void> {
-    const currentState = await getDiscoveryState(userId);
-    const newState: UserDiscoveryState = { ...currentState, ...updates };
-
-    // Get current preferences
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: { preferences: true },
-    });
-
-    const currentPreferences = (user?.preferences ?? {}) as Record<string, unknown>;
-
-    // Merge discoveryState into preferences
+    // Use PostgreSQL JSONB merge operator for atomic update
+    // COALESCE ensures we handle null preferences gracefully
+    // jsonb_set creates the discoveryState key if it doesn't exist
+    // || merges the new updates into existing discoveryState
     await db
         .update(users)
         .set({
-            preferences: {
-                ...currentPreferences,
-                discoveryState: newState,
-            },
+            preferences: sql`
+                COALESCE(${users.preferences}, '{}'::jsonb)
+                || jsonb_build_object(
+                    'discoveryState',
+                    COALESCE(
+                        ${users.preferences}->'discoveryState',
+                        '{}'::jsonb
+                    ) || ${JSON.stringify(updates)}::jsonb
+                )
+            `,
             updatedAt: new Date(),
         })
         .where(eq(users.id, userId));

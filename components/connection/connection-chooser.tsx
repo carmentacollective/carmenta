@@ -633,7 +633,9 @@ function ConnectionDropdown({
                                                 {isSearching ? "Results" : "Recent"}
                                             </span>
                                             <span className="ml-auto text-xs text-foreground/30">
-                                                {filteredUnstarred.length}
+                                                {isSearching
+                                                    ? filteredUnstarred.length
+                                                    : unstarredConnections.length}
                                             </span>
                                         </div>
 

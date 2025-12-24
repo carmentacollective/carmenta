@@ -75,7 +75,7 @@ export function StarButton({
                 onToggle();
             }}
             className={cn(
-                "tooltip interactive-press-icon relative z-content rounded-md transition-all",
+                "interactive-press-icon relative z-content rounded-md transition-all",
                 padding,
                 // Visibility: always show if starred, otherwise follow showOnHover
                 isStarred
