@@ -1,7 +1,11 @@
 "use client";
 
 import { Check, Palette } from "lucide-react";
-import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
+import {
+    useThemeVariant,
+    getCurrentHoliday,
+    type ThemeVariant,
+} from "@/lib/theme/theme-context";
 import { cn } from "@/lib/utils";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -12,7 +16,8 @@ interface ThemeConfig {
     colors: [string, string, string]; // [primary, secondary, accent]
 }
 
-const THEMES: ThemeConfig[] = [
+// Static theme configurations
+const STATIC_THEMES: ThemeConfig[] = [
     {
         value: "carmenta",
         label: "Carmenta",
@@ -43,18 +48,30 @@ const THEMES: ThemeConfig[] = [
         description: "Minimal & precise",
         colors: ["hsl(0 0% 35%)", "hsl(0 0% 88%)", "hsl(190 100% 50%)"],
     },
-    {
-        value: "christmas",
-        label: "Christmas",
-        description: "Festive warmth",
-        colors: ["hsl(350 65% 45%)", "hsl(140 40% 88%)", "hsl(42 85% 55%)"],
-    },
 ];
+
+/**
+ * Build themes list with dynamic Holiday option based on current date.
+ * The Holiday option shows the currently active seasonal theme's info.
+ */
+function getThemes(): ThemeConfig[] {
+    const currentHoliday = getCurrentHoliday();
+
+    const holidayTheme: ThemeConfig = {
+        value: "holiday",
+        label: `Holiday: ${currentHoliday.label}`,
+        description: currentHoliday.description,
+        colors: currentHoliday.colors,
+    };
+
+    return [...STATIC_THEMES, holidayTheme];
+}
 
 export function ThemeVariantSelector() {
     const { themeVariant, setThemeVariant } = useThemeVariant();
 
-    const currentTheme = THEMES.find((t) => t.value === themeVariant);
+    const themes = getThemes();
+    const currentTheme = themes.find((t) => t.value === themeVariant);
 
     return (
         <Popover.Root>
@@ -75,7 +92,7 @@ export function ThemeVariantSelector() {
                     align="end"
                 >
                     <div className="space-y-1">
-                        {THEMES.map((theme) => (
+                        {themes.map((theme) => (
                             <button
                                 key={theme.value}
                                 onClick={() => setThemeVariant(theme.value)}

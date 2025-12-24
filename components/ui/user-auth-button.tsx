@@ -21,7 +21,11 @@ import { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
+import {
+    useThemeVariant,
+    getCurrentHoliday,
+    type ThemeVariant,
+} from "@/lib/theme/theme-context";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
@@ -84,6 +88,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
     // Theme variants with primary color for swatch preview
     // Colors derived from --primary HSL values in globals.css (light mode)
+    const currentHoliday = getCurrentHoliday();
     const themeVariants: Array<{
         value: ThemeVariant;
         label: string;
@@ -119,6 +124,12 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
             label: "Monochrome",
             description: "Minimal, precise",
             color: "hsl(0 0% 35%)",
+        },
+        {
+            value: "holiday",
+            label: currentHoliday.label,
+            description: currentHoliday.description,
+            color: currentHoliday.colors[0], // Primary color from current holiday
         },
     ];
 
