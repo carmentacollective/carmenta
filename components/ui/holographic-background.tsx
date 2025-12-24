@@ -379,6 +379,7 @@ export function HolographicBackground({
     const watermarkScaleRef = useRef(1);
     const watermarkScaleVelocityRef = useRef(0);
     const watermarkTargetSizeRef = useRef(0);
+    const watermarkAnimationStartTime = useRef(0);
 
     // Update theme colors when theme or theme variant changes
     useEffect(() => {
@@ -435,6 +436,8 @@ export function HolographicBackground({
             watermarkRef.current.style.width = `${initialSize}px`;
             watermarkRef.current.style.height = `${initialSize}px`;
         }
+        // Track animation start time to delay JS transform until after CSS entrance animation (1.4s)
+        watermarkAnimationStartTime.current = Date.now();
         window.addEventListener("resize", handleResize);
 
         // Create blobs and particles once on mount
@@ -520,10 +523,14 @@ export function HolographicBackground({
             }
 
             // Animate watermark size with spring physics
+            // Wait 1.4s for CSS entrance animation to complete before applying JS transform
+            const elapsedMs = Date.now() - watermarkAnimationStartTime.current;
+            const cssEntranceComplete = elapsedMs >= 1400;
             if (
                 watermarkRef.current &&
                 watermarkBaseSizeRef.current > 0 &&
-                watermarkTargetSizeRef.current > 0
+                watermarkTargetSizeRef.current > 0 &&
+                cssEntranceComplete
             ) {
                 const targetScale =
                     watermarkTargetSizeRef.current / watermarkBaseSizeRef.current;
@@ -742,10 +749,10 @@ export function HolographicBackground({
                             ref={watermarkRef}
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain"
+                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-[opacity,filter] duration-500"
                             style={{
                                 // CSS size classes provide SSR fallback, then JS sets explicit px dimensions on mount
-                                // Transform scale is animated via spring physics in the animation loop
+                                // Transform scale is animated via spring physics in the animation loop (no CSS transition to avoid conflicts)
                                 willChange: "transform",
                                 // Boost opacity and brightness when cursor approaches center
                                 // Base opacity matches CSS animation: 0.09 light, 0.07 dark
