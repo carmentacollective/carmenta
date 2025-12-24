@@ -18,6 +18,7 @@ import {
     useState,
     useCallback,
     useTransition,
+    useOptimistic,
     useMemo,
     type ReactNode,
 } from "react";
@@ -90,6 +91,17 @@ export function ConnectionProvider({
     const [connections, setConnections] =
         useState<PublicConnection[]>(initialConnections);
 
+    // React 19: useOptimistic for instant star toggle feedback
+    const [optimisticConnections, updateOptimisticConnections] = useOptimistic(
+        connections,
+        (state, { id, isStarred }: { id: string; isStarred: boolean }) =>
+            state.map((c) =>
+                c.id === id
+                    ? { ...c, isStarred, starredAt: isStarred ? new Date() : null }
+                    : c
+            )
+    );
+
     const [freshConnectionIds, setFreshConnectionIds] = useState<Set<string>>(
         new Set()
     );
@@ -108,8 +120,10 @@ export function ConnectionProvider({
     const activeConnectionId = activeConnection?.id ?? null;
 
     const runningCount = useMemo(
-        () => connections.filter((c) => c.streamingStatus === "streaming").length,
-        [connections]
+        () =>
+            optimisticConnections.filter((c) => c.streamingStatus === "streaming")
+                .length,
+        [optimisticConnections]
     );
 
     const isLoaded = initialConnections.length > 0 || activeConnection !== null;
@@ -220,62 +234,42 @@ export function ConnectionProvider({
         []
     );
 
-    const handleToggleStarConnection = useCallback((id: string) => {
-        // Capture values from the functional update for use in API call
-        let originalIsStarred: boolean | undefined;
-        let originalStarredAt: Date | null | undefined;
-        let newIsStarred: boolean | undefined;
+    const handleToggleStarConnection = useCallback(
+        (id: string) => {
+            // Find connection to determine new state
+            const connection = connections.find((c) => c.id === id);
+            if (!connection) return;
 
-        // Pure optimistic update - captures original values via closure
-        setConnections((prev) => {
-            const connection = prev.find((c) => c.id === id);
-            if (!connection) return prev;
+            const newIsStarred = !connection.isStarred;
 
-            originalIsStarred = connection.isStarred;
-            originalStarredAt = connection.starredAt;
-            newIsStarred = !originalIsStarred;
+            // React 19: useOptimistic provides instant UI update
+            // Automatically reverts if the async action below fails
+            updateOptimisticConnections({ id, isStarred: newIsStarred });
 
-            return prev.map((c) =>
-                c.id === id
-                    ? {
-                          ...c,
-                          isStarred: newIsStarred!,
-                          starredAt: newIsStarred ? new Date() : null,
-                      }
-                    : c
-            );
-        });
-
-        // Server action OUTSIDE setState updater (prevents double API calls in StrictMode)
-        startTransition(async () => {
-            // Guard: if connection wasn't found, skip API call
-            if (newIsStarred === undefined) return;
-
-            try {
-                await toggleStarAction(id, newIsStarred);
-                logger.debug(
-                    { connectionId: id, isStarred: newIsStarred },
-                    "Toggled star"
-                );
-            } catch (err) {
-                // Revert to original state on error
-                setConnections((current) =>
-                    current.map((c) =>
-                        c.id === id
-                            ? {
-                                  ...c,
-                                  isStarred: originalIsStarred!,
-                                  starredAt: originalStarredAt!,
-                              }
-                            : c
-                    )
-                );
-                const error = err instanceof Error ? err : new Error(String(err));
-                logger.error({ error, connectionId: id }, "Failed to toggle star");
-                setError(error);
-            }
-        });
-    }, []); // Empty deps - uses functional updates and closures
+            // Server action with transition for proper pending state
+            startTransition(async () => {
+                try {
+                    const updated = await toggleStarAction(id, newIsStarred);
+                    // Sync real state on success
+                    if (updated) {
+                        setConnections((prev) =>
+                            prev.map((c) => (c.id === id ? updated : c))
+                        );
+                    }
+                    logger.debug(
+                        { connectionId: id, isStarred: newIsStarred },
+                        "Toggled star"
+                    );
+                } catch (err) {
+                    // useOptimistic auto-reverts, but we still need to show the error
+                    const error = err instanceof Error ? err : new Error(String(err));
+                    logger.error({ error, connectionId: id }, "Failed to toggle star");
+                    setError(error);
+                }
+            });
+        },
+        [connections, updateOptimisticConnections]
+    );
 
     const handleUpdateConnectionTitle = useCallback(
         (id: string, title: string) => {
@@ -327,34 +321,36 @@ export function ConnectionProvider({
     );
 
     // Computed: starred connections sorted by lastActivityAt
+    // Uses optimisticConnections for instant UI feedback on star toggle
     const starredConnections = useMemo(
         () =>
-            connections
+            optimisticConnections
                 .filter((c) => c.isStarred)
                 .sort(
                     (a, b) =>
                         new Date(b.lastActivityAt).getTime() -
                         new Date(a.lastActivityAt).getTime()
                 ),
-        [connections]
+        [optimisticConnections]
     );
 
     // Computed: unstarred connections sorted by lastActivityAt
+    // Uses optimisticConnections for instant UI feedback on star toggle
     const unstarredConnections = useMemo(
         () =>
-            connections
+            optimisticConnections
                 .filter((c) => !c.isStarred)
                 .sort(
                     (a, b) =>
                         new Date(b.lastActivityAt).getTime() -
                         new Date(a.lastActivityAt).getTime()
                 ),
-        [connections]
+        [optimisticConnections]
     );
 
     const value = useMemo<ConnectionContextValue>(
         () => ({
-            connections,
+            connections: optimisticConnections,
             starredConnections,
             unstarredConnections,
             activeConnection,
@@ -380,7 +376,7 @@ export function ConnectionProvider({
             setIsStreaming,
         }),
         [
-            connections,
+            optimisticConnections,
             starredConnections,
             unstarredConnections,
             activeConnection,
