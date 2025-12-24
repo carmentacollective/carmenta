@@ -126,8 +126,8 @@ const config: Config = {
                     "50%": { boxShadow: "0 0 40px hsl(280 40% 75% / 0.5)" },
                 },
                 "sparkle-burst": {
-                    "0%": { opacity: "1", transform: "translateY(0) scale(1)" },
-                    "100%": { opacity: "0", transform: "translateY(-12px) scale(0)" },
+                    "0%": { opacity: "1" },
+                    "100%": { opacity: "0", transform: "translateX(24px) scale(0)" },
                 },
                 "star-pop": {
                     "0%": { transform: "scale(1)" },
@@ -138,7 +138,6 @@ const config: Config = {
                 "float-up": {
                     "0%": {
                         opacity: "1",
-                        transform: "translateY(0) translateX(0)",
                     },
                     "100%": {
                         opacity: "0",
