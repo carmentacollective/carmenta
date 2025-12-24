@@ -142,7 +142,10 @@ function updateBaseline(metrics: {
 
     const content = fs.readFileSync(BASELINE_FILE, "utf-8");
     const now = new Date().toISOString().split("T")[0];
-    const commit = "auto-update"; // In CI, this would be the actual commit SHA
+    const commit =
+        process.env.COMMIT_SHA ??
+        process.env.GITHUB_SHA?.substring(0, 7) ??
+        "local-update";
 
     let updated = content;
 
@@ -223,6 +226,12 @@ async function fetchLatestExperiment(): Promise<{
 
         const latest = data.objects[0];
         const scores = latest.scores || {};
+
+        // Check if scores is empty - indicates experiment with no results
+        if (Object.keys(scores).length === 0) {
+            logger.warn({ experimentId: latest.id }, "Experiment has no scores");
+            return null;
+        }
 
         logger.info({ experimentId: latest.id, scores }, "Fetched latest experiment");
 

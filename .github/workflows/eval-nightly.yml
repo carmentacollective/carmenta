@@ -122,7 +122,7 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"Nightly evals passed\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+            "$SLACK_WEBHOOK_URL"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -133,7 +133,7 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"Eval Regression Detected\\nSee GitHub issue for details\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+            "$SLACK_WEBHOOK_URL"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
