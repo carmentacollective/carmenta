@@ -94,6 +94,7 @@ import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
+import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
 
 export function HoloThread() {
     return (
@@ -1517,7 +1518,7 @@ function AssistantMessage({
                             {hasContent && (
                                 <div className="group">
                                     <div className="px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
-                                        <MarkdownRenderer
+                                        <CollapsibleStreamingContent
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
