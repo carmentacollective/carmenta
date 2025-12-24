@@ -624,6 +624,9 @@ function ConnectionDropdown({
                                             <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
                                                 {isSearching ? "Results" : "Recent"}
                                             </span>
+                                            <span className="ml-auto text-xs text-foreground/30">
+                                                {filteredUnstarred.length}
+                                            </span>
                                         </div>
 
                                         <div className="py-1">
@@ -838,15 +841,15 @@ export function ConnectionChooser({
                                 <div className="h-4 w-px bg-foreground/10" />
                             )}
 
-                            {/* New button - on right for mobile */}
+                            {/* New button - prominent CTA */}
                             <button
                                 onClick={createNewConnection}
                                 disabled={isPending}
                                 className={cn(
-                                    "flex items-center justify-center",
+                                    "flex items-center justify-center transition-all duration-200",
                                     isMobilePlacement
-                                        ? "h-10 w-10 flex-shrink-0 rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25"
-                                        : "btn-subtle-text gap-1.5 text-sm text-foreground/50 hover:text-foreground/80",
+                                        ? "h-11 w-11 flex-shrink-0 rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-95"
+                                        : "h-8 gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary hover:bg-primary/25 active:scale-95",
                                     "disabled:cursor-not-allowed disabled:opacity-50"
                                 )}
                                 aria-label="New connection"
@@ -859,9 +862,7 @@ export function ConnectionChooser({
                                     <Plus className="h-4 w-4" />
                                 )}
                                 {!isMobilePlacement && (
-                                    <span className="hidden font-medium sm:inline">
-                                        New
-                                    </span>
+                                    <span className="hidden sm:inline">New</span>
                                 )}
                             </button>
                         </motion.div>
@@ -897,12 +898,12 @@ export function ConnectionChooser({
                                 {isStreaming && <RunningIndicator />}
                                 <span>Recent Connections</span>
                             </button>
-                            {/* New button on right for mobile */}
+                            {/* New button on right for mobile - prominent CTA */}
                             {isMobilePlacement && (
                                 <button
                                     onClick={createNewConnection}
                                     disabled={isPending}
-                                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="New connection"
                                     data-tooltip-id="tip"
                                     data-tooltip-content="Start fresh"

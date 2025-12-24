@@ -251,9 +251,9 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                         "h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14",
                         "glass-bg glass-shadow ring-1 ring-foreground/20 backdrop-blur-xl",
                         "dark:ring-white/15",
-                        "transition-[box-shadow,ring-color] duration-300",
-                        "hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
-                        "focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                        "transition-all duration-300",
+                        "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                        "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
                         isStreaming && "oracle-working",
                         !isStreaming && "oracle-breathing"
                     )}

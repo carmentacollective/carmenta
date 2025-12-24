@@ -28,6 +28,7 @@ import { AlertCircle, RefreshCw, X } from "lucide-react";
 
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
 import {
     ConciergeProvider,
     useConcierge,
@@ -340,6 +341,11 @@ function RuntimeErrorBanner({
     onRetry: () => void;
 }) {
     const displayMessage = parseErrorMessage(error.message);
+
+    // Trigger haptic on mount (error appeared)
+    useEffect(() => {
+        triggerHaptic("error");
+    }, []);
 
     return (
         <div

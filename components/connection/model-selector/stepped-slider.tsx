@@ -8,9 +8,11 @@
  * - 5 preset levels with emoji indicators
  * - Two modes: position (no fill) vs progress (fill builds up)
  * - Compact design suitable for popovers
+ * - Haptic feedback on selection changes
  */
 
 import { cn } from "@/lib/utils";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
 interface SteppedSliderProps {
     /** Current selected index */
@@ -42,6 +44,14 @@ export function SteppedSlider({
     progressMode = false,
 }: SteppedSliderProps) {
     const isPrimary = theme === "primary";
+    const { triggerHaptic } = useHapticFeedback();
+
+    const handleChange = (index: number) => {
+        if (index !== value) {
+            triggerHaptic("selection"); // Tactile feedback on slider change
+            onChange(index);
+        }
+    };
 
     return (
         <div>
@@ -73,7 +83,7 @@ export function SteppedSlider({
                     return (
                         <div key={i} className="flex flex-1 items-center">
                             <button
-                                onClick={() => onChange(i)}
+                                onClick={() => handleChange(i)}
                                 disabled={disabled}
                                 className="group flex flex-col items-center"
                             >
