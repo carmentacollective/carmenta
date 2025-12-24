@@ -153,7 +153,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onTest}
                                     disabled={isLoading}
-                                    className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/40 active:scale-[0.98] active:shadow-sm disabled:opacity-50"
+                                    className="interactive-focus interactive-press rounded-xl border-2 border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
                                 >
                                     {isTesting ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,7 +164,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onDisconnect}
                                     disabled={isLoading}
-                                    className="rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-red-300/50 active:scale-[0.98] disabled:opacity-50 dark:hover:bg-red-950/20"
+                                    className="interactive-focus-destructive interactive-press rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                                 >
                                     Disconnect
                                 </button>
@@ -178,7 +178,7 @@ export function IntegrationCard({
                         <button
                             onClick={onReconnect}
                             disabled={isLoading}
-                            className="rounded-xl border-2 border-amber-400/60 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 hover:shadow focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-300/50 active:scale-[0.98] active:shadow-sm disabled:opacity-50 dark:text-amber-400"
+                            className="interactive-focus-amber interactive-press rounded-xl border-2 border-amber-400/60 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 hover:shadow disabled:opacity-50 dark:text-amber-400"
                         >
                             {isReconnecting ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -189,7 +189,7 @@ export function IntegrationCard({
                         <button
                             onClick={onDisconnect}
                             disabled={isLoading}
-                            className="rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-red-300/50 active:scale-[0.98] disabled:opacity-50 dark:hover:bg-red-950/20"
+                            className="interactive-focus-destructive interactive-press rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                         >
                             Disconnect
                         </button>
@@ -200,7 +200,7 @@ export function IntegrationCard({
                     <button
                         onClick={onConnect}
                         disabled={isLoading}
-                        className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.98] active:shadow-sm disabled:opacity-50"
+                        className="interactive-focus-offset interactive-press rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
                     >
                         {isConnecting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

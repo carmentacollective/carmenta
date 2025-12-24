@@ -1556,12 +1556,63 @@
             0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
-    /* Click state - Ripple + depth shift */
-    .btn-clickable {
+    /* ==========================================================================
+       Interactive State Primitives
+       Composable focus, hover, and press states for all interactive elements.
+       Use focus-visible for keyboard-only focus rings (a11y best practice).
+       ========================================================================== */
+
+    /* Focus ring - primary (default) */
+    .interactive-focus {
+        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/40;
+    }
+
+    /* Focus ring - with offset for solid background buttons */
+    .interactive-focus-offset {
+        @apply interactive-focus focus-visible:ring-offset-2;
+    }
+
+    /* Focus ring - amber for starred/warning elements */
+    .interactive-focus-amber {
+        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-300/50;
+    }
+
+    /* Focus ring - red for destructive actions */
+    .interactive-focus-destructive {
+        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-red-300/50;
+    }
+
+    /* Focus ring - muted for secondary/subtle elements */
+    .interactive-focus-muted {
+        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-foreground/20;
+    }
+
+    /* Press state - subtle scale for most buttons */
+    .interactive-press {
+        @apply active:scale-[0.98];
+    }
+
+    /* Press state - deeper scale for icon buttons */
+    .interactive-press-icon {
+        @apply active:scale-[0.92];
+    }
+
+    /* Press state - depth shift for solid buttons (translate + shadow) */
+    .interactive-press-depth {
         @apply active:translate-y-0.5 active:shadow-sm;
     }
 
-    /* Hover state - Scale + shadow + ring (same as focus) */
+    /* ==========================================================================
+       Glass Button States
+       For buttons with glassmorphism treatment.
+       ========================================================================== */
+
+    /* Click state - Ripple + depth shift */
+    .btn-clickable {
+        @apply interactive-press-depth;
+    }
+
+    /* Hover state - Scale + shadow + ring */
     .btn-hoverable {
         @apply hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40;
     }
@@ -1570,9 +1621,10 @@
         background: var(--glass-bg-hover);
     }
 
-    /* Focus state - Scale + shadow + ring (same as hover) */
+    /* Focus state - Scale + shadow + ring (keyboard navigation) */
     .btn-focusable {
-        @apply focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40;
+        @apply interactive-focus;
+        @apply focus-visible:scale-105 focus-visible:shadow-2xl;
     }
 
     /* Disabled state - Grayscale */
@@ -1590,32 +1642,36 @@
         @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12;
     }
 
-    /* Subtle buttons - for buttons inside glass containers */
-    /* These don't need full glass treatment since they're already in a glass container */
+    /* ==========================================================================
+       Subtle Buttons
+       For buttons inside glass containers. Lighter treatment since they're
+       already in a glass context.
+       ========================================================================== */
 
-    /* Base subtle button - hover and focus are identical */
+    /* Base subtle button */
     .btn-subtle {
         @apply rounded-md transition-all;
-        @apply hover:ring-2 hover:ring-primary/30;
-        @apply focus:outline-none focus:ring-2 focus:ring-primary/30;
-        @apply active:scale-95;
+        @apply hover:ring-[3px] hover:ring-primary/30;
+        @apply interactive-focus;
+        @apply interactive-press;
     }
 
     .btn-subtle:hover,
-    .btn-subtle:focus {
+    .btn-subtle:focus-visible {
         background: var(--glass-bg-hover);
     }
 
-    /* Subtle icon button - small icons with scale effect */
+    /* Subtle icon button - small icons with deeper press */
     .btn-subtle-icon {
         @apply btn-subtle p-1;
-        @apply hover:scale-110 focus:scale-110;
+        @apply hover:scale-110 focus-visible:scale-110;
+        @apply interactive-press-icon;
     }
 
     /* Subtle text button - for text/label buttons */
     .btn-subtle-text {
         @apply btn-subtle px-2 py-1;
-        @apply hover:scale-105 focus:scale-105;
+        @apply hover:scale-105 focus-visible:scale-105;
     }
 
     /*
