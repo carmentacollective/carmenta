@@ -115,12 +115,48 @@ jobs:
           script: |
             const regressionDetails = String.raw`${{ steps.regression.outputs.regression_details }}`;
             const experimentUrl = `${{ steps.eval.outputs.experiment_url }}`;
+            const issueTitle = '[Eval Regression] Nightly eval detected quality drop';
 
-            await github.rest.issues.create({
+            // Check for existing open issue with eval-regression label
+            const existingIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '[Eval Regression] Nightly eval detected quality drop',
-              body: `## Regression Detected
+              labels: 'eval-regression',
+              state: 'open'
+            });
+
+            if (existingIssues.data.length > 0) {
+              // Add comment to existing issue instead of creating duplicate
+              const existingIssue = existingIssues.data[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `## Additional Regression Detected
+
+            Another eval run detected a regression.
+
+            ### Details
+
+            \`\`\`
+            ${regressionDetails}
+            \`\`\`
+
+            ### Links
+
+            - **Braintrust Experiment**: ${experimentUrl || 'See Braintrust dashboard'}
+            - **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Commit**: ${{ github.sha }}
+            `
+              });
+              console.log(`Added comment to existing issue #${existingIssue.number}`);
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: `## Regression Detected
 
             The nightly eval run detected a quality regression that exceeded alert thresholds.
 
@@ -142,8 +178,10 @@ jobs:
             2. Check recent commits for routing or model changes
             3. Run gap analyzer: \`pnpm tsx scripts/analyze-gaps.ts\`
             `,
-              labels: ['eval-regression', 'urgent']
-            });
+                labels: ['eval-regression', 'urgent']
+              });
+              console.log('Created new regression issue');
+            }
 
       - name: Post success to Slack
         if:
