@@ -150,7 +150,7 @@ describe("ModelSelectorTrigger", () => {
             expect(container).toHaveTextContent("Automagically");
 
             // Backdrop should exist and be clickable
-            const backdrop = container.querySelector(".fixed.inset-0.z-50");
+            const backdrop = container.querySelector(".fixed.inset-0.z-modal");
             expect(backdrop).toBeInTheDocument();
             // Note: Animation makes synchronous close testing unreliable
         });

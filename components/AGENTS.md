@@ -7,18 +7,21 @@ sensible defaults. Keep components focused—loading, error, empty, and success 
 
 ## Tooltips
 
-Use react-tooltip with the global `tip` ID for automatic positioning and viewport
-handling.
+Use Radix `<Tooltip>` primitives for all new components. Apply semantic z-index classes:
 
 ```tsx
-<button data-tooltip-id="tip" data-tooltip-content="Copy">
-  <CopyIcon />
-</button>
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button variant="ghost" size="icon">
+      <CopyIcon />
+    </Button>
+  </TooltipTrigger>
+  <TooltipContent className="z-tooltip">Copy to clipboard</TooltipContent>
+</Tooltip>
 ```
 
-The `<GlobalTooltip />` component in `app/layout.tsx` provides the tooltip container.
-Tooltips automatically flip and shift to stay in viewport. See `/app/brand` for
-examples.
+Legacy tooltip implementations (`data-tooltip-id`, `className="tooltip"`) exist in older
+components but should not be used in new code.
 
 ## Relevant Rules
 

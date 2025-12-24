@@ -145,7 +145,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                     <>
                         {/* Backdrop */}
                         <motion.div
-                            className="fixed inset-0 z-40"
+                            className="fixed inset-0 z-backdrop"
                             onClick={() => setIsOpen(false)}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -155,7 +155,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                         {/* Dropdown menu */}
                         <motion.div
-                            className="absolute right-0 top-full z-50 mt-2"
+                            className="absolute right-0 top-full z-modal mt-2"
                             initial={{ opacity: 0, y: -12, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.98 }}

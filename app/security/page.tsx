@@ -134,7 +134,7 @@ export default function SecurityPage() {
     return (
         <div className="relative min-h-screen bg-background">
             <HolographicBackground />
-            <div className="relative z-10">
+            <div className="relative z-content">
                 <SiteHeader bordered />
                 {/* Hero Section */}
                 <section className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">

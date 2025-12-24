@@ -14,7 +14,7 @@ export default function EnterPage() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+            <div className="relative z-content flex min-h-screen flex-col items-center justify-center px-6">
                 <EnterAuthWrapper />
             </div>
         </div>

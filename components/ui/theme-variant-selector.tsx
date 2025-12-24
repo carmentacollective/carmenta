@@ -70,7 +70,7 @@ export function ThemeVariantSelector() {
 
             <Popover.Portal>
                 <Popover.Content
-                    className="glass-container z-50 w-64 rounded-xl p-2 shadow-2xl"
+                    className="glass-container z-modal w-64 rounded-xl p-2 shadow-2xl"
                     sideOffset={8}
                     align="end"
                 >

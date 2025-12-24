@@ -206,7 +206,7 @@ export function RegenerateMenu({
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute bottom-full left-0 z-50 mb-1 min-w-[200px] overflow-hidden rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur-xl"
+                                className="absolute bottom-full left-0 z-dropdown mb-1 min-w-[200px] overflow-hidden rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur-xl"
                             >
                                 <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-foreground/40">
                                     Regenerate with

@@ -10,7 +10,7 @@ export function ConnectCTA() {
             href="/connection/new"
             className="btn-glass-interactive group/btn relative inline-flex overflow-hidden rounded-full px-8 py-3"
         >
-            <span className="relative z-10 text-base font-medium text-foreground/80 transition-colors group-hover/btn:text-foreground">
+            <span className="relative z-content text-base font-medium text-foreground/80 transition-colors group-hover/btn:text-foreground">
                 Connect
             </span>
             <div

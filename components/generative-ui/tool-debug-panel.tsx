@@ -66,7 +66,7 @@ export function ToolDebugPanel({
         >
             {/* Easter egg tooltip */}
             {tooltipVisible && (
-                <div className="absolute -top-8 left-0 z-10 rounded-md bg-foreground/90 px-2 py-1 text-xs text-background shadow-lg">
+                <div className="absolute -top-8 left-0 z-content rounded-md bg-foreground/90 px-2 py-1 text-xs text-background shadow-lg">
                     Welcome behind the curtain
                 </div>
             )}

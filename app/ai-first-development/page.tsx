@@ -16,7 +16,7 @@ export default function AIFirstDevelopmentPage() {
         <div className="relative min-h-screen">
             <HolographicBackground />
 
-            <div className="relative z-10 flex min-h-screen flex-col">
+            <div className="relative z-content flex min-h-screen flex-col">
                 <SiteHeader bordered />
                 <main className="flex flex-1 flex-col items-center px-6 py-12">
                     <div className="mx-auto max-w-2xl space-y-12">

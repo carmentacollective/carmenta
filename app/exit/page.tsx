@@ -40,7 +40,7 @@ export default function ExitPage() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+            <div className="relative z-content flex min-h-screen flex-col items-center justify-center px-6">
                 <div className="flex flex-col items-center text-center">
                     <Image
                         src="/logos/icon-transparent.png"

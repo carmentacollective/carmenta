@@ -77,7 +77,7 @@ describe("ModelSelectorModal", () => {
             );
 
             // Click on the backdrop (the outer fixed div)
-            const backdrop = container.querySelector(".fixed.inset-0.z-50");
+            const backdrop = container.querySelector(".fixed.inset-0.z-modal");
             expect(backdrop).toBeInTheDocument();
             fireEvent.click(backdrop!);
 

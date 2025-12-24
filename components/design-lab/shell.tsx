@@ -132,7 +132,7 @@ export function DesignLabShell({
         <div className="relative min-h-screen">
             <HolographicBackground />
 
-            <div className="relative z-10 flex min-h-screen flex-col">
+            <div className="relative z-content flex min-h-screen flex-col">
                 {/* Header */}
                 <header className="border-b border-foreground/10 bg-white/40 backdrop-blur-xl">
                     <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

@@ -182,7 +182,7 @@ export function ModelSelectorModal({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+                    className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
                     onClick={(e) => e.target === e.currentTarget && onClose()}
                 >
                     <motion.div
@@ -196,7 +196,7 @@ export function ModelSelectorModal({
                         {/* Close button - floats in corner, no header bar */}
                         <button
                             onClick={onClose}
-                            className="absolute right-3 top-3 z-10 rounded-full bg-white/60 p-2 text-foreground/50 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground/70 dark:bg-white/10 dark:hover:bg-white/20"
+                            className="absolute right-3 top-3 z-content rounded-full bg-white/60 p-2 text-foreground/50 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground/70 dark:bg-white/10 dark:hover:bg-white/20"
                             aria-label="Close model selector"
                         >
                             <X className="h-4 w-4" />

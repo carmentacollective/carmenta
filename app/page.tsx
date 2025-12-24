@@ -179,11 +179,11 @@ export default function HomePage() {
             <HolographicBackground hideWatermark />
 
             {/* Content layer */}
-            <div className="relative z-10 flex min-h-screen flex-col">
+            <div className="relative z-content flex min-h-screen flex-col">
                 {/* Sticky header - appears on scroll */}
                 <div
                     className={cn(
-                        "fixed left-0 right-0 top-0 z-50 transition-all duration-500",
+                        "fixed left-0 right-0 top-0 z-sticky transition-all duration-500",
                         showStickyOracle
                             ? "translate-y-0 opacity-100"
                             : "-translate-y-full opacity-0"
