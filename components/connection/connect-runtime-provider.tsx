@@ -648,6 +648,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         onError: (err) => {
             logger.error({ error: err.message }, "Chat error");
             setDisplayError(err);
+            clearTransientMessages();
         },
         // Handle transient data parts (status updates) as they stream
         onData: (dataPart) => {
