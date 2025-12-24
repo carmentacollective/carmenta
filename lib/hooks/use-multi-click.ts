@@ -7,7 +7,7 @@
  * after a certain number of rapid clicks.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 interface UseMultiClickOptions {
     /** Number of clicks required to trigger */
@@ -26,6 +26,20 @@ export function useMultiClick({
     const [isTriggered, setIsTriggered] = useState(false);
     const clickTimesRef = useRef<number[]>([]);
     const cooldownRef = useRef(false);
+    const triggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const cooldownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (triggerTimeoutRef.current) {
+                clearTimeout(triggerTimeoutRef.current);
+            }
+            if (cooldownTimeoutRef.current) {
+                clearTimeout(cooldownTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleClick = useCallback(() => {
         // Ignore if in cooldown
@@ -49,12 +63,24 @@ export function useMultiClick({
             clickTimesRef.current = [];
             cooldownRef.current = true;
 
+            // Clear previous timeouts if they exist
+            if (triggerTimeoutRef.current) {
+                clearTimeout(triggerTimeoutRef.current);
+            }
+            if (cooldownTimeoutRef.current) {
+                clearTimeout(cooldownTimeoutRef.current);
+            }
+
             // Reset triggered state after animation time
-            setTimeout(() => setIsTriggered(false), 1000);
+            triggerTimeoutRef.current = setTimeout(() => {
+                setIsTriggered(false);
+                triggerTimeoutRef.current = null;
+            }, 1000);
 
             // Reset cooldown
-            setTimeout(() => {
+            cooldownTimeoutRef.current = setTimeout(() => {
                 cooldownRef.current = false;
+                cooldownTimeoutRef.current = null;
             }, cooldown);
         }
     }, [threshold, timeWindow, cooldown]);

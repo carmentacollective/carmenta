@@ -14,6 +14,8 @@ import {
     createContext,
     useContext,
     useSyncExternalStore,
+    useRef,
+    useEffect,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -63,6 +65,15 @@ const getServerSnapshot = () => false;
 export function FloatingEmojiProvider({ children }: { children: React.ReactNode }) {
     const [effects, setEffects] = useState<FloatingEmojiState[]>([]);
     const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const timeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+    // Cleanup all timeouts on unmount
+    useEffect(() => {
+        return () => {
+            timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+            timeoutsRef.current.clear();
+        };
+    }, []);
 
     const trigger = useCallback((config: FloatingEmojiConfig) => {
         const count = config.count ?? 12;
@@ -90,9 +101,12 @@ export function FloatingEmojiProvider({ children }: { children: React.ReactNode 
         setEffects((prev) => [...prev, effect]);
 
         // Clean up after animation
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
             setEffects((prev) => prev.filter((e) => e.id !== id));
+            timeoutsRef.current.delete(id);
         }, duration + 500);
+
+        timeoutsRef.current.set(id, timeout);
     }, []);
 
     return (

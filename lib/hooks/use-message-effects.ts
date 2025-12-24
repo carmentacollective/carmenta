@@ -58,7 +58,7 @@ const SECRET_PHRASES: SecretPhrase[] = [
             /\bhooray\b/i,
             /\blet'?s\s*go\b/i,
             /\bhell\s*yeah\b/i,
-            /\byes+!+\b/i,
+            /\byes+!+/i,
         ],
         emoji: "🎉",
         count: 18,

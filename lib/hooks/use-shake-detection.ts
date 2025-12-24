@@ -117,9 +117,6 @@ export function useShakeDetection(
             if (!permissionGrantedRef.current) {
                 requestPermission();
             }
-            // Only need to do this once
-            document.removeEventListener("touchstart", handleFirstInteraction);
-            document.removeEventListener("click", handleFirstInteraction);
         };
 
         // Try to set up immediately for non-iOS
@@ -128,13 +125,21 @@ export function useShakeDetection(
         };
 
         if (typeof DeviceMotion.requestPermission !== "function") {
+            // Non-iOS: setup listener immediately
             setupListener();
         } else {
-            // iOS - wait for user interaction
-            document.addEventListener("touchstart", handleFirstInteraction, {
-                once: true,
-            });
-            document.addEventListener("click", handleFirstInteraction, { once: true });
+            // iOS: if permission already granted (from previous effect run), setup listener
+            // Otherwise, wait for user interaction
+            if (permissionGrantedRef.current) {
+                setupListener();
+            } else {
+                document.addEventListener("touchstart", handleFirstInteraction, {
+                    once: true,
+                });
+                document.addEventListener("click", handleFirstInteraction, {
+                    once: true,
+                });
+            }
         }
 
         return () => {
