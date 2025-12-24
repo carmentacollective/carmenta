@@ -139,11 +139,12 @@ function analyzeQueryComplexity(text: string): QueryComplexitySignals {
     );
 
     // References to previous context - suggests continuation of complex topic
+    // Use non-greedy matching with length limit to prevent ReDoS
     const contextPatterns = [
         /\blike we discussed\b/,
         /\bas i mentioned\b/,
         /\bearlier\b/,
-        /\bbefore\b.*\bsaid\b/,
+        /\bbefore\b.{1,50}?\bsaid\b/,
         /\bcontinue\b/,
         /\bpick up where\b/,
         /\bgoing back to\b/,
