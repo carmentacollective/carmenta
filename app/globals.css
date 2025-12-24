@@ -1627,7 +1627,6 @@
         transition:
             opacity 200ms ease-out,
             transform 200ms ease-out;
-        z-index: var(--z-tooltip);
     }
 
     .tooltip:hover::after,

@@ -27,7 +27,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
             {/* Backdrop overlay - deep purple twilight fade */}
             <div
                 className={cn(
-                    "fixed inset-0 z-[9998] transition-all duration-300 ease-out",
+                    "fixed inset-0 z-backdrop transition-all duration-300 ease-out",
                     isActive
                         ? "pointer-events-auto visible opacity-100"
                         : "pointer-events-none invisible opacity-0"
@@ -44,7 +44,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
             {/* Content overlay - centered drop zone */}
             <div
                 className={cn(
-                    "fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-300 ease-out",
+                    "fixed inset-0 z-modal flex flex-col items-center justify-center transition-all duration-300 ease-out",
                     isActive
                         ? "pointer-events-auto visible opacity-100"
                         : "pointer-events-none invisible opacity-0"

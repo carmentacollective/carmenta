@@ -175,7 +175,7 @@ export function POIMap({
         const isFavorite = favoriteIds.has(modalPoi.id);
 
         return (
-            <div className="absolute inset-0 z-[1100] flex items-center justify-center p-6">
+            <div className="absolute inset-0 z-modal flex items-center justify-center p-6">
                 <div
                     className="absolute inset-0 bg-black/40"
                     onClick={onDismissModal}
@@ -387,7 +387,7 @@ export function POIMap({
                         className="h-full w-full"
                     />
 
-                    <div className="absolute right-3 top-3 z-[1000] flex gap-1">
+                    <div className="absolute right-3 top-3 z-content flex gap-1">
                         {onRefresh && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -400,7 +400,7 @@ export function POIMap({
                                         <RefreshCw className="size-4" />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-[1001]">
+                                <TooltipContent className="z-tooltip">
                                     Refresh locations
                                 </TooltipContent>
                             </Tooltip>
@@ -416,7 +416,7 @@ export function POIMap({
                                     <Minimize2 className="size-4" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent className="z-[1001]">
+                            <TooltipContent className="z-tooltip">
                                 Exit fullscreen
                             </TooltipContent>
                         </Tooltip>
@@ -449,7 +449,7 @@ export function POIMap({
                 className="h-full w-full"
             />
 
-            <div className="absolute right-3 top-3 z-[1000] flex gap-1">
+            <div className="absolute right-3 top-3 z-content flex gap-1">
                 {onRefresh && (
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -462,7 +462,7 @@ export function POIMap({
                                 <RefreshCw className="size-4" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="z-[1001]">
+                        <TooltipContent className="z-tooltip">
                             Refresh locations
                         </TooltipContent>
                     </Tooltip>
@@ -478,19 +478,19 @@ export function POIMap({
                             <Maximize2 className="size-4" />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent className="z-[1001]">
+                    <TooltipContent className="z-tooltip">
                         Enter fullscreen
                     </TooltipContent>
                 </Tooltip>
             </div>
 
             {title && (
-                <div className="absolute left-3 top-3 z-[1000] rounded-lg bg-background/80 px-3 py-1.5 backdrop-blur-md">
+                <div className="absolute left-3 top-3 z-content rounded-lg bg-background/80 px-3 py-1.5 backdrop-blur-md">
                     <span className="text-sm font-medium">{title}</span>
                 </div>
             )}
 
-            <div className="absolute bottom-3 left-3 right-3 z-[1000]">
+            <div className="absolute bottom-3 left-3 right-3 z-content">
                 <POIListInline
                     pois={filteredPois}
                     selectedPoiId={selectedPoiId}

@@ -164,7 +164,7 @@ export const POICard = memo(function POICard({
                                 />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="left" className="z-[1001]">
+                        <TooltipContent side="left" className="z-tooltip">
                             {isFavorite ? "Remove from favorites" : "Add to favorites"}
                         </TooltipContent>
                     </Tooltip>
