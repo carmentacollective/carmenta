@@ -75,7 +75,10 @@ interface FileAttachmentContextType {
     /** Add pasted text as file (stores original content for Insert inline) */
     addPastedText: (files: File[], textContent: string, placeholder?: string) => void;
     /** Get next sequential placeholder for pasted content */
-    getNextPlaceholder: (type: "text" | "image") => {
+    getNextPlaceholder: (
+        type: "text" | "image",
+        mimeType?: string
+    ) => {
         placeholder: string;
         filename: string;
     };
@@ -146,22 +149,28 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         [startUpload]
     );
 
-    const getNextPlaceholder = useCallback((type: "text" | "image") => {
-        // Increment synchronously via ref to avoid race conditions with simultaneous pastes
-        pasteCountRef.current[type] += 1;
-        const nextCount = pasteCountRef.current[type];
+    const getNextPlaceholder = useCallback(
+        (type: "text" | "image", mimeType?: string) => {
+            // Increment synchronously via ref to avoid race conditions with simultaneous pastes
+            pasteCountRef.current[type] += 1;
+            const nextCount = pasteCountRef.current[type];
 
-        if (type === "text") {
+            if (type === "text") {
+                return {
+                    placeholder: `[Pasted Text #${nextCount}]`,
+                    filename: `Pasted Text #${nextCount}.txt`,
+                };
+            }
+
+            // Use actual image extension from MIME type (e.g., image/jpeg → jpeg)
+            const ext = mimeType?.split("/")[1] || "png";
             return {
-                placeholder: `[Pasted Text #${nextCount}]`,
-                filename: `Pasted Text #${nextCount}.txt`,
+                placeholder: `[Pasted Image #${nextCount}]`,
+                filename: `Pasted Image #${nextCount}.${ext}`,
             };
-        }
-        return {
-            placeholder: `[Pasted Image #${nextCount}]`,
-            filename: `Pasted Image #${nextCount}.png`,
-        };
-    }, []);
+        },
+        []
+    );
 
     const addPastedText = useCallback(
         (fileList: File[], textContent: string, placeholder?: string) => {

@@ -91,16 +91,20 @@ describe("FileAttachmentContext", () => {
             expect(text2.placeholder).toBe("[Pasted Text #2]");
         });
 
-        it("returns matching filename for images", () => {
+        it("returns matching filename for images with correct extension", () => {
             const { result } = renderHook(() => useFileAttachments(), {
                 wrapper: createWrapper(),
             });
 
-            const first = result.current.getNextPlaceholder("image");
-            const second = result.current.getNextPlaceholder("image");
+            const png = result.current.getNextPlaceholder("image", "image/png");
+            const jpeg = result.current.getNextPlaceholder("image", "image/jpeg");
+            const gif = result.current.getNextPlaceholder("image", "image/gif");
+            const noMime = result.current.getNextPlaceholder("image");
 
-            expect(first.filename).toBe("Pasted Image #1.png");
-            expect(second.filename).toBe("Pasted Image #2.png");
+            expect(png.filename).toBe("Pasted Image #1.png");
+            expect(jpeg.filename).toBe("Pasted Image #2.jpeg");
+            expect(gif.filename).toBe("Pasted Image #3.gif");
+            expect(noMime.filename).toBe("Pasted Image #4.png"); // defaults to png
         });
 
         it("returns matching filename for text", () => {

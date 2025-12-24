@@ -1829,7 +1829,10 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
                 // Process images - each gets its own placeholder
                 if (imageFiles.length > 0) {
                     for (const imageFile of imageFiles) {
-                        const { placeholder, filename } = getNextPlaceholder("image");
+                        const { placeholder, filename } = getNextPlaceholder(
+                            "image",
+                            imageFile.type
+                        );
                         // Rename file to match placeholder naming
                         const renamedFile = new File([imageFile], filename, {
                             type: imageFile.type,
