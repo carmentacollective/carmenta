@@ -274,6 +274,9 @@ async function aggregateExperimentData(
         scoreDistribution: {},
     };
 
+    // Track score sums and counts for averaging
+    const scoreSums: Record<string, { sum: number; count: number }> = {};
+
     for (const experiment of experiments) {
         logger.info(
             { experimentId: experiment.id, name: experiment.name },
@@ -296,7 +299,13 @@ async function aggregateExperimentData(
                 const dist = aggregated.scoreDistribution[scoreName];
                 dist.min = Math.min(dist.min, scoreValue);
                 dist.max = Math.max(dist.max, scoreValue);
-                // Running average (will be properly calculated later)
+
+                // Accumulate for average calculation
+                if (!scoreSums[scoreName]) {
+                    scoreSums[scoreName] = { sum: 0, count: 0 };
+                }
+                scoreSums[scoreName].sum += scoreValue;
+                scoreSums[scoreName].count++;
             }
 
             // Identify failures (score < 0.5 or error present)
@@ -330,19 +339,8 @@ async function aggregateExperimentData(
         }
     }
 
-    // Calculate proper averages for score distributions
-    for (const scoreName of Object.keys(aggregated.scoreDistribution)) {
-        let sum = 0;
-        let count = 0;
-        for (const experiment of experiments) {
-            const events = await fetchExperimentEvents(experiment.id);
-            for (const event of events) {
-                if (event.scores[scoreName] !== undefined) {
-                    sum += event.scores[scoreName];
-                    count++;
-                }
-            }
-        }
+    // Calculate averages from accumulated sums
+    for (const [scoreName, { sum, count }] of Object.entries(scoreSums)) {
         aggregated.scoreDistribution[scoreName].avg = count > 0 ? sum / count : 0;
     }
 

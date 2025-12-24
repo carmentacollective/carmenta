@@ -291,7 +291,8 @@ function generateReport(
     }
 
     const total = totalAWins + totalBWins + totalTies;
-    const bWinRate = total > 0 ? (totalBWins / (totalAWins + totalBWins)) * 100 : 0;
+    const totalDecided = totalAWins + totalBWins;
+    const bWinRate = totalDecided > 0 ? (totalBWins / totalDecided) * 100 : 0;
     const bAdvantage = total > 0 ? ((totalBWins - totalAWins) / total) * 100 : 0;
 
     // Generate progress bar
@@ -320,8 +321,8 @@ function generateReport(
     console.log("By Category:");
     for (const [category, stats] of categoryStats.entries()) {
         const catTotal = stats.aWins + stats.bWins + stats.ties;
-        const catBWinRate =
-            catTotal > 0 ? (stats.bWins / (stats.aWins + stats.bWins)) * 100 : 0;
+        const catDecided = stats.aWins + stats.bWins;
+        const catBWinRate = catDecided > 0 ? (stats.bWins / catDecided) * 100 : 0;
         const catBAdvantage =
             catTotal > 0 ? ((stats.bWins - stats.aWins) / catTotal) * 100 : 0;
         const catBFilled = Math.round((catBWinRate / 100) * barLength);

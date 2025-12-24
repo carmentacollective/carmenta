@@ -124,6 +124,22 @@ function updateBaseline(metrics: {
     routing?: number;
     toolInvocation?: number;
 }): void {
+    if (!fs.existsSync(BASELINE_FILE)) {
+        logger.warn("Baseline file does not exist, creating new baseline");
+        const template = `# Baseline Benchmark
+
+| Metric | Score | Last Updated | Commit |
+|--------|-------|--------------|--------|
+| Arena-Hard Overall | 0.0% | - | - |
+| Reasoning | 0.0% | - | - |
+| Creative | 0.0% | - | - |
+| Real World | 0.0% | - | - |
+| Routing Accuracy | 0.0% | - | - |
+| Tool Invocation | 0.0% | - | - |
+`;
+        fs.writeFileSync(BASELINE_FILE, template, "utf-8");
+    }
+
     const content = fs.readFileSync(BASELINE_FILE, "utf-8");
     const now = new Date().toISOString().split("T")[0];
     const commit = "auto-update"; // In CI, this would be the actual commit SHA
