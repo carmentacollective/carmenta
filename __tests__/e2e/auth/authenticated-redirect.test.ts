@@ -11,14 +11,14 @@ import { test, expect } from "@playwright/test";
  * Requires environment variables:
  * - CLERK_PUBLISHABLE_KEY (or NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
  * - CLERK_SECRET_KEY
- * - E2E_CLERK_USER_EMAIL: Test user email
- * - E2E_CLERK_USER_PASSWORD: Test user password
+ * - TEST_USER_EMAIL: Test user email
+ * - TEST_USER_PASSWORD: Test user password
  *
  * Tests are skipped if any required credentials are not configured.
  */
 
-const testUserEmail = process.env.E2E_CLERK_USER_EMAIL;
-const testUserPassword = process.env.E2E_CLERK_USER_PASSWORD;
+const testUserEmail = process.env.TEST_USER_EMAIL;
+const testUserPassword = process.env.TEST_USER_PASSWORD;
 const hasClerkKeys =
     (process.env.CLERK_PUBLISHABLE_KEY ||
         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
@@ -28,7 +28,7 @@ const hasCredentials = testUserEmail && testUserPassword && hasClerkKeys;
 test.describe("Authenticated User Redirects", () => {
     test.skip(
         !hasCredentials,
-        "Skipping: Clerk API keys or E2E_CLERK_USER_* credentials not set"
+        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
     );
 
     test("authenticated users on homepage are redirected to /connection", async ({
