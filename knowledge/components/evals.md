@@ -381,3 +381,8 @@ prove out in next month's benchmarks.
 - **Product insights** - See exactly where to improve next
 - **Marketing fuel** - Quantified claims backed by real data
 - **Continuous validation** - Monthly benchmarks show improvement over time
+
+---
+
+**Note:** This file is being reorganized. See `knowledge/evals/` for the full eval
+system specification.
