@@ -58,11 +58,20 @@ export interface CommandPaletteProps {
 }
 
 /**
+ * Escapes HTML entities for safe text rendering
+ */
+function escapeHtml(text: string): string {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
  * Renders text with <mark> tags as highlighted spans
+ *
+ * Defense-in-depth: Although ts_headline escapes HTML server-side,
+ * we also escape the extracted text to prevent XSS if content
+ * somehow contains unescaped user input.
  */
 function HighlightedText({ html }: { html: string }) {
-    // Convert <mark>text</mark> to styled spans
-    // This is safe because we control the server-side generation of these tags
     const parts = html.split(/(<mark>.*?<\/mark>)/g);
 
     return (
@@ -75,11 +84,11 @@ function HighlightedText({ html }: { html: string }) {
                             key={i}
                             className="rounded-sm bg-primary/20 px-0.5 text-primary"
                         >
-                            {text}
+                            {escapeHtml(text)}
                         </mark>
                     );
                 }
-                return <span key={i}>{part}</span>;
+                return <span key={i}>{escapeHtml(part)}</span>;
             })}
         </>
     );
@@ -345,8 +354,13 @@ export function CommandPalette({
                                     transition={{ duration: 0.15 }}
                                     className="overflow-hidden border-b border-foreground/10"
                                 >
+                                    {/*
+                                        PLACEHOLDER: Filter UI is scaffolded but not yet wired to search.
+                                        These controls update local state but searchKB() doesn't use them yet.
+                                        Backend filter support will be added in a follow-up PR.
+                                    */}
                                     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
-                                        {/* Date Range Filter */}
+                                        {/* Date Range Filter - UI only, not yet applied */}
                                         <div className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1">
                                             <Calendar className="h-3.5 w-3.5 text-foreground/50" />
                                             <select
@@ -369,7 +383,7 @@ export function CommandPalette({
                                             </select>
                                         </div>
 
-                                        {/* Starred Filter */}
+                                        {/* Starred Filter - UI only, not yet applied */}
                                         <button
                                             onClick={() =>
                                                 setFilters({

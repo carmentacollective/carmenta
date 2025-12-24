@@ -16,7 +16,7 @@ import { initializeProfile } from "./profile";
 import { logger } from "@/lib/logger";
 import { findUserByClerkId } from "@/lib/db/users";
 import { db } from "@/lib/db";
-import { documents, users, type SearchFilters } from "@/lib/db/schema";
+import { documents, users } from "@/lib/db/schema";
 import { VALUES_CONTENT } from "@/lib/prompts/system";
 
 const MAX_RECENT_SEARCHES = 5;
@@ -449,55 +449,4 @@ export async function clearRecentSearches(): Promise<void> {
         .where(eq(users.id, userId));
 
     logger.info({ userId }, "Cleared recent searches");
-}
-
-// ============================================================================
-// Search Filters
-// ============================================================================
-
-/**
- * Get saved search filter preferences
- */
-export async function getSearchFilters(): Promise<SearchFilters> {
-    const userId = await getDbUserId();
-
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: { preferences: true },
-    });
-
-    if (!user?.preferences) {
-        return {};
-    }
-
-    const preferences = user.preferences as { searchFilters?: SearchFilters };
-    return preferences.searchFilters ?? {};
-}
-
-/**
- * Update search filter preferences (merge with existing)
- */
-export async function updateSearchFilters(filters: SearchFilters): Promise<void> {
-    const userId = await getDbUserId();
-
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: { preferences: true },
-    });
-
-    const currentPreferences = (user?.preferences ?? {}) as Record<string, unknown>;
-    const currentFilters = (currentPreferences.searchFilters as SearchFilters) ?? {};
-
-    await db
-        .update(users)
-        .set({
-            preferences: {
-                ...currentPreferences,
-                searchFilters: { ...currentFilters, ...filters },
-            },
-            updatedAt: new Date(),
-        })
-        .where(eq(users.id, userId));
-
-    logger.debug({ userId, filters }, "Updated search filters");
 }
