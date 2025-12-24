@@ -93,7 +93,7 @@ export const createDocumentTool = tool({
         path: z
             .string()
             .describe(
-                "Document path in dot notation. Follow conventions: 'knowledge.identity' for facts about user, 'knowledge.people.{PascalCase}' for people, 'knowledge.projects.{kebab-case}' for projects, 'knowledge.decisions.{topic}' for decisions, 'knowledge.meetings.{YYYY-MM-DD}.{slug}' for meetings."
+                "Document path in dot notation. Follow conventions: 'knowledge.identity' for facts about user, 'knowledge.people.{Name}' for people, 'knowledge.projects.{name}' for projects, 'knowledge.topics.{topic}' for topical knowledge."
             ),
         name: z.string().describe("Human-readable document name"),
         content: z.string().describe("Document content in plain text"),
@@ -230,6 +230,9 @@ export const moveDocumentTool = tool({
         toPath: z.string().describe("New document path"),
     }),
     execute: async ({ userId, fromPath, toPath }): Promise<MoveDocumentOutput> => {
+        // Track if we created a document at toPath (for rollback safety)
+        let createdAtToPath = false;
+
         try {
             // Read the document at the old path
             const document = await kb.read(userId, fromPath);
@@ -242,6 +245,19 @@ export const moveDocumentTool = tool({
                 return {
                     success: false,
                     message: `Document not found at ${fromPath}`,
+                };
+            }
+
+            // Check if destination already exists (avoid overwriting)
+            const existingAtToPath = await kb.read(userId, toPath);
+            if (existingAtToPath) {
+                logger.warn(
+                    { userId, fromPath, toPath },
+                    "Attempted to move to occupied path"
+                );
+                return {
+                    success: false,
+                    message: `Cannot move: document already exists at ${toPath}`,
                 };
             }
 
@@ -261,21 +277,12 @@ export const moveDocumentTool = tool({
                 sourceId: document.sourceId ?? undefined,
                 tags: document.tags,
             });
+            createdAtToPath = true;
 
-            // Delete from old path - rollback if this fails
-            const deleted = await kb.remove(userId, fromPath);
-            if (!deleted) {
-                // Rollback: remove the document we just created
-                await kb.remove(userId, toPath);
-                logger.error(
-                    { userId, fromPath, toPath },
-                    "Move failed - delete failed, rolled back"
-                );
-                return {
-                    success: false,
-                    message: `Failed to move document: could not delete original at ${fromPath}`,
-                };
-            }
+            // Delete from old path
+            // If remove returns false, the document was already deleted (concurrent delete).
+            // That's fine - the move effectively succeeded (document only exists at toPath).
+            await kb.remove(userId, fromPath);
 
             logger.info({ userId, fromPath, toPath }, "🚚 Moved document");
 
@@ -284,19 +291,20 @@ export const moveDocumentTool = tool({
                 message: `Moved document from ${fromPath} to ${toPath}`,
             };
         } catch (error) {
-            // If kb.remove throws after kb.create succeeded, clean up
-            // to avoid leaving duplicate documents
-            try {
-                await kb.remove(userId, toPath);
-                logger.warn(
-                    { userId, fromPath, toPath },
-                    "Rolled back document creation after move failure"
-                );
-            } catch (rollbackError) {
-                logger.error(
-                    { error: rollbackError, userId, fromPath, toPath },
-                    "Rollback failed - document may exist at both paths"
-                );
+            // Only rollback if we actually created the document at toPath
+            if (createdAtToPath) {
+                try {
+                    await kb.remove(userId, toPath);
+                    logger.warn(
+                        { userId, fromPath, toPath },
+                        "Rolled back document creation after move failure"
+                    );
+                } catch {
+                    logger.error(
+                        { userId, toPath },
+                        "Failed to rollback document creation"
+                    );
+                }
             }
 
             logger.error(

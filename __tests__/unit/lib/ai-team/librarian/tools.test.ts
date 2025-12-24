@@ -312,6 +312,40 @@ describe("Knowledge Librarian Tools", () => {
             expect(result.message).toContain("not found");
         });
 
+        it("should return failure when destination path is occupied", async () => {
+            const user = await createTestUser();
+
+            // Create source document
+            await kb.create(user.id, {
+                path: "knowledge.source",
+                name: "Source Doc",
+                content: "Source content",
+            });
+
+            // Create document at destination
+            await kb.create(user.id, {
+                path: "knowledge.destination",
+                name: "Existing Doc",
+                content: "Existing content",
+            });
+
+            const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
+                userId: user.id,
+                fromPath: "knowledge.source",
+                toPath: "knowledge.destination",
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("already exists");
+
+            // Verify neither document was affected
+            const source = await kb.read(user.id, "knowledge.source");
+            expect(source?.content).toBe("Source content");
+
+            const dest = await kb.read(user.id, "knowledge.destination");
+            expect(dest?.content).toBe("Existing content");
+        });
+
         it("should handle move errors gracefully", async () => {
             const user = await createTestUser();
 
