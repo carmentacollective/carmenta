@@ -49,21 +49,16 @@ function useToolTiming(status: ToolStatusType): ToolTiming {
         const prevStatus = prevStatusRef.current;
 
         if (status === "running" && prevStatus !== "running") {
-            setTimeout(() => {
-                setTiming({ startedAt: Date.now() });
-            }, 0);
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing timing state with external status prop
+            setTiming({ startedAt: Date.now() });
         }
 
         if (status === "completed" && prevStatus !== "completed") {
-            setTimeout(() => {
-                setTiming((prev) => {
-                    const now = Date.now();
-                    const durationMs = prev.startedAt
-                        ? now - prev.startedAt
-                        : undefined;
-                    return { ...prev, completedAt: now, durationMs };
-                });
-            }, 0);
+            setTiming((prev) => {
+                const now = Date.now();
+                const durationMs = prev.startedAt ? now - prev.startedAt : undefined;
+                return { ...prev, completedAt: now, durationMs };
+            });
         }
 
         prevStatusRef.current = status;
@@ -104,15 +99,17 @@ export function ToolRenderer({
     // Track previous status to detect transitions to error state
     const prevStatusRef = useRef<ToolStatusType | null>(null);
 
-    // Auto-expand on error transition (configurable per tool, default true)
+    // Auto-expand on error (configurable per tool, default true)
     useEffect(() => {
         const prevStatus = prevStatusRef.current;
         const shouldAutoExpand = config.autoExpandOnError !== false;
 
-        // Only expand on transition TO error state
-        if (status === "error" && prevStatus !== "error" && shouldAutoExpand) {
-            // Defer to avoid synchronous setState in effect
-            setTimeout(() => setExpanded(true), 0);
+        // Expand on error: either transition to error OR initial render with error
+        if (status === "error" && shouldAutoExpand) {
+            if (prevStatus === null || prevStatus !== "error") {
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing UI state with external error status
+                setExpanded(true);
+            }
         }
 
         prevStatusRef.current = status;
