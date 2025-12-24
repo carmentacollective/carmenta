@@ -576,17 +576,17 @@
 
     /* Gradient color tokens - default carmenta theme */
     :root {
-        --greeting-gradient-start: hsl(270 50% 45%);
-        --greeting-gradient-mid: hsl(280 55% 55%);
-        --greeting-gradient-end: hsl(320 50% 50%);
-        --greeting-subtitle-color: hsl(285 20% 45%);
+        --greeting-gradient-start: hsl(260 70% 55%); /* Rich purple */
+        --greeting-gradient-mid: hsl(280 65% 60%); /* Vivid violet */
+        --greeting-gradient-end: hsl(310 60% 55%); /* Bright magenta */
+        --greeting-subtitle-color: hsl(285 20% 50%);
     }
 
     .dark {
-        --greeting-gradient-start: hsl(275 65% 72%);
-        --greeting-gradient-mid: hsl(285 60% 78%);
-        --greeting-gradient-end: hsl(320 55% 70%);
-        --greeting-subtitle-color: hsl(280 20% 70%);
+        --greeting-gradient-start: hsl(265 75% 70%); /* Luminous purple */
+        --greeting-gradient-mid: hsl(285 70% 75%); /* Bright violet */
+        --greeting-gradient-end: hsl(315 65% 72%); /* Vibrant magenta */
+        --greeting-subtitle-color: hsl(280 20% 72%);
     }
 
     /* Warm Earth theme gradient */
@@ -650,7 +650,7 @@
     }
 
     .greeting-container {
-        @apply text-center;
+        /* Centered by parent flex container, no explicit text-center needed */
     }
 
     .greeting-gradient {

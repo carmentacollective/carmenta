@@ -225,12 +225,26 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton() {
 /**
  * Welcome screen shown when thread is empty.
  * Feature tips now appear via OracleWhisper in the header.
+ * Beautiful exit animation when user sends their first message.
  */
 function ThreadWelcome() {
     return (
-        <div className="flex w-full flex-grow flex-col items-center justify-center">
+        <motion.div
+            className="flex w-full flex-grow flex-col items-center justify-center"
+            initial={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{
+                opacity: 0,
+                y: -40,
+                scale: 0.92,
+                filter: "blur(8px)",
+            }}
+            transition={{
+                duration: 0.6,
+                ease: [0.32, 0, 0.67, 0],
+            }}
+        >
             <Greeting />
-        </div>
+        </motion.div>
     );
 }
 
