@@ -15,7 +15,7 @@ import {
 
 import { useMarker } from "@/components/feedback/marker-provider";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -57,6 +57,20 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const { capture: captureMarker, isReady: isMarkerReady } = useMarker();
     // Track the "committed" theme (what user has actually selected, not just hovering)
     const [committedTheme, setCommittedTheme] = useState<ThemeVariant>(themeVariant);
+
+    // Close menu on Escape key
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen]);
 
     // Show nothing while loading to prevent flash
     if (!isLoaded) {
