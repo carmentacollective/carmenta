@@ -5,6 +5,13 @@
 if [ "$3" = "1" ]; then
   echo "🔄 Branch switched - checking for differences..."
 
+  # Clear Next.js cache - different branches may have different route structures
+  # Stale .next/types/ causes type errors on deleted routes
+  if [ -d ".next" ]; then
+    echo "🗑️  Clearing .next cache (prevents stale route types)..."
+    rm -rf .next
+  fi
+
   # Validate git refs are valid (prevents errors on initial clone or shallow repos)
   if ! git rev-parse "$1" > /dev/null 2>&1 || ! git rev-parse "$2" > /dev/null 2>&1; then
     echo "⚠️  Unable to validate branch differences (shallow clone or initial checkout)"

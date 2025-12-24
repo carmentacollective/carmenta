@@ -1,6 +1,13 @@
 #!/bin/sh
 echo "🔄 Checking for updates after merge..."
 
+# Clear Next.js cache - merges often change route structure, causing stale type definitions
+# See: https://github.com/vercel/next.js/discussions/54075
+if [ -d ".next" ]; then
+  echo "🗑️  Clearing .next cache (prevents stale route types)..."
+  rm -rf .next
+fi
+
 # Check if HEAD@{1} is valid (fails on initial clone or first commit)
 if ! git rev-parse HEAD@{1} > /dev/null 2>&1; then
   echo "⚠️  Unable to check merge differences (fresh clone or first commit)"
