@@ -48,6 +48,11 @@ import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import {
+    unauthorizedResponse,
+    validationErrorResponse,
+    serverErrorResponse,
+} from "@/lib/api/responses";
 import { triggerFollowUpIngestion } from "@/lib/ingestion/triggers/follow-up";
 import {
     getPendingDiscoveries,
@@ -311,10 +316,7 @@ export async function POST(req: Request) {
         // This allows git worktrees, forks, and local dev without Clerk setup
         const user = await currentUser();
         if (!user && process.env.NODE_ENV === "production") {
-            return new Response(JSON.stringify({ error: "Sign in to continue" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" },
-            });
+            return unauthorizedResponse();
         }
 
         // Use actual email if authenticated, fallback for development
@@ -334,16 +336,7 @@ export async function POST(req: Request) {
                 { userEmail, error: parseResult.error.flatten() },
                 "Invalid request body"
             );
-            return new Response(
-                JSON.stringify({
-                    error: "That request didn't quite make sense. The robots are looking into it. 🤖",
-                    details: parseResult.error.flatten(),
-                }),
-                {
-                    status: 400,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            return validationErrorResponse(parseResult.error.flatten());
         }
 
         const {
@@ -1109,54 +1102,16 @@ export async function POST(req: Request) {
             headers,
         });
     } catch (error) {
-        // Extract detailed error info
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorName = error instanceof Error ? error.name : "Unknown";
-        const errorStack = error instanceof Error ? error.stack : undefined;
-
         // Mark conversation as failed if one was created
         if (connectionId) {
             await updateStreamingStatus(connectionId, "failed").catch(() => {});
         }
 
-        // Log detailed error for debugging
-        logger.error(
-            {
-                error: errorMessage,
-                errorName,
-                errorStack,
-                userEmail,
-                connectionId,
-                model: CONCIERGE_DEFAULTS.modelId,
-            },
-            "Connect request failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: {
-                component: "api",
-                route: "connect",
-                errorName,
-            },
-            extra: {
-                userEmail,
-                connectionId,
-                model: CONCIERGE_DEFAULTS.modelId,
-                errorMessage,
-            },
+        return serverErrorResponse(error, {
+            userEmail,
+            resourceId: connectionId,
+            model: CONCIERGE_DEFAULTS.modelId,
+            route: "connect",
         });
-
-        // Return error response with details (safe for client)
-        return new Response(
-            JSON.stringify({
-                error: "Something went sideways. The robots are on it. 🤖",
-                // Include error type for debugging (not the full message which might contain sensitive info)
-                errorType: errorName,
-            }),
-            {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            }
-        );
     }
 }
