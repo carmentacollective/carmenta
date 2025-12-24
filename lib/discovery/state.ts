@@ -56,9 +56,9 @@ async function updateDiscoveryState(
                 || jsonb_build_object(
                     'discoveryState',
                     COALESCE(
-                        ${users.preferences}->>'discoveryState',
+                        ${users.preferences}->'discoveryState',
                         '{}'::jsonb
-                    )::jsonb || ${JSON.stringify(updates)}::jsonb
+                    ) || ${JSON.stringify(updates)}::jsonb
                 )
             `,
             updatedAt: new Date(),
