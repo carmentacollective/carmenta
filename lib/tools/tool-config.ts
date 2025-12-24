@@ -425,47 +425,68 @@ export function getStatusMessage(
 }
 
 // ============================================================================
-// Thinking indicator messages
+// Thinking indicator messages - Carmenta's oracle voice
 // ============================================================================
 
-const THINKING_MESSAGES = [
-    "Thinking...",
-    "Working through this...",
-    "One moment...",
-    "Connecting...",
-];
-
-const THINKING_DELIGHT_MESSAGES = [
-    "Good question...",
-    "Interesting...",
-    "Thinking on that...",
-];
-
-const LONG_WAIT_MESSAGES = [
-    "Still here...",
-    "Almost there...",
-    "Taking a bit longer...",
+/**
+ * On-brand loading messages that rotate during AI generation.
+ * Carmenta = goddess of transformation, oracle, wisdom keeper.
+ * All messages use "we" language per brand guidelines.
+ */
+export const THINKING_MESSAGES = [
+    // Oracle/Wisdom themed
+    "Consulting the oracle...",
+    "Summoning wisdom...",
+    "The muses are conferring...",
+    "Gathering cosmic insights...",
+    "Channeling the collective...",
+    // Creative/Making themed
+    "Brewing brilliance...",
+    "Weaving words...",
+    "Crafting something beautiful...",
+    // Collaborative (we language)
+    "We're onto something...",
+    "Our thoughts are aligning...",
+    "Brilliance incoming...",
 ];
 
 /**
- * Get a thinking message, with occasional delight variants.
+ * Messages shown after 8+ seconds - acknowledge the wait with warmth.
+ */
+export const LONG_WAIT_MESSAGES = [
+    "Almost there...",
+    "Worth the wait...",
+    "The good stuff takes time...",
+    "Still weaving...",
+];
+
+/**
+ * Final message shown right before response appears (optional).
+ */
+export const ARRIVAL_MESSAGES = ["Here we go..."];
+
+/**
+ * Get a thinking message for rotation. Returns all messages for the component
+ * to cycle through, plus metadata about timing.
  *
- * @param messageId - Unique ID for consistent selection
  * @param elapsedMs - How long we've been thinking
+ * @returns The appropriate message pool for current elapsed time
+ */
+export function getThinkingMessages(elapsedMs: number): string[] {
+    // After 8 seconds, switch to long wait messages
+    if (elapsedMs >= 8000) {
+        return LONG_WAIT_MESSAGES;
+    }
+    return THINKING_MESSAGES;
+}
+
+/**
+ * Legacy function for backwards compatibility with tests.
+ * Returns a single message based on elapsed time.
  */
 export function getThinkingMessage(messageId: string, elapsedMs: number): string {
-    // Long wait (5+ seconds) - acknowledge patience
-    if (elapsedMs >= 5000) {
-        return selectMessage(messageId + "-long", LONG_WAIT_MESSAGES);
-    }
-
-    // 10% chance of delight variant
-    if (shouldDelight(messageId, 0.1)) {
-        return selectMessage(messageId, THINKING_DELIGHT_MESSAGES);
-    }
-
-    // Standard rotation
-    return selectMessage(messageId, THINKING_MESSAGES);
+    const messages = getThinkingMessages(elapsedMs);
+    return selectMessage(messageId, messages);
 }
 
 // ============================================================================

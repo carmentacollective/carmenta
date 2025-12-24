@@ -1,30 +1,64 @@
 "use client";
 
-import { useEffect, useState, useId } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
-import { getThinkingMessage } from "@/lib/tools/tool-config";
+import { getThinkingMessages, THINKING_MESSAGES } from "@/lib/tools/tool-config";
 
 interface ThinkingIndicatorProps {
     className?: string;
 }
 
 /**
- * Warm loading indicator shown while waiting for the AI to respond.
+ * Pick a random message from the pool, avoiding the last one shown.
+ */
+function pickRandomMessage(messages: string[], lastMessage: string): string {
+    if (messages.length === 0) return "";
+    if (messages.length === 1) return messages[0];
+
+    // Filter out last message to avoid immediate repeat
+    const available = messages.filter((m) => m !== lastMessage);
+    const pool = available.length > 0 ? available : messages;
+
+    // Random selection
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    return pool[randomIndex];
+}
+
+/**
+ * Warm loading indicator with rotating messages in Carmenta's oracle voice.
  *
  * Features:
- * - Varied, human messages that rotate
+ * - Messages rotate every 3-5 seconds with smooth fade transitions
+ * - On-brand oracle/wisdom/creative themed messages
  * - Elapsed time shown after 2 seconds
- * - Gentle shimmer animation
- * - Occasional delight variants (hash-based, 10% chance)
- * - Long wait acknowledgment after 5 seconds
+ * - Long wait acknowledgment after 8 seconds
+ * - No repeat of same message twice in a row
  */
 export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
-    const messageId = useId();
     const [elapsedMs, setElapsedMs] = useState(0);
+    // Initialize with a random message immediately (no waiting for effect)
+    const [currentMessage, setCurrentMessage] = useState(() =>
+        pickRandomMessage(THINKING_MESSAGES, "")
+    );
+    const [messageIndex, setMessageIndex] = useState(0);
+    const lastMessageRef = useRef<string>(currentMessage);
     const [startTime] = useState(() => Date.now());
+
+    // Get the appropriate message pool based on elapsed time
+    const getMessagePool = useCallback(() => {
+        return getThinkingMessages(elapsedMs);
+    }, [elapsedMs]);
+
+    // Pick a random message, avoiding the last one shown
+    const pickNextMessage = useCallback(() => {
+        const messages = getMessagePool();
+        const selected = pickRandomMessage(messages, lastMessageRef.current);
+        lastMessageRef.current = selected;
+        return selected;
+    }, [getMessagePool]);
 
     // Track elapsed time
     useEffect(() => {
@@ -35,7 +69,20 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
         return () => clearInterval(interval);
     }, [startTime]);
 
-    const message = getThinkingMessage(messageId, elapsedMs);
+    // Rotate messages every 3-5 seconds
+    useEffect(() => {
+        // Random interval between 3-5 seconds
+        const rotationInterval = 3000 + Math.random() * 2000;
+
+        const timeout = setTimeout(() => {
+            const next = pickNextMessage();
+            setCurrentMessage(next);
+            setMessageIndex((i) => i + 1);
+        }, rotationInterval);
+
+        return () => clearTimeout(timeout);
+    }, [messageIndex, pickNextMessage]);
+
     const showTime = elapsedMs >= 2000;
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
@@ -67,9 +114,20 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
                 </div>
             </div>
 
-            {/* Message */}
+            {/* Message with fade transition */}
             <div className="relative flex items-baseline gap-2">
-                <span className="text-sm text-muted-foreground">{message}</span>
+                <AnimatePresence mode="wait">
+                    <motion.span
+                        key={currentMessage}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-sm text-muted-foreground"
+                    >
+                        {currentMessage}
+                    </motion.span>
+                </AnimatePresence>
                 {showTime && (
                     <span className="text-xs text-muted-foreground/60">
                         {elapsedSeconds}s
