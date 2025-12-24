@@ -11,7 +11,8 @@
  * - Cancel button per file
  */
 
-import { useEffect, useMemo } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useEffect, useState } from "react";
 import { X, FileText, Music, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
 import { cn } from "@/lib/utils";
@@ -26,10 +27,7 @@ export function UploadProgressDisplay({
     const { pendingFiles, removeFile, getTextContent } = useFileAttachments();
 
     // Calculate total size across all pending files
-    const totalSize = useMemo(
-        () => pendingFiles.reduce((sum, upload) => sum + upload.file.size, 0),
-        [pendingFiles]
-    );
+    const totalSize = pendingFiles.reduce((sum, upload) => sum + upload.file.size, 0);
 
     if (pendingFiles.length === 0) return null;
 
@@ -58,26 +56,26 @@ export function UploadProgressDisplay({
  * File Preview Thumbnail
  *
  * Shows image thumbnail for images, file type icon for others.
- * Manages object URL lifecycle to prevent memory leaks.
+ * Manages object URL lifecycle to prevent memory leaks and StrictMode issues.
  */
 function FilePreviewThumbnail({ file }: { file: File }) {
     const category = getFileCategory(file.type);
     const isImage = category === "image";
+    const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-    // Create object URL for image preview - memoized to avoid recreating on every render
-    const objectUrl = useMemo(
-        () => (isImage ? URL.createObjectURL(file) : null),
-        [file, isImage]
-    );
-
-    // Cleanup object URL when component unmounts or file changes
+    // Create and cleanup object URL within same effect for StrictMode compatibility
+    // StrictMode simulates unmount/remount - keeping creation and cleanup together
+    // ensures a fresh URL is created after cleanup on remount
     useEffect(() => {
+        if (!isImage) return;
+
+        const url = URL.createObjectURL(file);
+        setObjectUrl(url);
+
         return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
+            URL.revokeObjectURL(url);
         };
-    }, [objectUrl]);
+    }, [file, isImage]);
 
     // Image thumbnail
     if (isImage && objectUrl) {
