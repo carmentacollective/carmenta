@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within, cleanup } from "@testing-library/react";
 import { ThinkingIndicator } from "@/components/connection/thinking-indicator";
 import { THINKING_MESSAGES, LONG_WAIT_MESSAGES } from "@/lib/tools/tool-config";
 
@@ -9,6 +9,7 @@ describe("ThinkingIndicator", () => {
     });
 
     afterEach(() => {
+        cleanup();
         vi.useRealTimers();
     });
 
@@ -54,10 +55,11 @@ describe("ThinkingIndicator", () => {
     });
 
     it("rotates messages every 3-5 seconds", async () => {
-        render(<ThinkingIndicator />);
+        const { container } = render(<ThinkingIndicator />);
+        const view = within(container);
 
-        // Get initial message
-        const initialMessage = THINKING_MESSAGES.find((msg) => screen.queryByText(msg));
+        // Get initial message (use scoped query to avoid test pollution)
+        const initialMessage = THINKING_MESSAGES.find((msg) => view.queryByText(msg));
         expect(initialMessage).toBeDefined();
 
         // Advance time past the rotation interval (max 5 seconds)
@@ -74,7 +76,7 @@ describe("ThinkingIndicator", () => {
         // Use queryAllByText since AnimatePresence may leave exiting elements briefly
         const allMessages = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES];
         const foundMessages = allMessages.filter(
-            (msg) => screen.queryAllByText(msg).length > 0
+            (msg) => view.queryAllByText(msg).length > 0
         );
         expect(foundMessages.length).toBeGreaterThan(0);
     });

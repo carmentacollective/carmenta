@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load .env.local for local development (CI uses GitHub secrets)
+config({ path: ".env.local" });
 
 /**
  * Playwright configuration for E2E tests
@@ -9,7 +13,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Uses @clerk/testing for authenticated test flows. Requires:
  * - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
  * - CLERK_SECRET_KEY
- * - E2E_CLERK_USER_EMAIL + E2E_CLERK_USER_PASSWORD (for authenticated tests)
+ * - TEST_USER_EMAIL + TEST_USER_PASSWORD (for authenticated tests)
  */
 export default defineConfig({
     testDir: "./__tests__/e2e",
