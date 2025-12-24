@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { markNotificationRead } from "@/lib/db";
+import { markNotificationRead, findUserByClerkId } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -8,9 +8,14 @@ import { logger } from "@/lib/logger";
  */
 export async function POST(request: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const { userId: clerkId } = await auth();
+        if (!clerkId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const user = await findUserByClerkId(clerkId);
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
         const { notificationId } = await request.json();
@@ -21,7 +26,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const notification = await markNotificationRead(notificationId);
+        const notification = await markNotificationRead(user.id, notificationId);
 
         if (!notification) {
             return NextResponse.json(

@@ -75,8 +75,12 @@ export async function getRecentNotifications(
 
 /**
  * Mark a notification as read
+ *
+ * Requires userId to ensure users can only mark their own notifications as read.
+ * Returns null if notification doesn't exist or doesn't belong to the user.
  */
 export async function markNotificationRead(
+    userId: string,
     notificationId: string
 ): Promise<Notification | null> {
     const [notification] = await db
@@ -85,7 +89,12 @@ export async function markNotificationRead(
             read: true,
             readAt: new Date(),
         })
-        .where(eq(schema.notifications.id, notificationId))
+        .where(
+            and(
+                eq(schema.notifications.id, notificationId),
+                eq(schema.notifications.userId, userId)
+            )
+        )
         .returning();
 
     return notification ?? null;
