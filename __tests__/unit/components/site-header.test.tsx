@@ -2,16 +2,22 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 
 import { SiteHeader } from "@/components/site-header";
+import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
+
+// Wrapper to provide required context for InteractiveLogo
+function renderWithProviders(ui: React.ReactNode) {
+    return render(<FloatingEmojiProvider>{ui}</FloatingEmojiProvider>);
+}
 
 describe("SiteHeader", () => {
     it("renders logo and brand name", () => {
-        render(<SiteHeader />);
+        renderWithProviders(<SiteHeader />);
         expect(screen.getByAltText("Carmenta")).toBeInTheDocument();
         expect(screen.getByText("Carmenta")).toBeInTheDocument();
     });
 
     it("logo links to home page", () => {
-        const { container } = render(<SiteHeader />);
+        const { container } = renderWithProviders(<SiteHeader />);
         const link = container.querySelector("a");
         expect(link).toHaveAttribute("href", "/");
     });
@@ -19,18 +25,20 @@ describe("SiteHeader", () => {
     // Note: bordered prop exists but border styling was removed intentionally
     // (see commit "Make header fully transparent and move theme controls to user menu")
     it("header has transparent styling without borders", () => {
-        const { container } = render(<SiteHeader bordered />);
+        const { container } = renderWithProviders(<SiteHeader bordered />);
         const header = container.querySelector("header");
         expect(header).not.toHaveClass("border-b");
     });
 
     it("renders right content when provided", () => {
-        render(<SiteHeader rightContent={<button>Test Button</button>} />);
+        renderWithProviders(<SiteHeader rightContent={<button>Test Button</button>} />);
         expect(screen.getByText("Test Button")).toBeInTheDocument();
     });
 
     it("does not render user-provided right content when rightContent is not provided", () => {
-        const { container } = render(<SiteHeader showThemeSwitcher={false} />);
+        const { container } = renderWithProviders(
+            <SiteHeader showThemeSwitcher={false} />
+        );
         const header = container.querySelector("header");
         // Header has 2 children: logo link and right-side wrapper
         expect(header?.children.length).toBe(2);
@@ -40,7 +48,7 @@ describe("SiteHeader", () => {
     });
 
     it("renders multiple right content elements", () => {
-        render(
+        renderWithProviders(
             <SiteHeader
                 rightContent={
                     <>

@@ -10,6 +10,7 @@ import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import { MarkerProvider } from "@/components/feedback/marker-provider";
+import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 import { Toaster } from "sonner";
 import { GlobalTooltip } from "@/components/ui/global-tooltip";
 import "./globals.css";
@@ -124,11 +125,13 @@ export default function RootLayout({
                             <body className="min-h-screen bg-background font-sans antialiased">
                                 <ThemeProvider>
                                     <MarkerProvider>
-                                        <PWARegistration />
-                                        <StructuredData />
-                                        <Toaster />
-                                        <GlobalTooltip />
-                                        {children}
+                                        <FloatingEmojiProvider>
+                                            <PWARegistration />
+                                            <StructuredData />
+                                            <Toaster />
+                                            <GlobalTooltip />
+                                            {children}
+                                        </FloatingEmojiProvider>
                                     </MarkerProvider>
                                 </ThemeProvider>
                             </body>

@@ -126,13 +126,29 @@ const config: Config = {
                     "50%": { boxShadow: "0 0 40px hsl(280 40% 75% / 0.5)" },
                 },
                 "sparkle-burst": {
-                    "0%": { opacity: "1", transform: "translateY(0) scale(1)" },
-                    "100%": { opacity: "0", transform: "translateY(-12px) scale(0)" },
+                    "0%": { opacity: "1" },
+                    "100%": { opacity: "0", transform: "translateX(24px) scale(0)" },
                 },
                 "star-pop": {
                     "0%": { transform: "scale(1)" },
                     "50%": { transform: "scale(1.3)" },
                     "100%": { transform: "scale(1)" },
+                },
+                // Easter egg: floating emoji rising effect (iMessage-style)
+                "float-up": {
+                    "0%": {
+                        opacity: "1",
+                    },
+                    "100%": {
+                        opacity: "0",
+                        transform: "translateY(-100vh) translateX(var(--drift, 0px))",
+                    },
+                },
+                // Easter egg: shake wiggle for device shake response
+                wiggle: {
+                    "0%, 100%": { transform: "rotate(0deg)" },
+                    "25%": { transform: "rotate(-5deg)" },
+                    "75%": { transform: "rotate(5deg)" },
                 },
             },
             animation: {
@@ -142,6 +158,9 @@ const config: Config = {
                 float: "float 6s ease-in-out infinite",
                 "pulse-glow": "pulse-glow 3s ease-in-out infinite",
                 "star-pop": "star-pop 0.3s ease-out",
+                // Easter eggs
+                "float-up": "float-up 3s ease-out forwards",
+                wiggle: "wiggle 0.5s ease-in-out",
             },
         },
     },
