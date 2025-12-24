@@ -3,10 +3,13 @@ import * as Sentry from "@sentry/nextjs";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import {
     convertToModelMessages,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
     streamText,
     tool,
     stepCountIs,
     type UIMessage,
+    type UIMessageStreamWriter,
 } from "ai";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -54,6 +57,7 @@ import {
     type DiscoveryItem,
 } from "@/lib/discovery";
 import { updateProfileSection } from "@/lib/kb/profile";
+import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 
 /**
  * Route segment config for Vercel
@@ -884,6 +888,27 @@ export async function POST(req: Request) {
             pendingDiscoveries, // Discovery items to surface
         });
 
+        // Transient writer reference - set when the stream is consumed
+        // This allows onChunk to emit status updates during streaming
+        let transientWriter: UIMessageStreamWriter | null = null;
+
+        // Map tool names to user-friendly status messages
+        const getToolStatusMessage = (toolName: string): string => {
+            switch (toolName) {
+                case "webSearch":
+                    return STATUS_MESSAGES.webSearch.starting;
+                case "deepResearch":
+                    return STATUS_MESSAGES.deepResearch.starting;
+                case "fetchPage":
+                    return "Reading page...";
+                case "searchKnowledge":
+                    return STATUS_MESSAGES.knowledgeBase.searching;
+                default:
+                    // Integration tools (clickup, notion, etc.)
+                    return STATUS_MESSAGES.integration.connecting(toolName);
+            }
+        };
+
         const result = await streamText({
             model: openrouter.chat(concierge.modelId),
             // System messages are in the messages array with providerOptions for caching
@@ -900,6 +925,29 @@ export async function POST(req: Request) {
                 !disableMultiStepForReasoning && { stopWhen: stepCountIs(5) }),
             // Pass provider-specific reasoning configuration
             providerOptions,
+            // ================================================================
+            // TRANSIENT STATUS: Emit status updates during tool execution
+            // ================================================================
+            onChunk: ({ chunk }) => {
+                if (!transientWriter) return;
+
+                // Emit status when a tool call starts
+                if (chunk.type === "tool-call") {
+                    const message = getToolStatusMessage(chunk.toolName);
+                    writeStatus(
+                        transientWriter,
+                        `tool-${chunk.toolCallId}`,
+                        message,
+                        "🔧"
+                    );
+                }
+
+                // Clear status when tool result arrives
+                if (chunk.type === "tool-result") {
+                    // Write empty text to clear the transient message
+                    writeStatus(transientWriter, `tool-${chunk.toolCallId}`, "");
+                }
+            },
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
             experimental_telemetry: {
                 isEnabled: true,
@@ -1218,15 +1266,8 @@ export async function POST(req: Request) {
             "Connect stream initiated"
         );
 
-        // Get the stream response and add concierge headers
-        // sendReasoning: true streams reasoning tokens to client when available
-        const response = result.toUIMessageStreamResponse({
-            originalMessages: messagesWithoutReasoning,
-            sendReasoning: concierge.reasoning.enabled,
-        });
-
-        // Clone headers and add concierge + conversation data
-        const headers = new Headers(response.headers);
+        // Build concierge + metadata headers
+        const headers = new Headers();
         headers.set("X-Concierge-Model-Id", concierge.modelId);
         headers.set("X-Concierge-Temperature", String(concierge.temperature));
         headers.set(
@@ -1281,10 +1322,27 @@ export async function POST(req: Request) {
             }
         }
 
-        // Return response with concierge headers
-        return new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
+        // Create the UI message stream with transient status support
+        // Transient messages are sent inline but not persisted to message history
+        const stream = createUIMessageStream({
+            execute: ({ writer }) => {
+                // Set the writer reference so onChunk can emit transient messages
+                transientWriter = writer;
+
+                // Merge the streamText result into our stream
+                // sendReasoning: true streams reasoning tokens to client when available
+                writer.merge(
+                    result.toUIMessageStream({
+                        originalMessages: messagesWithoutReasoning,
+                        sendReasoning: concierge.reasoning.enabled,
+                    })
+                );
+            },
+        });
+
+        // Return streaming response with concierge headers
+        return createUIMessageStreamResponse({
+            stream,
             headers,
         });
     } catch (error) {

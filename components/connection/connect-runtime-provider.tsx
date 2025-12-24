@@ -37,6 +37,7 @@ import {
 import { useConnection } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
+import { TransientProvider, useTransient } from "@/lib/streaming";
 
 /**
  * Convert our DB UIMessageLike format to AI SDK UIMessage format
@@ -547,6 +548,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const { setConcierge } = useConcierge();
     const { activeConnectionId, initialMessages, addNewConnection, setIsStreaming } =
         useConnection();
+    const { handleDataPart, clearAll: clearTransientMessages } = useTransient();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
@@ -646,6 +648,15 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         onError: (err) => {
             logger.error({ error: err.message }, "Chat error");
             setDisplayError(err);
+            clearTransientMessages();
+        },
+        // Handle transient data parts (status updates) as they stream
+        onData: (dataPart) => {
+            handleDataPart(dataPart);
+        },
+        // Clear transient messages when streaming completes
+        onFinish: () => {
+            clearTransientMessages();
         },
         experimental_throttle: 50,
     });
@@ -978,13 +989,16 @@ function ConciergeWrapper({ children }: { children: ReactNode }) {
  *
  * This wraps the app with:
  * - ConciergeProvider for concierge data (hydrated from persisted state)
+ * - TransientProvider for ephemeral status messages during streaming
  * - ChatContext for message state and actions
  * - Runtime error display with retry capability
  */
 export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
     return (
         <ConciergeWrapper>
-            <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
+            <TransientProvider>
+                <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
+            </TransientProvider>
         </ConciergeWrapper>
     );
 }
