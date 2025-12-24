@@ -461,11 +461,6 @@ export const LONG_WAIT_MESSAGES = [
 ];
 
 /**
- * Final message shown right before response appears (optional).
- */
-export const ARRIVAL_MESSAGES = ["Here we go..."];
-
-/**
  * Get a thinking message for rotation. Returns all messages for the component
  * to cycle through, plus metadata about timing.
  *
