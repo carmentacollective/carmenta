@@ -242,14 +242,14 @@ export async function runLibrarianEval(
  */
 export const LIBRARIAN_MODEL_CANDIDATES = [
     {
-        id: "anthropic/claude-haiku-4",
-        name: "Claude Haiku 4",
-        description: "Fast and cheap - good for high-volume if quality holds",
-        costPer1M: { input: 0.8, output: 4.0 },
+        id: "anthropic/claude-haiku-4.5",
+        name: "Claude Haiku 4.5",
+        description: "Fast and cheap - ideal for high-volume knowledge extraction",
+        costPer1M: { input: 1.0, output: 5.0 },
     },
     {
-        id: "anthropic/claude-sonnet-4",
-        name: "Claude Sonnet 4",
+        id: "anthropic/claude-sonnet-4.5",
+        name: "Claude Sonnet 4.5",
         description: "Balanced - strong reasoning, reliable tool use",
         costPer1M: { input: 3.0, output: 15.0 },
     },

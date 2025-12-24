@@ -475,3 +475,18 @@ export const AUDIO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
  * Currently only Gemini 3 Pro supports video file processing.
  */
 export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
+
+/**
+ * Librarian model fallback chain.
+ * Based on evals/librarian eval performance data.
+ *
+ * The Librarian runs after conversations to extract worth-preserving knowledge.
+ * Priority: Haiku for speed/cost (this runs on every conversation), with
+ * Sonnet fallback for reliability.
+ *
+ * Run evals to validate: pnpm braintrust eval evals/librarian/eval.ts
+ */
+export const LIBRARIAN_FALLBACK_CHAIN: readonly string[] = [
+    "anthropic/claude-haiku-4.5",
+    "anthropic/claude-sonnet-4.5",
+] as const;
