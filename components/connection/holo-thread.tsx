@@ -1957,8 +1957,17 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                 for (const file of pastedTextFiles) {
                     const content = getTextContent(file.id);
                     if (content && file.placeholder) {
-                        // Replace placeholder with actual content
-                        newInput = newInput.replace(file.placeholder, content);
+                        // Try to replace placeholder with actual content
+                        const replacedInput = newInput.replace(
+                            file.placeholder,
+                            content
+                        );
+                        if (replacedInput === newInput) {
+                            // Placeholder not found (user deleted it) - append content to preserve it
+                            newInput = newInput ? `${newInput}\n\n${content}` : content;
+                        } else {
+                            newInput = replacedInput;
+                        }
                     } else if (content) {
                         // No placeholder (shouldn't happen, but handle gracefully)
                         newInput = newInput ? `${newInput}\n\n${content}` : content;
