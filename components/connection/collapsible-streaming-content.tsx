@@ -32,11 +32,22 @@ export function CollapsibleStreamingContent({
     content,
     isStreaming,
 }: CollapsibleStreamingContentProps) {
-    // Track explicit user override (null = no override, use automatic behavior)
-    const [userOverride, setUserOverride] = useState<boolean | null>(null);
+    // Track user override with streaming context
+    // Override only applies if set during the same streaming state
+    const [userOverride, setUserOverride] = useState<{
+        value: boolean;
+        duringStreaming: boolean;
+    } | null>(null);
 
-    // Derive collapsed state: user override takes precedence, otherwise auto-collapse during streaming
-    const isCollapsed = userOverride ?? isStreaming;
+    // Override only applies if it was set in the same streaming state
+    // This enables auto-expand when streaming completes (override from streaming phase is ignored)
+    const effectiveOverride =
+        userOverride && userOverride.duringStreaming === isStreaming
+            ? userOverride.value
+            : null;
+
+    // Derive collapsed state: effective override takes precedence, otherwise auto-collapse during streaming
+    const isCollapsed = effectiveOverride ?? isStreaming;
 
     // Extract section headers from markdown content
     const currentSection = useMemo(() => {
@@ -65,8 +76,11 @@ export function CollapsibleStreamingContent({
     }, [content]);
 
     const handleToggle = () => {
-        // Set explicit user override to opposite of current state
-        setUserOverride(!isCollapsed);
+        // Set explicit user override with streaming context
+        setUserOverride({
+            value: !isCollapsed,
+            duringStreaming: isStreaming,
+        });
     };
 
     // If no section header detected yet, just render normally (no collapse UI)
