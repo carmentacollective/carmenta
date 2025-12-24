@@ -45,8 +45,8 @@ export const HOLIDAYS: HolidayConfig[] = [
     {
         cssTheme: "christmas",
         label: "Christmas",
-        description: "Festive warmth",
-        colors: ["hsl(350 65% 45%)", "hsl(140 40% 88%)", "hsl(42 85% 55%)"],
+        description: "Red & green festive",
+        colors: ["hsl(350 72% 42%)", "hsl(145 45% 38%)", "hsl(42 90% 48%)"],
         startMonth: 12,
         startDay: 1,
         endMonth: 1,

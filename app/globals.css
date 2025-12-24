@@ -449,84 +449,84 @@
     }
 
     /* ===== CHRISTMAS THEME ===== */
-    /* Festive warmth - deep reds, forest greens, warm golds */
+    /* Classic Christmas - rich reds, forest greens, warm golds */
     :root[data-theme="christmas"] {
-        --background: 45 30% 96%; /* Warm cream like fresh snow */
-        --foreground: 350 35% 22%; /* Deep cranberry for text */
+        --background: 140 25% 96%; /* Hint of evergreen frost */
+        --foreground: 150 35% 18%; /* Deep forest green text */
 
         --card: 0 0% 100%;
-        --card-foreground: 350 35% 22%;
+        --card-foreground: 150 35% 18%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 350 35% 22%;
+        --popover-foreground: 150 35% 18%;
 
-        --primary: 350 65% 45%; /* Deep holly red */
+        --primary: 350 72% 42%; /* Rich Christmas red */
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 140 40% 88%; /* Soft pine needle */
-        --secondary-foreground: 350 35% 22%;
+        --secondary: 145 45% 38%; /* Visible evergreen */
+        --secondary-foreground: 0 0% 100%;
 
-        --muted: 45 20% 90%;
-        --muted-foreground: 350 20% 42%;
+        --muted: 145 15% 90%;
+        --muted-foreground: 150 20% 35%;
 
-        --accent: 42 85% 55%; /* Warm gold like candlelight */
-        --accent-foreground: 350 35% 22%;
+        --accent: 42 90% 48%; /* Bright gold star */
+        --accent-foreground: 150 35% 15%;
 
-        --destructive: 0 60% 70%;
+        --destructive: 0 60% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 45 20% 82%;
-        --input: 45 20% 88%;
-        --ring: 350 65% 45%;
+        --border: 145 18% 82%;
+        --input: 145 15% 90%;
+        --ring: 350 72% 42%;
 
-        /* Glassmorphism - warm holiday tinted */
-        --glass-bg: rgba(180, 80, 80, 0.12);
-        --glass-bg-hover: rgba(180, 80, 80, 0.2);
-        --glass-bg-active: rgba(180, 80, 80, 0.28);
-        --glass-surface: rgba(255, 252, 245, 0.92);
-        --glass-shadow: 0 4px 16px rgba(140, 60, 60, 0.12);
+        /* Glassmorphism - red and green holiday tinted */
+        --glass-bg: rgba(60, 120, 80, 0.1);
+        --glass-bg-hover: rgba(140, 60, 60, 0.15);
+        --glass-bg-active: rgba(140, 60, 60, 0.22);
+        --glass-surface: rgba(250, 255, 252, 0.94);
+        --glass-shadow: 0 4px 16px rgba(40, 90, 60, 0.12);
     }
 
     :root[data-theme="christmas"].dark {
-        /* Fireside warmth - cozy ember glow, not cold winter */
-        --background: 350 40% 7%; /* Deep cranberry-tinged black */
-        --foreground: 45 25% 92%; /* Warm cream like candlelight */
+        /* Christmas night - deep evergreen with red accents */
+        --background: 150 40% 6%; /* Deep forest night */
+        --foreground: 45 20% 92%; /* Warm snow white */
 
-        /* Cards glow like wrapped presents by firelight */
-        --card: 350 35% 12%;
-        --card-foreground: 45 25% 92%;
+        /* Cards like wrapped presents under the tree */
+        --card: 150 35% 10%;
+        --card-foreground: 45 20% 92%;
 
-        --popover: 350 38% 9%;
-        --popover-foreground: 45 25% 92%;
+        --popover: 150 38% 8%;
+        --popover-foreground: 45 20% 92%;
 
-        /* Primary - Luminous holly berry */
-        --primary: 350 70% 58%;
-        --primary-foreground: 350 40% 7%;
+        /* Primary - Luminous Christmas red */
+        --primary: 350 75% 55%;
+        --primary-foreground: 150 40% 6%;
 
-        /* Secondary - Deep evergreen shadow */
-        --secondary: 145 35% 18%;
-        --secondary-foreground: 45 25% 92%;
+        /* Secondary - Glowing evergreen */
+        --secondary: 145 50% 35%;
+        --secondary-foreground: 45 20% 92%;
 
-        --muted: 350 28% 15%;
-        --muted-foreground: 45 18% 62%;
+        --muted: 150 25% 14%;
+        --muted-foreground: 145 15% 55%;
 
-        /* Accent - Glowing golden ornament */
-        --accent: 42 80% 58%;
-        --accent-foreground: 350 40% 7%;
+        /* Accent - Golden ornament glow */
+        --accent: 42 85% 55%;
+        --accent-foreground: 150 40% 6%;
 
-        --destructive: 0 50% 50%;
+        --destructive: 0 55% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 350 24% 24%;
-        --input: 350 26% 17%;
-        --ring: 350 70% 58%;
+        --border: 150 22% 20%;
+        --input: 150 25% 14%;
+        --ring: 350 75% 55%;
 
-        /* Fireside glassmorphism - warm and inviting */
-        --glass-bg: rgba(160, 70, 70, 0.18);
-        --glass-bg-hover: rgba(180, 85, 85, 0.28);
-        --glass-bg-active: rgba(200, 100, 100, 0.35);
-        --glass-surface: rgba(32, 18, 18, 0.96);
-        --glass-shadow: 0 4px 24px rgba(120, 50, 50, 0.3);
+        /* Evergreen glassmorphism with warm glow */
+        --glass-bg: rgba(50, 100, 70, 0.2);
+        --glass-bg-hover: rgba(140, 70, 70, 0.25);
+        --glass-bg-active: rgba(140, 70, 70, 0.32);
+        --glass-surface: rgba(15, 25, 20, 0.96);
+        --glass-shadow: 0 4px 24px rgba(30, 80, 50, 0.3);
     }
 }
 
@@ -740,6 +740,21 @@
         --greeting-gradient-mid: hsl(220 10% 78%);
         --greeting-gradient-end: hsl(220 6% 82%);
         --greeting-subtitle-color: hsl(220 6% 68%);
+    }
+
+    /* Christmas theme gradient - red to green festive */
+    :root[data-theme="christmas"] {
+        --greeting-gradient-start: hsl(350 72% 42%); /* Christmas red */
+        --greeting-gradient-mid: hsl(42 90% 45%); /* Gold star */
+        --greeting-gradient-end: hsl(145 45% 38%); /* Evergreen */
+        --greeting-subtitle-color: hsl(150 25% 35%);
+    }
+
+    :root[data-theme="christmas"].dark {
+        --greeting-gradient-start: hsl(350 75% 58%); /* Bright red */
+        --greeting-gradient-mid: hsl(42 85% 58%); /* Golden glow */
+        --greeting-gradient-end: hsl(145 50% 45%); /* Glowing green */
+        --greeting-subtitle-color: hsl(145 20% 60%);
     }
 
     .greeting-container {

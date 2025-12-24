@@ -166,26 +166,26 @@ const THEME_PALETTES: Record<
     },
     christmas: {
         light: [
-            { r: 230, g: 180, b: 180 }, // Rose Blush
-            { r: 200, g: 220, b: 200 }, // Pine Frost
-            { r: 255, g: 240, b: 200 }, // Candlelight Gold
-            { r: 220, g: 200, b: 190 }, // Warm Cream
-            { r: 240, g: 190, b: 190 }, // Soft Holly
-            { r: 210, g: 230, b: 210 }, // Mistletoe
-            { r: 255, g: 235, b: 210 }, // Warm Glow
-            { r: 225, g: 210, b: 200 }, // Eggnog
+            { r: 200, g: 80, b: 90 }, // Christmas Red
+            { r: 80, g: 140, b: 95 }, // Evergreen
+            { r: 255, g: 210, b: 100 }, // Star Gold
+            { r: 180, g: 220, b: 185 }, // Pine Frost
+            { r: 220, g: 90, b: 100 }, // Holly Berry
+            { r: 100, g: 160, b: 110 }, // Forest Green
+            { r: 255, g: 190, b: 80 }, // Ornament Gold
+            { r: 160, g: 200, b: 170 }, // Mistletoe
         ],
         dark: [
-            { r: 160, g: 70, b: 80 }, // Holly Berry
-            { r: 180, g: 90, b: 95 }, // Cranberry Glow
-            { r: 80, g: 120, b: 90 }, // Evergreen Shadow
-            { r: 200, g: 150, b: 90 }, // Golden Ornament
-            { r: 150, g: 65, b: 75 }, // Deep Garnet
-            { r: 170, g: 85, b: 90 }, // Mulled Wine
-            { r: 90, g: 130, b: 95 }, // Forest Pine
-            { r: 190, g: 140, b: 85 }, // Amber Glow
+            { r: 180, g: 60, b: 70 }, // Rich Red
+            { r: 60, g: 120, b: 80 }, // Deep Evergreen
+            { r: 200, g: 160, b: 80 }, // Golden Glow
+            { r: 80, g: 140, b: 95 }, // Forest Pine
+            { r: 160, g: 50, b: 60 }, // Dark Cherry
+            { r: 50, g: 100, b: 70 }, // Night Pine
+            { r: 180, g: 140, b: 70 }, // Amber Ornament
+            { r: 70, g: 130, b: 90 }, // Spruce
         ],
-        darkBg: "#120808", // Deep fireside warmth
+        darkBg: "#081210", // Deep forest night
     },
 };
 
