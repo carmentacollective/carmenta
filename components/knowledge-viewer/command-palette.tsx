@@ -5,14 +5,36 @@
  *
  * Floating search overlay triggered by ⌘K (or Ctrl+K on Windows).
  * Provides quick navigation to any document in the knowledge base.
+ *
+ * Features:
+ * - Full-text search with highlighting
+ * - Recent searches (clickable chips)
+ * - Search filters (date, starred, model)
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, User, Settings, FileText } from "lucide-react";
+import {
+    Search,
+    User,
+    Settings,
+    FileText,
+    Clock,
+    Filter,
+    Calendar,
+    Star,
+    Bot,
+    ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { KBDocument, KBFolder } from "@/lib/kb/actions";
-import { searchKB } from "@/lib/kb/actions";
+import type { KBDocument, KBFolder, KBSearchResult } from "@/lib/kb/actions";
+import {
+    searchKB,
+    getRecentSearches,
+    addRecentSearch,
+    clearRecentSearches,
+} from "@/lib/kb/actions";
+import type { SearchFilters } from "@/lib/db/schema";
 import { logger } from "@/lib/client-logger";
 
 // Map paths to icons
@@ -35,6 +57,34 @@ export interface CommandPaletteProps {
     onSelect: (path: string) => void;
 }
 
+/**
+ * Renders text with <mark> tags as highlighted spans
+ */
+function HighlightedText({ html }: { html: string }) {
+    // Convert <mark>text</mark> to styled spans
+    // This is safe because we control the server-side generation of these tags
+    const parts = html.split(/(<mark>.*?<\/mark>)/g);
+
+    return (
+        <>
+            {parts.map((part, i) => {
+                if (part.startsWith("<mark>") && part.endsWith("</mark>")) {
+                    const text = part.slice(6, -7);
+                    return (
+                        <mark
+                            key={i}
+                            className="rounded-sm bg-primary/20 px-0.5 text-primary"
+                        >
+                            {text}
+                        </mark>
+                    );
+                }
+                return <span key={i}>{part}</span>;
+            })}
+        </>
+    );
+}
+
 export function CommandPalette({
     open,
     onOpenChange,
@@ -45,9 +95,23 @@ export function CommandPalette({
 }: CommandPaletteProps) {
     const [query, setQuery] = useState("");
     const [focusedIndex, setFocusedIndex] = useState(0);
-    const [searchResults, setSearchResults] = useState<KBDocument[]>([]);
+    const [searchResults, setSearchResults] = useState<KBSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState<SearchFilters>({});
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Load recent searches when palette opens
+    useEffect(() => {
+        if (open) {
+            getRecentSearches()
+                .then(setRecentSearches)
+                .catch((error) =>
+                    logger.error({ error }, "Failed to load recent searches")
+                );
+        }
+    }, [open]);
 
     // Perform full-text search when query changes
     useEffect(() => {
@@ -56,7 +120,7 @@ export function CommandPalette({
         const performSearch = async () => {
             if (!query.trim()) {
                 setSearchResults([]);
-                setIsSearching(false); // Bug fix: Reset loading state when clearing search
+                setIsSearching(false);
                 return;
             }
 
@@ -92,7 +156,10 @@ export function CommandPalette({
 
     // Group filtered results by folder
     const grouped = useMemo(() => {
-        const groups: Record<string, { name: string; documents: KBDocument[] }> = {};
+        const groups: Record<
+            string,
+            { name: string; documents: (KBDocument | KBSearchResult)[] }
+        > = {};
 
         for (const doc of filtered) {
             const folderPath = doc.path.split(".").slice(0, -1).join(".");
@@ -107,6 +174,34 @@ export function CommandPalette({
 
         return groups;
     }, [filtered]);
+
+    // Handle selection with recent search tracking
+    const handleSelect = useCallback(
+        (path: string) => {
+            if (query.trim()) {
+                // Save to recent searches (fire-and-forget)
+                addRecentSearch(query).catch((error) =>
+                    logger.error({ error }, "Failed to save recent search")
+                );
+            }
+            onSelect(path);
+        },
+        [query, onSelect]
+    );
+
+    // Handle recent search click
+    const handleRecentSearchClick = useCallback((searchQuery: string) => {
+        setQuery(searchQuery);
+    }, []);
+
+    // Handle clear recent searches
+    const handleClearRecent = useCallback(() => {
+        clearRecentSearches()
+            .then(() => setRecentSearches([]))
+            .catch((error) =>
+                logger.error({ error }, "Failed to clear recent searches")
+            );
+    }, []);
 
     // ⌘K keyboard shortcut
     useEffect(() => {
@@ -144,14 +239,14 @@ export function CommandPalette({
             } else if (e.key === "Enter") {
                 e.preventDefault();
                 if (filtered[focusedIndex]) {
-                    onSelect(filtered[focusedIndex].path);
+                    handleSelect(filtered[focusedIndex].path);
                 }
             }
         };
 
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [open, filtered, focusedIndex, onSelect]);
+    }, [open, filtered, focusedIndex, handleSelect]);
 
     // Focus input when opened
     useEffect(() => {
@@ -164,7 +259,6 @@ export function CommandPalette({
 
     // Reset focused index when filtered results change
     useEffect(() => {
-        // Only reset if not already at 0 to avoid unnecessary state updates
         if (focusedIndex !== 0) {
             setFocusedIndex(0);
         }
@@ -180,6 +274,9 @@ export function CommandPalette({
         },
         [onOpenChange]
     );
+
+    // Check if we have any active filters
+    const hasActiveFilters = filters.dateRange && filters.dateRange !== "all";
 
     return (
         <AnimatePresence>
@@ -197,7 +294,7 @@ export function CommandPalette({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
                         transition={{ type: "spring", duration: 0.2, bounce: 0.1 }}
-                        className="w-full max-w-md overflow-hidden rounded-2xl border border-foreground/10 bg-white/95 shadow-2xl backdrop-blur-xl dark:bg-gray-900/95"
+                        className="w-full max-w-lg overflow-hidden rounded-2xl border border-foreground/10 bg-white/95 shadow-2xl backdrop-blur-xl dark:bg-gray-900/95"
                     >
                         {/* Search input */}
                         <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
@@ -215,6 +312,18 @@ export function CommandPalette({
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-foreground/40"
                             />
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={cn(
+                                    "rounded-md p-1.5 transition-colors hover:bg-foreground/5",
+                                    showFilters || hasActiveFilters
+                                        ? "text-primary"
+                                        : "text-foreground/40"
+                                )}
+                                title="Toggle filters"
+                            >
+                                <Filter className="h-4 w-4" />
+                            </button>
                             {isSearching ? (
                                 <span className="text-xs text-foreground/40">
                                     searching...
@@ -225,6 +334,110 @@ export function CommandPalette({
                                 </kbd>
                             )}
                         </div>
+
+                        {/* Filters (collapsible) */}
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="overflow-hidden border-b border-foreground/10"
+                                >
+                                    <div className="flex flex-wrap items-center gap-2 px-4 py-2">
+                                        {/* Date Range Filter */}
+                                        <div className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1">
+                                            <Calendar className="h-3.5 w-3.5 text-foreground/50" />
+                                            <select
+                                                value={filters.dateRange ?? "all"}
+                                                onChange={(e) =>
+                                                    setFilters({
+                                                        ...filters,
+                                                        dateRange: e.target
+                                                            .value as SearchFilters["dateRange"],
+                                                    })
+                                                }
+                                                className="bg-transparent text-xs text-foreground/70 outline-none"
+                                            >
+                                                <option value="all">All time</option>
+                                                <option value="today">Today</option>
+                                                <option value="week">This week</option>
+                                                <option value="month">
+                                                    This month
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        {/* Starred Filter */}
+                                        <button
+                                            onClick={() =>
+                                                setFilters({
+                                                    ...filters,
+                                                    starredOnly: !filters.starredOnly,
+                                                })
+                                            }
+                                            className={cn(
+                                                "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
+                                                filters.starredOnly
+                                                    ? "bg-primary/15 text-primary"
+                                                    : "bg-foreground/5 text-foreground/70 hover:bg-foreground/10"
+                                            )}
+                                        >
+                                            <Star
+                                                className={cn(
+                                                    "h-3.5 w-3.5",
+                                                    filters.starredOnly &&
+                                                        "fill-current"
+                                                )}
+                                            />
+                                            Starred
+                                        </button>
+
+                                        {/* Model Filter - placeholder for future */}
+                                        <div className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1 opacity-50">
+                                            <Bot className="h-3.5 w-3.5 text-foreground/50" />
+                                            <span className="text-xs text-foreground/50">
+                                                Model
+                                            </span>
+                                            <ChevronDown className="h-3 w-3 text-foreground/50" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Recent searches (shown when no query) */}
+                        {!query.trim() && recentSearches.length > 0 && (
+                            <div className="border-b border-foreground/10 px-4 py-2">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/50">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        Recent
+                                    </div>
+                                    <button
+                                        onClick={handleClearRecent}
+                                        className="text-xs text-foreground/40 hover:text-foreground/60"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {recentSearches.map((search) => (
+                                        <button
+                                            key={search}
+                                            onClick={() =>
+                                                handleRecentSearchClick(search)
+                                            }
+                                            className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/70 transition-colors hover:bg-foreground/10"
+                                        >
+                                            <Search className="h-3 w-3" />
+                                            {search}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Results */}
                         <div className="max-h-80 overflow-y-auto p-2">
@@ -245,24 +458,58 @@ export function CommandPalette({
                                             const globalIndex = filtered.indexOf(doc);
                                             const isFocused =
                                                 globalIndex === focusedIndex;
+                                            const searchResult = doc as KBSearchResult;
+                                            const hasSnippet =
+                                                "snippet" in doc && doc.snippet;
 
                                             return (
                                                 <button
                                                     key={doc.id}
-                                                    onClick={() => onSelect(doc.path)}
+                                                    onClick={() =>
+                                                        handleSelect(doc.path)
+                                                    }
                                                     className={cn(
-                                                        "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                                                        "flex w-full flex-col gap-1 rounded-lg px-3 py-2 text-left transition-colors",
                                                         isFocused
-                                                            ? "bg-primary/15 text-primary"
+                                                            ? "bg-primary/15"
                                                             : selectedPath === doc.path
-                                                              ? "bg-foreground/5 text-foreground/80"
-                                                              : "text-foreground/70 hover:bg-foreground/5"
+                                                              ? "bg-foreground/5"
+                                                              : "hover:bg-foreground/5"
                                                     )}
                                                 >
-                                                    <Icon className="h-4 w-4 shrink-0" />
-                                                    <span className="capitalize">
-                                                        {doc.name.replace(".txt", "")}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon
+                                                            className={cn(
+                                                                "h-4 w-4 shrink-0",
+                                                                isFocused
+                                                                    ? "text-primary"
+                                                                    : "text-foreground/50"
+                                                            )}
+                                                        />
+                                                        <span
+                                                            className={cn(
+                                                                "text-sm capitalize",
+                                                                isFocused
+                                                                    ? "text-primary"
+                                                                    : "text-foreground/70"
+                                                            )}
+                                                        >
+                                                            {doc.name.replace(
+                                                                ".txt",
+                                                                ""
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    {/* Show highlighted snippet for search results */}
+                                                    {hasSnippet && (
+                                                        <div className="ml-6 line-clamp-2 text-xs text-foreground/50">
+                                                            <HighlightedText
+                                                                html={
+                                                                    searchResult.snippet
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </button>
                                             );
                                         })}

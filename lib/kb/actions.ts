@@ -16,8 +16,10 @@ import { initializeProfile } from "./profile";
 import { logger } from "@/lib/logger";
 import { findUserByClerkId } from "@/lib/db/users";
 import { db } from "@/lib/db";
-import { documents } from "@/lib/db/schema";
+import { documents, users, type SearchFilters } from "@/lib/db/schema";
 import { VALUES_CONTENT } from "@/lib/prompts/system";
+
+const MAX_RECENT_SEARCHES = 5;
 
 // ============================================================================
 // Helper
@@ -359,4 +361,143 @@ export async function getValuesDocument(): Promise<KBDocument> {
         editable: false,
         updatedAt: new Date(),
     };
+}
+
+// ============================================================================
+// Recent Searches
+// ============================================================================
+
+/**
+ * Get recent search queries for the current user
+ */
+export async function getRecentSearches(): Promise<string[]> {
+    const userId = await getDbUserId();
+
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { preferences: true },
+    });
+
+    if (!user?.preferences) {
+        return [];
+    }
+
+    const preferences = user.preferences as { recentSearches?: string[] };
+    return preferences.recentSearches ?? [];
+}
+
+/**
+ * Add a search query to recent searches
+ * Keeps only the most recent MAX_RECENT_SEARCHES queries
+ */
+export async function addRecentSearch(query: string): Promise<void> {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    const userId = await getDbUserId();
+
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { preferences: true },
+    });
+
+    const currentPreferences = (user?.preferences ?? {}) as Record<string, unknown>;
+    const currentSearches = (currentPreferences.recentSearches as string[]) ?? [];
+
+    // Remove duplicates and add new query at the start
+    const filtered = currentSearches.filter(
+        (s) => s.toLowerCase() !== trimmedQuery.toLowerCase()
+    );
+    const newSearches = [trimmedQuery, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+
+    await db
+        .update(users)
+        .set({
+            preferences: {
+                ...currentPreferences,
+                recentSearches: newSearches,
+            },
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+    logger.debug({ userId, query: trimmedQuery }, "Added recent search");
+}
+
+/**
+ * Clear all recent searches for the current user
+ */
+export async function clearRecentSearches(): Promise<void> {
+    const userId = await getDbUserId();
+
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { preferences: true },
+    });
+
+    const currentPreferences = (user?.preferences ?? {}) as Record<string, unknown>;
+
+    await db
+        .update(users)
+        .set({
+            preferences: {
+                ...currentPreferences,
+                recentSearches: [],
+            },
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+    logger.info({ userId }, "Cleared recent searches");
+}
+
+// ============================================================================
+// Search Filters
+// ============================================================================
+
+/**
+ * Get saved search filter preferences
+ */
+export async function getSearchFilters(): Promise<SearchFilters> {
+    const userId = await getDbUserId();
+
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { preferences: true },
+    });
+
+    if (!user?.preferences) {
+        return {};
+    }
+
+    const preferences = user.preferences as { searchFilters?: SearchFilters };
+    return preferences.searchFilters ?? {};
+}
+
+/**
+ * Update search filter preferences (merge with existing)
+ */
+export async function updateSearchFilters(filters: SearchFilters): Promise<void> {
+    const userId = await getDbUserId();
+
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { preferences: true },
+    });
+
+    const currentPreferences = (user?.preferences ?? {}) as Record<string, unknown>;
+    const currentFilters = (currentPreferences.searchFilters as SearchFilters) ?? {};
+
+    await db
+        .update(users)
+        .set({
+            preferences: {
+                ...currentPreferences,
+                searchFilters: { ...currentFilters, ...filters },
+            },
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+    logger.debug({ userId, filters }, "Updated search filters");
 }
