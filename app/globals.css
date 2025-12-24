@@ -603,13 +603,13 @@
 
     /* Assistant message bubble with glass effect */
     .assistant-message-bubble {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
     }
 
     .dark .assistant-message-bubble {
-        background: rgba(60, 50, 70, 0.6);
+        background: rgba(60, 50, 70, 0.75);
     }
 
     /* Error message bubble */
@@ -806,52 +806,58 @@
         @apply mb-0;
     }
 
-    /* Paragraphs */
+    /* Paragraphs - more breathing room */
     .holo-markdown p {
-        @apply mb-3;
+        @apply mb-4 leading-relaxed;
     }
 
     .holo-markdown p:last-child {
         @apply mb-0;
     }
 
-    /* Headings */
+    /* Headings - stronger visual hierarchy */
     .holo-markdown h1 {
-        @apply mb-3 mt-4 text-xl font-semibold first:mt-0;
+        @apply mb-4 mt-6 text-xl font-bold first:mt-0;
     }
 
     .holo-markdown h2 {
-        @apply mb-2 mt-3 text-lg font-semibold first:mt-0;
+        @apply mb-3 mt-5 text-lg font-bold first:mt-0;
     }
 
     .holo-markdown h3 {
-        @apply mb-2 mt-3 text-base font-semibold first:mt-0;
+        @apply mb-3 mt-4 text-base font-semibold first:mt-0;
     }
 
     .holo-markdown h4 {
-        @apply mb-2 mt-3 text-sm font-semibold first:mt-0;
+        @apply mb-2 mt-4 text-sm font-semibold first:mt-0;
     }
 
     .holo-markdown h5 {
-        @apply mb-1 mt-2 text-sm font-medium first:mt-0;
+        @apply mb-2 mt-3 text-sm font-medium first:mt-0;
     }
 
     .holo-markdown h6 {
-        @apply mb-1 mt-2 text-xs font-medium uppercase tracking-wide first:mt-0;
+        @apply mb-2 mt-3 text-xs font-medium uppercase tracking-wide first:mt-0;
     }
 
-    /* Lists */
+    /* Lists - more breathing room */
     .holo-markdown ul {
-        @apply my-2 list-disc space-y-1 pl-5;
+        @apply my-4 list-disc space-y-2 pl-6;
     }
 
     .holo-markdown ol {
-        @apply my-2 list-decimal space-y-1 pl-5;
+        @apply my-4 list-decimal space-y-2 pl-6;
     }
 
     .holo-markdown ul li,
     .holo-markdown ol li {
         @apply leading-relaxed;
+    }
+
+    /* Nested lists tighter spacing */
+    .holo-markdown li ul,
+    .holo-markdown li ol {
+        @apply my-2;
     }
 
     /* Inline code */
@@ -879,9 +885,9 @@
         @apply text-primary underline decoration-primary/30 transition-colors hover:decoration-primary;
     }
 
-    /* Horizontal rule */
+    /* Horizontal rule - stronger visual break */
     .holo-markdown hr {
-        @apply my-4 border-foreground/10;
+        @apply my-6 border-foreground/20;
     }
 
     /* Tables - Enhanced with rounded borders and hover effects */
@@ -896,7 +902,7 @@
     }
 
     .holo-markdown th {
-        @apply border-b border-foreground/15 px-3 py-2 text-left font-semibold;
+        @apply border-b border-foreground/15 px-4 py-3 text-left font-semibold;
     }
 
     .holo-markdown th:first-child {
@@ -912,7 +918,7 @@
     }
 
     .holo-markdown td {
-        @apply border-b border-foreground/10 px-3 py-2;
+        @apply border-b border-foreground/10 px-4 py-3;
     }
 
     .holo-markdown tbody tr:last-child td {
