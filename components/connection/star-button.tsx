@@ -75,7 +75,7 @@ export function StarButton({
                 onToggle();
             }}
             className={cn(
-                "tooltip relative z-content rounded-md transition-all",
+                "tooltip interactive-press-icon relative z-content rounded-md transition-all",
                 padding,
                 // Visibility: always show if starred, otherwise follow showOnHover
                 isStarred
@@ -85,11 +85,8 @@ export function StarButton({
                       : "opacity-100",
                 // Background on hover
                 isStarred ? "hover:bg-amber-50" : "hover:bg-foreground/5",
-                // Focus ring
-                "focus-visible:ring-2",
-                isStarred
-                    ? "focus-visible:ring-amber-300"
-                    : "focus-visible:ring-foreground/20",
+                // Focus ring - conditional color based on starred state
+                isStarred ? "interactive-focus-amber" : "interactive-focus-muted",
                 className
             )}
             data-tooltip-id="tip"

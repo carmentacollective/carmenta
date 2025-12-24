@@ -201,7 +201,7 @@ function EditableTitle({
             {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="btn-subtle-text flex items-center gap-2 rounded-md border border-transparent px-1.5 py-0.5 transition-all hover:border-foreground/10 hover:bg-foreground/[0.03]"
+                className="btn-subtle-text flex items-center gap-2 border border-transparent px-1.5 py-0.5 hover:border-foreground/10 hover:bg-foreground/[0.03]"
                 aria-label="Click to edit title"
             >
                 <AnimatedTitle title={title} />
@@ -318,7 +318,7 @@ function ConnectionRow({
             {/* Connection info - clickable */}
             <button
                 onClick={() => onSelect(conn.id, conn.slug)}
-                className="relative flex flex-1 items-center gap-3 text-left transition-all group-hover:translate-x-0.5"
+                className="interactive-focus relative flex flex-1 items-center gap-3 rounded-md text-left transition-all group-hover:translate-x-0.5"
             >
                 <span
                     className={cn(
@@ -850,7 +850,7 @@ export function ConnectionChooser({
                                 onClick={createNewConnection}
                                 disabled={isPending}
                                 className={cn(
-                                    "flex items-center justify-center transition-all duration-200",
+                                    "interactive-focus flex items-center justify-center transition-all duration-200",
                                     isMobilePlacement
                                         ? "h-11 w-11 flex-shrink-0 rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-95"
                                         : "h-8 gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary hover:bg-primary/25 active:scale-95",
@@ -907,7 +907,7 @@ export function ConnectionChooser({
                                 <button
                                     onClick={createNewConnection}
                                     disabled={isPending}
-                                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="interactive-focus flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="New connection"
                                     data-tooltip-id="tip"
                                     data-tooltip-content="Start fresh"
