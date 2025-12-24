@@ -758,7 +758,7 @@
     }
 
     .greeting-container {
-        /* Centered by parent flex container, no explicit text-center needed */
+        @apply text-center;
     }
 
     .greeting-gradient {
