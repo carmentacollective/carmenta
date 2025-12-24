@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import type { UIMessage } from "@ai-sdk/react";
 
 import * as Sentry from "@sentry/nextjs";
@@ -1724,6 +1725,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
+    const { triggerHaptic } = useHapticFeedback();
 
     // Show connection chooser on mobile when user has connections
     // Guard against undefined during SSR/hydration to prevent layout flash
@@ -1979,6 +1981,9 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             // Signal user engagement (dismisses feature tips whisper)
             emitUserEngaged();
 
+            // Haptic feedback on send
+            triggerHaptic("medium");
+
             const message = input.trim();
             lastSentMessageRef.current = message;
             wasStoppedRef.current = false; // Reset stop flag for new message
@@ -2020,11 +2025,13 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
             append,
             clearFiles,
             emitUserEngaged,
+            triggerHaptic,
         ]
     );
 
     const handleStop = useCallback(() => {
         if (!isLoading) return;
+        triggerHaptic("light"); // Haptic feedback on stop
         wasStoppedRef.current = true; // Mark as user-stopped (no success checkmark)
         stop();
         // Clear concierge state immediately for clean UI reset
@@ -2045,6 +2052,7 @@ function Composer({ isNewConversation, onMarkMessageStopped }: ComposerProps) {
         lastSentMessageRef.current = null;
     }, [
         isLoading,
+        triggerHaptic,
         stop,
         setConcierge,
         messages,

@@ -11,6 +11,7 @@ import {
     copyMarkdown,
     copyPlainText,
 } from "@/lib/copy-utils";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -158,6 +159,7 @@ export function CopyButton({
     const [isOpen, setIsOpen] = useState(false);
     const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentMessage, triggerDelight, scheduleClear } = useCopyDelight();
+    const { triggerHaptic } = useHapticFeedback();
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -174,6 +176,7 @@ export function CopyButton({
             setCopied(mode);
             setIsOpen(false);
             triggerDelight();
+            triggerHaptic("medium"); // Tactile feedback on successful copy
             scheduleClear();
             onCopySuccess?.();
 
@@ -185,7 +188,7 @@ export function CopyButton({
                 copiedTimeoutRef.current = null;
             }, FEEDBACK_DURATION_MS);
         },
-        [triggerDelight, scheduleClear, onCopySuccess]
+        [triggerDelight, triggerHaptic, scheduleClear, onCopySuccess]
     );
 
     const handleCopy = async (mode: CopyMode) => {

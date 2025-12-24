@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
@@ -33,8 +34,10 @@ export function ThemeSwitcher({
 }: ThemeSwitcherProps = {}) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { resolvedTheme, setTheme } = useTheme();
+    const { triggerHaptic } = useHapticFeedback();
 
     const toggleTheme = () => {
+        triggerHaptic("light"); // Tactile feedback on theme switch
         setTheme(resolvedTheme === "dark" ? "light" : "dark");
     };
 
