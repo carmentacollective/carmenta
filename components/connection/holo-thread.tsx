@@ -52,6 +52,7 @@ import { useUserContext } from "@/lib/auth/user-context";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
+import { TransientStatus } from "./transient-status";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
@@ -1459,6 +1460,9 @@ function AssistantMessage({
                     messageSeed={message.id}
                 />
             )}
+
+            {/* TRANSIENT STATUS - Real-time tool execution status */}
+            {isStreaming && isLast && <TransientStatus className="mt-2" />}
 
             {/* LLM ZONE - Model's output (neutral glass) */}
             {/* Appears after concierge selection with smooth entrance */}
