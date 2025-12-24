@@ -58,18 +58,10 @@ export interface CommandPaletteProps {
 }
 
 /**
- * Escapes HTML entities for safe text rendering
- */
-function escapeHtml(text: string): string {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-/**
  * Renders text with <mark> tags as highlighted spans
  *
- * Defense-in-depth: Although ts_headline escapes HTML server-side,
- * we also escape the extracted text to prevent XSS if content
- * somehow contains unescaped user input.
+ * Security: React JSX automatically escapes text content to prevent XSS.
+ * The ts_headline() PostgreSQL function returns safe <mark> tags that we parse manually.
  */
 function HighlightedText({ html }: { html: string }) {
     const parts = html.split(/(<mark>.*?<\/mark>)/g);
@@ -84,11 +76,11 @@ function HighlightedText({ html }: { html: string }) {
                             key={i}
                             className="rounded-sm bg-primary/20 px-0.5 text-primary"
                         >
-                            {escapeHtml(text)}
+                            {text}
                         </mark>
                     );
                 }
-                return <span key={i}>{escapeHtml(part)}</span>;
+                return <span key={i}>{part}</span>;
             })}
         </>
     );
