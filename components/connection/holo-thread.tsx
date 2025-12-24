@@ -146,7 +146,7 @@ function HoloThreadInner() {
             {/* Viewport with fade mask and mobile touch optimizations - powered by use-stick-to-bottom */}
             <StickToBottom.Content
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-8 pt-4 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -179,7 +179,7 @@ function HoloThreadInner() {
             </StickToBottom.Content>
 
             {/* Input container with safe area for notched devices */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -691,13 +691,13 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={planError}
                 >
                     {status === "running" ? (
-                        <div className="p-4">
+                        <div className="p-3 sm:p-4">
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Creating task plan...
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {planError ?? "Failed to create plan"}
                         </div>
                     ) : todos.length > 0 ? (
@@ -710,7 +710,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             maxVisibleTodos={6}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No tasks in plan
                         </div>
                     )}
@@ -747,7 +747,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={previewError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         <LinkPreview
                             id={`link-preview-${part.toolCallId}`}
                             href={href ?? ""}
@@ -820,7 +820,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     output={output}
                     error={optionsError}
                 >
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                         {status === "running" ? (
                             <div className="animate-pulse text-sm text-muted-foreground">
                                 Loading options...
@@ -928,7 +928,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             </div>
                         </div>
                     ) : status === "error" ? (
-                        <div className="p-4 text-sm text-destructive">
+                        <div className="p-3 text-sm text-destructive sm:p-4">
                             {mapError ?? "Failed to load map"}
                         </div>
                     ) : pois.length > 0 ? (
@@ -940,7 +940,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             title={title}
                         />
                     ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
+                        <div className="p-3 text-sm text-muted-foreground sm:p-4">
                             No locations to display
                         </div>
                     )}
@@ -1280,14 +1280,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     );
 
     return (
-        <div className="my-4 flex w-full justify-end">
+        <div className="my-1.5 flex w-full justify-end sm:my-4">
             <div className="group relative max-w-full sm:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
                 <div className="absolute -right-10 top-2 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-4">
+                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-3 py-2.5 sm:px-4 sm:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1451,7 +1451,7 @@ function AssistantMessage({
         showThinking;
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
                 <ConciergeDisplay
@@ -1515,7 +1515,7 @@ function AssistantMessage({
 
                             {/* File previews */}
                             {fileParts.length > 0 && (
-                                <div className="border-b border-foreground/10 p-4">
+                                <div className="border-b border-foreground/10 p-3 sm:p-4">
                                     <div className="flex flex-col gap-2">
                                         {fileParts.map((file, idx) => (
                                             <FilePreview
@@ -1531,7 +1531,7 @@ function AssistantMessage({
 
                             {/* Thinking indicator - inside LLM zone while waiting for content */}
                             {showThinking && (
-                                <div className="px-4 py-3">
+                                <div className="px-3 py-2 sm:px-4 sm:py-3">
                                     <ThinkingIndicator />
                                 </div>
                             )}
@@ -1539,13 +1539,13 @@ function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-4 pb-2 pt-4">
+                                    <div className="px-3 pb-1.5 pt-2.5 sm:px-4 sm:pb-2 sm:pt-4">
                                         <MarkdownRenderer
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
                                     </div>
-                                    <div className="px-4 pb-1">
+                                    <div className="px-3 pb-1 sm:px-4">
                                         <MessageActions
                                             content={content}
                                             isLast={isLast}
@@ -1576,7 +1576,7 @@ function AssistantMessage({
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-4">
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-3 py-2.5 sm:px-4 sm:py-4">
                         <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
@@ -1649,7 +1649,7 @@ function PendingAssistantMessage({
           : "idle";
 
     return (
-        <div className="my-4 flex w-full flex-col gap-0">
+        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
             {/* CONCIERGE ZONE - Always show during pending state */}
             <ConciergeDisplay
                 modelId={concierge?.modelId}
@@ -1678,7 +1678,7 @@ function PendingAssistantMessage({
                             }}
                             className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
                         >
-                            <div className="px-4 py-3">
+                            <div className="px-3 py-2 sm:px-4 sm:py-3">
                                 <ThinkingIndicator />
                             </div>
                         </motion.div>
