@@ -129,6 +129,16 @@ export function ModelSelectorModal({
 }: ModelSelectorModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
     const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+    const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Clear switch timeout on unmount to prevent state updates after unmount
+    useEffect(() => {
+        return () => {
+            if (switchTimeoutRef.current) {
+                clearTimeout(switchTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Handle Escape key to close modal
     useEffect(() => {
@@ -179,8 +189,11 @@ export function ModelSelectorModal({
         // Brief visual feedback during switch
         setSwitchingTo(modelId ?? "auto");
         onChange({ ...overrides, modelId });
-        // Clear after animation completes
-        setTimeout(() => setSwitchingTo(null), 300);
+        // Clear after animation completes (with cleanup ref for unmount safety)
+        if (switchTimeoutRef.current) {
+            clearTimeout(switchTimeoutRef.current);
+        }
+        switchTimeoutRef.current = setTimeout(() => setSwitchingTo(null), 300);
     };
 
     const handleCreativityChange = (index: number) => {
