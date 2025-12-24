@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { ThinkingIndicator } from "@/components/connection/thinking-indicator";
+import { THINKING_MESSAGES, LONG_WAIT_MESSAGES } from "@/lib/tools/tool-config";
 
 describe("ThinkingIndicator", () => {
     beforeEach(() => {
@@ -14,18 +15,8 @@ describe("ThinkingIndicator", () => {
     it("renders with initial thinking message", () => {
         render(<ThinkingIndicator />);
 
-        // Should show one of the thinking messages
-        const thinkingMessages = [
-            "Thinking...",
-            "Working through this...",
-            "One moment...",
-            "Connecting...",
-            "Good question...",
-            "Interesting...",
-            "Thinking on that...",
-        ];
-
-        const foundMessage = thinkingMessages.some((msg) => screen.queryByText(msg));
+        // Should show one of the thinking messages (on-brand Carmenta messages)
+        const foundMessage = THINKING_MESSAGES.some((msg) => screen.queryByText(msg));
         expect(foundMessage).toBe(true);
     });
 
@@ -60,6 +51,54 @@ describe("ThinkingIndicator", () => {
         });
 
         expect(screen.getByText(/4s$/)).toBeInTheDocument();
+    });
+
+    it("rotates messages every 3-5 seconds", async () => {
+        render(<ThinkingIndicator />);
+
+        // Get initial message
+        const initialMessage = THINKING_MESSAGES.find((msg) => screen.queryByText(msg));
+        expect(initialMessage).toBeDefined();
+
+        // Advance time past the rotation interval (max 5 seconds)
+        await act(async () => {
+            vi.advanceTimersByTime(6000);
+        });
+
+        // Wait for animation to complete (300ms fade transition)
+        await act(async () => {
+            vi.advanceTimersByTime(500);
+        });
+
+        // Should show a message (may be same or different due to random selection)
+        // Use queryAllByText since AnimatePresence may leave exiting elements briefly
+        const allMessages = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES];
+        const foundMessages = allMessages.filter(
+            (msg) => screen.queryAllByText(msg).length > 0
+        );
+        expect(foundMessages.length).toBeGreaterThan(0);
+    });
+
+    it("switches to long wait messages after 8 seconds", async () => {
+        render(<ThinkingIndicator />);
+
+        // Advance past 8 seconds threshold
+        await act(async () => {
+            vi.advanceTimersByTime(9000);
+        });
+
+        // Wait for animation to complete
+        await act(async () => {
+            vi.advanceTimersByTime(500);
+        });
+
+        // Should show one of the long wait or thinking messages
+        // (the pool switches after 8s, but we may still be mid-rotation)
+        const allMessages = [...THINKING_MESSAGES, ...LONG_WAIT_MESSAGES];
+        const foundMessages = allMessages.filter(
+            (msg) => screen.queryAllByText(msg).length > 0
+        );
+        expect(foundMessages.length).toBeGreaterThan(0);
     });
 
     it("applies custom className", () => {

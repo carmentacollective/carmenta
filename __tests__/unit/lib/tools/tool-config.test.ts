@@ -193,32 +193,34 @@ describe("tool-config", () => {
 
     describe("getThinkingMessage", () => {
         it("returns standard message for short waits", () => {
+            // On-brand Carmenta oracle messages
             const standardMessages = [
-                "Thinking...",
-                "Working through this...",
-                "One moment...",
-                "Connecting...",
+                "Consulting the oracle...",
+                "Summoning wisdom...",
+                "The muses are conferring...",
+                "Gathering cosmic insights...",
+                "Channeling the collective...",
+                "Brewing brilliance...",
+                "Weaving words...",
+                "Crafting something beautiful...",
+                "We're onto something...",
+                "Our thoughts are aligning...",
+                "Brilliance incoming...",
             ];
-            const delightMessages = [
-                "Good question...",
-                "Interesting...",
-                "Thinking on that...",
-            ];
-
-            const allPossible = [...standardMessages, ...delightMessages];
 
             const message = getThinkingMessage("msg-1", 1000); // 1 second
-            expect(allPossible).toContain(message);
+            expect(standardMessages).toContain(message);
         });
 
-        it("returns long wait message after 5 seconds", () => {
+        it("returns long wait message after 8 seconds", () => {
             const longWaitMessages = [
-                "Still here...",
                 "Almost there...",
-                "Taking a bit longer...",
+                "Worth the wait...",
+                "The good stuff takes time...",
+                "Still weaving...",
             ];
 
-            const message = getThinkingMessage("msg-1", 6000); // 6 seconds
+            const message = getThinkingMessage("msg-1", 9000); // 9 seconds (threshold is 8s)
             expect(longWaitMessages).toContain(message);
         });
 
