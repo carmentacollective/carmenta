@@ -7,6 +7,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { env } from "@/lib/env";
+import { ValidationError } from "@/lib/errors";
+import { getCredentials } from "@/lib/integrations/connection-manager";
 import { logger } from "@/lib/logger";
 
 /**
@@ -333,10 +335,6 @@ export abstract class ServiceAdapter {
         userId: string,
         accountId?: string
     ): Promise<{ accessToken: string } | MCPToolResponse> {
-        const { getCredentials } =
-            await import("@/lib/integrations/connection-manager");
-        const { ValidationError } = await import("@/lib/errors");
-
         try {
             const credentials = await getCredentials(
                 userId,
