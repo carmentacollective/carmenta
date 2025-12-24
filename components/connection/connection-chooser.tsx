@@ -306,13 +306,13 @@ function ConnectionRow({
                 <div className="absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-primary/60" />
             )}
 
-            {/* Star button - now always slightly visible, more visible on hover */}
+            {/* Star button - always visible at 40% opacity, full on hover for a11y */}
             <StarButton
                 isStarred={conn.isStarred}
                 onToggle={() => onToggleStar(conn.id)}
                 showOnHover
                 size="sm"
-                className={cn(!conn.isStarred && "opacity-30 group-hover:opacity-100")}
+                className={cn(!conn.isStarred && "opacity-40 group-hover:opacity-100")}
             />
 
             {/* Connection info - clickable */}
