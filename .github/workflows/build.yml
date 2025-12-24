@@ -176,6 +176,19 @@ jobs:
     needs: build
     if: github.actor != 'dependabot[bot]'
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: carmenta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -187,6 +200,11 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🗄️ Run database migrations
+        run: pnpm run db:migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
 
       - name: 📥 Download build artifacts
         uses: actions/download-artifact@v7
@@ -205,6 +223,8 @@ jobs:
         run: pnpm run test:e2e
         env:
           CI: true
+          # Database connection for E2E tests
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           # Clerk keys for testing (required for @clerk/testing)
