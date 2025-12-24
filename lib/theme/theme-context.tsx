@@ -154,11 +154,19 @@ interface ThemeProviderProps {
 
 /**
  * Get initial theme from localStorage (client-side only)
+ * Migrates old "christmas" theme to "holiday" for backwards compatibility
  */
 function getInitialTheme(): ThemeVariant {
     if (typeof window === "undefined") return DEFAULT_THEME;
-    const saved = localStorage.getItem(STORAGE_KEY) as ThemeVariant | null;
-    return saved || DEFAULT_THEME;
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    // Migrate old "christmas" theme to "holiday"
+    if (saved === "christmas") {
+        localStorage.setItem(STORAGE_KEY, "holiday");
+        return "holiday";
+    }
+
+    return (saved as ThemeVariant) || DEFAULT_THEME;
 }
 
 /**

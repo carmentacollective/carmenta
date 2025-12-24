@@ -78,6 +78,19 @@ describe("ThemeProvider and useThemeVariant", () => {
 
             expect(result.current.themeVariant).toBe("carmenta");
         });
+
+        it("migrates old 'christmas' theme to 'holiday'", () => {
+            // Simulate user with old "christmas" stored
+            localStorage.setItem("carmenta-theme-variant", "christmas");
+
+            const { result } = renderHook(() => useThemeVariant(), {
+                wrapper: createWrapper(),
+            });
+
+            // Should migrate to "holiday"
+            expect(result.current.themeVariant).toBe("holiday");
+            expect(localStorage.getItem("carmenta-theme-variant")).toBe("holiday");
+        });
     });
 
     describe("setThemeVariant", () => {
