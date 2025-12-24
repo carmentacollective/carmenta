@@ -11,9 +11,10 @@
  * connected by a subtle tail. The Oracle glows gently when speaking.
  *
  * Frequency Logic (based on UX psychology research):
- * - First 5 sessions: Always show (onboarding)
- * - Sessions 6-15: 50% chance (building familiarity)
- * - Sessions 16+: 25% chance (occasional reminders)
+ * - First 3 sessions: Never show (let new users explore naturally)
+ * - Sessions 3-7: Always show (onboarding period starts)
+ * - Sessions 8-17: 50% chance (building familiarity)
+ * - Sessions 18+: 25% chance (occasional reminders)
  * - Never show same tip twice in a row
  */
 
@@ -72,6 +73,9 @@ function saveWhisperState(state: WhisperState): void {
     }
 }
 
+/** Minimum sessions before tips appear - let new users explore naturally */
+const MIN_SESSIONS_BEFORE_TIPS = 3;
+
 /**
  * Determine if we should show a tip this session.
  * Based on UX research on notification fatigue and progressive disclosure.
@@ -79,11 +83,14 @@ function saveWhisperState(state: WhisperState): void {
 function shouldShowTip(state: WhisperState): boolean {
     const { sessionCount } = state;
 
-    // Always show for first 5 sessions (onboarding period)
-    if (sessionCount < 5) return true;
+    // Never show for first 3 sessions - let new users explore naturally
+    if (sessionCount < MIN_SESSIONS_BEFORE_TIPS) return false;
 
-    // 50% chance for sessions 6-15 (building familiarity)
-    if (sessionCount < 15) return Math.random() < 0.5;
+    // Always show for sessions 3-7 (onboarding period now they're familiar)
+    if (sessionCount < 8) return true;
+
+    // 50% chance for sessions 8-17 (building familiarity)
+    if (sessionCount < 18) return Math.random() < 0.5;
 
     // 25% chance after that (occasional helpful reminders)
     return Math.random() < 0.25;
@@ -282,20 +289,20 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                             delay: 0.6,
                             ease: [0.23, 1, 0.32, 1],
                         }}
-                        className="absolute left-0 top-full z-50 mt-2 w-72 sm:w-80"
+                        className="absolute left-full top-1/2 z-50 ml-3 w-56 -translate-y-1/2 sm:w-72"
                     >
-                        {/* Speech tail pointing up to Oracle */}
-                        <div className="absolute -top-2 left-5 h-4 w-4 rotate-45 border-l border-t border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
+                        {/* Speech tail pointing left to Oracle */}
+                        <div className="absolute -left-2 top-4 h-4 w-4 rotate-45 border-b border-l border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
 
-                        {/* Whisper card */}
-                        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-3 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-black/50">
+                        {/* Whisper card - more compact on mobile */}
+                        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-black/50 sm:p-3">
                             {/* Subtle shimmer */}
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-cyan-500/5" />
 
                             <div className="relative z-10">
                                 {/* Header with title and dismiss */}
                                 <div className="mb-1.5 flex items-start justify-between gap-2">
-                                    <h3 className="text-sm font-semibold text-foreground/90">
+                                    <h3 className="text-xs font-semibold text-foreground/90 sm:text-sm">
                                         {tip.tipTitle}
                                     </h3>
                                     <button
@@ -308,8 +315,8 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                     </button>
                                 </div>
 
-                                {/* Description */}
-                                <p className="text-xs leading-relaxed text-foreground/70">
+                                {/* Description - tighter line height on mobile */}
+                                <p className="text-xs leading-snug text-foreground/70 sm:leading-relaxed">
                                     {tip.tipDescription}
                                 </p>
 
