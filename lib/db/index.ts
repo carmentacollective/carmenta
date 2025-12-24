@@ -81,6 +81,8 @@ export type {
     Document,
     NewDocument,
     ConciergeReasoningConfig,
+    Notification,
+    NewNotification,
 } from "./schema";
 
 // Re-export user operations
@@ -118,3 +120,14 @@ export {
     type UIMessageLike,
     type UIMessagePartLike,
 } from "./connections";
+
+// Re-export notification operations
+export {
+    createNotification,
+    getUnreadNotifications,
+    getRecentNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    getUnreadCount,
+    type NotificationType,
+} from "./notifications";

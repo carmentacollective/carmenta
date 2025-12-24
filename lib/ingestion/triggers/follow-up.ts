@@ -4,11 +4,15 @@
  *
  * This integrates with the existing follow-up engine to extract
  * knowledge from conversations in real-time.
+ *
+ * When LIBRARIAN_ENABLED=true, uses the new Knowledge Librarian agent.
+ * Otherwise falls back to the legacy ingestion pipeline.
  */
 
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { ingestFromConversation } from "../engine";
+import { triggerLibrarian, isLibrarianEnabled } from "@/lib/ai-team/librarian/trigger";
 import type { StorageResult } from "../types";
 
 /**
@@ -81,7 +85,28 @@ export async function triggerFollowUpIngestion(
                     "🔄 Triggering follow-up ingestion"
                 );
 
-                // Run ingestion
+                // Use librarian if enabled, otherwise fall back to legacy pipeline
+                if (isLibrarianEnabled()) {
+                    logger.info(
+                        { conversationId },
+                        "📚 Using Knowledge Librarian for ingestion"
+                    );
+
+                    // Librarian handles async internally
+                    await triggerLibrarian(
+                        userId,
+                        conversationId,
+                        userMessages,
+                        assistantMessages,
+                        { async: finalConfig.async }
+                    );
+
+                    // Librarian doesn't return StorageResult[], so return empty
+                    // The librarian handles notifications internally
+                    return [];
+                }
+
+                // Legacy ingestion pipeline
                 const ingestPromise = ingestFromConversation(
                     userId,
                     userMessages,

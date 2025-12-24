@@ -11,8 +11,11 @@ import {
     getValuesDocument,
     initializeKBWithClerkData,
     hasKBProfile,
+    getRecentActivity,
     type KBFolder,
+    type ActivityItem,
 } from "@/lib/kb/actions";
+import { ActivityFeed } from "@/components/knowledge-viewer/activity-feed";
 
 export const metadata: Metadata = {
     title: "Knowledge Base · Carmenta",
@@ -57,9 +60,10 @@ export default async function KnowledgeBasePage() {
     }
 
     // Fetch KB data in parallel
-    const [userFolders, valuesDoc] = await Promise.all([
+    const [userFolders, valuesDoc, activityItems] = await Promise.all([
         getKBFolders(),
         getValuesDocument(),
+        getRecentActivity(),
     ]);
 
     // Build folder structure in order: philosophy, personality, knowledge
@@ -122,18 +126,25 @@ export default async function KnowledgeBasePage() {
                     <div className="mx-auto flex h-full max-w-5xl flex-col gap-8">
                         {/* Header */}
                         <section className="space-y-2">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-xl bg-primary/20 p-3">
-                                    <Book className="h-6 w-6 text-primary" />
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-xl bg-primary/20 p-3">
+                                        <Book className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-light tracking-tight text-foreground">
+                                            Knowledge Base
+                                        </h1>
+                                        <p className="text-foreground/70">
+                                            What we remember together
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h1 className="text-3xl font-light tracking-tight text-foreground">
-                                        Knowledge Base
-                                    </h1>
-                                    <p className="text-foreground/70">
-                                        What we remember together
-                                    </p>
-                                </div>
+
+                                {/* Activity Feed */}
+                                {activityItems.length > 0 && (
+                                    <ActivityFeed initialItems={activityItems} />
+                                )}
                             </div>
                         </section>
 
