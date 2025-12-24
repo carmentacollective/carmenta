@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import Image from "next/image";
 import { ExternalLink, Loader2, Eye, EyeOff, Key } from "lucide-react";
 import {
@@ -22,6 +22,14 @@ interface ApiKeyModalProps {
     ) => Promise<{ success: boolean; error?: string }>;
 }
 
+/**
+ * Action state for API key form submission.
+ * Uses React 19's useActionState for built-in loading/error handling.
+ */
+interface ActionState {
+    error: string | null;
+}
+
 export function ApiKeyModal({
     service,
     open,
@@ -30,40 +38,43 @@ export function ApiKeyModal({
 }: ApiKeyModalProps) {
     const [apiKey, setApiKey] = useState("");
     const [showKey, setShowKey] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // Reset key when modal closes to clear form state
+    const [resetKey, setResetKey] = useState(0);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!apiKey.trim()) {
-            setError("API key is required");
-            return;
-        }
+    // React 19: useActionState consolidates loading + error state
+    const [state, formAction, isPending] = useActionState<ActionState, FormData>(
+        async (_prevState, formData) => {
+            const key = formData.get("apiKey") as string;
 
-        setLoading(true);
-        setError(null);
-
-        try {
-            const result = await onSubmit(apiKey.trim());
-            if (result.success) {
-                setApiKey("");
-                setShowKey(false);
-                onOpenChange(false);
-            } else {
-                setError(result.error || "Failed to connect");
+            if (!key?.trim()) {
+                return { error: "API key is required" };
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
-        } finally {
-            setLoading(false);
-        }
-    };
+
+            try {
+                const result = await onSubmit(key.trim());
+                if (result.success) {
+                    // Reset form and close modal on success
+                    setApiKey("");
+                    setShowKey(false);
+                    onOpenChange(false);
+                    return { error: null };
+                }
+                return { error: result.error || "Failed to connect" };
+            } catch (err) {
+                return {
+                    error: err instanceof Error ? err.message : "An error occurred",
+                };
+            }
+        },
+        { error: null }
+    );
 
     const handleClose = () => {
-        if (!loading) {
+        if (!isPending) {
             setApiKey("");
-            setError(null);
             setShowKey(false);
+            // Increment reset key to remount form and clear error state
+            setResetKey((k) => k + 1);
             onOpenChange(false);
         }
     };
@@ -90,7 +101,7 @@ export function ApiKeyModal({
                     </div>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form key={resetKey} action={formAction} className="space-y-4">
                     {/* Get API Key Link */}
                     {service.getApiKeyUrl && (
                         <div className="rounded-lg bg-foreground/5 p-3">
@@ -121,6 +132,7 @@ export function ApiKeyModal({
                         <div className="relative">
                             <input
                                 id="api-key"
+                                name="apiKey"
                                 type={showKey ? "text" : "password"}
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
@@ -128,7 +140,7 @@ export function ApiKeyModal({
                                     service.apiKeyPlaceholder || "Enter your API key"
                                 }
                                 className="w-full rounded-lg border border-foreground/15 bg-background px-4 py-3 pr-12 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                disabled={loading}
+                                disabled={isPending}
                                 autoComplete="off"
                                 autoFocus
                             />
@@ -151,9 +163,9 @@ export function ApiKeyModal({
                     </div>
 
                     {/* Error Message */}
-                    {error && (
+                    {state.error && (
                         <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-                            {error}
+                            {state.error}
                         </div>
                     )}
 
@@ -162,17 +174,17 @@ export function ApiKeyModal({
                         <button
                             type="button"
                             onClick={handleClose}
-                            disabled={loading}
+                            disabled={isPending}
                             className="flex-1 rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !apiKey.trim()}
+                            disabled={isPending || !apiKey.trim()}
                             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loading ? (
+                            {isPending ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                     Connecting...
