@@ -41,49 +41,58 @@ export function useMultiClick({
         };
     }, []);
 
-    const handleClick = useCallback(() => {
-        // Ignore if in cooldown
-        if (cooldownRef.current) return;
+    const handleClick = useCallback(
+        (event?: React.MouseEvent) => {
+            // Ignore if in cooldown
+            if (cooldownRef.current) return;
 
-        const now = Date.now();
-        const clicks = clickTimesRef.current;
+            const now = Date.now();
+            const clicks = clickTimesRef.current;
 
-        // Add current click
-        clicks.push(now);
+            // Add current click
+            clicks.push(now);
 
-        // Remove clicks outside time window
-        const cutoff = now - timeWindow;
-        while (clicks.length > 0 && clicks[0] < cutoff) {
-            clicks.shift();
-        }
-
-        // Check if threshold reached
-        if (clicks.length >= threshold) {
-            setIsTriggered(true);
-            clickTimesRef.current = [];
-            cooldownRef.current = true;
-
-            // Clear previous timeouts if they exist
-            if (triggerTimeoutRef.current) {
-                clearTimeout(triggerTimeoutRef.current);
-            }
-            if (cooldownTimeoutRef.current) {
-                clearTimeout(cooldownTimeoutRef.current);
+            // Remove clicks outside time window
+            const cutoff = now - timeWindow;
+            while (clicks.length > 0 && clicks[0] < cutoff) {
+                clicks.shift();
             }
 
-            // Reset triggered state after animation time
-            triggerTimeoutRef.current = setTimeout(() => {
-                setIsTriggered(false);
-                triggerTimeoutRef.current = null;
-            }, 1000);
+            // Check if threshold reached
+            if (clicks.length >= threshold) {
+                // Prevent parent handlers (like Link navigation) from firing
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
 
-            // Reset cooldown
-            cooldownTimeoutRef.current = setTimeout(() => {
-                cooldownRef.current = false;
-                cooldownTimeoutRef.current = null;
-            }, cooldown);
-        }
-    }, [threshold, timeWindow, cooldown]);
+                setIsTriggered(true);
+                clickTimesRef.current = [];
+                cooldownRef.current = true;
+
+                // Clear previous timeouts if they exist
+                if (triggerTimeoutRef.current) {
+                    clearTimeout(triggerTimeoutRef.current);
+                }
+                if (cooldownTimeoutRef.current) {
+                    clearTimeout(cooldownTimeoutRef.current);
+                }
+
+                // Reset triggered state after animation time
+                triggerTimeoutRef.current = setTimeout(() => {
+                    setIsTriggered(false);
+                    triggerTimeoutRef.current = null;
+                }, 1000);
+
+                // Reset cooldown
+                cooldownTimeoutRef.current = setTimeout(() => {
+                    cooldownRef.current = false;
+                    cooldownTimeoutRef.current = null;
+                }, cooldown);
+            }
+        },
+        [threshold, timeWindow, cooldown]
+    );
 
     return { isTriggered, handleClick };
 }
