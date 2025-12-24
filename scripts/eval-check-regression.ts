@@ -17,8 +17,7 @@ import { logger } from "@/lib/logger";
 
 const BASELINE_FILE = path.join(process.cwd(), "knowledge/evals/baseline-benchmark.md");
 const BRAINTRUST_API_KEY = process.env.BRAINTRUST_API_KEY;
-const PROJECT_NAME = "Carmenta";
-const EXPERIMENT_NAME = "Carmenta Nightly";
+const PROJECT_NAME = "Carmenta Nightly"; // This is the project name, not experiment
 
 // Regression thresholds from spec
 const THRESHOLDS = {
@@ -173,6 +172,20 @@ function updateBaseline(metrics: {
 }
 
 /**
+ * Serialize error for logging (Error objects don't JSON.stringify well)
+ */
+function serializeError(error: unknown): Record<string, unknown> {
+    if (error instanceof Error) {
+        return {
+            name: error.name,
+            message: error.message,
+            stack: error.stack?.split("\n").slice(0, 5).join("\n"),
+        };
+    }
+    return { value: String(error) };
+}
+
+/**
  * Fetch latest experiment from Braintrust using REST API
  */
 async function fetchLatestExperiment(): Promise<{
@@ -189,9 +202,9 @@ async function fetchLatestExperiment(): Promise<{
     }
 
     try {
-        // Use Braintrust REST API to fetch experiments
-        const response = await fetch(
-            `https://api.braintrust.dev/v1/project/${encodeURIComponent(PROJECT_NAME)}/experiment?experiment_name=${encodeURIComponent(EXPERIMENT_NAME)}&limit=1`,
+        // First, get the project ID
+        const projectsResponse = await fetch(
+            `https://api.braintrust.dev/v1/project?project_name=${encodeURIComponent(PROJECT_NAME)}`,
             {
                 headers: {
                     Authorization: `Bearer ${BRAINTRUST_API_KEY}`,
@@ -201,13 +214,45 @@ async function fetchLatestExperiment(): Promise<{
             }
         );
 
-        if (!response.ok) {
+        if (!projectsResponse.ok) {
+            const errorText = await projectsResponse.text();
             throw new Error(
-                `Braintrust API error: ${response.status} ${response.statusText}`
+                `Braintrust API error fetching project: ${projectsResponse.status} ${projectsResponse.statusText} - ${errorText}`
             );
         }
 
-        const data = (await response.json()) as {
+        const projectsData = (await projectsResponse.json()) as {
+            objects?: Array<{ id: string; name: string }>;
+        };
+
+        if (!projectsData.objects || projectsData.objects.length === 0) {
+            logger.warn({ project: PROJECT_NAME }, "Project not found in Braintrust");
+            return null;
+        }
+
+        const projectId = projectsData.objects[0].id;
+        logger.info({ projectId, projectName: PROJECT_NAME }, "Found project");
+
+        // Now list experiments for this project, sorted by creation time (most recent first)
+        const experimentsResponse = await fetch(
+            `https://api.braintrust.dev/v1/experiment?project_id=${projectId}&limit=1`,
+            {
+                headers: {
+                    Authorization: `Bearer ${BRAINTRUST_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                signal: AbortSignal.timeout(30000),
+            }
+        );
+
+        if (!experimentsResponse.ok) {
+            const errorText = await experimentsResponse.text();
+            throw new Error(
+                `Braintrust API error fetching experiments: ${experimentsResponse.status} ${experimentsResponse.statusText} - ${errorText}`
+            );
+        }
+
+        const experimentsData = (await experimentsResponse.json()) as {
             objects?: Array<{
                 id: string;
                 name: string;
@@ -216,24 +261,27 @@ async function fetchLatestExperiment(): Promise<{
             }>;
         };
 
-        if (!data.objects || data.objects.length === 0) {
+        if (!experimentsData.objects || experimentsData.objects.length === 0) {
+            logger.warn({ project: PROJECT_NAME }, "No experiments found for project");
+            return null;
+        }
+
+        const latest = experimentsData.objects[0];
+        const scores = latest.scores || {};
+
+        logger.info(
+            { experimentId: latest.id, experimentName: latest.name, scores },
+            "Fetched latest experiment"
+        );
+
+        // Check if scores is empty - indicates experiment with no results yet
+        if (Object.keys(scores).length === 0) {
             logger.warn(
-                { project: PROJECT_NAME, experiment: EXPERIMENT_NAME },
-                "No experiments found"
+                { experimentId: latest.id, experimentName: latest.name },
+                "Experiment has no aggregated scores yet"
             );
             return null;
         }
-
-        const latest = data.objects[0];
-        const scores = latest.scores || {};
-
-        // Check if scores is empty - indicates experiment with no results
-        if (Object.keys(scores).length === 0) {
-            logger.warn({ experimentId: latest.id }, "Experiment has no scores");
-            return null;
-        }
-
-        logger.info({ experimentId: latest.id, scores }, "Fetched latest experiment");
 
         return {
             overall: scores.overall ?? scores.score ?? 0,
@@ -244,7 +292,10 @@ async function fetchLatestExperiment(): Promise<{
             toolInvocation: scores.toolInvocation ?? scores.tool_invocation,
         };
     } catch (error) {
-        logger.error({ error }, "Failed to fetch experiment from Braintrust");
+        logger.error(
+            { error: serializeError(error) },
+            "Failed to fetch experiment from Braintrust"
+        );
         throw error;
     }
 }
@@ -422,6 +473,6 @@ async function main(): Promise<void> {
 
 // Run the script
 main().catch((error) => {
-    logger.error({ error }, "Regression check failed");
+    logger.error({ error: serializeError(error) }, "Regression check failed");
     process.exit(1);
 });
