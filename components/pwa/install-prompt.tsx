@@ -2,82 +2,140 @@
  * PWA Install Prompt Component
  *
  * Shows a beautiful, on-brand prompt encouraging users to install Carmenta.
- * Only appears when installation is available (browser supports + not installed).
+ * Intelligently targets users when installation makes sense:
+ * - iOS Safari mobile only (where PWA provides most value)
+ * - After 3rd visit (user is engaged)
+ * - After meaningful engagement (15s dwell OR scroll/click/touch)
+ * - Not already installed
+ * - Not previously dismissed
  *
  * Features:
- * - Dismissible with 7-day snooze
+ * - iOS Safari mobile-only targeting (no desktop interruption)
+ * - Visit count tracking (3rd visit minimum)
+ * - Engagement-based timing
+ * - Dismissible with permanent snooze
+ * - Manual iOS install instructions
  * - Tracks install outcome for analytics
  * - Carmenta voice and aesthetic
- * - Accessible
+ * - Accessible with 44px touch targets
  *
  * @see knowledge/components/pwa-mobile-enhancements.md
  */
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, Smartphone } from "lucide-react";
-import { useInstallPrompt } from "@/lib/hooks/use-install-prompt";
-// import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback"; // TODO: Re-enable
-import { cn } from "@/lib/utils";
+import { X, Home } from "lucide-react";
 import { logger } from "@/lib/client-logger";
 
-const SNOOZE_KEY = "carmenta-install-prompt-snoozed";
-const SNOOZE_DAYS = 7;
+const VISIT_COUNT_KEY = "carmenta-visit-count";
+const SESSION_COUNTED_KEY = "carmenta-session-counted";
+const DISMISSED_KEY = "pwa-install-dismissed";
+const MIN_VISITS_REQUIRED = 3;
+const ENGAGEMENT_DELAY_MS = 15000; // 15 seconds of dwell time
 
-// Check if prompt is snoozed (pure function, safe for SSR)
-function isSnoozed(): boolean {
-    if (typeof window === "undefined") return true;
-    const snoozedUntil = localStorage.getItem(SNOOZE_KEY);
-    return Boolean(snoozedUntil && Date.now() < parseInt(snoozedUntil, 10));
+// Check if running on iOS Safari mobile
+function isIOSSafariMobile(): boolean {
+    if (typeof window === "undefined") return false;
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari =
+        /Safari/.test(navigator.userAgent) &&
+        !/CriOS|FxiOS|OPiOS/.test(navigator.userAgent);
+    const isMobile = window.innerWidth <= 768;
+
+    return isIOS && isSafari && isMobile;
+}
+
+// Check if already installed (running in standalone mode)
+function isAlreadyInstalled(): boolean {
+    if (typeof window === "undefined") return false;
+    return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+            true ||
+        document.referrer.includes("android-app://")
+    );
+}
+
+// Check initial eligibility (called once on mount via useState initializer)
+function checkInitialEligibility(): boolean {
+    if (typeof window === "undefined") return false;
+    if (!isIOSSafariMobile()) return false;
+    if (isAlreadyInstalled()) return false;
+    if (localStorage.getItem(DISMISSED_KEY) === "true") return false;
+
+    // Track visit count once per session
+    const sessionCounted = sessionStorage.getItem(SESSION_COUNTED_KEY);
+    if (!sessionCounted) {
+        const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) || "0", 10);
+        const newVisitCount = visitCount + 1;
+        localStorage.setItem(VISIT_COUNT_KEY, newVisitCount.toString());
+        sessionStorage.setItem(SESSION_COUNTED_KEY, "true");
+        logger.info({ visitCount: newVisitCount }, "📲 Tracking PWA visit count");
+    }
+
+    const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) || "0", 10);
+    return visitCount >= MIN_VISITS_REQUIRED;
 }
 
 export function InstallPrompt() {
-    const { canInstall, promptInstall } = useInstallPrompt();
-    // TODO: Re-enable haptic feedback once CI type resolution issue is fixed
-    // const { trigger: triggerHaptic } = useHapticFeedback();
-    const triggerHaptic = (_type: string) => {}; // no-op for now
-    // Track whether user has dismissed or installed this session
-    const [userDismissed, setUserDismissed] = useState(false);
-    const [isInstalling, setIsInstalling] = useState(false);
-    // Track delay timer completion (don't interrupt initial load)
-    const [delayComplete, setDelayComplete] = useState(false);
+    // Initialize eligibility once on mount (no setState in effects)
+    const [isEligible] = useState(checkInitialEligibility);
+    const [hasEngaged, setHasEngaged] = useState(false);
+    const [isDismissed, setIsDismissed] = useState(false);
+    const engagementTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Delay showing prompt to not interrupt initial load
+    // Engagement tracking callback (stable reference)
+    const trackEngagement = useCallback(() => {
+        setHasEngaged(true);
+        logger.debug({}, "📲 User engagement detected");
+    }, []);
+
+    // Set up engagement tracking only if eligible
     useEffect(() => {
-        if (!canInstall) return;
-        const timer = setTimeout(() => setDelayComplete(true), 3000);
-        return () => clearTimeout(timer);
-    }, [canInstall]);
-
-    // Derive visibility from state (no setState in effect body)
-    const isVisible = canInstall && !userDismissed && !isSnoozed() && delayComplete;
-
-    const handleInstall = async () => {
-        setIsInstalling(true);
-        triggerHaptic("medium");
-
-        const outcome = await promptInstall();
-
-        logger.info({ outcome }, "📲 Install prompt interaction");
-
-        setIsInstalling(false);
-
-        if (outcome === "accepted") {
-            setUserDismissed(true);
+        if (!isEligible) {
+            logger.debug({}, "📲 Not eligible for install prompt");
+            return;
         }
-    };
+
+        // Listen for engagement signals
+        const engagementEvents = ["scroll", "click", "touchstart"];
+        engagementEvents.forEach((event) => {
+            window.addEventListener(event, trackEngagement, { once: true });
+        });
+
+        // Time-based engagement (15 seconds dwell time)
+        engagementTimerRef.current = setTimeout(() => {
+            setHasEngaged(true);
+            logger.debug({}, "📲 Engagement detected via dwell time");
+        }, ENGAGEMENT_DELAY_MS);
+
+        return () => {
+            if (engagementTimerRef.current) {
+                clearTimeout(engagementTimerRef.current);
+            }
+            engagementEvents.forEach((event) => {
+                window.removeEventListener(event, trackEngagement);
+            });
+        };
+    }, [isEligible, trackEngagement]);
+
+    // Derive visibility from state
+    const isVisible = isEligible && hasEngaged && !isDismissed;
+
+    // Log when prompt becomes visible
+    useEffect(() => {
+        if (isVisible) {
+            logger.info({}, "📲 Showing PWA install prompt for iOS after engagement");
+        }
+    }, [isVisible]);
 
     const handleDismiss = () => {
-        triggerHaptic("light");
-
-        // Snooze for configured days
-        const snoozeUntil = Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000;
-        localStorage.setItem(SNOOZE_KEY, snoozeUntil.toString());
-
-        setUserDismissed(true);
-        logger.debug({}, "📲 Install prompt dismissed, snoozed");
+        localStorage.setItem(DISMISSED_KEY, "true");
+        setIsDismissed(true);
+        logger.info({}, "📲 Install prompt dismissed permanently");
     };
 
     return (
@@ -88,50 +146,56 @@ export function InstallPrompt() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.95 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="fixed bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 right-4 z-modal mx-auto max-w-sm sm:bottom-[max(1.5rem,env(safe-area-inset-bottom))] sm:left-auto sm:right-6"
+                    className="fixed bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 right-4 z-modal mx-auto max-w-sm"
                 >
-                    <div className="glass-card overflow-hidden rounded-2xl border border-white/10 bg-background/95 p-4 shadow-2xl backdrop-blur-xl">
+                    <div className="glass-card overflow-hidden rounded-2xl border border-white/10 bg-background/95 p-5 shadow-2xl backdrop-blur-xl">
                         {/* Dismiss button - 44px touch target (Apple HIG minimum) */}
                         <button
                             onClick={handleDismiss}
-                            className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60"
-                            aria-label="Dismiss"
+                            className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60 active:scale-95"
+                            aria-label="Dismiss install prompt"
                         >
                             <X className="h-4 w-4" />
                         </button>
 
-                        <div className="flex gap-4">
-                            {/* Icon */}
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
-                                <Smartphone className="h-6 w-6 text-indigo-400" />
+                        {/* Header with icon */}
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                                <Home className="h-6 w-6 text-primary" />
                             </div>
-
-                            {/* Content */}
-                            <div className="flex-1 pr-4">
+                            <div>
                                 <h3 className="font-semibold text-foreground">
                                     Add Carmenta to Home
                                 </h3>
-                                <p className="mt-1 text-sm text-foreground/60">
-                                    Install for faster access, offline support, and a
-                                    native app experience.
+                                <p className="text-sm text-foreground/60">
+                                    Faster access, native experience
                                 </p>
-
-                                {/* Install button - 44px min height for touch target */}
-                                <button
-                                    onClick={handleInstall}
-                                    disabled={isInstalling}
-                                    className={cn(
-                                        "mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all",
-                                        "bg-gradient-to-r from-indigo-500 to-purple-500 text-white",
-                                        "hover:from-indigo-600 hover:to-purple-600",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
-                                        "disabled:opacity-50"
-                                    )}
-                                >
-                                    <Download className="h-4 w-4" />
-                                    {isInstalling ? "Installing..." : "Install"}
-                                </button>
                             </div>
+                        </div>
+
+                        {/* iOS Instructions */}
+                        <div className="rounded-lg bg-foreground/5 p-3">
+                            <p className="mb-2 text-xs font-medium text-foreground/80">
+                                To install on iOS:
+                            </p>
+                            <ol className="space-y-1.5 text-xs text-foreground/60">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-foreground/30">1.</span>
+                                    <span>
+                                        Tap the Share button (square with arrow)
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-foreground/30">2.</span>
+                                    <span>
+                                        Scroll and tap &quot;Add to Home Screen&quot;
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-foreground/30">3.</span>
+                                    <span>Tap &quot;Add&quot; in the top right</span>
+                                </li>
+                            </ol>
                         </div>
                     </div>
                 </motion.div>
