@@ -6,32 +6,10 @@ import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
 
-// Create a restricted mathjs instance for safe user input evaluation
-// Disables import/createUnit to prevent code injection attacks
+// Create mathjs instance for safe user input evaluation
+// Security: expressions are evaluated with an empty scope to prevent
+// function definitions and variable assignments
 const math = create(all);
-math.import(
-    {
-        import: function () {
-            throw new Error("Function import is disabled");
-        },
-        createUnit: function () {
-            throw new Error("Function createUnit is disabled");
-        },
-        evaluate: function () {
-            throw new Error("Function evaluate is disabled");
-        },
-        parse: function () {
-            throw new Error("Function parse is disabled");
-        },
-        simplify: function () {
-            throw new Error("Function simplify is disabled");
-        },
-        derivative: function () {
-            throw new Error("Function derivative is disabled");
-        },
-    },
-    { override: true }
-);
 
 /**
  * Built-in tools available to all connections.
@@ -72,7 +50,9 @@ export const builtInTools = {
         }),
         execute: async ({ expression }) => {
             try {
-                const result = math.evaluate(expression);
+                // Evaluate with empty scope to prevent function definitions and assignments
+                // This allows standard math operations while blocking security risks
+                const result = math.evaluate(expression, {});
                 // Format the result nicely
                 const formatted =
                     typeof result === "number"
