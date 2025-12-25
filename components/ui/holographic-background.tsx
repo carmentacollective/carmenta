@@ -166,26 +166,27 @@ const THEME_PALETTES: Record<
     },
     christmas: {
         light: [
-            { r: 200, g: 80, b: 90 }, // Christmas Red
-            { r: 80, g: 140, b: 95 }, // Evergreen
-            { r: 255, g: 210, b: 100 }, // Star Gold
-            { r: 180, g: 220, b: 185 }, // Pine Frost
-            { r: 220, g: 90, b: 100 }, // Holly Berry
-            { r: 100, g: 160, b: 110 }, // Forest Green
-            { r: 255, g: 190, b: 80 }, // Ornament Gold
-            { r: 160, g: 200, b: 170 }, // Mistletoe
+            { r: 120, g: 180, b: 140 }, // Fresh Pine
+            { r: 80, g: 160, b: 110 }, // Evergreen
+            { r: 100, g: 190, b: 130 }, // Spring Green
+            { r: 140, g: 200, b: 160 }, // Mint Leaf
+            { r: 90, g: 170, b: 120 }, // Forest Glade
+            { r: 110, g: 185, b: 135 }, // Sage Meadow
+            { r: 130, g: 195, b: 150 }, // Soft Fern
+            { r: 100, g: 175, b: 125 }, // Woodland
         ],
         dark: [
-            { r: 180, g: 60, b: 70 }, // Rich Red
-            { r: 60, g: 120, b: 80 }, // Deep Evergreen
-            { r: 200, g: 160, b: 80 }, // Golden Glow
-            { r: 80, g: 140, b: 95 }, // Forest Pine
-            { r: 160, g: 50, b: 60 }, // Dark Cherry
-            { r: 50, g: 100, b: 70 }, // Night Pine
-            { r: 180, g: 140, b: 70 }, // Amber Ornament
-            { r: 70, g: 130, b: 90 }, // Spruce
+            // Pure greens only - no reds that mix to brown
+            { r: 45, g: 90, b: 65 }, // Deep Forest
+            { r: 55, g: 100, b: 75 }, // Night Pine
+            { r: 50, g: 95, b: 70 }, // Shadowed Sage
+            { r: 60, g: 110, b: 80 }, // Emerald Depths
+            { r: 40, g: 85, b: 60 }, // Forest Floor
+            { r: 65, g: 115, b: 85 }, // Mossy Glade
+            { r: 48, g: 92, b: 68 }, // Twilight Green
+            { r: 58, g: 105, b: 78 }, // Evergreen Shadow
         ],
-        darkBg: "#081210", // Deep forest night
+        darkBg: "#234230", // Sage Evening - matches theme background
     },
 };
 
@@ -245,12 +246,12 @@ const WARM_PRESENCE_COLORS: Record<
     },
     christmas: {
         light: {
-            inner: "rgba(220, 160, 160, 0.4)",
-            outer: "rgba(255, 220, 180, 0.25)",
+            inner: "rgba(140, 200, 160, 0.4)",
+            outer: "rgba(180, 220, 190, 0.25)",
         },
         dark: {
-            inner: "rgba(180, 90, 95, 0.28)",
-            outer: "rgba(200, 150, 90, 0.15)",
+            inner: "rgba(70, 130, 90, 0.30)",
+            outer: "rgba(50, 100, 70, 0.18)",
         },
     },
 };
@@ -350,11 +351,13 @@ export function HolographicBackground({
     const cssTheme = resolveToCssTheme(themeVariant);
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
+    const watermarkRef = useRef<HTMLImageElement>(null);
     const mouseRef = useRef({ x: 0, y: 0 });
     const blobsRef = useRef<Blob[]>([]);
     const particlesRef = useRef<Particle[]>([]);
     const timeRef = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
+    const needsImmediateRedrawRef = useRef(false);
     const themeColorsRef = useRef<{
         bg: string;
         colors: readonly ColorPalette[];
@@ -370,6 +373,14 @@ export function HolographicBackground({
 
     // Watermark presence: brightens when mouse is near center
     const [watermarkPresence, setWatermarkPresence] = useState(0);
+
+    // Watermark size animation: smooth spring physics on resize
+    // We use a fixed base size and animate scale transform for smooth resizing
+    const watermarkBaseSizeRef = useRef(0);
+    const watermarkScaleRef = useRef(1);
+    const watermarkScaleVelocityRef = useRef(0);
+    const watermarkTargetSizeRef = useRef(0);
+    const watermarkAnimationStartTime = useRef(0);
 
     // Update theme colors when theme or theme variant changes
     useEffect(() => {
@@ -398,6 +409,10 @@ export function HolographicBackground({
         const shimmerCtx = shimmerCanvas.getContext("2d");
         if (!holoCtx || !shimmerCtx) return;
 
+        // Calculate watermark size (matches CSS: min(80vh, 80vw))
+        const getWatermarkSize = () =>
+            Math.min(window.innerHeight * 0.8, window.innerWidth * 0.8);
+
         // Simple resize handler - just update canvas dimensions
         // The wrapping logic in the animation loop handles any out-of-bounds blobs
         const handleResize = () => {
@@ -405,10 +420,25 @@ export function HolographicBackground({
             holoCanvas.height = window.innerHeight;
             shimmerCanvas.width = window.innerWidth;
             shimmerCanvas.height = window.innerHeight;
+            // Force immediate redraw on next frame to prevent flicker
+            needsImmediateRedrawRef.current = true;
+            // Update watermark target size for spring animation
+            watermarkTargetSizeRef.current = getWatermarkSize();
         };
 
         // Initial canvas setup
         handleResize();
+        // Initialize watermark base size (used for scale calculation)
+        const initialSize = getWatermarkSize();
+        watermarkBaseSizeRef.current = initialSize;
+        watermarkTargetSizeRef.current = initialSize;
+        // Set initial watermark dimensions directly via ref
+        if (watermarkRef.current) {
+            watermarkRef.current.style.width = `${initialSize}px`;
+            watermarkRef.current.style.height = `${initialSize}px`;
+        }
+        // Track animation start time to delay JS transform until after CSS entrance animation (1.4s)
+        watermarkAnimationStartTime.current = Date.now();
         window.addEventListener("resize", handleResize);
 
         // Create blobs and particles once on mount
@@ -454,10 +484,13 @@ export function HolographicBackground({
             const time = timeRef.current;
 
             // Skip 2 of every 3 frames (~20fps) - slow dreamy blobs don't need 60fps
-            if (time % 3 !== 0) {
+            // BUT always draw immediately after resize to prevent flicker
+            const needsImmediateRedraw = needsImmediateRedrawRef.current;
+            if (time % 3 !== 0 && !needsImmediateRedraw) {
                 animationFrameRef.current = requestAnimationFrame(animate);
                 return;
             }
+            needsImmediateRedrawRef.current = false;
 
             const mouse = mouseRef.current;
             const { bg, colors } = themeColorsRef.current;
@@ -488,6 +521,30 @@ export function HolographicBackground({
             if (time - lastGradientUpdateRef.current >= 10) {
                 lastGradientUpdateRef.current = time;
                 setGradientPos({ x: springX.value, y: springY.value });
+            }
+
+            // Animate watermark size with spring physics
+            // Wait 1.4s for CSS entrance animation to complete before applying JS transform
+            const elapsedMs = Date.now() - watermarkAnimationStartTime.current;
+            const cssEntranceComplete = elapsedMs >= 1400;
+            if (
+                watermarkRef.current &&
+                watermarkBaseSizeRef.current > 0 &&
+                watermarkTargetSizeRef.current > 0 &&
+                cssEntranceComplete
+            ) {
+                const targetScale =
+                    watermarkTargetSizeRef.current / watermarkBaseSizeRef.current;
+                const scaleSpring = springLerp(
+                    watermarkScaleRef.current,
+                    targetScale,
+                    watermarkScaleVelocityRef.current,
+                    0.04, // Slightly stiffer than gradient for responsive feel
+                    0.82
+                );
+                watermarkScaleRef.current = scaleSpring.value;
+                watermarkScaleVelocityRef.current = scaleSpring.velocity;
+                watermarkRef.current.style.transform = `scale(${scaleSpring.value})`;
             }
 
             // Draw holographic blobs
@@ -690,10 +747,14 @@ export function HolographicBackground({
                     <div className="oracle-breathing">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
+                            ref={watermarkRef}
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-all duration-500"
+                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-[opacity,filter] duration-500"
                             style={{
+                                // CSS size classes provide SSR fallback, then JS sets explicit px dimensions on mount
+                                // Transform scale is animated via spring physics in the animation loop (no CSS transition to avoid conflicts)
+                                willChange: "transform",
                                 // Boost opacity and brightness when cursor approaches center
                                 // Base opacity matches CSS animation: 0.09 light, 0.07 dark
                                 opacity:

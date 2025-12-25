@@ -9,6 +9,24 @@
  * - Columns: snake_case, descriptive, avoid abbreviations
  * - Timestamps: use _at suffix (created_at, updated_at)
  * - Foreign keys: referenced_table_singular_id (user_id, connection_id)
+ *
+ * ID column patterns:
+ * - UUID: Use for user-facing entities needing globally unique, non-guessable IDs
+ *   Example: `uuid("id").primaryKey().defaultRandom()`
+ *   Used by: users, documents, notifications
+ *
+ * - Serial: Use for high-volume operational data (fast inserts, compact storage)
+ *   Example: `serial("id").primaryKey()`
+ *   Used by: connections, integrations (encoded via Sqids for public URLs)
+ *
+ * - Identity (NEW TABLES): Use for new tables needing auto-increment integers
+ *   Example: `integer("id").primaryKey().generatedAlwaysAsIdentity()`
+ *   Benefits: Modern PostgreSQL standard, explicit control over sequences
+ *   Note: Don't migrate existing serial columns; use for new tables only
+ *
+ * - Text: Use when IDs come from external systems (AI SDK message IDs, etc.)
+ *   Example: `text("id").primaryKey()`
+ *   Used by: messages (Vercel AI SDK provides nanoid-style IDs)
  */
 
 import {
@@ -933,3 +951,89 @@ export type NewIntegrationHistory = typeof integrationHistory.$inferInsert;
 
 export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
+
+// ============================================================================
+// NOTIFICATIONS TABLE (Knowledge Librarian)
+// ============================================================================
+
+/**
+ * Notification source types - which agent/system created the notification
+ */
+export const notificationSourceEnum = pgEnum("notification_source", [
+    "librarian", // Knowledge Librarian agent
+    "system", // System notifications
+]);
+
+/**
+ * Notification types - categorizes the notification content
+ */
+export const notificationTypeEnum = pgEnum("notification_type", [
+    "knowledge_created", // New document created in KB
+    "knowledge_updated", // Existing document updated
+    "knowledge_moved", // Document moved to new location
+    "insight", // General insight from librarian
+]);
+
+/**
+ * Notifications for users from AI agents
+ *
+ * The Knowledge Librarian uses this to inform users about KB changes.
+ * Future agents may also write notifications here.
+ *
+ * Design decisions:
+ * - Simple queue pattern: write once, read many, mark as read
+ * - No complex threading - each notification is standalone
+ * - Optional reference to document that was affected
+ */
+export const notifications = pgTable(
+    "notifications",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** User to notify */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Source agent/system */
+        source: notificationSourceEnum("source").notNull().default("librarian"),
+
+        /** Notification type for categorization */
+        type: notificationTypeEnum("type").notNull(),
+
+        /** Human-readable notification message */
+        message: text("message").notNull(),
+
+        /** Optional reference to affected document path */
+        documentPath: text("document_path"),
+
+        /** Whether the user has seen this notification */
+        read: boolean("read").notNull().default(false),
+
+        /** When the notification was read (null if unread) */
+        readAt: timestamp("read_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Primary query: unread notifications for a user */
+        index("notifications_user_read_idx").on(table.userId, table.read),
+        /** Recent notifications for activity feed */
+        index("notifications_user_created_idx").on(table.userId, table.createdAt),
+    ]
+);
+
+/**
+ * Relations for notifications
+ */
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+    user: one(users, {
+        fields: [notifications.userId],
+        references: [users.id],
+    }),
+}));
+
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;

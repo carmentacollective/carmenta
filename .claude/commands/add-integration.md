@@ -89,18 +89,15 @@ extend `ServiceAdapter` base class and implement `getHelp()`, `execute()`, and
 
 <tool-ui-philosophy>
 Tool results are intermediate data the AI processes. Users care about the AI's
-synthesized response, not raw API output. Tool UI components show minimal status: what
-happened, with optional expansion for debugging.
+synthesized response, not raw API output. Tool UI components delegate to ToolRenderer
+for consistent collapsed/expanded behavior.
 
-Design principles:
+Most integrations use the minimal wrapper pattern - ToolRenderer handles status display,
+icons, and expansion. Only add custom content for services with rich visual output (task
+lists, calendars, GIF galleries).
 
-- Compact one-line status for success states ("Loaded 10 recordings", "Found 3 tasks")
-- Loading states show action in progress ("Searching...", "Fetching tasks...")
-- Error states are clear but not alarming
-- Optional JSON expansion for debugging (collapsed by default)
-- Let the AI's response do the heavy lifting - the UI just confirms the tool worked
-
-Reference `components/generative-ui/limitless.tsx` for the pattern to follow.
+Reference `components/generative-ui/limitless.tsx` for the standard minimal pattern.
+Reference `components/generative-ui/clickup.tsx` for rich visual content pattern.
 </tool-ui-philosophy>
 
 <oauth-infrastructure>
@@ -173,19 +170,23 @@ Study these files to understand patterns:
    - For OAuth: add service mapping in `app/api/connect/route.ts` if key differs
 
 4. **Tool configuration** in `lib/tools/tool-config.ts`
-   - Add entry to TOOL_CONFIG with display name, icon, and status messages
-   - Import appropriate Lucide icon (Mic2 for audio, Database for data, etc.)
-   - Include delight messages for warmth and engagement
+   - Add entry to TOOL_CONFIG (alphabetically sorted in service integrations section)
+   - Set `displayName` matching services.ts display name
+   - Set `icon` to logo path: `"/logos/your-service.svg"`
+   - Define `messages` for pending, running, completed, error states
+   - Optional: `getDescription` to extract query/action from args
+   - Optional: `delightMessages` for occasional warmth (completed, fast variants)
 
 5. **Tool UI component** at `components/generative-ui/[service].tsx`
-   - Follow the compact status display pattern from limitless.tsx
-   - Handle loading, error, and success states
-   - Generate human-readable status messages per action
-   - Optional JSON expansion for debugging
+   - Use ToolRenderer wrapper pattern (see tool-ui-pattern section)
+   - For most services: minimal wrapper delegating to ToolRenderer
+   - For rich visual services: add custom content as ToolRenderer children
+   - Status messages and icons come from tool-config.ts
 
 6. **ToolPartRenderer case** in `components/connection/holo-thread.tsx`
-   - Add case in the switch statement matching the service name
-   - Import and render the tool UI component
+   - Import component alphabetically with other generative-ui imports
+   - Add case alphabetically in "Integration tools" section
+   - Case name matches service ID from services.ts
 
 7. **Service logo** at `public/logos/[service].svg`
 
@@ -198,16 +199,15 @@ Study these files to understand patterns:
    - Follow patterns in `__tests__/integration/lib/integrations/` </deliverables>
 
 <tool-ui-pattern>
-Create a compact status display component following this structure:
+Most integrations use the minimal ToolRenderer wrapper pattern:
 
 ```typescript
 "use client";
 
-import { useState } from "react";
-import { ServiceIcon, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { ToolRenderer } from "./tool-renderer";
 
-interface ServiceToolResultProps {
+interface YourServiceToolResultProps {
     toolCallId: string;
     status: ToolStatus;
     action: string;
@@ -216,106 +216,66 @@ interface ServiceToolResultProps {
     error?: string;
 }
 
-export function ServiceToolResult({
+export function YourServiceToolResult({
+    toolCallId,
     status,
-    action,
     input,
     output,
     error,
-}: ServiceToolResultProps) {
-    const [expanded, setExpanded] = useState(false);
-
-    // Loading state - single line with pulse animation
-    if (status === "running") {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                <ServiceIcon className="h-3.5 w-3.5 animate-pulse" />
-                <span>{getStatusMessage(action, input, "running")}</span>
-            </div>
-        );
-    }
-
-    // Error state - red text, clear message
-    if (status === "error" || error) {
-        return (
-            <div className="flex items-center gap-2 py-1 text-sm text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                <span>{error || `Service ${action} failed`}</span>
-            </div>
-        );
-    }
-
-    // Success - compact summary with optional JSON expansion
-    const summary = getStatusMessage(action, input, "completed", output);
-
+}: YourServiceToolResultProps) {
     return (
-        <div className="py-1">
-            <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex w-full items-center gap-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ServiceIcon className="h-3.5 w-3.5 text-primary/70" />
-                <span className="flex-1">{summary}</span>
-                {output && (expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
-            </button>
-
-            {expanded && output && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/30 p-2 text-xs text-muted-foreground">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-        </div>
+        <ToolRenderer
+            toolName="your-service"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+        />
     );
-}
-
-function getStatusMessage(
-    action: string,
-    input: Record<string, unknown>,
-    status: "running" | "completed",
-    output?: Record<string, unknown>
-): string {
-    const isRunning = status === "running";
-
-    switch (action) {
-        case "list_items": {
-            if (isRunning) return "Loading items...";
-            const count = (output?.items as unknown[])?.length ?? 0;
-            return `Loaded ${count} items`;
-        }
-        case "search": {
-            const query = input.query as string;
-            if (isRunning) return `Searching "${query}"...`;
-            const count = (output?.results as unknown[])?.length ?? 0;
-            return `Found ${count} results for "${query}"`;
-        }
-        case "get_item": {
-            if (isRunning) return "Loading details...";
-            const title = output?.title as string;
-            return title ? `Loaded: ${truncate(title, 50)}` : "Loaded item";
-        }
-        case "create_item":
-            return isRunning ? "Creating..." : "Created successfully";
-        case "update_item":
-            return isRunning ? "Updating..." : "Updated successfully";
-        case "delete_item":
-            return isRunning ? "Deleting..." : "Deleted";
-        default:
-            return isRunning ? `Running ${action}...` : `Completed ${action}`;
-    }
-}
-
-function truncate(text: string, maxLength: number): string {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength - 1) + "…";
 }
 ```
 
-Adapt the `getStatusMessage` function for your service's specific actions. The pattern
-stays the same: running state with "...", completed state with result summary.
+ToolRenderer handles status display, icons (from tool-config.ts), loading animation,
+error states, and JSON expansion. Status messages come from tool-config.ts. For most
+services, this minimal wrapper is all you need.
+
+For services with rich visual output (task cards, calendars, GIF galleries), add
+children to ToolRenderer:
+
+```typescript
+export function YourServiceToolResult({ ... }: YourServiceToolResultProps) {
+    const hasVisualContent = isVisualAction(action) && status === "completed";
+
+    return (
+        <ToolRenderer
+            toolName="your-service"
+            toolCallId={toolCallId}
+            status={status}
+            input={input}
+            output={output}
+            error={error}
+        >
+            {hasVisualContent && <RichContentComponent output={output} />}
+        </ToolRenderer>
+    );
+}
+```
+
+Reference `components/generative-ui/clickup.tsx` for the rich content pattern.
 </tool-ui-pattern>
 
 <tool-part-renderer-case>
-Add to the switch statement in `components/connection/holo-thread.tsx`:
+Add case to the switch statement in `components/connection/holo-thread.tsx`. Integration
+tool cases are sorted alphabetically to minimize merge conflicts.
+
+1. Import the component with other generative-ui imports (alphabetical):
+
+```typescript
+import { YourServiceToolResult } from "@/components/generative-ui/your-service";
+```
+
+2. Add case in alphabetical position within the "Integration tools" section:
 
 ```typescript
 case "your-service":
@@ -326,13 +286,42 @@ case "your-service":
             action={(input?.action as string) ?? "unknown"}
             input={input}
             output={output}
-            error={getToolError(part, output, "Service request failed")}
+            error={getToolError(part, output, "Your Service request failed")}
         />
     );
 ```
 
-Import the component at the top of the file with other generative-ui imports.
-</tool-part-renderer-case>
+The case name matches the service ID from services.ts (e.g., "clickup", "notion",
+"google-calendar-contacts"). </tool-part-renderer-case>
+
+<tool-config-example>
+Add entry to TOOL_CONFIG in `lib/tools/tool-config.ts` (alphabetically in service
+integrations section):
+
+```typescript
+"your-service": {
+    displayName: "Your Service",
+    icon: "/logos/your-service.svg",
+    getDescription: (args) => {
+        const query = args.query as string | undefined;
+        return query ? truncate(query, 50) : undefined;
+    },
+    messages: {
+        pending: "Getting ready...",
+        running: "Accessing Your Service...",
+        completed: "Your Service operation complete",
+        error: "Couldn't complete Your Service operation",
+    },
+    delightMessages: {
+        completed: ["Got it", "Done", "All set"],
+        fast: ["Quick one!"],
+    },
+},
+```
+
+The `getDescription` function extracts a brief description from tool args for the
+collapsed view. Common patterns: extract `query` for search, `title` for creation.
+</tool-config-example>
 
 <adapter-tool-guidance>
 Write tool descriptions that guide the AI toward efficient usage. Example from Limitless:

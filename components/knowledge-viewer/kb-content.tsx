@@ -20,7 +20,6 @@ import {
     Check,
     RotateCcw,
     Loader2,
-    Heart,
 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
@@ -30,8 +29,6 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
-    "philosophy.heart-centered": Heart,
-    "values.heart-centered": Heart, // fallback for old path
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,

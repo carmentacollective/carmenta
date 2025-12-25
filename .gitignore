@@ -58,3 +58,6 @@ scripts/evals/results/*.json
 
 # Design labs (local exploration, not part of product)
 app/design-lab/
+.vercel
+.env*.local
+evals/librarian/.claude/

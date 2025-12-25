@@ -488,45 +488,45 @@
     }
 
     :root[data-theme="christmas"].dark {
-        /* Christmas night - deep evergreen with red accents */
-        --background: 150 40% 6%; /* Deep forest night */
-        --foreground: 45 20% 92%; /* Warm snow white */
+        /* Christmas night - Sage Evening green with warm snow */
+        --background: 152 28% 21%; /* Sage Evening - airy forest */
+        --foreground: 45 20% 95%; /* Warm snow white */
 
-        /* Cards like wrapped presents under the tree */
-        --card: 150 35% 10%;
-        --card-foreground: 45 20% 92%;
+        /* Cards like wrapped presents - subtle contrast */
+        --card: 152 28% 17%;
+        --card-foreground: 45 20% 95%;
 
-        --popover: 150 38% 8%;
-        --popover-foreground: 45 20% 92%;
+        --popover: 152 28% 15%;
+        --popover-foreground: 45 20% 95%;
 
         /* Primary - Luminous Christmas red */
-        --primary: 350 75% 55%;
-        --primary-foreground: 150 40% 6%;
+        --primary: 350 72% 50%;
+        --primary-foreground: 0 0% 100%;
 
         /* Secondary - Glowing evergreen */
-        --secondary: 145 50% 35%;
-        --secondary-foreground: 45 20% 92%;
+        --secondary: 145 45% 32%;
+        --secondary-foreground: 45 20% 95%;
 
-        --muted: 150 25% 14%;
-        --muted-foreground: 145 15% 55%;
+        --muted: 152 25% 26%;
+        --muted-foreground: 145 15% 65%;
 
         /* Accent - Golden ornament glow */
         --accent: 42 85% 55%;
-        --accent-foreground: 150 40% 6%;
+        --accent-foreground: 152 28% 15%;
 
         --destructive: 0 55% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 150 22% 20%;
-        --input: 150 25% 14%;
-        --ring: 350 75% 55%;
+        --border: 152 22% 28%;
+        --input: 152 25% 26%;
+        --ring: 350 72% 50%;
 
-        /* Evergreen glassmorphism with warm glow */
-        --glass-bg: rgba(50, 100, 70, 0.2);
-        --glass-bg-hover: rgba(140, 70, 70, 0.25);
-        --glass-bg-active: rgba(140, 70, 70, 0.32);
-        --glass-surface: rgba(15, 25, 20, 0.96);
-        --glass-shadow: 0 4px 24px rgba(30, 80, 50, 0.3);
+        /* Sage Evening glassmorphism - all green tones */
+        --glass-bg: rgba(55, 100, 75, 0.22);
+        --glass-bg-hover: rgba(65, 115, 85, 0.28);
+        --glass-bg-active: rgba(75, 130, 95, 0.35);
+        --glass-surface: rgba(28, 52, 38, 0.96);
+        --glass-shadow: 0 4px 24px rgba(35, 66, 48, 0.4);
     }
 }
 
@@ -562,6 +562,12 @@
 }
 
 @layer components {
+    /* Content page container - standardized width and padding for informational pages */
+    .content-page {
+        @apply mx-auto w-full px-6 sm:px-8 lg:px-10;
+        max-width: 56rem; /* 896px - 4xl equivalent */
+    }
+
     /* Glassmorphism card */
     .glass-card {
         @apply rounded-2xl p-6;
@@ -603,13 +609,13 @@
 
     /* Assistant message bubble with glass effect */
     .assistant-message-bubble {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
     }
 
     .dark .assistant-message-bubble {
-        background: rgba(60, 50, 70, 0.6);
+        background: rgba(60, 50, 70, 0.75);
     }
 
     /* Error message bubble */
@@ -758,7 +764,7 @@
     }
 
     .greeting-container {
-        /* Centered by parent flex container, no explicit text-center needed */
+        @apply text-center;
     }
 
     .greeting-gradient {
@@ -806,52 +812,58 @@
         @apply mb-0;
     }
 
-    /* Paragraphs */
+    /* Paragraphs - more breathing room */
     .holo-markdown p {
-        @apply mb-3;
+        @apply mb-4 leading-relaxed;
     }
 
     .holo-markdown p:last-child {
         @apply mb-0;
     }
 
-    /* Headings */
+    /* Headings - stronger visual hierarchy */
     .holo-markdown h1 {
-        @apply mb-3 mt-4 text-xl font-semibold first:mt-0;
+        @apply mb-4 mt-6 text-xl font-bold first:mt-0;
     }
 
     .holo-markdown h2 {
-        @apply mb-2 mt-3 text-lg font-semibold first:mt-0;
+        @apply mb-3 mt-5 text-lg font-bold first:mt-0;
     }
 
     .holo-markdown h3 {
-        @apply mb-2 mt-3 text-base font-semibold first:mt-0;
+        @apply mb-3 mt-4 text-base font-semibold first:mt-0;
     }
 
     .holo-markdown h4 {
-        @apply mb-2 mt-3 text-sm font-semibold first:mt-0;
+        @apply mb-2 mt-4 text-sm font-semibold first:mt-0;
     }
 
     .holo-markdown h5 {
-        @apply mb-1 mt-2 text-sm font-medium first:mt-0;
+        @apply mb-2 mt-3 text-sm font-medium first:mt-0;
     }
 
     .holo-markdown h6 {
-        @apply mb-1 mt-2 text-xs font-medium uppercase tracking-wide first:mt-0;
+        @apply mb-2 mt-3 text-xs font-medium uppercase tracking-wide first:mt-0;
     }
 
-    /* Lists */
+    /* Lists - more breathing room */
     .holo-markdown ul {
-        @apply my-2 list-disc space-y-1 pl-5;
+        @apply my-4 list-disc space-y-2 pl-6;
     }
 
     .holo-markdown ol {
-        @apply my-2 list-decimal space-y-1 pl-5;
+        @apply my-4 list-decimal space-y-2 pl-6;
     }
 
     .holo-markdown ul li,
     .holo-markdown ol li {
         @apply leading-relaxed;
+    }
+
+    /* Nested lists tighter spacing */
+    .holo-markdown li ul,
+    .holo-markdown li ol {
+        @apply my-2;
     }
 
     /* Inline code */
@@ -879,9 +891,9 @@
         @apply text-primary underline decoration-primary/30 transition-colors hover:decoration-primary;
     }
 
-    /* Horizontal rule */
+    /* Horizontal rule - stronger visual break */
     .holo-markdown hr {
-        @apply my-4 border-foreground/10;
+        @apply my-6 border-foreground/20;
     }
 
     /* Tables - Enhanced with rounded borders and hover effects */
@@ -896,7 +908,7 @@
     }
 
     .holo-markdown th {
-        @apply border-b border-foreground/15 px-3 py-2 text-left font-semibold;
+        @apply border-b border-foreground/15 px-4 py-3 text-left font-semibold;
     }
 
     .holo-markdown th:first-child {
@@ -912,7 +924,7 @@
     }
 
     .holo-markdown td {
-        @apply border-b border-foreground/10 px-3 py-2;
+        @apply border-b border-foreground/10 px-4 py-3;
     }
 
     .holo-markdown tbody tr:last-child td {

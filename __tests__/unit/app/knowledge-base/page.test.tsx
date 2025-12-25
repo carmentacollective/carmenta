@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
     mockGetValuesDocument: vi.fn(),
     mockInitializeKBWithClerkData: vi.fn(),
     mockHasKBProfile: vi.fn(),
+    mockGetRecentActivity: vi.fn(),
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({
@@ -30,6 +31,7 @@ vi.mock("@/lib/kb/actions", () => ({
     getValuesDocument: mocks.mockGetValuesDocument,
     initializeKBWithClerkData: mocks.mockInitializeKBWithClerkData,
     hasKBProfile: mocks.mockHasKBProfile,
+    getRecentActivity: mocks.mockGetRecentActivity,
 }));
 
 // Mock Next.js navigation
@@ -55,6 +57,14 @@ vi.mock("@/components/knowledge-viewer", () => ({
     KnowledgeViewer: ({ initialFolders }: { initialFolders: unknown[] }) => (
         <div data-testid="knowledge-viewer" data-folder-count={initialFolders.length}>
             Knowledge Viewer
+        </div>
+    ),
+}));
+
+vi.mock("@/components/knowledge-viewer/activity-feed", () => ({
+    ActivityFeed: ({ initialItems }: { initialItems: unknown[] }) => (
+        <div data-testid="activity-feed" data-item-count={initialItems.length}>
+            Activity Feed
         </div>
     ),
 }));
@@ -119,6 +129,8 @@ describe("/knowledge-base page", () => {
             editable: false,
             updatedAt: new Date(),
         });
+        // Default: no activity items
+        mocks.mockGetRecentActivity.mockResolvedValue([]);
     });
 
     describe("Authentication", () => {
@@ -292,10 +304,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should still render viewer with philosophy + knowledge (coming soon) folders
+            // Assert: Should still render viewer with memories folder (always present)
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "2"); // philosophy + knowledge placeholder
+            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories folder always present
         });
 
         it("renders with folders when they exist", async () => {
@@ -388,12 +400,12 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Philosophy + knowledge (coming soon) folders always present, so viewer renders (never empty state)
+            // Assert: Memories folder always present, so viewer renders (never empty state)
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
             expect(getByTestId("knowledge-viewer")).toHaveAttribute(
                 "data-folder-count",
-                "2"
+                "1"
             );
         });
 

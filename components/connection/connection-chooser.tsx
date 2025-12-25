@@ -897,7 +897,7 @@ export function ConnectionChooser({
                             <button
                                 onClick={openDropdown}
                                 className={cn(
-                                    "btn-subtle flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground/80",
+                                    "flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground/80",
                                     isMobilePlacement && "flex-1"
                                 )}
                             >

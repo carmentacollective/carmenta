@@ -15,10 +15,7 @@
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
-import { getCredentials } from "@/lib/integrations/connection-manager";
 import { httpClient } from "@/lib/http-client";
-import { env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { GMAIL_API_BASE } from "../oauth/providers/gmail";
 
@@ -427,7 +424,7 @@ export class GmailAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const validation = this.validate(action, params);
         if (!validation.valid) {
-            this.logError(`Gmail adapter validation failed for action '${action}':`, {
+            this.logError(`[GMAIL ADAPTER] Validation failed for action '${action}':`, {
                 errors: validation.errors,
             });
             return this.createErrorResponse(
@@ -435,26 +432,11 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                return this.createErrorResponse(
-                    `No Gmail connection found. Please connect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
         try {
             switch (action) {
@@ -486,38 +468,12 @@ export class GmailAdapter extends ServiceAdapter {
                     );
             }
         } catch (error) {
-            this.logError(`Gmail adapter failed: ${action}`, {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            });
-
-            this.captureError(error, {
+            return this.handleOperationError(
+                error,
                 action,
-                params: params as Record<string, unknown>,
-                userId,
-            });
-
-            let errorMessage = `We couldn't ${action}: `;
-            if (error instanceof Error) {
-                if (error.message.includes("404")) {
-                    errorMessage += "That message or thread doesn't exist.";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage +=
-                        "Authentication failed. Your Gmail connection may have expired. " +
-                        `Reconnect at: ${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`;
-                } else if (error.message.includes("429")) {
-                    errorMessage += "Gmail rate limit hit. Please wait a moment.";
-                } else {
-                    errorMessage += error.message;
-                }
-            } else {
-                errorMessage += "The bots have been alerted. 🤖";
-            }
-
-            return this.createErrorResponse(errorMessage);
+                params as Record<string, unknown>,
+                userId
+            );
         }
     }
 
@@ -907,7 +863,6 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
-        // Validate endpoint starts with /gmail/v1
         if (!endpoint.startsWith("/gmail/v1")) {
             return this.createErrorResponse(
                 "Invalid endpoint: must start with '/gmail/v1'. " +
@@ -915,26 +870,11 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
-        let accessToken: string;
-        try {
-            const credentials = await getCredentials(
-                userId,
-                this.serviceName,
-                accountId
-            );
-            if (credentials.type !== "oauth" || !credentials.accessToken) {
-                return this.createErrorResponse(
-                    `No Gmail connection found. Please connect at: ` +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`
-                );
-            }
-            accessToken = credentials.accessToken;
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                return this.createErrorResponse(error.message);
-            }
-            throw error;
+        const tokenResult = await this.getOAuthAccessToken(userId, accountId);
+        if ("content" in tokenResult) {
+            return tokenResult;
         }
+        const { accessToken } = tokenResult;
 
         const requestOptions: {
             headers: Record<string, string>;
@@ -969,37 +909,20 @@ export class GmailAdapter extends ServiceAdapter {
 
             return this.createJSONResponse(response);
         } catch (error) {
-            logger.error(
-                {
-                    endpoint,
-                    method,
-                    userId,
-                    error: error instanceof Error ? error.message : String(error),
-                },
-                "Gmail raw API request failed"
-            );
-
-            this.captureError(error, {
+            this.captureAndLogError(error, {
                 action: "raw_api",
                 params: { endpoint, method },
                 userId,
             });
 
-            let errorMessage = "Raw API request failed: ";
+            let errorMessage = `Raw API request failed: `;
             if (error instanceof Error) {
                 if (error.message.includes("404")) {
                     errorMessage +=
                         "Endpoint not found. Check the Gmail API docs: " +
                         "https://developers.google.com/gmail/api/reference/rest";
-                } else if (
-                    error.message.includes("401") ||
-                    error.message.includes("403")
-                ) {
-                    errorMessage +=
-                        "Authentication failed. Please reconnect at: " +
-                        `${env.NEXT_PUBLIC_APP_URL}/integrations/gmail`;
                 } else {
-                    errorMessage += error.message;
+                    errorMessage += this.getAPIErrorDescription(error);
                 }
             } else {
                 errorMessage += "Unknown error";

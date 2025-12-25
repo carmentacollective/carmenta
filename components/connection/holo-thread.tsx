@@ -48,6 +48,7 @@ import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { Greeting } from "@/components/ui/greeting";
+import { Sparks } from "./sparks";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useUserContext } from "@/lib/auth/user-context";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
@@ -66,12 +67,16 @@ import { CompareTable } from "@/components/generative-ui/data-table";
 import { DeepResearchResult } from "@/components/generative-ui/deep-research";
 import { ClickUpToolResult } from "@/components/generative-ui/clickup";
 import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
+import { DropboxToolResult } from "@/components/generative-ui/dropbox";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
+import { GmailToolResult } from "@/components/generative-ui/gmail";
 import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
 import { NotionToolResult } from "@/components/generative-ui/notion";
+import { SlackToolResult } from "@/components/generative-ui/slack";
+import { TwitterToolResult } from "@/components/generative-ui/twitter";
 import { Plan } from "@/components/tool-ui/plan";
 import type { PlanTodo } from "@/components/tool-ui/plan/schema";
 import { LinkPreview } from "@/components/tool-ui/link-preview";
@@ -89,6 +94,7 @@ import { DragDropOverlay } from "./drag-drop-overlay";
 import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
+import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
 
 export function HoloThread() {
     return (
@@ -99,9 +105,23 @@ export function HoloThread() {
 }
 
 function HoloThreadInner() {
-    const { messages, isLoading } = useChatContext();
+    const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
+
+    // Handle spark prefill - either fill input or auto-submit
+    const handleSparkPrefill = useCallback(
+        (prompt: string, autoSubmit: boolean) => {
+            if (autoSubmit) {
+                // Submit directly
+                append({ role: "user", content: prompt });
+            } else {
+                // Just fill the input for user to edit
+                setInput(prompt);
+            }
+        },
+        [append, setInput]
+    );
 
     // Track messages that were stopped mid-stream (for visual indicator)
     const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(
@@ -150,7 +170,7 @@ function HoloThreadInner() {
                 )}
             >
                 {isEmpty ? (
-                    <ThreadWelcome />
+                    <ThreadWelcome onPrefill={handleSparkPrefill} />
                 ) : (
                     <div className="flex w-full flex-col">
                         {messages.map((message, index) => (
@@ -218,15 +238,19 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton() {
     );
 });
 
+interface ThreadWelcomeProps {
+    onPrefill: (prompt: string, autoSubmit: boolean) => void;
+}
+
 /**
  * Welcome screen shown when thread is empty.
- * Feature tips now appear via OracleWhisper in the header.
+ * Features personalized Sparks for quick conversation starters.
  * Beautiful exit animation when user sends their first message.
  */
-function ThreadWelcome() {
+function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
     return (
         <motion.div
-            className="flex w-full flex-grow flex-col items-center justify-center"
+            className="flex h-full w-full flex-1 flex-col items-center justify-center gap-8"
             initial={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
                 opacity: 0,
@@ -240,6 +264,7 @@ function ThreadWelcome() {
             }}
         >
             <Greeting />
+            <Sparks onPrefill={onPrefill} />
         </motion.div>
     );
 }
@@ -523,6 +548,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 />
             );
 
+        case "dropbox":
+            return (
+                <DropboxToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Dropbox request failed")}
+                />
+            );
+
         case "fireflies":
             return (
                 <FirefliesToolResult
@@ -544,6 +581,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "gmail":
+            return (
+                <GmailToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Gmail request failed")}
                 />
             );
 
@@ -580,6 +629,46 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Notion request failed")}
+                />
+            );
+
+        case "slack":
+            return (
+                <SlackToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Slack request failed")}
+                />
+            );
+
+        case "twitter":
+            return (
+                <TwitterToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Twitter request failed")}
+                />
+            );
+
+        // Knowledge & Discovery tools - internal tools for context management
+        case "searchKnowledge":
+        case "updateDiscovery":
+        case "completeDiscovery":
+        case "skipDiscovery":
+            return (
+                <ToolRenderer
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Knowledge operation failed")}
                 />
             );
 
@@ -1165,14 +1254,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     );
 
     return (
-        <div className="my-1.5 flex w-full justify-end sm:my-4">
+        <div className="my-3 flex w-full justify-end sm:my-5">
             <div className="group relative max-w-full sm:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
                 <div className="absolute -right-10 top-2 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-3 py-2.5 sm:px-4 sm:py-4">
+                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-3 sm:px-5 sm:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1336,7 +1425,7 @@ function AssistantMessage({
         showThinking;
 
     return (
-        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
+        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
             {/* CONCIERGE ZONE - Carmenta's identity (purple gradient) */}
             {showConcierge && (
                 <ConciergeDisplay
@@ -1354,9 +1443,10 @@ function AssistantMessage({
             {isStreaming && isLast && <TransientStatus className="mt-2" />}
 
             {/* LLM ZONE - Model's output (neutral glass) */}
-            {/* Appears after concierge selection with smooth entrance */}
+            {/* Only renders for the LAST message when concierge is active */}
+            {/* Historical messages use the fallback rendering path below */}
             <AnimatePresence>
-                {hasSelected && hasLlmOutput && (
+                {showConcierge && hasSelected && hasLlmOutput && (
                     <div className="relative mt-2">
                         {/* Model avatar - positioned outside bubble, hidden on mobile */}
                         <div className="absolute -left-10 top-2 hidden sm:block">
@@ -1370,7 +1460,7 @@ function AssistantMessage({
                                 duration: 0.35,
                                 ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
                             }}
-                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
                         >
                             {/* Reasoning - nested inside LLM zone */}
                             {reasoning && (
@@ -1427,13 +1517,13 @@ function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-3 pb-1.5 pt-2.5 sm:px-4 sm:pb-2 sm:pt-4">
-                                        <MarkdownRenderer
+                                    <div className="px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
+                                        <CollapsibleStreamingContent
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
                                     </div>
-                                    <div className="px-3 pb-1 sm:px-4">
+                                    <div className="px-4 pb-2 sm:px-5">
                                         <MessageActions
                                             content={content}
                                             isLast={isLast}
@@ -1464,7 +1554,7 @@ function AssistantMessage({
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-3 py-2.5 sm:px-4 sm:py-4">
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3 sm:px-5 sm:py-4">
                         <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
@@ -1494,6 +1584,20 @@ function AssistantMessage({
                     )}
                     {toolParts.map((part) => (
                         <ToolPartRenderer key={part.toolCallId} part={part} />
+                    ))}
+                </div>
+            )}
+
+            {/* Fallback: Show file parts without LLM zone wrapper when no concierge */}
+            {!showConcierge && fileParts.length > 0 && (
+                <div className="mt-2 flex flex-col gap-2">
+                    {fileParts.map((file, idx) => (
+                        <FilePreview
+                            key={idx}
+                            url={file.url}
+                            mediaType={file.mediaType}
+                            filename={file.name || "file"}
+                        />
                     ))}
                 </div>
             )}
@@ -1537,7 +1641,7 @@ function PendingAssistantMessage({
           : "idle";
 
     return (
-        <div className="my-1.5 flex w-full flex-col gap-0 sm:my-4">
+        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
             {/* CONCIERGE ZONE - Always show during pending state */}
             <ConciergeDisplay
                 modelId={concierge?.modelId}
@@ -1564,9 +1668,9 @@ function PendingAssistantMessage({
                                 duration: 0.35,
                                 ease: [0.16, 1, 0.3, 1],
                             }}
-                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/60 backdrop-blur-xl dark:bg-black/40"
+                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
                         >
-                            <div className="px-3 py-2 sm:px-4 sm:py-3">
+                            <div className="px-4 py-3 sm:px-5 sm:py-4">
                                 <ThinkingIndicator />
                             </div>
                         </motion.div>

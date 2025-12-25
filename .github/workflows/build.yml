@@ -155,6 +155,34 @@ jobs:
           echo "✅ Build successful! Output directory size:"
           du -sh .next
 
+      - name: 📊 Analyze bundle size
+        id: bundle
+        run: |
+          # Extract bundle sizes from Next.js build output
+          # Look for the client-side JS in static/chunks
+          TOTAL_SIZE=$(find .next/static/chunks -name "*.js" -exec cat {} + | wc -c)
+          TOTAL_KB=$((TOTAL_SIZE / 1024))
+
+          # Count individual chunk files
+          CHUNK_COUNT=$(find .next/static/chunks -name "*.js" | wc -l)
+
+          # Find the main app bundle
+          MAIN_BUNDLE=$(find .next/static/chunks -name "main-*.js" -exec du -k {} + | cut -f1 | head -1 || echo "0")
+
+          echo "## 📊 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total JS (uncompressed) | ${TOTAL_KB} KB |" >> $GITHUB_STEP_SUMMARY
+          echo "| Chunk count | ${CHUNK_COUNT} files |" >> $GITHUB_STEP_SUMMARY
+          echo "| Main bundle | ${MAIN_BUNDLE} KB |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Run \`pnpm next experimental-analyze\` locally for detailed treemap_" >> $GITHUB_STEP_SUMMARY
+
+          # Output for potential future PR comment action
+          echo "total_kb=${TOTAL_KB}" >> $GITHUB_OUTPUT
+          echo "chunk_count=${CHUNK_COUNT}" >> $GITHUB_OUTPUT
+
       - name: 📦 Create artifact bundle
         run: |
           # Create tarball to bypass .gitignore restrictions in upload-artifact@v4

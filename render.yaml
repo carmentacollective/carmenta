@@ -1,5 +1,0 @@
-# This file is NOT used - service is configured manually in Render dashboard
-#
-# Configuration:
-# - Build Command: ./scripts/render-deploy.sh
-# - Start Command: node .next/standalone/server.js

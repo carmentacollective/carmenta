@@ -1,173 +1,160 @@
 # Knowledge Librarian
 
-The first AI team member. She retrieves relevant context before conversations and
-extracts insights worth preserving afterward. The quiet keeper of everything you know.
+The intelligence that organizes your knowledge. One agent that sees everything - the
+conversation, the full KB structure - and makes smart decisions about what to store and
+where.
 
 ## Why This Exists
 
 The Knowledge Base stores documents. But storage alone isn't intelligence. Someone needs
-to understand what you're asking, why it matters, and what from your accumulated
-knowledge is relevant.
+to understand what you said, what's worth remembering, and how it fits with everything
+you already know.
 
-The Librarian is that intelligence. She's not a search function - she understands
-context, synthesizes across documents, and knows when a simple lookup suffices versus
-when deeper investigation is needed.
+The Librarian is that intelligence. Not a pipeline of extraction → evaluation → routing
+→ storage. One agent that sees full context and makes thoughtful decisions like a
+world-class assistant would.
 
-She's also the pattern for the [AI Team](./ai-team.md). The model established here - a
-role that can be efficient or thorough depending on need - extends to DCOS, Researcher,
-and other team members.
+## Core Philosophy: Think Like a Human Assistant
+
+Imagine a brilliant executive assistant who's been with you for years. When you mention
+"my girlfriend Julianna doesn't like seed oils":
+
+- She doesn't dump this into a generic "notes" file
+- She thinks: "Where would Nick want to find this later?"
+- She updates the identity file: "Nick lives in Austin"
+- She creates or updates a "People" section with Julianna's preferences
+- If Julianna comes up often, she might get her own file eventually
+
+This is **dynamic organization** - structure that evolves with your knowledge.
 
 ## What She Does
 
-### Retrieves Relevant Knowledge
+### One Agent, Full Context
 
-When you ask a question, the Librarian finds what's relevant from your knowledge base.
-She works with the [Concierge](./concierge.md), who signals how deep to look based on
-query classification.
+The Librarian receives the complete picture in a single call:
 
-Most queries get fast, simple retrieval - top few documents, summaries only. Complex
-queries ("what has Sarah said about this project across our conversations") get deeper
-investigation with synthesis.
+- **The conversation** - what was said, by whom, in what context
+- **The KB structure** - every folder, every document path, every existing piece of
+  knowledge
+- **User profile** - preferences, identity, relationships already captured
 
-The main agent sees summaries, not full documents. This protects context while providing
-awareness. The agent can request full content when needed.
+With this context, she makes three interconnected decisions:
+
+1. **What to extract** - Is this worth remembering? Durability, uniqueness,
+   retrievability.
+2. **Where it belongs** - Does this update an existing doc? Create a new one? Fit into
+   an existing folder?
+3. **How to organize** - Should Nick's identity be a single file or expand into a
+   folder? Should Julianna get her own file now that she's mentioned frequently?
+
+### Progressive Elaboration
+
+Knowledge structure grows organically:
+
+- **Single fact** → stored in appropriate parent document
+- **Multiple related facts** → document expands with sections
+- **Rich topic** → document becomes a folder with multiple files
+
+Example evolution:
+
+```
+Day 1: "Nick lives in Austin" → profile.identity (single line)
+Day 5: Multiple location facts → profile.identity gains "Location" section
+Day 20: Rich location history → profile/ folder with identity.md, locations.md
+```
+
+The Librarian sees when this evolution should happen and makes it happen.
 
 ### Extracts Worth-Preserving Knowledge
 
-After conversations, the Librarian evaluates what's worth keeping. Not everything - just
-decisions, insights, commitments, and facts that matter.
+Not everything gets saved. The Librarian evaluates:
 
-She handles placement (where does this go in the knowledge base?) and creates the
-document. The user sees a brief notification - "Noted" - and can review or undo.
+- **Durability** - Will this matter in 6 months?
+- **Uniqueness** - Is this new or already captured?
+- **Retrievability** - Can we find this when needed?
+- **Authority** - Is this source trustworthy?
 
-Extraction is automatic but not aggressive. Better to miss some things than to clutter
-the knowledge base with noise.
+Explicit user requests ("remember this", "save", "note that") bypass most evaluation -
+users know what matters to them.
 
-### Maintains Organization
+The user sees a brief notification - "Noted" - and can review or undo.
 
-As knowledge accumulates, the Librarian keeps structure coherent. She places new
-documents appropriately, suggests reorganization when patterns emerge, and learns from
-user corrections.
+### Maintains Living Organization
 
-See [Folder Structure](./knowledge-base-folders.md) for how organization works.
+As knowledge accumulates, the Librarian keeps structure coherent:
 
-## Role in Ingestion Channels
+- Places new information in the right location
+- Updates existing documents rather than creating duplicates
+- Recognizes when structure should evolve (file → folder)
+- Learns from user corrections ("move this to..." or deletions)
 
-The Knowledge Base has three ingestion channels (see
-[Ingestion Channels](./knowledge-base.md#ingestion-channels)). The Librarian's
-involvement differs by channel:
+## Ingestion Sources
 
-### Channel 1: Conversations (Primary Owner)
+Knowledge flows in from three sources. The Librarian handles all of them.
 
-The Librarian owns conversation extraction end-to-end:
+### Conversations (Primary)
 
-1. Conversation completes or reaches natural pause
-2. Librarian receives full conversation transcript
-3. Analyzes for extractable content: decisions, insights, commitments
-4. Determines placement path for each extraction
-5. Creates documents in knowledge base
-6. Notifies user: "Noted: [topic]"
+After each conversation turn, the Librarian receives:
 
-This is her core function - she understands conversational context and decides what's
-worth preserving.
+- Full conversation transcript
+- Current KB structure (all paths, summaries)
+- User profile context
 
-### Channel 2: File Uploads (Placement Only)
+She extracts what matters and places it intelligently. This is her core function.
 
-[File Attachments](./file-attachments.md) handles processing. Librarian handles
-placement:
+### File Uploads
 
-1. File Attachments receives upload, extracts text
-2. Librarian receives extracted text + metadata
-3. Determines where file belongs in KB structure
-4. Suggests tags based on content
-5. Identifies links to existing documents
-6. Returns placement decision to File Attachments
+When users upload files:
 
-She doesn't do the heavy processing - just the intelligent organization.
+- [File Attachments](./file-attachments.md) extracts text and metadata
+- Librarian receives the extracted content
+- She determines placement in KB structure
+- Identifies connections to existing knowledge
 
-### Channel 3: Integration Sync (Consultant Role)
+### Integration Syncs
 
-[Scheduled Sync Agents](./scheduled-agents.md) own their integrations. Librarian is
-available but not always involved:
+For external sources (Limitless, Fireflies, Gmail, etc.):
 
-**Sync Agent Independence**:
+- [Scheduled Sync Agents](./scheduled-agents.md) fetch and deduplicate data
+- Librarian receives batched content with source metadata
+- She handles placement and cross-document linking
 
-- Each integration has a dedicated sync agent (Limitless Agent, Fireflies Agent, etc.)
-- Sync agents know their domain: meeting transcripts go in `/meetings/`, emails in
-  `/communications/`
-- They handle fetching, deduplication, filtering, and basic placement
-- Most sync operations don't need Librarian input
+The sync agents own their domains (meetings go in meetings/). The Librarian handles
+ambiguous cases and maintains overall coherence.
 
-**When Sync Agents Consult Librarian**:
+## Retrieval
 
-- Ambiguous content that could belong in multiple places
-- Content that references existing KB documents (need link detection)
-- First sync for a new integration (establish placement patterns)
-- User-configured "smart placement" mode
+When conversation needs KB context, the Librarian retrieves what's relevant.
 
-**Example Flow**:
+The [Concierge](./concierge.md) signals depth:
 
-```
-Limitless Sync Agent runs daily:
-├── Fetches 5 new transcripts
-├── Filters out <2min recordings (agent decision)
-├── For each transcript:
-│   ├── Check: Is this clearly a meeting? → Place in /meetings/[date]/
-│   ├── Check: Does title mention a project? → Place in /projects/[name]/meetings/
-│   └── Unclear? → Ask Librarian for placement recommendation
-└── Report: "Synced 5 transcripts, 2 needed Librarian consultation"
-```
+| Signal       | Meaning                              | Librarian Response       |
+| ------------ | ------------------------------------ | ------------------------ |
+| No KB needed | Greetings, simple chat               | Skip retrieval           |
+| Shallow      | General questions, continuing topics | Fast search, summaries   |
+| Deep         | "What do I know about X"             | Investigation, synthesis |
+| Specific     | "That PDF", "the decision we made"   | Targeted lookup          |
 
-**Why This Separation**:
-
-- Sync agents run on schedule, need to be fast and autonomous
-- Librarian adds latency (LLM call) - only invoke when needed
-- Each agent knows its domain better than a generalist would
-- Librarian maintains overall coherence across all channels
-
-### Librarian vs Sync Agent Comparison
-
-| Responsibility            | Librarian | Sync Agents                   |
-| ------------------------- | --------- | ----------------------------- |
-| Conversation extraction   | ✓ Owner   | -                             |
-| File placement            | ✓ Owner   | -                             |
-| Integration fetching      | -         | ✓ Owner                       |
-| Domain-specific filtering | -         | ✓ Owner (knows their service) |
-| Deduplication             | Consulted | ✓ Owner (by source ID)        |
-| Ambiguous placement       | ✓ Owner   | Delegates to Librarian        |
-| Cross-document linking    | ✓ Owner   | Requests from Librarian       |
-| Organization coherence    | ✓ Owner   | Follows Librarian patterns    |
-
-The Librarian is the intelligence layer. Sync agents are the data pipelines. They work
-together but have clear ownership boundaries.
-
-## How She Works with Concierge
-
-The Concierge classifies queries and signals the Librarian:
-
-| Signal       | Meaning                                      | Librarian Behavior       |
-| ------------ | -------------------------------------------- | ------------------------ |
-| No KB needed | Greetings, simple chat                       | Skip entirely            |
-| Shallow      | General questions, continuing topics         | Fast search, summaries   |
-| Deep         | Research questions, "what do I know about X" | Investigation, synthesis |
-| Specific     | "That PDF", "the decision we made"           | Targeted lookup          |
-
-The Concierge also extracts hints - names, topics, time references - that help the
-Librarian search effectively.
+The Concierge extracts hints (names, topics, dates) that help the Librarian search
+effectively. Results return as summaries - the main agent can request full content when
+needed.
 
 ## Decisions Made
 
-**Summaries, not full documents**: Injected context is brief - title and first lines.
-Protects main agent's context window. Agent has tools to get full content when needed.
+**Single agent, not pipeline**: One LLM call with full context beats a multi-step
+extraction → evaluation → routing → storage pipeline. The Librarian sees everything and
+makes interconnected decisions that a pipeline would fragment.
 
-**Extraction is post-response and async**: Doesn't slow conversation. User sees response
-immediately. Extraction happens in background.
+**Full KB structure in context**: The Librarian receives all document paths and
+summaries. This enables intelligent placement without a separate "where should this go?"
+step.
 
-**Spectrum, not fixed**: Most operations are fast and deterministic. Complex queries
-promote to deeper reasoning. Efficiency by default, intelligence when needed.
+**Post-response, async**: Extraction doesn't slow conversation. User sees response
+immediately. The Librarian works in background.
 
-**First employee, not infrastructure**: The Librarian is a team member with a role, not
-invisible plumbing. Users can ask what she found or what she saved.
+**First team member, not infrastructure**: The Librarian is a named role with
+personality, not invisible plumbing. Users can ask what she found or what she saved.
+This is the pattern for future AI Team members.
 
 ## What Success Looks Like
 
@@ -180,37 +167,30 @@ invisible plumbing. Users can ask what she found or what she saved.
 
 ## Open Questions
 
-### Retrieval Tuning
+### Context Window Management
 
-- How many documents to inject by default?
-- When does shallow promote to deep?
-- How to handle empty or irrelevant results?
+- At what KB size does the full structure exceed context limits?
+- When do we need to summarize/chunk the KB structure itself?
+- Should we preemptively compress old/inactive knowledge?
 
-### Extraction Sensitivity
+### Progressive Elaboration Triggers
 
-- What's the bar for "worth saving"?
-- How to handle corrections when user deletes saved items?
-- Deduplication across conversations?
+- When should a file become a folder?
+- How many related facts justify a dedicated document?
+- Who decides when reorganization is needed - Librarian alone or with user input?
 
-### Librarian Identity
+### Team Identity
 
-- Does she have a visible voice? ("I found...")
-- Named team member or background infrastructure?
-- How does she relate to DCOS when that role exists?
+- Does she have a visible voice? ("I noted that...")
+- How do users interact with her directly vs through Carmenta?
+- How does she relate to future team members (DCOS, etc.)?
 
 ## Relationships
 
-- **[Knowledge Base](./knowledge-base.md)**: Librarian is intelligence on top of KB
-  storage
-- **[Knowledge Base Storage](./knowledge-base-storage.md)**: Technical foundation she
-  operates on
-- **[Concierge](./concierge.md)**: Signals KB need level, receives context to inject
-- **[Context Retrieval](./memory.md)**: How Librarian retrieves and injects relevant KB
-  content into conversations
-- **[AI Team](./ai-team.md)**: Librarian is first team member; pattern extends to others
+- **[Knowledge Base](./knowledge-base.md)**: The storage layer she organizes
+- **[Concierge](./concierge.md)**: Signals retrieval depth, extracts search hints
+- **[AI Team](./ai-team.md)**: First team member; pattern for future roles
 - **[File Attachments](./file-attachments.md)**: Handles upload/processing; Librarian
-  handles placement/retrieval
-- **[Scheduled Agents](./scheduled-agents.md)**: Sync agents for integrations; Librarian
-  consulted for ambiguous placement, owns overall organization coherence
-- **Integration Sync Agents**: Domain-specific agents (Limitless, Fireflies, Gmail,
-  etc.) that own their data pipelines; Librarian provides placement guidance when needed
+  handles placement
+- **[Scheduled Agents](./scheduled-agents.md)**: Fetch external data; Librarian handles
+  organization

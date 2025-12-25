@@ -11,6 +11,7 @@ import {
     Plug,
     Sparkles,
     BookOpen,
+    Heart,
 } from "lucide-react";
 
 import { useMarker } from "@/components/feedback/marker-provider";
@@ -247,6 +248,18 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <BookOpen className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Guide</span>
+                                    </Link>
+
+                                    <Link
+                                        href="/heart-centered-ai"
+                                        onClick={() => setIsOpen(false)}
+                                        className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                    >
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <Heart className="relative h-4 w-4 text-blue-500" />
+                                        <span className="relative">
+                                            Heart-Centered AI
+                                        </span>
                                     </Link>
 
                                     <Link

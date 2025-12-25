@@ -15,31 +15,28 @@ import {
     User,
     Sparkles,
     MessageSquare,
-    Heart,
     Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 import { transitions, variants } from "@/lib/motion/presets";
 
-// Map folder paths to icons (order: philosophy, personality, knowledge)
+// Map folder paths to icons
 const FOLDER_ICONS: Record<string, typeof User> = {
-    philosophy: Heart,
-    personality: Sparkles,
-    knowledge: Brain,
+    about: User,
+    communication: MessageSquare,
+    memories: Brain,
 };
 
-// Display names for folders (overrides capitalized path names)
+// Display names for folders
 const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
-    philosophy: "Our Foundation",
-    personality: "Our Partnership",
-    knowledge: "What We Remember",
+    about: "About You",
+    communication: "Communication",
+    memories: "Memories",
 };
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
-    "philosophy.heart-centered": Heart,
-    "values.heart-centered": Heart, // fallback for old path
     "profile.character": Sparkles,
     "profile.identity": User,
     "profile.preferences": MessageSquare,

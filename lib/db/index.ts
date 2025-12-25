@@ -5,7 +5,8 @@
  * Uses the `postgres` driver for connection pooling and query execution.
  *
  * Environment:
- * - DATABASE_URL: PostgreSQL connection string
+ * - POSTGRES_URL: Vercel Postgres connection string (preferred)
+ * - DATABASE_URL: PostgreSQL connection string (fallback)
  * - Defaults to localhost:5432/carmenta for Mac Homebrew PostgreSQL
  */
 
@@ -16,6 +17,12 @@ import { env } from "@/lib/env";
 import * as schema from "./schema";
 
 /**
+ * Database connection string.
+ * Prefers Vercel's POSTGRES_URL (auto-injected), falls back to DATABASE_URL.
+ */
+const connectionString = process.env.POSTGRES_URL ?? env.DATABASE_URL;
+
+/**
  * PostgreSQL client instance.
  *
  * Uses the postgres.js driver which provides:
@@ -24,7 +31,7 @@ import * as schema from "./schema";
  * - TypeScript support
  * - Automatic reconnection
  */
-const client = postgres(env.DATABASE_URL, {
+const client = postgres(connectionString, {
     // Reasonable defaults for a Next.js app
     max: 10, // Maximum pool size
     idle_timeout: 20, // Close idle connections after 20 seconds
@@ -74,6 +81,8 @@ export type {
     Document,
     NewDocument,
     ConciergeReasoningConfig,
+    Notification,
+    NewNotification,
 } from "./schema";
 
 // Re-export user operations
@@ -111,3 +120,14 @@ export {
     type UIMessageLike,
     type UIMessagePartLike,
 } from "./connections";
+
+// Re-export notification operations
+export {
+    createNotification,
+    getUnreadNotifications,
+    getRecentNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    getUnreadCount,
+    type NotificationType,
+} from "./notifications";

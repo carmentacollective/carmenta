@@ -254,8 +254,9 @@ export function setupTestDb() {
 
 /**
  * Get the test database instance (for internal use by mock).
+ * Exported for use by module mocks.
  */
-async function getTestDb() {
+export async function getTestDb() {
     if (!testDb || !testClient) {
         await createFreshTestDb();
     }
@@ -372,6 +373,9 @@ vi.mock("./lib/db/index", async () => {
     // It creates a circular dependency: connections → index → connections
     // Tests should import connection functions directly from "@/lib/db/connections"
 
+    // Import notification functions from the mocked module
+    const notificationsModule = await import("./lib/db/notifications");
+
     // Return a getter for db that always returns the current instance
     return {
         get db() {
@@ -383,6 +387,13 @@ vi.mock("./lib/db/index", async () => {
         getOrCreateUser,
         updateUserPreferences,
         updateLastSignedIn,
+        // Re-export notification functions
+        createNotification: notificationsModule.createNotification,
+        getUnreadNotifications: notificationsModule.getUnreadNotifications,
+        getRecentNotifications: notificationsModule.getRecentNotifications,
+        markNotificationRead: notificationsModule.markNotificationRead,
+        markAllNotificationsRead: notificationsModule.markAllNotificationsRead,
+        getUnreadCount: notificationsModule.getUnreadCount,
     };
 });
 
@@ -395,6 +406,120 @@ vi.mock("./lib/db/users", async () => {
         getOrCreateUser: dbModule.getOrCreateUser,
         updateUserPreferences: dbModule.updateUserPreferences,
         updateLastSignedIn: dbModule.updateLastSignedIn,
+    };
+});
+
+// Mock the notifications module to use test db
+vi.mock("./lib/db/notifications", async () => {
+    const schema =
+        (await import("./lib/db/schema")) as typeof import("./lib/db/schema");
+    const { eq, and, desc } = await import("drizzle-orm");
+
+    // Helper to get the current db - uses the testDb variable from the outer scope
+    // which is set by setupTestDb()
+    const getCurrentDb = async () => {
+        // Dynamic import to access the mocked db
+        const dbModule = await import("./lib/db/index");
+        return dbModule.db;
+    };
+
+    type NotificationType =
+        | "knowledge_created"
+        | "knowledge_updated"
+        | "knowledge_moved"
+        | "insight";
+
+    const createNotification = async (
+        userId: string,
+        type: NotificationType,
+        message: string,
+        documentPath?: string
+    ) => {
+        const currentDb = await getCurrentDb();
+        const [notification] = await currentDb
+            .insert(schema.notifications)
+            .values({
+                userId,
+                type,
+                message,
+                documentPath,
+                source: "librarian",
+            })
+            .returning();
+        return notification;
+    };
+
+    const getUnreadNotifications = async (userId: string, limit = 10) => {
+        const currentDb = await getCurrentDb();
+        return currentDb.query.notifications.findMany({
+            where: and(
+                eq(schema.notifications.userId, userId),
+                eq(schema.notifications.read, false)
+            ),
+            orderBy: [desc(schema.notifications.createdAt)],
+            limit,
+        });
+    };
+
+    const getRecentNotifications = async (userId: string, limit = 20) => {
+        const currentDb = await getCurrentDb();
+        return currentDb.query.notifications.findMany({
+            where: eq(schema.notifications.userId, userId),
+            orderBy: [desc(schema.notifications.createdAt)],
+            limit,
+        });
+    };
+
+    const markNotificationRead = async (notificationId: string) => {
+        const currentDb = await getCurrentDb();
+        const [notification] = await currentDb
+            .update(schema.notifications)
+            .set({
+                read: true,
+                readAt: new Date(),
+            })
+            .where(eq(schema.notifications.id, notificationId))
+            .returning();
+        return notification ?? null;
+    };
+
+    const markAllNotificationsRead = async (userId: string) => {
+        const currentDb = await getCurrentDb();
+        const result = await currentDb
+            .update(schema.notifications)
+            .set({
+                read: true,
+                readAt: new Date(),
+            })
+            .where(
+                and(
+                    eq(schema.notifications.userId, userId),
+                    eq(schema.notifications.read, false)
+                )
+            )
+            .returning({ id: schema.notifications.id });
+        return result.length;
+    };
+
+    const getUnreadCount = async (userId: string) => {
+        const currentDb = await getCurrentDb();
+        const notifications = await currentDb.query.notifications.findMany({
+            where: and(
+                eq(schema.notifications.userId, userId),
+                eq(schema.notifications.read, false)
+            ),
+            columns: { id: true },
+        });
+        return notifications.length;
+    };
+
+    return {
+        createNotification,
+        getUnreadNotifications,
+        getRecentNotifications,
+        markNotificationRead,
+        markAllNotificationsRead,
+        getUnreadCount,
     };
 });
 

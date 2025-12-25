@@ -13,8 +13,11 @@ export default {
     out: "./drizzle/migrations",
     dialect: "postgresql",
     dbCredentials: {
-        // Use DATABASE_URL from environment, with localhost default for development
-        url: process.env.DATABASE_URL ?? "postgresql://localhost:5432/carmenta",
+        // Prefer POSTGRES_URL (Vercel), fall back to DATABASE_URL, default to localhost
+        url:
+            process.env.POSTGRES_URL ??
+            process.env.DATABASE_URL ??
+            "postgresql://localhost:5432/carmenta",
     },
     // Verbose output for debugging
     verbose: true,

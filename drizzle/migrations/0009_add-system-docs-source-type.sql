@@ -1,1 +1,0 @@
-ALTER TYPE "public"."document_source_type" ADD VALUE 'system_docs' BEFORE 'conversation_extraction';

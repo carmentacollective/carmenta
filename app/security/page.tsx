@@ -137,7 +137,7 @@ export default function SecurityPage() {
             <div className="relative z-content">
                 <SiteHeader bordered />
                 {/* Hero Section */}
-                <section className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
+                <section className="content-page relative py-12 sm:py-16 lg:py-20">
                     <div className="text-center">
                         <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
                             <ShieldCheck className="h-8 w-8 text-primary" />
@@ -172,7 +172,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Core Security Promise */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 lg:p-12">
                         <h2 className="mb-6 text-3xl font-bold">
                             Our Security Promise
@@ -220,7 +220,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Security Features Grid */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="mb-12 text-center">
                         <h2 className="text-3xl font-bold">
                             Enterprise-Grade Security Features
@@ -254,7 +254,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Security Partners */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="mb-12 text-center">
                         <h2 className="text-3xl font-bold">
                             Trusted Security Partners
@@ -290,7 +290,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Technical Security Details */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="rounded-xl border bg-card p-8">
                         <h2 className="mb-6 text-2xl font-bold">
                             Technical Security Implementation
@@ -358,7 +358,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Security Practices */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="grid gap-8 lg:grid-cols-2">
                         <div className="rounded-xl border border-green-200 bg-green-50 p-8 dark:border-green-800 dark:bg-green-950">
                             <h3 className="mb-4 text-xl font-bold text-green-900 dark:text-green-100">
@@ -411,7 +411,7 @@ export default function SecurityPage() {
                 </section>
 
                 {/* Contact Section */}
-                <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="rounded-xl bg-muted/50 p-8 text-center">
                         <h2 className="mb-4 text-2xl font-bold">Security Questions?</h2>
                         <p className="mb-6 text-muted-foreground">

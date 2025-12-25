@@ -18,9 +18,7 @@ export function Footer() {
                         <span>How We Build</span>
                     </Link>
                     <Link
-                        href="https://heartcentered.ai"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="/heart-centered-ai"
                         className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
                     >
                         <Heart className="h-4 w-4 fill-primary text-primary" />

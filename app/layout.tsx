@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { UserProvider } from "@/lib/auth/user-context";
 import { ThemeProvider } from "@/lib/theme";
 import { PWARegistration } from "@/components/pwa-registration";
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { InstallPrompt } from "@/components/pwa";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
@@ -128,7 +128,7 @@ export default function RootLayout({
                                     <MarkerProvider>
                                         <FloatingEmojiProvider>
                                             <PWARegistration />
-                                            <PWAInstallPrompt />
+                                            <InstallPrompt />
                                             <StructuredData />
                                             <Toaster />
                                             <GlobalTooltip />
