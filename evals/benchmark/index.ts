@@ -30,20 +30,25 @@ export const datasetSummary = {
 // All queries combined for full eval run
 export const allQueries = [...benchmarkQueries, ...challengeCases];
 
-// Validation
-if (categoryCounts.total !== 100) {
-    console.warn(
-        `Warning: Core benchmark has ${categoryCounts.total} queries, expected 100`
-    );
-}
+/**
+ * Print dataset summary to console
+ * Call this explicitly when you want to see the summary (e.g., before running benchmarks)
+ */
+export function printDatasetSummary() {
+    // Validation
+    if (categoryCounts.total !== 100) {
+        console.warn(
+            `Warning: Core benchmark has ${categoryCounts.total} queries, expected 100`
+        );
+    }
 
-if (challengeCaseCounts.total !== 50) {
-    console.warn(
-        `Warning: Challenge cases have ${challengeCaseCounts.total} cases, expected 50`
-    );
-}
+    if (challengeCaseCounts.total !== 50) {
+        console.warn(
+            `Warning: Challenge cases have ${challengeCaseCounts.total} cases, expected 50`
+        );
+    }
 
-console.log(`
+    console.log(`
 ╔════════════════════════════════════════════════╗
 ║     Carmenta Evaluation Benchmark v1.0.0       ║
 ╠════════════════════════════════════════════════╣
@@ -64,3 +69,4 @@ console.log(`
 ║  TOTAL:          ${String(datasetSummary.grandTotal).padStart(3)} queries                    ║
 ╚════════════════════════════════════════════════╝
 `);
+}

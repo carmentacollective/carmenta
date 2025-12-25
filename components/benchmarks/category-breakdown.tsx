@@ -4,6 +4,11 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { CategoryScore, QueryResult } from "@/lib/benchmarks";
+import {
+    formatCategoryName,
+    getWinRateColor,
+    getWinRateBarClass,
+} from "@/lib/benchmarks";
 
 interface CategoryBreakdownProps {
     categories: CategoryScore[];
@@ -167,31 +172,12 @@ function QuerySummaryCard({ queryResult }: { queryResult: QueryResult }) {
 }
 
 function WinRateBar({ winRate }: { winRate: number }) {
-    const getBarColor = (rate: number) => {
-        if (rate >= 0.6) return "bg-green-500";
-        if (rate >= 0.4) return "bg-yellow-500";
-        return "bg-red-500";
-    };
-
     return (
         <div className="h-2 w-20 overflow-hidden rounded-full bg-foreground/10">
             <div
-                className={`h-full transition-all duration-300 ${getBarColor(winRate)}`}
+                className={`h-full transition-all duration-300 ${getWinRateBarClass(winRate)}`}
                 style={{ width: `${winRate * 100}%` }}
             />
         </div>
     );
-}
-
-function formatCategoryName(category: string): string {
-    return category
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-}
-
-function getWinRateColor(winRate: number): string {
-    if (winRate >= 0.6) return "text-green-500";
-    if (winRate >= 0.4) return "text-yellow-500";
-    return "text-red-500";
 }

@@ -1,4 +1,5 @@
 import { Trophy, Target, Clock } from "lucide-react";
+import { getWinRateBarClass } from "@/lib/benchmarks";
 
 interface BenchmarkSummaryProps {
     winRate: number;
@@ -89,16 +90,10 @@ export function BenchmarkSummary({
 }
 
 function WinRateBar({ winRate }: { winRate: number }) {
-    const getBarColor = (rate: number) => {
-        if (rate >= 0.6) return "bg-green-500";
-        if (rate >= 0.4) return "bg-yellow-500";
-        return "bg-red-500";
-    };
-
     return (
         <div className="h-2 overflow-hidden rounded-full bg-foreground/10">
             <div
-                className={`h-full transition-all duration-500 ${getBarColor(winRate)}`}
+                className={`h-full transition-all duration-500 ${getWinRateBarClass(winRate)}`}
                 style={{ width: `${winRate * 100}%` }}
             />
         </div>

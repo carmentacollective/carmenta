@@ -236,6 +236,15 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 /**
+ * Get color class for win rate display
+ */
+export function getWinRateColor(winRate: number): string {
+    if (winRate >= 0.6) return "text-green-500";
+    if (winRate >= 0.4) return "text-yellow-500";
+    return "text-red-500";
+}
+
+/**
  * Get query results grouped by query ID for easy lookup
  */
 export function getQueryResultsById(
