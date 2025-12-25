@@ -29,6 +29,7 @@ import { AlertCircle, RefreshCw, X } from "lucide-react";
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
 import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
+import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import {
     ConciergeProvider,
     useConcierge,
@@ -663,6 +664,9 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Derive loading states from status
     const isLoading = status === "streaming" || status === "submitted";
+
+    // Keep screen awake during AI streaming (prevents screen dim during long responses)
+    useWakeLock({ enabled: isLoading });
 
     // Sync states with connection context
     useEffect(() => {
