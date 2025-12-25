@@ -18,8 +18,8 @@ export default function AIFirstDevelopmentPage() {
 
             <div className="relative z-content flex min-h-screen flex-col">
                 <SiteHeader bordered />
-                <main className="flex flex-1 flex-col items-center px-6 py-12">
-                    <div className="mx-auto max-w-2xl space-y-12">
+                <main className="flex flex-1 flex-col items-center py-12">
+                    <div className="content-page space-y-12">
                         {/* Hero */}
                         <section className="space-y-6 text-center">
                             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">

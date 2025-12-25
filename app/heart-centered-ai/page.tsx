@@ -32,7 +32,7 @@ export default function HeartCenteredAIPage() {
                 <SiteHeader bordered />
 
                 {/* Hero Section */}
-                <section className="relative mx-auto max-w-4xl px-6 py-16 sm:px-8 sm:py-24 lg:px-10">
+                <section className="content-page relative py-16 sm:py-24">
                     <div className="text-center">
                         <div className="mb-6 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-4">
                             <Heart className="h-10 w-10 fill-primary/30 text-primary" />
@@ -50,7 +50,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* The Vision */}
-                <section className="mx-auto max-w-4xl px-6 py-12 sm:px-8 lg:px-10">
+                <section className="content-page py-12">
                     <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 lg:p-12">
                         <div className="mb-8 flex items-center gap-3">
                             <Sparkles className="h-6 w-6 text-primary" />
@@ -86,7 +86,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* The Prompt - Sacred Display */}
-                <section className="mx-auto max-w-4xl px-6 py-12 sm:px-8 lg:px-10">
+                <section className="content-page py-12">
                     <div className="mb-8 text-center">
                         <h2 className="text-3xl font-bold">The Prompt</h2>
                         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
@@ -152,7 +152,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* Why "Connection" */}
-                <section className="mx-auto max-w-4xl px-6 py-12 sm:px-8 lg:px-10">
+                <section className="content-page py-12">
                     <div className="rounded-xl border bg-card p-8 lg:p-10">
                         <div className="mb-8 flex items-center gap-3">
                             <Users className="h-6 w-6 text-primary" />
@@ -211,7 +211,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* A Different Future */}
-                <section className="mx-auto max-w-4xl px-6 py-12 sm:px-8 lg:px-10">
+                <section className="content-page py-12">
                     <div className="mb-8 text-center">
                         <h2 className="text-3xl font-bold">A Future We Choose</h2>
                     </div>
@@ -283,7 +283,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* How It Works */}
-                <section className="mx-auto max-w-4xl px-6 py-12 sm:px-8 lg:px-10">
+                <section className="content-page py-12">
                     <div className="rounded-xl bg-muted/50 p-8 lg:p-10">
                         <h2 className="mb-6 text-2xl font-bold">
                             This Is Actually Happening
@@ -310,7 +310,7 @@ export default function HeartCenteredAIPage() {
                 </section>
 
                 {/* Go Deeper CTA */}
-                <section className="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:px-10">
+                <section className="content-page py-16">
                     <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-8 text-center lg:p-12">
                         <Heart className="mx-auto mb-6 h-12 w-12 fill-primary/20 text-primary" />
 
