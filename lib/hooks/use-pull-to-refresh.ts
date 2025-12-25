@@ -122,22 +122,24 @@ export function usePullToRefresh({
     const handleTouchEnd = useCallback(async () => {
         if (!enabled || isRefreshing) return;
 
-        if (pullDistance >= threshold) {
-            setIsRefreshing(true);
-            triggerHaptic("success");
+        try {
+            if (pullDistance >= threshold) {
+                setIsRefreshing(true);
+                triggerHaptic("success");
 
-            try {
-                await onRefresh();
-            } finally {
-                setIsRefreshing(false);
+                try {
+                    await onRefresh();
+                } finally {
+                    setIsRefreshing(false);
+                }
             }
+        } finally {
+            // Always reset state, even if refresh callback throws
+            setPullDistance(0);
+            setIsPulling(false);
+            startY.current = 0;
+            currentY.current = 0;
         }
-
-        // Reset
-        setPullDistance(0);
-        setIsPulling(false);
-        startY.current = 0;
-        currentY.current = 0;
     }, [enabled, isRefreshing, pullDistance, threshold, triggerHaptic, onRefresh]);
 
     // Attach listeners
