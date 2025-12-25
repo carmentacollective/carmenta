@@ -67,6 +67,69 @@ export interface ConciergeInput {
         /** Additional hints from user input */
         hints?: string[];
     };
+
+    /**
+     * Message effort and complexity signals for reasoning decisions.
+     * These inform how much reasoning effort is likely expected.
+     */
+    querySignals?: QueryComplexitySignals;
+
+    /**
+     * Session context for reasoning decisions.
+     * Helps understand the flow and timing of the conversation.
+     */
+    sessionContext?: SessionContext;
+}
+
+/**
+ * Signals derived from the message content that indicate complexity
+ * and user effort, informing reasoning level decisions.
+ */
+export interface QueryComplexitySignals {
+    /** Character count of the user message */
+    characterCount: number;
+
+    /** Whether message has structured formatting (lists, bullets, numbered items) */
+    hasStructuredFormatting: boolean;
+
+    /** Number of distinct questions detected in the message */
+    questionCount: number;
+
+    /** Whether message contains "why", "how does", "explain" type depth indicators */
+    hasDepthIndicators: boolean;
+
+    /** Whether message contains conditional logic ("if X then Y", "but if") */
+    hasConditionalLogic: boolean;
+
+    /** Whether message references previous context ("like we discussed", "as I mentioned") */
+    referencesPreviousContext: boolean;
+
+    /** Whether message contains explicit speed signals ("quick", "just", "simply") */
+    hasSpeedSignals: boolean;
+
+    /** Whether message contains explicit depth signals ("think hard", "thorough", "ultrathink") */
+    hasExplicitDepthSignals: boolean;
+}
+
+/**
+ * Session context providing timing and flow information
+ * for reasoning decisions.
+ */
+export interface SessionContext {
+    /** Number of exchanges in this conversation */
+    turnCount: number;
+
+    /** Whether this is the first message in the conversation */
+    isFirstMessage: boolean;
+
+    /** Device type if known (mobile tends to prefer faster responses) */
+    deviceType?: "mobile" | "desktop" | "unknown";
+
+    /** Hour of day (0-23) in user's timezone - late night often means quick fixes */
+    hourOfDay?: number;
+
+    /** Milliseconds since last message (quick follow-up vs new thought) */
+    timeSinceLastMessage?: number;
 }
 
 /**
