@@ -155,11 +155,14 @@ export function useSwipeNavigation({
         document.addEventListener("touchstart", handleTouchStart, { passive: true });
         document.addEventListener("touchmove", handleTouchMove, { passive: true });
         document.addEventListener("touchend", handleTouchEnd);
+        // Handle touch interruptions (phone calls, system dialogs, multi-touch)
+        document.addEventListener("touchcancel", handleTouchEnd);
 
         return () => {
             document.removeEventListener("touchstart", handleTouchStart);
             document.removeEventListener("touchmove", handleTouchMove);
             document.removeEventListener("touchend", handleTouchEnd);
+            document.removeEventListener("touchcancel", handleTouchEnd);
         };
     }, [enabled, handleTouchStart, handleTouchMove, handleTouchEnd]);
 

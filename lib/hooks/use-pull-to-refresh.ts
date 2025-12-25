@@ -160,6 +160,8 @@ export function usePullToRefresh({
             options
         );
         container.addEventListener("touchend", handleTouchEnd as EventListener);
+        // Handle touch interruptions (phone calls, system dialogs, multi-touch)
+        container.addEventListener("touchcancel", handleTouchEnd as EventListener);
 
         return () => {
             container.removeEventListener(
@@ -171,6 +173,10 @@ export function usePullToRefresh({
                 handleTouchMove as EventListener
             );
             container.removeEventListener("touchend", handleTouchEnd as EventListener);
+            container.removeEventListener(
+                "touchcancel",
+                handleTouchEnd as EventListener
+            );
         };
     }, [enabled, containerRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
