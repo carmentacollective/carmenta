@@ -562,6 +562,12 @@
 }
 
 @layer components {
+    /* Content page container - standardized width and padding for informational pages */
+    .content-page {
+        @apply mx-auto w-full px-6 sm:px-8 lg:px-10;
+        max-width: 56rem; /* 896px - 4xl equivalent */
+    }
+
     /* Glassmorphism card */
     .glass-card {
         @apply rounded-2xl p-6;
