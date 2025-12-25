@@ -56,9 +56,11 @@ export function usePullToRefresh({
 
     const startY = useRef(0);
     const currentY = useRef(0);
+    // Track pullDistance in ref to avoid callback recreation on every frame
+    const pullDistanceRef = useRef(0);
     // TODO: Re-enable haptic feedback once CI type resolution issue is fixed
     // const { trigger: triggerHaptic } = useHapticFeedback();
-    const triggerHaptic = (_type: string) => {}; // no-op for now
+    const triggerHaptic = useCallback((_type: string) => {}, []); // no-op for now
 
     // Check if at top of scroll container
     const isAtTop = useCallback(() => {
@@ -93,13 +95,16 @@ export function usePullToRefresh({
             if (delta > 0) {
                 // Apply resistance curve for natural feel
                 const resistance = Math.min(delta / 2.5, maxPull);
-                setPullDistance(resistance);
-                setIsPulling(true);
 
-                // Haptic feedback when crossing threshold
-                if (resistance >= threshold && pullDistance < threshold) {
+                // Haptic feedback when crossing threshold (use ref to avoid dep on state)
+                if (resistance >= threshold && pullDistanceRef.current < threshold) {
                     triggerHaptic("medium");
                 }
+
+                // Update both ref and state
+                pullDistanceRef.current = resistance;
+                setPullDistance(resistance);
+                setIsPulling(true);
 
                 // Prevent default scrolling when pulling
                 if (resistance > 10) {
@@ -107,15 +112,7 @@ export function usePullToRefresh({
                 }
             }
         },
-        [
-            enabled,
-            isRefreshing,
-            isAtTop,
-            maxPull,
-            threshold,
-            pullDistance,
-            triggerHaptic,
-        ]
+        [enabled, isRefreshing, isAtTop, maxPull, threshold, triggerHaptic]
     );
 
     // Touch end - trigger refresh or reset
@@ -135,6 +132,7 @@ export function usePullToRefresh({
             }
         } finally {
             // Always reset state, even if refresh callback throws
+            pullDistanceRef.current = 0;
             setPullDistance(0);
             setIsPulling(false);
             startY.current = 0;

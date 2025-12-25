@@ -124,6 +124,8 @@ export function useInstallPrompt(): UseInstallPromptReturn {
             return outcome;
         } catch (error) {
             logger.error({ error }, "📲 Install prompt failed");
+            // Clear the prompt - it's now unusable after error
+            setDeferredPrompt(null);
             return "unavailable";
         }
     }, [deferredPrompt]);
