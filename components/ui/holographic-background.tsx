@@ -166,26 +166,27 @@ const THEME_PALETTES: Record<
     },
     christmas: {
         light: [
-            { r: 200, g: 80, b: 90 }, // Christmas Red
-            { r: 80, g: 140, b: 95 }, // Evergreen
-            { r: 255, g: 210, b: 100 }, // Star Gold
-            { r: 180, g: 220, b: 185 }, // Pine Frost
-            { r: 220, g: 90, b: 100 }, // Holly Berry
-            { r: 100, g: 160, b: 110 }, // Forest Green
-            { r: 255, g: 190, b: 80 }, // Ornament Gold
-            { r: 160, g: 200, b: 170 }, // Mistletoe
+            { r: 120, g: 180, b: 140 }, // Fresh Pine
+            { r: 80, g: 160, b: 110 }, // Evergreen
+            { r: 100, g: 190, b: 130 }, // Spring Green
+            { r: 140, g: 200, b: 160 }, // Mint Leaf
+            { r: 90, g: 170, b: 120 }, // Forest Glade
+            { r: 110, g: 185, b: 135 }, // Sage Meadow
+            { r: 130, g: 195, b: 150 }, // Soft Fern
+            { r: 100, g: 175, b: 125 }, // Woodland
         ],
         dark: [
-            { r: 180, g: 60, b: 70 }, // Rich Red
-            { r: 60, g: 120, b: 80 }, // Deep Evergreen
-            { r: 200, g: 160, b: 80 }, // Golden Glow
-            { r: 80, g: 140, b: 95 }, // Forest Pine
-            { r: 160, g: 50, b: 60 }, // Dark Cherry
-            { r: 50, g: 100, b: 70 }, // Night Pine
-            { r: 180, g: 140, b: 70 }, // Amber Ornament
-            { r: 70, g: 130, b: 90 }, // Spruce
+            // Pure greens only - no reds that mix to brown
+            { r: 45, g: 90, b: 65 }, // Deep Forest
+            { r: 55, g: 100, b: 75 }, // Night Pine
+            { r: 50, g: 95, b: 70 }, // Shadowed Sage
+            { r: 60, g: 110, b: 80 }, // Emerald Depths
+            { r: 40, g: 85, b: 60 }, // Forest Floor
+            { r: 65, g: 115, b: 85 }, // Mossy Glade
+            { r: 48, g: 92, b: 68 }, // Twilight Green
+            { r: 58, g: 105, b: 78 }, // Evergreen Shadow
         ],
-        darkBg: "#081210", // Deep forest night
+        darkBg: "#234230", // Sage Evening - matches theme background
     },
 };
 
@@ -245,12 +246,12 @@ const WARM_PRESENCE_COLORS: Record<
     },
     christmas: {
         light: {
-            inner: "rgba(220, 160, 160, 0.4)",
-            outer: "rgba(255, 220, 180, 0.25)",
+            inner: "rgba(140, 200, 160, 0.4)",
+            outer: "rgba(180, 220, 190, 0.25)",
         },
         dark: {
-            inner: "rgba(180, 90, 95, 0.28)",
-            outer: "rgba(200, 150, 90, 0.15)",
+            inner: "rgba(70, 130, 90, 0.30)",
+            outer: "rgba(50, 100, 70, 0.18)",
         },
     },
 };
