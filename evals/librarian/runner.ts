@@ -258,12 +258,6 @@ export const LIBRARIAN_MODEL_CANDIDATES = [
         costPer1M: { input: 0.2, output: 0.5 },
     },
     {
-        id: "google/gemini-3-flash-preview",
-        name: "Gemini 3 Flash",
-        description: "High-speed thinking model for agentic workflows",
-        costPer1M: { input: 0.1, output: 0.4 },
-    },
-    {
         id: "openai/gpt-4o-mini",
         name: "GPT-4o Mini",
         description: "Efficient OpenAI model for high-volume tasks",
