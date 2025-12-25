@@ -64,12 +64,12 @@ export default async function KnowledgeBasePage() {
         getRecentActivity(),
     ]);
 
-    // Build folder structure: About You, Communication, Memories
+    // Build folder structure: Profile, Communication, Memories
     // Philosophy (Heart-Centered AI) is displayed on dedicated /philosophy page
     const allFolders: KBFolder[] = [];
     const profileFolder = userFolders.find((f) => f.path === "profile");
 
-    // 1. About You - personal identity info
+    // 1. Profile - personal identity info (displays as "About You" document)
     if (profileFolder) {
         const identityDoc = profileFolder.documents.find(
             (d) => d.path === "profile.identity"
