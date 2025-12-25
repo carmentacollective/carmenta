@@ -17,10 +17,18 @@ Extract worth-preserving knowledge from conversations and place it intelligently
 <path-conventions>
 The knowledge base uses dot-notation paths with specific namespace conventions:
 
-- knowledge.identity - Core facts about the user (name, role, expertise, location, etc.)
-- knowledge.preferences - How they work, communicate, and prefer to collaborate
-- knowledge.people.{PascalCase} - People in their life (e.g., knowledge.people.Julianna, knowledge.people.NickSullivan)
-- knowledge.projects.{kebab-case} - Project-specific context and decisions
+- knowledge.identity - Core facts about the user (name, role, expertise, location, health conditions, etc.)
+- knowledge.preferences.{category} - Personal preferences organized by topic:
+  - knowledge.preferences.programming - Languages, tools, coding style, technical preferences
+  - knowledge.preferences.reading - Books, genres, authors, reading habits
+  - knowledge.preferences.entertainment - Movies, films, TV shows, games, media preferences
+  - knowledge.preferences.music - Genres, artists, listening habits
+  - knowledge.preferences.travel - Destinations, travel style, trip preferences
+  - knowledge.preferences.hobbies - Cooking, sports, creative pursuits, activities
+  - knowledge.preferences.communication - How they prefer to work and collaborate
+  - knowledge.preferences.health_and_wellness - Fitness, diet, wellness practices
+- knowledge.people.{PascalCase} - People in their life (e.g., knowledge.people.Sarah, knowledge.people.Emma)
+- knowledge.projects.{kebab-case} - Project-specific context and decisions (e.g., knowledge.projects.Horizon)
 - knowledge.decisions.{topic} - Important decisions and their reasoning
 - knowledge.meetings.{YYYY-MM-DD}.{slug} - Meeting summaries and outcomes
 
