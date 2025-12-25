@@ -1,6 +1,6 @@
 # Carmenta Evaluation Benchmark Dataset
 
-Version: 1.0.0 | Total: 250 queries
+Version: 1.0.0 | Total: 150 queries
 
 ## Overview
 
@@ -14,17 +14,17 @@ against frontier LLMs (ChatGPT, Claude, Gemini, etc.). It enables:
 
 ## Dataset Structure
 
-### Core Benchmark (200 queries)
+### Core Benchmark (100 queries)
 
 Balanced coverage across 5 categories:
 
 | Category         | Count | Focus Areas                                                         |
 | ---------------- | ----- | ------------------------------------------------------------------- |
-| Reasoning        | 40    | Logic puzzles, probability, systems thinking, code analysis, proofs |
-| Web Search       | 40    | Current events, pricing, product updates, research, fact-checking   |
-| Tool Integration | 40    | Comparisons, deep research, MCP integrations                        |
-| Edge Cases       | 40    | Loaded questions, ethics, misinformation, ambiguity, boundaries     |
-| Real-World       | 40    | Career, debugging, estimation, system design, code review           |
+| Reasoning        | 20    | Logic puzzles, probability, systems thinking, code analysis, proofs |
+| Web Search       | 20    | Current events, pricing, product updates, research, fact-checking   |
+| Tool Integration | 20    | Comparisons, deep research, MCP integrations                        |
+| Edge Cases       | 20    | Loaded questions, ethics, misinformation, ambiguity, boundaries     |
+| Real-World       | 20    | Career, debugging, estimation, system design, code review           |
 
 Each category includes three difficulty levels:
 
@@ -46,7 +46,7 @@ System resilience under challenging conditions:
 
 ## Files
 
-- `queries.ts` - Core 200-query benchmark with types and utilities
+- `queries.ts` - Core 100-query benchmark with types and utilities
 - `challenge-cases.ts` - 50 challenge case scenarios
 - `index.ts` - Combined exports and validation
 

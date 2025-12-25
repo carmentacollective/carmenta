@@ -31,9 +31,9 @@ export const datasetSummary = {
 export const allQueries = [...benchmarkQueries, ...challengeCases];
 
 // Validation
-if (categoryCounts.total !== 200) {
+if (categoryCounts.total !== 100) {
     console.warn(
-        `Warning: Core benchmark has ${categoryCounts.total} queries, expected 200`
+        `Warning: Core benchmark has ${categoryCounts.total} queries, expected 100`
     );
 }
 
