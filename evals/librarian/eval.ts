@@ -1,16 +1,18 @@
 /**
  * Knowledge Librarian Evaluation
  *
- * Braintrust-native evaluation for comparing Librarian model candidates.
- * Tests extraction quality, path selection, and action decisions across
- * different models to determine the optimal Librarian.
+ * Braintrust-native evaluation for the Librarian agent.
+ * Tests extraction quality, path selection, and action decisions.
  *
  * Usage:
- *   # Run with all model candidates:
+ *   # Nightly/default: test production model only
  *   pnpm braintrust eval evals/librarian/eval.ts
  *
- *   # Run with specific model:
- *   LIBRARIAN_MODEL=anthropic/claude-sonnet-4.5 pnpm braintrust eval evals/librarian/eval.ts
+ *   # Compare all model candidates (when evaluating new models)
+ *   LIBRARIAN_COMPARE_ALL=true pnpm braintrust eval evals/librarian/eval.ts
+ *
+ *   # Test a specific model
+ *   LIBRARIAN_MODEL=x-ai/grok-4.1-fast pnpm braintrust eval evals/librarian/eval.ts
  *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
@@ -35,6 +37,9 @@ import {
     type LibrarianModelCandidate,
 } from "./runner";
 
+// Production librarian model (from lib/model-config.ts LIBRARIAN_FALLBACK_CHAIN)
+const PRODUCTION_MODEL = LIBRARIAN_MODEL_CANDIDATES[0]; // Claude Haiku 4.5
+
 // Configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
@@ -49,17 +54,28 @@ if (!OPENROUTER_API_KEY) {
 
 // Determine which model(s) to test
 const specifiedModel = process.env.LIBRARIAN_MODEL;
-const modelsToTest: LibrarianModelCandidate[] = specifiedModel
-    ? LIBRARIAN_MODEL_CANDIDATES.filter((m) => m.id === specifiedModel)
-    : [...LIBRARIAN_MODEL_CANDIDATES];
+const compareAll = process.env.LIBRARIAN_COMPARE_ALL === "true";
 
-if (specifiedModel && modelsToTest.length === 0) {
-    console.error(`Unknown model: ${specifiedModel}`);
-    console.error("\nAvailable models:");
-    for (const m of LIBRARIAN_MODEL_CANDIDATES) {
-        console.error(`   - ${m.id} (${m.name})`);
+let modelsToTest: LibrarianModelCandidate[];
+
+if (specifiedModel) {
+    // Test a specific model
+    const found = LIBRARIAN_MODEL_CANDIDATES.filter((m) => m.id === specifiedModel);
+    if (found.length === 0) {
+        console.error(`Unknown model: ${specifiedModel}`);
+        console.error("\nAvailable models:");
+        for (const m of LIBRARIAN_MODEL_CANDIDATES) {
+            console.error(`   - ${m.id} (${m.name})`);
+        }
+        process.exit(1);
     }
-    process.exit(1);
+    modelsToTest = found;
+} else if (compareAll) {
+    // Compare all candidates (for model selection)
+    modelsToTest = [...LIBRARIAN_MODEL_CANDIDATES];
+} else {
+    // Default: production model only (for nightly)
+    modelsToTest = [PRODUCTION_MODEL];
 }
 
 console.log(`\nTesting ${modelsToTest.length} Librarian model(s):`);
