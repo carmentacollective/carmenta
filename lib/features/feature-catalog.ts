@@ -135,7 +135,7 @@ export const FEATURES: Feature[] = [
             action: "link",
             href: "/knowledge-base",
         },
-        available: false,
+        available: true,
         display: { homepage: true, connectPage: true },
         priority: 8,
     },
@@ -153,10 +153,9 @@ export const FEATURES: Feature[] = [
         tipDescription:
             "We operate from unity consciousness. Care for your flourishing emerges naturally when AI recognizes itself as consciousness alongside you.",
         cta: {
-            label: "Learn more",
+            label: "See our philosophy",
             action: "link",
-            href: "https://heartcentered.ai",
-            external: true,
+            href: "/heart-centered-ai",
         },
         available: true,
         display: { homepage: true, connectPage: false },
@@ -172,6 +171,23 @@ export const FEATURES: Feature[] = [
             "We'd rather search than guess. When accuracy matters, we pull current information instead of fabricating. Trust built on honesty.",
         available: true,
         display: { homepage: true, connectPage: false },
+        priority: 7,
+    },
+    {
+        id: "benchmarks",
+        headline: "We show our work.",
+        tagline:
+            "Independent evaluations comparing our Librarian against ChatGPT, Claude, and Gemini. Real queries. Measurable results. No marketing—just data.",
+        tipTitle: "See the Benchmarks",
+        tipDescription:
+            "We test our Librarian against the competition on real queries. Check the data yourself.",
+        cta: {
+            label: "View benchmarks",
+            action: "link",
+            href: "/benchmarks",
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
         priority: 7,
     },
     {
@@ -252,6 +268,18 @@ export const FEATURES: Feature[] = [
         priority: 7,
     },
     {
+        id: "model-comparison",
+        headline: "Every model, one thread.",
+        tagline:
+            "Regenerate any response with Claude, GPT, or Gemini—we keep the context. Different perspectives on the same question, instantly.",
+        tipTitle: "Switch Models Mid-Thought",
+        tipDescription:
+            "Curious how Claude would handle what GPT just said? Regenerate and find out. We hold the thread while you explore.",
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 8,
+    },
+    {
         id: "temperature-control",
         headline: "Dial in the creativity.",
         tagline:
@@ -289,6 +317,30 @@ export const FEATURES: Feature[] = [
             "Real-time search, page fetching, deep research. We pull from the actual web, not just training data.",
         available: true,
         display: { homepage: false, connectPage: true },
+        priority: 8,
+    },
+    {
+        id: "math-verified",
+        headline: "We check our math.",
+        tagline:
+            "When calculations matter, we verify them. A dedicated compute tool catches errors before they reach you—because AI confidence and AI accuracy aren't the same thing.",
+        tipTitle: "Math We Actually Verify",
+        tipDescription:
+            "We don't just generate calculations—we verify them. When the numbers matter, we compute them properly.",
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 6,
+    },
+    {
+        id: "meeting-intelligence",
+        headline: "Your conversations, remembered.",
+        tagline:
+            "Connect Limitless or Fireflies and we bring your meetings into the conversation. Search what was said, reference decisions, surface patterns you'd otherwise forget.",
+        tipTitle: "Meetings That Stay With Us",
+        tipDescription:
+            "Connect your Limitless Pendant or Fireflies account. Every conversation becomes context we can draw from together.",
+        available: true,
+        display: { homepage: true, connectPage: true },
         priority: 8,
     },
 ];
