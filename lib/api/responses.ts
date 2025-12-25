@@ -3,9 +3,15 @@
  *
  * Provides consistent JSON response builders for API routes.
  * Handles common patterns: errors, validation failures, auth failures.
+ *
+ * DrizzleQueryError Integration:
+ * Database query errors automatically capture rich context (SQL, params, cause)
+ * for better debugging in Sentry. This helps diagnose issues without manual
+ * context threading through every DB call.
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { DrizzleQueryError } from "drizzle-orm";
 
 import { logger } from "@/lib/logger";
 
@@ -67,6 +73,11 @@ export function notFoundResponse(resource = "Resource"): Response {
  * Returns a 500 Internal Server Error response.
  * Logs the error and reports to Sentry.
  *
+ * Handles DrizzleQueryError specially to capture rich database context:
+ * - Generated SQL query
+ * - Query parameters
+ * - Original driver error
+ *
  * @param error - The caught error
  * @param context - Additional context for logging and Sentry
  */
@@ -78,6 +89,16 @@ export function serverErrorResponse(
     const errorName = error instanceof Error ? error.name : "Unknown";
     const errorStack = error instanceof Error ? error.stack : undefined;
 
+    // Extract Drizzle-specific context for database errors
+    const isDrizzleError = error instanceof DrizzleQueryError;
+    const drizzleContext = isDrizzleError
+        ? {
+              query: error.query,
+              params: error.params,
+              driverError: error.cause?.message,
+          }
+        : undefined;
+
     // Log detailed error for debugging
     logger.error(
         {
@@ -87,6 +108,7 @@ export function serverErrorResponse(
             userEmail: context.userEmail,
             resourceId: context.resourceId,
             model: context.model,
+            ...(drizzleContext && { drizzle: drizzleContext }),
         },
         `${context.route ?? "API"} request failed`
     );
@@ -94,15 +116,21 @@ export function serverErrorResponse(
     // Report to Sentry with context
     Sentry.captureException(error, {
         tags: {
-            component: "api",
+            component: isDrizzleError ? "database" : "api",
             route: context.route ?? "unknown",
             errorName,
+            ...(isDrizzleError && { queryType: "drizzle" }),
         },
         extra: {
             userEmail: context.userEmail,
             resourceId: context.resourceId,
             model: context.model,
             errorMessage,
+            ...(drizzleContext && {
+                sql: drizzleContext.query,
+                params: drizzleContext.params,
+                driverError: drizzleContext.driverError,
+            }),
             ...context.extra,
         },
     });
