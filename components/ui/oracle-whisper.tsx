@@ -222,13 +222,9 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
         return () => window.removeEventListener(USER_ENGAGED_EVENT, handleUserEngaged);
     }, [isDismissed]);
 
-    const showWhisper = tip && !isDismissed && shouldShow;
+    // Only show whisper when tips are enabled AND we have a tip ready
+    const showWhisper = !TIPS_DISABLED && tip && !isDismissed && shouldShow;
     const isSpeaking = showWhisper && !isStreaming;
-
-    // Early return when disabled - after all hooks to maintain React rules
-    if (TIPS_DISABLED) {
-        return null;
-    }
 
     return (
         <div className={cn("relative", className)}>
