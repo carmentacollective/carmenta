@@ -8,7 +8,6 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
 import {
     getKBFolders,
-    getValuesDocument,
     initializeKBWithClerkData,
     hasKBProfile,
     getRecentActivity,
@@ -60,53 +59,68 @@ export default async function KnowledgeBasePage() {
     }
 
     // Fetch KB data in parallel
-    const [userFolders, valuesDoc, activityItems] = await Promise.all([
+    const [userFolders, activityItems] = await Promise.all([
         getKBFolders(),
-        getValuesDocument(),
         getRecentActivity(),
     ]);
 
-    // Build folder structure in order: philosophy, personality, knowledge
-    // Note: System documentation moved to /guide page
+    // Build folder structure: About You, Communication, Memories
+    // Philosophy (Heart-Centered AI) is displayed on dedicated /philosophy page
     const allFolders: KBFolder[] = [];
-
-    // 1. Heart-Centered Philosophy (top-level, not nested under Values)
-    allFolders.push({
-        id: "philosophy",
-        name: "philosophy",
-        path: "philosophy",
-        documents: [valuesDoc],
-    });
-
-    // 2. AI Personality folder (from user profile folders)
     const profileFolder = userFolders.find((f) => f.path === "profile");
+
+    // 1. About You - personal identity info
     if (profileFolder) {
-        allFolders.push({
-            ...profileFolder,
-            id: "personality",
-            name: "personality",
-            path: "personality",
-        });
+        const identityDoc = profileFolder.documents.find(
+            (d) => d.path === "profile.identity"
+        );
+        if (identityDoc) {
+            allFolders.push({
+                id: "about",
+                name: "about",
+                path: "about",
+                documents: [identityDoc],
+            });
+        }
     }
 
-    // 3. Knowledge folder (from user folders, or placeholder if not yet created)
+    // 2. Communication - voice, style, working together
+    if (profileFolder) {
+        const communicationDocs = profileFolder.documents.filter(
+            (d) => d.path === "profile.character" || d.path === "profile.preferences"
+        );
+        if (communicationDocs.length > 0) {
+            allFolders.push({
+                id: "communication",
+                name: "communication",
+                path: "communication",
+                documents: communicationDocs,
+            });
+        }
+    }
+
+    // 3. Memories - learned knowledge from conversations
     const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
     if (knowledgeFolder) {
-        allFolders.push(knowledgeFolder);
-    } else {
-        // Show "coming soon" placeholder
         allFolders.push({
-            id: "knowledge",
-            name: "knowledge",
-            path: "knowledge",
+            ...knowledgeFolder,
+            id: "memories",
+            name: "memories",
+            path: "memories",
+        });
+    } else {
+        allFolders.push({
+            id: "memories",
+            name: "memories",
+            path: "memories",
             documents: [
                 {
-                    id: "knowledge-placeholder",
-                    path: "_placeholder.knowledge",
+                    id: "memories-placeholder",
+                    path: "_placeholder.memories",
                     name: "Coming Soon",
                     content:
-                        "What we remember together will appear here.\n\nSoon we'll be able to add documents, notes, and context that persist across all connections.",
-                    description: "What we remember together",
+                        "What we learn together will appear here.\n\nSoon we'll capture insights, preferences, and context from our conversations.",
+                    description: "What we learn from our conversations",
                     promptLabel: null,
                     editable: false,
                     updatedAt: new Date(),

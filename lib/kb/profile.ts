@@ -38,21 +38,21 @@ Style: Direct and precise, every word earns its place`;
 export const PROFILE_DOCUMENT_DEFS = {
     character: {
         name: "Voice & Style",
-        description: "Shape how we interact (Carmenta by default)",
+        description: "Shape how we talk to you",
         promptLabel: "character",
         promptHint: "The AI's personality—name, voice, patterns",
         promptOrder: 1,
     },
     identity: {
-        name: "About You",
-        description: "Help us understand who you are",
+        name: "Personal Details",
+        description: "Who you are",
         promptLabel: "about",
         promptHint: "Who the user is—identity, role, current focus",
         promptOrder: 2,
     },
     preferences: {
-        name: "Working Together",
-        description: "Define how we collaborate",
+        name: "How We Work",
+        description: "How we collaborate together",
         promptLabel: "preferences",
         promptHint: "How the user prefers to collaborate—tone, format, depth",
         promptOrder: 3,
