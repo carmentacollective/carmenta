@@ -1,5 +1,9 @@
 "use client";
 
+// DISABLED: Rotating tips were mis-implemented.
+// To re-enable: change TIPS_DISABLED to false
+const TIPS_DISABLED = true;
+
 /**
  * OracleWhisper - Carmenta speaks to the user
  *
@@ -220,6 +224,11 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
 
     const showWhisper = tip && !isDismissed && shouldShow;
     const isSpeaking = showWhisper && !isStreaming;
+
+    // Early return when disabled - after all hooks to maintain React rules
+    if (TIPS_DISABLED) {
+        return null;
+    }
 
     return (
         <div className={cn("relative", className)}>
