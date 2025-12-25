@@ -20,7 +20,8 @@
     ]
   },
   "scripts": {
-    "analyze": "ANALYZE=true next build",
+    "analyze": "next experimental-analyze",
+    "analyze:webpack": "ANALYZE=true next build --webpack",
     "build": "next build",
     "vercel-build": "bash ./scripts/vercel-deploy.sh",
     "dev": "next dev --turbopack",
