@@ -264,10 +264,10 @@ export const LIBRARIAN_MODEL_CANDIDATES = [
         costPer1M: { input: 0.1, output: 0.4 },
     },
     {
-        id: "openai/gpt-5.2-mini",
-        name: "GPT-5.2 Mini",
+        id: "openai/gpt-4o-mini",
+        name: "GPT-4o Mini",
         description: "Efficient OpenAI model for high-volume tasks",
-        costPer1M: { input: 0.3, output: 1.2 },
+        costPer1M: { input: 0.15, output: 0.6 },
     },
     // Balanced tier - if fast models underperform
     {

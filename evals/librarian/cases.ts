@@ -169,8 +169,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath:
-                /knowledge\.projects\.(academic_learning|study_techniques|education)/,
+            expectedPath: /knowledge\.preferences\.learning/,
             expectedAction: "create",
             contentPatterns: [
                 /attended.*workshop.*note-taking/i,
@@ -386,7 +385,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.personal_finance.*/,
+            expectedPath:
+                /knowledge\.(preferences|identity)\.(hobbies\.)?(financial|personal-finance)/,
             expectedAction: "create",
             contentPatterns: [/financial management/i, /budgeting/i, /monthly budget/i],
         },
@@ -454,7 +454,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath:
+                /knowledge\.(preferences|identity)\.(relationships|dating|hobbies)/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -594,7 +595,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.preferences\.hobbies/,
+            expectedPath: /knowledge\.preferences\.(hobbies|reading)/,
             expectedAction: "append",
             contentPatterns: [/reading/i, /books/i, /literature/i],
         },
@@ -662,7 +663,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.preferences\.(entertainment|hobbies)/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*film club/i,
@@ -878,7 +879,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.preferences\.(hobbies\.)?financial/,
             expectedAction: "create",
             contentPatterns: [/financial literacy/i, /investment/i, /learning/i],
         },
@@ -1018,7 +1019,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.preferences\.learning/,
             expectedAction: "create",
             contentPatterns: [/study habits/i, /academic/i, /learning/i],
         },
@@ -1086,7 +1087,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.preferences\.music/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /late nights/i],
         },
@@ -1154,7 +1155,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.preferences\.music/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /music production/i],
         },
@@ -1366,7 +1367,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.preferences\.(hobbies|interests|activities)/,
+            expectedPath: /knowledge\.preferences\.(hobbies|reading)/,
             expectedAction: "append",
             contentPatterns: [/reading/i, /books/i, /literature/i],
         },
@@ -1434,7 +1435,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.preferences\.hobbies/,
+            expectedPath:
+                /knowledge\.(preferences|identity)\.(hobbies|cooking|dating|life-stage)/,
             expectedAction: "append",
             contentPatterns: [/cooking/i, /cooking class/i, /culinary/i],
         },
@@ -1502,7 +1504,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.preferences\.health_and_wellness/,
             expectedAction: "create",
             contentPatterns: [
                 /health.*journey/i,
@@ -1574,7 +1576,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(preferences\.learning|identity)/,
             expectedAction: "create",
             contentPatterns: [
                 /attended.*workshop.*note-taking/i,
@@ -1718,7 +1720,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.preferences\.(family|activities)/,
+            expectedPath:
+                /knowledge\.(preferences\.(family|activities)|identity\.family)/,
             expectedAction: "create",
             contentPatterns: [
                 /family game nights/i,
@@ -1858,7 +1861,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.preferences\.(entertainment|hobbies)/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*local film club/i,
@@ -1930,7 +1933,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(preferences\.hobbies|identity\.dating)/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -2214,7 +2217,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath:
+                /knowledge\.(preferences|identity)\.(hobbies\.)?(financial|personal-finance)/,
             expectedAction: "create",
             contentPatterns: [
                 /personal finance blog/i,

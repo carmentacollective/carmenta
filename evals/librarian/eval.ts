@@ -72,10 +72,42 @@ for (const model of modelsToTest) {
 }
 console.log("");
 
+// Parallel execution helper
+async function runWithConcurrency<T, R>(
+    items: T[],
+    fn: (item: T) => Promise<R>,
+    concurrency: number
+): Promise<R[]> {
+    const results: R[] = [];
+    let index = 0;
+
+    async function worker() {
+        while (index < items.length) {
+            const i = index++;
+            results[i] = await fn(items[i]);
+        }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, worker));
+    return results;
+}
+
 /**
  * Local mode: run evals and print results to console
  */
 async function runLocal() {
+    const quickMode = process.env.LIBRARIAN_QUICK === "true";
+    const concurrency = 10;
+
+    // In quick mode, sample 10 diverse test cases
+    const testCases = quickMode
+        ? librarianTestData.filter((_, i) => i % 5 === 0).slice(0, 10)
+        : librarianTestData;
+
+    if (quickMode) {
+        console.log(`Quick mode: testing ${testCases.length} cases (10% sample)`);
+    }
+
     interface ModelResult {
         model: string;
         scores: Record<string, { total: number; count: number }>;
@@ -93,45 +125,70 @@ async function runLocal() {
         const scores: Record<string, { total: number; count: number }> = {};
         let errors = 0;
         let totalLatency = 0;
+        let completed = 0;
 
-        for (let i = 0; i < librarianTestData.length; i++) {
-            const testCase = librarianTestData[i];
-            process.stdout.write(`\r  ${i + 1}/${librarianTestData.length}...`);
-
-            try {
-                const output = await runLibrarianEval(testCase.input, {
-                    librarianModel: model.id,
-                    apiKey: OPENROUTER_API_KEY,
-                });
-
-                totalLatency += output.latencyMs;
-
-                const caseScores = LibrarianScorer({
-                    input: testCase.input,
-                    output,
-                    expected: testCase.expected,
-                });
-
-                for (const score of caseScores) {
-                    if (!scores[score.name])
-                        scores[score.name] = { total: 0, count: 0 };
-                    scores[score.name].total += score.score;
-                    scores[score.name].count += 1;
+        const outputs = await runWithConcurrency(
+            testCases,
+            async (testCase) => {
+                try {
+                    const output = await runLibrarianEval(testCase.input, {
+                        librarianModel: model.id,
+                        apiKey: OPENROUTER_API_KEY,
+                    });
+                    completed++;
+                    process.stdout.write(`\r  ${completed}/${testCases.length}...`);
+                    return { testCase, output, error: null };
+                } catch (error) {
+                    completed++;
+                    return { testCase, output: null, error };
                 }
+            },
+            concurrency
+        );
 
-                if (!output.isValid) errors++;
-            } catch (error) {
+        const debugMode = process.env.LIBRARIAN_DEBUG === "true";
+
+        for (const { testCase, output, error } of outputs) {
+            if (error || !output) {
                 errors++;
+                continue;
             }
+
+            totalLatency += output.latencyMs;
+
+            const caseScores = LibrarianScorer({
+                input: testCase.input,
+                output,
+                expected: testCase.expected,
+            });
+
+            for (const score of caseScores) {
+                if (!scores[score.name]) scores[score.name] = { total: 0, count: 0 };
+                scores[score.name].total += score.score;
+                scores[score.name].count += 1;
+
+                // Debug: show failures
+                if (debugMode && score.score < 1) {
+                    const createCall = output.toolCalls.find(
+                        (c) => c.tool === "createDocument"
+                    );
+                    const path = createCall?.args?.path || "(no path)";
+                    console.log(`\n  FAIL [${score.name}]: ${testCase.input.id}`);
+                    console.log(`    Expected: ${testCase.expected.expectedPath}`);
+                    console.log(`    Got: ${path}`);
+                }
+            }
+
+            if (!output.isValid) errors++;
         }
 
-        console.log(`\r  Done: ${librarianTestData.length} cases      `);
+        console.log(`\r  Done: ${testCases.length} cases      `);
 
         results.push({
             model: model.name,
             scores,
             errors,
-            avgLatency: totalLatency / librarianTestData.length,
+            avgLatency: totalLatency / testCases.length,
         });
 
         // Print results for this model
