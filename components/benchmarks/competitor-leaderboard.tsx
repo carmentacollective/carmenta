@@ -3,7 +3,11 @@
 import { useState, Fragment } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import type { CompetitorScore, QueryResult, PairwiseResult } from "@/lib/benchmarks";
+import type {
+    CompetitorScore,
+    QueryResult,
+    PairwiseResult,
+} from "@/lib/benchmarks/types";
 import { QueryDetailModal } from "./query-detail-modal";
 
 interface CompetitorLeaderboardProps {

@@ -7,7 +7,8 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { BenchmarkSummary } from "@/components/benchmarks/benchmark-summary";
 import { CompetitorLeaderboard } from "@/components/benchmarks/competitor-leaderboard";
 import { CategoryBreakdown } from "@/components/benchmarks/category-breakdown";
-import { getLatestBenchmarkResults, formatBenchmarkDate } from "@/lib/benchmarks";
+import { getLatestBenchmarkResults } from "@/lib/benchmarks/data";
+import { formatBenchmarkDate } from "@/lib/benchmarks/utils";
 
 export const metadata: Metadata = {
     title: "Benchmarks · Carmenta",

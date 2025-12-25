@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { X, Clock, Trophy, AlertCircle, Handshake } from "lucide-react";
 
-import type { QueryResult, PairwiseResult } from "@/lib/benchmarks";
+import type { QueryResult, PairwiseResult } from "@/lib/benchmarks/types";
 
 interface QueryDetailModalProps {
     query: QueryResult;

@@ -1,5 +1,5 @@
 import { Trophy, Target, Clock } from "lucide-react";
-import { getWinRateBarClass } from "@/lib/benchmarks";
+import { getWinRateBarClass } from "@/lib/benchmarks/utils";
 
 interface BenchmarkSummaryProps {
     winRate: number;

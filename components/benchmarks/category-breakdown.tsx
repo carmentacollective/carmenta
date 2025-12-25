@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import type { CategoryScore, QueryResult } from "@/lib/benchmarks";
+import type { CategoryScore, QueryResult } from "@/lib/benchmarks/types";
 import {
     formatCategoryName,
     getWinRateColor,
     getWinRateBarClass,
-} from "@/lib/benchmarks";
+} from "@/lib/benchmarks/utils";
 
 interface CategoryBreakdownProps {
     categories: CategoryScore[];
