@@ -250,7 +250,7 @@ interface ThreadWelcomeProps {
 function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
     return (
         <motion.div
-            className="flex min-h-full w-full flex-col items-center justify-center gap-8"
+            className="flex h-full w-full flex-1 flex-col items-center justify-center gap-8"
             initial={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
                 opacity: 0,

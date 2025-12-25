@@ -289,10 +289,10 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                             delay: 0.6,
                             ease: [0.23, 1, 0.32, 1],
                         }}
-                        className="absolute left-full top-1/2 z-50 ml-3 w-56 -translate-y-1/2 sm:w-72"
+                        className="absolute left-1/2 top-full z-50 mt-3 w-56 -translate-x-1/2 sm:w-72"
                     >
-                        {/* Speech tail pointing left to Oracle */}
-                        <div className="absolute -left-2 top-4 h-4 w-4 rotate-45 border-b border-l border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
+                        {/* Speech tail pointing up to Oracle */}
+                        <div className="absolute -top-2 left-6 h-4 w-4 rotate-45 border-l border-t border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
 
                         {/* Whisper card - more compact on mobile */}
                         <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-black/50 sm:p-3">
