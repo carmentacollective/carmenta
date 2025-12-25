@@ -162,10 +162,10 @@ function HoloThreadInner() {
         >
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
-            {/* Viewport with fade mask and mobile touch optimizations - powered by use-stick-to-bottom */}
+            {/* Viewport - use-stick-to-bottom handles scroll container, we just provide content */}
             <StickToBottom.Content
                 className={cn(
-                    "chat-viewport-fade flex flex-1 touch-pan-y flex-col items-center overflow-y-auto overscroll-contain bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade flex flex-1 flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
