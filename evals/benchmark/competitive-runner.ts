@@ -388,7 +388,17 @@ async function runBenchmark(options: {
         const pairwiseResults: PairwiseResult[] = [];
         for (const compResponse of competitorResponses) {
             if (carmentaResponse.error || compResponse.error) {
-                // If either errored, the non-errored one wins
+                // If both errored, it's a tie
+                if (carmentaResponse.error && compResponse.error) {
+                    pairwiseResults.push({
+                        competitor: compResponse.model,
+                        winner: "tie",
+                        confidence: 1.0,
+                        reasoning: `Both failed: Carmenta (${carmentaResponse.error}), Competitor (${compResponse.error})`,
+                    });
+                    continue;
+                }
+                // If only one errored, the non-errored one wins
                 pairwiseResults.push({
                     competitor: compResponse.model,
                     winner: carmentaResponse.error ? "competitor" : "carmenta",
