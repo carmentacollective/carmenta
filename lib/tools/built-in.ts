@@ -1,8 +1,37 @@
 import { tool } from "ai";
+import { all, create } from "mathjs";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
+
+// Create a restricted mathjs instance for safe user input evaluation
+// Disables import/createUnit to prevent code injection attacks
+const math = create(all);
+math.import(
+    {
+        import: function () {
+            throw new Error("Function import is disabled");
+        },
+        createUnit: function () {
+            throw new Error("Function createUnit is disabled");
+        },
+        evaluate: function () {
+            throw new Error("Function evaluate is disabled");
+        },
+        parse: function () {
+            throw new Error("Function parse is disabled");
+        },
+        simplify: function () {
+            throw new Error("Function simplify is disabled");
+        },
+        derivative: function () {
+            throw new Error("Function derivative is disabled");
+        },
+    },
+    { override: true }
+);
 
 /**
  * Built-in tools available to all connections.
@@ -31,37 +60,44 @@ export const builtInTools = {
         },
     }),
 
-    webSearch: tool({
+    calculate: tool({
         description:
-            "Search the web for current information. Use when you need fresh data, recent news, or to verify facts. Returns concise results with snippets and URLs.",
+            "Evaluate mathematical expressions. Use this to verify calculations, compute formulas, or solve math problems. Supports arithmetic, algebra, trigonometry, statistics, unit conversions, and financial calculations.",
         inputSchema: z.object({
-            query: z
+            expression: z
                 .string()
-                .describe("The search query. Be specific and include key terms."),
-            maxResults: z
-                .number()
-                .min(1)
-                .max(20)
-                .optional()
-                .describe("Maximum number of results to return (default: 5)."),
+                .describe(
+                    "Mathematical expression to evaluate. Examples: '2 + 2', 'sqrt(16)', 'sin(45 deg)', '5!', '10 km to miles', '(44100/42000)^(365/343) - 1'"
+                ),
         }),
-        execute: async ({ query, maxResults }) => {
-            const provider = getWebIntelligenceProvider();
-            const result = await provider.search(query, { maxResults });
+        execute: async ({ expression }) => {
+            try {
+                const result = math.evaluate(expression);
+                // Format the result nicely
+                const formatted =
+                    typeof result === "number"
+                        ? math.format(result, { precision: 14 })
+                        : String(result);
 
-            if (!result) {
                 return {
+                    expression,
+                    result: formatted,
+                    numeric: typeof result === "number" ? result : null,
+                };
+            } catch (error) {
+                logger.warn(
+                    { error, expression },
+                    "Failed to evaluate mathematical expression"
+                );
+                return {
+                    expression,
                     error: true,
-                    message: "Search came up empty. The robots are on it. 🤖",
-                    results: [],
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : "Could not evaluate expression",
                 };
             }
-
-            return {
-                error: false,
-                results: result.results,
-                query: result.query,
-            };
         },
     }),
 
@@ -153,6 +189,40 @@ export const builtInTools = {
                 summary: result.summary,
                 findings: result.findings,
                 sources: result.sources,
+            };
+        },
+    }),
+
+    webSearch: tool({
+        description:
+            "Search the web for current information. Use when you need fresh data, recent news, or to verify facts. Returns concise results with snippets and URLs.",
+        inputSchema: z.object({
+            query: z
+                .string()
+                .describe("The search query. Be specific and include key terms."),
+            maxResults: z
+                .number()
+                .min(1)
+                .max(20)
+                .optional()
+                .describe("Maximum number of results to return (default: 5)."),
+        }),
+        execute: async ({ query, maxResults }) => {
+            const provider = getWebIntelligenceProvider();
+            const result = await provider.search(query, { maxResults });
+
+            if (!result) {
+                return {
+                    error: true,
+                    message: "Search came up empty. The robots are on it. 🤖",
+                    results: [],
+                };
+            }
+
+            return {
+                error: false,
+                results: result.results,
+                query: result.query,
             };
         },
     }),
