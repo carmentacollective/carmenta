@@ -26,6 +26,7 @@ The knowledge base uses dot-notation paths with specific namespace conventions:
   - knowledge.preferences.travel - Destinations, travel style, trip preferences
   - knowledge.preferences.hobbies - Cooking, sports, creative pursuits, activities
   - knowledge.preferences.communication - How they prefer to work and collaborate
+  - knowledge.preferences.learning - Study methods, courses, educational interests
   - knowledge.preferences.health_and_wellness - Fitness, diet, wellness practices
 - knowledge.people.{PascalCase} - People in their life (e.g., knowledge.people.Sarah, knowledge.people.Emma)
 - knowledge.projects.{kebab-case} - Project-specific context and decisions (e.g., knowledge.projects.Horizon)
