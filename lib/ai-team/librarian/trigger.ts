@@ -20,7 +20,7 @@ export interface LibrarianTriggerConfig {
 }
 
 const DEFAULT_CONFIG: LibrarianTriggerConfig = {
-    minMessageCount: 3, // Need at least 3 messages for meaningful extraction
+    minMessageCount: 2, // Trigger after first exchange (1 user + 1 assistant)
     async: true, // Don't block conversation response
 };
 
