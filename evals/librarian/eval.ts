@@ -125,6 +125,7 @@ async function runLocal() {
         const scores: Record<string, { total: number; count: number }> = {};
         let errors = 0;
         let totalLatency = 0;
+        let successfulRuns = 0;
         let completed = 0;
 
         const outputs = await runWithConcurrency(
@@ -155,6 +156,7 @@ async function runLocal() {
             }
 
             totalLatency += output.latencyMs;
+            successfulRuns++;
 
             const caseScores = LibrarianScorer({
                 input: testCase.input,
@@ -188,7 +190,7 @@ async function runLocal() {
             model: model.name,
             scores,
             errors,
-            avgLatency: totalLatency / testCases.length,
+            avgLatency: successfulRuns > 0 ? totalLatency / successfulRuns : 0,
         });
 
         // Print results for this model
