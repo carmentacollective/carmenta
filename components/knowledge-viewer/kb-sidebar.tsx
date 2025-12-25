@@ -30,7 +30,7 @@ const FOLDER_ICONS: Record<string, typeof User> = {
 
 // Display names for folders
 const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
-    about: "About You",
+    about: "Profile",
     communication: "Communication",
     memories: "Memories",
 };
