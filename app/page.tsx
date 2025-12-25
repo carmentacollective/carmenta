@@ -213,7 +213,7 @@ export default function HomePage() {
                                     src="/logos/icon-transparent.png"
                                     alt="Carmenta"
                                     fill
-                                    sizes="(max-width: 640px) 144px, 176px"
+                                    sizes="(max-width: 639px) 144px, 176px"
                                     className="object-contain drop-shadow-lg"
                                     priority
                                 />
