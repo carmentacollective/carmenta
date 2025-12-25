@@ -56,7 +56,7 @@ export function usePullToRefresh({
 
     const startY = useRef(0);
     const currentY = useRef(0);
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Check if at top of scroll container
     const isAtTop = useCallback(() => {

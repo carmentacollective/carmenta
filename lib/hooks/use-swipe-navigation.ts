@@ -54,7 +54,7 @@ export function useSwipeNavigation({
     const [isSwiping, setIsSwiping] = useState(false);
 
     const router = useRouter();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
 
     const startX = useRef(0);
     const startY = useRef(0);

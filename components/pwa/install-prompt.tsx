@@ -35,7 +35,7 @@ function isSnoozed(): boolean {
 
 export function InstallPrompt() {
     const { canInstall, promptInstall } = useInstallPrompt();
-    const { triggerHaptic } = useHapticFeedback();
+    const { trigger: triggerHaptic } = useHapticFeedback();
     // Track whether user has dismissed or installed this session
     const [userDismissed, setUserDismissed] = useState(false);
     const [isInstalling, setIsInstalling] = useState(false);
