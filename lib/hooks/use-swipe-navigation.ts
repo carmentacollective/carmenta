@@ -56,12 +56,14 @@ export function useSwipeNavigation({
     const router = useRouter();
     // TODO: Re-enable haptic feedback once CI type resolution issue is fixed
     // const { trigger: triggerHaptic } = useHapticFeedback();
-    const triggerHaptic = (_type: string) => {}; // no-op for now
+    const triggerHaptic = useCallback((_type: string) => {}, []); // no-op for now
 
     const startX = useRef(0);
     const startY = useRef(0);
     const startTime = useRef(0);
     const isEdgeSwipe = useRef(false);
+    // Track swipeDistance in ref to avoid callback recreation on every frame
+    const swipeDistanceRef = useRef(0);
 
     // Touch start - check if starting from edge
     const handleTouchStart = useCallback(
@@ -100,44 +102,49 @@ export function useSwipeNavigation({
 
             // Only track rightward swipes
             if (deltaX > 0) {
-                setSwipeDistance(deltaX);
-                setIsSwiping(true);
-
-                // Haptic when crossing threshold
-                if (deltaX >= threshold && swipeDistance < threshold) {
+                // Haptic when crossing threshold (use ref to avoid dep on state)
+                if (deltaX >= threshold && swipeDistanceRef.current < threshold) {
                     triggerHaptic("medium");
                 }
+
+                // Update both ref and state
+                swipeDistanceRef.current = deltaX;
+                setSwipeDistance(deltaX);
+                setIsSwiping(true);
             }
         },
-        [enabled, isSwiping, threshold, swipeDistance, triggerHaptic]
+        [enabled, isSwiping, threshold, triggerHaptic]
     );
 
     // Touch end - trigger navigation or reset
     const handleTouchEnd = useCallback(() => {
         if (!enabled || !isEdgeSwipe.current) return;
 
-        const elapsed = Date.now() - startTime.current;
-        const velocity = swipeDistance / elapsed;
+        try {
+            const elapsed = Date.now() - startTime.current;
+            const velocity = swipeDistance / elapsed;
 
-        // Trigger if exceeded threshold OR fast swipe
-        const shouldNavigate =
-            swipeDistance >= threshold ||
-            (velocity >= velocityThreshold && swipeDistance > 30);
+            // Trigger if exceeded threshold OR fast swipe
+            const shouldNavigate =
+                swipeDistance >= threshold ||
+                (velocity >= velocityThreshold && swipeDistance > 30);
 
-        if (shouldNavigate) {
-            triggerHaptic("success");
+            if (shouldNavigate) {
+                triggerHaptic("success");
 
-            if (onBack) {
-                onBack();
-            } else {
-                router.back();
+                if (onBack) {
+                    onBack();
+                } else {
+                    router.back();
+                }
             }
+        } finally {
+            // Always reset state, even if navigation throws
+            swipeDistanceRef.current = 0;
+            setSwipeDistance(0);
+            setIsSwiping(false);
+            isEdgeSwipe.current = false;
         }
-
-        // Reset
-        setSwipeDistance(0);
-        setIsSwiping(false);
-        isEdgeSwipe.current = false;
     }, [
         enabled,
         swipeDistance,
