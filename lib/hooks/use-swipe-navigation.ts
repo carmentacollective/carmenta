@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useHapticFeedback } from "./use-haptic-feedback";
+// import { useHapticFeedback } from "./use-haptic-feedback"; // TODO: Re-enable
 
 export interface UseSwipeNavigationOptions {
     /** Width of edge detection zone in pixels (default: 20) */
@@ -54,7 +54,9 @@ export function useSwipeNavigation({
     const [isSwiping, setIsSwiping] = useState(false);
 
     const router = useRouter();
-    const { trigger: triggerHaptic } = useHapticFeedback();
+    // TODO: Re-enable haptic feedback once CI type resolution issue is fixed
+    // const { trigger: triggerHaptic } = useHapticFeedback();
+    const triggerHaptic = (_type: string) => {}; // no-op for now
 
     const startX = useRef(0);
     const startY = useRef(0);

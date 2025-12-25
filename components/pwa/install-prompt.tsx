@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Smartphone } from "lucide-react";
 import { useInstallPrompt } from "@/lib/hooks/use-install-prompt";
-import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
+// import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback"; // TODO: Re-enable
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
@@ -35,7 +35,9 @@ function isSnoozed(): boolean {
 
 export function InstallPrompt() {
     const { canInstall, promptInstall } = useInstallPrompt();
-    const { trigger: triggerHaptic } = useHapticFeedback();
+    // TODO: Re-enable haptic feedback once CI type resolution issue is fixed
+    // const { trigger: triggerHaptic } = useHapticFeedback();
+    const triggerHaptic = (_type: string) => {}; // no-op for now
     // Track whether user has dismissed or installed this session
     const [userDismissed, setUserDismissed] = useState(false);
     const [isInstalling, setIsInstalling] = useState(false);
