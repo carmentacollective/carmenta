@@ -22,6 +22,7 @@
   "scripts": {
     "analyze": "ANALYZE=true next build",
     "build": "next build",
+    "vercel-build": "bash ./scripts/vercel-deploy.sh",
     "dev": "next dev --turbopack",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev --turbopack",
     "db:generate": "drizzle-kit generate",
