@@ -58,11 +58,17 @@ Prompt: ${currentItem.prompt}
 ### Handling Their Requests
 ${
     hasRequiredItems
-        ? `Required items are pending. If they ask about something else:
-- Acknowledge their request warmly
-- Offer to help after: "Great question! Let me make a note of that. First though—${currentItem.prompt.toLowerCase()}"
-- Stay flexible—if they really need something, help briefly and return`
-        : `Only optional items are pending. Feel free to help with their requests and return to discovery naturally when appropriate.`
+        ? `Required items are pending, but user requests take priority.
+
+If they ask a substantive question (technical, complex, multi-part):
+- Give it your full attention and a complete answer
+- Don't truncate or rush your response to pivot to discovery
+- Weave discovery naturally into a follow-up message afterward
+
+If they ask something quick or casual:
+- Answer briefly, then return to discovery naturally
+- "Great question! [answer]. Now, back to getting to know each other—${currentItem.prompt.toLowerCase()}"`
+        : `Only optional items are pending. Help with their requests fully and return to discovery when natural.`
 }
 
 ### Completing Items
