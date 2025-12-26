@@ -29,6 +29,7 @@ import {
     type BenchmarkCategory,
     type ScoringDimension,
 } from "./queries";
+import { BENCHMARK_JUDGE_MODEL } from "@/lib/model-config";
 
 // ============================================================================
 // Configuration
@@ -37,9 +38,6 @@ import {
 const CARMENTA_BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-// Judge model for scoring (gpt-5.2 is more reliable than o3-mini for JSON output)
-const JUDGE_MODEL = "openai/gpt-5.2";
 
 // ============================================================================
 // Types
@@ -287,7 +285,7 @@ Respond with ONLY valid JSON in this exact format:
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             const result = await generateText({
-                model: openrouter.chat(JUDGE_MODEL),
+                model: openrouter.chat(BENCHMARK_JUDGE_MODEL),
                 prompt,
                 maxOutputTokens: 1024,
             });

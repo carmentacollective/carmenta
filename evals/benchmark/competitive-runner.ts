@@ -28,6 +28,7 @@ import {
     type BenchmarkQuery,
     type BenchmarkCategory,
 } from "./queries";
+import { BENCHMARK_JUDGE_MODEL } from "@/lib/model-config";
 
 // ============================================================================
 // Configuration
@@ -45,9 +46,6 @@ const COMPETITOR_MODELS = [
     { id: "google/gemini-3-pro-preview", name: "Gemini 3 Pro" },
     { id: "x-ai/grok-4.1-fast", name: "Grok 4.1" },
 ] as const;
-
-// Judge model for pairwise comparison
-const JUDGE_MODEL = "openai/o3-mini";
 
 // ============================================================================
 // Types
@@ -152,7 +150,7 @@ async function callCarmenta(query: string): Promise<ModelResponse> {
 }
 
 /**
- * Consume SSE stream from Carmenta
+ * Consume SSE stream from Carmenta - handles multiple AI SDK formats
  */
 async function consumeStream(response: Response): Promise<string> {
     const reader = response.body?.getReader();
@@ -161,7 +159,6 @@ async function consumeStream(response: Response): Promise<string> {
     const decoder = new TextDecoder();
     let text = "";
     let buffer = "";
-    const eventTypes = new Set<string>();
 
     while (true) {
         const { done, value } = await reader.read();
@@ -176,75 +173,22 @@ async function consumeStream(response: Response): Promise<string> {
             if (line.startsWith("data: ")) {
                 try {
                     const data = JSON.parse(line.slice(6));
-                    if (data.type) {
-                        eventTypes.add(data.type);
-                    }
-                    // AI SDK UI message stream format - various possible formats
-                    // Format 1: text-delta with delta field
+
+                    // Handle various AI SDK stream formats
+                    // Only capture text content - tool outputs are processed by the model
+                    // and should appear in subsequent text, not as raw JSON
                     if (data.type === "text-delta" && data.delta) {
                         text += data.delta;
-                    }
-                    // Format 2: text-delta with textDelta field
-                    else if (data.type === "text-delta" && data.textDelta) {
+                    } else if (data.type === "text-delta" && data.textDelta) {
                         text += data.textDelta;
-                    }
-                    // Format 3: text with text field (UIMessagePart format)
-                    else if (data.type === "text" && data.text) {
+                    } else if (data.type === "text" && data.text) {
                         text += data.text;
-                    }
-                    // Format 4: text with value field
-                    else if (data.type === "text" && data.value) {
-                        text += data.value;
-                    }
-                    // Format 5: finish event may contain the message
-                    else if (data.type === "finish" && data.message?.content) {
-                        text = data.message.content;
-                    }
-                    // Format 6: finish-step with message content
-                    else if (data.type === "finish-step" && data.text) {
-                        text += data.text;
-                    }
-                    // Format 7: assistant-message-start with content array
-                    else if (data.type === "assistant-message-start" && data.content) {
-                        // Extract text from content array if present
-                        for (const part of data.content) {
-                            if (part.type === "text" && part.text) {
-                                text += part.text;
-                            }
-                        }
-                    }
-                    // Capture reasoning content (when sendReasoning is enabled)
-                    else if (data.type === "reasoning-delta" && data.delta) {
-                        // Reasoning is separate from response text, skip
-                    }
-                    // Capture tool outputs - this is part of Carmenta's response
-                    else if (data.type === "tool-output-available" && data.output) {
-                        // Tool output is part of the response
-                        const output =
-                            typeof data.output === "string"
-                                ? data.output
-                                : JSON.stringify(data.output);
-                        console.log(
-                            `    [DEBUG] tool output (${output.length} chars): ${output.slice(0, 200)}...`
-                        );
-                        text += output + "\n\n";
-                    }
-                    // Debug: log finish event to see finishReason
-                    else if (data.type === "finish") {
-                        console.log(
-                            `    [DEBUG] finish: ${data.finishReason || "unknown"}`
-                        );
                     }
                 } catch {
                     // Skip non-JSON lines
                 }
             }
         }
-    }
-
-    // Debug: log what event types we saw
-    if (text.length === 0 && eventTypes.size > 0) {
-        console.log(`    [DEBUG] Stream event types: ${[...eventTypes].join(", ")}`);
     }
 
     return text;
@@ -347,7 +291,7 @@ Which response is better? Output only valid JSON.`;
 
     try {
         const result = await generateText({
-            model: openrouter.chat(JUDGE_MODEL),
+            model: openrouter.chat(BENCHMARK_JUDGE_MODEL),
             system: JUDGE_SYSTEM_PROMPT,
             prompt,
             maxOutputTokens: 500,
