@@ -40,17 +40,17 @@ vi.mock("next/navigation", () => ({
     redirect: mockRedirect,
 }));
 
-// Mock components
-vi.mock("@/components/site-header", () => ({
-    SiteHeader: ({ bordered }: { bordered?: boolean }) => (
-        <div data-testid="site-header" data-bordered={bordered}>
-            Header
+// Mock StandardPageLayout (now wraps SiteHeader and HolographicBackground)
+vi.mock("@/components/layouts/standard-page-layout", () => ({
+    StandardPageLayout: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="standard-page-layout">
+            <div data-testid="holographic-bg">Background</div>
+            <div data-testid="site-header" data-bordered="true">
+                Header
+            </div>
+            <main>{children}</main>
         </div>
     ),
-}));
-
-vi.mock("@/components/ui/holographic-background", () => ({
-    HolographicBackground: () => <div data-testid="holographic-bg">Background</div>,
 }));
 
 vi.mock("@/components/knowledge-viewer", () => ({

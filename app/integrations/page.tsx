@@ -5,8 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Plug, Sparkles, CheckCircle2, XCircle, X } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
-import { SiteHeader } from "@/components/site-header";
-import { HolographicBackground } from "@/components/ui/holographic-background";
+import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import {
     IntegrationCard,
     ApiKeyModal,
@@ -292,129 +291,108 @@ function IntegrationsContent() {
     };
 
     return (
-        <div className="relative min-h-screen">
-            <HolographicBackground />
-
-            <div className="relative z-content">
-                <SiteHeader bordered />
-
-                <main className="py-12">
-                    <div className="mx-auto max-w-3xl space-y-8 px-6">
-                        {/* Header */}
-                        <section className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-xl bg-primary/20 p-3">
-                                    <Plug className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-light tracking-tight text-foreground">
-                                        Integrations
-                                    </h1>
-                                    <p className="text-foreground/70">
-                                        Connect your tools. We'll remember how to use
-                                        them.
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Global status message (OAuth callback results) */}
-                        {globalMessage && (
-                            <div
-                                className={`flex items-center justify-between gap-3 rounded-xl p-4 ${
-                                    globalMessage.type === "success"
-                                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                                        : "bg-red-500/10 text-red-700 dark:text-red-400"
-                                }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    {globalMessage.type === "success" ? (
-                                        <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                                    ) : (
-                                        <XCircle className="h-5 w-5 flex-shrink-0" />
-                                    )}
-                                    <span className="text-sm font-medium">
-                                        {globalMessage.text}
-                                    </span>
-                                </div>
-                                <button
-                                    onClick={() => setGlobalMessage(null)}
-                                    className="rounded-lg p-1 hover:bg-foreground/10"
-                                    aria-label="Dismiss message"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
-                        )}
-
-                        {loading ? (
-                            <div className="flex items-center justify-center py-24">
-                                <div className="flex flex-col items-center gap-4">
-                                    <Sparkles className="h-8 w-8 animate-pulse text-primary" />
-                                    <p className="text-foreground/60">
-                                        Loading integrations...
-                                    </p>
-                                </div>
-                            </div>
-                        ) : sortedList.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
-                                <Plug className="mb-4 h-12 w-12 text-foreground/30" />
-                                <h3 className="text-lg font-medium text-foreground/80">
-                                    No connections yet
-                                </h3>
-                                <p className="mt-2 text-sm text-foreground/60">
-                                    We're adding more integrations soon.
-                                </p>
-                            </div>
-                        ) : (
-                            <section>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    {sortedList.map((item) => (
-                                        <IntegrationCard
-                                            key={`${item.service.id}-${item.accountId ?? "available"}`}
-                                            service={item.service}
-                                            status={item.status}
-                                            onConnect={() =>
-                                                handleConnectClick(item.service)
-                                            }
-                                            onReconnect={() => handleReconnect(item)}
-                                            onTest={() => handleTest(item)}
-                                            onDisconnect={() => handleDisconnect(item)}
-                                            isConnecting={connectingServices.has(
-                                                item.service.id
-                                            )}
-                                            isReconnecting={reconnectingServices.has(
-                                                item.service.id
-                                            )}
-                                            isTesting={testingServices.has(
-                                                item.service.id
-                                            )}
-                                            statusMessage={statusMessages.get(
-                                                item.service.id
-                                            )}
-                                            onClearStatusMessage={() => {
-                                                setStatusMessages((prev) => {
-                                                    const next = new Map(prev);
-                                                    next.delete(item.service.id);
-                                                    return next;
-                                                });
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Security Note */}
-                        <section className="pt-4 text-center">
-                            <p className="text-sm text-foreground/50">
-                                All credentials and OAuth tokens are encrypted with
-                                AES-256-GCM and stored securely.
-                            </p>
-                        </section>
+        <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
+            {/* Header */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-primary/20 p-3">
+                        <Plug className="h-6 w-6 text-primary" />
                     </div>
-                </main>
-            </div>
+                    <div>
+                        <h1 className="text-3xl font-light tracking-tight text-foreground">
+                            Integrations
+                        </h1>
+                        <p className="text-foreground/70">
+                            Connect your tools. We'll remember how to use them.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Global status message (OAuth callback results) */}
+            {globalMessage && (
+                <div
+                    className={`flex items-center justify-between gap-3 rounded-xl p-4 ${
+                        globalMessage.type === "success"
+                            ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                            : "bg-red-500/10 text-red-700 dark:text-red-400"
+                    }`}
+                >
+                    <div className="flex items-center gap-3">
+                        {globalMessage.type === "success" ? (
+                            <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                        ) : (
+                            <XCircle className="h-5 w-5 flex-shrink-0" />
+                        )}
+                        <span className="text-sm font-medium">
+                            {globalMessage.text}
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => setGlobalMessage(null)}
+                        className="rounded-lg p-1 hover:bg-foreground/10"
+                        aria-label="Dismiss message"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex items-center justify-center py-24">
+                    <div className="flex flex-col items-center gap-4">
+                        <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                        <p className="text-foreground/60">Loading integrations...</p>
+                    </div>
+                </div>
+            ) : sortedList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
+                    <Plug className="mb-4 h-12 w-12 text-foreground/30" />
+                    <h3 className="text-lg font-medium text-foreground/80">
+                        No connections yet
+                    </h3>
+                    <p className="mt-2 text-sm text-foreground/60">
+                        We're adding more integrations soon.
+                    </p>
+                </div>
+            ) : (
+                <section>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {sortedList.map((item) => (
+                            <IntegrationCard
+                                key={`${item.service.id}-${item.accountId ?? "available"}`}
+                                service={item.service}
+                                status={item.status}
+                                onConnect={() => handleConnectClick(item.service)}
+                                onReconnect={() => handleReconnect(item)}
+                                onTest={() => handleTest(item)}
+                                onDisconnect={() => handleDisconnect(item)}
+                                isConnecting={connectingServices.has(item.service.id)}
+                                isReconnecting={reconnectingServices.has(
+                                    item.service.id
+                                )}
+                                isTesting={testingServices.has(item.service.id)}
+                                statusMessage={statusMessages.get(item.service.id)}
+                                onClearStatusMessage={() => {
+                                    setStatusMessages((prev) => {
+                                        const next = new Map(prev);
+                                        next.delete(item.service.id);
+                                        return next;
+                                    });
+                                }}
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Security Note */}
+            <section className="pt-4 text-center">
+                <p className="text-sm text-foreground/50">
+                    All credentials and OAuth tokens are encrypted with AES-256-GCM and
+                    stored securely.
+                </p>
+            </section>
 
             {/* API Key Modal */}
             <ApiKeyModal
@@ -435,7 +413,7 @@ function IntegrationsContent() {
                 }}
                 onSubmit={handleConnectSubmit}
             />
-        </div>
+        </StandardPageLayout>
     );
 }
 
@@ -447,24 +425,16 @@ export default function IntegrationsPage() {
     return (
         <Suspense
             fallback={
-                <div className="relative min-h-screen">
-                    <HolographicBackground />
-                    <div className="relative z-content">
-                        <SiteHeader bordered />
-                        <main className="py-12">
-                            <div className="mx-auto max-w-3xl px-6">
-                                <div className="flex items-center justify-center py-24">
-                                    <div className="flex flex-col items-center gap-4">
-                                        <Sparkles className="h-8 w-8 animate-pulse text-primary" />
-                                        <p className="text-foreground/60">
-                                            Loading integrations...
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </main>
+                <StandardPageLayout maxWidth="standard" contentClassName="py-12">
+                    <div className="flex items-center justify-center py-24">
+                        <div className="flex flex-col items-center gap-4">
+                            <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                            <p className="text-foreground/60">
+                                Loading integrations...
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </StandardPageLayout>
             }
         >
             <IntegrationsContent />
