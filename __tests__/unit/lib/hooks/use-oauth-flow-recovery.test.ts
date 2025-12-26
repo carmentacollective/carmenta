@@ -42,7 +42,7 @@ describe("useOAuthFlowRecovery", () => {
             expect(result.current.abandonedServiceName).toBeNull();
         });
 
-        it("should detect abandoned OAuth flow from sessionStorage on mount", () => {
+        it("should detect abandoned OAuth flow from sessionStorage on mount", async () => {
             // Set up an OAuth attempt that started 5 seconds ago
             const pendingState = {
                 service: "notion",
@@ -51,6 +51,9 @@ describe("useOAuthFlowRecovery", () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(pendingState));
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedService).toBe("notion");
             expect(result.current.abandonedServiceName).toBe("Notion");
@@ -69,10 +72,13 @@ describe("useOAuthFlowRecovery", () => {
             expect(result.current.abandonedService).toBeNull();
         });
 
-        it("should handle invalid JSON in sessionStorage gracefully", () => {
+        it("should handle invalid JSON in sessionStorage gracefully", async () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, "invalid json{");
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedService).toBeNull();
             // Should have cleaned up the invalid state
@@ -96,7 +102,7 @@ describe("useOAuthFlowRecovery", () => {
             expect(typeof parsed.startedAt).toBe("number");
         });
 
-        it("should clear any existing abandoned state", () => {
+        it("should clear any existing abandoned state", async () => {
             // Set up an existing abandoned flow
             const pendingState = {
                 service: "slack",
@@ -105,6 +111,9 @@ describe("useOAuthFlowRecovery", () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(pendingState));
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedService).toBe("slack");
 
@@ -117,7 +126,7 @@ describe("useOAuthFlowRecovery", () => {
     });
 
     describe("markOAuthComplete", () => {
-        it("should clear sessionStorage", () => {
+        it("should clear sessionStorage", async () => {
             const pendingState = {
                 service: "notion",
                 startedAt: Date.now() - 5000,
@@ -125,6 +134,9 @@ describe("useOAuthFlowRecovery", () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(pendingState));
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedService).toBe("notion");
 
@@ -138,7 +150,7 @@ describe("useOAuthFlowRecovery", () => {
     });
 
     describe("dismissRecovery", () => {
-        it("should clear abandoned state and sessionStorage", () => {
+        it("should clear abandoned state and sessionStorage", async () => {
             const pendingState = {
                 service: "notion",
                 startedAt: Date.now() - 5000,
@@ -146,6 +158,9 @@ describe("useOAuthFlowRecovery", () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(pendingState));
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedService).toBe("notion");
 
@@ -320,7 +335,7 @@ describe("useOAuthFlowRecovery", () => {
     });
 
     describe("service name resolution", () => {
-        it("should resolve known service IDs to display names", () => {
+        it("should resolve known service IDs to display names", async () => {
             const pendingState = {
                 service: "notion",
                 startedAt: Date.now() - 5000,
@@ -329,10 +344,13 @@ describe("useOAuthFlowRecovery", () => {
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
 
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
+
             expect(result.current.abandonedServiceName).toBe("Notion");
         });
 
-        it("should fall back to service ID for unknown services", () => {
+        it("should fall back to service ID for unknown services", async () => {
             const pendingState = {
                 service: "unknown-service",
                 startedAt: Date.now() - 5000,
@@ -340,6 +358,9 @@ describe("useOAuthFlowRecovery", () => {
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(pendingState));
 
             const { result } = renderHook(() => useOAuthFlowRecovery());
+
+            // Flush the useEffect that checks storage on mount
+            await act(async () => {});
 
             expect(result.current.abandonedServiceName).toBe("unknown-service");
         });

@@ -61,11 +61,10 @@ function getAbandonedServiceFromStorage(): string | null {
 }
 
 export function useOAuthFlowRecovery(): UseOAuthFlowRecoveryResult {
-    // Initialize state from sessionStorage to avoid flash of no content
-    const [abandonedService, setAbandonedService] = useState<string | null>(() =>
-        typeof window !== "undefined" ? getAbandonedServiceFromStorage() : null
-    );
-    // Re-check storage when page becomes visible or gains focus
+    // Initialize as null to avoid hydration mismatch (server has no sessionStorage)
+    const [abandonedService, setAbandonedService] = useState<string | null>(null);
+
+    // Check storage on mount and when page becomes visible or gains focus
     // (user returns from OAuth tab/window)
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -74,6 +73,9 @@ export function useOAuthFlowRecovery(): UseOAuthFlowRecoveryResult {
             const abandoned = getAbandonedServiceFromStorage();
             setAbandonedService(abandoned);
         };
+
+        // Check immediately on mount (after hydration)
+        checkStorage();
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
