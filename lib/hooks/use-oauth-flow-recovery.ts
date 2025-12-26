@@ -68,6 +68,8 @@ export function useOAuthFlowRecovery(): UseOAuthFlowRecoveryResult {
     // Re-check storage when page becomes visible or gains focus
     // (user returns from OAuth tab/window)
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
         const checkStorage = () => {
             const abandoned = getAbandonedServiceFromStorage();
             setAbandonedService(abandoned);
@@ -76,18 +78,21 @@ export function useOAuthFlowRecovery(): UseOAuthFlowRecoveryResult {
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
                 // Small delay to let any in-progress redirects complete
-                setTimeout(checkStorage, 300);
+                timeoutId = setTimeout(checkStorage, 300);
             }
         };
 
         const handleFocus = () => {
-            setTimeout(checkStorage, 300);
+            timeoutId = setTimeout(checkStorage, 300);
         };
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("focus", handleFocus);
 
         return () => {
+            if (timeoutId !== undefined) {
+                clearTimeout(timeoutId);
+            }
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("focus", handleFocus);
         };
@@ -113,19 +118,22 @@ export function useOAuthFlowRecovery(): UseOAuthFlowRecoveryResult {
     }, []);
 
     const retryOAuth = useCallback(() => {
-        if (abandonedService) {
+        // Read fresh from storage instead of using captured abandonedService
+        // to avoid stale closure if sessionStorage is modified externally
+        const freshService = getAbandonedServiceFromStorage();
+        if (freshService) {
             // Clear old state
             sessionStorage.removeItem(OAUTH_PENDING_KEY);
             // Mark new attempt
             const state: OAuthPendingState = {
-                service: abandonedService,
+                service: freshService,
                 startedAt: Date.now(),
             };
             sessionStorage.setItem(OAUTH_PENDING_KEY, JSON.stringify(state));
             // Redirect to OAuth
-            window.location.href = `/connect/${abandonedService}`;
+            window.location.href = `/connect/${freshService}`;
         }
-    }, [abandonedService]);
+    }, []); // No dependency on abandonedService - reads fresh from storage
 
     const abandonedServiceName = abandonedService
         ? (getServiceById(abandonedService)?.name ?? abandonedService)
