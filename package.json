@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@47ng/simple-e2ee": "^1.1.0",
+    "@ai-sdk/gateway": "^3.0.2",
     "@ai-sdk/react": "^3.0.0",
     "@clerk/nextjs": "^6.36.3",
     "@marker.io/browser": "^0.20.2",

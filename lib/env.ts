@@ -20,6 +20,10 @@ export const env = createEnv({
     server: {
         NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
         OPENROUTER_API_KEY: z.string().min(1).optional(),
+        // Vercel AI Gateway API key (alternative to OpenRouter)
+        AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+        // Enable live AI provider integration tests (expensive, off by default)
+        AI_LIVE_TESTS: z.enum(["true", "false"]).default("false"),
         // Sentry DSN for server-side error tracking and LLM tracing
         SENTRY_DSN: z.string().optional(),
         // Auth token for source map uploads (CI/CD only)
@@ -76,6 +80,8 @@ export const env = createEnv({
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+        AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+        AI_LIVE_TESTS: process.env.AI_LIVE_TESTS,
         SENTRY_DSN: process.env.SENTRY_DSN,
         SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
         NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

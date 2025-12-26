@@ -90,4 +90,26 @@ Without the API key, these tests are skipped automatically. Tests cover all 5 ad
 operations: list_transcripts, get_transcript, search_transcripts, generate_summary, and
 raw_api (GraphQL). Note: Fireflies free plan has 50 API calls/day limit.
 
+### Vercel AI Gateway Integration Tests
+
+Location: `__tests__/integration/lib/ai/gateway.integration.test.ts`
+
+Run with API key:
+
+```bash
+AI_GATEWAY_API_KEY=your_key AI_LIVE_TESTS=true pnpm test gateway.integration
+```
+
+These tests make real API calls to Vercel AI Gateway and cost money. They require both
+`AI_GATEWAY_API_KEY` and `AI_LIVE_TESTS=true` to be set. Test coverage includes:
+
+- Basic inference for each supported model (Haiku, Gemini, GPT-5.2, Grok, Perplexity)
+- Streaming support
+- Reasoning/extended thinking configuration (Anthropic + OpenAI)
+- Prompt caching configuration (Anthropic)
+- Fallback configuration
+- Model ID translation (OpenRouter → Gateway format)
+
+Uses Claude Haiku (cheapest model) for most tests to minimize costs.
+
 @.cursor/rules/testing-standards-typescript.mdc
