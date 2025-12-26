@@ -678,40 +678,57 @@ export async function POST(req: Request) {
                     // Knowledge Ingestion: Extract learnings from conversation
                     // Fire-and-forget - handles async internally, won't block response
                     if (currentConnectionId) {
-                        // Extract text content from messages
-                        const extractText = (msg: UIMessage): string =>
-                            msg.parts
-                                ?.filter(
-                                    (p): p is { type: "text"; text: string } =>
-                                        p.type === "text"
-                                )
-                                .map((p) => p.text)
-                                .join(" ") ?? "";
+                        void (async () => {
+                            try {
+                                // Get conversation title for context
+                                // New connections: use concierge-generated title
+                                // Existing connections: fetch from database
+                                let conversationTitle = isNewConnection
+                                    ? conciergeResult.title
+                                    : undefined;
 
-                        const userMessages = messages
-                            .filter((m) => m.role === "user")
-                            .map(extractText);
+                                if (!isNewConnection) {
+                                    const connection =
+                                        await getConnection(currentConnectionId);
+                                    conversationTitle = connection?.title ?? undefined;
+                                }
 
-                        // Include the just-generated assistant response
-                        const assistantMessages = [
-                            ...messages
-                                .filter((m) => m.role === "assistant")
-                                .map(extractText),
-                            text, // Current response
-                        ];
+                                // Extract text content from messages
+                                const extractText = (msg: UIMessage): string =>
+                                    msg.parts
+                                        ?.filter(
+                                            (p): p is { type: "text"; text: string } =>
+                                                p.type === "text"
+                                        )
+                                        .map((p) => p.text)
+                                        .join(" ") ?? "";
 
-                        void triggerLibrarian(
-                            dbUser.id,
-                            currentConnectionId.toString(),
-                            userMessages,
-                            assistantMessages,
-                            { async: true, title: conciergeResult.title }
-                        ).catch((error) => {
-                            logger.error(
-                                { error, connectionId: currentConnectionId },
-                                "Knowledge Librarian failed (non-blocking)"
-                            );
-                        });
+                                const userMessages = messages
+                                    .filter((m) => m.role === "user")
+                                    .map(extractText);
+
+                                // Include the just-generated assistant response
+                                const assistantMessages = [
+                                    ...messages
+                                        .filter((m) => m.role === "assistant")
+                                        .map(extractText),
+                                    text, // Current response
+                                ];
+
+                                await triggerLibrarian(
+                                    dbUser.id,
+                                    currentConnectionId.toString(),
+                                    userMessages,
+                                    assistantMessages,
+                                    { async: true, title: conversationTitle }
+                                );
+                            } catch (error) {
+                                logger.error(
+                                    { error, connectionId: currentConnectionId },
+                                    "Knowledge Librarian failed (non-blocking)"
+                                );
+                            }
+                        })();
                     }
 
                     // Log production trace to Braintrust
