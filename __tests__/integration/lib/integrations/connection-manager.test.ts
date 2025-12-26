@@ -27,14 +27,14 @@ describe("Connection Manager", () => {
             const user = await createTestUser({ email: "test@example.com" });
 
             // Create multiple integrations
-            await createTestApiKeyIntegration(user.email, "giphy");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap");
             await createTestApiKeyIntegration(user.email, "limitless");
             await createTestApiKeyIntegration(user.email, "fireflies");
 
             const services = await getConnectedServices(user.email);
 
             expect(services).toHaveLength(3);
-            expect(services).toContain("giphy");
+            expect(services).toContain("coinmarketcap");
             expect(services).toContain("limitless");
             expect(services).toContain("fireflies");
         });
@@ -43,10 +43,10 @@ describe("Connection Manager", () => {
             const user = await createTestUser({ email: "multi@example.com" });
 
             // Create two accounts for same service
-            await createTestApiKeyIntegration(user.email, "giphy", "key1", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key1", {
                 accountId: "account1",
             });
-            await createTestApiKeyIntegration(user.email, "giphy", "key2", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key2", {
                 accountId: "account2",
             });
 
@@ -54,7 +54,7 @@ describe("Connection Manager", () => {
 
             // Should return unique service IDs (deduped)
             expect(services).toHaveLength(1);
-            expect(services[0]).toBe("giphy");
+            expect(services[0]).toBe("coinmarketcap");
         });
 
         it("returns empty array for user with no integrations", async () => {
@@ -68,7 +68,7 @@ describe("Connection Manager", () => {
         it("excludes disconnected integrations", async () => {
             const user = await createTestUser({ email: "disconnected@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                 status: "connected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "key", {
@@ -78,14 +78,14 @@ describe("Connection Manager", () => {
             const services = await getConnectedServices(user.email);
 
             expect(services).toHaveLength(1);
-            expect(services).toContain("giphy");
+            expect(services).toContain("coinmarketcap");
             expect(services).not.toContain("limitless");
         });
 
         it("excludes expired integrations", async () => {
             const user = await createTestUser({ email: "expired@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                 status: "connected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "key", {
@@ -95,13 +95,13 @@ describe("Connection Manager", () => {
             const services = await getConnectedServices(user.email);
 
             expect(services).toHaveLength(1);
-            expect(services).toContain("giphy");
+            expect(services).toContain("coinmarketcap");
         });
 
         it("excludes integrations with errors", async () => {
             const user = await createTestUser({ email: "error@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                 status: "connected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "key", {
@@ -112,7 +112,7 @@ describe("Connection Manager", () => {
             const services = await getConnectedServices(user.email);
 
             expect(services).toHaveLength(1);
-            expect(services).toContain("giphy");
+            expect(services).toContain("coinmarketcap");
         });
     });
 
@@ -122,9 +122,9 @@ describe("Connection Manager", () => {
                 const user = await createTestUser({ email: "apikey@example.com" });
                 const apiKey = "test-api-key-123";
 
-                await createTestApiKeyIntegration(user.email, "giphy", apiKey);
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", apiKey);
 
-                const creds = await getCredentials(user.email, "giphy");
+                const creds = await getCredentials(user.email, "coinmarketcap");
 
                 expect(creds.type).toBe("api_key");
                 if (creds.type === "api_key" && creds.credentials) {
@@ -171,16 +171,16 @@ describe("Connection Manager", () => {
                 const user = await createTestUser({ email: "default@example.com" });
 
                 // Create two accounts, one marked as default
-                await createTestApiKeyIntegration(user.email, "giphy", "key1", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key1", {
                     accountId: "account1",
                     isDefault: false,
                 });
-                await createTestApiKeyIntegration(user.email, "giphy", "key2", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key2", {
                     accountId: "account2",
                     isDefault: true,
                 });
 
-                const creds = await getCredentials(user.email, "giphy");
+                const creds = await getCredentials(user.email, "coinmarketcap");
 
                 expect(creds.type).toBe("api_key");
                 if (creds.type === "api_key" && creds.credentials) {
@@ -198,7 +198,7 @@ describe("Connection Manager", () => {
                     .insert(schema.integrations)
                     .values({
                         userEmail: user.email,
-                        service: "giphy",
+                        service: "coinmarketcap",
                         credentialType: "api_key",
                         encryptedCredentials:
                             await import("@/lib/integrations/encryption").then((m) =>
@@ -213,12 +213,17 @@ describe("Connection Manager", () => {
                 // Wait a bit to ensure different timestamps
                 await new Promise((resolve) => setTimeout(resolve, 10));
 
-                await createTestApiKeyIntegration(user.email, "giphy", "newest-key", {
-                    accountId: "account2",
-                    isDefault: false,
-                });
+                await createTestApiKeyIntegration(
+                    user.email,
+                    "coinmarketcap",
+                    "newest-key",
+                    {
+                        accountId: "account2",
+                        isDefault: false,
+                    }
+                );
 
-                const creds = await getCredentials(user.email, "giphy");
+                const creds = await getCredentials(user.email, "coinmarketcap");
 
                 expect(creds.type).toBe("api_key");
                 if (creds.type === "api_key" && creds.credentials) {
@@ -231,15 +236,19 @@ describe("Connection Manager", () => {
             it("uses specific account when accountId provided", async () => {
                 const user = await createTestUser({ email: "specific@example.com" });
 
-                await createTestApiKeyIntegration(user.email, "giphy", "key1", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key1", {
                     accountId: "account1",
                 });
-                await createTestApiKeyIntegration(user.email, "giphy", "key2", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key2", {
                     accountId: "account2",
                     isDefault: true,
                 });
 
-                const creds = await getCredentials(user.email, "giphy", "account1");
+                const creds = await getCredentials(
+                    user.email,
+                    "coinmarketcap",
+                    "account1"
+                );
 
                 expect(creds.type).toBe("api_key");
                 if (creds.type === "api_key" && creds.credentials) {
@@ -266,13 +275,13 @@ describe("Connection Manager", () => {
                     email: "disconnected@example.com",
                 });
 
-                await createTestApiKeyIntegration(user.email, "giphy", "key", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                     status: "disconnected",
                 });
 
-                await expect(getCredentials(user.email, "giphy")).rejects.toThrow(
-                    ValidationError
-                );
+                await expect(
+                    getCredentials(user.email, "coinmarketcap")
+                ).rejects.toThrow(ValidationError);
             });
 
             it("throws ValidationError for specific accountId that doesn't exist", async () => {
@@ -280,12 +289,12 @@ describe("Connection Manager", () => {
                     email: "wrongaccount@example.com",
                 });
 
-                await createTestApiKeyIntegration(user.email, "giphy", "key", {
+                await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                     accountId: "account1",
                 });
 
                 await expect(
-                    getCredentials(user.email, "giphy", "nonexistent-account")
+                    getCredentials(user.email, "coinmarketcap", "nonexistent-account")
                 ).rejects.toThrow(ValidationError);
             });
         });

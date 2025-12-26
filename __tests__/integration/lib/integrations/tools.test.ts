@@ -22,14 +22,14 @@ describe("Integration Tool Loading", () => {
             const user = await createTestUser({ email: "test@example.com" });
 
             // Create integration records
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key");
             await createTestApiKeyIntegration(user.email, "limitless", "test-key");
 
             // Load tools
             const tools = await getIntegrationTools(user.email);
 
             expect(Object.keys(tools)).toHaveLength(2);
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toContain("coinmarketcap");
             expect(Object.keys(tools)).toContain("limitless");
         });
 
@@ -44,7 +44,7 @@ describe("Integration Tool Loading", () => {
         it("excludes disconnected integrations", async () => {
             const user = await createTestUser({ email: "test@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key", {
                 status: "connected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "test-key", {
@@ -54,14 +54,14 @@ describe("Integration Tool Loading", () => {
             const tools = await getIntegrationTools(user.email);
 
             expect(Object.keys(tools)).toHaveLength(1);
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toContain("coinmarketcap");
             expect(Object.keys(tools)).not.toContain("limitless");
         });
 
         it("excludes expired integrations", async () => {
             const user = await createTestUser({ email: "test@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key", {
                 status: "connected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "test-key", {
@@ -71,17 +71,17 @@ describe("Integration Tool Loading", () => {
             const tools = await getIntegrationTools(user.email);
 
             expect(Object.keys(tools)).toHaveLength(1);
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toContain("coinmarketcap");
         });
 
         it("handles multiple accounts for same service", async () => {
             const user = await createTestUser({ email: "multi@example.com" });
 
             // Create two accounts for same service
-            await createTestApiKeyIntegration(user.email, "giphy", "key1", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key1", {
                 accountId: "account1",
             });
-            await createTestApiKeyIntegration(user.email, "giphy", "key2", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key2", {
                 accountId: "account2",
                 isDefault: true,
             });
@@ -90,68 +90,66 @@ describe("Integration Tool Loading", () => {
 
             // Should create one tool for the service
             expect(Object.keys(tools)).toHaveLength(1);
-            expect(Object.keys(tools)[0]).toBe("giphy");
+            expect(Object.keys(tools)[0]).toBe("coinmarketcap");
         });
 
         it("loads both OAuth and API key integrations", async () => {
             const user = await createTestUser({ email: "mixed@example.com" });
 
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key");
             await createTestOAuthIntegration(user.email, "notion", "nango_conn_123");
 
             const tools = await getIntegrationTools(user.email);
 
             expect(Object.keys(tools)).toHaveLength(2);
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toContain("coinmarketcap");
             expect(Object.keys(tools)).toContain("notion");
         });
 
         it("handles many integrations", async () => {
             const { user, integrations } = await createUserWithIntegrations([
-                "giphy",
+                "coinmarketcap",
                 "limitless",
                 "fireflies",
-                "coinmarketcap",
             ]);
 
             const tools = await getIntegrationTools(user.email);
 
-            expect(Object.keys(tools)).toHaveLength(4);
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toHaveLength(3);
+            expect(Object.keys(tools)).toContain("coinmarketcap");
             expect(Object.keys(tools)).toContain("limitless");
             expect(Object.keys(tools)).toContain("fireflies");
-            expect(Object.keys(tools)).toContain("coinmarketcap");
         });
     });
 
     describe("Tool Structure", () => {
         it("returns tools with correct structure", async () => {
             const user = await createTestUser({ email: "structure@example.com" });
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key");
 
             const tools = await getIntegrationTools(user.email);
-            const giphyTool = tools.giphy;
+            const coinmarketcapTool = tools.coinmarketcap;
 
             // Tool should have these properties (from ai sdk tool())
-            expect(giphyTool).toBeDefined();
-            expect(giphyTool.description).toBeDefined();
-            expect(giphyTool.inputSchema).toBeDefined();
-            expect(giphyTool.execute).toBeDefined();
-            expect(typeof giphyTool.execute).toBe("function");
+            expect(coinmarketcapTool).toBeDefined();
+            expect(coinmarketcapTool.description).toBeDefined();
+            expect(coinmarketcapTool.inputSchema).toBeDefined();
+            expect(coinmarketcapTool.execute).toBeDefined();
+            expect(typeof coinmarketcapTool.execute).toBe("function");
         });
 
         it("tool description is well-formed", async () => {
             const user = await createTestUser({ email: "desc@example.com" });
-            await createTestApiKeyIntegration(user.email, "giphy", "test-key");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "test-key");
 
             const tools = await getIntegrationTools(user.email);
-            const giphyTool = tools.giphy;
+            const coinmarketcapTool = tools.coinmarketcap;
 
             // Description should be non-empty and mention actions
-            expect(giphyTool.description).toBeDefined();
-            if (giphyTool.description) {
-                expect(giphyTool.description.length).toBeGreaterThan(0);
-                expect(giphyTool.description.toLowerCase()).toContain("action");
+            expect(coinmarketcapTool.description).toBeDefined();
+            if (coinmarketcapTool.description) {
+                expect(coinmarketcapTool.description.length).toBeGreaterThan(0);
+                expect(coinmarketcapTool.description.toLowerCase()).toContain("action");
             }
         });
     });
@@ -161,7 +159,7 @@ describe("Integration Tool Loading", () => {
             const user = await createTestUser({ email: "invalid@example.com" });
 
             // Create integration with empty encrypted credentials (invalid)
-            await createTestApiKeyIntegration(user.email, "giphy", "valid-key");
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "valid-key");
 
             // This one has no credentials (should be skipped)
             await createTestApiKeyIntegration(user.email, "limitless", "", {
@@ -171,7 +169,7 @@ describe("Integration Tool Loading", () => {
             const tools = await getIntegrationTools(user.email);
 
             // Should only load the valid one
-            expect(Object.keys(tools)).toContain("giphy");
+            expect(Object.keys(tools)).toContain("coinmarketcap");
             // Limitless might or might not be included depending on encryption validation
         });
 
@@ -179,7 +177,7 @@ describe("Integration Tool Loading", () => {
             const user = await createTestUser({ email: "allinvalid@example.com" });
 
             // All disconnected
-            await createTestApiKeyIntegration(user.email, "giphy", "key", {
+            await createTestApiKeyIntegration(user.email, "coinmarketcap", "key", {
                 status: "disconnected",
             });
             await createTestApiKeyIntegration(user.email, "limitless", "key", {
