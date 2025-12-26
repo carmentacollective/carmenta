@@ -1,12 +1,12 @@
-name: Nightly Evals
+name: Weekly Evals
 
 on:
   schedule:
-    - cron: "0 2 * * *" # 2am UTC daily
+    - cron: "0 2 * * 0" # 2am UTC every Sunday
   workflow_dispatch:
     inputs:
       full_benchmark:
-        description: "Run full 750-question benchmark instead of nightly subset"
+        description: "Run full 750-question benchmark instead of weekly subset"
         type: boolean
         default: false
 
@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run nightly eval suite
+      - name: Run weekly eval suite
         id: eval
         run: |
           pnpm dlx braintrust eval evals/nightly/eval.ts 2>&1 | tee eval-output.txt
@@ -78,7 +78,7 @@ jobs:
       - name: Run Librarian agent eval
         id: librarian_eval
         run: |
-          # Run Librarian eval with Haiku (fast, cost-effective for nightly)
+          # Run Librarian eval with Haiku (fast, cost-effective for weekly runs)
           LIBRARIAN_MODEL=anthropic/claude-haiku-4.5 pnpm dlx braintrust eval evals/librarian/eval.ts 2>&1 | tee librarian-eval-output.txt
           LIBRARIAN_EXIT_CODE=${PIPESTATUS[0]}
           echo "librarian_exit_code=$LIBRARIAN_EXIT_CODE" >> $GITHUB_OUTPUT
@@ -115,7 +115,7 @@ jobs:
           script: |
             const regressionDetails = String.raw`${{ steps.regression.outputs.regression_details }}`;
             const experimentUrl = `${{ steps.eval.outputs.experiment_url }}`;
-            const issueTitle = '[Eval Regression] Nightly eval detected quality drop';
+            const issueTitle = '[Eval Regression] Weekly eval detected quality drop';
 
             // Check for existing open issue with eval-regression label
             const existingIssues = await github.rest.issues.listForRepo({
@@ -158,7 +158,7 @@ jobs:
                 title: issueTitle,
                 body: `## Regression Detected
 
-            The nightly eval run detected a quality regression that exceeded alert thresholds.
+            The weekly eval run detected a quality regression that exceeded alert thresholds.
 
             ### Details
 
@@ -189,7 +189,7 @@ jobs:
           != ''
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"Nightly evals passed\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
+            --data "{\"text\":\"Weekly evals passed\\nExperiment: ${{ steps.eval.outputs.experiment_url }}\"}" \
             "$SLACK_WEBHOOK_URL"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
