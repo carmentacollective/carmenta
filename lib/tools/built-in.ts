@@ -14,6 +14,25 @@ const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 // function definitions and variable assignments
 const math = create(all);
 
+// Add common aliases for mathematical functions
+// These allow more natural notation that models often use
+// Note: Some names like C and P may conflict with math.js constants, so we use override
+math.import(
+    {
+        // Combination notation: C(n,k) or nCr(n,k) → combinations(n,k)
+        C: math.combinations,
+        nCr: math.combinations,
+        // Permutation notation: P(n,k) or nPr(n,k) → permutations(n,k)
+        P: math.permutations,
+        nPr: math.permutations,
+        // Natural log: ln(x) → log(x) (math.js uses log for natural log)
+        ln: math.log,
+        // Base-10 log alias
+        lg: math.log10,
+    },
+    { override: true }
+);
+
 /**
  * Built-in tools available to all connections.
  * These tools provide core capabilities like web search, comparison tables, and research.
@@ -43,12 +62,12 @@ export const builtInTools = {
 
     calculate: tool({
         description:
-            "Evaluate mathematical expressions. Use this to verify calculations, compute formulas, or solve math problems. Supports arithmetic, algebra, trigonometry, statistics, unit conversions, and financial calculations.",
+            "Evaluate mathematical expressions. Use this to verify calculations, compute formulas, or solve math problems. Supports arithmetic, algebra, trigonometry, statistics, unit conversions, combinations/permutations, and financial calculations.",
         inputSchema: z.object({
             expression: z
                 .string()
                 .describe(
-                    "Mathematical expression to evaluate. Examples: '2 + 2', 'sqrt(16)', 'sin(45 deg)', '5!', '10 km to miles', '(44100/42000)^(365/343) - 1'"
+                    "Mathematical expression to evaluate. Examples: '2 + 2', 'sqrt(16)', 'sin(45 deg)', '5!', 'C(10,5)', 'ln(e)', '10 km to miles'"
                 ),
         }),
         execute: async ({ expression }) => {

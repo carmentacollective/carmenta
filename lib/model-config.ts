@@ -487,3 +487,10 @@ export const LIBRARIAN_FALLBACK_CHAIN: readonly ModelId[] = [
     "anthropic/claude-haiku-4.5",
     "anthropic/claude-sonnet-4.5",
 ] as const;
+
+/**
+ * Benchmark judge model for evals.
+ * Used by scoring-runner and competitive-runner for LLM-as-judge evaluation.
+ * GPT-5.2 chosen for reliable structured JSON output.
+ */
+export const BENCHMARK_JUDGE_MODEL = "openai/gpt-5.2" as const;

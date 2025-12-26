@@ -28,6 +28,7 @@ import {
     type BenchmarkQuery,
     type BenchmarkCategory,
 } from "./queries";
+import { BENCHMARK_JUDGE_MODEL } from "@/lib/model-config";
 
 // ============================================================================
 // Configuration
@@ -45,9 +46,6 @@ const COMPETITOR_MODELS = [
     { id: "google/gemini-3-pro-preview", name: "Gemini 3 Pro" },
     { id: "x-ai/grok-4.1-fast", name: "Grok 4.1" },
 ] as const;
-
-// Judge model for pairwise comparison
-const JUDGE_MODEL = "openai/o3-mini";
 
 // ============================================================================
 // Types
@@ -152,7 +150,7 @@ async function callCarmenta(query: string): Promise<ModelResponse> {
 }
 
 /**
- * Consume SSE stream from Carmenta
+ * Consume SSE stream from Carmenta - handles multiple AI SDK formats
  */
 async function consumeStream(response: Response): Promise<string> {
     const reader = response.body?.getReader();
@@ -175,8 +173,16 @@ async function consumeStream(response: Response): Promise<string> {
             if (line.startsWith("data: ")) {
                 try {
                     const data = JSON.parse(line.slice(6));
+
+                    // Handle various AI SDK stream formats
+                    // Only capture text content - tool outputs are processed by the model
+                    // and should appear in subsequent text, not as raw JSON
                     if (data.type === "text-delta" && data.delta) {
                         text += data.delta;
+                    } else if (data.type === "text-delta" && data.textDelta) {
+                        text += data.textDelta;
+                    } else if (data.type === "text" && data.text) {
+                        text += data.text;
                     }
                 } catch {
                     // Skip non-JSON lines
@@ -285,7 +291,7 @@ Which response is better? Output only valid JSON.`;
 
     try {
         const result = await generateText({
-            model: openrouter.chat(JUDGE_MODEL),
+            model: openrouter.chat(BENCHMARK_JUDGE_MODEL),
             system: JUDGE_SYSTEM_PROMPT,
             prompt,
             maxOutputTokens: 500,

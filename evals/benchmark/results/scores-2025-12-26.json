@@ -1,0 +1,429 @@
+{
+  "timestamp": "2025-12-26T19:05:55.198Z",
+  "version": "2.0.0",
+  "overallScore": 74,
+  "queryCount": 10,
+  "byCategory": [
+    {
+      "category": "reasoning",
+      "avgScore": 74,
+      "queryCount": 10,
+      "lowestScoring": [
+        {
+          "queryId": "reasoning-010-tragedy-commons",
+          "score": 23
+        },
+        {
+          "queryId": "reasoning-008-traffic",
+          "score": 38
+        },
+        {
+          "queryId": "reasoning-007-simpsons-paradox",
+          "score": 47
+        }
+      ]
+    }
+  ],
+  "byDimension": [
+    {
+      "dimension": "accuracy",
+      "avgScore": 84
+    },
+    {
+      "dimension": "clarity",
+      "avgScore": 82
+    },
+    {
+      "dimension": "completeness",
+      "avgScore": 58
+    },
+    {
+      "dimension": "actionability",
+      "avgScore": 5
+    }
+  ],
+  "lowestScoring": [
+    {
+      "queryId": "reasoning-010-tragedy-commons",
+      "score": 23,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-008-traffic",
+      "score": 38,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-007-simpsons-paradox",
+      "score": 47,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-006-base-rate",
+      "score": 73,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-005-monty-hall",
+      "score": 84,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-009-goodharts-law",
+      "score": 90,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-003-prisoners-hats",
+      "score": 94,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-001-three-liars",
+      "score": 96,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-004-weighing-coins",
+      "score": 97,
+      "category": "reasoning"
+    },
+    {
+      "queryId": "reasoning-002-knights-knaves",
+      "score": 98,
+      "category": "reasoning"
+    }
+  ],
+  "queryResults": [
+    {
+      "queryId": "reasoning-001-three-liars",
+      "query": {
+        "id": "reasoning-001-three-liars",
+        "query": "Three people are in a room: Alice, Bob, and Carol.\n- Alice says: \"Exactly one of us is lying.\"\n- Bob says: \"Exactly two of us are lying.\"\n- Carol says: \"All three of us are lying.\"\n\nWho is telling the truth? Show your reasoning step by step.",
+        "category": "reasoning",
+        "difficulty": "standard",
+        "rationale": "Classic logic puzzle requiring systematic case analysis.",
+        "primaryDimensions": ["accuracy", "completeness", "clarity"],
+        "tags": ["logic", "puzzle", "deduction"],
+        "source": "custom"
+      },
+      "response": "# The Liar Puzzle\n\nLet's work through each possible scenario systematically.\n\n## The Statements\n- **Alice:** \"Exactly one of us is lying.\"\n- **Bob:** \"Exactly two of us are lying.\"\n- **Carol:** \"All three of us are lying.\"\n\n## Testing Each Case\n\n**Case 1: Zero liars**\nIf nobody lies, all statements must be true. But Alice claims exactly one is lying—that would be false. Contradiction. ❌\n\n**Case 2: Exactly one liar**\nAlice's statement would be true. But then Bob and Carol's statements are both false, making them both liars. That's two liars, not one. Contradiction. ❌\n\n**Case 3: Exactly two liars**\nBob's statement would be true. Let's check:\n- Alice says \"exactly one\" → False (she's lying)\n- Bob says \"exactly two\" → True (he's truthful)\n- Carol says \"all three\" → False (she's lying)\n\nTwo liars (Alice and Carol), one truth-teller (Bob). This matches Bob's claim. ✓\n\n**Case 4: All three lying**\nCarol's statement would be true—but if she's telling the truth, she's not lying. Self-contradiction. ❌\n\n## Answer\n\n**Bob is telling the truth.** Alice and Carol are lying.\n\nThe elegant twist: Carol's statement is self-defeating. If all three were lying, her statement would be true, which means she wouldn't be lying—a paradox that eliminates that possibility entirely.",
+      "latencyMs": 21565,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 97,
+          "reasoning": "Correctly concludes Bob is telling the truth and Alice and Carol are lying. Case analysis is logically consistent; no substantive errors."
+        },
+        {
+          "dimension": "completeness",
+          "score": 96,
+          "reasoning": "Fully answers who is truthful and provides step-by-step reasoning by checking all possible numbers of liars. No important scenario omitted."
+        },
+        {
+          "dimension": "clarity",
+          "score": 94,
+          "reasoning": "Well-structured with clear cases and explicit truth/lie checks. Minor stylistic fluff (emoji and 'elegant twist') but overall very easy to follow."
+        }
+      ],
+      "overallScore": 96,
+      "timestamp": "2025-12-26T19:00:02.841Z"
+    },
+    {
+      "queryId": "reasoning-002-knights-knaves",
+      "query": {
+        "id": "reasoning-002-knights-knaves",
+        "query": "On an island, knights always tell the truth and knaves always lie. You meet two people, A and B.\n- A says: \"At least one of us is a knave.\"\n\nWhat are A and B?",
+        "category": "reasoning",
+        "difficulty": "standard",
+        "rationale": "Knights and knaves puzzle testing logical deduction.",
+        "primaryDimensions": ["accuracy", "clarity"],
+        "tags": ["logic", "puzzle", "knights-knaves"],
+        "source": "custom"
+      },
+      "response": "# Solving the Puzzle\n\nLet's work through both possibilities for A.\n\n**If A is a knave:**\nA's statement \"at least one of us is a knave\" would be a lie. For it to be false, *neither* of them could be a knave—both would have to be knights. But that contradicts our assumption that A is a knave. ❌ Impossible.\n\n**If A is a knight:**\nA's statement must be true—at least one of them *is* a knave. Since A is a knight, that knave must be B. ✓ Consistent.\n\n## Answer\n\n- **A is a knight**\n- **B is a knave**",
+      "latencyMs": 11209,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 100,
+          "reasoning": "Correctly analyzes both cases. If A were a knave the statement would have to be false, implying both are knights, which is contradictory. Therefore A is a knight and B must be a knave."
+        },
+        {
+          "dimension": "clarity",
+          "score": 95,
+          "reasoning": "Well-structured, step-by-step case analysis with a clear conclusion. Minor stylistic fluff (e.g., emojis/headers) but the logic is easy to follow."
+        }
+      ],
+      "overallScore": 98,
+      "timestamp": "2025-12-26T19:00:21.697Z"
+    },
+    {
+      "queryId": "reasoning-003-prisoners-hats",
+      "query": {
+        "id": "reasoning-003-prisoners-hats",
+        "query": "100 prisoners stand in a line, each wearing either a red or blue hat. Each can see all hats in front of them but not their own or those behind. Starting from the back, each must guess their hat color. They can hear all previous guesses. Before the line-up, they can agree on a strategy.\n\nWhat strategy guarantees saving at least 99 prisoners?",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Complex puzzle requiring insight into parity and information encoding.",
+        "primaryDimensions": ["accuracy", "completeness", "clarity"],
+        "tags": ["logic", "puzzle", "strategy", "parity"],
+        "source": "arena-hard"
+      },
+      "response": "# The Parity Strategy\n\nThis is a beautiful puzzle where information theory meets cooperation. Here's the strategy:\n\n## Setup\n\nAssign values: **Red = 0**, **Blue = 1**\n\n## The Strategy\n\n**Person 100 (back of line):** Count all blue hats you see. Announce based on parity:\n- See an *even* number of blue hats → say \"Red\"\n- See an *odd* number of blue hats → say \"Blue\"\n\n**Everyone else:** Use the parity information to deduce your own hat with certainty.\n\n## Why It Works\n\nPerson 100's guess encodes the **parity** (odd/even count) of blue hats among positions 1–99. Each subsequent person can:\n\n1. Hear the original parity announced\n2. Track how that parity has changed based on correct guesses behind them\n3. See all hats in front of them\n4. Calculate what their hat *must* be to make the math work\n\n**Example for Person 99:**\n- Hears that positions 1–99 have odd parity (say, from \"Blue\" call)\n- Counts blue hats in positions 1–98, finds an even number\n- Deduces: \"My hat must be blue to make the total odd\" ✓\n\nEach person updates the running parity and applies the same logic.\n\n## The Guarantee\n\n| Who | Outcome |\n|-----|---------|\n| Person 100 | 50% chance (their call encodes information, not their own hat) |\n| Persons 1–99 | **100% saved** |\n\n**Guaranteed minimum: 99 prisoners saved.** The first person sacrifices certainty about their own fate to give everyone else perfect information. 🎩",
+      "latencyMs": 30676,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 96,
+          "reasoning": "Describes the standard parity (mod 2) strategy correctly: the last prisoner encodes the parity of blue hats seen, and all others can deduce their own hat with certainty given the announced parity, visible hats ahead, and previous (correct) guesses. Minor imprecision in wording about “tracking how parity has changed” (it relies on assuming previous guesses are correct under the strategy) but does not affect correctness."
+        },
+        {
+          "dimension": "completeness",
+          "score": 94,
+          "reasoning": "Fully answers the query with a concrete strategy and explains why it guarantees at least 99 saved, including who may be sacrificed and an illustrative example. Could be slightly more explicit about the exact update rule each prisoner uses, but the core method is present."
+        },
+        {
+          "dimension": "clarity",
+          "score": 92,
+          "reasoning": "Well-structured with clear setup, steps, and rationale; the parity mapping and the roles of the last prisoner vs. others are easy to follow. The explanation of the parity-updating mechanism could be a touch more precise, but overall it is understandable."
+        }
+      ],
+      "overallScore": 94,
+      "timestamp": "2025-12-26T19:01:03.567Z"
+    },
+    {
+      "queryId": "reasoning-004-weighing-coins",
+      "query": {
+        "id": "reasoning-004-weighing-coins",
+        "query": "You have 12 coins, one of which is counterfeit (either heavier or lighter). Using a balance scale exactly 3 times, identify the counterfeit coin AND determine if it's heavier or lighter.",
+        "category": "reasoning",
+        "difficulty": "expert",
+        "rationale": "Information-theoretic puzzle requiring optimal decision tree.",
+        "primaryDimensions": ["accuracy", "completeness"],
+        "tags": ["logic", "puzzle", "optimization"],
+        "source": "arena-hard"
+      },
+      "response": "# The 12-Coin Puzzle\n\nThis is a classic that requires squeezing maximum information from each weighing. Each weighing has 3 outcomes (left heavy, balanced, right heavy), giving us 3³ = 27 possible result combinations—just enough to distinguish 24 possibilities (12 coins × heavy/light).\n\n---\n\n## Setup\n\nLabel coins **1–12**. Here's the complete strategy:\n\n---\n\n## Weighing 1: [1,2,3,4] vs [5,6,7,8]\n\nThis creates three branches:\n\n---\n\n### Branch A: Balanced ⚖️\nThe fake is among **9,10,11,12**. Coins 1–8 are genuine.\n\n**Weighing 2:** [9,10,11] vs [1,2,3]\n| Result | Conclusion | Weighing 3 | Logic |\n|--------|-----------|------------|-------|\n| Balanced | 12 is fake | 12 vs 1 | Tips → 12 heavy; Rises → 12 light |\n| Left heavy | 9,10, or 11 is heavy | 9 vs 10 | Heavy side = fake; Balanced → 11 heavy |\n| Left light | 9,10, or 11 is light | 9 vs 10 | Light side = fake; Balanced → 11 light |\n\n---\n\n### Branch B: Left [1,2,3,4] Heavier ⬇️\nEither **1,2,3,4 is heavy** OR **5,6,7,8 is light**. Coins 9–12 are genuine.\n\n**Weighing 2:** [1,2,5] vs [3,6,9]\n\n| Result | Suspects | Weighing 3 | Logic |\n|--------|----------|------------|-------|\n| Balanced | 4 heavy, 7 light, or 8 light | 7 vs 8 | Light side = fake; Balanced → 4 heavy |\n| Left heavy | 1 heavy, 2 heavy, or 6 light | 1 vs 2 | Heavy side = fake; Balanced → 6 light |\n| Right heavy | 3 heavy or 5 light | 3 vs 9 | 3 heavy if tips; Balanced → 5 light |\n\n---\n\n### Branch C: Right [5,6,7,8] Heavier ⬆️\nMirror of Branch B. Either **5,6,7,8 is heavy** OR **1,2,3,4 is light**.\n\n**Weighing 2:** [5,6,1] vs [7,2,9]\n\n| Result | Suspects | Weighing 3 | Logic |\n|--------|----------|------------|-------|\n| Balanced | 8 heavy, 3 light, or 4 light | 3 vs 4 | Light side = fake; Balanced → 8 heavy |\n| Left heavy | 5 heavy, 6 heavy, or 2 light | 5 vs 6 | Heavy side = fake; Balanced → 2 light |\n| Right heavy | 7 heavy or 1 light | 7 vs 9 | 7 heavy if tips; Balanced → 1 light |\n\n---\n\n## Why It Works\n\nThe key insight in Weighing 2 is **rotation**: we move some coins between sides and swap some out for known genuine coins. This lets us deduce *which* coin moved based on *how* the result changes—encoding both identity and weight status simultaneously. ✨",
+      "latencyMs": 35907,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 96,
+          "reasoning": "The weighing scheme is consistent with the standard 12-coin/3-weighing solution. Each branch’s suspect set matches the physics of balance outcomes, and the third-weighing resolutions correctly identify both the coin and whether it’s heavy/light. Only very minor presentation ambiguities (e.g., wording like “tips” without specifying direction) but not enough to impair correctness."
+        },
+        {
+          "dimension": "completeness",
+          "score": 97,
+          "reasoning": "Provides a full decision tree covering all outcomes of all three weighings, including identification of the counterfeit coin and whether it is heavier or lighter in every case. Includes setup, all branches, and final disambiguation steps."
+        }
+      ],
+      "overallScore": 97,
+      "timestamp": "2025-12-26T19:03:10.107Z"
+    },
+    {
+      "queryId": "reasoning-005-monty-hall",
+      "query": {
+        "id": "reasoning-005-monty-hall",
+        "query": "The Monty Hall problem variant: You're on a game show with 100 doors. Behind one door is a car; the rest have goats. You pick door #1. The host opens 98 doors showing goats (leaving doors #1 and #57 closed).\n\nShould you switch to door #57? What's the probability of winning if you switch vs. stay?",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Extended Monty Hall tests probabilistic reasoning.",
+        "primaryDimensions": ["accuracy", "clarity", "completeness"],
+        "tags": ["probability", "counterintuitive", "bayes"],
+        "source": "custom"
+      },
+      "response": "This is the Monty Hall problem scaled up—and the larger scale makes the logic beautifully clear.\n\n## The Key Insight\n\nThe host's action isn't random. They *know* where the car is and deliberately avoid opening that door. This concentrates information.\n\n## The Probabilities\n\n**When you initially picked door #1:**\n- Probability you picked the car: 1/100\n- Probability the car is behind one of the other 99 doors: 99/100\n\n**After the host opens 98 goat doors:**\n\nThe host's reveal doesn't change your initial odds. Your door still has that same 1/100 chance. But all that probability mass (99/100) that was spread across the other 99 doors is now *concentrated entirely on door #57*—because the host's deliberate avoidance eliminated every other option.",
+      "latencyMs": 17257,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 93,
+          "reasoning": "The reasoning is correct for the standard Monty Hall variant where the host knows the car’s location, always opens 98 goat doors, and leaves exactly one alternative door closed. In that setup, door #1 remains 1/100 and the other remaining door carries 99/100. Minor caveat: it doesn’t explicitly state the needed host assumptions."
+        },
+        {
+          "dimension": "clarity",
+          "score": 90,
+          "reasoning": "Well-structured and easy to follow with a clear key insight and step-by-step probability breakdown. The conclusion is strongly implied, though it would be clearer with an explicit final statement of the switch/stay win probabilities."
+        },
+        {
+          "dimension": "completeness",
+          "score": 68,
+          "reasoning": "It addresses the core logic and sets up the correct probabilities, but it never explicitly answers 'Should you switch?' nor directly states the numerical win probability for switching vs. staying (99/100 vs 1/100). It also omits stating the host-behavior assumptions explicitly."
+        }
+      ],
+      "overallScore": 84,
+      "timestamp": "2025-12-26T19:03:36.509Z"
+    },
+    {
+      "queryId": "reasoning-006-base-rate",
+      "query": {
+        "id": "reasoning-006-base-rate",
+        "query": "A disease affects 1 in 1000 people. A test has 99% sensitivity and 99% specificity. If you test positive, what's the probability you have the disease? Show your work using Bayes' theorem.",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Tests Bayesian reasoning and understanding of base rates.",
+        "primaryDimensions": ["accuracy", "completeness", "clarity"],
+        "tags": ["probability", "bayes", "base-rate"],
+        "source": "arena-hard"
+      },
+      "response": "# Bayes' Theorem: The False Positive Paradox\n\nThis is a classic problem that reveals counterintuitive truths about medical testing. Let's work through it.\n\n## Given Information\n\n| Parameter | Value |\n|-----------|-------|\n| Base rate (prevalence) | P(D) = 1/1000 = 0.001 |\n| Sensitivity | P(+\\|D) = 0.99 |\n| Specificity | P(−\\|¬D) = 0.99 |\n| False positive rate | P(+\\|¬D) = 0.01 |\n\n## Bayes' Theorem\n\n$$P(D|+) = \\frac{P(+|D) \\cdot P(D)}{P(+)}$$\n\nFirst, we need **P(+)**, the total probability of testing positive:\n\n$$P(+) = P(+|D) \\cdot P(D) + P(+|\\neg D) \\cdot P(\\neg D)$$",
+      "latencyMs": 15348,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 92,
+          "reasoning": "All stated quantities (prevalence, sensitivity, specificity, false positive rate) and Bayes' theorem setup are correct; no factual errors in what is provided."
+        },
+        {
+          "dimension": "completeness",
+          "score": 40,
+          "reasoning": "It sets up Bayes' theorem and P(+) but never completes the calculation to produce P(D|+) or a numeric probability, which is the core of the question."
+        },
+        {
+          "dimension": "clarity",
+          "score": 86,
+          "reasoning": "Well-structured with a clear table and equations; easy to follow up to the point it stops, but the missing final computation leaves the explanation unfinished."
+        }
+      ],
+      "overallScore": 73,
+      "timestamp": "2025-12-26T19:03:58.918Z"
+    },
+    {
+      "queryId": "reasoning-007-simpsons-paradox",
+      "query": {
+        "id": "reasoning-007-simpsons-paradox",
+        "query": "Hospital A: 90% survival for easy surgeries (900/1000), 50% for difficult (50/100).\nHospital B: 95% for easy (95/100), 60% for difficult (600/1000).\n\nWhich hospital is better? Calculate overall survival rates and explain the paradox.",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Simpson's paradox tests understanding of confounding.",
+        "primaryDimensions": ["accuracy", "completeness", "clarity"],
+        "tags": ["probability", "statistics", "paradox"],
+        "source": "custom"
+      },
+      "response": "This is a classic case of **Simpson's Paradox**—one of the most counterintuitive phenomena in statistics. Let me calculate the overall rates:",
+      "latencyMs": 8378,
+      "dimensions": [
+        {
+          "dimension": "accuracy",
+          "score": 55,
+          "reasoning": "Correctly identifies the situation as Simpson's Paradox, but provides no calculations or overall survival rates, so it fails to demonstrate factual results the query asks for."
+        },
+        {
+          "dimension": "completeness",
+          "score": 15,
+          "reasoning": "Does not compute overall survival rates for either hospital and does not explain why the paradox occurs beyond naming it; it stops mid-response."
+        },
+        {
+          "dimension": "clarity",
+          "score": 70,
+          "reasoning": "The single point it makes is clearly stated and well-phrased, but the response is truncated and lacks the promised computed rates, limiting overall usefulness."
+        }
+      ],
+      "overallScore": 47,
+      "timestamp": "2025-12-26T19:04:15.906Z"
+    },
+    {
+      "queryId": "reasoning-008-traffic",
+      "query": {
+        "id": "reasoning-008-traffic",
+        "query": "A city wants to reduce traffic congestion. Options:\n1. Add a new highway lane\n2. Improve public transit frequency by 50%\n3. Implement congestion pricing during peak hours\n\nAnalyze each considering second-order effects and feedback loops. Which succeeds long-term?",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Tests systems thinking—induced demand and feedback loops.",
+        "primaryDimensions": ["completeness", "clarity", "accuracy"],
+        "tags": ["systems-thinking", "policy", "tradeoffs"],
+        "source": "custom"
+      },
+      "response": "This is a beautiful systems thinking question. The answer hinges entirely on understanding feedback loops—and one option works *with* them while two fight against them.",
+      "latencyMs": 40355,
+      "dimensions": [
+        {
+          "dimension": "completeness",
+          "score": 12,
+          "reasoning": "It does not analyze any of the three options, does not discuss second-order effects/feedback loops in detail, and does not answer which option succeeds long-term—only offers a vague teaser."
+        },
+        {
+          "dimension": "clarity",
+          "score": 58,
+          "reasoning": "The writing is readable and coherent, but it is not structured as an analysis and provides no concrete content, making it unclear in terms of actionable conclusions."
+        },
+        {
+          "dimension": "accuracy",
+          "score": 45,
+          "reasoning": "The high-level claim about feedback loops could be true in general, but it asserts that one option works and two fight feedback loops without specifying which or providing justification, making it potentially misleading and not verifiably correct."
+        }
+      ],
+      "overallScore": 38,
+      "timestamp": "2025-12-26T19:05:03.822Z"
+    },
+    {
+      "queryId": "reasoning-009-goodharts-law",
+      "query": {
+        "id": "reasoning-009-goodharts-law",
+        "query": "\"When a measure becomes a target, it ceases to be a good measure.\" Explain Goodhart's Law and provide examples from: education, healthcare, and software engineering.",
+        "category": "reasoning",
+        "difficulty": "standard",
+        "rationale": "Tests understanding of metrics and optimization pressure.",
+        "primaryDimensions": ["clarity", "completeness", "accuracy"],
+        "tags": ["systems-thinking", "metrics", "optimization"],
+        "source": "custom"
+      },
+      "response": "**Goodhart's Law** captures a fundamental problem in measurement and incentives: when we optimize for a metric rather than the underlying goal, people find ways to game the system. The measure becomes distorted because behavior shifts toward maximizing the number rather than improving what the number was meant to represent.\n\nThe mechanism is straightforward—once a metric carries consequences (rewards, rankings, funding), it creates pressure to improve that specific number. This pressure finds the gaps between what we're measuring and what we actually care about, then exploits them.\n\n## Education: Standardized Test Scores\n\nSchools judged by test scores face intense pressure to raise them. The predictable response: teach to the test. Narrow curriculum to tested subjects. Drill test-taking strategies. In extreme cases, exclude struggling students from test days, or administrators alter answer sheets.\n\nThe original intent—measuring student learning and school effectiveness—erodes. High scores no longer signal broad educational quality; they signal test preparation. Meanwhile, critical thinking, creativity, social skills, and subject depth outside the test disappear from focus. The metric improved while education quality stagnated or declined.\n\n## Healthcare: Hospital Readmission Rates\n\nThe Affordable Care Act penalized hospitals with high 30-day readmission rates, aiming to improve care quality and discharge planning. The measure assumed readmissions indicated inadequate treatment.\n\nHospitals responded by becoming more selective about admissions, sometimes classifying returning patients as \"observation\" rather than \"admission\" to avoid penalties. Some discouraged high-risk patients from seeking care at their facility. Others focused resources on the 30-day window while neglecting longer-term outcomes.\n\nThe readmission rate improved on paper, but the underlying goal—better patient care—became secondary to managing the metric. The measure stopped reflecting care quality and started reflecting gaming behavior.\n\n## Software Engineering: Lines of Code\n\nWhen programmer productivity gets measured by lines of code written, the dysfunction is immediate. Developers write verbose, repetitive code instead of elegant, concise solutions. Code becomes harder to maintain, bug-prone, and bloated—but the metric rises.\n\nSimilarly, counting bugs fixed incentivizes creating or reporting trivial bugs. Measuring deployment frequency without considering quality leads to empty commits. Sprint velocity as a target inflates story point estimates rather than improving actual throughput.\n\nEach metric was originally a reasonable signal—code output, bug resolution, shipping cadence, team capacity. Each became counterproductive the moment it determined performance reviews or bonuses.\n\n---\n\nThe pattern repeats across domains: **distance between measurement and goal creates exploitable space**. The tighter the coupling between what we measure and what we genuinely value, the more robust the metric. But perfect coupling is rare, which is why Goodhart's Law remains so persistently relevant.",
+      "latencyMs": 25125,
+      "dimensions": [
+        {
+          "dimension": "clarity",
+          "score": 94,
+          "reasoning": "Well-structured with a clear definition, mechanism explanation, and distinct domain sections. Examples are easy to follow and the concluding synthesis reinforces the main idea."
+        },
+        {
+          "dimension": "completeness",
+          "score": 92,
+          "reasoning": "Directly explains Goodhart’s Law and provides relevant examples from all three requested domains (education, healthcare, software engineering), including concrete failure modes (teaching to the test, observation-status gaming, LoC incentives). Minor room for additional variety or countermeasures, but not required."
+        },
+        {
+          "dimension": "accuracy",
+          "score": 84,
+          "reasoning": "Core concept and most examples are correct and representative. Healthcare discussion (ACA HRRP, 30-day readmissions, use of observation status) is broadly accurate, though some claims (e.g., systematically discouraging high-risk patients) are somewhat speculative/overgeneralized without qualification. Software metrics pitfalls are accurate as incentives examples."
+        }
+      ],
+      "overallScore": 90,
+      "timestamp": "2025-12-26T19:05:39.105Z"
+    },
+    {
+      "queryId": "reasoning-010-tragedy-commons",
+      "query": {
+        "id": "reasoning-010-tragedy-commons",
+        "query": "A shared fishing ground sustainably supports 100 tons/year. 10 companies fish there. Each profits more by catching more, but if total exceeds 100 tons, fish collapse. Design three mechanisms to prevent overfishing, analyzing tradeoffs.",
+        "category": "reasoning",
+        "difficulty": "hard",
+        "rationale": "Tests understanding of collective action problems.",
+        "primaryDimensions": ["completeness", "clarity", "actionability"],
+        "tags": ["systems-thinking", "game-theory", "mechanism-design"],
+        "source": "custom"
+      },
+      "response": "# Preventing the Tragedy of the Commons: Three Mechanisms\n\nThis is a textbook commons dilemma. Each company's rational choice (catch more) leads to collective ruin. Let's design three distinct approaches and analyze what each trades off.\n\n---\n\n## The Setup",
+      "latencyMs": 10418,
+      "dimensions": [
+        {
+          "dimension": "completeness",
+          "score": 8,
+          "reasoning": "It restates the commons dilemma and promises three approaches but does not actually propose any mechanisms or analyze tradeoffs. The answer stops at the setup."
+        },
+        {
+          "dimension": "clarity",
+          "score": 55,
+          "reasoning": "The writing is coherent and well-formatted with headings, but since the substantive content is missing, overall clarity on what to do is not achieved."
+        },
+        {
+          "dimension": "actionability",
+          "score": 5,
+          "reasoning": "No concrete mechanisms, steps, enforcement details, or tradeoff analysis are provided, so a user cannot act on it."
+        }
+      ],
+      "overallScore": 23,
+      "timestamp": "2025-12-26T19:05:55.198Z"
+    }
+  ]
+}
