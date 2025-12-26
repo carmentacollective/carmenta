@@ -11,18 +11,18 @@ export function Footer() {
                 <nav className="flex flex-wrap items-center gap-x-8 gap-y-4 text-sm text-foreground/60">
                     {/* Primary links with icons */}
                     <Link
+                        href="/heart-centered-ai"
+                        className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
+                    >
+                        <Heart className="h-4 w-4 fill-primary text-primary" />
+                        <span>Heart-Centered AI</span>
+                    </Link>
+                    <Link
                         href="/ai-first-development"
                         className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
                     >
                         <Code2 className="h-4 w-4" />
                         <span>How We Build</span>
-                    </Link>
-                    <Link
-                        href="/heart-centered-ai"
-                        className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
-                    >
-                        <Heart className="h-4 w-4 fill-primary text-primary" />
-                        <span>Heart Centered AI</span>
                     </Link>
                     <Link
                         href="https://github.com/carmentacollective/carmenta"
@@ -42,16 +42,16 @@ export function Footer() {
                         Privacy
                     </Link>
                     <Link
-                        href="/security"
-                        className="transition-all hover:scale-105 hover:text-foreground/90"
-                    >
-                        Security
-                    </Link>
-                    <Link
                         href="/terms"
                         className="transition-all hover:scale-105 hover:text-foreground/90"
                     >
                         Terms
+                    </Link>
+                    <Link
+                        href="/security"
+                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                    >
+                        Security
                     </Link>
 
                     {/* Theme switcher */}

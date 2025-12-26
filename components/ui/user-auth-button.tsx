@@ -12,6 +12,8 @@ import {
     Sparkles,
     BookOpen,
     Heart,
+    Compass,
+    Code2,
 } from "lucide-react";
 
 import { useMarker } from "@/components/feedback/marker-provider";
@@ -218,6 +220,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                 {/* Menu items */}
                                 <div className="py-1">
+                                    {/* Settings & Core Features */}
                                     <button
                                         onClick={() => {
                                             openUserProfile();
@@ -227,8 +230,21 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                     >
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <User className="relative h-4 w-4 text-foreground/60" />
-                                        <span className="relative">Manage account</span>
+                                        <span className="relative">Account</span>
                                     </button>
+
+                                    <Link
+                                        href="/integrations"
+                                        onClick={() => setIsOpen(false)}
+                                        className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                    >
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <Plug className="relative h-4 w-4 text-foreground/60" />
+                                        <span className="relative">Integrations</span>
+                                    </Link>
+
+                                    {/* Learning & Content */}
+                                    <div className="my-1 border-t border-foreground/10" />
 
                                     <Link
                                         href="/knowledge-base"
@@ -246,7 +262,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                        <BookOpen className="relative h-4 w-4 text-foreground/60" />
+                                        <Compass className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Guide</span>
                                     </Link>
 
@@ -256,20 +272,20 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                        <Heart className="relative h-4 w-4 text-blue-500" />
+                                        <Heart className="relative h-4 w-4 fill-primary text-primary" />
                                         <span className="relative">
                                             Heart-Centered AI
                                         </span>
                                     </Link>
 
                                     <Link
-                                        href="/integrations"
+                                        href="/ai-first-development"
                                         onClick={() => setIsOpen(false)}
                                         className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
                                     >
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                        <Plug className="relative h-4 w-4 text-foreground/60" />
-                                        <span className="relative">Integrations</span>
+                                        <Code2 className="relative h-4 w-4 text-foreground/60" />
+                                        <span className="relative">How We Build</span>
                                     </Link>
 
                                     {/* Appearance section - compact redesign */}
@@ -376,7 +392,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         </div>
                                     )}
 
-                                    {/* Feedback button */}
+                                    {/* Meta actions */}
                                     <div className="border-t border-foreground/10">
                                         <button
                                             onClick={() => {
