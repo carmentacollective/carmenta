@@ -44,6 +44,11 @@ vi.mock("@/lib/ai/gateway", async () => {
     return {
         getGatewayClient: () => () => mockModel,
         translateModelId: (id: string) => id,
+        translateOptions: (modelId: string, options: unknown) => ({
+            gateway: {
+                models: (options as { fallbackModels?: string[] }).fallbackModels || [],
+            },
+        }),
     };
 });
 
