@@ -183,7 +183,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                         {/* Dropdown menu */}
                         <motion.div
-                            className="fixed right-6 top-16 z-modal"
+                            className="absolute right-0 top-full z-modal mt-2"
                             initial={{ opacity: 0, y: -12, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.98 }}
