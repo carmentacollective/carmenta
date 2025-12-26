@@ -180,8 +180,8 @@ describe.concurrent("Routing Rules - Video Attachments", () => {
     });
 });
 
-describe.concurrent("Routing Rules - Anthropic Reasoning + Tools Bug", () => {
-    it("redirects Anthropic with reasoning and tools to GPT-5.2", () => {
+describe.concurrent("Routing Rules - Anthropic Reasoning + Tools", () => {
+    it("allows Anthropic with reasoning and tools", () => {
         const input = createRoutingInput({
             selectedModelId: "anthropic/claude-opus-4.5",
             reasoningEnabled: true,
@@ -190,38 +190,11 @@ describe.concurrent("Routing Rules - Anthropic Reasoning + Tools Bug", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("openai/gpt-5.2");
-        expect(result.wasChanged).toBe(true);
-        expect(result.reason).toContain("GPT-5.2");
-    });
-
-    it("allows Anthropic with reasoning but no tools", () => {
-        const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5",
-            reasoningEnabled: true,
-            toolsEnabled: false,
-        });
-
-        const result = applyRoutingRules(input);
-
-        // Should not redirect (or only redirect if context overflow)
-        expect(result.modelId).not.toBe("openai/gpt-5.2");
-    });
-
-    it("allows Anthropic with tools but no reasoning", () => {
-        const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
-            reasoningEnabled: false,
-            toolsEnabled: true,
-        });
-
-        const result = applyRoutingRules(input);
-
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-opus-4.5");
         expect(result.wasChanged).toBe(false);
     });
 
-    it("applies to all Anthropic models", () => {
+    it("allows all Anthropic models with reasoning and tools", () => {
         const anthropicModels: ModelId[] = [
             "anthropic/claude-opus-4.5",
             "anthropic/claude-sonnet-4.5",
@@ -237,21 +210,9 @@ describe.concurrent("Routing Rules - Anthropic Reasoning + Tools Bug", () => {
 
             const result = applyRoutingRules(input);
 
-            expect(result.modelId).toBe("openai/gpt-5.2");
+            expect(result.modelId).toBe(modelId);
+            expect(result.wasChanged).toBe(false);
         }
-    });
-
-    it("does not apply to non-Anthropic models", () => {
-        const input = createRoutingInput({
-            selectedModelId: "openai/gpt-5.2",
-            reasoningEnabled: true,
-            toolsEnabled: true,
-        });
-
-        const result = applyRoutingRules(input);
-
-        // GPT-5.2 should stay as is - bug only affects Anthropic
-        expect(result.modelId).toBe("openai/gpt-5.2");
     });
 });
 
@@ -364,7 +325,7 @@ describe.concurrent("Routing Rules - Priority Order", () => {
         expect(result.reason).toContain("Audio");
     });
 
-    it("applies Anthropic bug rule before context overflow", () => {
+    it("allows Anthropic with reasoning and tools", () => {
         const input = createRoutingInput({
             selectedModelId: "anthropic/claude-sonnet-4.5",
             reasoningEnabled: true,
@@ -373,9 +334,8 @@ describe.concurrent("Routing Rules - Priority Order", () => {
 
         const result = applyRoutingRules(input);
 
-        // Bug rule takes priority
-        expect(result.modelId).toBe("openai/gpt-5.2");
-        expect(result.reason).toContain("GPT-5.2");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.wasChanged).toBe(false);
     });
 });
 
