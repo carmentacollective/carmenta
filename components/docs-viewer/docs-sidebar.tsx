@@ -155,10 +155,10 @@ export function DocsSidebar({
                                                         "flex w-full items-center gap-3 text-left transition-colors",
                                                         mobile
                                                             ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
-                                                            : "px-3 py-3 text-sm hover:bg-foreground/5",
+                                                            : "px-3 py-3 text-sm",
                                                         selectedPath === doc.path
                                                             ? "bg-primary/10 text-primary"
-                                                            : "text-foreground/60"
+                                                            : "text-foreground/60 hover:bg-foreground/5"
                                                     )}
                                                 >
                                                     <FileText

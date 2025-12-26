@@ -117,7 +117,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
             [];
 
         return (
-            <div className="flex h-full flex-col bg-background">
+            <div key="mobile" className="flex h-full flex-col bg-background">
                 {/* Header with named back + search */}
                 <div className="border-b border-foreground/10 pt-safe-top">
                     <div className="flex items-center justify-between px-4 py-3">
@@ -154,7 +154,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                     className="flex items-center gap-1 font-medium text-primary"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
-                                    <span>{selectedDocument?.name ?? "Back"}</span>
+                                    <span>{currentSection?.name ?? "Back"}</span>
                                 </motion.button>
                             )}
                         </AnimatePresence>
@@ -320,7 +320,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
 
     // Desktop two-pane layout
     return (
-        <div className="relative flex h-full gap-6">
+        <div key="desktop" className="relative flex h-full gap-6">
             {/* Sidebar */}
             <DocsSidebar
                 sections={sections}
