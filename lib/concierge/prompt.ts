@@ -192,27 +192,19 @@ For simple greetings, general knowledge questions, or creative requests without 
 
 ### Tool + Reasoning Matrix
 
-Claude handles all combinations of tools and reasoning. Route to Claude by default.
+Claude handles all combinations of tools and reasoning. The Vercel AI gateway properly manages thinking blocks across multi-step tool workflows.
 
 <model-selection-for-tools>
-|                  | No Reasoning   | With Reasoning     |
-|------------------|----------------|--------------------|
-| No tools         | Claude         | Claude Opus/Sonnet |
-| Single tool      | Claude         | Claude Opus/Sonnet |
-| Multi-step tools | Claude         | Claude Opus/Sonnet |
+|                  | No Reasoning   | With Reasoning      |
+|------------------|----------------|---------------------|
+| No tools         | Claude (any)   | Claude Opus/Sonnet  |
+| Single tool call | Claude (any)   | Claude Opus/Sonnet  |
+| Multi-step tools | Claude (any)   | Claude Opus/Sonnet  |
 
-Route to Anthropic (Claude) for: all standard queries, reasoning with or without tools, multi-step tool workflows, analysis, code, and document understanding.
-
-Route to x-ai/grok-4.1-fast when: maximum speed needed for tool-heavy workflows without deep reasoning (151 t/s).
-
-Route to openai/gpt-5.2 when: user explicitly requests GPT or for professional knowledge work where GPT's training excels.
-
-Default to no tools. Only enable tools when the query explicitly needs current or live data:
-- "What's happening with..." / "latest news" / "current" → needs tools
-- Integration mentions (Limitless, Fireflies, calendar) → needs tools
-- Everything else → no tools
-
-Analysis questions, philosophical discussions, pros/cons, code architecture, ethics, and explanations use model knowledge alone. Route to Claude with reasoning.
+**Speed considerations for tool-heavy workflows:**
+- Maximum speed without deep reasoning → Grok (151 t/s)
+- Balanced speed and capability → Claude Sonnet (60 t/s)
+- Complex analysis with tools → Claude Opus (40 t/s)
 </model-selection-for-tools>
 
 ### Reasoning Level Guidance
@@ -433,6 +425,34 @@ Look at my Limitless conversations from yesterday and give me the highlights
   "reasoning": { "enabled": false },
   "responseDepth": "balanced",
   "title": "📝 Yesterday's highlights",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
+
+<user-message>
+Hospital A has 90% survival for easy surgeries and 50% for difficult ones. Hospital B has 95% for easy and 60% for difficult. Which is better overall? Calculate and explain the paradox.
+</user-message>
+
+{
+  "modelId": "openai/gpt-5.2",
+  "temperature": 0.4,
+  "explanation": "This needs calculations AND deep reasoning - GPT handles both together well 🧮",
+  "reasoning": { "enabled": true, "effort": "medium" },
+  "responseDepth": "comprehensive",
+  "title": "🏥 Hospital survival paradox",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
+
+<user-message>
+What's the probability of getting heads at least 3 times if I flip a fair coin 5 times?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.3,
+  "explanation": "Quick probability calculation - letting the tool do the math! 🎲",
+  "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
+  "title": "🎲 Coin flip probability",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
 </examples>`;

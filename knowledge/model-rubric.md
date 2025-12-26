@@ -69,15 +69,16 @@ Route to x-ai/grok-4.1-fast for: political opinions, edgy humor, controversial t
 
 ## Tool + Reasoning Matrix
 
-Claude handles all combinations of tools and reasoning.
+Claude handles all combinations of tools and reasoning. The Vercel AI gateway properly
+manages thinking blocks across multi-step tool workflows.
 
 |                  | No Reasoning | With Reasoning     |
 | ---------------- | ------------ | ------------------ |
-| No tools         | Claude       | Claude Opus/Sonnet |
-| Single tool      | Claude       | Claude Opus/Sonnet |
-| Multi-step tools | Claude       | Claude Opus/Sonnet |
+| No tools         | Claude (any) | Claude Opus/Sonnet |
+| Single tool call | Claude (any) | Claude Opus/Sonnet |
+| Multi-step tools | Claude (any) | Claude Opus/Sonnet |
 
-For maximum speed on tool-heavy workflows without deep reasoning → Grok (151 t/s).
+For maximum speed on tool-heavy workflows → Grok (151 t/s).
 
 ## Reasoning
 

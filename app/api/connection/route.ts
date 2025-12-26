@@ -4,8 +4,8 @@ import {
     convertToModelMessages,
     createUIMessageStream,
     createUIMessageStreamResponse,
-    streamText,
     stepCountIs,
+    streamText,
     type UIMessage,
     type UIMessageStreamWriter,
 } from "ai";
@@ -293,13 +293,6 @@ export async function POST(req: Request) {
         const modelConfig = getModel(concierge.modelId);
         const modelSupportsTools = modelConfig?.supportsTools ?? false;
 
-        // Anthropic models with reasoning cannot use multi-step tool calling
-        // because thinking blocks in step 1 responses cause API rejection on step 2+
-        // See: https://github.com/vercel/ai/issues/9631
-        const isAnthropicModel = modelConfig?.provider === "anthropic";
-        const disableMultiStepForReasoning =
-            isAnthropicModel && concierge.reasoning.enabled;
-
         // Load integration tools for connected services
         // These are merged with built-in tools for the request
         // CRITICAL: Pass userEmail, not dbUser.id (UUID) - connection-manager queries use email
@@ -451,9 +444,8 @@ export async function POST(req: Request) {
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),
             temperature: concierge.temperature,
-            // Multi-step: enabled for tools, but disabled for Anthropic + reasoning (safety net)
-            ...(modelSupportsTools &&
-                !disableMultiStepForReasoning && { stopWhen: stepCountIs(5) }),
+            // Multi-step tool calling: allows model to continue after tool results
+            ...(modelSupportsTools && { stopWhen: stepCountIs(5) }),
             // Pass provider-specific reasoning configuration
             providerOptions,
             // ================================================================
