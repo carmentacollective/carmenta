@@ -38,8 +38,8 @@ const CARMENTA_BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const JWT_TOKEN = process.env.TEST_USER_TOKEN;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-// Judge model for scoring
-const JUDGE_MODEL = "openai/o3-mini";
+// Judge model for scoring (gpt-5.2 is more reliable than o3-mini for JSON output)
+const JUDGE_MODEL = "openai/gpt-5.2";
 
 // ============================================================================
 // Types
@@ -194,8 +194,6 @@ async function consumeStream(response: Response): Promise<string> {
     const decoder = new TextDecoder();
     let text = "";
     let buffer = "";
-    const eventTypes = new Set<string>();
-    let lineCount = 0;
 
     while (true) {
         const { done, value } = await reader.read();
@@ -207,39 +205,25 @@ async function consumeStream(response: Response): Promise<string> {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-            lineCount++;
             if (line.startsWith("data: ")) {
                 try {
                     const data = JSON.parse(line.slice(6));
-                    if (data.type) eventTypes.add(data.type);
 
                     // Handle various AI SDK stream formats
+                    // Only capture text content - tool outputs are processed by the model
+                    // and should appear in subsequent text, not as raw JSON
                     if (data.type === "text-delta" && data.delta) {
                         text += data.delta;
                     } else if (data.type === "text-delta" && data.textDelta) {
                         text += data.textDelta;
                     } else if (data.type === "text" && data.text) {
                         text += data.text;
-                    } else if (data.type === "tool-output-available" && data.output) {
-                        // Capture tool outputs as part of response
-                        const output =
-                            typeof data.output === "string"
-                                ? data.output
-                                : JSON.stringify(data.output, null, 2);
-                        text += output + "\n\n";
                     }
                 } catch {
                     // Skip non-JSON lines
                 }
             }
         }
-    }
-
-    // Debug: log stream info if no text captured
-    if (text.length === 0 && lineCount > 0) {
-        console.log(
-            `    [DEBUG] ${lineCount} lines, events: ${[...eventTypes].join(", ")}`
-        );
     }
 
     return text;
