@@ -89,6 +89,8 @@ import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-co
 import { FilePickerButton } from "./file-picker-button";
 import { ConnectionChooser } from "./connection-chooser";
 import { useConnection } from "./connection-context";
+import { DraftRecoveryBanner } from "./draft-recovery-banner";
+import { useDraftPersistence } from "@/lib/hooks/use-draft-persistence";
 import { UploadProgressDisplay } from "./upload-progress";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -1728,12 +1730,20 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
         getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
-    const { connections } = useConnection();
+    const { connections, activeConnectionId } = useConnection();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
     const { trigger: triggerHaptic } = useHapticFeedback();
     const { checkMessage } = useMessageEffects();
+
+    // Draft persistence - saves unsent messages to localStorage
+    const { hasRecoveredDraft, dismissRecovery, clearDraft, onMessageSent } =
+        useDraftPersistence({
+            connectionId: activeConnectionId,
+            input,
+            setInput,
+        });
 
     // Show connection chooser on mobile when user has connections
     // Guard against undefined during SSR/hydration to prevent layout flash
@@ -2047,8 +2057,9 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                         name: f.name,
                     })),
                 });
-                // Clear files after successful send
+                // Clear files and draft after successful send
                 clearFiles();
+                onMessageSent();
                 // Re-focus input for quick follow-up messages
                 // Use preventScroll on mobile to avoid keyboard-induced scroll jank
                 inputRef.current?.focus({ preventScroll: isMobile });
@@ -2074,9 +2085,11 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
             setInput,
             append,
             clearFiles,
+            onMessageSent,
             emitUserEngaged,
             triggerHaptic,
             checkMessage,
+            isMobile,
         ]
     );
 
@@ -2231,6 +2244,13 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Draft recovery banner - shows when we restored unsent text */}
+            <DraftRecoveryBanner
+                show={hasRecoveredDraft}
+                onContinue={dismissRecovery}
+                onStartFresh={clearDraft}
+            />
 
             <form
                 ref={formRef}
