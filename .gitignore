@@ -61,3 +61,4 @@ app/design-lab/
 .vercel
 .env*.local
 evals/librarian/.claude/
+.site-keeper/
