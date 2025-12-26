@@ -13,7 +13,7 @@ import * as Sentry from "@sentry/nextjs";
 import { generateText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
-import { getOpenRouterClient } from "@/lib/ai/openrouter";
+import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
 import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
@@ -368,7 +368,7 @@ export async function runConcierge(
         { op: "concierge.route", name: "Concierge Model Selection" },
         async (span) => {
             try {
-                const openrouter = getOpenRouterClient();
+                const gateway = getGatewayClient();
 
                 // Load the rubric
                 const rubricContent = await getRubricContent();
@@ -457,7 +457,7 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                 // Use messages array (not system param) to enable Anthropic prompt caching on fallback.
                 // Gemini (primary) has automatic caching for prompts > 1024 tokens.
                 const result = await generateText({
-                    model: openrouter.chat(CONCIERGE_MODEL),
+                    model: gateway(translateModelId(CONCIERGE_MODEL)),
                     messages: [
                         {
                             role: "system",
@@ -476,8 +476,8 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                     temperature: 0.1, // Low temperature for consistent routing
                     maxRetries: 1, // Single retry on network/rate limit errors
                     providerOptions: {
-                        openrouter: {
-                            models: [...CONCIERGE_FALLBACK_CHAIN], // Gemini 3 Flash → Grok 4.1 Fast → Sonnet 4.5
+                        gateway: {
+                            models: CONCIERGE_FALLBACK_CHAIN.map(translateModelId), // Gemini 3 Flash → Grok 4.1 Fast → Sonnet 4.5
                         },
                     },
                     tools: {

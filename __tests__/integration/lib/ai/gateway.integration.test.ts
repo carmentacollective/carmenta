@@ -301,7 +301,7 @@ describeIf("Vercel AI Gateway Integration", () => {
                     cacheControl: { type: "ephemeral" },
                 },
                 gateway: {
-                    models: ["google/gemini-3-pro-preview"],
+                    models: ["google/gemini-3.0-pro-preview"], // Translated
                 },
             });
         });
@@ -320,56 +320,4 @@ describeIf("Vercel AI Gateway Integration", () => {
             ).rejects.toThrow();
         });
     });
-});
-
-// Separate expensive cache verification test
-describeIf("Vercel AI Gateway - Cache Verification (Expensive)", () => {
-    it.skip(
-        "verifies cache hit on second call with same large prompt",
-        async () => {
-            // This test is expensive because it requires:
-            // 1. A prompt > 1024 tokens (Anthropic minimum for caching)
-            // 2. Two API calls to verify cache hit
-            // Only enable manually when needed
-
-            const gateway = getGatewayClient();
-            const modelId = translateModelId("anthropic/claude-haiku-4.5");
-
-            // Generate a large system prompt > 1024 tokens
-            const largeContext = `
-                You are a helpful assistant with extensive knowledge.
-                ${Array(200).fill("Context line for padding to exceed token minimum.").join("\n")}
-            `;
-
-            const providerOptions = translateOptions("anthropic/claude-haiku-4.5", {
-                cacheControl: { type: "ephemeral" },
-            });
-
-            // First call - should create cache
-            const result1 = await generateText({
-                model: gateway(modelId),
-                system: largeContext,
-                prompt: "Say hello",
-                maxOutputTokens: 20,
-                providerOptions,
-            });
-
-            // Second call - should hit cache
-            const result2 = await generateText({
-                model: gateway(modelId),
-                system: largeContext,
-                prompt: "Say goodbye",
-                maxOutputTokens: 20,
-                providerOptions,
-            });
-
-            expect(result1.text).toBeTruthy();
-            expect(result2.text).toBeTruthy();
-
-            // Check for cache hit in provider metadata
-            // Note: The exact location of cached token info may vary
-            // based on AI SDK version
-        },
-        MODEL_TIMEOUT * 2
-    );
 });

@@ -14,7 +14,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import { filterReasoningFromMessages } from "@/lib/ai/messages";
-import { getOpenRouterClient } from "@/lib/ai/openrouter";
+import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 
 import {
     runConcierge,
@@ -322,7 +322,7 @@ export async function POST(req: Request) {
         // Use actual email if authenticated, fallback for development
         userEmail = user?.emailAddresses[0]?.emailAddress ?? "dev-user@local";
 
-        const openrouter = getOpenRouterClient();
+        const gateway = getGatewayClient();
 
         // Initialize Braintrust logger for production tracing (gracefully degrades if not configured)
         await initBraintrustLogger();
@@ -610,8 +610,8 @@ export async function POST(req: Request) {
                     : "medium";
 
             providerOptions = {
-                openrouter: {
-                    models: getFallbackChain(concierge.modelId),
+                gateway: {
+                    models: getFallbackChain(concierge.modelId).map(translateModelId),
                     reasoning: concierge.reasoning.maxTokens
                         ? { max_tokens: concierge.reasoning.maxTokens }
                         : { effort },
@@ -620,8 +620,8 @@ export async function POST(req: Request) {
         } else {
             // Reasoning disabled, but still configure failover models
             providerOptions = {
-                openrouter: {
-                    models: getFallbackChain(concierge.modelId),
+                gateway: {
+                    models: getFallbackChain(concierge.modelId).map(translateModelId),
                 },
             };
         }
@@ -666,7 +666,7 @@ export async function POST(req: Request) {
         };
 
         const result = await streamText({
-            model: openrouter.chat(concierge.modelId),
+            model: gateway(translateModelId(concierge.modelId)),
             // System messages are in the messages array with providerOptions for caching
             messages: [
                 ...systemMessages,
