@@ -98,9 +98,9 @@ export function PreHydrationLoader() {
   <!-- Subtle orbit path -->
   <div class="orbit-path" style="position: absolute; inset: -4%; border-radius: 50%; border: 1px solid hsl(270 40% 56% / 0.08);"></div>
   <!-- Large breathing container (8.8s cycle) -->
-  <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  <div style="position: absolute; inset: 0;
+              background: url('/logos/icon-transparent-192.png') center/contain no-repeat;
               animation: preLoaderBreathe 8.8s ease-in-out infinite;">
-    <img src="/logos/icon-transparent.png" alt="" style="width: 100%; height: 100%;" />
   </div>
 </div>
 `,
