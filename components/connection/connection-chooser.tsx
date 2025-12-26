@@ -732,14 +732,18 @@ export function ConnectionChooser({
         [activeConnection, updateConnectionTitle]
     );
 
-    // Focus input when dropdown opens
+    const isMobilePlacement = placement === "bottom";
+
+    // Focus search input when dropdown opens on desktop only
+    // On mobile (bottom placement), skip auto-focus to avoid disruptive keyboard popup
+    // when user accidentally taps the dropdown trigger near the chat input
     useEffect(() => {
-        if (isDropdownOpen && inputRef.current) {
+        if (isDropdownOpen && inputRef.current && !isMobilePlacement) {
             requestAnimationFrame(() => {
                 inputRef.current?.focus();
             });
         }
-    }, [isDropdownOpen]);
+    }, [isDropdownOpen, isMobilePlacement]);
 
     // Keyboard shortcut: Cmd+Shift+S to toggle star on active connection
     useEffect(() => {
@@ -769,8 +773,6 @@ export function ConnectionChooser({
     // Unified container - smooth transitions between states
     // Mobile (bottom placement): full width, plus on right
     // Desktop (header placement): use glass-pill styling
-    const isMobilePlacement = placement === "bottom";
-
     return (
         <div className={cn("relative", isMobilePlacement && "w-full")}>
             <motion.div
