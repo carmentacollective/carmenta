@@ -49,6 +49,8 @@ export interface KBSidebarProps {
     dimmed?: boolean;
     /** Additional classes for the nav container */
     className?: string;
+    /** Mobile full-screen mode - larger touch targets, no glass styling */
+    mobile?: boolean;
 }
 
 export function KBSidebar({
@@ -57,6 +59,7 @@ export function KBSidebar({
     onSelect,
     dimmed = false,
     className,
+    mobile = false,
 }: KBSidebarProps) {
     const [expanded, setExpanded] = useState<Set<string>>(
         new Set(folders.map((f) => f.path))
@@ -77,20 +80,24 @@ export function KBSidebar({
     return (
         <nav
             className={cn(
-                "glass-card flex h-full max-h-[calc(100vh-16rem)] w-72 shrink-0 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
+                "flex shrink-0 flex-col overflow-hidden transition-opacity duration-200",
+                !mobile &&
+                    "glass-card h-full max-h-[calc(100vh-16rem)] w-72 rounded-xl",
                 dimmed && "opacity-30",
                 className
             )}
         >
-            {/* Header */}
-            <div className="border-b border-foreground/10 p-4">
-                <span className="text-sm font-medium text-foreground/70">
-                    Knowledge
-                </span>
-            </div>
+            {/* Header - hidden on mobile (parent provides header) */}
+            {!mobile && (
+                <div className="border-b border-foreground/10 p-4">
+                    <span className="text-sm font-medium text-foreground/70">
+                        Knowledge
+                    </span>
+                </div>
+            )}
 
             {/* Tree */}
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className={cn("flex-1 overflow-y-auto", mobile ? "p-4" : "p-3")}>
                 {folders.length === 0 ? (
                     <p className="py-8 text-center text-sm text-foreground/40">
                         No knowledge yet
@@ -101,12 +108,22 @@ export function KBSidebar({
                         const isExpanded = expanded.has(folder.path);
 
                         return (
-                            <div key={folder.id} className="mb-1">
+                            <div key={folder.id} className={mobile ? "mb-2" : "mb-1"}>
                                 <button
                                     onClick={() => toggle(folder.path)}
-                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all hover:bg-foreground/5"
+                                    className={cn(
+                                        "flex w-full items-center gap-3 rounded-lg transition-all",
+                                        mobile
+                                            ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
+                                            : "px-3 py-2 text-sm hover:bg-foreground/5"
+                                    )}
                                 >
-                                    <FolderIcon className="h-4 w-4 text-foreground/50" />
+                                    <FolderIcon
+                                        className={cn(
+                                            "text-foreground/50",
+                                            mobile ? "h-5 w-5" : "h-4 w-4"
+                                        )}
+                                    />
                                     <span className="flex-1 text-left font-medium capitalize text-foreground/80">
                                         {FOLDER_DISPLAY_NAMES[folder.path] ??
                                             folder.name}
@@ -121,7 +138,12 @@ export function KBSidebar({
                                         animate={isExpanded ? "expanded" : "collapsed"}
                                         transition={transitions.quick}
                                     >
-                                        <ChevronRight className="h-4 w-4 text-foreground/30" />
+                                        <ChevronRight
+                                            className={cn(
+                                                "text-foreground/30",
+                                                mobile ? "h-5 w-5" : "h-4 w-4"
+                                            )}
+                                        />
                                     </motion.div>
                                 </button>
 
@@ -132,7 +154,10 @@ export function KBSidebar({
                                             animate={{ maxHeight: 1000, opacity: 1 }}
                                             exit={{ maxHeight: 0, opacity: 0 }}
                                             transition={transitions.standard}
-                                            className="ml-6 overflow-hidden border-l-2 border-foreground/10"
+                                            className={cn(
+                                                "overflow-hidden border-l-2 border-foreground/10",
+                                                mobile ? "ml-7" : "ml-6"
+                                            )}
                                         >
                                             {folder.documents.map((doc) => {
                                                 const DocIcon =
@@ -145,7 +170,7 @@ export function KBSidebar({
                                                             onSelect(doc.path)
                                                         }
                                                         data-tooltip-id={
-                                                            doc.description
+                                                            !mobile && doc.description
                                                                 ? "tip"
                                                                 : undefined
                                                         }
@@ -153,13 +178,22 @@ export function KBSidebar({
                                                             doc.description ?? undefined
                                                         }
                                                         className={cn(
-                                                            "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
+                                                            "flex w-full items-center gap-3 text-left transition-colors",
+                                                            mobile
+                                                                ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
+                                                                : "px-3 py-3 text-sm hover:bg-foreground/5",
                                                             selectedPath === doc.path
                                                                 ? "bg-primary/10 text-primary"
-                                                                : "text-foreground/60 hover:bg-foreground/5"
+                                                                : "text-foreground/60"
                                                         )}
                                                     >
-                                                        <DocIcon className="h-4 w-4" />
+                                                        <DocIcon
+                                                            className={
+                                                                mobile
+                                                                    ? "h-5 w-5"
+                                                                    : "h-4 w-4"
+                                                            }
+                                                        />
                                                         <span>{doc.name}</span>
                                                     </button>
                                                 );

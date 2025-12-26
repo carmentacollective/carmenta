@@ -173,7 +173,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                     <>
                         {/* Backdrop */}
                         <motion.div
-                            className="fixed inset-0 z-backdrop"
+                            className="fixed inset-0 z-backdrop bg-black/30"
                             onClick={() => setIsOpen(false)}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

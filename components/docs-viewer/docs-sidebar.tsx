@@ -35,6 +35,8 @@ export interface DocsSidebarProps {
     selectedPath: string | null;
     onSelect: (path: string) => void;
     className?: string;
+    /** Mobile full-screen mode - larger touch targets, no glass styling */
+    mobile?: boolean;
 }
 
 export function DocsSidebar({
@@ -42,6 +44,7 @@ export function DocsSidebar({
     selectedPath,
     onSelect,
     className,
+    mobile = false,
 }: DocsSidebarProps) {
     const [expanded, setExpanded] = useState<Set<string>>(
         new Set(sections.map((s) => s.id))
@@ -62,19 +65,23 @@ export function DocsSidebar({
     return (
         <nav
             className={cn(
-                "glass-card flex h-full max-h-[calc(100vh-16rem)] w-72 shrink-0 flex-col overflow-hidden rounded-xl",
+                "flex shrink-0 flex-col overflow-hidden",
+                !mobile &&
+                    "glass-card h-full max-h-[calc(100vh-16rem)] w-72 rounded-xl",
                 className
             )}
         >
-            {/* Header */}
-            <div className="border-b border-foreground/10 p-4">
-                <span className="text-sm font-medium text-foreground/70">
-                    Documentation
-                </span>
-            </div>
+            {/* Header - hidden on mobile (parent provides header) */}
+            {!mobile && (
+                <div className="border-b border-foreground/10 p-4">
+                    <span className="text-sm font-medium text-foreground/70">
+                        Documentation
+                    </span>
+                </div>
+            )}
 
             {/* Sections - scrollable */}
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className={cn("flex-1 overflow-y-auto", mobile ? "p-4" : "p-3")}>
                 {sections.length === 0 ? (
                     <p className="py-8 text-center text-sm text-foreground/40">
                         No documentation yet
@@ -85,12 +92,22 @@ export function DocsSidebar({
                         const isExpanded = expanded.has(section.id);
 
                         return (
-                            <div key={section.id} className="mb-1">
+                            <div key={section.id} className={mobile ? "mb-2" : "mb-1"}>
                                 <button
                                     onClick={() => toggle(section.id)}
-                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all hover:bg-foreground/5"
+                                    className={cn(
+                                        "flex w-full items-center gap-3 rounded-lg transition-all",
+                                        mobile
+                                            ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
+                                            : "px-3 py-2 text-sm hover:bg-foreground/5"
+                                    )}
                                 >
-                                    <SectionIcon className="h-4 w-4 text-foreground/50" />
+                                    <SectionIcon
+                                        className={cn(
+                                            "text-foreground/50",
+                                            mobile ? "h-5 w-5" : "h-4 w-4"
+                                        )}
+                                    />
                                     <span className="flex-1 text-left font-medium text-foreground/80">
                                         {section.name}
                                     </span>
@@ -103,7 +120,12 @@ export function DocsSidebar({
                                         animate={{ rotate: isExpanded ? 90 : 0 }}
                                         transition={{ duration: 0.15 }}
                                     >
-                                        <ChevronRight className="h-4 w-4 text-foreground/30" />
+                                        <ChevronRight
+                                            className={cn(
+                                                "text-foreground/30",
+                                                mobile ? "h-5 w-5" : "h-4 w-4"
+                                            )}
+                                        />
                                     </motion.div>
                                 </button>
 
@@ -114,21 +136,38 @@ export function DocsSidebar({
                                             animate={{ height: "auto", opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
                                             transition={{ duration: 0.2 }}
-                                            className="ml-6 overflow-hidden border-l-2 border-foreground/10"
+                                            className={cn(
+                                                "overflow-hidden border-l-2 border-foreground/10",
+                                                mobile ? "ml-7" : "ml-6"
+                                            )}
                                         >
                                             {section.documents.map((doc) => (
                                                 <button
                                                     key={doc.id}
                                                     onClick={() => onSelect(doc.path)}
-                                                    title={doc.description ?? undefined}
+                                                    title={
+                                                        !mobile
+                                                            ? (doc.description ??
+                                                              undefined)
+                                                            : undefined
+                                                    }
                                                     className={cn(
-                                                        "flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
+                                                        "flex w-full items-center gap-3 text-left transition-colors",
+                                                        mobile
+                                                            ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
+                                                            : "px-3 py-3 text-sm hover:bg-foreground/5",
                                                         selectedPath === doc.path
                                                             ? "bg-primary/10 text-primary"
-                                                            : "text-foreground/60 hover:bg-foreground/5"
+                                                            : "text-foreground/60"
                                                     )}
                                                 >
-                                                    <FileText className="h-4 w-4" />
+                                                    <FileText
+                                                        className={
+                                                            mobile
+                                                                ? "h-5 w-5"
+                                                                : "h-4 w-4"
+                                                        }
+                                                    />
                                                     <span>{doc.name}</span>
                                                 </button>
                                             ))}
