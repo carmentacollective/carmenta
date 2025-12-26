@@ -39,20 +39,20 @@ const STARS = Array.from({ length: 30 }, () => ({
 const BLOB_COLORS: Record<CssThemeVariant, { light: string[]; dark: string[] }> = {
     carmenta: {
         light: [
-            "rgba(255, 180, 210, 0.5)",
-            "rgba(230, 200, 255, 0.5)",
-            "rgba(200, 220, 255, 0.5)",
-            "rgba(180, 240, 240, 0.5)",
-            "rgba(255, 220, 230, 0.5)",
-            "rgba(200, 255, 220, 0.5)",
+            "rgba(255, 200, 175, 0.5)", // Peach (was pink)
+            "rgba(200, 180, 255, 0.5)", // Cool violet (was warm lavender)
+            "rgba(200, 220, 255, 0.5)", // Periwinkle
+            "rgba(180, 240, 240, 0.5)", // Cyan
+            "rgba(255, 230, 200, 0.5)", // Champagne (was blush)
+            "rgba(200, 255, 220, 0.5)", // Mint
         ],
         dark: [
-            "rgba(150, 100, 180, 0.4)",
-            "rgba(180, 110, 200, 0.4)",
-            "rgba(140, 120, 200, 0.4)",
-            "rgba(120, 130, 210, 0.4)",
-            "rgba(160, 100, 220, 0.4)",
-            "rgba(130, 110, 190, 0.4)",
+            "rgba(180, 130, 100, 0.4)", // Warm amber (was pink-purple)
+            "rgba(160, 140, 220, 0.4)", // Cool violet
+            "rgba(140, 120, 200, 0.4)", // Royal purple
+            "rgba(120, 130, 210, 0.4)", // Twilight indigo
+            "rgba(200, 170, 130, 0.4)", // Golden (was magenta)
+            "rgba(130, 110, 190, 0.4)", // Deep lavender
         ],
     },
     "warm-earth": {
@@ -168,12 +168,12 @@ const WARM_PRESENCE: Record<
 > = {
     carmenta: {
         light: {
-            inner: "rgba(255, 180, 210, 0.4)",
-            outer: "rgba(230, 200, 255, 0.25)",
+            inner: "rgba(255, 205, 170, 0.4)", // Warm amber (was pink)
+            outer: "rgba(200, 180, 255, 0.25)", // Cool violet (was lavender)
         },
         dark: {
-            inner: "rgba(180, 110, 200, 0.25)",
-            outer: "rgba(140, 120, 200, 0.12)",
+            inner: "rgba(200, 160, 120, 0.25)", // Golden warmth
+            outer: "rgba(140, 120, 200, 0.12)", // Cool violet
         },
     },
     "warm-earth": {

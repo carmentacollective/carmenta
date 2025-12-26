@@ -16,6 +16,14 @@ function isBirthday(firstName: string): boolean {
     return today.getMonth() === config.month && today.getDate() === config.day;
 }
 
+/** Get time-of-day greeting */
+function getTimeGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+}
+
 interface GreetingProps {
     className?: string;
     subtitleClassName?: string;
@@ -23,17 +31,14 @@ interface GreetingProps {
 }
 
 /**
- * Greeting that adapts to authentication state and special occasions.
+ * Elegant greeting with time-awareness and refined typography.
+ *
+ * Uses Cormorant Garamond italic for the name - warm, intimate, luxurious.
+ * Time-of-day greeting creates presence: "Good evening, Nick"
  *
  * Birthday: "Happy Birthday, Nick! 🎂" + celebratory subtitle
- * Logged in: "Hey, Nick" + "What are we creating together?"
- * Logged out: "Hey" + landing-appropriate subtitle
- *
- * Features theme-adaptive gradient text that adjusts colors based on
- * light/dark mode and theme variant via CSS custom properties.
- *
- * Waits for auth state to load before rendering, so the greeting animates in
- * with the complete content—no awkward "Hey" → "Hey, Nick" flash.
+ * Logged in: "Good [time], Nick" + "What are we creating together?"
+ * Logged out: "Good [time]" + landing-appropriate subtitle
  */
 export function Greeting({ className, subtitleClassName, subtitle }: GreetingProps) {
     // Safely get user context - may be null during SSR
@@ -52,6 +57,7 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
     const isLoggedIn = isLoaded && !!user;
     const firstName = user?.firstName;
     const hasBirthday = firstName ? isBirthday(firstName) : false;
+    const timeGreeting = getTimeGreeting();
 
     // Adapt subtitle based on auth state and special occasions
     const defaultSubtitle = hasBirthday
@@ -62,23 +68,39 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
 
     const displaySubtitle = subtitle ?? defaultSubtitle;
 
-    // Build the complete greeting text
-    const greetingText = hasBirthday
-        ? `Happy Birthday, ${firstName}! 🎂`
-        : firstName
-          ? `Hey, ${firstName}`
-          : "Hey";
-
     if (!isLoaded) return null;
 
-    return (
-        <div className="greeting-container">
-            <h1 className={cn("greeting-gradient", className)}>{greetingText}</h1>
-            {displaySubtitle && (
+    // Birthday gets special treatment
+    if (hasBirthday) {
+        return (
+            <div className="greeting-container animate-greeting-enter">
+                <h1 className={cn("greeting-name-only", className)}>
+                    {firstName}
+                    <span className="greeting-emoji">🎂</span>
+                </h1>
+            </div>
+        );
+    }
+
+    // Logged in: Hi, Name with wave + subtitle
+    if (firstName) {
+        return (
+            <div className="greeting-container animate-greeting-enter">
+                <h1 className={cn("greeting-name-only", className)}>
+                    Hi, {firstName}
+                    <span className="greeting-wave">👋</span>
+                </h1>
                 <p className={cn("greeting-subtitle", subtitleClassName)}>
                     {displaySubtitle}
                 </p>
-            )}
+            </div>
+        );
+    }
+
+    // Logged out: Welcome message
+    return (
+        <div className="greeting-container animate-greeting-enter">
+            <h1 className={cn("greeting-name-only", className)}>Welcome</h1>
         </div>
     );
 }

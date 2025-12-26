@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
 
 import { ViewTransitions } from "next-view-transitions";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -39,6 +39,18 @@ const outfit = Outfit({
 const jetbrainsMono = JetBrains_Mono({
     subsets: ["latin"],
     variable: "--font-mono",
+    display: "swap",
+});
+
+/**
+ * Cormorant Garamond - Elegant serif for greetings and display text.
+ * The italic forms feel intimate and warm, perfect for "coming home."
+ */
+const cormorant = Cormorant_Garamond({
+    subsets: ["latin"],
+    variable: "--font-serif",
+    weight: ["300", "400", "500", "600"],
+    style: ["normal", "italic"],
     display: "swap",
 });
 
@@ -127,7 +139,7 @@ export default function RootLayout({
                     <ViewTransitions>
                         <html
                             lang="en"
-                            className={`${outfit.variable} ${jetbrainsMono.variable}`}
+                            className={`${outfit.variable} ${jetbrainsMono.variable} ${cormorant.variable}`}
                             suppressHydrationWarning
                         >
                             <head>

@@ -767,6 +767,7 @@
         @apply text-center;
     }
 
+    /* Legacy class for backwards compatibility */
     .greeting-gradient {
         @apply text-[44px] font-semibold leading-tight tracking-tight md:text-5xl;
         letter-spacing: -1.5px;
@@ -779,17 +780,126 @@
         background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        /* Subtle text shadow for depth - uses the gradient start color */
         filter: drop-shadow(
             0 2px 8px
                 color-mix(in srgb, var(--greeting-gradient-start) 25%, transparent)
         );
     }
 
+    /*
+     * New elegant greeting typography
+     * Uses serif for warmth, gradient for theme consistency
+     */
+    .greeting-display {
+        @apply text-[2.75rem] font-light leading-[1.1] md:text-[3.5rem];
+        font-family: var(--font-outfit), system-ui, sans-serif;
+        letter-spacing: -0.03em;
+        color: var(--greeting-gradient-mid);
+        filter: drop-shadow(
+            0 1px 2px
+                color-mix(in srgb, var(--greeting-gradient-start) 15%, transparent)
+        );
+    }
+
+    /* The name gets special serif italic treatment */
+    .greeting-name {
+        font-family: var(--font-serif), Georgia, serif;
+        font-style: italic;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        background: linear-gradient(
+            135deg,
+            var(--greeting-gradient-start) 0%,
+            var(--greeting-gradient-mid) 50%,
+            var(--greeting-gradient-end) 100%
+        );
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .greeting-emoji {
+        @apply ml-3 inline-block;
+        -webkit-text-fill-color: initial;
+    }
+
+    /* Name-only greeting: clean, confident */
+    .greeting-name-only {
+        @apply text-[2.8rem] font-normal leading-none md:text-[3.6rem];
+        letter-spacing: -0.03em;
+        background: linear-gradient(
+            135deg,
+            var(--greeting-gradient-start) 0%,
+            var(--greeting-gradient-mid) 50%,
+            var(--greeting-gradient-end) 100%
+        );
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(
+            0 2px 12px color-mix(in srgb, var(--greeting-gradient-mid) 20%, transparent)
+        );
+    }
+
+    .greeting-wave {
+        @apply ml-3 inline-block;
+        -webkit-text-fill-color: initial;
+        animation: wave 1s ease-in-out forwards;
+        transform-origin: 70% 70%;
+    }
+
+    @keyframes wave {
+        0%,
+        100% {
+            transform: rotate(0deg);
+        }
+        10% {
+            transform: rotate(14deg);
+        }
+        20% {
+            transform: rotate(-8deg);
+        }
+        30% {
+            transform: rotate(14deg);
+        }
+        40% {
+            transform: rotate(-4deg);
+        }
+        50% {
+            transform: rotate(10deg);
+        }
+        60%,
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
     .greeting-subtitle {
-        @apply mt-3 text-lg font-light md:text-xl;
+        @apply mt-4 text-lg font-light tracking-wide md:text-xl;
         color: var(--greeting-subtitle-color);
-        letter-spacing: -0.3px;
+        letter-spacing: 0.02em;
+        opacity: 0;
+        animation: greeting-fade-up 0.6s ease-out forwards;
+    }
+
+    /* Entrance animation */
+    @keyframes greeting-fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-greeting-enter {
+        animation: greeting-fade-up 0.5s ease-out forwards;
+    }
+
+    .animate-greeting-enter .greeting-subtitle {
+        animation-delay: 150ms;
     }
 }
 
