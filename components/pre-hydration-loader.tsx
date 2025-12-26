@@ -44,6 +44,10 @@ export function PreHydrationLoader() {
   @keyframes preLoaderSpin {
     to { transform: rotate(360deg); }
   }
+  @keyframes preLoaderFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
   #pre-hydration-loader {
     position: fixed;
     inset: 0;
@@ -52,6 +56,8 @@ export function PreHydrationLoader() {
     align-items: center;
     justify-content: center;
     background: hsl(320 20% 97%);
+    opacity: 0;
+    animation: preLoaderFadeIn 0.4s ease-out 0.3s forwards;
   }
   @media (prefers-color-scheme: dark) {
     #pre-hydration-loader {
@@ -65,7 +71,7 @@ export function PreHydrationLoader() {
     }
   }
 </style>
-<div style="position: relative; width: min(50vh, 50vw); height: min(50vh, 50vw);">
+<div style="position: relative; width: min(50vh, 70vw); height: min(50vh, 70vw);">
   <!-- Orbiting dot (4.4s = 2 orbits per 8.8s breath) -->
   <div style="position: absolute; inset: -4%; animation: preLoaderSpin 4.4s linear infinite;">
     <div class="orbit-dot" style="
