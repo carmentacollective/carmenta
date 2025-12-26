@@ -78,11 +78,12 @@ function MemeContent({
 
     return (
         <Card className="max-w-md overflow-hidden">
-            <div className="relative aspect-square">
+            <div className="relative aspect-auto">
                 <Image
                     src={url}
                     alt={`Meme: ${[topText, bottomText].filter(Boolean).join(" / ")}`}
-                    fill
+                    width={500}
+                    height={500}
                     className="object-contain"
                     sizes="(max-width: 768px) 100vw, 448px"
                 />

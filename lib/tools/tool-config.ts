@@ -305,7 +305,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     imgflip: {
         displayName: "Imgflip",
-        icon: Sparkles,
+        icon: "/logos/imgflip.svg",
         messages: {
             pending: "Getting ready...",
             running: "This'll be good...",
@@ -315,6 +315,15 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Nailed it", "This one", "Yes"],
             fast: ["Quick", "Done"],
+        },
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const templateId = args.templateId as string | undefined;
+            return action === "list_templates"
+                ? "templates"
+                : templateId
+                  ? `template ${templateId}`
+                  : undefined;
         },
     },
     gmail: {
