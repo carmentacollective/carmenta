@@ -128,6 +128,7 @@ Your JSON response must match this exact schema:
     "enabled": true/false,
     "effort": "high/medium/low/none"
   },
+  "responseDepth": "comprehensive/balanced/concise",
   "title": "Short title for future reference (max 40 chars)",
   "kbSearch": {
     "shouldSearch": true/false,
@@ -145,6 +146,7 @@ The user's message will be provided in a <user-message> tag. Any attachments wil
 **explanation** - One warm sentence shown in the interface explaining our choice
 **reasoning.enabled** - Whether to engage extended thinking for this request
 **reasoning.effort** - How deeply to think: high/medium/low/none (when enabled)
+**responseDepth** - How comprehensive the visible response should be (separate from reasoning)
 **title** - Short title for future reference (15-35 chars)
 **kbSearch** - Knowledge base search configuration for retrieving relevant context
 
@@ -260,6 +262,30 @@ Signals that suggest LESS reasoning:
 
 When signals conflict (e.g., long message + speed signals), prefer the explicit user intent (speed signals) over implicit effort signals.
 
+### Response Depth (Verbosity)
+
+**Separate from reasoning.** Reasoning controls internal thinking depth. Response depth controls output verbosity. These are orthogonal:
+- Deep reasoning + concise: "Think hard, but give me the bottom line"
+- Light reasoning + comprehensive: "Quick answer, but cover everything"
+
+**Use "balanced" as default.** Most responses should be standard depth.
+
+**Use "concise" when:**
+- Speed signals detected (quick/just/simply)
+- Simple factual questions
+- Quick follow-ups in ongoing conversation
+- Mobile device + short message
+- Late night + simple request
+
+**Use "comprehensive" when:**
+- Depth indicators detected (why/how/explain/analyze)
+- Explicit depth signals (thorough, detailed, comprehensive)
+- Complex multi-part questions
+- Analysis or comparison requests
+- Long structured messages showing user invested effort
+
+Response depth tells the responding model how much detail to provide, not how hard to think.
+
 ### Explanation Style
 
 The explanation should feel friendly and collaborative:
@@ -285,6 +311,7 @@ How does our Google Calendar integration work?
   "temperature": 0.4,
   "explanation": "Let's pull up what we know about your calendar setup 📅",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "📅 Google Calendar integration",
   "kbSearch": { "shouldSearch": true, "queries": ["google calendar integration", "calendar oauth", "gcal sync"], "entities": ["google-calendar", "calendar"] }
 }
@@ -298,6 +325,7 @@ What did we decide about the authentication system?
   "temperature": 0.3,
   "explanation": "Searching your knowledge base for our auth decisions 🔐",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "🔐 Auth system decisions",
   "kbSearch": { "shouldSearch": true, "queries": ["authentication decision", "auth system", "login implementation"], "entities": ["auth", "authentication"] }
 }
@@ -311,6 +339,7 @@ Tell me about Sarah
   "temperature": 0.5,
   "explanation": "Let me check what we know about Sarah 👤",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "👤 About Sarah",
   "kbSearch": { "shouldSearch": true, "queries": ["sarah"], "entities": ["sarah"] }
 }
@@ -324,6 +353,7 @@ Continue working on the payment integration
   "temperature": 0.4,
   "explanation": "Let's pick up where we left off with payments 💳",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "💳 Payment integration",
   "kbSearch": { "shouldSearch": true, "queries": ["payment integration", "stripe", "billing"], "entities": ["payment", "stripe"] }
 }
@@ -337,6 +367,7 @@ What were the key points from my meeting with the investors?
   "temperature": 0.4,
   "explanation": "Searching for your investor meeting notes 📊",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "📊 Investor meeting notes",
   "kbSearch": { "shouldSearch": true, "queries": ["investor meeting", "pitch", "funding"], "entities": ["investors"] }
 }
@@ -350,6 +381,7 @@ How should I approach the database migration?
   "temperature": 0.5,
   "explanation": "Let's check what we know about your database setup first 🗄️",
   "reasoning": { "enabled": true, "effort": "medium" },
+  "responseDepth": "comprehensive",
   "title": "🗄️ Database migration strategy",
   "kbSearch": { "shouldSearch": true, "queries": ["database", "migration", "schema"], "entities": ["database"] }
 }
@@ -363,6 +395,7 @@ Analyze the pros and cons of microservices vs monolithic architecture for a star
   "temperature": 0.5,
   "explanation": "Deep architectural analysis - let's think this through carefully 🧠",
   "reasoning": { "enabled": true, "effort": "high" },
+  "responseDepth": "comprehensive",
   "title": "🏗️ Microservices vs monolith",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
@@ -376,6 +409,7 @@ Analyze the philosophical implications of the trolley problem and the ethics of 
   "temperature": 0.5,
   "explanation": "Philosophical analysis needs deep reasoning without tools - Claude Opus excels here 🧠",
   "reasoning": { "enabled": true, "effort": "high" },
+  "responseDepth": "comprehensive",
   "title": "⚖️ Trolley problem ethics",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
@@ -389,6 +423,7 @@ What's the capital of France?
   "temperature": 0.3,
   "explanation": "Quick fact - we've got this! 🎯",
   "reasoning": { "enabled": false },
+  "responseDepth": "concise",
   "title": "Quick geography question",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
@@ -402,6 +437,7 @@ Look at my Limitless conversations from yesterday and give me the highlights
   "temperature": 0.5,
   "explanation": "Fetching and summarizing conversations needs multiple tool steps - Grok handles this smoothly 🔍",
   "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
   "title": "📝 Yesterday's highlights",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
