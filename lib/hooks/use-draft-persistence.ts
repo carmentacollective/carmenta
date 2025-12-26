@@ -20,10 +20,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/client-logger";
 
 const DRAFT_KEY_PREFIX = "carmenta:draft:";
+const NEW_CONNECTION_KEY = "new";
 const DEBOUNCE_MS = 500;
 
 export interface UseDraftPersistenceOptions {
-    /** Connection ID to scope the draft to */
+    /** Connection ID to scope the draft to (uses "new" fallback for new connections) */
     connectionId: string | null;
     /** Current input value from parent state */
     input: string;
@@ -50,13 +51,12 @@ function getDraftKey(connectionId: string): string {
  * Try to get saved draft from localStorage
  * Returns null if not available or empty
  */
-function getSavedDraft(connectionId: string | null): string | null {
-    if (!connectionId) return null;
+function getSavedDraft(key: string): string | null {
     if (typeof window === "undefined") return null;
 
     try {
-        const key = getDraftKey(connectionId);
-        const savedDraft = localStorage.getItem(key);
+        const storageKey = getDraftKey(key);
+        const savedDraft = localStorage.getItem(storageKey);
         if (savedDraft && savedDraft.trim().length > 0) {
             return savedDraft;
         }
@@ -71,6 +71,9 @@ export function useDraftPersistence({
     input,
     setInput,
 }: UseDraftPersistenceOptions): UseDraftPersistenceReturn {
+    // Use "new" as fallback key for new connections
+    const effectiveKey = connectionId ?? NEW_CONNECTION_KEY;
+
     // Track whether we've restored for this connection (to prevent double-restore)
     const restoredConnectionRef = useRef<string | null>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -81,10 +84,9 @@ export function useDraftPersistence({
     // Restore draft on mount or connection change
     useEffect(() => {
         // Skip if we've already restored for this connection
-        if (restoredConnectionRef.current === connectionId) return;
-        if (!connectionId) return;
+        if (restoredConnectionRef.current === effectiveKey) return;
 
-        const savedDraft = getSavedDraft(connectionId);
+        const savedDraft = getSavedDraft(effectiveKey);
 
         if (savedDraft) {
             setInput(savedDraft);
@@ -94,7 +96,7 @@ export function useDraftPersistence({
                 setShowRecoveryBanner(true);
             });
             logger.info(
-                { connectionId, length: savedDraft.length },
+                { key: effectiveKey, length: savedDraft.length },
                 "📝 Draft recovered"
             );
         } else {
@@ -105,12 +107,11 @@ export function useDraftPersistence({
         }
 
         // Mark this connection as restored
-        restoredConnectionRef.current = connectionId;
-    }, [connectionId, setInput]);
+        restoredConnectionRef.current = effectiveKey;
+    }, [effectiveKey, setInput]);
 
     // Debounced save to localStorage
     useEffect(() => {
-        if (!connectionId) return;
         if (typeof window === "undefined") return;
 
         // Clear any pending save
@@ -121,7 +122,7 @@ export function useDraftPersistence({
         // Schedule save
         debounceRef.current = setTimeout(() => {
             try {
-                const key = getDraftKey(connectionId);
+                const key = getDraftKey(effectiveKey);
 
                 if (input.trim().length > 0) {
                     localStorage.setItem(key, input);
@@ -140,7 +141,7 @@ export function useDraftPersistence({
                 clearTimeout(debounceRef.current);
             }
         };
-    }, [connectionId, input]);
+    }, [effectiveKey, input]);
 
     // Dismiss recovery notification (keep the text)
     const dismissRecovery = useCallback(() => {
@@ -149,23 +150,19 @@ export function useDraftPersistence({
 
     // Clear draft and dismiss (start fresh)
     const clearDraft = useCallback(() => {
-        if (!connectionId) return;
-
         setInput("");
         setShowRecoveryBanner(false);
 
         try {
-            const key = getDraftKey(connectionId);
+            const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
         } catch {
             // Fail silently
         }
-    }, [connectionId, setInput]);
+    }, [effectiveKey, setInput]);
 
     // Clear draft when message is sent
     const onMessageSent = useCallback(() => {
-        if (!connectionId) return;
-
         // Clear any pending save
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
@@ -173,7 +170,7 @@ export function useDraftPersistence({
         }
 
         try {
-            const key = getDraftKey(connectionId);
+            const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
         } catch {
             // Fail silently
@@ -181,7 +178,7 @@ export function useDraftPersistence({
 
         // Also dismiss recovery if it was showing
         setShowRecoveryBanner(false);
-    }, [connectionId]);
+    }, [effectiveKey]);
 
     return {
         hasRecoveredDraft: showRecoveryBanner,
