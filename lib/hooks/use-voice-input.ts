@@ -4,19 +4,20 @@
  * useVoiceInput Hook
  *
  * React hook for real-time voice input with streaming transcription.
- * Manages microphone access, provider lifecycle, and transcript accumulation.
+ * Uses the official @deepgram/sdk for browser-based speech-to-text.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
+import type { LiveClient, LiveTranscriptionEvent } from "@deepgram/sdk";
 
 import { logger } from "@/lib/client-logger";
-import {
-    createDeepgramProvider,
-    type TranscriptResult,
-    type VoiceConnectionState,
-    type VoiceProvider,
-    type VoiceProviderConfig,
-} from "@/lib/voice";
+
+export type VoiceConnectionState =
+    | "disconnected"
+    | "connecting"
+    | "connected"
+    | "error";
 
 export interface UseVoiceInputOptions {
     /** Language code for transcription (default: 'en') */
@@ -80,108 +81,233 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     const [error, setError] = useState<Error | null>(null);
     const [isSupported] = useState(() => checkVoiceSupport());
 
-    // Use refs to avoid recreating provider on every render
-    const providerRef = useRef<VoiceProvider | null>(null);
+    // Refs to manage connection and recording state
+    const connectionRef = useRef<LiveClient | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
     const finalTranscriptRef = useRef("");
     const interimTranscriptRef = useRef("");
 
-    // Memoized callbacks for provider
-    const handleTranscript = useCallback(
-        (result: TranscriptResult) => {
-            if (result.isFinal) {
-                // Append final result to accumulated transcript
-                finalTranscriptRef.current +=
-                    (finalTranscriptRef.current ? " " : "") + result.text;
-                interimTranscriptRef.current = "";
-            } else {
-                // Update interim result
-                interimTranscriptRef.current = result.text;
-            }
+    // Store callbacks in refs to avoid stale closures
+    const onTranscriptCompleteRef = useRef(onTranscriptComplete);
+    const onTranscriptUpdateRef = useRef(onTranscriptUpdate);
+    const onErrorRef = useRef(onError);
 
-            // Combine final + interim for display
-            const combined =
-                finalTranscriptRef.current +
-                (interimTranscriptRef.current
-                    ? " " + interimTranscriptRef.current
-                    : "");
+    useEffect(() => {
+        onTranscriptCompleteRef.current = onTranscriptComplete;
+        onTranscriptUpdateRef.current = onTranscriptUpdate;
+        onErrorRef.current = onError;
+    }, [onTranscriptComplete, onTranscriptUpdate, onError]);
 
-            setTranscript(combined);
-            onTranscriptUpdate?.(combined, result.isFinal);
-
-            if (result.isFinal) {
-                logger.debug(
-                    { text: result.text, confidence: result.confidence },
-                    "Final transcript received"
-                );
-            }
-        },
-        [onTranscriptUpdate]
-    );
-
-    const handleConnectionChange = useCallback((state: VoiceConnectionState) => {
-        setConnectionState(state);
-        logger.debug({ state }, "Voice connection state changed");
+    const handleError = useCallback((err: Error) => {
+        setError(err);
+        setConnectionState("error");
+        onErrorRef.current?.(err);
+        logger.error({ error: err }, "Voice input error");
     }, []);
 
-    const handleError = useCallback(
-        (err: Error) => {
-            setError(err);
-            onError?.(err);
-        },
-        [onError]
-    );
+    const stopListening = useCallback(() => {
+        // Stop media recorder
+        if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+        mediaRecorderRef.current = null;
 
-    // Create provider instance
-    const getOrCreateProvider = useCallback(() => {
-        if (!providerRef.current) {
-            const config: VoiceProviderConfig = {
-                language,
-                interimResults: true,
-                punctuate: true,
-                smartFormat: true,
-            };
-
-            providerRef.current = createDeepgramProvider(config, {
-                onTranscript: handleTranscript,
-                onConnectionChange: handleConnectionChange,
-                onError: handleError,
-                onSpeechStart: () => logger.debug({}, "Speech started"),
-                onSpeechEnd: () => logger.debug({}, "Speech ended"),
-            });
+        // Stop all audio tracks
+        if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+            mediaStreamRef.current = null;
         }
 
-        return providerRef.current;
-    }, [language, handleTranscript, handleConnectionChange, handleError]);
+        // Close Deepgram connection
+        if (connectionRef.current) {
+            connectionRef.current.finish();
+            connectionRef.current = null;
+        }
+
+        // Deliver final transcript before clearing
+        if (finalTranscriptRef.current) {
+            onTranscriptCompleteRef.current?.(finalTranscriptRef.current);
+        }
+
+        // Clear transcript refs for next session
+        finalTranscriptRef.current = "";
+        interimTranscriptRef.current = "";
+
+        setConnectionState("disconnected");
+        logger.debug({}, "Voice input stopped");
+    }, []);
 
     const startListening = useCallback(async () => {
         if (!isSupported) {
-            const err = new Error("Voice input is not supported in this browser");
-            handleError(err);
+            handleError(new Error("Voice input is not supported in this browser"));
             return;
         }
 
+        // Get API key from environment
+        const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
+        if (!apiKey) {
+            handleError(
+                new Error(
+                    "Deepgram API key not configured. Set NEXT_PUBLIC_DEEPGRAM_API_KEY."
+                )
+            );
+            return;
+        }
+
+        // Check microphone permission state first
+        try {
+            const permissionStatus = await navigator.permissions.query({
+                name: "microphone" as PermissionName,
+            });
+
+            if (permissionStatus.state === "denied") {
+                handleError(
+                    new Error(
+                        "Microphone access is blocked. Click the lock icon in your browser's address bar, find 'Microphone', and change it to 'Allow'. Then refresh the page."
+                    )
+                );
+                return;
+            }
+        } catch {
+            // Permissions API not supported, continue with getUserMedia
+            logger.debug(
+                {},
+                "Permissions API not available, trying getUserMedia directly"
+            );
+        }
+
         setError(null);
+        setConnectionState("connecting");
 
         try {
-            const provider = getOrCreateProvider();
-            await provider.connect();
+            // Request microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 16000,
+                },
+            });
+            mediaStreamRef.current = stream;
+
+            // Create Deepgram client and connection
+            const deepgram = createClient(apiKey);
+            const connection = deepgram.listen.live({
+                model: "nova-3",
+                language,
+                smart_format: true,
+                punctuate: true,
+                interim_results: true,
+                utterance_end_ms: 1000,
+                vad_events: true,
+            });
+
+            connectionRef.current = connection;
+
+            // Handle connection open
+            connection.on(LiveTranscriptionEvents.Open, () => {
+                logger.debug({}, "Deepgram connection opened");
+                setConnectionState("connected");
+
+                // Start recording and sending audio
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+                        ? "audio/webm;codecs=opus"
+                        : "audio/webm",
+                });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (
+                        event.data.size > 0 &&
+                        connectionRef.current?.getReadyState() === 1
+                    ) {
+                        connectionRef.current.send(event.data);
+                    }
+                };
+
+                mediaRecorder.start(250); // Send audio every 250ms
+                mediaRecorderRef.current = mediaRecorder;
+
+                logger.debug({}, "MediaRecorder started");
+            });
+
+            // Handle transcription results
+            connection.on(
+                LiveTranscriptionEvents.Transcript,
+                (data: LiveTranscriptionEvent) => {
+                    const text = data.channel?.alternatives?.[0]?.transcript || "";
+                    if (!text) return;
+
+                    const isFinal = data.is_final ?? false;
+
+                    if (isFinal) {
+                        // Append to final transcript
+                        finalTranscriptRef.current +=
+                            (finalTranscriptRef.current ? " " : "") + text;
+                        interimTranscriptRef.current = "";
+
+                        logger.debug(
+                            {
+                                text,
+                                confidence: data.channel?.alternatives?.[0]?.confidence,
+                            },
+                            "Final transcript"
+                        );
+                    } else {
+                        // Update interim transcript
+                        interimTranscriptRef.current = text;
+                    }
+
+                    // Combine for display
+                    const combined =
+                        finalTranscriptRef.current +
+                        (interimTranscriptRef.current
+                            ? " " + interimTranscriptRef.current
+                            : "");
+
+                    setTranscript(combined);
+                    onTranscriptUpdateRef.current?.(combined, isFinal);
+                }
+            );
+
+            // Handle connection close
+            connection.on(LiveTranscriptionEvents.Close, () => {
+                logger.debug({}, "Deepgram connection closed");
+                if (connectionState !== "disconnected") {
+                    stopListening();
+                }
+            });
+
+            // Handle errors
+            connection.on(LiveTranscriptionEvents.Error, (err) => {
+                handleError(err instanceof Error ? err : new Error(String(err)));
+                stopListening();
+            });
         } catch (err) {
-            const error = err instanceof Error ? err : new Error(String(err));
-            handleError(error);
-        }
-    }, [isSupported, getOrCreateProvider, handleError]);
+            const error =
+                err instanceof Error ? err : new Error("Failed to start voice input");
 
-    const stopListening = useCallback(() => {
-        const provider = providerRef.current;
-        if (provider) {
-            provider.disconnect();
-
-            // Deliver final transcript
-            if (finalTranscriptRef.current) {
-                onTranscriptComplete?.(finalTranscriptRef.current);
+            // Provide helpful error messages
+            if (error.name === "NotAllowedError") {
+                handleError(
+                    new Error(
+                        "Microphone access denied. Please allow microphone access in your browser settings."
+                    )
+                );
+            } else if (error.name === "NotFoundError") {
+                handleError(
+                    new Error(
+                        "No microphone found. Please connect a microphone and try again."
+                    )
+                );
+            } else {
+                handleError(error);
             }
+
+            stopListening();
         }
-    }, [onTranscriptComplete]);
+    }, [isSupported, language, handleError, stopListening, connectionState]);
 
     const toggleListening = useCallback(async () => {
         if (connectionState === "connected") {
@@ -200,19 +326,13 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            providerRef.current?.disconnect();
-            providerRef.current = null;
+            if (mediaRecorderRef.current?.state === "recording") {
+                mediaRecorderRef.current.stop();
+            }
+            mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+            connectionRef.current?.finish();
         };
     }, []);
-
-    // Recreate provider when language changes
-    useEffect(() => {
-        // If provider exists and language changed, disconnect old provider
-        if (providerRef.current) {
-            providerRef.current.disconnect();
-            providerRef.current = null;
-        }
-    }, [language]);
 
     return {
         startListening,
