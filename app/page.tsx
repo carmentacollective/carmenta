@@ -195,7 +195,7 @@ export default function HomePage() {
                 {/* Main content - centered */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
                     {/* Logo - breathing, no hover interaction */}
-                    <div ref={heroLogoRef} className="mb-8 sm:mb-10">
+                    <div ref={heroLogoRef} className="mb-6 sm:mb-10">
                         <div className="relative">
                             {/* Breathing glow */}
                             <div
@@ -222,7 +222,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Primary tagline - always visible */}
-                    <h1 className="mb-12 text-4xl font-light text-foreground/90 sm:mb-14 sm:text-5xl lg:text-6xl">
+                    <h1 className="mb-8 text-3xl font-light text-foreground/90 sm:mb-14 sm:text-5xl lg:text-6xl">
                         Create at the speed of thought.
                     </h1>
 
@@ -232,7 +232,7 @@ export default function HomePage() {
                         onClick={() => setPaused((p) => !p)}
                         className={cn(
                             "w-full max-w-2xl cursor-pointer",
-                            "min-h-[16rem] sm:min-h-0",
+                            "min-h-[12rem] sm:min-h-0",
                             contentVisible
                                 ? "breathe-enter translate-y-0 opacity-100"
                                 : "breathe-exit -translate-y-2 opacity-0"
@@ -251,7 +251,7 @@ export default function HomePage() {
                         {/* Description - LEFT ALIGNED, min-height prevents layout shift */}
                         <p
                             className={cn(
-                                "min-h-[7rem] max-w-xl text-lg leading-relaxed text-foreground/60 sm:min-h-[6rem] sm:text-xl",
+                                "min-h-[5rem] max-w-xl text-lg leading-normal text-foreground/60 sm:min-h-[6rem] sm:text-xl",
                                 phase === "description" ||
                                     phase === "hold" ||
                                     phase === "exit"
@@ -283,7 +283,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Connect CTA */}
-                    <div className="mt-12 flex flex-col items-center gap-3 sm:mt-16">
+                    <div className="mt-8 flex flex-col items-center gap-3 sm:mt-16">
                         <Link
                             href="/connection/new"
                             prefetch={false}
