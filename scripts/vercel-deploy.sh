@@ -14,6 +14,10 @@ echo "   pnpm version (packages): $(pnpm --version)"
 echo "📚 Syncing system documentation..."
 pnpm run docs:sync || { echo "❌ Docs sync failed"; exit 1; }
 
+# Run database migrations (Supabase Postgres)
+echo "🗄️  Running database migrations..."
+pnpm run db:migrate
+
 # Build the application
 echo "🏗️  Building application..."
 pnpm run build
