@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plug, Sparkles, CheckCircle2, XCircle, X } from "lucide-react";
+import { Plug, Sparkles, CheckCircle2, XCircle, X, RotateCcw } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -21,6 +21,7 @@ import type { ConnectedService } from "@/lib/actions/integration-utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
+import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 
 /**
  * Unified integration item for the list.
@@ -42,6 +43,16 @@ function IntegrationsContent() {
     const [connected, setConnected] = useState<ConnectedService[]>([]);
     const [available, setAvailable] = useState<ServiceDefinition[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // OAuth flow recovery - detects abandoned OAuth attempts
+    const {
+        abandonedService,
+        abandonedServiceName,
+        markOAuthStarted,
+        markOAuthComplete,
+        dismissRecovery,
+        retryOAuth,
+    } = useOAuthFlowRecovery();
 
     // Global status message (for OAuth callback results)
     const [globalMessage, setGlobalMessage] = useState<{
@@ -99,6 +110,19 @@ function IntegrationsContent() {
         const message = searchParams.get("message");
 
         if (success === "connected" && service) {
+            // OAuth completed successfully - clear tracking state
+            markOAuthComplete();
+            setConnectingServices((prev) => {
+                const next = new Set(prev);
+                next.delete(service);
+                return next;
+            });
+            setReconnectingServices((prev) => {
+                const next = new Set(prev);
+                next.delete(service);
+                return next;
+            });
+
             const serviceDefinition = getServiceById(service);
             const serviceName = serviceDefinition?.name ?? service;
             setGlobalMessage({
@@ -110,6 +134,21 @@ function IntegrationsContent() {
             // Reload services to show the new connection
             loadServices();
         } else if (error) {
+            // OAuth returned an error - clear tracking state
+            markOAuthComplete();
+            if (service) {
+                setConnectingServices((prev) => {
+                    const next = new Set(prev);
+                    next.delete(service);
+                    return next;
+                });
+                setReconnectingServices((prev) => {
+                    const next = new Set(prev);
+                    next.delete(service);
+                    return next;
+                });
+            }
+
             const errorMessages: Record<string, string> = {
                 oauth_failed:
                     message ?? "Authorization didn't work out. We've been alerted. 🤖",
@@ -130,7 +169,23 @@ function IntegrationsContent() {
             // Clear URL params without reload
             window.history.replaceState({}, "", "/integrations");
         }
-    }, [searchParams, loadServices]);
+    }, [searchParams, loadServices, markOAuthComplete]);
+
+    // Clear loading states when an abandoned OAuth flow is detected
+    useEffect(() => {
+        if (abandonedService) {
+            setConnectingServices((prev) => {
+                const next = new Set(prev);
+                next.delete(abandonedService);
+                return next;
+            });
+            setReconnectingServices((prev) => {
+                const next = new Set(prev);
+                next.delete(abandonedService);
+                return next;
+            });
+        }
+    }, [abandonedService]);
 
     // Build unified list: connected services first, then available services
     const unifiedList: IntegrationItem[] = [
@@ -162,6 +217,8 @@ function IntegrationsContent() {
             setModalOpen(true);
         } else if (service.authMethod === "oauth") {
             setConnectingServices((prev) => new Set(prev).add(service.id));
+            // Track OAuth attempt for recovery detection
+            markOAuthStarted(service.id);
             // OAuth flow - redirect to connect page
             window.location.href = `/connect/${service.id}`;
         }
@@ -285,6 +342,8 @@ function IntegrationsContent() {
             setModalOpen(true);
         } else if (item.service.authMethod === "oauth") {
             setReconnectingServices((prev) => new Set(prev).add(item.service.id));
+            // Track OAuth attempt for recovery detection
+            markOAuthStarted(item.service.id);
             // OAuth flow - redirect to connect page
             window.location.href = `/connect/${item.service.id}`;
         }
@@ -335,6 +394,33 @@ function IntegrationsContent() {
                     >
                         <X className="h-4 w-4" />
                     </button>
+                </div>
+            )}
+
+            {/* OAuth flow recovery banner - shown when user abandons an OAuth flow */}
+            {abandonedService && !globalMessage && (
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
+                    <div className="flex items-center gap-3">
+                        <RotateCcw className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm font-medium">
+                            Didn't finish connecting {abandonedServiceName}?
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={retryOAuth}
+                            className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-sm font-medium hover:bg-amber-500/30"
+                        >
+                            Try again
+                        </button>
+                        <button
+                            onClick={dismissRecovery}
+                            className="rounded-lg p-1 hover:bg-foreground/10"
+                            aria-label="Dismiss"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 
