@@ -14,8 +14,14 @@ import { MarkerProvider } from "@/components/feedback/marker-provider";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 import { Toaster } from "sonner";
 import { GlobalTooltip } from "@/components/ui/global-tooltip";
-import { PreHydrationLoader } from "@/components/pre-hydration-loader";
 import "./globals.css";
+
+/**
+ * Critical inline CSS that renders before any external CSS loads.
+ * Prevents flash of white by setting background color immediately.
+ * Must match the theme colors defined in viewport.themeColor.
+ */
+const criticalCss = `html{background:#F8F4F8}@media(prefers-color-scheme:dark){html{background:#1A0F20}}`;
 
 /**
  * Outfit - Modern, geometric with soft curves.
@@ -124,8 +130,12 @@ export default function RootLayout({
                             className={`${outfit.variable} ${jetbrainsMono.variable}`}
                             suppressHydrationWarning
                         >
+                            <head>
+                                <style
+                                    dangerouslySetInnerHTML={{ __html: criticalCss }}
+                                />
+                            </head>
                             <body className="min-h-screen bg-background font-sans antialiased">
-                                <PreHydrationLoader />
                                 <ThemeProvider>
                                     <MarkerProvider>
                                         <FloatingEmojiProvider>
