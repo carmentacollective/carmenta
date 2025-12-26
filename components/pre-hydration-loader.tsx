@@ -16,15 +16,24 @@ import { useEffect } from "react";
  */
 export function PreHydrationLoader() {
     useEffect(() => {
-        // React has hydrated - remove the pre-loader
+        // React has hydrated - remove the pre-loader immediately
         const preLoader = document.getElementById("pre-hydration-loader");
         if (preLoader) {
-            // Fade out gracefully
-            preLoader.style.opacity = "0";
-            preLoader.style.transition = "opacity 0.3s ease-out";
-            setTimeout(() => {
+            // Get current opacity and fade from there
+            const currentOpacity = getComputedStyle(preLoader).opacity;
+            // If still invisible (delay hasn't passed), just remove
+            if (parseFloat(currentOpacity) < 0.1) {
                 preLoader.remove();
-            }, 300);
+            } else {
+                // Visible - fade out gracefully
+                preLoader.style.animation = "none";
+                preLoader.style.opacity = currentOpacity;
+                // Force reflow
+                preLoader.offsetHeight;
+                preLoader.style.transition = "opacity 0.3s ease-out";
+                preLoader.style.opacity = "0";
+                setTimeout(() => preLoader.remove(), 300);
+            }
         }
     }, []);
 
@@ -57,7 +66,7 @@ export function PreHydrationLoader() {
     justify-content: center;
     background: hsl(320 20% 97%);
     opacity: 0;
-    animation: preLoaderFadeIn 0.4s ease-out 0.3s forwards;
+    animation: preLoaderFadeIn 1s ease-out 0.5s forwards;
   }
   @media (prefers-color-scheme: dark) {
     #pre-hydration-loader {
