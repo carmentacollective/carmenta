@@ -14,7 +14,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import { filterReasoningFromMessages } from "@/lib/ai/messages";
-import { getOpenRouterClient } from "@/lib/ai/openrouter";
+import { getGatewayClient, translateModelId, translateOptions } from "@/lib/ai/gateway";
 
 import {
     runConcierge,
@@ -322,7 +322,7 @@ export async function POST(req: Request) {
         // Use actual email if authenticated, fallback for development
         userEmail = user?.emailAddresses[0]?.emailAddress ?? "dev-user@local";
 
-        const openrouter = getOpenRouterClient();
+        const gateway = getGatewayClient();
 
         // Initialize Braintrust logger for production tracing (gracefully degrades if not configured)
         await initBraintrustLogger();
@@ -602,28 +602,27 @@ export async function POST(req: Request) {
                 );
             }
 
-            // Determine effort for OpenRouter - "none" means reasoning is disabled (shouldn't happen here)
+            // Determine effort - "none" means reasoning is disabled (shouldn't happen here)
             // but we handle it by defaulting to medium
             const effort: OpenRouterEffort =
                 concierge.reasoning.effort && concierge.reasoning.effort !== "none"
                     ? concierge.reasoning.effort
                     : "medium";
 
-            providerOptions = {
-                openrouter: {
-                    models: getFallbackChain(concierge.modelId),
-                    reasoning: concierge.reasoning.maxTokens
-                        ? { max_tokens: concierge.reasoning.maxTokens }
-                        : { effort },
+            // Use translateOptions to properly format reasoning for provider-specific APIs
+            providerOptions = translateOptions(concierge.modelId, {
+                fallbackModels: getFallbackChain(concierge.modelId),
+                reasoning: {
+                    enabled: true,
+                    maxTokens: concierge.reasoning.maxTokens,
+                    effort,
                 },
-            };
+            });
         } else {
             // Reasoning disabled, but still configure failover models
-            providerOptions = {
-                openrouter: {
-                    models: getFallbackChain(concierge.modelId),
-                },
-            };
+            providerOptions = translateOptions(concierge.modelId, {
+                fallbackModels: getFallbackChain(concierge.modelId),
+            });
         }
 
         // Strip reasoning parts before sending to API (Anthropic rejects modified thinking blocks)
@@ -666,7 +665,7 @@ export async function POST(req: Request) {
         };
 
         const result = await streamText({
-            model: openrouter.chat(concierge.modelId),
+            model: gateway(translateModelId(concierge.modelId)),
             // System messages are in the messages array with providerOptions for caching
             messages: [
                 ...systemMessages,

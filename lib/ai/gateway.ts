@@ -233,6 +233,7 @@ export const MODEL_ID_MAPPINGS: Record<string, string> = {
     // OpenRouter: "google/gemini-3-pro-preview"
     // Gateway: "google/gemini-3.0-pro-preview"
     "google/gemini-3-pro-preview": "google/gemini-3.0-pro-preview",
+    "google/gemini-3-flash-preview": "google/gemini-3.0-flash-preview",
 };
 
 /**

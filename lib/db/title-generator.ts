@@ -5,10 +5,10 @@
  * inspired by gitmoji conventions.
  */
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
 import { generateText } from "ai";
 
+import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -72,14 +72,12 @@ export async function generateTitle(firstMessage: string): Promise<string> {
     }
 
     try {
-        assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
+        assertEnv(env.AI_GATEWAY_API_KEY, "AI_GATEWAY_API_KEY");
 
-        const openrouter = createOpenRouter({
-            apiKey: env.OPENROUTER_API_KEY,
-        });
+        const gateway = getGatewayClient();
 
         const result = await generateText({
-            model: openrouter.chat(TITLE_GENERATOR_MODEL),
+            model: gateway(translateModelId(TITLE_GENERATOR_MODEL)),
             system: TITLE_SYSTEM_PROMPT,
             prompt: firstMessage.slice(0, 500), // Limit input to save tokens
             temperature: 0.3, // Low temperature for consistent titles

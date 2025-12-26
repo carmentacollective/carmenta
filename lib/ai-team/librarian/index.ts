@@ -9,9 +9,9 @@
  */
 
 import { ToolLoopAgent, stepCountIs } from "ai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { logger } from "@/lib/logger";
-import { assertEnv } from "@/lib/env";
+import { assertEnv, env } from "@/lib/env";
+import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { LIBRARIAN_FALLBACK_CHAIN } from "@/lib/model-config";
 import { librarianSystemPrompt } from "./prompt";
 import {
@@ -40,20 +40,15 @@ const MAX_STEPS = 10;
  * Create the Knowledge Librarian agent
  */
 export function createLibrarianAgent() {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    assertEnv(apiKey, "OPENROUTER_API_KEY");
+    assertEnv(env.AI_GATEWAY_API_KEY, "AI_GATEWAY_API_KEY");
 
-    const openrouter = createOpenRouter({
-        apiKey,
-    });
+    const gateway = getGatewayClient();
 
     // Use first model with fallback chain for automatic failover
     const primaryModel = LIBRARIAN_FALLBACK_CHAIN[0];
 
     const agent = new ToolLoopAgent({
-        model: openrouter(primaryModel, {
-            models: [...LIBRARIAN_FALLBACK_CHAIN],
-        }),
+        model: gateway(translateModelId(primaryModel)),
         instructions: librarianSystemPrompt,
         tools: {
             listKnowledge: listKnowledgeTool,
@@ -65,6 +60,11 @@ export function createLibrarianAgent() {
             notifyUser: notifyUserTool,
         },
         stopWhen: stepCountIs(MAX_STEPS),
+        providerOptions: {
+            gateway: {
+                models: LIBRARIAN_FALLBACK_CHAIN.map(translateModelId),
+            },
+        },
     });
 
     logger.info(

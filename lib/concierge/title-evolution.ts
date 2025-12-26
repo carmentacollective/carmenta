@@ -8,11 +8,11 @@
  * Uses Haiku 4.5 for fast inference (~100-200ms).
  */
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import * as Sentry from "@sentry/nextjs";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
+import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { assertEnv, env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -154,11 +154,9 @@ export async function evaluateTitleEvolution(
         { op: "concierge.title-evolution", name: "Title Evolution Evaluation" },
         async (span) => {
             try {
-                assertEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
+                assertEnv(env.AI_GATEWAY_API_KEY, "AI_GATEWAY_API_KEY");
 
-                const openrouter = createOpenRouter({
-                    apiKey: env.OPENROUTER_API_KEY,
-                });
+                const gateway = getGatewayClient();
 
                 const prompt = buildTitleEvolutionPrompt(
                     currentTitle,
@@ -185,7 +183,7 @@ export async function evaluateTitleEvolution(
                 });
 
                 const result = await generateText({
-                    model: openrouter.chat(TITLE_EVOLUTION_MODEL),
+                    model: gateway(translateModelId(TITLE_EVOLUTION_MODEL)),
                     prompt,
                     temperature: 0.2, // Low temperature for consistent decisions
                     maxRetries: 1,

@@ -7,8 +7,8 @@ vi.mock("@clerk/nextjs/server", () => ({
     currentUser: vi.fn(),
 }));
 
-// Mock the OpenRouter provider to use a mock model
-vi.mock("@openrouter/ai-sdk-provider", async () => {
+// Mock the Gateway provider to use a mock model
+vi.mock("@/lib/ai/gateway", async () => {
     const { MockLanguageModelV3, simulateReadableStream } = await import("ai/test");
     const mockModel = new MockLanguageModelV3({
         doStream: async () => ({
@@ -42,15 +42,19 @@ vi.mock("@openrouter/ai-sdk-provider", async () => {
     });
 
     return {
-        createOpenRouter: () => ({
-            chat: () => mockModel,
+        getGatewayClient: () => () => mockModel,
+        translateModelId: (id: string) => id,
+        translateOptions: (modelId: string, options: unknown) => ({
+            gateway: {
+                models: (options as { fallbackModels?: string[] }).fallbackModels || [],
+            },
         }),
     };
 });
 
 // Mock env to provide API key
 vi.mock("@/lib/env", () => ({
-    env: { OPENROUTER_API_KEY: "test-key" },
+    env: { AI_GATEWAY_API_KEY: "test-key" },
     assertEnv: vi.fn(),
 }));
 
