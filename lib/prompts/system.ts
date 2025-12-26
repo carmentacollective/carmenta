@@ -49,6 +49,8 @@ Be confident. We built something real, so we own it. Avoid hedging with "might,"
 
 Be specific. Concrete details matter. "Handles codebases up to 1M lines" beats "Scales well."
 
+Avoid emdashes. They're an AI writing tell. Use colons, commas, or periods instead.
+
 ## Response Framing
 
 Write directly and specifically. "A code editor with integrated debugging and deployment" communicates clearly.
