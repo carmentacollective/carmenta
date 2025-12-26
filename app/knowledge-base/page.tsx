@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { Book, Sparkles } from "lucide-react";
 
-import { SiteHeader } from "@/components/site-header";
-import { HolographicBackground } from "@/components/ui/holographic-background";
+import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
 import {
     getKBFolders,
@@ -130,57 +129,50 @@ export default async function KnowledgeBasePage() {
     }
 
     return (
-        <div className="relative flex min-h-screen flex-col">
-            <HolographicBackground />
-
-            <div className="relative z-content flex flex-1 flex-col">
-                <SiteHeader bordered />
-
-                <main className="flex-1 px-6 py-8">
-                    <div className="mx-auto flex h-full max-w-5xl flex-col gap-8">
-                        {/* Header */}
-                        <section className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="rounded-xl bg-primary/20 p-3">
-                                        <Book className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-3xl font-light tracking-tight text-foreground">
-                                            Knowledge Base
-                                        </h1>
-                                        <p className="text-foreground/70">
-                                            What we remember together
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Activity Feed */}
-                                {activityItems.length > 0 && (
-                                    <ActivityFeed initialItems={activityItems} />
-                                )}
-                            </div>
-                        </section>
-
-                        {/* Knowledge Viewer */}
-                        <section className="min-h-[500px] flex-1">
-                            {allFolders.length === 0 ? (
-                                <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
-                                    <Sparkles className="mb-4 h-12 w-12 text-foreground/30" />
-                                    <h3 className="text-lg font-medium text-foreground/80">
-                                        We're setting up your knowledge base
-                                    </h3>
-                                    <p className="mt-2 text-sm text-foreground/60">
-                                        Refresh the page in a moment.
-                                    </p>
-                                </div>
-                            ) : (
-                                <KnowledgeViewer initialFolders={allFolders} />
-                            )}
-                        </section>
+        <StandardPageLayout
+            maxWidth="standard"
+            contentClassName="flex h-full flex-col gap-8 py-8"
+        >
+            {/* Header */}
+            <section className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-xl bg-primary/20 p-3">
+                            <Book className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-light tracking-tight text-foreground">
+                                Knowledge Base
+                            </h1>
+                            <p className="text-foreground/70">
+                                What we remember together
+                            </p>
+                        </div>
                     </div>
-                </main>
-            </div>
-        </div>
+
+                    {/* Activity Feed */}
+                    {activityItems.length > 0 && (
+                        <ActivityFeed initialItems={activityItems} />
+                    )}
+                </div>
+            </section>
+
+            {/* Knowledge Viewer */}
+            <section className="min-h-[500px] flex-1">
+                {allFolders.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
+                        <Sparkles className="mb-4 h-12 w-12 text-foreground/30" />
+                        <h3 className="text-lg font-medium text-foreground/80">
+                            We're setting up your knowledge base
+                        </h3>
+                        <p className="mt-2 text-sm text-foreground/60">
+                            Refresh the page in a moment.
+                        </p>
+                    </div>
+                ) : (
+                    <KnowledgeViewer initialFolders={allFolders} />
+                )}
+            </section>
+        </StandardPageLayout>
     );
 }
