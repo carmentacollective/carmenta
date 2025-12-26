@@ -2,9 +2,12 @@ import { tool } from "ai";
 import { all, create } from "mathjs";
 import { z } from "zod";
 
+import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
+
+const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 
 // Create mathjs instance for safe user input evaluation
 // Security: expressions are evaluated with an empty scope to prevent
@@ -206,7 +209,184 @@ export const builtInTools = {
             };
         },
     }),
+
+    giphy: tool({
+        description:
+            "Search for GIFs and stickers. Use for reactions, celebrations, or when visual expression adds to communication. Actions: search (find GIFs by query), get_random (random GIF, optionally by tag), get_trending (popular GIFs).",
+        inputSchema: z.object({
+            action: z
+                .enum(["search", "get_random", "get_trending"])
+                .describe("The action to perform"),
+            query: z
+                .string()
+                .optional()
+                .describe("Search term for finding GIFs (required for search action)"),
+            tag: z
+                .string()
+                .optional()
+                .describe("Tag to filter random GIFs (optional for get_random action)"),
+            limit: z
+                .number()
+                .min(1)
+                .max(50)
+                .optional()
+                .describe("Maximum number of GIFs to return (default: 10, max: 50)"),
+        }),
+        execute: async ({ action, query, tag, limit = 10 }) => {
+            const apiKey = process.env.GIPHY_API_KEY;
+            if (!apiKey) {
+                logger.error("GIPHY_API_KEY environment variable not configured");
+                return {
+                    error: true,
+                    message: "Giphy is not configured. Missing API key.",
+                };
+            }
+
+            const DEFAULT_RATING = "pg";
+
+            try {
+                switch (action) {
+                    case "search": {
+                        if (!query) {
+                            return {
+                                error: true,
+                                message: "Search action requires a query parameter.",
+                            };
+                        }
+
+                        logger.info({ query, limit }, "Searching Giphy");
+
+                        const response = await httpClient
+                            .get(`${GIPHY_API_BASE}/search`, {
+                                searchParams: {
+                                    api_key: apiKey,
+                                    q: query,
+                                    limit: Math.min(limit, 50).toString(),
+                                    rating: DEFAULT_RATING,
+                                    lang: "en",
+                                },
+                            })
+                            .json<GiphySearchResponse>();
+
+                        if (response.data.length === 0) {
+                            return {
+                                query,
+                                totalCount: 0,
+                                results: [],
+                                message: "No GIFs found matching your query.",
+                            };
+                        }
+
+                        return {
+                            query,
+                            totalCount: response.pagination.total_count,
+                            count: response.pagination.count,
+                            results: response.data.map(formatGif),
+                        };
+                    }
+
+                    case "get_random": {
+                        logger.info({ tag }, "Getting random Giphy GIF");
+
+                        const searchParams: Record<string, string> = {
+                            api_key: apiKey,
+                            rating: DEFAULT_RATING,
+                        };
+                        if (tag) searchParams.tag = tag;
+
+                        const response = await httpClient
+                            .get(`${GIPHY_API_BASE}/random`, { searchParams })
+                            .json<GiphyRandomResponse>();
+
+                        return {
+                            result: formatGif(response.data),
+                        };
+                    }
+
+                    case "get_trending": {
+                        logger.info({ limit }, "Getting trending Giphy GIFs");
+
+                        const response = await httpClient
+                            .get(`${GIPHY_API_BASE}/trending`, {
+                                searchParams: {
+                                    api_key: apiKey,
+                                    limit: Math.min(limit, 50).toString(),
+                                    rating: DEFAULT_RATING,
+                                },
+                            })
+                            .json<GiphySearchResponse>();
+
+                        return {
+                            totalCount: response.pagination.total_count,
+                            count: response.pagination.count,
+                            results: response.data.map(formatGif),
+                        };
+                    }
+                }
+            } catch (error) {
+                logger.error({ error, action }, "Giphy API request failed");
+                return {
+                    error: true,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : "Failed to fetch GIFs from Giphy",
+                };
+            }
+        },
+    }),
 };
+
+// Giphy API types
+interface GiphyGif {
+    id: string;
+    title: string;
+    url: string;
+    rating: string;
+    images: {
+        original: { url: string; width: string; height: string };
+        fixed_height: { url: string; width: string; height: string };
+        fixed_width: { url: string; width: string; height: string };
+    };
+}
+
+interface GiphySearchResponse {
+    data: GiphyGif[];
+    pagination: { total_count: number; count: number; offset: number };
+    meta: { status: number; msg: string };
+}
+
+interface GiphyRandomResponse {
+    data: GiphyGif;
+    meta: { status: number; msg: string };
+}
+
+function formatGif(gif: GiphyGif) {
+    return {
+        id: gif.id,
+        title: gif.title,
+        url: gif.url,
+        rating: gif.rating,
+        images: {
+            original: {
+                url: gif.images.original.url,
+                width: gif.images.original.width,
+                height: gif.images.original.height,
+            },
+            fixed_height: {
+                url: gif.images.fixed_height.url,
+                width: gif.images.fixed_height.width,
+                height: gif.images.fixed_height.height,
+            },
+            fixed_width: {
+                url: gif.images.fixed_width.url,
+                width: gif.images.fixed_width.width,
+                height: gif.images.fixed_width.height,
+            },
+        },
+        attribution: "Powered by GIPHY",
+    };
+}
 
 /**
  * Create the searchKnowledge tool with user context.

@@ -51,7 +51,6 @@ export {
     ServiceAdapter,
     ClickUpAdapter,
     FirefliesAdapter,
-    GiphyAdapter,
     LimitlessAdapter,
     NotionAdapter,
 } from "./adapters";

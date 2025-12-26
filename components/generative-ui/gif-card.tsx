@@ -14,10 +14,20 @@ import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
-import type { FormattedGIF } from "@/lib/integrations/adapters/giphy";
 
-// Re-export for convenience
-export type GifData = FormattedGIF;
+/** GIF data structure returned by Giphy API */
+export interface GifData {
+    id: string;
+    title: string;
+    url: string;
+    rating: string;
+    images: {
+        original: { url: string; width: string; height: string };
+        fixed_height: { url: string; width: string; height: string };
+        fixed_width: { url: string; width: string; height: string };
+    };
+    attribution: string;
+}
 
 interface GifCardProps {
     gif: GifData;

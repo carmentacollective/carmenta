@@ -136,21 +136,6 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["list_transcripts", "search_transcripts", "get_transcript"],
     },
 
-    // Giphy - API Key
-    {
-        id: "giphy",
-        name: "Giphy",
-        description: "Search for GIFs and stickers",
-        logo: "/logos/giphy.svg",
-        authMethod: "api_key",
-        status: "available",
-        getApiKeyUrl: "https://developers.giphy.com/",
-        apiKeyPlaceholder: "Enter your Giphy API key",
-        supportsMultipleAccounts: false,
-        docsUrl: "https://developers.giphy.com/docs/api",
-        capabilities: ["search", "get_trending", "get_random"],
-    },
-
     // Gmail - OAuth (in-house, "restricted" scopes tier - requires Google verification)
     // Uses "internal" status because restricted Google scopes require special approval
     {
