@@ -91,7 +91,9 @@ the AI SDK doesn't provide one.
 
 Not every title gets an emoji - only when it genuinely captures the intent.
 
-**Implementation**: `generateTitle()` in `lib/db/title-generator.ts`.
+**Implementation**: Title generation is integrated into the Concierge routing system
+(`lib/concierge/prompt.ts`). The concierge generates titles as part of its JSON
+response, ensuring consistent model selection and title generation in a single LLM call.
 
 ### 6. Background Save Pattern
 
