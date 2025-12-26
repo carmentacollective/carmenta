@@ -294,13 +294,36 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: "/logos/giphy.svg",
         messages: {
             pending: "Getting ready...",
-            running: "Searching GIFs...",
-            completed: "GIFs found",
-            error: "Couldn't find GIFs",
+            running: "Wait for it...",
+            completed: "Perfect",
+            error: "Couldn't find the right one",
         },
         delightMessages: {
-            completed: ["Perfect GIF", "Found it", "GIF ready"],
-            fast: ["Quick find!", "Instant GIF"],
+            completed: ["This one", "Yes", "Here"],
+            fast: ["Gotcha", "Quick"],
+        },
+    },
+    imgflip: {
+        displayName: "Imgflip",
+        icon: "/logos/imgflip.svg",
+        messages: {
+            pending: "Getting ready...",
+            running: "This'll be good...",
+            completed: "Perfect",
+            error: "That didn't work",
+        },
+        delightMessages: {
+            completed: ["Nailed it", "This one", "Yes"],
+            fast: ["Quick", "Done"],
+        },
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const templateId = args.templateId as string | undefined;
+            return action === "list_templates"
+                ? "templates"
+                : templateId
+                  ? `template ${templateId}`
+                  : undefined;
         },
     },
     gmail: {

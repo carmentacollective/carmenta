@@ -71,6 +71,7 @@ import { DropboxToolResult } from "@/components/generative-ui/dropbox";
 import { FetchPageResult } from "@/components/generative-ui/fetch-page";
 import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
 import { GiphyToolResult } from "@/components/generative-ui/giphy";
+import { ImgflipToolResult } from "@/components/generative-ui/imgflip";
 import { GmailToolResult } from "@/components/generative-ui/gmail";
 import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
 import { LimitlessToolResult } from "@/components/generative-ui/limitless";
@@ -581,6 +582,18 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Giphy request failed")}
+                />
+            );
+
+        case "imgflip":
+            return (
+                <ImgflipToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Imgflip request failed")}
                 />
             );
 

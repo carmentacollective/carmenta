@@ -335,6 +335,131 @@ export const builtInTools = {
             }
         },
     }),
+
+    imgflip: tool({
+        description:
+            "Create custom memes by adding text to popular meme templates. Use for witty responses, humor, or when a meme would perfectly capture the moment. Actions: list_templates (get available meme templates), create_meme (generate a meme with custom text).",
+        inputSchema: z.object({
+            action: z
+                .enum(["list_templates", "create_meme"])
+                .describe("The action to perform"),
+            templateId: z
+                .string()
+                .optional()
+                .describe(
+                    "Meme template ID (required for create_meme). Use list_templates to find IDs."
+                ),
+            topText: z
+                .string()
+                .optional()
+                .describe("Text for the top of the meme (for create_meme)"),
+            bottomText: z
+                .string()
+                .optional()
+                .describe("Text for the bottom of the meme (for create_meme)"),
+        }),
+        execute: async ({ action, templateId, topText, bottomText }) => {
+            const IMGFLIP_API_BASE = "https://api.imgflip.com";
+
+            try {
+                switch (action) {
+                    case "list_templates": {
+                        logger.info("Fetching Imgflip meme templates");
+
+                        const response = await httpClient
+                            .get(`${IMGFLIP_API_BASE}/get_memes`)
+                            .json<ImgflipGetMemesResponse>();
+
+                        if (!response.success) {
+                            return {
+                                error: true,
+                                message: "Failed to fetch meme templates",
+                            };
+                        }
+
+                        // Return top 50 most popular templates
+                        return {
+                            count: Math.min(response.data.memes.length, 50),
+                            templates: response.data.memes.slice(0, 50).map((m) => ({
+                                id: m.id,
+                                name: m.name,
+                                url: m.url,
+                                boxCount: m.box_count,
+                            })),
+                        };
+                    }
+
+                    case "create_meme": {
+                        const username = process.env.IMGFLIP_USERNAME;
+                        const password = process.env.IMGFLIP_PASSWORD;
+
+                        if (!username || !password) {
+                            logger.error(
+                                "IMGFLIP_USERNAME or IMGFLIP_PASSWORD not configured"
+                            );
+                            return {
+                                error: true,
+                                message:
+                                    "Imgflip meme creation is not configured. Missing credentials.",
+                            };
+                        }
+
+                        if (!templateId) {
+                            return {
+                                error: true,
+                                message:
+                                    "templateId is required for create_meme. Use list_templates to find template IDs.",
+                            };
+                        }
+
+                        logger.info(
+                            { templateId, topText, bottomText },
+                            "Creating Imgflip meme"
+                        );
+
+                        const formData = new URLSearchParams();
+                        formData.append("template_id", templateId);
+                        formData.append("username", username);
+                        formData.append("password", password);
+                        if (topText) formData.append("text0", topText);
+                        if (bottomText) formData.append("text1", bottomText);
+
+                        const response = await httpClient
+                            .post(`${IMGFLIP_API_BASE}/caption_image`, {
+                                body: formData.toString(),
+                                headers: {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                },
+                            })
+                            .json<ImgflipCaptionResponse>();
+
+                        if (!response.success) {
+                            return {
+                                error: true,
+                                message:
+                                    response.error_message || "Failed to create meme",
+                            };
+                        }
+
+                        return {
+                            url: response.data.url,
+                            pageUrl: response.data.page_url,
+                            attribution: "Powered by Imgflip",
+                        };
+                    }
+                }
+            } catch (error) {
+                logger.error({ error, action }, "Imgflip API request failed");
+                return {
+                    error: true,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : "Failed to communicate with Imgflip",
+                };
+            }
+        },
+    }),
 };
 
 // Giphy API types
@@ -359,6 +484,27 @@ interface GiphySearchResponse {
 interface GiphyRandomResponse {
     data: GiphyGif;
     meta: { status: number; msg: string };
+}
+
+// Imgflip API types
+interface ImgflipMeme {
+    id: string;
+    name: string;
+    url: string;
+    width: number;
+    height: number;
+    box_count: number;
+}
+
+interface ImgflipGetMemesResponse {
+    success: boolean;
+    data: { memes: ImgflipMeme[] };
+}
+
+interface ImgflipCaptionResponse {
+    success: boolean;
+    data: { url: string; page_url: string };
+    error_message?: string;
 }
 
 function formatGif(gif: GiphyGif) {
