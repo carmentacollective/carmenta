@@ -705,7 +705,7 @@ export async function POST(req: Request) {
                             currentConnectionId.toString(),
                             userMessages,
                             assistantMessages,
-                            { async: true }
+                            { async: true, title: conciergeResult.title }
                         ).catch((error) => {
                             logger.error(
                                 { error, connectionId: currentConnectionId },
