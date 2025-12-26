@@ -55,6 +55,8 @@ export const env = createEnv({
         TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
         // Braintrust API key for evals and production tracing
         BRAINTRUST_API_KEY: z.string().min(1).optional(),
+        // Deepgram API key for real-time voice transcription
+        DEEPGRAM_API_KEY: z.string().min(1).optional(),
         // PostgreSQL connection string
         // Defaults to Mac Homebrew PostgreSQL localhost
         DATABASE_URL: z.string().url().default("postgresql://localhost:5432/carmenta"),
@@ -101,6 +103,7 @@ export const env = createEnv({
         TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
         TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
+        DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
         DATABASE_URL: process.env.DATABASE_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:

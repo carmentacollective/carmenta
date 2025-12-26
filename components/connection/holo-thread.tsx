@@ -95,6 +95,7 @@ import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
+import { VoiceInputButton } from "@/components/voice";
 
 export function HoloThread() {
     return (
@@ -1774,6 +1775,15 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
         [handleInputChange, emitUserEngaged]
     );
 
+    // Voice input: update input field as user speaks
+    const handleVoiceTranscript = useCallback(
+        (transcript: string) => {
+            setInput(transcript);
+            emitUserEngaged();
+        },
+        [setInput, emitUserEngaged]
+    );
+
     // Helper to insert text at cursor position and update input
     const insertAtCursor = useCallback(
         (text: string) => {
@@ -2261,6 +2271,10 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                     {/* Desktop: show tools directly (guard against undefined during SSR) */}
                     {isMobile === false && (
                         <>
+                            <VoiceInputButton
+                                onTranscriptUpdate={handleVoiceTranscript}
+                                disabled={isLoading}
+                            />
                             <FilePickerButton />
                             <ModelSelectorTrigger
                                 overrides={overrides}
@@ -2273,6 +2287,11 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                     {/* Mobile: tools behind ••• button (strict check for SSR) */}
                     {isMobile === true && (
                         <div className="relative flex items-center">
+                            {/* Voice button always visible on mobile for quick access */}
+                            <VoiceInputButton
+                                onTranscriptUpdate={handleVoiceTranscript}
+                                disabled={isLoading}
+                            />
                             <AnimatePresence>
                                 {showMobileTools && (
                                     <motion.div
