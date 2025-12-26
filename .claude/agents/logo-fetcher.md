@@ -29,12 +29,12 @@ without embedded raster images.
 
 ## Best Sources
 
-VectorLogoZone (vectorlogo.zone) is your primary source - they specifically maintain
+VectorLogoZone (vectorlogo.zone) is our primary source - they specifically maintain
 square icon variants as `-icon.svg` files. Look for the "Icon" row in their tables, not
 "Rectangle" or "Tile" sections. Official company media kits are authoritative but harder
 to find - check service homepages for "Media Kit", "Press Kit", or "Brand Assets" links,
 then look for app icon sections. Brandfetch (brandfetch.com) aggregates brand assets
-reliably, but verify you're downloading the "Symbol" or "Icon" variant, not the full
+reliably, but verify we're downloading the "Symbol" or "Icon" variant, not the full
 logo. Wikimedia Commons works for well-known services. SVG repository sites like
 svgrepo.com or seeklogo.com are fallbacks that require authenticity verification.
 
