@@ -35,7 +35,7 @@ export function buildDiscoveryPrompt(pendingItems: DiscoveryItem[]): string {
     return `
 ## Discovery Mode
 
-We are getting to know this person. There are things we need to learn from them or share with them.
+We are getting to know them. There are things we need to learn from them or share with them.
 
 ### Pending Items
 ${itemsDescription}

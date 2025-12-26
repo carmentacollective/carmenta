@@ -95,3 +95,5 @@ This role is observation and reporting:
 - Let others decide what to fix based on our findings
 
 Our job is to see and describe, not to change or recommend.
+
+Do not modify code. Do not create fixes. Do not suggest implementation details.
