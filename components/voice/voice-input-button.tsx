@@ -79,13 +79,10 @@ export function VoiceInputButton({
     const handleClick = useCallback(async () => {
         triggerHaptic();
 
-        if (isListening) {
-            // When stopping, the hook will call onTranscriptComplete
-            clearTranscript();
-        }
-
+        // toggleListening will call onTranscriptComplete when stopping
+        // Hook clears transcript after completion
         await toggleListening();
-    }, [toggleListening, isListening, clearTranscript, triggerHaptic]);
+    }, [toggleListening, triggerHaptic]);
 
     // Don't render if voice input is not supported
     if (!isSupported) {

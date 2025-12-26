@@ -195,7 +195,7 @@ export class DeepgramProvider implements VoiceProvider {
                 clearTimeout(timeout);
                 const error = new Error("WebSocket error");
                 logger.error({ event }, "WebSocket error");
-                this.callbacks.onError?.(error);
+                // Don't call onError here - let the catch block handle it to avoid duplicates
                 reject(error);
             };
 

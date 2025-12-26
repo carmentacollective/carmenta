@@ -186,7 +186,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     const toggleListening = useCallback(async () => {
         if (connectionState === "connected") {
             stopListening();
-        } else if (connectionState === "disconnected") {
+        } else if (connectionState === "disconnected" || connectionState === "error") {
             await startListening();
         }
     }, [connectionState, startListening, stopListening]);
@@ -204,6 +204,15 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             providerRef.current = null;
         };
     }, []);
+
+    // Recreate provider when language changes
+    useEffect(() => {
+        // If provider exists and language changed, disconnect old provider
+        if (providerRef.current) {
+            providerRef.current.disconnect();
+            providerRef.current = null;
+        }
+    }, [language]);
 
     return {
         startListening,
