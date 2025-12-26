@@ -89,6 +89,9 @@ vi.mock("./lib/env", () => ({
         NODE_ENV: "test",
         DATABASE_URL: "postgresql://localhost:5432/carmenta_test",
         OPENROUTER_API_KEY: undefined,
+        // AI Gateway - read from process.env for live integration tests
+        AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+        AI_LIVE_TESTS: process.env.AI_LIVE_TESTS,
         SENTRY_DSN: undefined,
         SENTRY_AUTH_TOKEN: undefined,
         NEXT_PUBLIC_SENTRY_DSN: undefined,
