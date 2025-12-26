@@ -7,8 +7,7 @@
  *
  * 1. Attachment requirements (audio/video → Gemini)
  * 2. Context overflow (conversation too long → larger context model)
- * 3. Known bugs (Anthropic reasoning+tools → GPT-5.2)
- * 4. User override (always wins)
+ * 3. User override (always wins)
  */
 
 import { logger } from "@/lib/logger";
