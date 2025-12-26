@@ -18,32 +18,38 @@ connected service.
 
 **Productivity**
 
-- [Notion](./integrations/notion.md) — Access notes, databases, documentation
-- [ClickUp](./integrations/clickup.md) — Manage tasks and projects
-- [Linear](./integrations/linear.md) — Issue tracking for engineering teams
+- [Notion](../integrations/notion.md) — Access notes, databases, documentation
+- [ClickUp](../integrations/clickup.md) — Manage tasks and projects
 
 **Communication**
 
-- [Slack](./integrations/slack.md) — Messages, channels, team connection
-- [Gmail](./integrations/gmail.md) — Email access and search
+- [Slack](../integrations/slack.md) _(Beta)_ — Messages, channels, team connection
+- [Gmail](../integrations/gmail.md) _(Invite only)_ — Email access and search
+- [X (Twitter)](../integrations/twitter.md) _(Beta)_ — Post tweets, search timeline
 
 **Storage**
 
-- [Google Drive](./integrations/google-drive.md) — Documents, spreadsheets, files
+- [Google Drive](../integrations/google-drive.md) — Documents, spreadsheets, files
+- [Dropbox](../integrations/dropbox.md) _(Beta)_ — Files, folders, shared links
 
-**AI and Data**
+**Meeting Intelligence**
 
-- [Limitless](./integrations/limitless.md) — Wearable audio transcripts
-- [Fireflies](./integrations/fireflies.md) — Meeting transcripts and notes
+- [Limitless](../integrations/limitless.md) — Wearable audio transcripts
+- [Fireflies](../integrations/fireflies.md) — Meeting transcripts and notes
 
 **Development**
 
-- [GitHub](./integrations/github.md) — Repositories, issues, pull requests
+- [GitHub](../integrations/github.md) — Repositories, issues, pull requests
 
 **Calendar and Contacts**
 
-- [Google Calendar](./integrations/google-calendar.md) — Schedule and events
-- [Google Contacts](./integrations/google-contacts.md) — Contact information
+- [Google Calendar & Contacts](../integrations/google-calendar.md) — Schedule, events,
+  people
+
+**Market Data**
+
+- [CoinMarketCap](../integrations/coinmarketcap.md) — Cryptocurrency prices and market
+  data
 
 One subscription covers all integrations. No per-service fees.
 
@@ -61,8 +67,7 @@ _"Search my Slack for messages about the product launch"_
 
 _"Check if there are any open PRs on the main repo"_
 
-Carmenta figures out which integration to use. No special syntax. No commands to
-memorize.
+We figure out which integration to use. No special syntax. No commands to memorize.
 
 ## Philosophy
 

@@ -1,7 +1,7 @@
 # Google Drive Integration
 
-Connect Google Drive to Carmenta. Access documents, spreadsheets, and files through
-natural conversation.
+Connect Google Drive and we bring your documents into the conversation. Search files,
+read content, and pull context from Docs, Sheets, and Slides.
 
 ## What You Can Do
 
