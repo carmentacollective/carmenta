@@ -259,11 +259,12 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                         interimTranscriptRef.current = text;
                     }
 
-                    // Combine for display
+                    // Combine for display (add space only if final transcript exists)
                     const combined =
                         finalTranscriptRef.current +
                         (interimTranscriptRef.current
-                            ? " " + interimTranscriptRef.current
+                            ? (finalTranscriptRef.current ? " " : "") +
+                              interimTranscriptRef.current
                             : "");
 
                     setTranscript(combined);
@@ -274,9 +275,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             // Handle connection close
             connection.on(LiveTranscriptionEvents.Close, () => {
                 logger.debug({}, "Deepgram connection closed");
-                if (connectionState !== "disconnected") {
-                    stopListening();
-                }
+                // stopListening is idempotent, safe to call unconditionally
+                stopListening();
             });
 
             // Handle errors
