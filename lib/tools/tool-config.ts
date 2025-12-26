@@ -303,6 +303,20 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick find!", "Instant GIF"],
         },
     },
+    imgflip: {
+        displayName: "Imgflip",
+        icon: Sparkles,
+        messages: {
+            pending: "Getting ready...",
+            running: "Crafting meme...",
+            completed: "Meme created",
+            error: "Couldn't create meme",
+        },
+        delightMessages: {
+            completed: ["Perfect meme", "Nailed it", "Meme ready"],
+            fast: ["Quick meme!", "Instant classic"],
+        },
+    },
     gmail: {
         displayName: "Gmail",
         icon: "/logos/gmail.svg",
