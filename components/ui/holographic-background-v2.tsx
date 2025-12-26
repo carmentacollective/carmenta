@@ -315,7 +315,7 @@ export function HolographicBackground({
             {BLOBS.map((blob, i) => (
                 <div
                     key={i}
-                    className="pointer-events-none absolute rounded-full"
+                    className={`pointer-events-none absolute rounded-full drift-${i + 1} hue-cycle`}
                     style={{
                         left: `${blob.x}%`,
                         top: `${blob.y}%`,
