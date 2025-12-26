@@ -19,7 +19,7 @@
 export default function Loading() {
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-background">
-            {/* Keyframe animations - inline to ensure they're available before CSS loads */}
+            {/* Keyframe animations and dark mode adjustments - inline to ensure they're available before CSS loads */}
             <style
                 dangerouslySetInnerHTML={{
                     __html: `
@@ -29,6 +29,14 @@ export default function Loading() {
                         }
                         @keyframes loaderSpin {
                             to { transform: rotate(360deg); }
+                        }
+                        @media (prefers-color-scheme: dark) {
+                            .orbit-path-dark {
+                                border-color: hsl(270 40% 56% / 0.15) !important;
+                            }
+                            .orbit-dot-dark {
+                                box-shadow: 0 0 24px hsl(270 60% 65% / 0.6) !important;
+                            }
                         }
                     `,
                 }}
@@ -48,7 +56,7 @@ export default function Loading() {
                     style={{ animation: "loaderSpin 4.4s linear infinite" }}
                 >
                     <div
-                        className="absolute left-1/2 top-0 rounded-full"
+                        className="orbit-dot-dark absolute left-1/2 top-0 rounded-full"
                         style={{
                             width: "min(2vh, 12px)",
                             height: "min(2vh, 12px)",
@@ -62,7 +70,7 @@ export default function Loading() {
 
                 {/* Subtle orbit path */}
                 <div
-                    className="absolute -inset-[4%] rounded-full"
+                    className="orbit-path-dark absolute -inset-[4%] rounded-full"
                     style={{
                         border: "1px solid hsl(270 40% 56% / 0.08)",
                     }}
