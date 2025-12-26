@@ -17,7 +17,6 @@ import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
 import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
 
-import { generateTitle } from "@/lib/db/title-generator";
 import { buildConciergePrompt, formatQuerySignals } from "./prompt";
 import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
 import {
@@ -398,8 +397,10 @@ export async function runConcierge(
                         { attachments },
                         "Audio attachment detected - forcing audio-capable model"
                     );
-                    // Generate title since we're bypassing the normal concierge LLM call
-                    const title = await generateTitle(userQuery);
+                    // Simple title from query (concierge handles title generation normally)
+                    const title = userQuery.trim()
+                        ? `🎵 ${userQuery.slice(0, 35).trim()}`
+                        : "🎵 Audio conversation";
                     return {
                         modelId: AUDIO_CAPABLE_MODEL,
                         temperature: 0.5,

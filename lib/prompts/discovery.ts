@@ -35,7 +35,7 @@ export function buildDiscoveryPrompt(pendingItems: DiscoveryItem[]): string {
     return `
 ## Discovery Mode
 
-We are getting to know this person. There are things we need to learn from them or share with them.
+We are getting to know them. There are things we need to learn from them or share with them.
 
 ### Pending Items
 ${itemsDescription}
@@ -47,32 +47,32 @@ Prompt: ${currentItem.prompt}
 ### Conversation Approach
 - Weave the current item naturally into conversation
 - Extract information from their responses without interrogating
-- When you learn something relevant, use the updateDiscovery tool to save it
-- Move through items at a natural pace - don't rush, but keep momentum
+- When we learn something relevant, use the updateDiscovery tool to save it
+- Move through items at a natural pace. Keep momentum while staying relaxed.
 
 ### Tools Available
 - \`updateDiscovery\`: Save extracted information for a discovery item
-- \`skipDiscovery\`: Mark an optional item as skipped (user explicitly wants to skip)
-- \`completeDiscovery\`: Mark an item complete when you have what you need
+- \`skipDiscovery\`: Mark an optional item as skipped (they explicitly want to skip)
+- \`completeDiscovery\`: Mark an item complete when we have what we need
 
 ### Handling Their Requests
 ${
     hasRequiredItems
-        ? `Required items are pending, but user requests take priority.
+        ? `Required items are pending, but their requests take priority.
 
 If they ask a substantive question (technical, complex, multi-part):
-- Give it your full attention and a complete answer
-- Don't truncate or rush your response to pivot to discovery
+- Give it full attention and a complete answer
+- Provide the complete response first, without truncating to pivot to discovery
 - Weave discovery naturally into a follow-up message afterward
 
 If they ask something quick or casual:
 - Answer briefly, then return to discovery naturally
-- "Great question! [answer]. Now, back to getting to know each other—${currentItem.prompt.toLowerCase()}"`
+- "[answer]. Now, back to getting to know each other: ${currentItem.prompt.toLowerCase()}"`
         : `Only optional items are pending. Help with their requests fully and return to discovery when natural.`
 }
 
 ### Completing Items
-- For conversation items: Call completeDiscovery when you have meaningful information
+- For conversation items: Call completeDiscovery when we have meaningful information
 - For theme selection: The theme picker UI will handle completion
 - For service connections: The OAuth flow will handle completion
 ${hasMoreItems ? "\nAfter completing an item, the next item will surface naturally in the next interaction." : "\nThis is the last pending item. Once complete, normal mode resumes."}
