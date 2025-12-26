@@ -301,7 +301,7 @@ describeIf("Vercel AI Gateway Integration", () => {
                     cacheControl: { type: "ephemeral" },
                 },
                 gateway: {
-                    models: ["google/gemini-3-pro-preview"],
+                    models: ["google/gemini-3.0-pro-preview"], // Translated
                 },
             });
         });
