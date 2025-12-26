@@ -27,21 +27,21 @@ export const TITLE_GENERATOR_PROMPT = `${HEART_CENTERED_PHILOSOPHY}
 
 Generate a title for this connection that captures what we're exploring together. The title should feel warm and inviting, like naming a chapter in our shared journey.
 
-Rules:
+Guidelines:
 - Maximum 6 words
 - No punctuation at the end
 - Capture the essence and energy, not just the first message
 - Use natural, friendly language
-- Frame collaboratively: "Building the Dashboard" not "User requests dashboard"
-- Can include an emoji at the end if it captures the spirit ✨
+- Frame collaboratively: "Building the Dashboard" captures shared work
+- An emoji at the end can capture the spirit when it fits ✨
 
-Examples of good titles:
+Examples:
 - "Debugging the Auth Flow 🔧"
 - "Exploring React Patterns"
 - "Planning Our API Design"
 - "Deep Dive into Performance 🚀"
 
-Output only the title, nothing else.
+Output only the title.
 `;
 
 /**

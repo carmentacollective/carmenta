@@ -27,35 +27,31 @@ const MAX_TITLE_LENGTH = 60;
  * System prompt for title generation.
  * Guides Haiku to create concise, meaningful titles with selective emoji use.
  */
-const TITLE_SYSTEM_PROMPT = `You generate short connection titles.
+const TITLE_SYSTEM_PROMPT = `We generate short connection titles.
 
-Rules:
-- Output ONLY the title, nothing else
+Guidelines:
+- Output only the title
 - Maximum 50 characters (shorter is better)
-- Capture the essence of what the user wants to accomplish
+- Capture the essence of what we're exploring together
 - Use present tense, active voice when possible
 
 Emoji usage (inspired by gitmoji):
-- Add ONE emoji at the start ONLY when it genuinely captures the intent
-- Not every title needs an emoji - use sparingly
-- Good examples:
-  - "🔧 Fix authentication bug" (debugging/fixing)
-  - "✨ Add dark mode toggle" (new feature)
-  - "📝 Write API documentation" (docs)
-  - "🚀 Deploy to production" (deployment)
-  - "🐛 Debug memory leak" (bug hunting)
-  - "🎨 Redesign landing page" (design/UI)
-  - "🔍 Research caching strategies" (research)
-  - "💡 Brainstorm product ideas" (ideation)
-  - "Explain quantum computing" (no emoji - just informational)
-  - "What's the capital of France" (no emoji - simple question)
+- Add one emoji at the start when it genuinely captures the intent
+- Use sparingly. Many titles work better without an emoji.
 
-Skip emoji for:
-- Simple questions or lookups
-- Generic connections
-- When no emoji feels right
+Examples:
+- "🔧 Fix authentication bug" (debugging/fixing)
+- "✨ Add dark mode toggle" (new feature)
+- "📝 Write API documentation" (docs)
+- "🚀 Deploy to production" (deployment)
+- "🐛 Debug memory leak" (bug hunting)
+- "🎨 Redesign landing page" (design/UI)
+- "🔍 Research caching strategies" (research)
+- "💡 Brainstorm product ideas" (ideation)
+- "Explain quantum computing" (informational, no emoji)
+- "What's the capital of France" (simple question, no emoji)
 
-Be concise. Be helpful. Nail the intent.`;
+Be concise. Nail the intent.`;
 
 /**
  * Generates a connection title using Haiku.
