@@ -297,46 +297,77 @@ Respond with ONLY valid JSON in this exact format:
   ]
 }`;
 
-    try {
-        const result = await generateText({
-            model: openrouter.chat(JUDGE_MODEL),
-            prompt,
-            maxOutputTokens: 1024,
-        });
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-        // Parse JSON from response
-        const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error("No JSON found in judge response");
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const result = await generateText({
+                model: openrouter.chat(JUDGE_MODEL),
+                prompt,
+                maxOutputTokens: 1024,
+            });
+
+            // Parse JSON from response - try multiple extraction methods
+            let jsonMatch = result.text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                // Try extracting from markdown code block
+                const codeBlockMatch = result.text.match(
+                    /```(?:json)?\s*([\s\S]*?)```/
+                );
+                if (codeBlockMatch) {
+                    jsonMatch = codeBlockMatch[1].match(/\{[\s\S]*\}/);
+                }
+            }
+
+            if (!jsonMatch) {
+                throw new Error(
+                    `No JSON found in judge response (attempt ${attempt}/${maxRetries})`
+                );
+            }
+
+            const parsed = JSON.parse(jsonMatch[0]);
+            const dimensions: DimensionScore[] = parsed.scores.map(
+                (s: {
+                    dimension: ScoringDimension;
+                    score: number;
+                    reasoning: string;
+                }) => ({
+                    dimension: s.dimension,
+                    score: Math.min(100, Math.max(0, s.score)), // Clamp to 0-100
+                    reasoning: s.reasoning,
+                })
+            );
+
+            // Calculate overall as average of dimension scores
+            const overallScore = Math.round(
+                dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length
+            );
+
+            return { dimensions, overallScore };
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            if (attempt < maxRetries) {
+                console.log(
+                    `    Retry ${attempt}/${maxRetries} after error: ${lastError.message}`
+                );
+                await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Backoff
+            }
         }
-
-        const parsed = JSON.parse(jsonMatch[0]);
-        const dimensions: DimensionScore[] = parsed.scores.map(
-            (s: { dimension: ScoringDimension; score: number; reasoning: string }) => ({
-                dimension: s.dimension,
-                score: Math.min(100, Math.max(0, s.score)), // Clamp to 0-100
-                reasoning: s.reasoning,
-            })
-        );
-
-        // Calculate overall as average of dimension scores
-        const overallScore = Math.round(
-            dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length
-        );
-
-        return { dimensions, overallScore };
-    } catch (error) {
-        console.error(`    Scoring error: ${error}`);
-        // Return middle-ground scores on error
-        return {
-            dimensions: query.primaryDimensions.map((dim) => ({
-                dimension: dim,
-                score: 50,
-                reasoning: `Scoring error: ${error}`,
-            })),
-            overallScore: 50,
-        };
     }
+
+    // All retries exhausted
+    console.error(
+        `    Scoring failed after ${maxRetries} attempts: ${lastError?.message}`
+    );
+    return {
+        dimensions: query.primaryDimensions.map((dim) => ({
+            dimension: dim,
+            score: 50,
+            reasoning: `Scoring failed after ${maxRetries} retries: ${lastError?.message}`,
+        })),
+        overallScore: 50,
+    };
 }
 
 // ============================================================================
