@@ -1,7 +1,7 @@
-# Google Calendar Integration
+# Google Calendar & Contacts Integration
 
-Connect Google Calendar to Carmenta. See your schedule, create events, and check
-availability through natural conversation.
+Connect your Google account and we bring your calendar and contacts into the
+conversation. Check your schedule, create events, look up people—all naturally.
 
 ## What You Can Do
 
@@ -15,22 +15,29 @@ availability through natural conversation.
 
 **Manage events** — "Move my dentist appointment to Thursday"
 
+**Look up contacts** — "What's Jordan's email address?"
+
+**Find people** — "Who do I know at Acme Corp?"
+
 ## Connecting
 
 1. Go to Settings → Integrations
-2. Click Connect next to Google Calendar
-3. Authorize Carmenta to access your calendar
+2. Click Connect next to Google Calendar & Contacts
+3. Authorize Carmenta to access your calendars and contacts
 4. Select which calendars to include
 
-You choose which calendars we can see.
+You choose which calendars and contact groups we can see.
 
 ## How We Use It
 
 When you ask about your schedule, we check your connected calendars. Availability,
 upcoming meetings, and conflicts become part of the conversation.
 
-Creating events requires confirmation. We'll show you the details before adding anything
-to your calendar.
+When you mention someone or need contact details, we search your Google Contacts.
+Contact information joins the conversation naturally.
+
+Creating events requires confirmation. We show you the details before adding anything to
+your calendar.
 
 ## Example Conversations
 
@@ -40,14 +47,18 @@ _"Am I free for lunch on Friday?"_
 
 _"Schedule a project kickoff for Monday morning"_
 
-_"Cancel my afternoon meetings"_
+_"What's the phone number for the contractor we hired?"_
+
+_"Find my contact for the Henderson project"_
 
 ## Context for Conversations
 
-Calendar awareness makes other conversations smarter. When discussing meeting prep, we
-know what's coming up. When tracking commitments, we know your time constraints.
+Calendar and contact awareness makes other conversations smarter. When discussing
+meeting prep, we know what's coming up and who's attending. When tracking commitments,
+we know your time constraints and can reference the right people.
 
 ## Privacy
 
-We access only calendars you've authorized. Event details are used for context, not
-stored permanently. Credentials are encrypted. Disconnect anytime.
+We access only calendars and contact groups you've authorized. Event details and contact
+information are used for context, not stored permanently. Credentials are encrypted.
+Disconnect anytime.

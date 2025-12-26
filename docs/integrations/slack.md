@@ -1,7 +1,9 @@
 # Slack Integration
 
-Connect Slack to Carmenta. Search messages, stay connected with your team, and send
-updates through natural conversation.
+> This integration is in beta. Request access through Settings → Integrations.
+
+Connect Slack and we bring your team conversations into the dialogue. Search messages,
+check channels, and send updates naturally.
 
 ## What You Can Do
 

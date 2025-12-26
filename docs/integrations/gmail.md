@@ -1,7 +1,10 @@
 # Gmail Integration
 
-Connect Gmail to Carmenta. Search your email, read messages, and draft responses through
-natural conversation.
+> This integration requires additional authorization. Gmail uses restricted Google API
+> scopes that need verification. Contact us for access.
+
+Connect Gmail and we bring your email into the conversation. Search your inbox, read
+messages, and draft responses naturally.
 
 ## What You Can Do
 
