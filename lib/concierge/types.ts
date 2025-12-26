@@ -12,6 +12,18 @@
 export type ReasoningEffort = "high" | "medium" | "low" | "none";
 
 /**
+ * Response depth/verbosity guidance.
+ *
+ * Separate from reasoning (which controls internal thinking depth).
+ * This controls how comprehensive the visible output should be.
+ *
+ * - "comprehensive": Full explanations, examples, edge cases, thorough coverage
+ * - "balanced": Standard response depth for most queries
+ * - "concise": Brief, direct answers - get to the point quickly
+ */
+export type ResponseDepth = "comprehensive" | "balanced" | "concise";
+
+/**
  * Lightweight input for the Concierge.
  *
  * Instead of passing the full message array, we extract metadata
@@ -220,6 +232,17 @@ export interface ConciergeResult {
     kbSearch?: KBSearchConfig;
 
     /**
+     * Response depth/verbosity guidance.
+     *
+     * Orthogonal to reasoning (internal thinking). Examples:
+     * - Deep reasoning + concise output: "Think hard but give me the bottom line"
+     * - Light reasoning + comprehensive output: "Quick overview but cover everything"
+     *
+     * Based on query signals: speed signals → concise, depth indicators → comprehensive.
+     */
+    responseDepth?: ResponseDepth;
+
+    /**
      * Whether the model was auto-switched due to technical requirements.
      * True when attachments or context overflow force a specific model.
      */
@@ -267,6 +290,7 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
     reasoning: {
         enabled: false,
     },
+    responseDepth: "balanced",
 };
 
 /**

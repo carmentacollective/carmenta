@@ -406,8 +406,9 @@ export async function POST(req: Request) {
         // These are prepended to messages array (not via `system` param) so we can
         // use providerOptions for cache_control.
         // Includes profile context from Knowledge Base (Layer 2),
-        // discovery context when items are pending (Layer 3), and
-        // retrieved context based on concierge query analysis (Layer 4).
+        // discovery context when items are pending (Layer 3),
+        // retrieved context based on concierge query analysis (Layer 4),
+        // and response depth guidance (Layer 6).
         const systemMessages = await buildSystemMessages({
             user,
             userEmail,
@@ -415,6 +416,7 @@ export async function POST(req: Request) {
             timezone: undefined, // TODO: Get from client in future
             kbSearch: concierge.kbSearch, // Query-based knowledge retrieval
             pendingDiscoveries, // Discovery items to surface
+            responseDepth: conciergeResult.responseDepth, // Response verbosity guidance
         });
 
         // Transient writer reference - set when the stream is consumed

@@ -5,7 +5,7 @@ import { renderSessionContext } from "./templates";
 import { buildDiscoveryPrompt } from "./discovery";
 import { compileProfileContext } from "@/lib/kb/compile-context";
 import { retrieveContext, formatRetrievedContext } from "@/lib/kb/retrieve-context";
-import type { KBSearchConfig } from "@/lib/concierge/types";
+import type { KBSearchConfig, ResponseDepth } from "@/lib/concierge/types";
 import type { DiscoveryItem } from "@/lib/discovery/config";
 
 /**
@@ -61,6 +61,8 @@ export interface UserContext {
     kbSearch?: KBSearchConfig;
     /** Pending discovery items for this user */
     pendingDiscoveries?: DiscoveryItem[];
+    /** Response depth/verbosity guidance from concierge */
+    responseDepth?: ResponseDepth;
 }
 
 /**
@@ -103,6 +105,31 @@ function getUserName(user: User | null): string | undefined {
         `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
         undefined
     );
+}
+
+/**
+ * Build response depth guidance based on concierge analysis.
+ *
+ * This guides how comprehensive/verbose the response should be,
+ * independent of reasoning depth (which controls internal thinking).
+ */
+function buildResponseDepthGuidance(depth: ResponseDepth): string {
+    switch (depth) {
+        case "concise":
+            return `## Response Style
+
+This request wants a quick, direct answer. Be brief and to the point. Skip extended explanations, examples, or caveats unless essential. Get to the answer fast.`;
+
+        case "comprehensive":
+            return `## Response Style
+
+This request wants thorough coverage. Provide full explanations, relevant examples, edge cases, and context. Take the space needed to be complete. Don't truncate or summarize when detail serves the answer.`;
+
+        case "balanced":
+        default:
+            // No explicit guidance for balanced - let the model use its natural judgment
+            return "";
+    }
 }
 
 /**
@@ -202,6 +229,19 @@ export async function buildSystemMessages(
         content: sessionContext,
         // No providerOptions = no caching
     });
+
+    // Layer 6: Response Depth Guidance (per-request, from concierge)
+    // Only inject when not "balanced" (balanced uses model's natural judgment)
+    if (context.responseDepth && context.responseDepth !== "balanced") {
+        const depthGuidance = buildResponseDepthGuidance(context.responseDepth);
+        if (depthGuidance) {
+            messages.push({
+                role: "system",
+                content: depthGuidance,
+                // No providerOptions = no caching (changes per-request)
+            });
+        }
+    }
 
     return messages;
 }
