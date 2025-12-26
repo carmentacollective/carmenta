@@ -144,7 +144,7 @@ function translateFallbackOptions(
 
     if (options.fallbackModels && options.fallbackModels.length > 0) {
         result.gateway = {
-            models: options.fallbackModels,
+            models: options.fallbackModels.map(translateModelId),
         };
     }
 
@@ -206,7 +206,7 @@ export const gatewayProvider: AIProvider = {
 
     chat(modelId: string): LanguageModel {
         const client = getGatewayClient();
-        return client(modelId);
+        return client(translateModelId(modelId));
     },
 
     translateOptions(

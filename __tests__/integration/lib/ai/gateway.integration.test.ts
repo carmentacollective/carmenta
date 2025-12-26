@@ -252,15 +252,15 @@ describeIf("Vercel AI Gateway Integration", () => {
                 fallbackModels: [
                     "anthropic/claude-sonnet-4.5",
                     "google/gemini-3-pro-preview",
-                    "openai/gpt-5.2",
+                    "x-ai/grok-4.1-fast",
                 ],
             });
 
             expect(options.gateway).toEqual({
                 models: [
                     "anthropic/claude-sonnet-4.5",
-                    "google/gemini-3-pro-preview",
-                    "openai/gpt-5.2",
+                    "google/gemini-3.0-pro-preview", // Translated
+                    "xai/grok-4.1-fast-non-reasoning", // Translated
                 ],
             });
         });
