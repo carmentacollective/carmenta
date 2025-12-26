@@ -294,13 +294,13 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: "/logos/giphy.svg",
         messages: {
             pending: "Getting ready...",
-            running: "Searching GIFs...",
-            completed: "GIFs found",
-            error: "Couldn't find GIFs",
+            running: "Wait for it...",
+            completed: "Perfect",
+            error: "Couldn't find the right one",
         },
         delightMessages: {
-            completed: ["Perfect GIF", "Found it", "GIF ready"],
-            fast: ["Quick find!", "Instant GIF"],
+            completed: ["This one", "Yes", "Here"],
+            fast: ["Gotcha", "Quick"],
         },
     },
     imgflip: {
@@ -308,13 +308,13 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         icon: Sparkles,
         messages: {
             pending: "Getting ready...",
-            running: "Crafting meme...",
-            completed: "Meme created",
-            error: "Couldn't create meme",
+            running: "This'll be good...",
+            completed: "Perfect",
+            error: "That didn't work",
         },
         delightMessages: {
-            completed: ["Perfect meme", "Nailed it", "Meme ready"],
-            fast: ["Quick meme!", "Instant classic"],
+            completed: ["Nailed it", "This one", "Yes"],
+            fast: ["Quick", "Done"],
         },
     },
     gmail: {
