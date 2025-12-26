@@ -13,7 +13,6 @@ functionality that powers Carmenta.
   - `connections.ts` - Connection (conversation) data access
   - `users.ts` - User data access
   - `message-mapping.ts` - Message format conversions
-  - `title-generator.ts` - LLM-powered connection title generation
 
 ### AI & Intelligence
 
