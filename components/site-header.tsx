@@ -31,7 +31,7 @@ export function SiteHeader({
     return (
         <header className="flex items-center justify-between px-6 py-4">
             <Link
-                href="/"
+                href="/home"
                 className="vt-app-logo interactive-focus group flex items-center gap-3 rounded-lg transition-all duration-300"
             >
                 <InteractiveLogo />

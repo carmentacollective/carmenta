@@ -229,7 +229,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
     return (
         <div className={cn("relative", className)}>
             {/* Oracle with speaking glow */}
-            <Link href="/" className="relative block">
+            <Link href="/home" className="relative block">
                 {/* Speaking glow - pulses when whisper is visible */}
                 <AnimatePresence>
                     {isSpeaking && (

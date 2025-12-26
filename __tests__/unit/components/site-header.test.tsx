@@ -19,7 +19,7 @@ describe("SiteHeader", () => {
     it("logo links to home page", () => {
         const { container } = renderWithProviders(<SiteHeader />);
         const link = container.querySelector("a");
-        expect(link).toHaveAttribute("href", "/");
+        expect(link).toHaveAttribute("href", "/home");
     });
 
     // Note: bordered prop exists but border styling was removed intentionally
