@@ -17,6 +17,8 @@ export interface LibrarianTriggerConfig {
     minMessageCount: number;
     /** Whether to run asynchronously (fire and forget) */
     async: boolean;
+    /** Conversation title for context */
+    title?: string;
 }
 
 const DEFAULT_CONFIG: LibrarianTriggerConfig = {
@@ -71,15 +73,25 @@ export async function triggerLibrarian(
                     return;
                 }
 
-                logger.info(
-                    { conversationId, messageCount: totalMessages },
-                    "📚 Triggering Knowledge Librarian"
+                // Extract only the LAST exchange to keep context bounded
+                // This prevents context overflow on long conversations
+                const lastUserMessage = userMessages[userMessages.length - 1] ?? "";
+                const lastAssistantMessage =
+                    assistantMessages[assistantMessages.length - 1] ?? "";
+
+                // Estimate token count for logging (rough: 1 token ≈ 4 chars)
+                const estimatedTokens = Math.round(
+                    (lastUserMessage.length + lastAssistantMessage.length) / 4
                 );
 
-                // Format conversation for the librarian
-                const conversationText = formatConversation(
-                    userMessages,
-                    assistantMessages
+                logger.info(
+                    {
+                        conversationId,
+                        totalMessages,
+                        estimatedTokens,
+                        hasTitle: !!finalConfig.title,
+                    },
+                    "📚 Triggering Knowledge Librarian (bounded context)"
                 );
 
                 // Create the agent and invoke it
@@ -87,17 +99,27 @@ export async function triggerLibrarian(
                     try {
                         const agent = createLibrarianAgent();
 
-                        // Invoke the agent with the conversation context
+                        // Build prompt with bounded context:
+                        // - Conversation title provides topic context
+                        // - Only the last exchange is analyzed for extraction
+                        // - This keeps input bounded regardless of conversation length
+                        const titleContext = finalConfig.title
+                            ? `<conversation-topic>${finalConfig.title}</conversation-topic>\n\n`
+                            : "";
+
                         const result = await agent.generate({
                             prompt: `<user-id>${userId}</user-id>
 
 <conversation-id>${conversationId}</conversation-id>
 
-<conversation>
-${conversationText}
-</conversation>
+${titleContext}<last-exchange>
+<user>${lastUserMessage}</user>
+<assistant>${lastAssistantMessage}</assistant>
+</last-exchange>
 
-Please analyze this conversation and extract any worth-preserving knowledge to the knowledge base. Start by listing the current knowledge base to understand what already exists.`,
+Analyze this exchange and extract any worth-preserving knowledge to the knowledge base. Start by listing the current knowledge base to understand what already exists.
+
+Focus on durable information: facts about the user, decisions made, people mentioned, preferences expressed, or explicit "remember this" requests. Skip transient task help, general knowledge questions, and greetings.`,
                         });
 
                         logger.info(
@@ -141,23 +163,4 @@ Please analyze this conversation and extract any worth-preserving knowledge to t
             }
         }
     );
-}
-
-/**
- * Format conversation messages for the librarian
- */
-function formatConversation(
-    userMessages: string[],
-    assistantMessages: string[]
-): string {
-    const messages: string[] = [];
-    for (let i = 0; i < Math.max(userMessages.length, assistantMessages.length); i++) {
-        if (i < userMessages.length) {
-            messages.push(`User: ${userMessages[i]}`);
-        }
-        if (i < assistantMessages.length) {
-            messages.push(`Assistant: ${assistantMessages[i]}`);
-        }
-    }
-    return messages.join("\n\n");
 }
