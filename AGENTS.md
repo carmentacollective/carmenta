@@ -36,7 +36,8 @@ Use `pnpm` for all package management and script execution. Never use `npm` or `
 
 ## Git Workflow
 
-Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`)
+Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`).
+Use gitmoji. Not every commit gets an emoji. Only when it adds value/clarity.
 
 Never commit to main without explicit permission. Never use `--no-verify`.
 
@@ -49,9 +50,16 @@ The app requires authentication for most features. Test credentials are availabl
 
 ### Dev Server
 
-When browser testing or verifying functionality, always start a fresh dev server with
-`pnpm dev`. Don't assume a server already running on port 3000 is serving the current
-working directory—it may be serving a different copy of the repo.
+When browser testing or verifying functionality, start a dev server with `pnpm dev`.
+
++**NEVER kill processes on ports.** Other processes (evals, other projects, long-running
+jobs) may be using those ports. If port 3000 is taken, Next.js will automatically use
+the next available port (3001, 3002, etc.). Just run `pnpm dev` and read the output to
+see which port it's using.
+
+Don't assume a server already running on port 3000 is serving the current working
+directory—it may be serving a different copy of the repo. If the lock file error
+appears, a dev server for THIS repo is already running—use that one.
 
 ## Context Management
 
