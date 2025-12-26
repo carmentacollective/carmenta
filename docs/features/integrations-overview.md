@@ -29,6 +29,7 @@ connected service.
 
 **Storage**
 
+- [Google Drive](../integrations/google-drive.md) — Documents, spreadsheets, files
 - [Dropbox](../integrations/dropbox.md) _(Beta)_ — Files, folders, shared links
 
 **Meeting Intelligence**
