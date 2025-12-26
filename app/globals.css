@@ -1836,4 +1836,146 @@
             animation: none !important;
         }
     }
+
+    /* =============================================
+     * Holographic Background V2 - CSS Animations
+     * =============================================
+     * Pure CSS blob drift animations. Each blob has a unique
+     * movement path with prime-ish durations to prevent sync.
+     */
+
+    /* Blob drift animations - organic, slow movement patterns */
+    @keyframes drift-1 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        25% {
+            transform: translate(-50%, -50%) translate(80px, -40px);
+        }
+        50% {
+            transform: translate(-50%, -50%) translate(40px, 60px);
+        }
+        75% {
+            transform: translate(-50%, -50%) translate(-60px, 20px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    @keyframes drift-2 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        33% {
+            transform: translate(-50%, -50%) translate(-70px, 50px);
+        }
+        66% {
+            transform: translate(-50%, -50%) translate(50px, -30px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    @keyframes drift-3 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        20% {
+            transform: translate(-50%, -50%) translate(60px, 40px);
+        }
+        40% {
+            transform: translate(-50%, -50%) translate(-40px, 80px);
+        }
+        60% {
+            transform: translate(-50%, -50%) translate(-80px, -20px);
+        }
+        80% {
+            transform: translate(-50%, -50%) translate(30px, -50px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    @keyframes drift-4 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        50% {
+            transform: translate(-50%, -50%) translate(-90px, -60px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    @keyframes drift-5 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        25% {
+            transform: translate(-50%, -50%) translate(-50px, 70px);
+        }
+        50% {
+            transform: translate(-50%, -50%) translate(70px, 50px);
+        }
+        75% {
+            transform: translate(-50%, -50%) translate(40px, -60px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    @keyframes drift-6 {
+        0% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+        33% {
+            transform: translate(-50%, -50%) translate(100px, 0);
+        }
+        66% {
+            transform: translate(-50%, -50%) translate(-30px, -70px);
+        }
+        100% {
+            transform: translate(-50%, -50%) translate(0, 0);
+        }
+    }
+
+    /* Hue cycle - smooth color rotation */
+    @keyframes hue-cycle {
+        from {
+            filter: blur(40px) hue-rotate(0deg);
+        }
+        to {
+            filter: blur(40px) hue-rotate(360deg);
+        }
+    }
+
+    /* Star twinkle - gentle opacity pulse */
+    @keyframes twinkle {
+        0%,
+        100% {
+            opacity: 0.3;
+        }
+        50% {
+            opacity: 0.9;
+        }
+    }
+
+    /* Reduced motion: simplify holographic animations */
+    @media (prefers-reduced-motion: reduce) {
+        [class*="drift-"],
+        .hue-cycle {
+            animation: none !important;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+        }
+    }
 }
