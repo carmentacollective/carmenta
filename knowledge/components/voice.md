@@ -70,37 +70,90 @@ Some interactions work better in voice:
 
 ---
 
+## Current Implementation (M1)
+
+### STT: Deepgram Nova-3
+
+We chose Deepgram for voice input based on comprehensive research:
+
+**Why Deepgram:**
+
+- Sub-300ms latency for real-time streaming (vs 1-5s for batch Whisper)
+- Nova-3 model with <5% word error rate
+- WebSocket streaming with interim results
+- Smart formatting (punctuation, numbers, dates)
+- Voice activity detection built-in
+- $0.0043/min pricing
+
+**Architecture:**
+
+```
+lib/voice/
+├── types.ts              # Provider abstraction interface
+├── deepgram-provider.ts  # Deepgram WebSocket implementation
+└── index.ts              # Exports
+
+lib/hooks/
+└── use-voice-input.ts    # React hook for voice input
+
+components/voice/
+└── voice-input-button.tsx # Mic button with recording state
+
+app/api/voice/token/
+└── route.ts              # Server-side token generation
+```
+
+**How it works:**
+
+1. User clicks mic button → requests microphone permission
+2. API route generates authenticated WebSocket URL (keeps API key server-side)
+3. MediaRecorder streams audio in 100ms chunks via WebSocket
+4. Deepgram returns interim + final transcripts in real-time
+5. Transcript flows directly into chat input field
+6. User clicks again to stop → final transcript ready to send
+
+**Technical specs implemented:**
+
+- Audio: WebM/Opus at 48kHz (browser default)
+- Chunk size: 100ms (balance of latency vs network efficiency)
+- Encoding: Opus codec via MediaRecorder
+- Streaming: WebSocket to Deepgram's /v1/listen endpoint
+- VAD: Deepgram's utterance detection (1000ms silence threshold)
+
+### Provider Abstraction
+
+Built for future providers (OpenAI Realtime, Gladia):
+
+```typescript
+interface VoiceProvider {
+  connect(): Promise<void>;
+  disconnect(): void;
+  pause(): void;
+  resume(): void;
+  readonly state: VoiceConnectionState;
+  readonly isStreaming: boolean;
+}
+```
+
+---
+
 ## Open Questions
 
-### Architecture
+### TTS (Not Yet Implemented)
 
-- **STT provider**: Whisper? Deepgram? AssemblyAI? Google? Tradeoffs in accuracy,
-  latency, cost?
-- **TTS provider**: ElevenLabs? PlayHT? OpenAI? Amazon Polly? What sounds most natural?
-- **Real-time vs. batch**: Streaming transcription vs. process complete utterances?
-  Implications for latency and accuracy?
-- **On-device vs. cloud**: Any processing on device for latency? Privacy implications?
+- **Provider**: ElevenLabs? PlayHT? OpenAI? Amazon Polly? What sounds most natural?
+- **Voice persona**: What does Carmenta sound like? One voice or multiple?
+- **Streaming**: Real-time TTS streaming for responsive output?
 
-### Product Decisions
+### Full Conversational Mode
 
-- **Activation model**: Always listening with wake word? Push-to-talk? Both? Privacy
-  considerations?
-- **Voice persona**: What does Carmenta sound like? One voice or multiple? Our choice?
+- **OpenAI Realtime API**: For speech-to-speech when we want full voice conversation
 - **Interruption behavior**: Can we interrupt? How does Carmenta handle it?
-- **Fallback behavior**: What happens when voice fails? Graceful degradation to text?
+- **Turn-taking**: Natural conversation flow patterns
 
-### Technical Specifications Needed
+### Future Enhancements
 
-- Audio capture and encoding requirements
-- Streaming protocol for real-time transcription
-- TTS output format and streaming
-- Voice activity detection parameters
-- Latency budget breakdown (capture → STT → process → TTS → playback)
-
-### Research Needed
-
-- Benchmark STT providers on accuracy, latency, and cost
-- Evaluate TTS options for naturalness and expressiveness
-- Study conversational AI voice patterns (GPT-4o voice, Hume, Character.ai voice)
-- Research wake word detection options and privacy implications
-- Review accessibility requirements for voice interfaces
+- Voice activity detection on device (reduce API calls for silence)
+- Wake word detection ("Hey Carmenta")
+- Speaker diarization for multi-person input
+- Voice-based commands (tone/prosody for intent)
