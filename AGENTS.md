@@ -40,6 +40,19 @@ Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found p
 
 Never commit to main without explicit permission. Never use `--no-verify`.
 
+## Development & Testing
+
+### Browser Testing
+
+The app requires authentication for most features. Test credentials are available in
+`.env.local` as `TEST_USER_EMAIL` and `TEST_USER_PASSWORD`.
+
+### Dev Server
+
+When browser testing or verifying functionality, always start a fresh dev server with
+`pnpm dev`. Don't assume a server already running on port 3000 is serving the current
+working directory—it may be serving a different copy of the repo.
+
 ## Context Management
 
 ### Compaction Strategy
