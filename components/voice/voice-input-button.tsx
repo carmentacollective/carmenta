@@ -46,7 +46,6 @@ export function VoiceInputButton({
         isSupported,
         // transcript managed via onTranscriptUpdate callback
         transcript: _transcript,
-        clearTranscript,
         error,
     } = useVoiceInput({
         onTranscriptComplete: useCallback(

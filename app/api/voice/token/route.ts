@@ -87,8 +87,8 @@ export async function POST(request: Request) {
 
         // Note: Deepgram WebSocket requires the API key for authentication.
         // The key is transmitted to the client but requires an authenticated session.
-        // For production, consider using Deepgram's project key API to create
-        // short-lived, scoped keys for each session.
+        // TODO: Use Deepgram's project key API for production to create
+        // short-lived, scoped keys instead of exposing the main API key
         const authenticatedUrl = `${wsUrl}&token=${env.DEEPGRAM_API_KEY}`;
 
         return NextResponse.json({
