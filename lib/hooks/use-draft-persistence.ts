@@ -100,7 +100,8 @@ export function useDraftPersistence({
                 "📝 Draft recovered"
             );
         } else {
-            // No draft for this connection - ensure banner is hidden
+            // No draft for this connection - clear input and hide banner
+            setInput("");
             Promise.resolve().then(() => {
                 setShowRecoveryBanner(false);
             });
