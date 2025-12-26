@@ -20,14 +20,14 @@ Honor user preferences. User intent overrides routing rules.
 
 Speed signals: "quick", "fast", "briefly", short questions, simple lookups.
 
-| Model                       | Speed   | Use When                          |
-| --------------------------- | ------- | --------------------------------- |
-| x-ai/grok-4.1-fast          | 151 t/s | Maximum speed, multi-step tools   |
-| google/gemini-3-pro-preview | 124 t/s | Speed + audio/video               |
-| anthropic/claude-haiku-4.5  | 100 t/s | Speed + Anthropic values          |
-| openai/gpt-5.2              | 95 t/s  | Multi-step tools + reasoning only |
-| anthropic/claude-sonnet-4.5 | 60 t/s  | Balanced (default)                |
-| anthropic/claude-opus-4.5   | 40 t/s  | Deep work, quality over speed     |
+| Model                       | Speed   | Use When                             |
+| --------------------------- | ------- | ------------------------------------ |
+| x-ai/grok-4.1-fast          | 151 t/s | Maximum speed, multi-step tools      |
+| google/gemini-3-pro-preview | 124 t/s | Speed + audio/video                  |
+| anthropic/claude-haiku-4.5  | 100 t/s | Speed + Anthropic values             |
+| openai/gpt-5.2              | 95 t/s  | User requests GPT, professional work |
+| anthropic/claude-sonnet-4.5 | 60 t/s  | Balanced (default)                   |
+| anthropic/claude-opus-4.5   | 40 t/s  | Deep work, quality over speed        |
 
 When speed priority: set reasoning to "none" or "minimal".
 
@@ -42,9 +42,9 @@ math leader. Use for: complex coding, deep reasoning, difficult math, thorough a
 **anthropic/claude-haiku-4.5** — Fast. 200K context, 100 t/s, $1/$5. Use for: simple
 facts, quick lookups, speed signals, budget-conscious.
 
-**openai/gpt-5.2** — Tools + reasoning specialist. 400K context, 95 t/s, $1.75/$14. Use
-for: Multi-step tool workflows that ALSO need reasoning (Anthropic bug workaround). NOT
-for: Single tool calls, multi-step tools without reasoning (Claude/Grok handle these).
+**openai/gpt-5.2** — Professional work specialist. 400K context, 95 t/s, $1.75/$14. Use
+for: user explicitly requests GPT, professional knowledge work, complex agentic
+workflows.
 
 **google/gemini-3-pro-preview** — Multimodal. 1M context, 124 t/s, $2/$12. Audio, video,
 creative leader. Use for: audio attached, video attached, creative writing.
@@ -69,16 +69,15 @@ Route to x-ai/grok-4.1-fast for: political opinions, edgy humor, controversial t
 
 ## Tool + Reasoning Matrix
 
-Anthropic bug: reasoning tokens can't flow into multi-step tool calls.
+Claude handles all combinations of tools and reasoning.
 
-|                  | No Reasoning   | With Reasoning     |
-| ---------------- | -------------- | ------------------ |
-| No tools         | Claude         | Claude Opus/Sonnet |
-| Single tool      | Claude         | Claude Opus/Sonnet |
-| Multi-step tools | Claude or Grok | **GPT-5.2**        |
+|                  | No Reasoning | With Reasoning     |
+| ---------------- | ------------ | ------------------ |
+| No tools         | Claude       | Claude Opus/Sonnet |
+| Single tool      | Claude       | Claude Opus/Sonnet |
+| Multi-step tools | Claude       | Claude Opus/Sonnet |
 
-Multi-step tool signals: integrations (Limitless, Fireflies), comparisons with current
-data, research requiring multiple searches.
+For maximum speed on tool-heavy workflows without deep reasoning → Grok (151 t/s).
 
 ## Reasoning
 

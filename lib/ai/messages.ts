@@ -10,21 +10,19 @@ import type { UIMessage } from "ai";
  * Part types that should be filtered from multi-turn conversations.
  *
  * Anthropic's API rejects requests that include thinking/reasoning blocks
- * from previous turns. These must be stripped before sending.
+ * from previous turns. These must be stripped before sending to any provider.
  */
 const REASONING_PART_TYPES = ["reasoning", "thinking", "redacted_thinking"] as const;
 
 /**
  * Filters reasoning/thinking blocks from messages for multi-turn API calls.
  *
- * Anthropic's extended thinking feature has a limitation: thinking blocks
- * cannot be modified in subsequent turns. When we send a conversation with
- * previous thinking blocks, the API rejects it. This function strips those
- * blocks before sending.
+ * When sending a conversation history to the API, thinking blocks from previous
+ * assistant messages must be stripped. Anthropic's API rejects requests containing
+ * thinking blocks in prior turns (they're ephemeral, not meant to persist).
  *
- * The AI SDK's UIMessage type can have content as either a string or an
- * array of parts. We filter thinking blocks from both the 'parts' array
- * (our format) and the 'content' array (when it's an array).
+ * Note: This is different from multi-step tool calling within a single turn,
+ * which the Vercel AI gateway handles correctly.
  *
  * @param messages - Array of UIMessages from the conversation
  * @returns Messages with reasoning/thinking parts removed

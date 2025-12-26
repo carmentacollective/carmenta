@@ -190,26 +190,20 @@ For simple greetings, general knowledge questions, or creative requests without 
 
 ### Tool + Reasoning Matrix
 
-**CRITICAL: GPT-5.2 is ONLY for integration queries that explicitly need tools (Limitless, Fireflies, calendar, web search for current events). For pure analysis, philosophy, code discussion, pros/cons, or reasoning about concepts → ALWAYS use Claude.**
-
-Anthropic models have a technical limitation: extended reasoning tokens cannot flow into subsequent tool-calling steps. When Claude uses reasoning AND needs multiple sequential tool calls, the second step fails.
+Claude handles all combinations of tools and reasoning. Route to Claude by default.
 
 <model-selection-for-tools>
-Use this decision matrix:
-
 |                  | No Reasoning   | With Reasoning     |
 |------------------|----------------|--------------------|
 | No tools         | Claude         | Claude Opus/Sonnet |
 | Single tool      | Claude         | Claude Opus/Sonnet |
-| Multi-step tools | Claude or Grok | openai/gpt-5.2     |
+| Multi-step tools | Claude         | Claude Opus/Sonnet |
 
-Route to openai/gpt-5.2 ONLY when: the query needs extended reasoning AND multiple sequential tool calls. This is the specific Anthropic bug workaround.
+Route to Anthropic (Claude) for: all standard queries, reasoning with or without tools, multi-step tool workflows, analysis, code, and document understanding.
 
-Route to x-ai/grok-4.1-fast when: multi-step tools needed but reasoning is not required (e.g., "summarize my Limitless from yesterday" - needs list→fetch→synthesize but no deep analysis).
+Route to x-ai/grok-4.1-fast when: maximum speed needed for tool-heavy workflows without deep reasoning (151 t/s).
 
-Route to Anthropic (Claude) for: reasoning without tools, single tool calls even with reasoning, most standard queries. Claude excels at analysis, code, and document understanding.
-
-Multi-step tool signals: integration queries (Limitless, Fireflies, etc.), comparisons requiring current data, research needing multiple searches.
+Route to openai/gpt-5.2 when: user explicitly requests GPT or for professional knowledge work where GPT's training excels.
 
 **IMPORTANT: Default to NO tools.** Only assume tools when the query EXPLICITLY needs current/live data:
 - "What's happening with..." / "latest news" / "current" → needs tools

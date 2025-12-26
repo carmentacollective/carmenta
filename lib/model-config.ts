@@ -417,14 +417,11 @@ export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
         "anthropic/claude-haiku-4.5",
     ],
 
-    // GPT → Gemini (versatile multimodal) → Grok (fast, large context)
-    // NOTE: Avoid Anthropic in this chain because when ChatGPT reasoning is enabled
-    // and the request falls back to Anthropic, the conversation may contain thinking
-    // blocks that Anthropic's API rejects ("thinking blocks cannot be modified")
+    // GPT → Sonnet (capable, Anthropic values) → Gemini (versatile multimodal)
     "openai/gpt-5.2": [
         "openai/gpt-5.2",
+        "anthropic/claude-sonnet-4.5",
         "google/gemini-3-pro-preview",
-        "x-ai/grok-4.1-fast",
     ],
 
     // Perplexity → Sonnet (can't do live web, but capable) → Gemini (versatile)

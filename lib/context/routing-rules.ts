@@ -95,7 +95,7 @@ export function applyRoutingRules(input: RoutingRulesInput): RoutingRulesResult 
         };
     }
 
-    // Rule 1: Audio attachments → Gemini (ONLY model with native audio)
+    // Audio attachments → Gemini (ONLY model with native audio)
     if (attachmentTypes.includes("audio")) {
         if (currentModelId !== AUDIO_CAPABLE_MODEL) {
             logger.info(
@@ -109,7 +109,7 @@ export function applyRoutingRules(input: RoutingRulesInput): RoutingRulesResult 
         }
     }
 
-    // Rule 2: Video attachments → Gemini (ONLY model with native video)
+    // Video attachments → Gemini (ONLY model with native video)
     if (attachmentTypes.includes("video")) {
         const geminiId = VIDEO_CAPABLE_MODEL;
         if (currentModelId !== geminiId) {
@@ -124,25 +124,7 @@ export function applyRoutingRules(input: RoutingRulesInput): RoutingRulesResult 
         }
     }
 
-    // Rule 3: Anthropic reasoning + tools = broken combination
-    // See: https://github.com/vercel/ai/issues/9631
-    // Thinking blocks in step 1 responses cause API rejection on step 2+
-    const modelConfig = getModel(currentModelId);
-    const isAnthropicModel = modelConfig?.provider === "anthropic";
-
-    if (isAnthropicModel && reasoningEnabled && toolsEnabled) {
-        const fallbackId = "openai/gpt-5.2" as ModelId;
-        logger.info(
-            { from: currentModelId, to: fallbackId },
-            "Anthropic + reasoning + tools is broken - falling back to GPT-5.2"
-        );
-        currentModelId = fallbackId;
-        wasChanged = true;
-        reason =
-            "Complex reasoning with tools - routing to GPT-5.2 for full capability";
-    }
-
-    // Rule 4: Context overflow - upgrade to larger model if needed
+    // Context overflow - upgrade to larger model if needed
     const contextResult = handleContextOverflow(currentModelId, messages);
     if (contextResult.wasChanged) {
         currentModelId = contextResult.modelId;

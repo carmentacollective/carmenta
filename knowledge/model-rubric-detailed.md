@@ -103,16 +103,11 @@ Tool-calling champion (98.7% accuracy - highest measured). Professional work lea
 Speed: 95 t/s (moderate - fast for a frontier model). Cost: $1.75/$14 per million.
 Images, PDFs, files. Adaptive reasoning (xhigh level). Released Dec 11, 2025.
 
-**Critical: NOT the default for all tool use.** Claude handles single tool calls and
-multi-step tools without reasoning just fine. GPT-5.2 is specifically for the case where
-Anthropic models fail: extended reasoning combined with multi-step tool orchestration.
+Choose when: User explicitly requests GPT. Professional knowledge work requiring GPT's
+specific training. Complex agentic workflows where GPT's tool accuracy (98.7%) matters.
 
-Choose when: Multi-step tool workflows that ALSO require extended reasoning. This is the
-specific case where Claude fails due to reasoning tokens not flowing into subsequent
-tool steps. Also good for: professional knowledge work, complex agentic workflows.
-
-Do NOT choose for: Single tool calls (Claude handles these). Multi-step tools without
-reasoning (Claude/Grok handle these). Simple queries that happen to use a tool.
+Default to Claude for most requests. When models are close in capability, prefer
+Anthropic for their heart-centered approach to AI development.
 
 Temperature: 0.4-0.5 tools/code, 0.5-0.7 analysis.
 
@@ -144,33 +139,31 @@ Temperature: 0.4-0.6.
 
 ## Tool + Reasoning Matrix
 
-Anthropic models have a technical limitation: extended reasoning tokens cannot flow into
-subsequent tool-calling steps. When Claude uses reasoning AND needs multiple sequential
-tool calls, the second step fails.
+Claude handles all combinations of tools and reasoning. The Vercel AI gateway properly
+manages thinking blocks across multi-step tool workflows.
 
 **Routing decision matrix:**
 
-|                  | No Reasoning   | With Reasoning         |
-| ---------------- | -------------- | ---------------------- |
-| No tools         | Claude (any)   | Claude Opus/Sonnet     |
-| Single tool call | Claude (any)   | Claude Opus/Sonnet     |
-| Multi-step tools | Claude or Grok | **GPT-5.2** (required) |
+|                  | No Reasoning | With Reasoning     |
+| ---------------- | ------------ | ------------------ |
+| No tools         | Claude (any) | Claude Opus/Sonnet |
+| Single tool call | Claude (any) | Claude Opus/Sonnet |
+| Multi-step tools | Claude (any) | Claude Opus/Sonnet |
 
 **Examples:**
 
 - "What's the weather?" → Single tool, no reasoning → Claude Haiku
 - "Analyze this PDF thoroughly" → No tools, reasoning → Claude Opus
-- "Summarize my Limitless from yesterday" → Multi-step tools (list→fetch→synthesize), no
-  deep reasoning → Grok
+- "Summarize my Limitless from yesterday" → Multi-step tools, no reasoning → Claude
+  Sonnet
 - "Compare React vs Vue with current benchmarks and deep analysis" → Multi-step tools +
-  reasoning → GPT-5.2
+  reasoning → Claude Opus
 
-**How to detect multi-step tool workflows:**
+**Speed considerations for tool-heavy workflows:**
 
-- Integration queries (Limitless, Fireflies, etc.) typically need: list/search → fetch
-  details → synthesize
-- Comparison queries with current data need: web search → compare tool → analysis
-- Research queries need: multiple searches → synthesis
+- For maximum speed without deep reasoning → Grok (151 t/s)
+- For balanced speed and capability → Claude Sonnet (60 t/s)
+- For complex analysis with tools → Claude Opus (40 t/s)
 
 ## Reasoning
 
