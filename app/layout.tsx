@@ -14,6 +14,7 @@ import { MarkerProvider } from "@/components/feedback/marker-provider";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 import { Toaster } from "sonner";
 import { GlobalTooltip } from "@/components/ui/global-tooltip";
+import { PreHydrationLoader } from "@/components/pre-hydration-loader";
 import "./globals.css";
 
 /**
@@ -124,6 +125,7 @@ export default function RootLayout({
                             suppressHydrationWarning
                         >
                             <body className="min-h-screen bg-background font-sans antialiased">
+                                <PreHydrationLoader />
                                 <ThemeProvider>
                                     <MarkerProvider>
                                         <FloatingEmojiProvider>
