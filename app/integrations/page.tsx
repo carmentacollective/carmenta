@@ -376,6 +376,13 @@ function IntegrationsContent() {
                 { error, service: item.service.id },
                 "Integration test failed"
             );
+
+            analytics.integration.testFailed({
+                serviceId: item.service.id,
+                serviceName: item.service.name,
+                errorMessage: error instanceof Error ? error.message : "Unknown error",
+            });
+
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "test_integration" },
                 extra: { serviceId: item.service.id, accountId: item.accountId },
