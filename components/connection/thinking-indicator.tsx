@@ -85,7 +85,6 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
             transition={{ duration: 0.2 }}
             className={cn(
                 "relative flex items-center gap-3 rounded-lg px-4 py-3",
-                "border border-white/20 bg-white/30 backdrop-blur-sm",
                 className
             )}
         >
