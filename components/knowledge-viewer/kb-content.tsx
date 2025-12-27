@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
 import { logger } from "@/lib/client-logger";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { analytics } from "@/lib/analytics/events";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
@@ -185,8 +186,10 @@ export function KBContent({
         if (!kbDocument || !hasChanges || isOverLimit) return;
 
         const savedPath = kbDocument.path;
+        const section = savedPath.split(".")[0];
         setError(null);
         setSaveState("saving");
+        const startTime = Date.now();
 
         // Clear any existing timeout to prevent race conditions
         if (savedTimeoutRef.current) {
@@ -198,6 +201,14 @@ export function KBContent({
             try {
                 const updated = await updateKBDocument(savedPath, editContent);
                 onUpdate(savedPath, updated);
+
+                analytics.kb.documentSaved({
+                    path: savedPath,
+                    documentName: kbDocument.name,
+                    section,
+                    contentLength: editContent.length,
+                    durationMs: Date.now() - startTime,
+                });
 
                 // Only update state if we're still on the same document
                 // (user may have switched documents during save)

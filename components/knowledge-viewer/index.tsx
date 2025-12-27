@@ -27,6 +27,7 @@ import { CommandPalette } from "./command-palette";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import type { KBDocument, KBFolder } from "@/lib/kb/actions";
+import { analytics } from "@/lib/analytics/events";
 
 // Folder display names and icons (shared with kb-sidebar)
 const FOLDER_DISPLAY_NAMES: Record<string, string> = {
@@ -102,26 +103,70 @@ export function KnowledgeViewer({ initialFolders }: KnowledgeViewerProps) {
         );
     }, []);
 
+    // Handle desktop sidebar selection
+    const handleDesktopDocSelect = useCallback(
+        (path: string) => {
+            const doc = allDocuments.find((d) => d.path === path);
+            if (doc) {
+                const section = path.split(".")[0];
+                analytics.kb.documentViewed({
+                    path,
+                    documentName: doc.name,
+                    section,
+                });
+            }
+            setSelectedPath(path);
+        },
+        [allDocuments]
+    );
+
     // Handle search result selection (desktop command palette)
-    const handleSearchSelect = useCallback((path: string) => {
-        setSelectedPath(path);
-        setSearchOpen(false);
-    }, []);
+    const handleSearchSelect = useCallback(
+        (path: string) => {
+            handleDesktopDocSelect(path);
+            setSearchOpen(false);
+        },
+        [handleDesktopDocSelect]
+    );
 
     // Mobile navigation handlers
-    const handleMobileFolderSelect = useCallback((folderId: string) => {
-        setCurrentFolderId(folderId);
-        setMobileView("docs");
-        setMobileSearchQuery("");
-        setMobileSearchOpen(false);
-    }, []);
+    const handleMobileFolderSelect = useCallback(
+        (folderId: string) => {
+            const folder = folders.find((f) => f.id === folderId);
+            if (folder) {
+                analytics.kb.folderViewed({
+                    folderId,
+                    folderName: FOLDER_DISPLAY_NAMES[folder.path] ?? folder.name,
+                });
+            }
 
-    const handleMobileDocSelect = useCallback((path: string) => {
-        setSelectedPath(path);
-        setMobileView("content");
-        setMobileSearchQuery("");
-        setMobileSearchOpen(false);
-    }, []);
+            setCurrentFolderId(folderId);
+            setMobileView("docs");
+            setMobileSearchQuery("");
+            setMobileSearchOpen(false);
+        },
+        [folders]
+    );
+
+    const handleMobileDocSelect = useCallback(
+        (path: string) => {
+            const doc = allDocuments.find((d) => d.path === path);
+            if (doc) {
+                const section = path.split(".")[0]; // e.g., "profile" from "profile.character"
+                analytics.kb.documentViewed({
+                    path,
+                    documentName: doc.name,
+                    section,
+                });
+            }
+
+            setSelectedPath(path);
+            setMobileView("content");
+            setMobileSearchQuery("");
+            setMobileSearchOpen(false);
+        },
+        [allDocuments]
+    );
 
     const handleMobileBack = useCallback(() => {
         if (mobileView === "content") {
@@ -357,7 +402,7 @@ export function KnowledgeViewer({ initialFolders }: KnowledgeViewerProps) {
             <KBSidebar
                 folders={folders}
                 selectedPath={selectedPath}
-                onSelect={setSelectedPath}
+                onSelect={handleDesktopDocSelect}
                 dimmed={searchOpen}
             />
 

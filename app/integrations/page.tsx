@@ -22,6 +22,7 @@ import type { ServiceDefinition } from "@/lib/integrations/services";
 import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
+import { analytics } from "@/lib/analytics/events";
 
 /**
  * Unified integration item for the list.
@@ -125,6 +126,12 @@ function IntegrationsContent() {
 
             const serviceDefinition = getServiceById(service);
             const serviceName = serviceDefinition?.name ?? service;
+
+            analytics.integration.oauthCompleted({
+                serviceId: service,
+                serviceName,
+            });
+
             setGlobalMessage({
                 type: "success",
                 text: `We're connected to ${serviceName}!`,
@@ -137,6 +144,14 @@ function IntegrationsContent() {
             // OAuth returned an error - clear tracking state
             markOAuthComplete();
             if (service) {
+                const serviceDefinition = getServiceById(service);
+                analytics.integration.oauthFailed({
+                    serviceId: service,
+                    serviceName: serviceDefinition?.name,
+                    errorCode: error,
+                    errorMessage: message ?? undefined,
+                });
+
                 setConnectingServices((prev) => {
                     const next = new Set(prev);
                     next.delete(service);
@@ -174,6 +189,11 @@ function IntegrationsContent() {
     // Clear loading states when an abandoned OAuth flow is detected
     useEffect(() => {
         if (abandonedService) {
+            analytics.integration.abandonedFlowDetected({
+                serviceId: abandonedService,
+                serviceName: abandonedServiceName ?? undefined,
+            });
+
             setConnectingServices((prev) => {
                 const next = new Set(prev);
                 next.delete(abandonedService);
@@ -185,7 +205,7 @@ function IntegrationsContent() {
                 return next;
             });
         }
-    }, [abandonedService]);
+    }, [abandonedService, abandonedServiceName]);
 
     // Build unified list: connected services first, then available services
     const unifiedList: IntegrationItem[] = [
@@ -212,6 +232,12 @@ function IntegrationsContent() {
     );
 
     const handleConnectClick = (service: ServiceDefinition) => {
+        analytics.integration.connectClicked({
+            serviceId: service.id,
+            serviceName: service.name,
+            authMethod: service.authMethod,
+        });
+
         if (service.authMethod === "api_key") {
             setSelectedService(service);
             setModalOpen(true);
@@ -219,6 +245,10 @@ function IntegrationsContent() {
             setConnectingServices((prev) => new Set(prev).add(service.id));
             // Track OAuth attempt for recovery detection
             markOAuthStarted(service.id);
+            analytics.integration.oauthStarted({
+                serviceId: service.id,
+                serviceName: service.name,
+            });
             // OAuth flow - redirect to connect page
             window.location.href = `/connect/${service.id}`;
         }
@@ -230,7 +260,17 @@ function IntegrationsContent() {
         }
         const result = await connectApiKeyService(selectedService.id, apiKey);
         if (result.success) {
+            analytics.integration.apiKeyConnected({
+                serviceId: selectedService.id,
+                serviceName: selectedService.name,
+            });
             await loadServices();
+        } else {
+            analytics.integration.apiKeyFailed({
+                serviceId: selectedService.id,
+                serviceName: selectedService.name,
+                errorMessage: result.error,
+            });
         }
         return result;
     };
@@ -240,6 +280,11 @@ function IntegrationsContent() {
 
         try {
             await deleteIntegration(item.service.id, item.accountId);
+
+            analytics.integration.disconnected({
+                serviceId: item.service.id,
+                serviceName: item.service.name,
+            });
 
             // Show success message
             setStatusMessages((prev) => {
@@ -280,10 +325,23 @@ function IntegrationsContent() {
 
     const handleTest = async (item: IntegrationItem) => {
         setTestingServices((prev) => new Set(prev).add(item.service.id));
+        const startTime = Date.now();
+
+        analytics.integration.testExecuted({
+            serviceId: item.service.id,
+            serviceName: item.service.name,
+        });
 
         try {
             const result = await testIntegration(item.service.id, item.accountId);
+            const durationMs = Date.now() - startTime;
+
             if (result.success) {
+                analytics.integration.testPassed({
+                    serviceId: item.service.id,
+                    serviceName: item.service.name,
+                    durationMs,
+                });
                 // Show inline success message
                 setStatusMessages((prev) => {
                     const next = new Map(prev);
@@ -294,6 +352,11 @@ function IntegrationsContent() {
                     return next;
                 });
             } else {
+                analytics.integration.testFailed({
+                    serviceId: item.service.id,
+                    serviceName: item.service.name,
+                    errorMessage: result.error,
+                });
                 // Show inline error message
                 setStatusMessages((prev) => {
                     const next = new Map(prev);
@@ -313,6 +376,13 @@ function IntegrationsContent() {
                 { error, service: item.service.id },
                 "Integration test failed"
             );
+
+            analytics.integration.testFailed({
+                serviceId: item.service.id,
+                serviceName: item.service.name,
+                errorMessage: error instanceof Error ? error.message : "Unknown error",
+            });
+
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "test_integration" },
                 extra: { serviceId: item.service.id, accountId: item.accountId },
