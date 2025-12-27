@@ -3,11 +3,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 import { UserAuthButton } from "@/components/ui";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { getHomepageFeatures, type Feature } from "@/lib/features/feature-catalog";
+
+// Refined easing - fast attack, smooth deceleration with character
+const smoothOut = [0.22, 1, 0.36, 1] as const;
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -39,6 +43,8 @@ export default function HomePage() {
     const [paused, setPaused] = useState(false);
     const charIndex = useRef(0);
     const [isClient, setIsClient] = useState(false);
+    const [revealed, setRevealed] = useState(false);
+    const prefersReducedMotion = useReducedMotion();
 
     // Derive visibility from phase - content hidden during exit
     const contentVisible = phase !== "exit";
@@ -82,6 +88,12 @@ export default function HomePage() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsClient(true);
+    }, []);
+
+    // Trigger cinematic reveal after mount
+    useEffect(() => {
+        const timer = setTimeout(() => setRevealed(true), 100);
+        return () => clearTimeout(timer);
     }, []);
 
     // Keyboard navigation
@@ -167,24 +179,64 @@ export default function HomePage() {
 
                 {/* Main content - centered hero */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                    {/* Hero statement */}
-                    <h1 className="max-w-3xl text-4xl font-light text-foreground/90 sm:text-5xl lg:text-6xl">
+                    {/* Hero statement - cinematic reveal */}
+                    <motion.h1
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
+                        animate={revealed ? { opacity: 1, y: 0 } : {}}
+                        transition={{
+                            duration: prefersReducedMotion ? 0 : 0.5,
+                            ease: smoothOut,
+                        }}
+                        className="max-w-3xl text-4xl font-light text-foreground/90 sm:text-5xl lg:text-6xl"
+                    >
                         The best interface to AI for people who create at the speed of
                         thought
-                    </h1>
+                    </motion.h1>
 
-                    {/* Connect CTA - prominent */}
-                    <Link
-                        href="/connection/new"
-                        prefetch={false}
-                        className="mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
+                    {/* Connect CTA - staggered reveal with spring */}
+                    <motion.div
+                        initial={
+                            prefersReducedMotion
+                                ? false
+                                : { opacity: 0, y: 16, scale: 0.98 }
+                        }
+                        animate={revealed ? { opacity: 1, y: 0, scale: 1 } : {}}
+                        transition={
+                            prefersReducedMotion
+                                ? { duration: 0 }
+                                : {
+                                      duration: 0.4,
+                                      delay: 0.15,
+                                      ease: smoothOut,
+                                      scale: {
+                                          type: "spring",
+                                          stiffness: 300,
+                                          damping: 20,
+                                      },
+                                  }
+                        }
                     >
-                        Connect to AI
-                        <ArrowRight className="h-5 w-5" />
-                    </Link>
+                        <Link
+                            href="/connection/new"
+                            prefetch={false}
+                            className="mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
+                        >
+                            Connect to AI
+                            <ArrowRight className="h-5 w-5" />
+                        </Link>
+                    </motion.div>
 
-                    {/* Rotating feature carousel */}
-                    <div className="mt-16 w-full max-w-2xl">
+                    {/* Rotating feature carousel - staggered reveal */}
+                    <motion.div
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+                        animate={revealed ? { opacity: 1, y: 0 } : {}}
+                        transition={{
+                            duration: prefersReducedMotion ? 0 : 0.4,
+                            delay: prefersReducedMotion ? 0 : 0.3,
+                            ease: smoothOut,
+                        }}
+                        className="mt-16 w-full max-w-2xl"
+                    >
                         {/* Rotating headline with typewriter effect */}
                         <div
                             onClick={() => setPaused((p) => !p)}
@@ -269,7 +321,7 @@ export default function HomePage() {
                                 <ChevronRight className="h-4 w-4" />
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
                 </main>
 
                 {/* Footer */}
