@@ -63,8 +63,9 @@ export default async function KnowledgeBasePage() {
         getRecentActivity(),
     ]);
 
-    // Build folder structure: Profile, Communication, Memories
-    // Philosophy (Heart-Centered AI) is displayed on dedicated /philosophy page
+    // Build folder structure: Profile, Memories
+    // Communication preferences are on dedicated /communication page
+    // Philosophy (Heart-Centered AI) is on dedicated /philosophy page
     const allFolders: KBFolder[] = [];
     const profileFolder = userFolders.find((f) => f.path === "profile");
 
@@ -83,22 +84,7 @@ export default async function KnowledgeBasePage() {
         }
     }
 
-    // 2. Communication - voice, style, working together
-    if (profileFolder) {
-        const communicationDocs = profileFolder.documents.filter(
-            (d) => d.path === "profile.character" || d.path === "profile.preferences"
-        );
-        if (communicationDocs.length > 0) {
-            allFolders.push({
-                id: "communication",
-                name: "communication",
-                path: "communication",
-                documents: communicationDocs,
-            });
-        }
-    }
-
-    // 3. Memories - learned knowledge from conversations
+    // 2. Memories - learned knowledge from conversations
     const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
     if (knowledgeFolder) {
         allFolders.push({

@@ -11,6 +11,7 @@ import {
     Plug,
     Sparkles,
     BookOpen,
+    MessageSquare,
     Heart,
     Compass,
     Code2,
@@ -243,7 +244,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         <span className="relative">Integrations</span>
                                     </Link>
 
-                                    {/* Learning & Content */}
+                                    {/* Personal Settings */}
                                     <div className="my-1 border-t border-foreground/10" />
 
                                     <Link
@@ -254,6 +255,16 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                         <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                         <BookOpen className="relative h-4 w-4 text-foreground/60" />
                                         <span className="relative">Knowledge Base</span>
+                                    </Link>
+
+                                    <Link
+                                        href="/communication"
+                                        onClick={() => setIsOpen(false)}
+                                        className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                    >
+                                        <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                        <MessageSquare className="relative h-4 w-4 text-foreground/60" />
+                                        <span className="relative">Communication</span>
                                     </Link>
 
                                     <Link

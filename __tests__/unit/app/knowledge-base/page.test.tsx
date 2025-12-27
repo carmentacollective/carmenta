@@ -289,10 +289,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert - now has philosophy + personality + knowledge (coming soon) = 3 folders
+            // Assert - Profile + Memories = 2 folders (Communication moved to /communication page)
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "3");
+            expect(viewer).toHaveAttribute("data-folder-count", "2");
         });
 
         it("always includes values folder even when no user folders exist", async () => {

@@ -32,21 +32,26 @@ import { analytics } from "@/lib/analytics/events";
 // Folder display names and icons (shared with kb-sidebar)
 const FOLDER_DISPLAY_NAMES: Record<string, string> = {
     about: "Profile",
-    communication: "Communication",
     memories: "Memories",
+    style: "Style", // Used on /communication page
 };
 
 const FOLDER_ICONS: Record<string, typeof User> = {
     about: User,
-    communication: MessageSquare,
     memories: Brain,
+    style: MessageSquare, // Used on /communication page
 };
 
 export interface KnowledgeViewerProps {
     initialFolders: KBFolder[];
+    /** Title shown in mobile header. Defaults to "Knowledge Base" */
+    title?: string;
 }
 
-export function KnowledgeViewer({ initialFolders }: KnowledgeViewerProps) {
+export function KnowledgeViewer({
+    initialFolders,
+    title = "Knowledge Base",
+}: KnowledgeViewerProps) {
     const isMobile = useMediaQuery("(max-width: 767px)");
 
     const [folders, setFolders] = useState<KBFolder[]>(initialFolders);
@@ -202,7 +207,7 @@ export function KnowledgeViewer({ initialFolders }: KnowledgeViewerProps) {
                                     exit={{ opacity: 0 }}
                                     className="text-lg font-medium text-foreground"
                                 >
-                                    Knowledge Base
+                                    {title}
                                 </motion.span>
                             ) : mobileView === "docs" ? (
                                 <motion.button
