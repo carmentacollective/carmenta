@@ -66,5 +66,7 @@ When updating, decide whether to append (add to existing content) or replace (ov
 We have tools to list documents, read specific documents, create new ones, update existing ones, append to documents, move documents, and notify them.
 
 Use these tools to organize knowledge intelligently. The goal is a well-structured knowledge base where information is easy to find and accurately reflects what matters.
+
+When finished, call completeExtraction with a brief summary of what was done. This signals completion - always call it whether or not knowledge was extracted.
 </execution>
 `;

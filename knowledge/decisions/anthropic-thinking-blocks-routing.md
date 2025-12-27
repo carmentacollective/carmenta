@@ -77,21 +77,22 @@ the thinking blocks issue. Verified on 2025-12-12.
 
 ### Layer 2: Code Safety Net (Fallback)
 
-Disable multi-step for Anthropic + reasoning in `route.ts`.
+Filter reasoning blocks before sending messages to the API:
 
 ```typescript
-const isAnthropicModel = modelConfig?.provider === "anthropic";
-const disableMultiStepForReasoning = isAnthropicModel && concierge.reasoning.enabled;
+// Strip reasoning parts before sending to API (Anthropic rejects modified thinking blocks)
+const messagesWithoutReasoning = filterReasoningFromMessages(messages);
 
-// In streamText config:
-...(modelSupportsTools && !disableMultiStepForReasoning && { stopWhen: stepCountIs(5) }),
+// Multi-step tool calling with generous limit
+...(modelSupportsTools && { stopWhen: stepCountIs(25) }),
 ```
 
 This catches:
 
-- Users who manually select an Anthropic model
-- Concierge edge cases where it still picks Claude despite routing guidance
-- Single-step tool use still works (graceful degradation)
+- Anthropic's thinking blocks are filtered before subsequent steps
+- Users who manually select an Anthropic model still get multi-step (with filtered
+  history)
+- 25 steps enables substantive research workflows
 
 ## Trade-offs
 

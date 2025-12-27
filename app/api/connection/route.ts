@@ -444,8 +444,10 @@ export async function POST(req: Request) {
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),
             temperature: concierge.temperature,
-            // Multi-step tool calling: allows model to continue after tool results
-            ...(modelSupportsTools && { stopWhen: stepCountIs(5) }),
+            // Multi-step tool calling: allows substantive research workflows
+            // 25 steps enables: search → read multiple sources → refine → integrate
+            // Real safety net is maxDuration (120s), not step count
+            ...(modelSupportsTools && { stopWhen: stepCountIs(25) }),
             // Pass provider-specific reasoning configuration
             providerOptions,
             // ================================================================
