@@ -65,9 +65,7 @@ export const clickupProvider: OAuthProviderConfig = {
             Sentry.captureException(error, {
                 tags: { component: "oauth", provider: "clickup" },
             });
-            throw new Error(
-                `We couldn't reach your ClickUp account. Give it another try?`
-            );
+            throw new Error(`Couldn't reach ClickUp right now. Give it another try?`);
         }
     },
 

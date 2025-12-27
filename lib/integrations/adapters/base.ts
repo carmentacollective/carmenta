@@ -274,7 +274,7 @@ export abstract class ServiceAdapter {
         if (msg.includes("429")) {
             return {
                 success: false,
-                error: `${this.serviceDisplayName} rate limit hit. Please wait a moment.`,
+                error: `${this.serviceDisplayName} rate limit hit. Give it a moment?`,
             };
         }
 
@@ -570,7 +570,7 @@ export abstract class ServiceAdapter {
      * Create a standardized "invalid connection" error message
      */
     protected createInvalidConnectionError(): string {
-        return `Your ${this.serviceDisplayName} connection is invalid. Reconnect at: ${this.getIntegrationUrl()}`;
+        return `The ${this.serviceDisplayName} connection is invalid. Reconnect at: ${this.getIntegrationUrl()}`;
     }
 
     /**
@@ -607,7 +607,7 @@ export abstract class ServiceAdapter {
         if (errMsg.includes("401")) {
             return (
                 errorMessage +
-                `Authentication failed. Your ${this.serviceDisplayName} connection may have expired. ` +
+                `Authentication failed. The ${this.serviceDisplayName} connection may have expired. ` +
                 `Reconnect at: ${this.getIntegrationUrl()}`
             );
         }
@@ -621,19 +621,19 @@ export abstract class ServiceAdapter {
             );
         }
 
-        // 429 rate limit
+        // 429 rate limit - transient, waiting helps
         if (errMsg.includes("429")) {
             return (
                 errorMessage +
-                `${this.serviceDisplayName} rate limit hit. Please wait a moment.`
+                `${this.serviceDisplayName} rate limit hit. Give it a moment?`
             );
         }
 
-        // 500/503 service errors
+        // 500/503 service errors - external service issue, we're watching
         if (errMsg.includes("500") || errMsg.includes("503")) {
             return (
                 errorMessage +
-                `${this.serviceDisplayName} is temporarily unavailable. Please try again later.`
+                `${this.serviceDisplayName} is having issues. We're watching for when it's back. 🤖`
             );
         }
 
@@ -669,7 +669,7 @@ export abstract class ServiceAdapter {
 
         if (errMsg.includes("401")) {
             return (
-                `Authentication failed. Your ${this.serviceDisplayName} connection may have expired. ` +
+                `Authentication failed. The ${this.serviceDisplayName} connection may have expired. ` +
                 `Reconnect at: ${this.getIntegrationUrl()}`
             );
         }
@@ -682,11 +682,11 @@ export abstract class ServiceAdapter {
         }
 
         if (errMsg.includes("429")) {
-            return `${this.serviceDisplayName} rate limit hit. Please wait a moment.`;
+            return `${this.serviceDisplayName} rate limit hit. Give it a moment?`;
         }
 
         if (errMsg.includes("500") || errMsg.includes("503")) {
-            return `${this.serviceDisplayName} is temporarily unavailable. Please try again later.`;
+            return `${this.serviceDisplayName} is having issues. We're watching for when it's back. 🤖`;
         }
 
         return errMsg;

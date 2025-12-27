@@ -61,7 +61,7 @@ export default function ExitPage() {
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
                         {error
-                            ? "We couldn't sign you out. Please try again."
+                            ? "Couldn't sign you out. The bots are on it. 🤖"
                             : "We'll remember where we left off"}
                     </p>
                     {error && (

@@ -56,7 +56,7 @@ export function validateFile(file: File): ValidationResult {
         );
         return {
             valid: false,
-            error: "We couldn't determine the file category. Please try a different file.",
+            error: "We couldn't determine the file category. Try a different file?",
         };
     }
 

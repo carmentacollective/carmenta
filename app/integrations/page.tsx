@@ -154,7 +154,7 @@ function IntegrationsContent() {
                     message ?? "Authorization didn't work out. We've been alerted. 🤖",
                 invalid_callback:
                     "The OAuth callback was invalid. Our monitoring caught it. 🤖",
-                invalid_state: "Your session expired. Please try connecting again.",
+                invalid_state: "Session expired. Try connecting again?",
                 unknown_provider:
                     "That service isn't recognized. The robots have been notified. 🤖",
                 token_exchange_failed:

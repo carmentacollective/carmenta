@@ -132,14 +132,14 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             if (errorMessage.includes("401") || errorMessage.includes("403")) {
                 return {
                     success: false,
-                    error: `Your Google connection may have expired. Try reconnecting at ${this.getIntegrationUrl()}`,
+                    error: `The Google connection may have expired. Try reconnecting at ${this.getIntegrationUrl()}`,
                 };
             }
 
             if (errorMessage.includes("404")) {
                 return {
                     success: false,
-                    error: "We couldn't find your primary calendar. Make sure you have a Google Calendar set up.",
+                    error: "Couldn't find a primary calendar. Make sure Google Calendar is set up.",
                 };
             }
 
@@ -155,7 +155,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
 
             return {
                 success: false,
-                error: "We couldn't verify your Google connection. Try reconnecting.",
+                error: "Couldn't verify the Google connection. Try reconnecting?",
             };
         }
     }
