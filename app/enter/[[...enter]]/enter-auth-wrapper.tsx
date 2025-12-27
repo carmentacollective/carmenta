@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { SignIn, useUser } from "@clerk/nextjs";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore, useRef } from "react";
+import { analytics } from "@/lib/analytics/events";
 
 const EMAIL_STORAGE_KEY = "carmenta_remembered_email";
 
@@ -24,6 +25,8 @@ function subscribeToStorage(callback: () => void): () => void {
  */
 export function EnterAuthWrapper() {
     const { user, isSignedIn } = useUser();
+    const hasTrackedPageView = useRef(false);
+    const hasTrackedSignIn = useRef(false);
 
     // Use useSyncExternalStore for hydration-safe localStorage access
     const rememberedEmail = useSyncExternalStore(
@@ -32,15 +35,37 @@ export function EnterAuthWrapper() {
         () => undefined // Server snapshot
     );
 
-    // Save email when user signs in
+    // Track page view once on mount
+    useEffect(() => {
+        if (!hasTrackedPageView.current) {
+            hasTrackedPageView.current = true;
+            analytics.auth.signInPageViewed({
+                isReturningUser: !!rememberedEmail,
+            });
+
+            if (rememberedEmail) {
+                analytics.auth.returningUserDetected();
+            }
+        }
+    }, [rememberedEmail]);
+
+    // Save email when user signs in and track completion
     useEffect(() => {
         if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
             localStorage.setItem(
                 EMAIL_STORAGE_KEY,
                 user.primaryEmailAddress.emailAddress
             );
+
+            // Track sign-in completion once
+            if (!hasTrackedSignIn.current) {
+                hasTrackedSignIn.current = true;
+                analytics.auth.signInCompleted({
+                    isReturningUser: !!rememberedEmail,
+                });
+            }
         }
-    }, [isSignedIn, user]);
+    }, [isSignedIn, user, rememberedEmail]);
 
     return (
         <>
