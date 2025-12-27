@@ -18,6 +18,7 @@ import type {
     AppendToDocumentOutput,
     MoveDocumentOutput,
     NotifyUserOutput,
+    CompleteExtractionOutput,
 } from "./types";
 
 /**
@@ -354,5 +355,38 @@ export const notifyUserTool = tool({
                 message: `Failed to queue notification: ${error instanceof Error ? error.message : "Unknown error"}`,
             };
         }
+    },
+});
+
+/**
+ * Signal extraction is complete
+ *
+ * This tool allows the agent to explicitly signal it's done processing,
+ * rather than running until the step limit. Improves efficiency and
+ * provides clear telemetry on agent behavior.
+ */
+export const completeExtractionTool = tool({
+    description:
+        "Signal that knowledge extraction is complete. Call this when you've finished processing the conversation - whether you extracted knowledge or determined nothing was worth saving. This ends the extraction process.",
+    inputSchema: z.object({
+        extracted: z
+            .boolean()
+            .describe("Whether any knowledge was extracted and saved"),
+        summary: z
+            .string()
+            .describe(
+                "Brief summary of what was done: documents created/updated, or why nothing was extracted"
+            ),
+    }),
+    execute: async ({ extracted, summary }): Promise<CompleteExtractionOutput> => {
+        logger.info(
+            { extracted, summary },
+            extracted ? "✅ Extraction complete" : "⏭️ No extraction needed"
+        );
+
+        return {
+            acknowledged: true,
+            summary,
+        };
     },
 });

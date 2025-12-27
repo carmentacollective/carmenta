@@ -228,12 +228,19 @@ const { messages } = useChat({
 ### Multi-Step Agents
 
 ```typescript
+import { streamText, stepCountIs, hasToolCall } from "ai";
+
 const result = await streamText({
   model,
   messages,
   tools: agentTools,
-  maxSteps: 5, // Allow up to 5 tool-use iterations
+  // 25 steps enables substantive research: search → read → refine → integrate
+  // Real safety net is maxDuration timeout, not step count
+  stopWhen: stepCountIs(25),
 });
+
+// Or with explicit termination signal:
+stopWhen: [hasToolCall("completeTask"), stepCountIs(25)];
 ```
 
 ## Deferred Features

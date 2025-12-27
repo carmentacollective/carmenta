@@ -90,3 +90,8 @@ export interface NotifyUserOutput {
     success: boolean;
     message: string;
 }
+
+export interface CompleteExtractionOutput {
+    acknowledged: boolean;
+    summary: string;
+}

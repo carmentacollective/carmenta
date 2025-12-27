@@ -140,6 +140,46 @@ The agent abstraction is elegant but our requirements exceed its current flexibi
 The cost of migration (rewriting route handler, potential regressions) exceeds the
 benefit (cleaner code).
 
+## Where We DO Use ToolLoopAgent
+
+The **Knowledge Librarian** (`lib/ai-team/librarian/`) uses the full Agent pattern:
+
+```typescript
+import { ToolLoopAgent, stepCountIs, hasToolCall } from "ai";
+
+const agent = new ToolLoopAgent({
+  model: gateway("anthropic/claude-haiku-4"),
+  instructions: librarianSystemPrompt,
+  tools: {
+    listKnowledge,
+    readDocument,
+    createDocument,
+    updateDocument,
+    completeExtraction, // Explicit termination signal
+  },
+  // Stop when agent signals done, or hit safety limit
+  stopWhen: [hasToolCall("completeExtraction"), stepCountIs(10)],
+});
+```
+
+The Librarian works because it doesn't need:
+
+- Dynamic model selection (always uses Haiku)
+- Prompt caching (simple prompt, no cost benefit)
+- Custom headers (background job, no HTTP response)
+- Transient status (not visible to user)
+
+## Step Limits Philosophy
+
+**Main route: 25 steps** - Enables substantive research workflows. A basic search-read
+cycle needs 5-7 steps; deep research may need 15-20. The real safety net is
+`maxDuration = 120s`, not step count. Most requests complete in 2-5 steps anyway.
+
+**Librarian: 10 steps + hasToolCall** - KB operations are bounded. Explicit
+`completeExtraction` tool signals completion; step limit is just a safety backstop.
+
+**Tests/Evals: 3-5 steps** - Intentionally limited for speed and cost control.
+
 ## Resources
 
 - [AI SDK 6.0 Beta Announcement](https://vercel.com/blog/ai-sdk-6-beta)
@@ -149,6 +189,8 @@ benefit (cleaner code).
 
 ## Changelog
 
+- **2025-12-27** - Increased main route step limit from 5 → 25. Added `hasToolCall`
+  pattern to Librarian with explicit `completeExtraction` tool.
 - **2024-12-24** - Initial analysis of V6 agent paradigm. Decision: stick with
   streamText() primitives due to prompt caching, dynamic routing, and custom header
   requirements.
