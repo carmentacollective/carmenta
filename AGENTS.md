@@ -30,6 +30,10 @@ specs. The specification is the IP.
 
 Use "we" language throughout all interfaces, not "I" or "the user".
 
+Never give time estimates for software work. "This will take 2-3 weeks" is based on
+humans writing code and meaningless for AI-assisted development. Focus on what needs to
+be done, not when.
+
 ## Package Manager
 
 Use `pnpm` for all package management and script execution. Never use `npm` or `bun`.

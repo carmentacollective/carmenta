@@ -10,6 +10,7 @@
  * Options:
  *   --limit N      Only run first N queries (default: all)
  *   --category X   Only run queries in category X
+ *   --reverse      Run queries in reverse order (real-world first)
  *   --output FILE  Output file (default: results/scores-YYYY-MM-DD.json)
  */
 
@@ -519,6 +520,7 @@ async function main(): Promise<void> {
     let limit: number | undefined;
     let category: BenchmarkCategory | undefined;
     let outputFile: string | undefined;
+    let reverse = false;
 
     for (let i = 0; i < args.length; i++) {
         if (args[i] === "--limit" && args[i + 1]) {
@@ -530,6 +532,8 @@ async function main(): Promise<void> {
         } else if (args[i] === "--output" && args[i + 1]) {
             outputFile = args[i + 1];
             i++;
+        } else if (args[i] === "--reverse") {
+            reverse = true;
         }
     }
 
@@ -559,6 +563,11 @@ async function main(): Promise<void> {
         total: queries.length,
     });
 
+    // Apply reverse (run real-world first, reasoning last)
+    if (reverse) {
+        queries = queries.reverse();
+    }
+
     // Apply limit
     if (limit) {
         queries = queries.slice(0, limit);
@@ -571,6 +580,9 @@ async function main(): Promise<void> {
 
     if (category) {
         console.log(`📂 Category filter: ${category}`);
+    }
+    if (reverse) {
+        console.log(`🔄 Order: REVERSED (real-world → reasoning)`);
     }
     if (limit) {
         console.log(`🔢 Limit: ${limit} queries`);
