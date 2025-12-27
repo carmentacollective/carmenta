@@ -84,7 +84,9 @@ vi.mock("@/lib/context", () => ({
     }),
 }));
 
-// Mock database functions for persistence
+// TODO: This local vi.mock("@/lib/db") overrides the global PGlite mock from vitest.setup.ts
+// Consider rewriting these tests to use real DB operations like retrieve-context.test.ts
+// See: https://github.com/carmentacollective/carmenta/pull/466
 vi.mock("@/lib/db", () => ({
     getOrCreateUser: vi.fn(),
     createConnection: vi.fn(),
