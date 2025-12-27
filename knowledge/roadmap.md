@@ -143,19 +143,19 @@ return because Carmenta knows them, not just because it's capable.
 
 ### Components
 
-| Component                | Status | Notes                                                             |
-| ------------------------ | ------ | ----------------------------------------------------------------- |
-| **Auth**                 | ✅     | Clerk integration complete, sessions, profiles                    |
-| **Memory**               | 🔨     | KB foundation done, profile injection working, extraction pending |
-| **Conversations**        | ✅     | History via Connection Chooser, search past                       |
-| **Reasoning Tokens**     | ✅     | Extended thinking display in message parts, streaming support     |
-| **Model Selection**      | ✅     | Concierge routing + user choice with stepped slider               |
-| **File Attachments**     | ✅     | Upload, validation, multimodal routing (built ahead)              |
-| **Service Integrations** | ✅     | 11 integrations with OAuth/API key, encrypted storage             |
-| **Generative UI**        | ✅     | Research, tables, comparisons (foundation for AG-UI)              |
-| **Onboarding**           | 🔨     | Basic profile init working, full flow pending                     |
-| **Analytics**            | ⏳     | PostHog integration - who uses what, retention                    |
-| **Usage Metering**       | ⏳     | Token counting, cost attribution (no billing yet)                 |
+| Component                | Status | Notes                                                                 |
+| ------------------------ | ------ | --------------------------------------------------------------------- |
+| **Auth**                 | ✅     | Clerk integration complete, sessions, profiles                        |
+| **Memory**               | 🔨     | Phases 1-2 complete (context compilation, FTS retrieval), 3-5 pending |
+| **Conversations**        | ✅     | History via Connection Chooser, search past                           |
+| **Reasoning Tokens**     | ✅     | Extended thinking display in message parts, streaming support         |
+| **Model Selection**      | ✅     | Concierge routing + user choice with stepped slider                   |
+| **File Attachments**     | ✅     | Upload, validation, multimodal routing (built ahead)                  |
+| **Service Integrations** | ✅     | 11 integrations with OAuth/API key, encrypted storage                 |
+| **Generative UI**        | ✅     | Research, tables, comparisons (foundation for AG-UI)                  |
+| **Onboarding**           | ⏳     | Spec complete, reactive profile seeding only, no dedicated flow       |
+| **Analytics**            | ⏳     | PostHog initialized, auto-pageviews only, no custom events            |
+| **Usage Metering**       | ⏳     | Token counting, cost attribution (no billing yet)                     |
 
 ### Memory Implementation Phases
 
@@ -163,38 +163,39 @@ Memory is the access pattern for the Knowledge Base - how we compile context, re
 on-demand, and compact over time. See [Memory Architecture](./components/memory.md) for
 complete spec.
 
-**Phase 1: Core Context Compilation** (Week 1)
+**Phase 1: Core Context Compilation** ✅ COMPLETE
 
 - Two-system-message pattern (static cached + dynamic computed)
-- `/profile/` folder in Knowledge Base (identity, preferences, goals, people)
-- `compileUserContext()` from profile documents
-- Static prefix versioning for cache stability
-- Measure cache hit rates (target: 85%+, 70%+ cost reduction)
+- `/profile/` folder in Knowledge Base (character, identity, preferences)
+- `compileUserContext()` from profile documents with XML formatting
+- Profile initialization with Clerk data seeding
+- Token-aware context budgeting
 
-**Phase 2: Retrieval Tools** (Week 2)
+**Phase 2: Retrieval Tools** ✅ COMPLETE
 
-- `search_knowledge` tool (hybrid FTS + semantic via pgvector)
-- `read_document` tool (full content on-demand)
-- `search_conversation` tool (FTS on messages table)
-- Test retrieval quality, tune ranking
+- `retrieveContext()` with multi-signal search (entities + FTS)
+- Full-text search with snippet generation and relevance scoring
+- Token budgeting respects context window limits
+- Concierge extracts search queries from user messages
+- Results formatted as XML with attribution metadata
 
-**Phase 3: Session Compaction** (Week 3)
+**Phase 3: Session Compaction** ⏳ PENDING
 
 - Event-structured message storage
 - Two-stage compaction (prune tool results → summarize)
 - Compaction triggers (token threshold, task boundary, conversation end)
 - Test multi-hour conversations
 
-**Phase 4: Knowledge Extraction** (Week 4)
+**Phase 4: Knowledge Extraction** ⏳ PENDING
 
 - Post-conversation extraction to Knowledge Base
 - Librarian path determination
 - Auto-update `/profile/` from learnings
 - Wire up extraction triggers
 
-**Phase 5: pgvector Semantic Search** (Week 5+)
+**Phase 5: pgvector Semantic Search** ⏳ PENDING
 
-- Add embedding column to documents (Phase 2 from KB storage spec)
+- Add embedding column to documents
 - Generate embeddings for profile + key documents
 - Implement hybrid search (FTS + semantic)
 - A/B test, tune ranking weights
@@ -209,13 +210,14 @@ complete spec.
   ([memory spec](./components/memory.md))
 - **Storage unified**: Knowledge Base (documents table) is storage, Memory is access
   pattern - no separate memory tables
+- **Profile document structure**: Three documents in `/profile/` - character (AI
+  personality), identity (user info from Clerk), preferences (collaboration style)
 
 ### Decisions To Make
 
-- **Profile document structure**: What goes in identity.txt vs preferences.txt?
-  Auto-update frequency?
 - **Compaction triggers**: Token threshold (100K?), task boundary detection, manual
   trigger in UI?
+- **Knowledge extraction**: When to extract? End of conversation? Significant insights?
 - **Onboarding flow**: Conversational vs. form? What's essential to collect?
 
 ### Enhancements to Existing
@@ -345,10 +347,9 @@ The full Concierge ([spec](./components/concierge.md)) operates in three phases:
 
 ### Not Yet
 
-- No service integrations
-- No AI team
-- No scheduled agents
-- No billing
+- No AI team (M4)
+- No scheduled agents (M4)
+- No billing (M4)
 
 ---
 
@@ -450,11 +451,11 @@ M0.5: Interface → Concierge (stub) → Persistence → Chooser       ✅ COMPL
 M1: Data Storage → Error Handling → Observability                ✅ COMPLETE
     Status Indicators → Delight Layer                            ✅ COMPLETE
          ↓
-M2: Auth ✅ → Memory → Reasoning Tokens → Onboarding → Analytics
+M2: Auth ✅ → Memory (Phase 1-2 ✅, 3-5 ⏳) → Reasoning ✅ → Onboarding ⏳ → Analytics ⏳
          ↓
-M3: Voice → Model Intelligence → Concierge (full) → Files → Improvement Loop
+M3: Voice → Model Intelligence ✅ → Concierge (full) ✅ → Improvement Loop
          ↓
-M4: Service Connectivity → External Tools → AI Team → Agents → Billing
+M4: Service Connectivity 🔨 → External Tools → AI Team → Agents → Billing
 ```
 
 Within each milestone, components can often be built in parallel. Across milestones,
@@ -481,19 +482,21 @@ Decisions that shaped the architecture - these are settled, not open questions:
 
 ### Current Focus (M2)
 
-- **Memory architecture**: pgvector in Supabase? External service (Zep, Mem0)? What
-  context window strategy?
-- **Reasoning level calibration**: How accurately can we determine appropriate effort
-  from query alone?
+- **Session compaction UX**: How do we surface compaction to users? Silent background
+  process or visible context management?
+- **Knowledge extraction triggers**: End of conversation? Significant insight detection?
+  Manual "remember this" command?
+- **Onboarding experience**: Conversational AI flow vs structured UI? What's the minimum
+  viable profile for personalization?
 
 ### Sequencing Rationale
 
-- **Voice before integrations (M3 before M4)**: Voice enables the 1x foundation (flow
-  state, presence). You can't multiply what isn't working at 100%.
+- **Voice before AI team (M3 before M4)**: Voice enables the 1x foundation (flow state,
+  presence). You can't multiply what isn't working at 100%.
 - **AI team after voice (M4)**: The AI Team requires the 1x foundation to deliver value.
   Adding team capacity before achieving flow state creates complexity, not leverage.
-- **File attachments in M3**: Files support flow state by enabling seamless context
-  switching without breaking presence.
+- **Service integrations built ahead**: Originally M4, now working in M2. Enables richer
+  context and demonstrates platform capability early.
 
 ### Scope Philosophy
 
