@@ -441,9 +441,71 @@ Components and capabilities that come after initial public launch:
 
 ---
 
+## God Mode Development (Parallel Track)
+
+**Persona:** Nick (pioneer mode, dogfooding) **Signal:** "I build Carmenta in Carmenta"
+**Test:** Is Carmenta the primary development interface for building Carmenta?
+
+This is a **parallel track** to the main product milestones - Nick's personal
+infrastructure that runs alongside public Carmenta. It's the convergence of
+[Dev Mode](./components/dev-mode.md) and [God Mode](./components/god-mode.md): full
+agentic coding through the web interface on dedicated always-on infrastructure.
+
+### What This Proves
+
+The ultimate dogfood. If Carmenta can build Carmenta, it validates the entire vision of
+AI-first development. Every friction point discovered becomes a product improvement.
+
+### Why Parallel Track
+
+God Mode Development is infrastructure for Nick, not a product milestone. It doesn't
+block M2-M4 progress. It accelerates it by making development itself faster. Build it
+incrementally while shipping the main product.
+
+### Phases
+
+| Phase | Status | Deliverable                                               |
+| ----- | ------ | --------------------------------------------------------- |
+| G1    | ⏳     | **Foundation**: SDK integration, streaming, one workspace |
+| G2    | ⏳     | **Multi-Workspace**: Repo switching, worktree awareness   |
+| G3    | ⏳     | **Background Execution**: Tasks survive browser close     |
+| G4    | ⏳     | **Always-On**: Scheduled agents, event triggers           |
+| G5    | ⏳     | **Visual Polish**: Diff viewer, terminal, file tree       |
+
+### Components
+
+| Component                 | Status | Notes                                            |
+| ------------------------- | ------ | ------------------------------------------------ |
+| **Agent SDK Integration** | ⏳     | Direct `@anthropic-ai/claude-agent-sdk` usage    |
+| **Workspace Manager**     | ⏳     | Multi-repo, session persistence, context caching |
+| **Streaming UI**          | ⏳     | NDJSON streaming with abort capability           |
+| **Background Tasks**      | ⏳     | Queue, persistence, replay                       |
+| **Scheduled Agents**      | ⏳     | Cron-style recurring tasks                       |
+| **GitHub Integration**    | ⏳     | PR creation, issue management, webhooks          |
+
+### Infrastructure
+
+- **Hosting**: Dedicated server (cloud VM or Mac Mini)
+- **Domain**: god.carmenta.com (Nick access only)
+- **Security**: Tailscale or Cloudflare Access
+- **Filesystem**: Full access to /Users/nick/src/
+
+### Success Criteria
+
+- Nick uses Carmenta as primary development interface
+- Terminal usage drops to near-zero for Carmenta work
+- Context survives across sessions/days
+- Background agents complete work while Nick sleeps
+
+See [God Mode Development spec](./components/god-mode-development.md) for full details.
+
+---
+
 ## Dependency Graph
 
 ```
+MAIN PRODUCT TRACK
+══════════════════
 M0: Foundation → Hosting → Testing                               ✅ COMPLETE
          ↓
 M0.5: Interface → Concierge (stub) → Persistence → Chooser       ✅ COMPLETE
@@ -456,6 +518,21 @@ M2: Auth ✅ → Memory (Phase 1-2 ✅, 3-5 ⏳) → Reasoning ✅ → Onboardin
 M3: Voice → Model Intelligence ✅ → Concierge (full) ✅ → Improvement Loop
          ↓
 M4: Service Connectivity 🔨 → External Tools → AI Team → Agents → Billing
+
+
+GOD MODE DEVELOPMENT (Parallel Track - Nick's Infrastructure)
+═════════════════════════════════════════════════════════════
+G1: Agent SDK → Streaming UI → Single Workspace                  ⏳ NEXT
+         ↓
+G2: Multi-Workspace → Worktree Awareness → Context Caching       ⏳
+         ↓
+G3: Background Tasks → Event Persistence → Replay                ⏳
+         ↓
+G4: Scheduled Agents → GitHub Webhooks → Daily Digest            ⏳
+         ↓
+G5: Diff Viewer → Terminal Panel → File Tree → Polish            ⏳
+
+Note: God Mode accelerates main track by dogfooding. Build incrementally.
 ```
 
 Within each milestone, components can often be built in parallel. Across milestones,
@@ -556,3 +633,10 @@ Detailed specifications live in `knowledge/components/`. Key specs by milestone:
 - [Carmenta Presence](./components/carmenta-presence.md) - Three-phase interaction model
 - [Connection Chooser](./components/connection-chooser.md) - Navigation, state
   management
+
+### God Mode Development (Parallel Track)
+
+- [God Mode Development](./components/god-mode-development.md) - Full spec for agentic
+  coding interface
+- [Dev Mode](./components/dev-mode.md) - Original dev mode concept (foundation)
+- [God Mode](./components/god-mode.md) - Always-on infrastructure concept (foundation)
