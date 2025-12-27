@@ -24,15 +24,15 @@ import { transitions, variants } from "@/lib/motion/presets";
 // Map folder paths to icons
 const FOLDER_ICONS: Record<string, typeof User> = {
     about: User,
-    communication: MessageSquare,
     memories: Brain,
+    style: MessageSquare, // Used on /communication page
 };
 
 // Display names for folders
 const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
     about: "Profile",
-    communication: "Communication",
     memories: "Memories",
+    style: "Style", // Used on /communication page
 };
 
 // Map document paths to icons
