@@ -69,8 +69,12 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
+    // Clone the request before fetching - request bodies can only be consumed once
+    // Without this, if network fails, we can't use the original request for cache lookup
+    const request = event.request.clone();
+
     event.respondWith(
-        fetch(event.request)
+        fetch(request)
             .then((response) => {
                 // Don't cache non-successful responses or opaque responses
                 if (
@@ -87,7 +91,7 @@ self.addEventListener("fetch", (event) => {
                 // Cache the response (non-blocking, errors are silently ignored)
                 caches
                     .open(RUNTIME_CACHE)
-                    .then((cache) => cache.put(event.request, responseToCache))
+                    .then((cache) => cache.put(request, responseToCache))
                     .catch(() => {
                         // Silently fail - caching is an enhancement, not critical
                         // Errors might occur due to quota exceeded or other storage issues
