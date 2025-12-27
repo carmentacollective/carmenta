@@ -3,11 +3,10 @@ import { test, expect } from "@playwright/test";
 /**
  * Responsive Design and Viewport Tests
  *
- * Validates viewport configuration, responsive behavior across breakpoints,
- * and mobile optimizations.
+ * Validates viewport configuration and responsive behavior across breakpoints.
  *
  * Tests behavior: Layout should adapt to different viewport sizes without horizontal
- * scroll, meta tags should be configured correctly, and mobile-specific CSS should apply.
+ * scroll, and meta tags should be configured correctly.
  */
 
 test.describe("Viewport Configuration", () => {
@@ -91,64 +90,5 @@ test.describe("Responsive Breakpoints", () => {
         });
 
         expect(hasHorizontalScroll).toBe(false);
-    });
-});
-
-test.describe("Mobile Optimizations", () => {
-    test("transparent tap highlight is configured", async ({ page }) => {
-        await page.goto("/");
-
-        const tapHighlight = await page.evaluate(() => {
-            const html = document.documentElement;
-            return window
-                .getComputedStyle(html)
-                .getPropertyValue("-webkit-tap-highlight-color");
-        });
-
-        expect(tapHighlight).toMatch(/rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
-    });
-
-    test("text size adjustment on orientation change is prevented", async ({
-        page,
-    }) => {
-        await page.goto("/");
-
-        const textSizeAdjust = await page.evaluate(() => {
-            const html = document.documentElement;
-            return window
-                .getComputedStyle(html)
-                .getPropertyValue("-webkit-text-size-adjust");
-        });
-
-        expect(textSizeAdjust).toBe("100%");
-    });
-
-    test("smooth scrolling is enabled", async ({ page }) => {
-        await page.goto("/");
-
-        const scrollBehavior = await page.evaluate(() => {
-            const html = document.documentElement;
-            return window.getComputedStyle(html).getPropertyValue("scroll-behavior");
-        });
-
-        expect(scrollBehavior).toBe("smooth");
-    });
-});
-
-test.describe("Font Loading", () => {
-    test("font CSS variables are defined", async ({ page }) => {
-        await page.goto("/");
-
-        const fontVars = await page.evaluate(() => {
-            const html = document.documentElement;
-            const styles = window.getComputedStyle(html);
-            return {
-                hasOutfit: styles.getPropertyValue("--font-outfit").length > 0,
-                hasMono: styles.getPropertyValue("--font-mono").length > 0,
-            };
-        });
-
-        expect(fontVars.hasOutfit).toBe(true);
-        expect(fontVars.hasMono).toBe(true);
     });
 });

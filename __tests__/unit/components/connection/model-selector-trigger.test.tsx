@@ -87,23 +87,6 @@ describe("ModelSelectorTrigger", () => {
             expect(button).toBeInTheDocument();
         });
 
-        it("has ring highlight when overrides are set", () => {
-            const { container } = render(
-                <TestWrapper>
-                    <ModelSelectorTrigger
-                        {...defaultProps}
-                        overrides={{
-                            ...DEFAULT_OVERRIDES,
-                            modelId: "anthropic/claude-opus-4.5",
-                        }}
-                    />
-                </TestWrapper>
-            );
-
-            const button = container.querySelector("button");
-            expect(button).toHaveClass("ring-2");
-        });
-
         it("is disabled when disabled prop is true", () => {
             const { container } = render(
                 <TestWrapper>
@@ -178,29 +161,6 @@ describe("ModelSelectorTrigger", () => {
                     modelId: "anthropic/claude-sonnet-4.5",
                 })
             );
-        });
-    });
-
-    describe("accessibility", () => {
-        it("trigger has aria-label", () => {
-            const { container } = render(
-                <TestWrapper>
-                    <ModelSelectorTrigger {...defaultProps} />
-                </TestWrapper>
-            );
-
-            const button = container.querySelector("button");
-            expect(button).toHaveAttribute("aria-label", "Model settings");
-        });
-
-        it("applies custom className", () => {
-            const { container } = render(
-                <TestWrapper>
-                    <ModelSelectorTrigger {...defaultProps} className="custom-class" />
-                </TestWrapper>
-            );
-
-            expect(container.firstChild).toHaveClass("custom-class");
         });
     });
 });

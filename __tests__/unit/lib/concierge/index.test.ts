@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import type { UIMessage } from "ai";
-import { z } from "zod";
 
 import { CONCIERGE_DEFAULTS } from "@/lib/concierge/types";
 import { buildConciergePrompt } from "@/lib/concierge/prompt";
@@ -12,7 +11,6 @@ import {
     conciergeSchema,
 } from "@/lib/concierge";
 import { parseConciergeHeaders } from "@/lib/concierge/context";
-import { ALLOWED_MODELS } from "@/lib/concierge/types";
 
 describe("Concierge", () => {
     describe("buildConciergePrompt", () => {
@@ -362,80 +360,6 @@ describe("Concierge", () => {
             ];
 
             expect(formatQueryForConcierge(messages).text).toBe("Only message");
-        });
-    });
-});
-
-describe("ConciergeDisplay component helpers", () => {
-    const getModelDisplayName = (modelId: string): string => {
-        const displayNames: Record<string, string> = {
-            "anthropic/claude-opus-4.5": "Claude Opus",
-            "anthropic/claude-sonnet-4.5": "Claude Sonnet",
-            "anthropic/claude-haiku-4.5": "Claude Haiku",
-            "google/gemini-3-pro-preview": "Gemini Pro",
-            "x-ai/grok-4.1-fast": "Grok",
-            "openai/gpt-5.2": "ChatGPT",
-        };
-        return displayNames[modelId] ?? modelId.split("/").pop() ?? modelId;
-    };
-
-    const getTemperatureLabel = (temperature: number): string => {
-        if (temperature <= 0.3) return "precise";
-        if (temperature <= 0.6) return "balanced";
-        if (temperature <= 0.8) return "creative";
-        return "expressive";
-    };
-
-    describe("getModelDisplayName", () => {
-        it("returns friendly names for known models", () => {
-            expect(getModelDisplayName("anthropic/claude-sonnet-4.5")).toBe(
-                "Claude Sonnet"
-            );
-            expect(getModelDisplayName("anthropic/claude-opus-4.5")).toBe(
-                "Claude Opus"
-            );
-            expect(getModelDisplayName("anthropic/claude-haiku-4.5")).toBe(
-                "Claude Haiku"
-            );
-            expect(getModelDisplayName("google/gemini-3-pro-preview")).toBe(
-                "Gemini Pro"
-            );
-            expect(getModelDisplayName("x-ai/grok-4.1-fast")).toBe("Grok");
-            expect(getModelDisplayName("openai/gpt-5.2")).toBe("ChatGPT");
-        });
-
-        it("extracts model name for unknown models", () => {
-            expect(getModelDisplayName("some-provider/cool-model")).toBe("cool-model");
-        });
-
-        it("returns full modelId when no slash present", () => {
-            expect(getModelDisplayName("localmodel")).toBe("localmodel");
-        });
-    });
-
-    describe("getTemperatureLabel", () => {
-        it("returns 'precise' for temperatures 0-0.3", () => {
-            expect(getTemperatureLabel(0)).toBe("precise");
-            expect(getTemperatureLabel(0.1)).toBe("precise");
-            expect(getTemperatureLabel(0.3)).toBe("precise");
-        });
-
-        it("returns 'balanced' for temperatures 0.31-0.6", () => {
-            expect(getTemperatureLabel(0.31)).toBe("balanced");
-            expect(getTemperatureLabel(0.5)).toBe("balanced");
-            expect(getTemperatureLabel(0.6)).toBe("balanced");
-        });
-
-        it("returns 'creative' for temperatures 0.61-0.8", () => {
-            expect(getTemperatureLabel(0.61)).toBe("creative");
-            expect(getTemperatureLabel(0.7)).toBe("creative");
-            expect(getTemperatureLabel(0.8)).toBe("creative");
-        });
-
-        it("returns 'expressive' for temperatures above 0.8", () => {
-            expect(getTemperatureLabel(0.81)).toBe("expressive");
-            expect(getTemperatureLabel(0.9)).toBe("expressive");
-            expect(getTemperatureLabel(1.0)).toBe("expressive");
         });
     });
 });

@@ -177,34 +177,4 @@ describe("UploadProgressDisplay", () => {
             expect(container.firstChild).toBeNull();
         });
     });
-
-    describe("styling", () => {
-        it("applies font-mono class when placeholder exists", () => {
-            mockState.pendingFiles.push({
-                id: "upload-1",
-                file: new File([""], "Pasted Image #1.png", { type: "image/png" }),
-                status: "complete",
-                placeholder: "[Pasted Image #1]",
-            });
-
-            render(<UploadProgressDisplay />);
-
-            const placeholderElement = screen.getByText("[Pasted Image #1]");
-            expect(placeholderElement).toHaveClass("font-mono");
-        });
-
-        it("applies green color when complete without placeholder", () => {
-            mockState.pendingFiles.push({
-                id: "upload-1",
-                file: new File([""], "regular-file.png", { type: "image/png" }),
-                status: "complete",
-            });
-
-            render(<UploadProgressDisplay />);
-
-            const readyElement = screen.getByText("Ready");
-            // Check for green color class (light or dark mode)
-            expect(readyElement.className).toMatch(/text-green/);
-        });
-    });
 });

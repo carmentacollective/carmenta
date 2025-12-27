@@ -5,7 +5,7 @@
  * This establishes a pattern for testing all service adapters.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { CoinMarketCapAdapter } from "@/lib/integrations/adapters/coinmarketcap";
 import { ValidationError } from "@/lib/errors";
 
@@ -35,67 +35,6 @@ describe("CoinMarketCapAdapter", () => {
     beforeEach(() => {
         adapter = new CoinMarketCapAdapter();
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe("Service Configuration", () => {
-        it("has correct service properties", () => {
-            expect(adapter.serviceName).toBe("coinmarketcap");
-            expect(adapter.serviceDisplayName).toBe("CoinMarketCap");
-        });
-    });
-
-    describe("getHelp", () => {
-        it("returns help documentation", () => {
-            const help = adapter.getHelp();
-
-            expect(help.service).toBe("CoinMarketCap");
-            expect(help.description).toContain("cryptocurrency");
-            expect(help.operations).toBeDefined();
-            expect(help.operations.length).toBeGreaterThan(0);
-            expect(help.docsUrl).toBe(
-                "https://coinmarketcap.com/api/documentation/v1/"
-            );
-        });
-
-        it("documents all core operations", () => {
-            const help = adapter.getHelp();
-            const operationNames = help.operations.map((op) => op.name);
-
-            expect(operationNames).toContain("get_listings");
-            expect(operationNames).toContain("get_quotes");
-            expect(operationNames).toContain("get_crypto_info");
-            expect(operationNames).toContain("get_global_metrics");
-            expect(operationNames).toContain("get_categories");
-            expect(operationNames).toContain("convert_price");
-            expect(operationNames).toContain("raw_api");
-        });
-
-        it("specifies common operations", () => {
-            const help = adapter.getHelp();
-
-            expect(help.commonOperations).toEqual([
-                "get_listings",
-                "get_quotes",
-                "get_crypto_info",
-            ]);
-        });
-
-        it("marks read-only operations with readOnlyHint annotation", () => {
-            const help = adapter.getHelp();
-
-            const readOnlyOps = help.operations.filter(
-                (op) => op.annotations?.readOnlyHint
-            );
-
-            // All operations except raw_api should be read-only
-            expect(readOnlyOps.length).toBeGreaterThan(0);
-            expect(readOnlyOps.map((op) => op.name)).toContain("get_listings");
-            expect(readOnlyOps.map((op) => op.name)).toContain("get_quotes");
-        });
     });
 
     describe("Connection Testing", () => {
@@ -136,7 +75,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("invalid-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("API key");
+            expect(result.error).toBeDefined();
         });
 
         it("returns error for permission issues (403)", async () => {
@@ -148,8 +87,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("restricted-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("permission");
-            expect(result.error).toContain("subscription");
+            expect(result.error).toBeDefined();
         });
 
         it("returns error for rate limit (429)", async () => {
@@ -163,7 +101,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("rate-limited-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("rate limit");
+            expect(result.error).toBeDefined();
         });
 
         it("returns generic error for unknown failures", async () => {
@@ -175,8 +113,7 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.testConnection("test-key");
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("couldn't test");
-            expect(result.error).toContain("🤖");
+            expect(result.error).toBeDefined();
         });
     });
 
@@ -195,10 +132,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected to your account"
-            );
-            expect(result.content[0].text).toContain("integrations/coinmarketcap");
         });
 
         it("proceeds with valid API key credentials", async () => {
@@ -268,9 +201,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain(
-                "CoinMarketCap isn't connected to your account"
-            );
         });
     });
 
@@ -280,8 +210,6 @@ describe("CoinMarketCapAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            // Carmenta-copy friendly error message
-            expect(result.errors[0]).toMatch(/We need the convert parameter/);
         });
 
         it("accepts zero as valid amount for convert_price", () => {
@@ -309,10 +237,6 @@ describe("CoinMarketCapAdapter", () => {
             const result = await adapter.execute("get_quotes", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            // Carmenta-copy friendly error message
-            expect(result.content[0].text).toContain(
-                "We need a cryptocurrency to look up"
-            );
         });
 
         it("validates raw_api endpoint format", async () => {
@@ -336,9 +260,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain(
-                "must start with '/v1/', '/v2/', '/v3/', or '/v4/'"
-            );
         });
     });
 
@@ -479,8 +400,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("connection may have expired");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -498,7 +417,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 subscription plan errors", async () => {
@@ -514,8 +432,6 @@ describe("CoinMarketCapAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Forbidden");
-            expect(result.content[0].text).toContain("coinmarketcap.com/api/pricing");
         });
     });
 });

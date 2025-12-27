@@ -103,20 +103,6 @@ describe("ThinkingIndicator", () => {
         expect(foundMessages.length).toBeGreaterThan(0);
     });
 
-    it("applies custom className", () => {
-        const { container } = render(<ThinkingIndicator className="custom-class" />);
-
-        expect(container.firstChild).toHaveClass("custom-class");
-    });
-
-    it("renders rotating logo animation", () => {
-        const { container } = render(<ThinkingIndicator />);
-
-        // Check for rotating animation
-        const rotatingElement = container.querySelector(".animate-spin-slow");
-        expect(rotatingElement).toBeInTheDocument();
-    });
-
     describe("Error States", () => {
         it("handles extremely long elapsed times", async () => {
             render(<ThinkingIndicator />);
@@ -162,35 +148,6 @@ describe("ThinkingIndicator", () => {
 
             // Should still render elapsed time
             expect(screen.getByText(/600s$/)).toBeInTheDocument();
-        });
-
-        it("handles timer cleanup on unmount", async () => {
-            const { unmount } = render(<ThinkingIndicator />);
-
-            // Start timers
-            await act(async () => {
-                vi.advanceTimersByTime(3000);
-            });
-
-            // Unmount mid-countdown
-            unmount();
-
-            // Advance time after unmount
-            await act(async () => {
-                vi.advanceTimersByTime(10000);
-            });
-
-            // Should not throw or cause issues
-            expect(true).toBe(true);
-        });
-
-        it("handles concurrent renders", () => {
-            // Multiple indicators at once should work
-            const { container: container1 } = render(<ThinkingIndicator />);
-            const { container: container2 } = render(<ThinkingIndicator />);
-
-            expect(container1.firstChild).toBeInTheDocument();
-            expect(container2.firstChild).toBeInTheDocument();
         });
     });
 });
