@@ -189,7 +189,7 @@ cycle needs 5-7 steps; deep research may need 15-20. The real safety net is
 
 ## Changelog
 
-- **2024-12-27** - Increased main route step limit from 5 → 25. Added `hasToolCall`
+- **2025-12-27** - Increased main route step limit from 5 → 25. Added `hasToolCall`
   pattern to Librarian with explicit `completeExtraction` tool.
 - **2024-12-24** - Initial analysis of V6 agent paradigm. Decision: stick with
   streamText() primitives due to prompt caching, dynamic routing, and custom header
