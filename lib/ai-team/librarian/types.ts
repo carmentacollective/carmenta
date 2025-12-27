@@ -91,11 +91,6 @@ export interface NotifyUserOutput {
     message: string;
 }
 
-export interface CompleteExtractionInput {
-    extracted: boolean;
-    summary: string;
-}
-
 export interface CompleteExtractionOutput {
     acknowledged: boolean;
     summary: string;
