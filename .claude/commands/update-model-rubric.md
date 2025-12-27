@@ -3,6 +3,19 @@
 Research the current LLM landscape and update Carmenta's model routing rubrics. This is
 a deep research task that should take several minutes to run thoroughly.
 
+## The Model Discovery Challenge
+
+The LLM landscape changes weekly. New models release, old ones deprecate, performance
+characteristics shift. This command addresses static configuration maintenance. For
+runtime discovery, see `knowledge/components/model-discovery/spec.md`.
+
+This manual process remains valuable for:
+
+- Deep capability analysis that APIs do not expose
+- Routing heuristics based on benchmark nuance
+- Values-aligned decisions (Anthropic preference)
+- Qualitative assessments from community experience
+
 ## Avoiding Hallucination
 
 Read @.cursor/rules/trust-and-decision-making.mdc first.
@@ -103,6 +116,9 @@ Artificial Analysis (https://artificialanalysis.ai/)
   speed metric for routing.
 - Pricing comparisons
 - Context window data
+- Their methodology: https://artificialanalysis.ai/methodology/performance-benchmarking
+- Tests run 8x/day, measures real-world API performance, tokens normalized to GPT-4
+  tokenizer
 
 Speed data is essential. Users who want quick answers need to be routed to fast models.
 A 151 t/s model delivers a 100-token response in 0.7 seconds. A 40 t/s model takes 2.5
@@ -141,7 +157,7 @@ xAI (https://x.ai)
 OpenRouter API (https://openrouter.ai/api/v1/models)
 
 Use OpenRouter as your primary source for model identifiers. The API returns a large
-JSON file. Download and parse it:
+JSON file with rich metadata. Download and parse it:
 
 ```bash
 # Download and save the models list
@@ -160,8 +176,26 @@ cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("google/
 cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("x-ai/")) | {id, context_length, pricing}'
 ```
 
+The OpenRouter API provides extensive metadata per model:
+
+- `id`: Exact model identifier (use this in rubric)
+- `context_length`: Maximum context window
+- `pricing`: Input/output costs per token
+- `architecture`: Tokenizer, instruction type, modalities
+- `input_modalities`: What inputs the model accepts (text, image, audio, video)
+- `output_modalities`: What outputs it produces
+- `supported_parameters`: Which API parameters it accepts (tools, temperature, etc.)
+- `top_provider`: Performance data from the fastest provider
+
 The model IDs in the rubric should match OpenRouter's API exactly since that's what
 Carmenta uses to route requests. Do not guess or pattern-match model names.
+
+OpenRouter also offers dynamic variants that can inform routing:
+
+- `:nitro` - Routes to fastest provider (throughput-optimized)
+- `:floor` - Routes to cheapest provider
+- `:thinking` - Enables reasoning by default
+- `:online` - Adds web search to any model
 
 OpenRouter Website (https://openrouter.ai/models)
 
@@ -290,6 +324,25 @@ Wait for user approval before writing the files.
   - `knowledge/model-rubric.md` (slim routing version)
   - `knowledge/model-rubric-detailed.md` (full reference)
   - `lib/model-config.ts` (TypeScript config)
+
+## Relationship to Dynamic Discovery
+
+This manual update process complements future dynamic discovery (see
+`knowledge/components/model-discovery/spec.md`). Static rubrics remain valuable for:
+
+- Routing heuristics requiring human judgment (sensitivity routing, values alignment)
+- Benchmark interpretation that APIs cannot provide
+- Fallback configuration when discovery fails
+- Curated subset from the 500+ models available
+
+Dynamic discovery will eventually provide:
+
+- Model availability checks
+- Real-time pricing updates
+- Capability verification
+- Deprecation detection
+
+The rubric captures judgment. Discovery captures facts. Both are needed.
 
 ## Example Invocation
 
