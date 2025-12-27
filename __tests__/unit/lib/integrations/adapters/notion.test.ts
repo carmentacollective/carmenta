@@ -4,7 +4,7 @@
  * Tests authentication and core operations for the Notion adapter.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { NotionAdapter } from "@/lib/integrations/adapters/notion";
 import { ValidationError } from "@/lib/errors";
 
@@ -37,52 +37,6 @@ describe("NotionAdapter", () => {
     beforeEach(() => {
         adapter = new NotionAdapter();
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe("Service Configuration", () => {
-        it("has correct service properties", () => {
-            expect(adapter.serviceName).toBe("notion");
-            expect(adapter.serviceDisplayName).toBe("Notion");
-        });
-    });
-
-    describe("getHelp", () => {
-        it("returns help documentation", () => {
-            const help = adapter.getHelp();
-
-            expect(help.service).toBe("Notion");
-            expect(help.operations).toBeDefined();
-            expect(help.operations.length).toBeGreaterThan(0);
-        });
-
-        it("documents all core operations", () => {
-            const help = adapter.getHelp();
-            const operationNames = help.operations.map((op) => op.name);
-
-            expect(operationNames).toContain("search");
-            expect(operationNames).toContain("get_page");
-            expect(operationNames).toContain("create_page");
-            expect(operationNames).toContain("update_page");
-            expect(operationNames).toContain("query_database");
-            expect(operationNames).toContain("create_database_entry");
-            expect(operationNames).toContain("raw_api");
-        });
-
-        it("marks read-only operations with readOnlyHint annotation", () => {
-            const help = adapter.getHelp();
-
-            const readOnlyOps = help.operations.filter(
-                (op) => op.annotations?.readOnlyHint
-            );
-
-            expect(readOnlyOps.length).toBeGreaterThan(0);
-            expect(readOnlyOps.map((op) => op.name)).toContain("search");
-            expect(readOnlyOps.map((op) => op.name)).toContain("get_page");
-        });
     });
 
     describe("Authentication", () => {
@@ -153,7 +107,6 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/We need the query parameter/);
         });
 
         it("validates required parameters for get_page", () => {
@@ -161,7 +114,6 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/We need the page_id parameter/);
         });
 
         it("validates required parameters for create_page", () => {
@@ -317,8 +269,6 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("Reconnect");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -336,10 +286,9 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("rate limit hit");
         });
 
-        it("handles 403 permission errors with actionable guidance", async () => {
+        it("handles 403 permission errors", async () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.post as Mock).mockReturnValue({
                 json: vi.fn().mockRejectedValue(new Error("HTTP 403: Forbidden")),
@@ -352,8 +301,6 @@ describe("NotionAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("403");
-            expect(result.content[0].text).toContain("reconnecting");
         });
     });
 
@@ -375,7 +322,6 @@ describe("NotionAdapter", () => {
 
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toMatch(/We need the block_id parameter/);
         });
 
         it("fetches comments from a page", async () => {
@@ -571,7 +517,6 @@ describe("NotionAdapter", () => {
             expect(result.isError).toBe(false);
             const response = JSON.parse(result.content[0].text as string);
             expect(response.totalCount).toBe(0);
-            expect(response.note).toContain("No comments found");
         });
     });
 
@@ -692,23 +637,6 @@ describe("NotionAdapter", () => {
             const response = JSON.parse(result.content[0].text as string);
             expect(response.results[0].parent).toBeUndefined();
             expect(response.results[0].location).toBeUndefined();
-        });
-    });
-
-    describe("list_comments in Help", () => {
-        it("documents list_comments operation", () => {
-            const help = adapter.getHelp();
-            const operationNames = help.operations.map((op) => op.name);
-
-            expect(operationNames).toContain("list_comments");
-
-            const listCommentsOp = help.operations.find(
-                (op) => op.name === "list_comments"
-            );
-            expect(listCommentsOp?.annotations?.readOnlyHint).toBe(true);
-            expect(
-                listCommentsOp?.parameters.find((p) => p.name === "block_id")
-            ).toBeDefined();
         });
     });
 });

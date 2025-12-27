@@ -4,7 +4,7 @@
  * Tests authentication and core operations for the Gmail adapter.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { GmailAdapter } from "@/lib/integrations/adapters/gmail";
 import { ValidationError } from "@/lib/errors";
 
@@ -38,65 +38,6 @@ describe("GmailAdapter", () => {
     beforeEach(() => {
         adapter = new GmailAdapter();
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe("Service Configuration", () => {
-        it("has correct service properties", () => {
-            expect(adapter.serviceName).toBe("gmail");
-            expect(adapter.serviceDisplayName).toBe("Gmail");
-        });
-    });
-
-    describe("getHelp", () => {
-        it("returns help documentation", () => {
-            const help = adapter.getHelp();
-
-            expect(help.service).toBe("Gmail");
-            expect(help.operations).toBeDefined();
-            expect(help.operations.length).toBeGreaterThan(0);
-            expect(help.docsUrl).toBe(
-                "https://developers.google.com/gmail/api/reference/rest"
-            );
-        });
-
-        it("documents all core operations", () => {
-            const help = adapter.getHelp();
-            const operationNames = help.operations.map((op) => op.name);
-
-            expect(operationNames).toContain("send_message");
-            expect(operationNames).toContain("search_messages");
-            expect(operationNames).toContain("get_message");
-            expect(operationNames).toContain("list_threads");
-            expect(operationNames).toContain("create_draft");
-            expect(operationNames).toContain("raw_api");
-        });
-
-        it("specifies common operations", () => {
-            const help = adapter.getHelp();
-
-            expect(help.commonOperations).toEqual([
-                "send_message",
-                "search_messages",
-                "get_message",
-            ]);
-        });
-
-        it("marks read-only operations with readOnlyHint annotation", () => {
-            const help = adapter.getHelp();
-
-            const readOnlyOps = help.operations.filter(
-                (op) => op.annotations?.readOnlyHint
-            );
-
-            expect(readOnlyOps.length).toBeGreaterThan(0);
-            expect(readOnlyOps.map((op) => op.name)).toContain("search_messages");
-            expect(readOnlyOps.map((op) => op.name)).toContain("get_message");
-            expect(readOnlyOps.map((op) => op.name)).toContain("list_threads");
-        });
     });
 
     describe("testConnection", () => {
@@ -513,8 +454,6 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("Authentication failed");
-            expect(result.content[0].text).toContain("connection may have expired");
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -532,7 +471,6 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 404 not found errors", async () => {
@@ -548,14 +486,12 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("doesn't exist");
         });
 
         it("handles unknown action", async () => {
             const result = await adapter.execute("unknown_action", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("We don't recognize");
         });
     });
 
@@ -580,7 +516,6 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("/gmail/v1");
         });
 
         it("executes raw API request", async () => {

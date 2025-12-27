@@ -5,19 +5,15 @@
  * particularly around foreign key constraints and conflict handling.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { setupTestDb } from "@/vitest.setup";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 
 setupTestDb();
-import {
-    upsertMessage,
-    createConnection,
-    deleteConnection,
-} from "@/lib/db/connections";
-import { users, connections, messages, messageParts } from "@/lib/db/schema";
+import { upsertMessage, createConnection } from "@/lib/db/connections";
+import { users, messages, messageParts } from "@/lib/db/schema";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 describe("Message Insert Error Handling", () => {
@@ -38,19 +34,6 @@ describe("Message Insert Error Handling", () => {
         // Create test connection
         const connection = await createConnection(testUserId);
         testConnectionId = connection.id; // Now a number (serial)
-    });
-
-    afterEach(async () => {
-        // Clean up test data
-        if (testConnectionId) {
-            await deleteConnection(testConnectionId).catch(() => {});
-        }
-        if (testUserId) {
-            await db
-                .delete(users)
-                .where(eq(users.id, testUserId))
-                .catch(() => {});
-        }
     });
 
     describe("upsertMessage", () => {

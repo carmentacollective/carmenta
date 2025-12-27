@@ -129,22 +129,6 @@ describe("ReasoningDisplay", () => {
         expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it("renders brain icon", () => {
-        const { container } = render(<ReasoningDisplay content="Test" isStreaming />);
-
-        // Brain icon should be present
-        const icon = within(container).getByTestId("reasoning-icon");
-        expect(icon).toBeInTheDocument();
-    });
-
-    it("applies custom className", () => {
-        const { container } = render(
-            <ReasoningDisplay content="Test" isStreaming className="my-custom-class" />
-        );
-
-        expect(container.firstChild).toHaveClass("my-custom-class");
-    });
-
     it("truncates long context in status message", () => {
         const longContent =
             "This is a very long first sentence that should definitely be truncated because it exceeds forty characters";

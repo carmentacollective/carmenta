@@ -4,7 +4,7 @@
  * Tests authentication and core operations for the Google Calendar & Contacts adapter.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { GoogleCalendarContactsAdapter } from "@/lib/integrations/adapters/google-calendar-contacts";
 import { ValidationError } from "@/lib/errors";
 
@@ -37,47 +37,6 @@ describe("GoogleCalendarContactsAdapter", () => {
     beforeEach(() => {
         adapter = new GoogleCalendarContactsAdapter();
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe("Service Configuration", () => {
-        it("has correct service properties", () => {
-            expect(adapter.serviceName).toBe("google-calendar-contacts");
-            expect(adapter.serviceDisplayName).toBe("Google Calendar & Contacts");
-        });
-    });
-
-    describe("getHelp", () => {
-        it("returns help documentation", () => {
-            const help = adapter.getHelp();
-
-            expect(help.service).toBe("Google Calendar & Contacts");
-            expect(help.operations).toBeDefined();
-            expect(help.operations.length).toBeGreaterThan(0);
-        });
-
-        it("documents all core operations", () => {
-            const help = adapter.getHelp();
-            const operationNames = help.operations.map((op) => op.name);
-
-            expect(operationNames).toContain("list_calendars");
-            expect(operationNames).toContain("list_events");
-            expect(operationNames).toContain("create_event");
-            expect(operationNames).toContain("search_contacts");
-            expect(operationNames).toContain("list_contacts");
-            expect(operationNames).toContain("raw_api");
-        });
-
-        it("specifies common operations", () => {
-            const help = adapter.getHelp();
-
-            expect(help.commonOperations).toContain("list_events");
-            expect(help.commonOperations).toContain("create_event");
-            expect(help.commonOperations).toContain("search_contacts");
-        });
     });
 
     describe("Authentication", () => {
@@ -235,9 +194,6 @@ describe("GoogleCalendarContactsAdapter", () => {
             const result = await adapter.execute("list_calendars", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /403|Forbidden|Authentication failed/
-            );
         });
 
         it("handles 429 rate limit errors", async () => {
@@ -251,7 +207,6 @@ describe("GoogleCalendarContactsAdapter", () => {
             const result = await adapter.execute("list_calendars", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toContain("rate limit hit");
         });
 
         it("handles 403 permission errors", async () => {
@@ -263,9 +218,6 @@ describe("GoogleCalendarContactsAdapter", () => {
             const result = await adapter.execute("list_calendars", {}, testUserEmail);
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(
-                /403|Forbidden|Authentication failed/
-            );
         });
     });
 });

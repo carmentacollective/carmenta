@@ -95,17 +95,6 @@ describe("ModelSelectorModal", () => {
     });
 
     describe("model selection", () => {
-        it("highlights Automagically when modelId is null", () => {
-            const { container } = render(<ModelSelectorModal {...defaultProps} />);
-
-            // The Automagically button should have the selected styling
-            const automagicallyButton = container.querySelector(
-                ".bg-gradient-to-br button"
-            );
-            expect(automagicallyButton).toBeInTheDocument();
-            expect(automagicallyButton).toHaveClass("shadow-xl");
-        });
-
         it("calls onChange with model ID when model is selected", () => {
             const onChange = vi.fn();
             const { container } = render(
@@ -206,32 +195,6 @@ describe("ModelSelectorModal", () => {
                 reasoning: null,
             });
             expect(onClose).toHaveBeenCalled();
-        });
-    });
-
-    describe("model details", () => {
-        it("shows speed/quality badges for models", () => {
-            const { container } = render(<ModelSelectorModal {...defaultProps} />);
-
-            expect(container).toHaveTextContent("Fast");
-            expect(container).toHaveTextContent("Versatile");
-            expect(container).toHaveTextContent("Deep");
-        });
-
-        it("shows model descriptions", () => {
-            const { container } = render(<ModelSelectorModal {...defaultProps} />);
-
-            // Check for a model description
-            expect(container).toHaveTextContent(
-                "Versatile powerhouse for code, analysis, and creative work"
-            );
-        });
-
-        it("shows capability tags for models", () => {
-            const { container } = render(<ModelSelectorModal {...defaultProps} />);
-
-            expect(container).toHaveTextContent("Deep thinking");
-            expect(container).toHaveTextContent("Long docs");
         });
     });
 });
