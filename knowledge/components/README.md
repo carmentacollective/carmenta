@@ -199,3 +199,12 @@ gracefully. We see helpful messages, not stack traces.
 
 Database infrastructure - PostgreSQL for relational data, Redis for caching and
 real-time. Hosting options, ORM choices, vector storage considerations.
+
+## Community Layer
+
+### [Slackbot](slackbot/)
+
+Carmenta's living presence in the community Slack. Not a command responder - a proactive
+community member. Release announcements, community help, member connections, and news.
+The same goddess who powers the interface, walking among the community. Documented
+across multiple files: vision, best-of-breed patterns, moonshot ideas, and architecture.
