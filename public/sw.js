@@ -69,8 +69,12 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
+    // Clone the request before fetching - request bodies can only be consumed once
+    // Without this, if network fails, we can't use the original request for cache lookup
+    const request = event.request.clone();
+
     event.respondWith(
-        fetch(event.request)
+        fetch(request)
             .then((response) => {
                 // Don't cache non-successful responses or opaque responses
                 if (
