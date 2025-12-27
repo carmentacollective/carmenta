@@ -91,7 +91,7 @@ self.addEventListener("fetch", (event) => {
                 // Cache the response (non-blocking, errors are silently ignored)
                 caches
                     .open(RUNTIME_CACHE)
-                    .then((cache) => cache.put(event.request, responseToCache))
+                    .then((cache) => cache.put(request, responseToCache))
                     .catch(() => {
                         // Silently fail - caching is an enhancement, not critical
                         // Errors might occur due to quota exceeded or other storage issues
