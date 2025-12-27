@@ -223,22 +223,28 @@ export async function GET(request: NextRequest) {
         let userMessage = error.message;
 
         // Provide specific guidance for common OAuth errors
+        // Be honest: don't say "try again" when retrying won't help
         if (error.message.includes("invalid_client")) {
-            userMessage = `${state.provider} rejected our credentials. We're looking into it—try again shortly.`;
+            // Our credentials are wrong - we need to fix them, not the user
+            userMessage = `${state.provider} rejected our credentials. The robots have been alerted. 🤖`;
         } else if (
             error.message.includes("invalid_grant") ||
             error.message.includes("authorization code")
         ) {
-            userMessage = `Your authorization code for ${state.provider} expired. The robots have been notified. 🤖`;
+            // Authorization code expired - user needs to restart the flow
+            userMessage = `The authorization code for ${state.provider} expired. Try connecting again?`;
         } else if (error.message.includes("redirect_uri_mismatch")) {
-            userMessage =
-                "The redirect URL doesn't match what's configured in the provider settings. We'll need to update the OAuth configuration.";
+            // Our config is wrong - we need to fix it
+            userMessage = `The redirect URL doesn't match what ${state.provider} expects. The bots are on it. 🤖`;
         } else if (error.message.includes("access_denied")) {
-            userMessage = `You declined access to ${state.provider}. To connect, you'll need to grant permissions.`;
+            // User declined - this is their choice, be warm about it
+            userMessage = `Access to ${state.provider} was declined. Connect again when ready.`;
         } else if (error.message.includes("Network error")) {
-            userMessage = `We couldn't reach ${state.provider} right now. It may be temporarily unavailable. Try again in a moment?`;
+            // Transient - retry is honest here
+            userMessage = `Couldn't reach ${state.provider} right now. Try again in a moment?`;
         } else if (!error.message || error.message.includes("Unknown")) {
-            userMessage = `We had an error connecting to your ${state.provider} account. The robots have been notified. 🤖`;
+            // Unknown error - our problem
+            userMessage = `Something went wrong connecting to ${state.provider}. The robots have been notified. 🤖`;
         }
 
         // Use appUrl for error redirect to ensure correct domain

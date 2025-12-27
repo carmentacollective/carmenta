@@ -883,7 +883,7 @@ export class DropboxAdapter extends ServiceAdapter {
 
             // Dropbox-specific: storage quota exceeded
             if (errMsg.includes("insufficient_space")) {
-                return `We couldn't ${action}: Not enough space in your Dropbox account to complete this operation.`;
+                return `We couldn't ${action}: Dropbox is out of storage space.`;
             }
         }
 

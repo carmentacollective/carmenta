@@ -3,6 +3,9 @@
  *
  * User-friendly error message formatting for KB operations.
  * Handles cryptic errors from service workers and network failures.
+ *
+ * Philosophy: Be honest about what happened. Don't say "try again" when
+ * retrying won't work. If it's our bug, own it. If it's transient, say so.
  */
 
 /**
@@ -10,45 +13,47 @@
  * Handles the cryptic errors from service workers and network failures.
  */
 export function formatSaveError(error: unknown): string {
-    // Handle null/undefined/empty
+    // Handle null/undefined/empty - likely our bug, don't suggest retry
     if (error === null || error === undefined) {
-        return "We couldn't save your changes. Please try again.";
+        return "We couldn't save those changes. The robots have been alerted. 🤖";
     }
 
     const message = error instanceof Error ? error.message : String(error);
 
-    // Network errors from service worker or fetch
+    // Network errors from service worker or fetch - user can fix, retry is honest
     if (
         message.includes("Load failed") ||
         message.includes("Failed to fetch") ||
         message.includes("NetworkError") ||
         message.includes("network")
     ) {
-        return "Connection lost. Please check your network and try again.";
+        return "Connection dropped. Check your network and try again?";
     }
 
-    // Timeout errors
+    // Timeout errors - transient, retry is honest
     if (message.includes("timeout") || message.includes("Timeout")) {
-        return "Request timed out. Please try again.";
+        return "That request timed out. Try again?";
     }
 
-    // Server errors
+    // Server errors - our bug, don't lie about retry working
     if (message.includes("500") || message.includes("Internal Server Error")) {
-        return "Something went wrong on our end. Please try again in a moment.";
+        return "Something broke on our end. The robots have been notified. 🤖";
     }
 
-    // Auth errors
+    // Auth errors - specific action needed, not retry
     if (message.includes("401") || message.includes("Unauthorized")) {
-        return "Your session has expired. Please refresh the page.";
+        return "Session expired. Refresh the page to continue.";
     }
 
-    // Generic fallback - but still clean
+    // Generic fallback - likely our bug, own it
     // TypeError and other internal errors shouldn't be shown to users
     const isTypeError = error instanceof TypeError;
     if (message.includes("{") || isTypeError) {
-        return "We couldn't save your changes. Please try again.";
+        return "We couldn't save those changes. The robots have been alerted. 🤖";
     }
 
     // If the message is already user-friendly, use it
-    return message || "We couldn't save your changes. Please try again.";
+    return (
+        message || "We couldn't save those changes. The robots have been alerted. 🤖"
+    );
 }

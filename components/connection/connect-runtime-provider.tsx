@@ -249,7 +249,8 @@ export function useSettingsModal() {
  * Handles JSON error responses, HTML error pages, provider errors, and plain text.
  *
  * All messages follow Carmenta voice: warm, direct, confident, helpful.
- * No technical jargon. Focus on what the user can do next.
+ * No technical jargon. Be honest about what's transient vs what's broken.
+ * Don't say "try again" when retrying won't help.
  */
 function parseErrorMessage(message: string | undefined): string {
     if (!message) return "We couldn't complete that request.";
@@ -263,23 +264,27 @@ function parseErrorMessage(message: string | undefined): string {
         lowerMessage.includes("ai_apicallerror")
     ) {
         // Check for specific patterns in the full message
+        // Thinking block issues - transient, retry is honest
         if (lowerMessage.includes("thinking") && lowerMessage.includes("block")) {
             return "We hit a conversation glitch. Try sending your message again.";
         }
+        // Rate limits - transient, retry works after waiting
         if (lowerMessage.includes("rate limit") || lowerMessage.includes("429")) {
             return "The model is busy right now. Give it a moment and try again.";
         }
+        // Overloaded - transient, offer alternative
         if (lowerMessage.includes("overloaded") || lowerMessage.includes("503")) {
             return "High demand right now. Try a different model or wait a moment.";
         }
+        // Timeout - transient, offer alternative approach
         if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
             return "The response took too long. Try a simpler question or a faster model.";
         }
-        // Generic provider error
+        // Generic provider error - might be transient, offer options
         return "We couldn't reach the model. Try again or switch models.";
     }
 
-    // Connection/network errors
+    // Connection/network errors - user can fix
     if (
         lowerMessage.includes("fetch failed") ||
         lowerMessage.includes("network error") ||
@@ -301,22 +306,26 @@ function parseErrorMessage(message: string | undefined): string {
         }
     }
 
-    // Handle HTML error pages (like 404s) - extract just the status code if present
+    // Handle HTML error pages - extract status code if present
     if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
-        // Try to extract status code from Next.js error page
         const statusMatch = trimmed.match(/<h1[^>]*>(\d{3})<\/h1>/);
         if (statusMatch) {
             const status = statusMatch[1];
-            if (status === "404") return "We lost the thread. Refresh and try again.";
-            if (status === "500") return "We hit a snag. Try again in a moment.";
-            return "Unexpected response. Refresh and try again.";
+            // 404 - might be stale state, refresh helps
+            if (status === "404") return "We lost the thread. Refresh to continue.";
+            // 500 - our bug, don't lie about retry working
+            if (status === "500")
+                return "Something broke on our end. The robots have been notified. 🤖";
+            // Other status - our bug
+            return "Something unexpected happened. The bots are on it. 🤖";
         }
-        return "Unexpected response. Refresh and try again.";
+        // Unknown HTML response - likely our bug
+        return "Something unexpected happened. The bots are on it. 🤖";
     }
 
-    // If the message is very long (likely a stack trace or HTML), truncate it
+    // Very long messages (likely a stack trace) - our bug
     if (trimmed.length > 200) {
-        return "We hit a snag. Try again or start a new conversation.";
+        return "Something went sideways. The robots have been alerted. 🤖";
     }
 
     // Final pass: check for any remaining technical patterns

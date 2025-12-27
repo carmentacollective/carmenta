@@ -288,18 +288,16 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             const error =
                 err instanceof Error ? err : new Error("Failed to start voice input");
 
-            // Provide helpful error messages
+            // Provide helpful error messages - be direct about what action is needed
             if (error.name === "NotAllowedError") {
                 handleError(
                     new Error(
-                        "Microphone access denied. Please allow microphone access in your browser settings."
+                        "Microphone access denied. Allow microphone access in your browser settings to continue."
                     )
                 );
             } else if (error.name === "NotFoundError") {
                 handleError(
-                    new Error(
-                        "No microphone found. Please connect a microphone and try again."
-                    )
+                    new Error("No microphone found. Connect a microphone to use voice.")
                 );
             } else {
                 handleError(error);

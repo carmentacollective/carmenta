@@ -100,7 +100,7 @@ export class TwitterAdapter extends ServiceAdapter {
 
                     throw new Error(
                         "X API response parsing failed due to connection interruption. " +
-                            "This may be due to network issues or API rate limiting. Please try again."
+                            "Might be network issues or rate limiting. Try again in a moment?"
                     );
                 }
 
@@ -129,7 +129,7 @@ export class TwitterAdapter extends ServiceAdapter {
                 });
 
                 throw new Error(
-                    "Lost connection to X API. This may be temporary. Please try again."
+                    "Lost connection to X API. This may be temporary. Try again?"
                 );
             }
 

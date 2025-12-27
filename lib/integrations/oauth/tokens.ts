@@ -177,7 +177,7 @@ export async function exchangeCodeForTokens(
         });
 
         throw new Error(
-            "Network error during token exchange. Please check your connection and try again."
+            "Network error during token exchange. Check your connection and try again?"
         );
     }
 
