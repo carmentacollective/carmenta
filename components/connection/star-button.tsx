@@ -90,7 +90,9 @@ export function StarButton({
                 className
             )}
             data-tooltip-id="tip"
-            data-tooltip-content={label || (isStarred ? "Unpin" : "Keep close")}
+            data-tooltip-content={
+                label || (isStarred ? "Remove from starred" : "Pin to top of list")
+            }
             aria-label={label || (isStarred ? "Unstar connection" : "Star connection")}
             aria-pressed={isStarred}
         >

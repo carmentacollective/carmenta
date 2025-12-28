@@ -36,8 +36,8 @@ classification engine.
 
 ## The Oracle Menu
 
-The Oracle icon (top-left of /connect) provides discovery for users who don't know the
-@carmenta pattern. Clicking it reveals options that pre-fill the message input:
+The Oracle icon (top-left of /connection) provides discovery for users who don't know
+the @carmenta pattern. Clicking it reveals options that pre-fill the message input:
 
 - "I have feedback" → "@carmenta I have feedback about..."
 - "Report a bug" → "@carmenta I found a bug: "
