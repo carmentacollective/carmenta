@@ -354,8 +354,8 @@ describe("ConnectionChooser Integration", () => {
                 ).toBeInTheDocument();
             });
 
-            // Close via backdrop click
-            const backdrop = container.querySelector(".fixed.inset-0");
+            // Close via backdrop click (dropdown renders via portal to document.body)
+            const backdrop = document.querySelector(".fixed.inset-0");
             fireEvent.click(backdrop!);
 
             await waitFor(() => {

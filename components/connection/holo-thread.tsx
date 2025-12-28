@@ -87,7 +87,6 @@ import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
-import { ConnectionChooser } from "./connection-chooser";
 import { useConnection } from "./connection-context";
 import { DraftRecoveryBanner } from "./draft-recovery-banner";
 import { useDraftPersistence } from "@/lib/hooks/use-draft-persistence";
@@ -1730,7 +1729,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
         getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
-    const { connections, activeConnectionId } = useConnection();
+    const { activeConnectionId } = useConnection();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
@@ -1744,10 +1743,6 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
             input,
             setInput,
         });
-
-    // Show connection chooser on mobile when user has connections
-    // Guard against undefined during SSR/hydration to prevent layout flash
-    const showMobileConnectionChooser = isMobile === true && connections.length > 0;
 
     // IME composition state
     const [isComposing, setIsComposing] = useState(false);
@@ -2215,9 +2210,6 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
 
     return (
         <div className="flex w-full flex-col gap-2">
-            {/* Mobile connection chooser - shown above composer */}
-            {showMobileConnectionChooser && <ConnectionChooser placement="bottom" />}
-
             {/* Upload progress display */}
             {hasPendingFiles && (
                 <UploadProgressDisplay onInsertInline={handleInsertInline} />

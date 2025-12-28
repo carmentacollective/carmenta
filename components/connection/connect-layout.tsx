@@ -18,7 +18,7 @@
 
 import { type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { Plus, Loader2 } from "lucide-react";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectRuntimeProvider } from "./connect-runtime-provider";
@@ -71,73 +71,123 @@ function CarmentaOracleWithWhisper() {
 // ============================================================
 
 function ConnectLayoutInner({ children }: { children: ReactNode }) {
-    const { activeConnection, connections } = useConnection();
-    const isMobile = useIsMobile();
+    const { activeConnection, connections, createNewConnection, isPending } =
+        useConnection();
 
     // Simple: key only changes on real navigation (when activeConnection changes)
     const connectionKey = activeConnection?.id ?? "new";
 
-    // Hide connection chooser until we have at least one conversation
-    // On mobile, it's shown near the composer instead of in header
+    // Show connection chooser when we have at least one conversation
     // Guard against undefined during SSR/hydration to prevent layout flash
-    const showConnectionChooser = connections.length > 0 && isMobile !== true;
+    const hasConnections = connections.length > 0;
 
     return (
         <ConnectRuntimeProvider>
             <div className="flex h-full items-center justify-center p-0 sm:p-4">
                 {/* ONE container for everything - header, chat, input - all same width */}
                 <div className="relative flex h-full w-full max-w-4xl flex-col">
-                    {/* Header row - compact on mobile, spacious on desktop, safe area for notched devices */}
-                    {/* Mobile: tighter vertical padding to maximize chat space */}
-                    <header className="flex items-center justify-between pb-1 pl-3 pr-[max(0.75rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 sm:py-3 md:px-12">
-                        {/* Oracle with whisper - Carmenta speaks */}
-                        <motion.div
-                            variants={entranceVariants}
-                            initial="hidden"
-                            animate="visible"
-                            custom={0}
-                        >
-                            <CarmentaOracleWithWhisper />
-                        </motion.div>
+                    {/* Header - Two rows on mobile, single row on desktop */}
+                    {/* Mobile: Row 1 = Oracle | New | Avatar, Row 2 = Connection chooser */}
+                    {/* Desktop: Single row = Oracle | Connection chooser | Avatar */}
+                    {/* Uses glass effect matching the input dock (rgba(255,255,255,0.7) + blur) */}
+                    {/*
+                        Header spacing uses 8px grid:
+                        - Mobile: mx-3 (12px) + px-3 (12px) = 24px edge inset
+                        - sm+: mx-4 (16px) + px-4 (16px) = 32px edge inset
+                        Glass effect consistent at all sizes for visual continuity
+                    */}
+                    <header className="mx-3 mb-3 mt-[max(0.5rem,env(safe-area-inset-top))] space-y-3 rounded-3xl bg-white/70 px-4 py-3 backdrop-blur-xl dark:bg-card/70 sm:mx-4 sm:mb-4 sm:space-y-0 sm:px-5 sm:py-4">
+                        {/* Row 1: Oracle | (desktop: ConnectionChooser) | (mobile: New) | Avatar */}
+                        <div className="flex items-center justify-between">
+                            {/* Oracle with whisper - Carmenta speaks */}
+                            <motion.div
+                                variants={entranceVariants}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0}
+                            >
+                                <CarmentaOracleWithWhisper />
+                            </motion.div>
 
-                        {/* Center section - maintains spacing even when chooser is hidden */}
-                        <motion.div
-                            className="flex flex-1 items-center justify-center"
-                            variants={entranceVariants}
-                            initial="hidden"
-                            animate="visible"
-                            custom={0.05}
-                        >
-                            {showConnectionChooser && <ConnectionChooser />}
-                        </motion.div>
+                            {/* Desktop: Connection chooser in center */}
+                            <motion.div
+                                className="hidden flex-1 justify-center sm:flex"
+                                variants={entranceVariants}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0.05}
+                            >
+                                {hasConnections && <ConnectionChooser />}
+                            </motion.div>
 
-                        {/* Account - User dropdown menu
+                            {/* Mobile: New button between Oracle and Avatar */}
+                            {hasConnections && (
+                                <motion.div
+                                    className="sm:hidden"
+                                    variants={entranceVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    custom={0.05}
+                                >
+                                    <button
+                                        onClick={createNewConnection}
+                                        disabled={isPending}
+                                        className="flex h-8 items-center gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary transition-all hover:bg-primary/25 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                        aria-label="New connection"
+                                    >
+                                        {isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Plus className="h-4 w-4" />
+                                        )}
+                                        <span className="text-sm font-medium">
+                                            New Connection
+                                        </span>
+                                    </button>
+                                </motion.div>
+                            )}
 
-                            ⚠️ CRITICAL Z-INDEX WARNING ⚠️
+                            {/* Account - User dropdown menu
 
-                            This motion.div creates a stacking context because Framer Motion
-                            applies CSS transforms during animation. Without an explicit z-index,
-                            this stacking context defaults to z-auto (effectively 0).
+                                ⚠️ CRITICAL Z-INDEX WARNING ⚠️
 
-                            The <main> element below has z-base (0). Since main comes AFTER
-                            header in DOM order, main wins when z-indices are equal - blocking
-                            ALL clicks on the UserAuthButton dropdown menu.
+                                This motion.div creates a stacking context because Framer Motion
+                                applies CSS transforms during animation. Without an explicit z-index,
+                                this stacking context defaults to z-auto (effectively 0).
 
-                            z-dropdown (30) ensures the dropdown renders above main content.
-                            DO NOT REMOVE THIS Z-INDEX or the dropdown will be unclickable.
+                                The <main> element below has z-base (0). Since main comes AFTER
+                                header in DOM order, main wins when z-indices are equal - blocking
+                                ALL clicks on the UserAuthButton dropdown menu.
 
-                            Bug was caused by: Framer Motion transform + DOM order + equal z-index
-                            See: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context
-                        */}
-                        <motion.div
-                            variants={entranceVariants}
-                            initial="hidden"
-                            animate="visible"
-                            custom={0.1}
-                            className="z-dropdown"
-                        >
-                            <UserAuthButton />
-                        </motion.div>
+                                z-dropdown (30) ensures the dropdown renders above main content.
+                                DO NOT REMOVE THIS Z-INDEX or the dropdown will be unclickable.
+
+                                Bug was caused by: Framer Motion transform + DOM order + equal z-index
+                                See: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context
+                            */}
+                            <motion.div
+                                variants={entranceVariants}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0.1}
+                                className="z-dropdown"
+                            >
+                                <UserAuthButton />
+                            </motion.div>
+                        </div>
+
+                        {/* Row 2 (Mobile only): Connection chooser - same component, CSS-hidden on desktop */}
+                        {hasConnections && (
+                            <motion.div
+                                className="w-full sm:hidden"
+                                variants={entranceVariants}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0.1}
+                            >
+                                <ConnectionChooser hideNewButton />
+                            </motion.div>
+                        )}
                     </header>
 
                     {/* Chat (messages + input) fills the rest */}

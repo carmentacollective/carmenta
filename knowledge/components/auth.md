@@ -27,7 +27,7 @@ us and grows with us.
 
 **Protected Routes**:
 
-- `/connect` - requires authentication
+- `/connection` - requires authentication
 - `/api/*` - all API routes require authentication
 
 **Public Routes**:
@@ -135,7 +135,7 @@ architecture. This decision is deferred until Service Connectivity implementatio
 ### Product Decisions (Partially Resolved)
 
 - ~~**Auth methods**~~: Email + Google at launch.
-- ~~**Required vs. optional**~~: Auth required for `/connect` and API. Landing page
+- ~~**Required vs. optional**~~: Auth required for `/connection` and API. Landing page
   public.
 - **Data portability**: To be implemented (GDPR consideration)
 - **Account linking**: Handled by Clerk (users can add multiple auth methods)
