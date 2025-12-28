@@ -493,6 +493,43 @@ export async function findInterruptedConnections(
     });
 }
 
+/**
+ * Updates the active stream ID for resumable streaming
+ *
+ * @param connectionId - ID of the connection
+ * @param streamId - The resumable stream ID (null to clear)
+ */
+export async function updateActiveStreamId(
+    connectionId: number,
+    streamId: string | null
+): Promise<void> {
+    await db
+        .update(connections)
+        .set({
+            activeStreamId: streamId,
+        })
+        .where(eq(connections.id, connectionId));
+
+    logger.debug(
+        { connectionId, activeStreamId: streamId ? "set" : "cleared" },
+        "Updated active stream ID"
+    );
+}
+
+/**
+ * Gets the active stream ID for a connection
+ *
+ * @param connectionId - ID of the connection
+ * @returns The active stream ID, or null if none
+ */
+export async function getActiveStreamId(connectionId: number): Promise<string | null> {
+    const connection = await db.query.connections.findFirst({
+        where: eq(connections.id, connectionId),
+        columns: { activeStreamId: true },
+    });
+    return connection?.activeStreamId ?? null;
+}
+
 // ============================================================================
 // EXPORTS FOR DB INDEX
 // ============================================================================

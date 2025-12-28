@@ -92,6 +92,7 @@ vi.mock("@/lib/db", () => ({
     createConnection: vi.fn(),
     upsertMessage: vi.fn(),
     updateStreamingStatus: vi.fn(),
+    updateActiveStreamId: vi.fn(),
 }));
 
 // Mock discovery functions
@@ -180,6 +181,7 @@ describe("POST /api/connection", () => {
                         : `connection-${publicId}`,
                     status: "active" as const,
                     streamingStatus: "idle" as const,
+                    activeStreamId: null,
                     modelId: null,
                     // Concierge data for persistence (temperature is string for numeric column)
                     conciergeModelId: conciergeData?.modelId ?? null,
@@ -410,6 +412,7 @@ describe("POST /api/connection", () => {
                     slug: `debug-api-errors-${testPublicId}`,
                     status: "active" as const,
                     streamingStatus: "idle" as const,
+                    activeStreamId: null,
                     modelId: null,
                     conciergeModelId: conciergeData?.modelId ?? null,
                     conciergeTemperature:
@@ -466,6 +469,7 @@ describe("POST /api/connection", () => {
                     slug: `connection-${testPublicId}`, // Fallback slug
                     status: "active" as const,
                     streamingStatus: "idle" as const,
+                    activeStreamId: null,
                     modelId: null,
                     conciergeModelId: conciergeData?.modelId ?? null,
                     conciergeTemperature:

@@ -11,6 +11,7 @@ export * from "./types";
 
 // Server-side utilities
 export * from "./transient-writer";
+export { getStreamContext } from "./stream-context";
 
 // Client-side context and hooks
 export {

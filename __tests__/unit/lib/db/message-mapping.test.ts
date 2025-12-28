@@ -617,6 +617,7 @@ describe("mapConnectionMessagesToUI", () => {
             slug: "test-conversation-conv-123",
             status: "active",
             streamingStatus: "idle",
+            activeStreamId: null,
             modelId: null,
             conciergeModelId: null,
             conciergeTemperature: null,
