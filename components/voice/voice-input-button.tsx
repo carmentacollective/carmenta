@@ -8,7 +8,14 @@
  * directly into the chat input.
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import {
+    forwardRef,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mic, MicOff, Loader2 } from "lucide-react";
 
@@ -16,11 +23,20 @@ import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/lib/hooks/use-voice-input";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
+export interface VoiceInputButtonRef {
+    /** Stop recording if currently active */
+    stop: () => void;
+    /** Whether currently recording */
+    isListening: boolean;
+}
+
 interface VoiceInputButtonProps {
     /** Callback when transcript is updated (real-time) */
     onTranscriptUpdate?: (transcript: string) => void;
     /** Callback when recording stops with final transcript */
     onTranscriptComplete?: (transcript: string) => void;
+    /** Callback when a new recording session starts */
+    onSessionStart?: () => void;
     /** Whether the button is disabled */
     disabled?: boolean;
     /** Additional class names */
@@ -29,20 +45,55 @@ interface VoiceInputButtonProps {
     variant?: "ghost" | "primary";
 }
 
-export function VoiceInputButton({
-    onTranscriptUpdate,
-    onTranscriptComplete,
-    disabled = false,
-    className,
-    variant = "ghost",
-}: VoiceInputButtonProps) {
+export const VoiceInputButton = forwardRef<
+    VoiceInputButtonRef,
+    VoiceInputButtonProps
+>(function VoiceInputButton(
+    {
+        onTranscriptUpdate,
+        onTranscriptComplete,
+        onSessionStart,
+        disabled = false,
+        className,
+        variant = "ghost",
+    },
+    ref
+) {
     const { trigger: triggerHaptic } = useHapticFeedback();
 
     // Track the transcript we've already sent to avoid duplicates
     const lastSentTranscriptRef = useRef("");
 
+    // Define callbacks before passing to useVoiceInput (hooks can't be called inside other hooks)
+    const handleTranscriptComplete = useCallback(
+        (finalTranscript: string) => {
+            onTranscriptComplete?.(finalTranscript);
+            lastSentTranscriptRef.current = "";
+        },
+        [onTranscriptComplete]
+    );
+
+    const handleTranscriptUpdate = useCallback(
+        (currentTranscript: string) => {
+            // Only send the delta (new text since last update)
+            // This prevents the full transcript from being re-sent on each update
+            if (currentTranscript !== lastSentTranscriptRef.current) {
+                onTranscriptUpdate?.(currentTranscript);
+                lastSentTranscriptRef.current = currentTranscript;
+            }
+        },
+        [onTranscriptUpdate]
+    );
+
+    const handleSessionStart = useCallback(() => {
+        // Reset tracking ref when new session starts
+        lastSentTranscriptRef.current = "";
+        onSessionStart?.();
+    }, [onSessionStart]);
+
     const {
         toggleListening,
+        stopListening,
         isListening,
         isConnecting,
         isSupported,
@@ -50,25 +101,20 @@ export function VoiceInputButton({
         transcript: _transcript,
         error,
     } = useVoiceInput({
-        onTranscriptComplete: useCallback(
-            (finalTranscript: string) => {
-                onTranscriptComplete?.(finalTranscript);
-                lastSentTranscriptRef.current = "";
-            },
-            [onTranscriptComplete]
-        ),
-        onTranscriptUpdate: useCallback(
-            (currentTranscript: string) => {
-                // Only send the delta (new text since last update)
-                // This prevents the full transcript from being re-sent on each update
-                if (currentTranscript !== lastSentTranscriptRef.current) {
-                    onTranscriptUpdate?.(currentTranscript);
-                    lastSentTranscriptRef.current = currentTranscript;
-                }
-            },
-            [onTranscriptUpdate]
-        ),
+        onTranscriptComplete: handleTranscriptComplete,
+        onTranscriptUpdate: handleTranscriptUpdate,
+        onSessionStart: handleSessionStart,
     });
+
+    // Expose stop method via ref for parent to call (e.g., on form submit)
+    useImperativeHandle(
+        ref,
+        () => ({
+            stop: stopListening,
+            isListening,
+        }),
+        [stopListening, isListening]
+    );
 
     // Clear transcript ref when not listening
     useEffect(() => {
@@ -77,8 +123,28 @@ export function VoiceInputButton({
         }
     }, [isListening]);
 
+    // Track recent click to suppress tooltip during state transitions
+    const [justClicked, setJustClicked] = useState(false);
+    const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (clickTimeoutRef.current) {
+                clearTimeout(clickTimeoutRef.current);
+            }
+        };
+    }, []);
+
     const handleClick = useCallback(async () => {
         triggerHaptic();
+
+        // Suppress tooltip briefly to prevent it showing during state change
+        setJustClicked(true);
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+        }
+        clickTimeoutRef.current = setTimeout(() => setJustClicked(false), 300);
 
         // toggleListening will call onTranscriptComplete when stopping
         // Hook clears transcript after completion
@@ -98,7 +164,7 @@ export function VoiceInputButton({
         : isListening
           ? "Click to stop recording"
           : isConnecting
-            ? "Connecting..."
+            ? "Click to cancel"
             : "Voice input";
 
     // Determine button style based on variant and state
@@ -113,7 +179,7 @@ export function VoiceInputButton({
         <button
             type="button"
             onClick={handleClick}
-            disabled={disabled || isConnecting}
+            disabled={disabled}
             className={cn(
                 "group relative flex shrink-0 items-center justify-center rounded-full",
                 variant === "primary" ? "h-11 w-11" : "h-10 w-10 sm:h-12 sm:w-12",
@@ -122,10 +188,16 @@ export function VoiceInputButton({
                 disabled && "pointer-events-none opacity-50",
                 className
             )}
-            aria-label={isListening ? "Stop voice input" : "Start voice input"}
+            aria-label={
+                isListening
+                    ? "Stop voice input"
+                    : isConnecting
+                      ? "Cancel connecting"
+                      : "Start voice input"
+            }
             data-testid="voice-input-button"
-            data-tooltip-id="tip"
-            data-tooltip-content={tooltipContent}
+            data-tooltip-id={justClicked ? undefined : "tip"}
+            data-tooltip-content={justClicked ? undefined : tooltipContent}
         >
             <AnimatePresence mode="wait">
                 {isConnecting ? (
@@ -191,4 +263,4 @@ export function VoiceInputButton({
             </AnimatePresence>
         </button>
     );
-}
+});
