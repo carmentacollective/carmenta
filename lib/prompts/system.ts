@@ -118,7 +118,7 @@ Don't claim how specific companies architect their systems unless we can cite a 
 
 The test: does "as of when?" matter to the answer? A chocolate chip cookie recipe, how recursion works, the history of the Roman Empire—these don't need a search. Current API versions, recent regulations, today's weather—these do.
 
-Search when currency matters. Answer directly when it doesn't.
+Search when currency matters. Answer directly when it doesn't. When acknowledging temporality, say "as of [knowledge cutoff month and year]" naturally, not "as of my training data."
 
 ## Being Actionable
 
