@@ -115,15 +115,17 @@ function HoloThreadInner() {
     // Track if we've done the initial scroll positioning
     // When loading a completed conversation (not streaming), we want to show
     // the beginning of the last response, not the end (which is the default)
-    const hasInitialScrolled = useRef(false);
     const lastAssistantRef = useRef<HTMLDivElement>(null);
+    const initialLoadHandled = useRef(false);
 
-    // On initial load of a completed conversation, scroll to show the beginning
-    // of the last assistant message instead of the very bottom
+    // On initial mount with a completed conversation, scroll to show the beginning
+    // of the last assistant message instead of the very bottom.
+    // Only runs once on mount to avoid scrolling after streaming completes.
     useEffect(() => {
-        if (hasInitialScrolled.current) return;
+        // Only run on initial mount, not on subsequent updates
+        if (initialLoadHandled.current) return;
         if (messages.length === 0) return;
-        if (isLoading) return; // Don't interfere during streaming
+        if (isLoading) return; // Don't run if actively streaming
 
         // Find if the last message is from assistant (completed response)
         const lastMessage = messages[messages.length - 1];
@@ -136,8 +138,9 @@ function HoloThreadInner() {
                 });
             });
         }
-        hasInitialScrolled.current = true;
-    }, [messages, isLoading]);
+        initialLoadHandled.current = true;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty deps - only run on mount
 
     // Handle spark prefill - either fill input or auto-submit
     const handleSparkPrefill = useCallback(
