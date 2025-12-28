@@ -413,8 +413,10 @@ def main():
             }
         }
         print(json.dumps(output))
+        # Exit 0 with JSON output triggers UI confirmation dialog in Claude Code
         sys.exit(0)
 
+    # No violations - command is allowed
     sys.exit(0)
 
 
