@@ -216,7 +216,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                   ease: [0.16, 1, 0.3, 1],
                               }}
                           >
-                              <div className="glass-container w-64 overflow-hidden rounded-2xl shadow-2xl">
+                              <div className="glass-container-mobile w-64 overflow-hidden rounded-2xl shadow-2xl">
                                   {/* User info header */}
                                   <div className="border-b border-foreground/10 px-4 py-3">
                                       <div className="flex items-center gap-3">

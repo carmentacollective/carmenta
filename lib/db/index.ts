@@ -111,6 +111,8 @@ export {
     upsertMessage,
     loadMessages,
     updateStreamingStatus,
+    updateActiveStreamId,
+    getActiveStreamId,
     markAsBackground,
     findInterruptedConnections,
     mapConnectionMessagesToUI,

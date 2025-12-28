@@ -265,6 +265,13 @@ export const connections = pgTable(
             .notNull()
             .default("idle"),
 
+        /**
+         * Active resumable stream ID for connection recovery
+         * Set when streaming starts, cleared when streaming completes or fails.
+         * Used by resumable-stream package to resume interrupted streams.
+         */
+        activeStreamId: text("active_stream_id"),
+
         /** Model used for this connection (e.g., "anthropic/claude-sonnet-4") */
         modelId: varchar("model_id", { length: 255 }),
 

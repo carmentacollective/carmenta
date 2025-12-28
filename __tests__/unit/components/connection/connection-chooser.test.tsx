@@ -448,8 +448,8 @@ describe("ConnectionChooser", () => {
             });
             render(<ConnectionChooser />);
 
-            // S2-S4 state: untitled connection shows "Recent Connections" trigger
-            fireEvent.click(screen.getByText("Recent Connections"));
+            // S2-S4 state: untitled connection shows "X Conversations" trigger with count
+            fireEvent.click(screen.getByText(/\d+ Conversation/));
             // "New connection" appears as fallback title in the dropdown
             expect(screen.getAllByText("New connection").length).toBeGreaterThanOrEqual(
                 1

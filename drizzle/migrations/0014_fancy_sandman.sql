@@ -1,0 +1,1 @@
+ALTER TABLE "connections" ADD COLUMN "active_stream_id" text;

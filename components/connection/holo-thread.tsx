@@ -112,6 +112,36 @@ function HoloThreadInner() {
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
 
+    // Track if we've done the initial scroll positioning
+    // When loading a completed conversation (not streaming), we want to show
+    // the beginning of the last response, not the end (which is the default)
+    const lastAssistantRef = useRef<HTMLDivElement>(null);
+    const initialLoadHandled = useRef(false);
+
+    // On initial mount with a completed conversation, scroll to show the beginning
+    // of the last assistant message instead of the very bottom.
+    // Only runs once on mount to avoid scrolling after streaming completes.
+    useEffect(() => {
+        // Only run on initial mount, not on subsequent updates
+        if (initialLoadHandled.current) return;
+        if (messages.length === 0) return;
+        if (isLoading) return; // Don't run if actively streaming
+
+        // Find if the last message is from assistant (completed response)
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.role === "assistant" && lastAssistantRef.current) {
+            // Scroll the last assistant message into view at the top
+            requestAnimationFrame(() => {
+                lastAssistantRef.current?.scrollIntoView({
+                    behavior: "instant",
+                    block: "start",
+                });
+            });
+        }
+        initialLoadHandled.current = true;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty deps - only run on mount
+
     // Handle spark prefill - either fill input or auto-submit
     const handleSparkPrefill = useCallback(
         (prompt: string, autoSubmit: boolean) => {
@@ -176,18 +206,43 @@ function HoloThreadInner() {
                     <ThreadWelcome onPrefill={handleSparkPrefill} />
                 ) : (
                     <div className="flex w-full flex-col">
-                        {messages.map((message, index) => (
-                            <MessageBubble
-                                key={message.id}
-                                message={message}
-                                isLast={
-                                    index === messages.length - 1 &&
-                                    !needsPendingAssistant
-                                }
-                                isStreaming={isLoading && index === messages.length - 1}
-                                wasStopped={stoppedMessageIds.has(message.id)}
-                            />
-                        ))}
+                        {messages.map((message, index) => {
+                            const isLastAssistant =
+                                index === messages.length - 1 &&
+                                message.role === "assistant" &&
+                                !needsPendingAssistant;
+
+                            // Wrap the last assistant message with a ref for scroll-to-top on load
+                            if (isLastAssistant) {
+                                return (
+                                    <div key={message.id} ref={lastAssistantRef}>
+                                        <MessageBubble
+                                            message={message}
+                                            isLast
+                                            isStreaming={isLoading}
+                                            wasStopped={stoppedMessageIds.has(
+                                                message.id
+                                            )}
+                                        />
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <MessageBubble
+                                    key={message.id}
+                                    message={message}
+                                    isLast={
+                                        index === messages.length - 1 &&
+                                        !needsPendingAssistant
+                                    }
+                                    isStreaming={
+                                        isLoading && index === messages.length - 1
+                                    }
+                                    wasStopped={stoppedMessageIds.has(message.id)}
+                                />
+                            );
+                        })}
 
                         {/* Pending assistant response - shows immediately after user sends */}
                         {needsPendingAssistant && (
