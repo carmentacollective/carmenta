@@ -410,15 +410,6 @@ function ConnectionDropdown({
         []
     );
 
-    const _confirmDelete = useCallback(
-        (e: React.MouseEvent, connectionId: string) => {
-            e.stopPropagation();
-            onDelete(connectionId);
-            setConfirmingDeleteId(null);
-        },
-        [onDelete]
-    );
-
     const cancelDelete = useCallback(() => {
         setConfirmingDeleteId(null);
     }, []);
