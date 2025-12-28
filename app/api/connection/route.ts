@@ -908,9 +908,14 @@ export async function POST(req: Request) {
                     () => stream.pipeThrough(new JsonToSseTransformStream())
                 );
 
-                // Only after Redis has the stream, write the ID to DB
-                // This prevents race where client could try to resume before Redis is ready
-                await updateActiveStreamId(currentConnectionId!, streamId);
+                // Try to write the ID to DB (non-blocking - stream is already usable)
+                // If this fails, the stream will still work but won't be resumable on reconnect
+                updateActiveStreamId(currentConnectionId!, streamId).catch((error) => {
+                    logger.error(
+                        { error, connectionId: currentConnectionId, streamId },
+                        "Failed to save stream ID to database - stream will work but not be resumable"
+                    );
+                });
 
                 logger.debug(
                     { connectionId: currentConnectionId, streamId },
@@ -918,6 +923,7 @@ export async function POST(req: Request) {
                 );
 
                 // Return resumable stream with all headers
+                // Stream is already consumed, so we MUST return it here
                 return new Response(resumableStream, {
                     headers: {
                         ...Object.fromEntries(headers.entries()),
