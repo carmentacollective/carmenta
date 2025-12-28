@@ -11,8 +11,14 @@ import { useRef } from "react";
 import { Paperclip } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
 import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
+import { cn } from "@/lib/utils";
 
-export function FilePickerButton() {
+interface FilePickerButtonProps {
+    /** Additional CSS classes for mobile sizing overrides */
+    className?: string;
+}
+
+export function FilePickerButton({ className }: FilePickerButtonProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const { addFiles } = useFileAttachments();
 
@@ -36,7 +42,7 @@ export function FilePickerButton() {
             <button
                 type="button"
                 onClick={handleClick}
-                className="btn-icon-glass group"
+                className={cn("btn-icon-glass group", className)}
                 data-tooltip-id="tip"
                 data-tooltip-content="Add files · up to 10MB"
                 aria-label="Attach file"
