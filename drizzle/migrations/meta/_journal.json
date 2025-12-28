@@ -15,6 +15,13 @@
       "when": 1766596354662,
       "tag": "0013_round_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1766890188965,
+      "tag": "0014_fancy_sandman",
+      "breakpoints": true
     }
   ]
 }

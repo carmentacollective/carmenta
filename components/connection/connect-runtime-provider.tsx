@@ -642,6 +642,9 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Key insight: We use effectiveChatId (which is stable from the start)
     // so that messages are tracked correctly even before the server creates
     // the connection. This matches Vercel's ai-chatbot pattern.
+    //
+    // Resume: Enabled for existing connections so we can recover interrupted streams.
+    // When resume is true, the hook checks GET /api/connection/{id}/stream on mount.
     const {
         messages,
         setMessages,
@@ -655,6 +658,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         id: effectiveChatId,
         messages: initialAIMessages,
         transport,
+        // Enable stream resumption for existing connections (not new ones)
+        resume: !!activeConnectionId,
         onError: (err) => {
             logger.error({ error: err.message }, "Chat error");
             setDisplayError(err);
