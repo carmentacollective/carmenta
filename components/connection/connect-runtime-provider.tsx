@@ -59,68 +59,71 @@ import { TransientProvider, useTransient } from "@/lib/streaming";
  */
 export function toAIMessage(msg: UIMessageLike): UIMessage {
     // Map parts with loose typing - the AI SDK accepts these at runtime
+    // Filter out null/undefined parts that can occur during stream resume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mappedParts: any[] = msg.parts.map((part) => {
-        const partType = part.type as string;
+    const mappedParts: any[] = msg.parts
+        .filter((part) => part != null && typeof part === "object" && "type" in part)
+        .map((part) => {
+            const partType = part.type as string;
 
-        if (partType === "text") {
+            if (partType === "text") {
+                return { type: "text", text: String(part.text || "") };
+            }
+
+            if (partType === "reasoning") {
+                const reasoningPart: Record<string, unknown> = {
+                    type: "reasoning",
+                    text: String(part.text || ""),
+                };
+                // Include providerMetadata if present (for reasoning tokens, cache info)
+                if (part.providerMetadata) {
+                    reasoningPart.providerMetadata = part.providerMetadata;
+                }
+                return reasoningPart;
+            }
+
+            if (partType === "file") {
+                return {
+                    type: "file",
+                    url: String(part.url || ""),
+                    mediaType: String(part.mediaType || part.mimeType || ""),
+                    name: String(part.name || "file"),
+                };
+            }
+
+            if (partType === "step-start") {
+                return { type: "step-start" };
+            }
+
+            // Tool parts: type is "tool-{toolName}" (e.g., "tool-webSearch")
+            if (partType.startsWith("tool-")) {
+                const toolPart: Record<string, unknown> = {
+                    type: partType,
+                    toolCallId: String(part.toolCallId || ""),
+                    state: (part.state as string) || "input-available",
+                    input: part.input,
+                };
+                if (part.output !== undefined) {
+                    toolPart.output = part.output;
+                }
+                if (part.errorText) {
+                    toolPart.errorText = part.errorText;
+                }
+                return toolPart;
+            }
+
+            // Data parts: type is "data-{dataType}" (e.g., "data-comparison")
+            if (partType.startsWith("data-")) {
+                return {
+                    type: partType,
+                    id: String(part.id || ""),
+                    data: part.data || {},
+                };
+            }
+
+            // Fallback for truly unknown types - preserve as-is
             return { type: "text", text: String(part.text || "") };
-        }
-
-        if (partType === "reasoning") {
-            const reasoningPart: Record<string, unknown> = {
-                type: "reasoning",
-                text: String(part.text || ""),
-            };
-            // Include providerMetadata if present (for reasoning tokens, cache info)
-            if (part.providerMetadata) {
-                reasoningPart.providerMetadata = part.providerMetadata;
-            }
-            return reasoningPart;
-        }
-
-        if (partType === "file") {
-            return {
-                type: "file",
-                url: String(part.url || ""),
-                mediaType: String(part.mediaType || part.mimeType || ""),
-                name: String(part.name || "file"),
-            };
-        }
-
-        if (partType === "step-start") {
-            return { type: "step-start" };
-        }
-
-        // Tool parts: type is "tool-{toolName}" (e.g., "tool-webSearch")
-        if (partType.startsWith("tool-")) {
-            const toolPart: Record<string, unknown> = {
-                type: partType,
-                toolCallId: String(part.toolCallId || ""),
-                state: (part.state as string) || "input-available",
-                input: part.input,
-            };
-            if (part.output !== undefined) {
-                toolPart.output = part.output;
-            }
-            if (part.errorText) {
-                toolPart.errorText = part.errorText;
-            }
-            return toolPart;
-        }
-
-        // Data parts: type is "data-{dataType}" (e.g., "data-comparison")
-        if (partType.startsWith("data-")) {
-            return {
-                type: partType,
-                id: String(part.id || ""),
-                data: part.data || {},
-            };
-        }
-
-        // Fallback for truly unknown types - preserve as-is
-        return { type: "text", text: String(part.text || "") };
-    });
+        });
 
     return {
         id: msg.id,
