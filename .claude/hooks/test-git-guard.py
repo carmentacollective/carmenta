@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Test script for git-guard.py context drift detection.
+Tests for git-guard.py hook.
 
-This simulates the scenario where Claude drifts from a worktree to main repo.
+Tests the ViolationType separation between hard blocks (exit 2) and
+ask-user confirmations (JSON output with permissionDecision: "ask").
 """
 
 import json
@@ -11,114 +12,288 @@ import sys
 from pathlib import Path
 
 
-def test_context_drift_read_allowed():
-    """Test that read operations are allowed during context drift."""
-    print("Testing context drift - read operations should be allowed...")
-
-    # Simulate being in main repo with a read operation (git status)
+def run_hook(command: str, cwd: str = "/tmp") -> tuple[int, str, str]:
+    """Run the git-guard hook with a command and return (exit_code, stdout, stderr)."""
     test_input = {
-        "cwd": "/Users/nick/src/carmenta",
-        "tool_input": {
-            "command": "git status"
-        }
+        "cwd": cwd,
+        "tool_input": {"command": command}
     }
 
-    # Run the hook
     result = subprocess.run(
-        ["python3", ".claude/hooks/git-guard.py"],
+        ["python3", str(Path(__file__).parent / "git-guard.py")],
         input=json.dumps(test_input),
         capture_output=True,
         text=True,
     )
 
-    print(f"Exit code: {result.returncode}")
-    if result.stderr:
-        print(f"Stderr:\n{result.stderr}")
-
-    # Read operations should always succeed, even during drift
-    if result.returncode == 0:
-        print("✅ Read operation allowed during drift (correct behavior)")
-        return True
-    else:
-        print("❌ Read operation blocked during drift (wrong behavior)")
-        return False
+    return result.returncode, result.stdout, result.stderr
 
 
-def test_context_drift_write_blocked():
-    """Test that write operations are blocked during context drift."""
-    print("\nTesting context drift - write operations should be blocked...")
+def parse_ask_response(stdout: str) -> dict | None:
+    """Parse JSON output from ask-user response."""
+    try:
+        return json.loads(stdout)
+    except json.JSONDecodeError:
+        return None
 
-    # Simulate being in main repo with a write operation (git commit)
-    test_input = {
-        "cwd": "/Users/nick/src/carmenta",
-        "tool_input": {
-            "command": "git commit -m 'test'"
-        }
-    }
 
-    # Run the hook
-    result = subprocess.run(
-        ["python3", ".claude/hooks/git-guard.py"],
-        input=json.dumps(test_input),
-        capture_output=True,
-        text=True,
+class TestResults:
+    def __init__(self):
+        self.passed = 0
+        self.failed = 0
+
+    def check(self, condition: bool, name: str):
+        if condition:
+            print(f"  ✅ {name}")
+            self.passed += 1
+        else:
+            print(f"  ❌ {name}")
+            self.failed += 1
+
+
+def test_ask_user_violations():
+    """Test operations that should trigger UI confirmation (ASK_USER)."""
+    print("\n📋 Testing ASK_USER violations (should return JSON with permissionDecision: ask)")
+    results = TestResults()
+
+    # git push origin main
+    exit_code, stdout, _ = run_hook("git push origin main")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push origin main → asks for confirmation"
     )
 
-    print(f"Exit code: {result.returncode}")
-    print(f"Stderr:\n{result.stderr}")
+    # git push origin master
+    exit_code, stdout, _ = run_hook("git push origin master")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push origin master → asks for confirmation"
+    )
 
-    # Check if drift was detected and blocked the write operation
-    if result.returncode == 2 and "CONTEXT DRIFT DETECTED" in result.stderr:
-        print("✅ Write operation blocked during drift (correct behavior)")
-        return True
-    elif result.returncode == 0:
-        print("⚠️  No drift detected (this is expected if not on a feature branch)")
-        return True
-    else:
-        print("❌ Unexpected result")
-        return False
+    # git push --no-verify
+    exit_code, stdout, _ = run_hook("git push --no-verify origin feature")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push --no-verify → asks for confirmation"
+    )
+
+    # git commit --no-verify
+    exit_code, stdout, _ = run_hook("git commit --no-verify -m 'test'")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git commit --no-verify → asks for confirmation"
+    )
+
+    # gh pr merge
+    exit_code, stdout, _ = run_hook("gh pr merge 123")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "gh pr merge → asks for confirmation"
+    )
+
+    # Combined: push to main with --no-verify (both are ASK_USER)
+    exit_code, stdout, _ = run_hook("git push --no-verify origin main")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push --no-verify origin main → asks for confirmation (combined)"
+    )
+
+    return results
 
 
-def test_worktree_detection():
-    """Test worktree detection functions."""
-    print("\nTesting worktree detection...")
+def test_hard_block_violations():
+    """Test operations that should be hard blocked (exit 2)."""
+    print("\n🚫 Testing HARD_BLOCK violations (should exit 2)")
+    results = TestResults()
 
-    # Import the module (file has hyphen so must use importlib)
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("git_guard", Path(__file__).parent / "git-guard.py")
-    git_guard = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(git_guard)
+    # git add .
+    exit_code, _, stderr = run_hook("git add .")
+    results.check(
+        exit_code == 2 and "git add . is forbidden" in stderr,
+        "git add . → hard blocked"
+    )
 
-    # Test with current directory
-    cwd = Path.cwd()
-    print(f"Current directory: {cwd}")
-    print(f"Is in worktree: {git_guard.is_in_worktree(str(cwd))}")
+    # git add -A
+    exit_code, _, stderr = run_hook("git add -A")
+    results.check(
+        exit_code == 2 and "git add -A/--all is forbidden" in stderr,
+        "git add -A → hard blocked"
+    )
 
-    if git_guard.is_in_worktree(str(cwd)):
-        print("✅ Correctly detected worktree (based on .git file)")
-        info = git_guard.get_worktree_info(str(cwd))
-        if info:
-            print(f"  Branch: {info['branch']}")
-            print(f"  Main repo: {info['main_repo']}")
-    else:
-        print("Not in a worktree (running from main repo)")
+    # git add --all
+    exit_code, _, stderr = run_hook("git add --all")
+    results.check(
+        exit_code == 2 and "git add -A/--all is forbidden" in stderr,
+        "git add --all → hard blocked"
+    )
 
-    return True
+    # git commit -a
+    exit_code, _, stderr = run_hook("git commit -a -m 'test'")
+    results.check(
+        exit_code == 2 and "git commit -a is forbidden" in stderr,
+        "git commit -a → hard blocked"
+    )
+
+    # git commit -am (combined flags)
+    exit_code, _, stderr = run_hook("git commit -am 'test'")
+    results.check(
+        exit_code == 2 and "git commit -a is forbidden" in stderr,
+        "git commit -am → hard blocked (combined flags)"
+    )
+
+    return results
+
+
+def test_hard_block_priority():
+    """Test that hard blocks take priority over ask-user violations."""
+    print("\n⚡ Testing hard block priority (hard block wins over ask)")
+    results = TestResults()
+
+    # git commit -a --no-verify: -a is HARD_BLOCK, --no-verify is ASK_USER
+    # Should hard block, not ask
+    exit_code, stdout, stderr = run_hook("git commit -a --no-verify -m 'test'")
+    results.check(
+        exit_code == 2 and "git commit -a is forbidden" in stderr,
+        "git commit -a --no-verify → hard blocks (not asks)"
+    )
+
+    # git commit -am --no-verify
+    exit_code, stdout, stderr = run_hook("git commit -am --no-verify 'test'")
+    results.check(
+        exit_code == 2 and "git commit -a is forbidden" in stderr,
+        "git commit -am --no-verify → hard blocks (not asks)"
+    )
+
+    return results
+
+
+def test_allowed_operations():
+    """Test operations that should be allowed without prompts."""
+    print("\n✅ Testing allowed operations (should exit 0, no output)")
+    results = TestResults()
+
+    # git push to feature branch
+    exit_code, stdout, _ = run_hook("git push origin feature-branch")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git push origin feature-branch → allowed"
+    )
+
+    # git commit (normal)
+    exit_code, stdout, _ = run_hook("git commit -m 'test'")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git commit -m 'test' → allowed"
+    )
+
+    # git commit --amend (should NOT trigger -a check)
+    exit_code, stdout, _ = run_hook("git commit --amend -m 'test'")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git commit --amend → allowed (--amend is not -a)"
+    )
+
+    # git add specific files
+    exit_code, stdout, _ = run_hook("git add src/file.ts")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git add src/file.ts → allowed"
+    )
+
+    # git status (read operation)
+    exit_code, stdout, _ = run_hook("git status")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git status → allowed"
+    )
+
+    # gh pr create (not merge)
+    exit_code, stdout, _ = run_hook("gh pr create --title 'test'")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "gh pr create → allowed"
+    )
+
+    return results
+
+
+def test_refspec_detection():
+    """Test detection of main branch in refspecs."""
+    print("\n🔀 Testing refspec detection")
+    results = TestResults()
+
+    # HEAD:main
+    exit_code, stdout, _ = run_hook("git push origin HEAD:main")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push origin HEAD:main → asks for confirmation"
+    )
+
+    # feature:master
+    exit_code, stdout, _ = run_hook("git push origin feature:master")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push origin feature:master → asks for confirmation"
+    )
+
+    # +main (force push)
+    exit_code, stdout, _ = run_hook("git push origin +main")
+    response = parse_ask_response(stdout)
+    results.check(
+        exit_code == 0 and response and
+        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
+        "git push origin +main → asks for confirmation"
+    )
+
+    # feature:feature (not main, should be allowed)
+    exit_code, stdout, _ = run_hook("git push origin feature:feature")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git push origin feature:feature → allowed"
+    )
+
+    return results
 
 
 if __name__ == "__main__":
-    print("Git Guard - Context Drift Detection Tests\n")
+    print("Git Guard Hook Tests")
     print("=" * 60)
 
-    success = True
-    success &= test_context_drift_read_allowed()
-    success &= test_context_drift_write_blocked()
-    success &= test_worktree_detection()
+    all_results = TestResults()
+
+    for test_fn in [
+        test_ask_user_violations,
+        test_hard_block_violations,
+        test_hard_block_priority,
+        test_allowed_operations,
+        test_refspec_detection,
+    ]:
+        results = test_fn()
+        all_results.passed += results.passed
+        all_results.failed += results.failed
 
     print("\n" + "=" * 60)
-    if success:
+    print(f"Results: {all_results.passed} passed, {all_results.failed} failed")
+
+    if all_results.failed == 0:
         print("✅ All tests passed!")
+        sys.exit(0)
     else:
         print("❌ Some tests failed")
-
-    sys.exit(0 if success else 1)
+        sys.exit(1)

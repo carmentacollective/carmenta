@@ -5,17 +5,19 @@ Claude Code Hook: Git Guard
 Protects against dangerous git operations by properly parsing git commands
 instead of fragile regex matching.
 
-Blocks:
-- Direct pushes to main branch
-- git push --no-verify
-- git commit --no-verify
-- gh pr merge (use GitHub web interface)
+Hard blocks (exit 2):
 - git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
 
+Requires confirmation (permissionDecision: "ask"):
+- Direct pushes to main branch
+- git push --no-verify
+- git commit --no-verify
+- gh pr merge
+
 Exit codes:
-- 0: Command is allowed
-- 2: Command is blocked (violations found)
+- 0: Command allowed (or JSON output for "ask" decision)
+- 2: Command blocked (hard violations)
 
 Allows:
 - git commit --amend (amend contains 'a' but is not the -a flag)
@@ -27,12 +29,19 @@ import os
 import shlex
 import subprocess
 import sys
+from enum import Enum
 from typing import NamedTuple
+
+
+class ViolationType(Enum):
+    HARD_BLOCK = "block"  # Exit 2, no way through
+    ASK_USER = "ask"      # Prompt for confirmation in UI
 
 
 class Violation(NamedTuple):
     message: str
     suggestion: str
+    violation_type: ViolationType = ViolationType.HARD_BLOCK
 
 
 def validate_directory(path: str) -> bool:
@@ -200,8 +209,9 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
     # Check for --no-verify
     if has_flag(flags, "--no-verify"):
         violations.append(Violation(
-            "git push --no-verify is forbidden",
-            "Remove --no-verify and fix any hook failures"
+            "git push --no-verify requires explicit approval",
+            "Confirm in the UI dialog, or remove --no-verify and fix hook failures",
+            ViolationType.ASK_USER
         ))
 
     # Check for push to main
@@ -237,8 +247,9 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
 
     if pushing_to_main:
         violations.append(Violation(
-            "Direct push to main branch is forbidden",
-            "Push to a feature branch and create a pull request"
+            "Push to main branch requires explicit approval",
+            "Confirm in the UI dialog, or push to a feature branch instead",
+            ViolationType.ASK_USER
         ))
 
     return violations
@@ -271,11 +282,12 @@ def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]
     """Check git commit for violations."""
     violations = []
 
-    # Block --no-verify (note: -n is short for --dry-run, not --no-verify)
+    # Check --no-verify (note: -n is short for --dry-run, not --no-verify)
     if has_flag(flags, "--no-verify"):
         violations.append(Violation(
-            "git commit --no-verify is forbidden",
-            "Remove --no-verify and fix any hook failures"
+            "git commit --no-verify requires explicit approval",
+            "Confirm in the UI dialog, or remove --no-verify and fix hook failures",
+            ViolationType.ASK_USER
         ))
 
     # Block -a (but NOT --amend!)
@@ -310,12 +322,12 @@ def check_gh_command(command: str) -> list[Violation]:
     remaining = tokens[gh_idx + 1:]
 
     # Check for "gh pr merge" command
-    # Block all gh pr merge invocations regardless of PR number
     # gh pr merge can work with or without explicit PR number (uses current branch's PR)
     if len(remaining) >= 2 and remaining[0] == "pr" and remaining[1] == "merge":
         violations.append(Violation(
-            "Merging PRs via CLI is not recommended",
-            "Use the GitHub web interface - it provides better review experience and status checks"
+            "Merging PRs via CLI requires explicit approval",
+            "Confirm in the UI dialog, or use GitHub web interface for better review experience",
+            ViolationType.ASK_USER
         ))
 
     return violations
@@ -371,14 +383,40 @@ def main():
     # Check for violations
     violations = check_command(command, cwd)
 
-    if violations:
+    if not violations:
+        sys.exit(0)
+
+    # Separate hard blocks from ask-user violations
+    hard_blocks = [v for v in violations if v.violation_type == ViolationType.HARD_BLOCK]
+    ask_violations = [v for v in violations if v.violation_type == ViolationType.ASK_USER]
+
+    # Hard blocks take priority - exit 2, no way through
+    if hard_blocks:
         print("\n*** BLOCKED: Operation not allowed ***\n", file=sys.stderr)
-        for v in violations:
+        for v in hard_blocks:
             print(f"  {v.message}", file=sys.stderr)
             print(f"    -> {v.suggestion}\n", file=sys.stderr)
         print("See .cursor/rules/git-interaction.mdc for git workflow rules", file=sys.stderr)
         sys.exit(2)
 
+    # Ask-user violations: output JSON to trigger UI confirmation
+    if ask_violations:
+        # Build reason from all ask violations
+        reasons = [v.message for v in ask_violations]
+        reason_text = "; ".join(reasons)
+
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "ask",
+                "permissionDecisionReason": reason_text
+            }
+        }
+        print(json.dumps(output))
+        # Exit 0 with JSON output triggers UI confirmation dialog in Claude Code
+        sys.exit(0)
+
+    # No violations - command is allowed
     sys.exit(0)
 
 
