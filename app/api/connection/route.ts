@@ -55,7 +55,8 @@ import {
 import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 // Discovery is disabled - type import kept for pendingDiscoveries typing
 import { type DiscoveryItem } from "@/lib/discovery";
-import { writeStatus, STATUS_MESSAGES, getStreamContext } from "@/lib/streaming";
+import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
+import { getStreamContext } from "@/lib/streaming/stream-context";
 
 /**
  * Route segment config for Vercel

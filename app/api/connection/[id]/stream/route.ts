@@ -12,7 +12,7 @@ import { UI_MESSAGE_STREAM_HEADERS } from "ai";
 
 import { getConnection, getActiveStreamId, findUserByClerkId } from "@/lib/db";
 import { decodeConnectionId } from "@/lib/sqids";
-import { getStreamContext } from "@/lib/streaming";
+import { getStreamContext } from "@/lib/streaming/stream-context";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
 

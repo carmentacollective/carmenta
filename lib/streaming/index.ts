@@ -11,7 +11,6 @@ export * from "./types";
 
 // Server-side utilities
 export * from "./transient-writer";
-export { getStreamContext } from "./stream-context";
 
 // Client-side context and hooks
 export {
@@ -21,3 +20,7 @@ export {
     useTransientOracle,
     useTransientToast,
 } from "./transient-context";
+
+// Server-only exports (do NOT re-export from this barrel - import directly)
+// This prevents client bundles from trying to include Redis/after dependencies
+// import { getStreamContext } from "@/lib/streaming/stream-context";
