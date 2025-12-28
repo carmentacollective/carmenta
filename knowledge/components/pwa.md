@@ -74,8 +74,8 @@ Created programmatically at `app/manifest.ts` following Next.js App Router patte
 - Both `any` and `maskable` purposes for Android adaptive icons
 - iOS requires separate `apple-touch-icon` (180×180) via metadata
 
-**Shortcuts**: "New Conversation" shortcut directly to `/connect` - reduces friction for
-primary action.
+**Shortcuts**: "New Conversation" shortcut directly to `/connection` - reduces friction
+for primary action.
 
 ### Service Worker Implementation
 
@@ -99,7 +99,7 @@ Notification API. Payload structure:
   "icon": "/logos/icon-transparent-192.png",
   "badge": "/logos/icon-transparent-192.png",
   "data": {
-    "url": "/connect",
+    "url": "/connection",
     "conversationId": "123",
     "type": "briefing"
   },
