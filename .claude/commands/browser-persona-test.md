@@ -326,7 +326,7 @@ details} </work_remaining>
 
 <context>
 - Worktree: /Users/nick/src/carmenta-concierge
-- Chat interface: /connect route
+- Chat interface: /connection route
 - Auth: Clerk (should auto-login in dev)
 - Available tools: Compare, WebSearch, FetchPage, DeepResearch
 </context>

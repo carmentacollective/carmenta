@@ -58,7 +58,7 @@ building.
 
 "Connect" reflects the heart-centered philosophy: you're connecting with AI, not
 chatting at a tool. It works for Q&A, creation, exploration - all modes of interaction.
-The page lives at `/connect` and the experience is called "connecting with Carmenta."
+The page lives at `/connection` and the experience is called "connecting with Carmenta."
 
 ### Components
 

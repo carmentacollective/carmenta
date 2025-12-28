@@ -6,7 +6,7 @@ orchestrates the experience across devices.
 
 ## Terminology: "Connect" not "Chat"
 
-The primary interaction page is `/connect`, not `/chat`. This is a deliberate choice.
+The primary interaction page is `/connection`, not `/chat`. This is a deliberate choice.
 
 "Chat" carries baggage: message bubbles, conversation histories, the back-and-forth
 paradigm of messaging apps like Slack or iMessage. It frames AI as something you're
