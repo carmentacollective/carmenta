@@ -1,5 +1,6 @@
 ---
 description: Start a fresh Next.js dev server with intelligent state management
+argument-hint: [open]
 ---
 
 # Dev Server
@@ -16,7 +17,8 @@ detection, pre-warming, and optional browser opening.
 
 ## Step 1: Clean State
 
-Remove stale build artifacts for a fresh compile:
+Check if `.next` is locked by a running process. If locked, Step 2 will handle killing
+our dev server first. Then remove stale build artifacts:
 
 ```bash
 rm -rf .next
@@ -26,22 +28,21 @@ This ensures no cached compilation issues. Every dev server start is clean.
 
 ## Step 2: Kill Only OUR Dev Server
 
-Check if there's already a dev server running for THIS directory:
+Find dev servers on common ports and check their working directory:
 
 ```bash
-# Find any pnpm/next dev process with this directory as cwd
-lsof -i :3000-3010 -P | grep -E "(node|next)" | head -5
+lsof -i :3000-3010 -P 2>/dev/null | grep -E "LISTEN" | awk '{print $2}' | sort -u | while read pid; do
+  cwd=$(lsof -p "$pid" 2>/dev/null | grep cwd | awk '{print $NF}')
+  echo "PID $pid: $cwd"
+done
 ```
 
-If a process is found AND its working directory matches the current repo, kill it:
+For each process found, compare its working directory to the current repo. Only kill
+processes whose `cwd` matches `$(pwd)`. If a process is for a different directory (e.g.,
+carmenta-mobile vs carmenta), leave it alone and let Next.js auto-pick the next
+available port.
 
-```bash
-# Get PID and verify it's for this directory before killing
-# Only kill if the process cwd matches $(pwd)
-```
-
-CRITICAL: Never kill processes for other directories. Other projects, evals, and
-long-running jobs use those ports. If unsure, start on next available port instead.
+Never kill processes for other directories. If unsure, skip killing and start fresh.
 
 ## Step 3: Start Fresh
 
@@ -103,17 +104,10 @@ Opened in browser
 <smart-behaviors>
 
 **Dependency Check** If `node_modules` doesn't exist or `package.json` is newer than
-`node_modules`:
+`node_modules`, run `pnpm install` first.
 
-```bash
-pnpm install
-```
-
-**TypeScript Errors** If the build shows TS errors, report them clearly. Don't just say
-"failed."
-
-**Lock File Check** If `.next/server/pages-manifest.json` exists and is locked, a server
-may be running. Check before attempting to remove `.next`.
+**TypeScript Errors** If the build shows TS errors, report them clearly with file and
+line numbers. Don't just say "failed."
 
 **Port Exhaustion** If ports 3000-3010 are all taken by OTHER projects (not ours),
 report this clearly rather than killing random processes.
