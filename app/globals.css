@@ -76,6 +76,7 @@
         --z-modal: 50;
         --z-tooltip: 50;
         --z-toast: 60;
+        --z-loading: 70;
     }
 
     /* Dark mode - Cosmic consciousness depths with ethereal shimmer */

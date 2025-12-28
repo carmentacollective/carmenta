@@ -47,7 +47,7 @@ export function PullToRefreshIndicator({
             }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="pointer-events-none fixed left-1/2 top-0 z-50 -translate-x-1/2"
+            className="pointer-events-none fixed left-1/2 top-0 z-modal -translate-x-1/2"
         >
             <div
                 className={cn(

@@ -16,6 +16,7 @@
  * | z-modal     | 50    | Modals, dialogs, drawers, popovers        |
  * | z-tooltip   | 50    | Tooltips (same level as modals)           |
  * | z-toast     | 60    | Toast notifications (always visible)      |
+ * | z-loading   | 70    | Full-screen loading/blocking overlays     |
  *
  * ## Usage Guidelines
  *
@@ -39,6 +40,10 @@
  *
  * **z-toast**: Toast notifications always appear above everything else so users
  * see important feedback even when a modal is open.
+ *
+ * **z-loading**: Full-screen loading overlays and blocking states. These are rare
+ * but critical—page transitions, initial hydration, and states where the entire
+ * UI should be blocked. Use sparingly; most loading states should be inline.
  *
  * ## Stacking Contexts
  *
@@ -65,6 +70,7 @@ export const Z_INDEX = {
     modal: 50,
     tooltip: 50,
     toast: 60,
+    loading: 70,
 } as const;
 
 export type ZIndexLevel = keyof typeof Z_INDEX;
