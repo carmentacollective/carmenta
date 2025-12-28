@@ -242,12 +242,11 @@ export function ConnectionProvider({
 
             const newIsStarred = !connection.isStarred;
 
-            // React 19: useOptimistic provides instant UI update
-            // Automatically reverts if the async action below fails
-            updateOptimisticConnections({ id, isStarred: newIsStarred });
-
-            // Server action with transition for proper pending state
+            // React 19: useOptimistic update MUST be inside startTransition
             startTransition(async () => {
+                // Optimistic update for instant UI feedback
+                updateOptimisticConnections({ id, isStarred: newIsStarred });
+
                 try {
                     const updated = await toggleStarAction(id, newIsStarred);
                     // Sync real state on success
@@ -261,7 +260,7 @@ export function ConnectionProvider({
                         "Toggled star"
                     );
                 } catch (err) {
-                    // useOptimistic auto-reverts, but we still need to show the error
+                    // useOptimistic auto-reverts on error
                     const error = err instanceof Error ? err : new Error(String(err));
                     logger.error({ error, connectionId: id }, "Failed to toggle star");
                     setError(error);
