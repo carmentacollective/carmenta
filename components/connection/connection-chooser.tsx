@@ -15,6 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
     Plus,
     Search,
@@ -22,7 +23,6 @@ import {
     Clock,
     Trash2,
     Loader2,
-    ChevronDown,
     ChevronRight,
     Star,
     Pencil,
@@ -203,6 +203,8 @@ function EditableTitle({
                 onClick={handleStartEdit}
                 className="btn-subtle-text flex items-center gap-2 border border-transparent px-1.5 py-0.5 hover:border-foreground/10 hover:bg-foreground/[0.03]"
                 aria-label="Click to edit title"
+                data-tooltip-id="tip"
+                data-tooltip-content="Click to rename"
             >
                 <AnimatedTitle title={title} />
                 {/* Pencil icon - more visible on hover */}
@@ -352,9 +354,6 @@ function ConnectionRow({
     );
 }
 
-/** Placement determines dropdown position and animation direction */
-export type ConnectionChooserPlacement = "header" | "bottom";
-
 /** Shared dropdown for both minimal and full states */
 function ConnectionDropdown({
     isOpen,
@@ -371,7 +370,6 @@ function ConnectionDropdown({
     setQuery,
     debouncedQuery,
     inputRef,
-    placement = "header",
 }: {
     isOpen: boolean;
     onClose: () => void;
@@ -387,7 +385,6 @@ function ConnectionDropdown({
     setQuery: (q: string) => void;
     debouncedQuery: string;
     inputRef: React.RefObject<HTMLInputElement | null>;
-    placement?: ConnectionChooserPlacement;
 }) {
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
     const [starredCollapsed, setStarredCollapsed] = useState(() => {
@@ -413,7 +410,7 @@ function ConnectionDropdown({
         []
     );
 
-    const confirmDelete = useCallback(
+    const _confirmDelete = useCallback(
         (e: React.MouseEvent, connectionId: string) => {
             e.stopPropagation();
             onDelete(connectionId);
@@ -474,13 +471,17 @@ function ConnectionDropdown({
         };
     }, [starredConnections, unstarredConnections, debouncedQuery]);
 
-    return (
+    // Use portal to escape stacking context from Framer Motion transforms
+    // Check runs on every render but createPortal only called client-side
+    const canUsePortal = typeof document !== "undefined";
+
+    const dropdownContent = (
         <AnimatePresence>
             {isOpen && (
                 <>
                     {/* Backdrop */}
                     <motion.div
-                        className="fixed inset-0 z-backdrop"
+                        className="fixed inset-0 z-backdrop bg-black/20 backdrop-blur-sm"
                         onClick={handleClose}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -488,23 +489,12 @@ function ConnectionDropdown({
                         transition={{ duration: 0.15 }}
                     />
 
-                    {/* Dropdown panel */}
+                    {/* Dropdown panel - always positioned below header */}
                     <motion.div
-                        className={cn(
-                            "fixed inset-x-0 z-modal mx-auto w-[calc(100vw-2rem)] sm:w-[420px]",
-                            placement === "header" ? "top-24" : "bottom-36"
-                        )}
-                        initial={{
-                            opacity: 0,
-                            y: placement === "header" ? -12 : 12,
-                            scale: 0.96,
-                        }}
+                        className="fixed inset-x-0 top-24 z-modal mx-auto w-[calc(100vw-2rem)] sm:w-[420px]"
+                        initial={{ opacity: 0, y: -12, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{
-                            opacity: 0,
-                            y: placement === "header" ? -8 : 8,
-                            scale: 0.98,
-                        }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div className="glass-container overflow-hidden rounded-2xl shadow-2xl">
@@ -681,12 +671,16 @@ function ConnectionDropdown({
             )}
         </AnimatePresence>
     );
+
+    // Render via portal to escape parent stacking contexts
+    return canUsePortal ? createPortal(dropdownContent, document.body) : null;
 }
 
 export function ConnectionChooser({
-    placement = "header",
+    hideNewButton = false,
 }: {
-    placement?: ConnectionChooserPlacement;
+    /** Hide the new button when it's rendered elsewhere (e.g., mobile header row 1) */
+    hideNewButton?: boolean;
 } = {}) {
     const {
         connections,
@@ -732,18 +726,14 @@ export function ConnectionChooser({
         [activeConnection, updateConnectionTitle]
     );
 
-    const isMobilePlacement = placement === "bottom";
-
-    // Focus search input when dropdown opens on desktop only
-    // On mobile (bottom placement), skip auto-focus to avoid disruptive keyboard popup
-    // when user accidentally taps the dropdown trigger near the chat input
+    // Focus search input when dropdown opens
     useEffect(() => {
-        if (isDropdownOpen && inputRef.current && !isMobilePlacement) {
+        if (isDropdownOpen && inputRef.current) {
             requestAnimationFrame(() => {
                 inputRef.current?.focus();
             });
         }
-    }, [isDropdownOpen, isMobilePlacement]);
+    }, [isDropdownOpen]);
 
     // Keyboard shortcut: Cmd+Shift+S to toggle star on active connection
     useEffect(() => {
@@ -770,41 +760,32 @@ export function ConnectionChooser({
         return null;
     }
 
-    // Unified container - smooth transitions between states
-    // Mobile (bottom placement): full width, plus on right
-    // Desktop (header placement): use glass-pill styling
+    // Unified trigger - adapts to container via CSS
+    // Max-width keeps it from stretching too wide on large screens
     return (
-        <div className={cn("relative", isMobilePlacement && "w-full")}>
+        <div className="relative w-full max-w-md sm:max-w-lg">
             <motion.div
                 layout
-                className={cn(
-                    "flex items-center",
-                    placement === "header"
-                        ? "glass-pill"
-                        : "w-full rounded-3xl bg-foreground/[0.03] px-3 py-1.5 ring-1 ring-foreground/10 backdrop-blur-sm dark:bg-foreground/[0.05]"
-                )}
+                className="glass-pill flex w-full items-center"
                 transition={{
                     layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}
             >
                 <AnimatePresence mode="popLayout" initial={false}>
                     {hasTitle ? (
-                        // S5: Full layout - different structure for mobile vs desktop
+                        // Has title: Search | Title | Star | New
                         <motion.div
                             key="full"
-                            className={cn(
-                                "flex items-center gap-3",
-                                isMobilePlacement ? "w-full" : "px-4 py-2"
-                            )}
-                            initial={{ opacity: 0, y: isMobilePlacement ? 8 : -8 }}
+                            className="flex w-full items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4"
+                            initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: isMobilePlacement ? 8 : -8 }}
+                            exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         >
                             {/* Search button */}
                             <button
                                 onClick={openDropdown}
-                                className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
+                                className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
                                 aria-label="Search connections"
                                 data-tooltip-id="tip"
                                 data-tooltip-content="Find connections"
@@ -812,18 +793,11 @@ export function ConnectionChooser({
                                 <Search className="h-4 w-4" />
                             </button>
 
-                            {/* Divider - desktop only */}
-                            {!isMobilePlacement && (
-                                <div className="h-4 w-px bg-foreground/10" />
-                            )}
+                            {/* Divider */}
+                            <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
 
-                            {/* Title area - flex-1 on mobile to push + to right */}
-                            <div
-                                className={cn(
-                                    "flex items-center gap-2",
-                                    isMobilePlacement && "min-w-0 flex-1"
-                                )}
-                            >
+                            {/* Title area - fills available space */}
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
                                 {isStreaming && <RunningIndicator />}
                                 <EditableTitle title={title} onSave={handleSaveTitle} />
                             </div>
@@ -844,44 +818,38 @@ export function ConnectionChooser({
                                 />
                             )}
 
-                            {/* Divider - desktop only */}
-                            {!isMobilePlacement && (
-                                <div className="h-4 w-px bg-foreground/10" />
+                            {/* New button */}
+                            {!hideNewButton && (
+                                <>
+                                    <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
+                                    <button
+                                        onClick={createNewConnection}
+                                        disabled={isPending}
+                                        className="interactive-focus flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/25 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                        aria-label="New connection"
+                                        data-tooltip-id="tip"
+                                        data-tooltip-content="Start fresh"
+                                    >
+                                        {isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Plus className="h-4 w-4" />
+                                        )}
+                                        <span className="hidden sm:inline lg:hidden">
+                                            New
+                                        </span>
+                                        <span className="hidden lg:inline">
+                                            New Connection
+                                        </span>
+                                    </button>
+                                </>
                             )}
-
-                            {/* New button - prominent CTA */}
-                            <button
-                                onClick={createNewConnection}
-                                disabled={isPending}
-                                className={cn(
-                                    "interactive-focus flex items-center justify-center transition-all duration-200",
-                                    isMobilePlacement
-                                        ? "h-11 w-11 flex-shrink-0 rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-95"
-                                        : "h-8 gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary hover:bg-primary/25 active:scale-95",
-                                    "disabled:cursor-not-allowed disabled:opacity-50"
-                                )}
-                                aria-label="New connection"
-                                data-tooltip-id="tip"
-                                data-tooltip-content="Start fresh"
-                            >
-                                {isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Plus className="h-4 w-4" />
-                                )}
-                                {!isMobilePlacement && (
-                                    <span className="hidden sm:inline">New</span>
-                                )}
-                            </button>
                         </motion.div>
                     ) : (
-                        // S2/S3/S4: Minimal trigger - search + recent, plus on right for mobile
+                        // No title yet: Search | "Recent Connections"
                         <motion.div
                             key="minimal"
-                            className={cn(
-                                "flex items-center gap-3",
-                                isMobilePlacement ? "w-full" : "px-4 py-2"
-                            )}
+                            className="flex w-full items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -889,7 +857,7 @@ export function ConnectionChooser({
                         >
                             <button
                                 onClick={openDropdown}
-                                className="btn-subtle-icon text-foreground/40 hover:text-foreground/60"
+                                className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
                                 aria-label="Search connections"
                                 data-tooltip-id="tip"
                                 data-tooltip-content="Find connections"
@@ -898,31 +866,11 @@ export function ConnectionChooser({
                             </button>
                             <button
                                 onClick={openDropdown}
-                                className={cn(
-                                    "flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground/80",
-                                    isMobilePlacement && "flex-1"
-                                )}
+                                className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground/80"
                             >
                                 {isStreaming && <RunningIndicator />}
-                                <span>Recent Connections</span>
+                                <span className="truncate">Recent Connections</span>
                             </button>
-                            {/* New button on right for mobile - prominent CTA */}
-                            {isMobilePlacement && (
-                                <button
-                                    onClick={createNewConnection}
-                                    disabled={isPending}
-                                    className="interactive-focus flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                                    aria-label="New connection"
-                                    data-tooltip-id="tip"
-                                    data-tooltip-content="Start fresh"
-                                >
-                                    {isPending ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Plus className="h-4 w-4" />
-                                    )}
-                                </button>
-                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -943,7 +891,6 @@ export function ConnectionChooser({
                 setQuery={setQuery}
                 debouncedQuery={debouncedQuery}
                 inputRef={inputRef}
-                placement={placement}
             />
         </div>
     );

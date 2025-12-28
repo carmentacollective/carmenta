@@ -244,10 +244,11 @@ describe("ConnectionChooser", () => {
         });
 
         it("closes dropdown when backdrop is clicked", async () => {
-            const { container } = render(<ConnectionChooser />);
+            render(<ConnectionChooser />);
 
             fireEvent.click(screen.getByLabelText("Search connections"));
-            const backdrop = container.querySelector(".fixed.inset-0");
+            // Dropdown renders via portal to document.body
+            const backdrop = document.querySelector(".fixed.inset-0");
             fireEvent.click(backdrop!);
 
             await vi.waitFor(() => {
