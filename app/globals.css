@@ -1660,6 +1660,38 @@
         @apply ring-white/15;
     }
 
+    /*
+     * Mobile-solid glass variant for dropdown menus
+     * iOS Safari PWA has unreliable backdrop-blur support, causing content bleed-through.
+     * This provides a fully opaque background on mobile for critical UI like menus.
+     */
+    .glass-container-mobile {
+        background: var(--glass-surface);
+        box-shadow: var(--glass-shadow);
+        @apply ring-1 ring-white/40 backdrop-blur-xl;
+    }
+
+    .dark .glass-container-mobile {
+        @apply ring-white/15;
+    }
+
+    /* On mobile (touch devices), use fully opaque backgrounds */
+    @media (max-width: 768px), (pointer: coarse) {
+        .glass-container-mobile {
+            background: hsl(var(--background));
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+    }
+
+    /* Fallback for browsers that don't support backdrop-filter */
+    @supports not (backdrop-filter: blur(1px)) {
+        .glass-container,
+        .glass-container-mobile {
+            background: hsl(var(--background));
+        }
+    }
+
     /* Glass pill - for buttons in glass containers (e.g., connection chooser) */
     .glass-pill {
         background: var(--glass-bg);
