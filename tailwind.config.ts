@@ -91,6 +91,7 @@ const config: Config = {
              * modal (50)   - Modals, dialogs, drawers, popovers
              * tooltip (50) - Tooltips (same level as modals)
              * toast (60)   - Toast notifications (always visible)
+             * loading (70) - Full-screen loading/blocking overlays
              */
             zIndex: {
                 base: "0",
@@ -101,6 +102,7 @@ const config: Config = {
                 modal: "50",
                 tooltip: "50",
                 toast: "60",
+                loading: "70",
             },
             keyframes: {
                 "fade-in": {

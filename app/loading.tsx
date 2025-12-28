@@ -18,7 +18,7 @@
 
 export default function Loading() {
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-background">
+        <div className="fixed inset-0 z-loading flex items-center justify-center bg-background">
             {/* Keyframe animations and dark mode adjustments - inline to ensure they're available before CSS loads */}
             <style
                 dangerouslySetInnerHTML={{
