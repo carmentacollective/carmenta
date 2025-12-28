@@ -31,6 +31,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useConnection } from "./connection-context";
 import { StarButton } from "./star-button";
 import type { PublicConnection } from "@/lib/actions/connections";
@@ -482,7 +483,7 @@ function ConnectionDropdown({
 
                     {/* Dropdown panel - always positioned below header */}
                     <motion.div
-                        className="fixed inset-x-0 top-24 z-modal mx-auto w-[calc(100vw-2rem)] sm:w-[420px]"
+                        className="fixed inset-x-0 top-32 z-modal mx-auto w-[calc(100vw-2rem)] sm:top-24 sm:w-[420px]"
                         initial={{ opacity: 0, y: -12, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -717,14 +718,17 @@ export function ConnectionChooser({
         [activeConnection, updateConnectionTitle]
     );
 
-    // Focus search input when dropdown opens
+    // Detect mobile to avoid disruptive keyboard popup
+    const isMobile = useMediaQuery("(max-width: 639px)");
+
+    // Focus search input when dropdown opens (skip on mobile to avoid keyboard popup)
     useEffect(() => {
-        if (isDropdownOpen && inputRef.current) {
+        if (isDropdownOpen && inputRef.current && !isMobile) {
             requestAnimationFrame(() => {
                 inputRef.current?.focus();
             });
         }
-    }, [isDropdownOpen]);
+    }, [isDropdownOpen, isMobile]);
 
     // Keyboard shortcut: Cmd+Shift+S to toggle star on active connection
     useEffect(() => {
