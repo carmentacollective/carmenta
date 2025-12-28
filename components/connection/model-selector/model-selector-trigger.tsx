@@ -64,7 +64,7 @@ export function ModelSelectorTrigger({
     const labelText = showLabel && manualModel ? manualModel.shortName : null;
 
     return (
-        <div className={cn("relative", className)}>
+        <div className="relative">
             {/* Trigger Button */}
             <button
                 onClick={() => setSettingsOpen(true)}
@@ -75,7 +75,8 @@ export function ModelSelectorTrigger({
                         ? "group relative flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors hover:bg-foreground/5"
                         : "btn-icon-glass group relative",
                     hasOverrides && !isAuto ? "ring-2 ring-primary/40" : "",
-                    disabled && "btn-disabled"
+                    disabled && "btn-disabled",
+                    className
                 )}
                 aria-label="Model settings"
                 data-tooltip-id="tip"

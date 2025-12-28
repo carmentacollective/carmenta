@@ -2273,6 +2273,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                             onChange={setOverrides}
                             conciergeModel={conciergeModel}
                             showLabel={isMobile === true}
+                            className={isMobile === true ? "h-11" : ""}
                         />
                         <FilePickerButton
                             className={isMobile === true ? "h-11 w-11" : ""}
