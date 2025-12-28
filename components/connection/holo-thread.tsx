@@ -23,15 +23,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
-import {
-    Square,
-    ArrowDown,
-    CornerDownLeft,
-    MoreHorizontal,
-    X,
-    Pencil,
-    Check,
-} from "lucide-react";
+import { Square, ArrowDown, CornerDownLeft, X, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -1814,9 +1806,6 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
 
-    // Mobile tools expansion state
-    const [showMobileTools, setShowMobileTools] = useState(false);
-
     // Shift+Enter hint: show once for new users, then never again
     const [showShiftEnterHint, setShowShiftEnterHint] = useState(false);
 
@@ -2303,7 +2292,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                 ref={formRef}
                 onSubmit={handleSubmit}
                 className={cn(
-                    "glass-input-dock relative flex w-full items-center transition-all",
+                    "glass-input-dock relative flex w-full flex-col transition-all sm:flex-row sm:items-center",
                     shouldFlash && "ring-2 ring-primary/40"
                 )}
             >
@@ -2319,96 +2308,65 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                         setTimeout(() => setIsComposing(false), 0);
                     }}
                     placeholder="Message Carmenta..."
-                    className="max-h-32 min-h-[2.75rem] flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-base leading-5 text-foreground/95 outline-none placeholder:text-foreground/40 sm:px-6 sm:py-4 md:max-h-40 md:min-h-[3.5rem]"
+                    className={cn(
+                        "max-h-48 min-h-[2.75rem] w-full flex-none resize-none bg-transparent px-4 py-3 text-base leading-5 text-foreground/95 outline-none placeholder:text-foreground/40 sm:flex-1 sm:px-6 sm:py-4 md:max-h-60 md:min-h-[3.5rem]",
+                        "rounded-2xl border transition-colors",
+                        input.includes(" ")
+                            ? "border-foreground/10 bg-background/30"
+                            : "border-transparent"
+                    )}
                     rows={1}
                     data-testid="composer-input"
                 />
 
-                <div className="flex items-center gap-1.5 pr-3 sm:gap-2 sm:pr-4">
-                    {showStop ? (
-                        <ComposerButton
-                            type="button"
-                            variant="stop"
-                            pipelineState={pipelineState}
-                            aria-label="Stop generation"
-                            onClick={handleStop}
-                            data-testid="stop-button"
-                        >
-                            <Square className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </ComposerButton>
-                    ) : (
-                        <ComposerButton
-                            type="submit"
-                            variant="send"
-                            aria-label="Send message"
-                            disabled={isUploading}
-                            data-testid="send-button"
-                        >
-                            <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </ComposerButton>
-                    )}
+                {/* Action bar: responsive layout via CSS */}
+                <div className="flex items-center justify-between gap-2 px-3 pb-2.5 pt-1 sm:justify-end sm:gap-1.5 sm:pb-0 sm:pr-4 sm:pt-0">
+                    {/* Left group (mobile) / inline (desktop): Model + Attach */}
+                    <div className="flex items-center gap-1 sm:order-last sm:gap-1.5">
+                        <ModelSelectorTrigger
+                            overrides={overrides}
+                            onChange={setOverrides}
+                            conciergeModel={conciergeModel}
+                            showLabel={isMobile === true}
+                            className={isMobile === true ? "h-11" : ""}
+                        />
+                        <FilePickerButton
+                            className={isMobile === true ? "h-11 w-11" : ""}
+                        />
+                    </div>
 
-                    {/* Desktop: show tools directly (guard against undefined during SSR) */}
-                    {isMobile === false && (
-                        <>
-                            <VoiceInputButton
-                                onTranscriptUpdate={handleVoiceTranscript}
-                                disabled={isLoading}
-                            />
-                            <FilePickerButton />
-                            <ModelSelectorTrigger
-                                overrides={overrides}
-                                onChange={setOverrides}
-                                conciergeModel={conciergeModel}
-                            />
-                        </>
-                    )}
-
-                    {/* Mobile: tools behind ••• button (strict check for SSR) */}
-                    {isMobile === true && (
-                        <div className="relative flex items-center">
-                            {/* Voice button always visible on mobile for quick access */}
-                            <VoiceInputButton
-                                onTranscriptUpdate={handleVoiceTranscript}
-                                disabled={isLoading}
-                            />
-                            <AnimatePresence>
-                                {showMobileTools && (
-                                    <motion.div
-                                        initial={{ width: 0, opacity: 0 }}
-                                        animate={{ width: "auto", opacity: 1 }}
-                                        exit={{ width: 0, opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="flex items-center gap-1.5 overflow-hidden"
-                                    >
-                                        <FilePickerButton />
-                                        <ModelSelectorTrigger
-                                            overrides={overrides}
-                                            onChange={setOverrides}
-                                            conciergeModel={conciergeModel}
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                            <button
+                    {/* Right group: Send + Voice */}
+                    <div className="flex items-center gap-2 sm:order-first sm:gap-1.5">
+                        {showStop ? (
+                            <ComposerButton
                                 type="button"
-                                onClick={() => setShowMobileTools(!showMobileTools)}
-                                className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-full transition-colors",
-                                    showMobileTools
-                                        ? "bg-primary/20 text-primary"
-                                        : "text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60"
-                                )}
-                                aria-label="Toggle tools"
+                                variant="stop"
+                                pipelineState={pipelineState}
+                                aria-label="Stop generation"
+                                onClick={handleStop}
+                                data-testid="stop-button"
+                                className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                {showMobileTools ? (
-                                    <X className="h-4 w-4" />
-                                ) : (
-                                    <MoreHorizontal className="h-4 w-4" />
-                                )}
-                            </button>
-                        </div>
-                    )}
+                                <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </ComposerButton>
+                        ) : (
+                            <ComposerButton
+                                type="submit"
+                                variant="send"
+                                aria-label="Send message"
+                                disabled={isUploading}
+                                data-testid="send-button"
+                                className={isMobile === true ? "h-11 w-11" : ""}
+                            >
+                                <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </ComposerButton>
+                        )}
+                        <VoiceInputButton
+                            onTranscriptUpdate={handleVoiceTranscript}
+                            disabled={isLoading}
+                            className={isMobile === true ? "h-11 w-11" : ""}
+                        />
+                    </div>
                 </div>
             </form>
         </div>

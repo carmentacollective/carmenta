@@ -42,6 +42,8 @@ export interface ModelConfig {
     id: string;
     /** Human-friendly display name */
     displayName: string;
+    /** Short name for compact UI (e.g., mobile input chip) */
+    shortName: string;
     /** Provider identifier */
     provider: ModelProvider;
     /** User-facing description - what this model is good at */
@@ -76,6 +78,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "anthropic/claude-sonnet-4.5",
         displayName: "Claude Sonnet",
+        shortName: "Sonnet",
         provider: "anthropic",
         description: "Versatile powerhouse for code, analysis, and creative work",
         speedQuality: "versatile",
@@ -95,6 +98,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "anthropic/claude-opus-4.5",
         displayName: "Claude Opus",
+        shortName: "Opus",
         provider: "anthropic",
         description: "Maximum capability for complex research and deep thinking",
         speedQuality: "deep",
@@ -114,6 +118,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "anthropic/claude-haiku-4.5",
         displayName: "Claude Haiku",
+        shortName: "Haiku",
         provider: "anthropic",
         description: "Fast & efficient for quick questions and rapid responses",
         speedQuality: "fast",
@@ -133,6 +138,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "google/gemini-3-pro-preview",
         displayName: "Gemini Pro",
+        shortName: "Gemini",
         provider: "google",
         description: "Multimodal understanding for video, audio, and images",
         speedQuality: "versatile",
@@ -149,6 +155,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "x-ai/grok-4.1-fast",
         displayName: "Grok",
+        shortName: "Grok",
         provider: "x-ai",
         description: "Massive 2M token context for extreme-length scenarios",
         speedQuality: "fast",
@@ -168,6 +175,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "openai/gpt-5.2",
         displayName: "ChatGPT",
+        shortName: "ChatGPT",
         provider: "openai",
         description: "Frontier model for professional work with adaptive reasoning",
         speedQuality: "versatile",
@@ -187,6 +195,7 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "perplexity/sonar-pro",
         displayName: "Perplexity",
+        shortName: "Perplexity",
         provider: "perplexity",
         description: "Real-time web search with cited sources",
         speedQuality: "specialized",

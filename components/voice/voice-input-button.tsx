@@ -25,6 +25,8 @@ interface VoiceInputButtonProps {
     disabled?: boolean;
     /** Additional class names */
     className?: string;
+    /** Visual variant: "ghost" (default) toggles between ghost/active, "primary" always shows filled */
+    variant?: "ghost" | "primary";
 }
 
 export function VoiceInputButton({
@@ -32,6 +34,7 @@ export function VoiceInputButton({
     onTranscriptComplete,
     disabled = false,
     className,
+    variant = "ghost",
 }: VoiceInputButtonProps) {
     const { trigger: triggerHaptic } = useHapticFeedback();
 
@@ -98,14 +101,23 @@ export function VoiceInputButton({
             ? "Connecting..."
             : "Voice input";
 
+    // Determine button style based on variant and state
+    const buttonStyle =
+        variant === "primary"
+            ? "btn-cta" // Always filled for primary variant
+            : isActive
+              ? "btn-cta"
+              : "btn-icon-glass";
+
     return (
         <button
             type="button"
             onClick={handleClick}
             disabled={disabled || isConnecting}
             className={cn(
-                "group relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
-                isActive ? "btn-cta" : "btn-icon-glass",
+                "group relative flex shrink-0 items-center justify-center rounded-full",
+                variant === "primary" ? "h-11 w-11" : "h-10 w-10 sm:h-12 sm:w-12",
+                buttonStyle,
                 showError && "text-amber-500",
                 disabled && "pointer-events-none opacity-50",
                 className
@@ -166,7 +178,14 @@ export function VoiceInputButton({
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ duration: 0.15 }}
                     >
-                        <Mic className="h-5 w-5 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-6 sm:w-6" />
+                        <Mic
+                            className={cn(
+                                "h-5 w-5 transition-colors sm:h-6 sm:w-6",
+                                variant === "primary"
+                                    ? "text-primary-foreground"
+                                    : "text-foreground/50 group-hover:text-foreground/80"
+                            )}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
