@@ -297,7 +297,7 @@ function ConnectionRow({
             {/* Hover background - more visible shift */}
             <div
                 className={cn(
-                    "absolute inset-0 transition-all duration-200",
+                    "pointer-events-none absolute inset-0 transition-all duration-200",
                     isActive
                         ? "bg-primary/3 opacity-0 group-hover:opacity-100"
                         : "bg-foreground/[0.04] opacity-0 group-hover:opacity-100"
