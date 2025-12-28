@@ -6,6 +6,7 @@ import {
     CloudSun,
     BookOpen,
     Sparkles,
+    Calculator,
     type LucideIcon,
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
@@ -228,6 +229,20 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
     },
     // Service integrations (alphabetical order)
+    calculate: {
+        displayName: "Calculator",
+        icon: Calculator,
+        messages: {
+            pending: "Getting ready...",
+            running: "Crunching numbers...",
+            completed: "Calculation complete",
+            error: "Calculation failed",
+        },
+        delightMessages: {
+            completed: ["Got it", "Here's the answer", "Math done"],
+            fast: ["Quick math!", "Done!"],
+        },
+    },
     clickup: {
         displayName: "ClickUp",
         icon: "/logos/clickup.svg",

@@ -460,6 +460,13 @@ function getToolError(
  * Render a single tool part with the appropriate UI component
  */
 function ToolPartRenderer({ part }: { part: ToolPart }) {
+    // Defensive check - part should never be undefined given our type guard,
+    // but the AI SDK's stream resume can produce unexpected data structures
+    if (!part || typeof part !== "object" || !part.type || !part.state) {
+        logger.warn({ part }, "ToolPartRenderer received invalid part");
+        return null;
+    }
+
     const toolName = part.type.replace("tool-", "");
     const status = getToolStatus(part.state);
     const input = part.input as Record<string, unknown>;
@@ -986,6 +993,39 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             initialZoom={zoom}
                             title={title}
                         />
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "calculate": {
+            const calcOutput = output as
+                | { result?: unknown; explanation?: string }
+                | undefined;
+            const calcError = getToolError(part, output, "Calculation failed");
+            const hasResult =
+                status === "completed" && calcOutput?.result !== undefined;
+
+            return (
+                <ToolRenderer
+                    toolName="calculate"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={calcError}
+                >
+                    {hasResult && (
+                        <div className="space-y-1 text-sm">
+                            <div className="font-mono text-base font-medium">
+                                {String(calcOutput.result)}
+                            </div>
+                            {calcOutput.explanation && (
+                                <div className="text-xs text-muted-foreground">
+                                    {calcOutput.explanation}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </ToolRenderer>
             );
