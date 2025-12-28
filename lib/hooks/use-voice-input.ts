@@ -92,6 +92,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     const interimTranscriptRef = useRef("");
     const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const keepaliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const isCancelledRef = useRef(false); // Track if connection was cancelled
 
     // Connection timeout duration (10 seconds)
     const CONNECTION_TIMEOUT_MS = 10000;
@@ -119,6 +120,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     }, []);
 
     const stopListening = useCallback(() => {
+        // Mark as cancelled to prevent race with Open event handler
+        isCancelledRef.current = true;
+
         // Clear connection timeout
         if (connectionTimeoutRef.current) {
             clearTimeout(connectionTimeoutRef.current);
@@ -160,6 +164,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             onTranscriptCompleteRef.current?.(combinedTranscript);
         }
 
+        // Clear refs after delivery to prevent duplicate callbacks on Close event
+        finalTranscriptRef.current = "";
+        interimTranscriptRef.current = "";
+
         setConnectionState("disconnected");
         logger.debug({}, "Voice input stopped");
     }, []);
@@ -169,6 +177,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             handleError(new Error("Voice input is not supported in this browser"));
             return;
         }
+
+        // Reset cancelled flag for new session
+        isCancelledRef.current = false;
 
         // Clear refs at the start of a new session
         // This ensures fresh transcription without lingering text from previous sessions
@@ -248,6 +259,12 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
             // Handle connection open
             connection.on(LiveTranscriptionEvents.Open, () => {
+                // Check if connection was cancelled before this event fired (race condition)
+                if (isCancelledRef.current) {
+                    logger.debug({}, "Connection opened but was cancelled, ignoring");
+                    return;
+                }
+
                 // Clear the connection timeout - we connected successfully
                 if (connectionTimeoutRef.current) {
                     clearTimeout(connectionTimeoutRef.current);
