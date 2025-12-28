@@ -388,6 +388,7 @@ function ConnectionDropdown({
     inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+    const [showAllRecent, setShowAllRecent] = useState(false);
     const [starredCollapsed, setStarredCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         const stored = localStorage.getItem("carmenta:starred-collapsed");
@@ -438,30 +439,37 @@ function ConnectionDropdown({
     }, [isOpen, handleClose, confirmingDeleteId, cancelDelete]);
 
     // Filter connections based on search - returns unified results when searching
-    const { filteredStarred, filteredUnstarred, isSearching } = useMemo(() => {
-        const isSearching = Boolean(debouncedQuery.trim());
+    const { filteredStarred, filteredUnstarred, isSearching, hasMoreRecent } =
+        useMemo(() => {
+            const isSearching = Boolean(debouncedQuery.trim());
+            const recentLimit = 6;
+            const hasMoreRecent = unstarredConnections.length > recentLimit;
 
-        if (!isSearching) {
-            // No search: show starred and recent (limited)
+            if (!isSearching) {
+                // No search: show starred and recent (limited unless "show all" is active)
+                return {
+                    filteredStarred: starredConnections,
+                    filteredUnstarred: showAllRecent
+                        ? unstarredConnections
+                        : unstarredConnections.slice(0, recentLimit),
+                    isSearching: false,
+                    hasMoreRecent,
+                };
+            }
+
+            // Search: filter all connections and show in unified list
+            const lowerQuery = debouncedQuery.toLowerCase();
+            const matchesQuery = (c: PublicConnection) =>
+                c.title?.toLowerCase().includes(lowerQuery) ||
+                c.id.toLowerCase().includes(lowerQuery);
+
             return {
-                filteredStarred: starredConnections,
-                filteredUnstarred: unstarredConnections.slice(0, 6),
-                isSearching: false,
+                filteredStarred: starredConnections.filter(matchesQuery),
+                filteredUnstarred: unstarredConnections.filter(matchesQuery),
+                isSearching: true,
+                hasMoreRecent: false,
             };
-        }
-
-        // Search: filter all connections and show in unified list
-        const lowerQuery = debouncedQuery.toLowerCase();
-        const matchesQuery = (c: PublicConnection) =>
-            c.title?.toLowerCase().includes(lowerQuery) ||
-            c.id.toLowerCase().includes(lowerQuery);
-
-        return {
-            filteredStarred: starredConnections.filter(matchesQuery),
-            filteredUnstarred: unstarredConnections.filter(matchesQuery),
-            isSearching: true,
-        };
-    }, [starredConnections, unstarredConnections, debouncedQuery]);
+        }, [starredConnections, unstarredConnections, debouncedQuery, showAllRecent]);
 
     // Use portal to escape stacking context from Framer Motion transforms
     // Check runs on every render but createPortal only called client-side
@@ -489,7 +497,7 @@ function ConnectionDropdown({
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="glass-container overflow-hidden rounded-2xl shadow-2xl">
+                        <div className="glass-container-mobile overflow-hidden rounded-2xl shadow-2xl">
                             {/* Search header */}
                             <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
                                 <Search className="h-5 w-5 text-foreground/40" />
@@ -653,6 +661,28 @@ function ConnectionDropdown({
                                                     )
                                                 )}
                                             </AnimatePresence>
+
+                                            {/* Show all / Show less toggle when there are more than 6 recent */}
+                                            {hasMoreRecent && !isSearching && (
+                                                <button
+                                                    onClick={() =>
+                                                        setShowAllRecent(!showAllRecent)
+                                                    }
+                                                    className="flex w-full items-center justify-center gap-2 border-t border-foreground/5 px-4 py-2.5 text-sm text-primary/80 transition-colors hover:bg-foreground/[0.03] hover:text-primary"
+                                                >
+                                                    {showAllRecent ? (
+                                                        <>Show less</>
+                                                    ) : (
+                                                        <>
+                                                            View all{" "}
+                                                            {
+                                                                unstarredConnections.length
+                                                            }{" "}
+                                                            conversations
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -841,7 +871,7 @@ export function ConnectionChooser({
                             )}
                         </motion.div>
                     ) : (
-                        // No title yet: Search | "Recent Connections"
+                        // No title yet: Search | "X Conversations" (clickable to see history)
                         <motion.div
                             key="minimal"
                             className="flex w-full items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4"
@@ -853,9 +883,9 @@ export function ConnectionChooser({
                             <button
                                 onClick={openDropdown}
                                 className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
-                                aria-label="Search connections"
+                                aria-label="View all conversations"
                                 data-tooltip-id="tip"
-                                data-tooltip-content="Find connections"
+                                data-tooltip-content="View all conversations"
                             >
                                 <Search className="h-4 w-4" />
                             </button>
@@ -864,7 +894,12 @@ export function ConnectionChooser({
                                 className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground/80"
                             >
                                 {isStreaming && <RunningIndicator />}
-                                <span className="truncate">Recent Connections</span>
+                                <Clock className="h-3.5 w-3.5" />
+                                <span className="truncate">
+                                    {connections.length} Conversation
+                                    {connections.length !== 1 ? "s" : ""}
+                                </span>
+                                <ChevronRight className="h-3.5 w-3.5 text-foreground/40" />
                             </button>
                         </motion.div>
                     )}
