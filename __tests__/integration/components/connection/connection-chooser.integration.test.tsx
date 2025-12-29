@@ -136,10 +136,10 @@ describe("ConnectionChooser Integration", () => {
                 </ConnectionProvider>
             );
 
-            // 3. Verify connection appears in UI (title words are split into animated spans)
-            expect(screen.getByText("My")).toBeInTheDocument();
-            expect(screen.getByText("First")).toBeInTheDocument();
-            expect(screen.getByText("Chat")).toBeInTheDocument();
+            // 3. Verify connection appears in UI (typewriter animation renders full title)
+            await waitFor(() => {
+                expect(screen.getByText("My First Chat")).toBeInTheDocument();
+            });
 
             // 4. Open dropdown and verify both connections are listed
             fireEvent.click(screen.getByLabelText("Search connections"));

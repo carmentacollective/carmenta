@@ -112,10 +112,11 @@ describe("ConnectionChooser", () => {
 
     describe("Initial Rendering", () => {
         it("renders the chooser pill", () => {
-            const { container } = render(<ConnectionChooser />);
+            render(<ConnectionChooser />);
 
-            // The component should render the pill container
-            expect(container.querySelector(".glass-pill")).toBeInTheDocument();
+            // The component should render with search and new buttons
+            expect(screen.getByLabelText("Search connections")).toBeInTheDocument();
+            expect(screen.getByLabelText("New connection")).toBeInTheDocument();
         });
 
         it("shows search button when connections exist", () => {
@@ -140,13 +141,13 @@ describe("ConnectionChooser", () => {
             ).not.toBeInTheDocument();
         });
 
-        it("displays active connection title", () => {
+        it("displays active connection title", async () => {
             render(<ConnectionChooser />);
 
-            // Title is animated with words in separate spans (visual spacing via CSS gap)
-            // So we check that each word appears in the document
-            expect(screen.getByText("First")).toBeInTheDocument();
-            expect(screen.getByText("Conversation")).toBeInTheDocument();
+            // TypewriterTitle renders the full title in a single span
+            await vi.waitFor(() => {
+                expect(screen.getByText("First Conversation")).toBeInTheDocument();
+            });
         });
 
         it("shows new connection button", () => {
@@ -182,12 +183,17 @@ describe("ConnectionChooser", () => {
             expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
         });
 
-        it("enters edit mode when title is clicked (not dropdown)", () => {
+        it("enters edit mode when title is clicked (not dropdown)", async () => {
             render(<ConnectionChooser />);
 
-            // Title is animated with words in separate spans - click on a word (bubbles to button)
-            const titleWord = screen.getByText("First");
-            fireEvent.click(titleWord);
+            // Wait for title to render, then click the edit button
+            await vi.waitFor(() => {
+                expect(screen.getByText("First Conversation")).toBeInTheDocument();
+            });
+
+            // Click the title button to enter edit mode
+            const editButton = screen.getByLabelText("Click to edit title");
+            fireEvent.click(editButton);
 
             // Clicking title now enters edit mode (not opening dropdown)
             // Edit mode shows an input with the current title
@@ -448,8 +454,8 @@ describe("ConnectionChooser", () => {
             });
             render(<ConnectionChooser />);
 
-            // S2-S4 state: untitled connection shows "X Conversations" trigger with count
-            fireEvent.click(screen.getByText(/\d+ Conversation/));
+            // S2-S4 state: untitled connection shows "Search conversations..." placeholder
+            fireEvent.click(screen.getByLabelText("Search conversations"));
             // "New connection" appears as fallback title in the dropdown
             expect(screen.getAllByText("New connection").length).toBeGreaterThanOrEqual(
                 1
