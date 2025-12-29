@@ -73,7 +73,7 @@ export const proxy = clerkMiddleware(async (auth, req) => {
         return;
     }
 
-    // Code mode is public in dev (future: GitHub auth in production)
+    // Code mode is public (operates on local file system, no user data)
     if (isCodeRoute(req)) {
         return;
     }

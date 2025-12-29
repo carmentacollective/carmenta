@@ -74,17 +74,7 @@ export async function GET(
         // Get message counts and previews for each connection
         const sessions: SessionWithPreview[] = await Promise.all(
             projectConnections.map(async (conn) => {
-                // Get message count
-                const messageList = await db.query.messages.findMany({
-                    where: eq(messages.connectionId, conn.id),
-                    orderBy: [desc(messages.createdAt)],
-                    limit: 1,
-                    columns: {
-                        id: true,
-                    },
-                });
-
-                // Get total count
+                // Get total message count
                 const allMessages = await db.query.messages.findMany({
                     where: eq(messages.connectionId, conn.id),
                     columns: { id: true },
