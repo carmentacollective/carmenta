@@ -306,6 +306,21 @@ export const connections = pgTable(
         /** When the connection was starred (null if not starred) */
         starredAt: timestamp("starred_at", { withTimezone: true }),
 
+        // ---- Code Mode (Dev Mode) ----
+
+        /**
+         * Project path for code mode connections.
+         * When set, this connection uses Claude Agent SDK instead of normal chat.
+         * Example: "/Users/nick/src/carmenta-code"
+         */
+        projectPath: text("project_path"),
+
+        /**
+         * Claude Agent SDK session ID for resuming code sessions.
+         * Populated after first message, used to resume with full context.
+         */
+        codeSessionId: text("code_session_id"),
+
         createdAt: timestamp("created_at", { withTimezone: true })
             .notNull()
             .defaultNow(),

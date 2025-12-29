@@ -41,6 +41,7 @@ const isWebhookRoute = createRouteMatcher(["/api/webhooks(.*)"]);
 const isHealthRoute = createRouteMatcher(["/healthz"]);
 const isOAuthCallbackRoute = createRouteMatcher(["/integrations/oauth/callback(.*)"]);
 const isInngestRoute = createRouteMatcher(["/api/inngest(.*)"]);
+const isCodeRoute = createRouteMatcher(["/api/code(.*)", "/code(.*)"]);
 
 export const proxy = clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
@@ -69,6 +70,11 @@ export const proxy = clerkMiddleware(async (auth, req) => {
 
     // Inngest is public (uses signing key verification)
     if (isInngestRoute(req)) {
+        return;
+    }
+
+    // Code mode is public in dev (future: GitHub auth in production)
+    if (isCodeRoute(req)) {
         return;
     }
 

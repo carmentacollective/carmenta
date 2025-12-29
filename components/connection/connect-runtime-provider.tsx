@@ -248,6 +248,26 @@ export function useSettingsModal() {
 }
 
 /**
+ * Context for code mode - allows components to know when in code mode
+ * and access the project path.
+ */
+export interface CodeModeContextType {
+    /** Whether the current connection is in code mode */
+    isCodeMode: boolean;
+    /** Project path when in code mode, null otherwise */
+    projectPath: string | null;
+}
+
+const CodeModeContext = createContext<CodeModeContextType>({
+    isCodeMode: false,
+    projectPath: null,
+});
+
+export function useCodeMode() {
+    return useContext(CodeModeContext);
+}
+
+/**
  * Parses an error message and extracts a user-friendly message.
  * Handles JSON error responses, HTML error pages, provider errors, and plain text.
  *
@@ -412,11 +432,15 @@ interface ConnectRuntimeProviderProps {
 /**
  * Custom fetch wrapper that injects connectionId, model overrides,
  * and extracts concierge headers from responses.
+ *
+ * For code mode (when projectPathRef has a value), routes to /api/code
+ * and includes projectPath in the request body.
  */
 function createFetchWrapper(
     setConcierge: (data: ReturnType<typeof parseConciergeHeaders>) => void,
     overridesRef: React.MutableRefObject<ModelOverrides>,
     connectionIdRef: React.MutableRefObject<string | null>,
+    projectPathRef: React.MutableRefObject<string | null>,
     addNewConnection: (connection: {
         id: string;
         slug: string;
@@ -430,15 +454,23 @@ function createFetchWrapper(
     ) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        const url = typeof input === "string" ? input : input.toString();
+        let url = typeof input === "string" ? input : input.toString();
         const method = init?.method || "GET";
 
-        logger.debug({ url, method }, "API request starting");
+        // Code mode routing: when projectPath is set, use /api/code
+        const isCodeMode = !!projectPathRef.current;
+        if (isCodeMode && url.includes("/api/connection")) {
+            url = url.replace("/api/connection", "/api/code");
+        }
 
-        // Clear stale concierge data
-        setConcierge(null);
+        logger.debug({ url, method, isCodeMode }, "API request starting");
 
-        // Inject connectionId and model overrides into POST body
+        // Clear stale concierge data (not used in code mode)
+        if (!isCodeMode) {
+            setConcierge(null);
+        }
+
+        // Inject connectionId, model overrides, and projectPath into POST body
         let modifiedInit = init;
         if (method === "POST" && init?.body) {
             try {
@@ -446,6 +478,11 @@ function createFetchWrapper(
 
                 if (connectionIdRef.current) {
                     body.connectionId = connectionIdRef.current;
+                }
+
+                // Code mode: include projectPath
+                if (projectPathRef.current) {
+                    body.projectPath = projectPathRef.current;
                 }
 
                 if (overridesRef.current.modelId) {
@@ -466,14 +503,18 @@ function createFetchWrapper(
                 logger.debug(
                     {
                         connectionId: connectionIdRef.current,
+                        projectPath: projectPathRef.current,
                         modelOverride: overridesRef.current.modelId,
                     },
-                    "Applied connectionId and model overrides"
+                    "Applied request overrides"
                 );
             } catch {
                 logger.warn({}, "Failed to parse request body for override injection");
             }
         }
+
+        // Update the input URL for the actual fetch
+        input = url;
 
         try {
             const response = await fetch(input, modifiedInit);
@@ -559,13 +600,22 @@ function createFetchWrapper(
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages, addNewConnection, setIsStreaming } =
-        useConnection();
+    const {
+        activeConnection,
+        activeConnectionId,
+        initialMessages,
+        addNewConnection,
+        setIsStreaming,
+    } = useConnection();
     const { handleDataPart, clearAll: clearTransientMessages } = useTransient();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
+
+    // Code mode: when projectPath is set, route to /api/code
+    const isCodeMode = !!activeConnection?.projectPath;
+    const projectPath = activeConnection?.projectPath ?? null;
 
     // Generate a stable chat ID for new connections.
     // This matches Vercel's ai-chatbot pattern where the ID is known BEFORE sending.
@@ -579,6 +629,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Use refs for values that change but shouldn't recreate the transport
     const overridesRef = useRef(overrides);
     const connectionIdRef = useRef(activeConnectionId);
+    const projectPathRef = useRef(projectPath);
 
     useEffect(() => {
         overridesRef.current = overrides;
@@ -587,6 +638,10 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     useEffect(() => {
         connectionIdRef.current = activeConnectionId;
     }, [activeConnectionId]);
+
+    useEffect(() => {
+        projectPathRef.current = projectPath;
+    }, [projectPath]);
 
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
@@ -614,6 +669,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Create transport with custom fetch
     // Note: We pass ref objects (not .current) to be read at fetch time, not render time
+    // The fetch wrapper handles routing to /api/code when projectPath is set
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
@@ -623,6 +679,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     setConcierge,
                     overridesRef,
                     connectionIdRef,
+                    projectPathRef,
                     addNewConnection,
                     handleNewConnectionCreated
                 ),
@@ -960,23 +1017,30 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         [settingsOpen]
     );
 
+    const codeModeContextValue = useMemo<CodeModeContextType>(
+        () => ({ isCodeMode, projectPath }),
+        [isCodeMode, projectPath]
+    );
+
     return (
-        <SettingsModalContext.Provider value={settingsModalContextValue}>
-            <ModelOverridesContext.Provider value={overridesContextValue}>
-                <ChatErrorContext.Provider value={errorContextValue}>
-                    <ChatContext.Provider value={chatContextValue}>
-                        {children}
-                        {displayError && (
-                            <RuntimeErrorBanner
-                                error={displayError}
-                                onDismiss={clearError}
-                                onRetry={handleRetry}
-                            />
-                        )}
-                    </ChatContext.Provider>
-                </ChatErrorContext.Provider>
-            </ModelOverridesContext.Provider>
-        </SettingsModalContext.Provider>
+        <CodeModeContext.Provider value={codeModeContextValue}>
+            <SettingsModalContext.Provider value={settingsModalContextValue}>
+                <ModelOverridesContext.Provider value={overridesContextValue}>
+                    <ChatErrorContext.Provider value={errorContextValue}>
+                        <ChatContext.Provider value={chatContextValue}>
+                            {children}
+                            {displayError && (
+                                <RuntimeErrorBanner
+                                    error={displayError}
+                                    onDismiss={clearError}
+                                    onRetry={handleRetry}
+                                />
+                            )}
+                        </ChatContext.Provider>
+                    </ChatErrorContext.Provider>
+                </ModelOverridesContext.Provider>
+            </SettingsModalContext.Provider>
+        </CodeModeContext.Provider>
     );
 }
 

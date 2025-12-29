@@ -55,6 +55,8 @@ export interface PublicConnection {
     lastActivityAt: Date;
     createdAt: Date;
     updatedAt: Date;
+    /** Project path for code mode. When set, uses Claude Agent SDK. */
+    projectPath: string | null;
 }
 
 /**

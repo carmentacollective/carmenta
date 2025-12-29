@@ -73,6 +73,9 @@ export interface ConnectionWithMessages {
     lastActivityAt: Date;
     createdAt: Date;
     updatedAt: Date;
+    // Code mode (Dev Mode)
+    projectPath: string | null;
+    codeSessionId: string | null;
     messages: MessageWithParts[];
 }
 

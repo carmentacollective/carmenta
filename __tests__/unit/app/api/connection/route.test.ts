@@ -194,6 +194,9 @@ describe("POST /api/connection", () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lastActivityAt: new Date(),
+                    // Code mode fields
+                    projectPath: null,
+                    codeSessionId: null,
                 };
             }
         );
@@ -424,6 +427,8 @@ describe("POST /api/connection", () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lastActivityAt: new Date(),
+                    projectPath: null,
+                    codeSessionId: null,
                 })
             );
 
@@ -481,6 +486,8 @@ describe("POST /api/connection", () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lastActivityAt: new Date(),
+                    projectPath: null,
+                    codeSessionId: null,
                 })
             );
 

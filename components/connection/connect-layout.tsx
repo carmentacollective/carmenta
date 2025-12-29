@@ -30,8 +30,9 @@ import { motion } from "framer-motion";
 import { Plus, Loader2 } from "lucide-react";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
-import { ConnectRuntimeProvider } from "./connect-runtime-provider";
+import { ConnectRuntimeProvider, useCodeMode } from "./connect-runtime-provider";
 import { ConnectionChooser } from "./connection-chooser";
+import { FolderGit2 } from "lucide-react";
 import { OracleWhisper } from "@/components/ui/oracle-whisper";
 import { UserAuthButton } from "@/components/ui";
 import type {
@@ -74,6 +75,31 @@ const entranceVariants = {
 
 function CarmentaOracleWithWhisper() {
     return <OracleWhisper />;
+}
+
+// ============================================================
+// Code Mode Indicator - Shows project name when in code mode
+// ============================================================
+
+function CodeModeIndicator() {
+    const { isCodeMode, projectPath } = useCodeMode();
+
+    if (!isCodeMode || !projectPath) return null;
+
+    // Extract project name from path
+    const projectName = projectPath.split("/").pop() || "Project";
+
+    return (
+        <motion.div
+            className="flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            title={`Code mode: ${projectPath}`}
+        >
+            <FolderGit2 className="h-4 w-4" />
+            <span className="max-w-[120px] truncate">{projectName}</span>
+        </motion.div>
+    );
 }
 
 // ============================================================
@@ -152,13 +178,14 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
 
                             {/* Desktop: Connection chooser in center */}
                             <motion.div
-                                className="hidden flex-1 justify-center sm:flex"
+                                className="hidden flex-1 items-center justify-center gap-2 sm:flex"
                                 variants={entranceVariants}
                                 initial="hidden"
                                 animate="visible"
                                 custom={0.05}
                             >
                                 {hasConnections && <ConnectionChooser />}
+                                <CodeModeIndicator />
                             </motion.div>
 
                             {/* Mobile: New button between Oracle and Avatar */}
@@ -202,16 +229,19 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                             </motion.div>
                         </div>
 
-                        {/* Row 2 (Mobile only): Connection chooser */}
+                        {/* Row 2 (Mobile only): Connection chooser + code mode */}
                         {hasConnections && (
                             <motion.div
-                                className="w-full sm:hidden"
+                                className="flex w-full items-center gap-2 sm:hidden"
                                 variants={entranceVariants}
                                 initial="hidden"
                                 animate="visible"
                                 custom={0.1}
                             >
-                                <ConnectionChooser hideNewButton />
+                                <div className="flex-1">
+                                    <ConnectionChooser hideNewButton />
+                                </div>
+                                <CodeModeIndicator />
                             </motion.div>
                         )}
                     </header>

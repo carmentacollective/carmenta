@@ -202,6 +202,7 @@ export function ConnectionProvider({
                 createdAt: now,
                 updatedAt: now,
                 lastActivityAt: now,
+                projectPath: partialConnection.projectPath ?? null,
             };
 
             setConnections((prev) => {
