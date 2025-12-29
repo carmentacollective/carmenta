@@ -60,8 +60,8 @@ function getSavedDraft(key: string): string | null {
         if (savedDraft && savedDraft.trim().length > 0) {
             return savedDraft;
         }
-    } catch {
-        // localStorage might be unavailable
+    } catch (error) {
+        logger.debug({ error, key }, "localStorage read failed");
     }
     return null;
 }
@@ -83,17 +83,23 @@ export function useDraftPersistence({
 
     // Restore draft on mount or connection change
     useEffect(() => {
+        let cancelled = false;
+
         // Skip if we've already restored for this connection
         if (restoredConnectionRef.current === effectiveKey) return;
 
         const savedDraft = getSavedDraft(effectiveKey);
 
         if (savedDraft) {
-            setInput(savedDraft);
+            if (!cancelled) {
+                setInput(savedDraft);
+            }
             // Show banner after a microtask to avoid "setState in effect" lint error
             // by ensuring it's in a callback context
             Promise.resolve().then(() => {
-                setShowRecoveryBanner(true);
+                if (!cancelled) {
+                    setShowRecoveryBanner(true);
+                }
             });
             logger.info(
                 { key: effectiveKey, length: savedDraft.length },
@@ -101,14 +107,22 @@ export function useDraftPersistence({
             );
         } else {
             // No draft for this connection - clear input and hide banner
-            setInput("");
+            if (!cancelled) {
+                setInput("");
+            }
             Promise.resolve().then(() => {
-                setShowRecoveryBanner(false);
+                if (!cancelled) {
+                    setShowRecoveryBanner(false);
+                }
             });
         }
 
         // Mark this connection as restored
         restoredConnectionRef.current = effectiveKey;
+
+        return () => {
+            cancelled = true;
+        };
     }, [effectiveKey, setInput]);
 
     // Debounced save to localStorage
@@ -157,8 +171,8 @@ export function useDraftPersistence({
         try {
             const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
-        } catch {
-            // Fail silently
+        } catch (error) {
+            logger.debug({ error, key: effectiveKey }, "Failed to clear draft");
         }
     }, [effectiveKey, setInput]);
 
@@ -173,8 +187,8 @@ export function useDraftPersistence({
         try {
             const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
-        } catch {
-            // Fail silently
+        } catch (error) {
+            logger.debug({ error, key: effectiveKey }, "Failed to clear draft on send");
         }
 
         // Also dismiss recovery if it was showing
