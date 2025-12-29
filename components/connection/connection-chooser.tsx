@@ -87,14 +87,15 @@ function RunningIndicator() {
  * Fixed 500ms total duration regardless of title length. Short titles
  * type more deliberately, long titles move faster - consistent experience.
  *
- * The animation only plays when a NEW title arrives (not on mount with
- * existing title, and not when switching between connections).
+ * Animates on mount (when transitioning from no-title state) and when
+ * title changes. This ensures the effect plays when Carmenta first names
+ * a conversation.
  */
 function TypewriterTitle({ title }: { title: string }) {
-    // Track previous title in state (React's recommended pattern)
-    const [prevTitle, setPrevTitle] = useState(title);
-    const [displayedChars, setDisplayedChars] = useState(title.length);
-    const [isAnimating, setIsAnimating] = useState(false);
+    // Start with empty prevTitle so animation triggers on mount
+    const [prevTitle, setPrevTitle] = useState("");
+    const [displayedChars, setDisplayedChars] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(title.length > 0);
 
     // Detect title change during render (this is allowed in React)
     const isNewTitle = prevTitle !== title && title.length > 0;
@@ -434,13 +435,14 @@ function ConnectionDropdown({
     const [showAllRecent, setShowAllRecent] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(-1);
 
-    // Track previous values to reset focusedIndex during render (React-recommended pattern)
+    // Track previous values to reset state during render (React-recommended pattern)
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
     const [prevQuery, setPrevQuery] = useState(debouncedQuery);
     if (prevIsOpen !== isOpen || prevQuery !== debouncedQuery) {
         setPrevIsOpen(isOpen);
         setPrevQuery(debouncedQuery);
         setFocusedIndex(-1);
+        setNavigatingToId(null); // Clear stale loading state when dropdown reopens
     }
 
     const [starredCollapsed, setStarredCollapsed] = useState(() => {
