@@ -181,11 +181,10 @@ export async function getCredentials(
             const errMsg = error instanceof Error ? error.message : String(error);
 
             // Network/server errors are transient - don't tell user to reconnect
+            // Use word boundaries to avoid false positives (e.g., port :5000, code 15003)
+            const httpStatusPattern = /\b(500|502|503|504)\b/;
             const isTransientError =
-                errMsg.includes("500") ||
-                errMsg.includes("502") ||
-                errMsg.includes("503") ||
-                errMsg.includes("504") ||
+                httpStatusPattern.test(errMsg) ||
                 errMsg.includes("ECONNREFUSED") ||
                 errMsg.includes("ECONNRESET") ||
                 errMsg.includes("ETIMEDOUT");
