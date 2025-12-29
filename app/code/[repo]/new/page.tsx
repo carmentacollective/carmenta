@@ -4,11 +4,16 @@
  * Clean URL: /code/[repo]/new
  * Example: /code/carmenta-code/new
  *
- * Creates a new ephemeral code session. The session will be created
- * on first message and auto-titled after the first exchange.
+ * Creates a new code session for the specified project.
+ * The session will be created on first message and auto-titled after the first exchange.
  */
 
-import ConnectionPage from "@/app/connection/[slug]/[id]/page";
+import { notFound } from "next/navigation";
+
+import { Chat, ConnectLayout } from "@/components/connection";
+import { HolographicBackground } from "@/components/ui/holographic-background";
+import { getRecentConnections } from "@/lib/actions/connections";
+import { findProjectBySlug } from "@/lib/code/projects";
 
 interface PageProps {
     params: Promise<{
@@ -19,13 +24,29 @@ interface PageProps {
 export default async function NewCodeSessionPage({ params }: PageProps) {
     const { repo } = await params;
 
-    // Render the chat interface in "new session" mode
-    // The session will be created when the user sends their first message
+    // Look up the project by repo slug
+    const project = await findProjectBySlug(repo);
+    if (!project) {
+        notFound();
+    }
+
+    // Load recent connections for the sidebar
+    const recentConnections = await getRecentConnections(10);
+
     return (
-        <ConnectionPage
-            params={Promise.resolve({ slug: "_", id: "new" })}
-            // @ts-expect-error - Adding code mode context
-            codeMode={{ repo, isNew: true }}
-        />
+        <div className="fixed inset-0 overflow-hidden">
+            <HolographicBackground hideWatermark />
+            <div className="relative z-content h-full">
+                <ConnectLayout
+                    initialConnections={recentConnections}
+                    activeConnection={null}
+                    initialMessages={[]}
+                    initialConcierge={null}
+                    projectPath={project.path}
+                >
+                    <Chat />
+                </ConnectLayout>
+            </div>
+        </div>
     );
 }

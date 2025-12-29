@@ -54,6 +54,8 @@ interface ConnectionContextValue {
     initialMessages: UIMessageLike[];
     /** Persisted concierge data for hydrating UI on page load */
     initialConcierge: PersistedConciergeData | null;
+    /** Project path for code mode (from prop OR from activeConnection) */
+    projectPath: string | null;
     setActiveConnection: (id: string, slug: string) => void;
     createNewConnection: () => void;
     archiveActiveConnection: () => void;
@@ -76,6 +78,8 @@ interface ConnectionProviderProps {
     initialMessages?: UIMessageLike[];
     /** Persisted concierge data for hydrating UI on page load */
     initialConcierge?: PersistedConciergeData | null;
+    /** Project path for code mode (used for new sessions before connection exists) */
+    projectPath?: string | null;
 }
 
 export function ConnectionProvider({
@@ -84,6 +88,7 @@ export function ConnectionProvider({
     activeConnection = null,
     initialMessages = [],
     initialConcierge = null,
+    projectPath: propProjectPath = null,
 }: ConnectionProviderProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -348,6 +353,9 @@ export function ConnectionProvider({
         [optimisticConnections]
     );
 
+    // Effective projectPath: prop takes precedence over activeConnection
+    const projectPath = propProjectPath ?? activeConnection?.projectPath ?? null;
+
     const value = useMemo<ConnectionContextValue>(
         () => ({
             connections: optimisticConnections,
@@ -365,6 +373,7 @@ export function ConnectionProvider({
             error,
             initialMessages,
             initialConcierge,
+            projectPath,
             setActiveConnection: setActiveConnectionNav,
             createNewConnection: handleCreateNewConnection,
             archiveActiveConnection,
@@ -391,6 +400,7 @@ export function ConnectionProvider({
             error,
             initialMessages,
             initialConcierge,
+            projectPath,
             setActiveConnectionNav,
             handleCreateNewConnection,
             archiveActiveConnection,

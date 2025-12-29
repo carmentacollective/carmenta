@@ -7,6 +7,16 @@ import {
     BookOpen,
     Sparkles,
     Calculator,
+    FileText,
+    FilePen,
+    FileEdit,
+    Terminal,
+    FolderSearch,
+    FileSearch,
+    Bot,
+    ListTodo,
+    Code,
+    NotebookPen,
     type LucideIcon,
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
@@ -409,6 +419,246 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Tweet posted", "Timeline checked", "Post ready"],
             fast: ["Quick post!", "Posted!"],
+        },
+    },
+
+    // =========================================================================
+    // Claude Code tools - code mode file and shell operations
+    // =========================================================================
+
+    Read: {
+        displayName: "Read File",
+        icon: FileText,
+        getDescription: (args) => {
+            const filePath = args.file_path as string | undefined;
+            if (!filePath) return undefined;
+            const parts = filePath.split("/");
+            return truncate(parts[parts.length - 1] || filePath, 40);
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Reading file...",
+            completed: "File read",
+            error: "Couldn't read file",
+        },
+        delightMessages: {
+            completed: ["Got it", "File loaded", "Contents ready"],
+            fast: ["Quick read!"],
+        },
+    },
+
+    Write: {
+        displayName: "Write File",
+        icon: FilePen,
+        getDescription: (args) => {
+            const filePath = args.file_path as string | undefined;
+            if (!filePath) return undefined;
+            const parts = filePath.split("/");
+            return truncate(parts[parts.length - 1] || filePath, 40);
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Writing file...",
+            completed: "File written",
+            error: "Couldn't write file",
+        },
+        delightMessages: {
+            completed: ["Saved", "Written", "File created"],
+            fast: ["Quick write!"],
+        },
+    },
+
+    Edit: {
+        displayName: "Edit File",
+        icon: FileEdit,
+        getDescription: (args) => {
+            const filePath = args.file_path as string | undefined;
+            if (!filePath) return undefined;
+            const parts = filePath.split("/");
+            return truncate(parts[parts.length - 1] || filePath, 40);
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Editing file...",
+            completed: "File edited",
+            error: "Couldn't edit file",
+        },
+        delightMessages: {
+            completed: ["Updated", "Changed", "Modified"],
+            fast: ["Quick edit!"],
+        },
+    },
+
+    Bash: {
+        displayName: "Run Command",
+        icon: Terminal,
+        getDescription: (args) => {
+            const command = args.command as string | undefined;
+            if (!command) return undefined;
+            // Show first word (the command) plus truncated args
+            const parts = command.split(/\s+/);
+            const cmd = parts[0];
+            if (parts.length === 1) return cmd;
+            return truncate(`${cmd} ...`, 30);
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Running command...",
+            completed: "Command completed",
+            error: "Command failed",
+        },
+        delightMessages: {
+            completed: ["Done", "Executed", "Complete"],
+            fast: ["Quick!"],
+        },
+    },
+
+    Glob: {
+        displayName: "Find Files",
+        icon: FolderSearch,
+        getDescription: (args) => {
+            const pattern = args.pattern as string | undefined;
+            return pattern ? truncate(pattern, 40) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Finding files...",
+            completed: "Files found",
+            error: "Couldn't find files",
+        },
+        delightMessages: {
+            completed: ["Found them", "Located", "Matched"],
+            fast: ["Quick find!"],
+        },
+    },
+
+    Grep: {
+        displayName: "Search Code",
+        icon: FileSearch,
+        getDescription: (args) => {
+            const pattern = args.pattern as string | undefined;
+            return pattern ? truncate(`"${pattern}"`, 40) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching code...",
+            completed: "Search complete",
+            error: "Search failed",
+        },
+        delightMessages: {
+            completed: ["Found matches", "Results ready", "Searched"],
+            fast: ["Quick search!"],
+        },
+    },
+
+    Task: {
+        displayName: "Sub-Agent",
+        icon: Bot,
+        getDescription: (args) => {
+            const agentType = args.subagent_type as string | undefined;
+            const description = args.description as string | undefined;
+            return agentType || (description ? truncate(description, 30) : undefined);
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Working on sub-task...",
+            completed: "Sub-task complete",
+            error: "Sub-task failed",
+        },
+        delightMessages: {
+            completed: ["Done", "Finished", "Complete"],
+        },
+    },
+
+    TodoWrite: {
+        displayName: "Task List",
+        icon: ListTodo,
+        messages: {
+            pending: "Getting ready...",
+            running: "Updating tasks...",
+            completed: "Tasks updated",
+            error: "Couldn't update tasks",
+        },
+        delightMessages: {
+            completed: ["Updated", "Organized", "Tracked"],
+            fast: ["Quick update!"],
+        },
+    },
+
+    LSP: {
+        displayName: "Code Intelligence",
+        icon: Code,
+        getDescription: (args) => {
+            const operation = args.operation as string | undefined;
+            return operation;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Analyzing code...",
+            completed: "Analysis complete",
+            error: "Analysis failed",
+        },
+        delightMessages: {
+            completed: ["Analyzed", "Found it", "Understood"],
+            fast: ["Quick lookup!"],
+        },
+    },
+
+    NotebookEdit: {
+        displayName: "Edit Notebook",
+        icon: NotebookPen,
+        messages: {
+            pending: "Getting ready...",
+            running: "Editing notebook...",
+            completed: "Notebook updated",
+            error: "Couldn't edit notebook",
+        },
+        delightMessages: {
+            completed: ["Updated", "Edited", "Modified"],
+            fast: ["Quick edit!"],
+        },
+    },
+
+    WebFetch: {
+        displayName: "Fetch Page",
+        icon: Globe,
+        getDescription: (args) => {
+            const url = args.url as string | undefined;
+            if (!url) return undefined;
+            try {
+                return new URL(url).hostname;
+            } catch {
+                return truncate(url, 40);
+            }
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Fetching page...",
+            completed: "Page fetched",
+            error: "Couldn't fetch page",
+        },
+        delightMessages: {
+            completed: ["Got it", "Loaded", "Retrieved"],
+            fast: ["Quick fetch!"],
+        },
+    },
+
+    WebSearch: {
+        displayName: "Web Search",
+        icon: Search,
+        getDescription: (args) => {
+            const query = args.query as string | undefined;
+            return query ? truncate(query, 50) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Searching the web...",
+            completed: "Search complete",
+            error: "Search failed",
+        },
+        delightMessages: {
+            completed: ["Found results", "Searched", "Discovered"],
+            fast: ["Quick search!"],
         },
     },
 };

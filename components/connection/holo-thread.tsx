@@ -41,6 +41,7 @@ import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { TransientStatus } from "./transient-status";
+import { useTransient } from "@/lib/streaming";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import {
@@ -170,11 +171,26 @@ function HoloThreadInner() {
     // This happens when:
     // 1. isLoading is true (request in flight)
     // 2. The last message is from the user (assistant hasn't streamed yet)
-    // 3. NOT in code mode (code mode streams directly without concierge phase)
     // This bridges the gap between user submit and first assistant token.
     const lastMessage = messages[messages.length - 1];
-    const needsPendingAssistant =
-        !isCodeMode && isLoading && lastMessage?.role === "user";
+    const lastAssistantMessage = messages.findLast((m) => m.role === "assistant");
+
+    // Check if the last assistant message has any real content
+    // (AI SDK adds an empty assistant message immediately when streaming starts)
+    const hasAssistantContent =
+        lastAssistantMessage?.parts?.some(
+            (p) =>
+                (p.type === "text" && (p as { text?: string }).text?.trim()) ||
+                p.type === "reasoning" ||
+                p.type?.startsWith("tool-")
+        ) ?? false;
+
+    const needsPendingAssistant = isLoading && lastMessage?.role === "user";
+
+    // Code mode: show pending when streaming but no content yet
+    // This handles the gap where the model is thinking before producing output
+    const needsPendingCodeMode = isCodeMode && isLoading && !hasAssistantContent;
+    const needsPendingRegular = !isCodeMode && needsPendingAssistant;
 
     return (
         <div className="flex h-full flex-col bg-transparent" role="log">
@@ -233,12 +249,15 @@ function HoloThreadInner() {
                             })}
 
                             {/* Pending assistant response - shows immediately after user sends */}
-                            {needsPendingAssistant && (
+                            {needsPendingRegular && (
                                 <PendingAssistantMessage
                                     concierge={concierge}
                                     messageSeed={lastMessage.id}
                                 />
                             )}
+
+                            {/* Code mode pending - shows transient status during agent processing */}
+                            {needsPendingCodeMode && <PendingCodeModeMessage />}
                         </div>
                     )}
                 </div>
@@ -1037,6 +1056,465 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
+        // =====================================================================
+        // Claude Code tools - code mode file and shell operations
+        // =====================================================================
+
+        case "Read": {
+            // File read operation - show file path and content preview
+            const filePath = input.file_path as string | undefined;
+            const content = output as string | undefined;
+            const readError = getToolError(part, output, "Failed to read file");
+
+            return (
+                <ToolRenderer
+                    toolName="Read"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={readError}
+                >
+                    {status === "completed" && content && (
+                        <div className="space-y-2">
+                            {filePath && (
+                                <div className="font-mono text-xs text-muted-foreground">
+                                    {filePath}
+                                </div>
+                            )}
+                            <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                {typeof content === "string"
+                                    ? content.slice(0, 2000)
+                                    : JSON.stringify(content, null, 2).slice(0, 2000)}
+                                {typeof content === "string" &&
+                                    content.length > 2000 &&
+                                    "..."}
+                            </pre>
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Write": {
+            // File write operation - show file path and bytes written
+            const filePath = input.file_path as string | undefined;
+            const writeError = getToolError(part, output, "Failed to write file");
+
+            return (
+                <ToolRenderer
+                    toolName="Write"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={writeError}
+                >
+                    {status === "completed" && filePath && (
+                        <div className="font-mono text-xs text-muted-foreground">
+                            {filePath}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Edit": {
+            // File edit operation - show file path and diff preview
+            const filePath = input.file_path as string | undefined;
+            const oldString = input.old_string as string | undefined;
+            const newString = input.new_string as string | undefined;
+            const editError = getToolError(part, output, "Failed to edit file");
+
+            return (
+                <ToolRenderer
+                    toolName="Edit"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={editError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {filePath && (
+                                <div className="font-mono text-xs text-muted-foreground">
+                                    {filePath}
+                                </div>
+                            )}
+                            {oldString && newString && (
+                                <div className="space-y-1">
+                                    <div className="rounded bg-red-500/10 p-2 font-mono text-xs text-red-400">
+                                        - {oldString.slice(0, 200)}
+                                        {oldString.length > 200 && "..."}
+                                    </div>
+                                    <div className="rounded bg-green-500/10 p-2 font-mono text-xs text-green-400">
+                                        + {newString.slice(0, 200)}
+                                        {newString.length > 200 && "..."}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Bash": {
+            // Shell command execution - show command and output
+            const command = input.command as string | undefined;
+            const bashOutput = output as
+                | string
+                | { stdout?: string; stderr?: string }
+                | undefined;
+            const bashError = getToolError(part, output, "Command failed");
+
+            // Extract stdout/stderr from output
+            const stdout =
+                typeof bashOutput === "string" ? bashOutput : bashOutput?.stdout;
+            const stderr =
+                typeof bashOutput === "object" ? bashOutput?.stderr : undefined;
+
+            return (
+                <ToolRenderer
+                    toolName="Bash"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={bashError}
+                >
+                    {(command || stdout || stderr) && (
+                        <div className="space-y-2">
+                            {command && (
+                                <div className="rounded bg-black/30 p-2 font-mono text-xs text-cyan-400">
+                                    $ {command}
+                                </div>
+                            )}
+                            {stdout && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {stdout.slice(0, 3000)}
+                                    {stdout.length > 3000 && "\n..."}
+                                </pre>
+                            )}
+                            {stderr && (
+                                <pre className="max-h-32 overflow-auto rounded bg-red-500/10 p-2 font-mono text-xs text-red-400">
+                                    {stderr.slice(0, 1000)}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Glob": {
+            // File pattern matching - show pattern and matched files
+            const pattern = input.pattern as string | undefined;
+            const matches = output as string[] | undefined;
+            const globError = getToolError(part, output, "Failed to find files");
+
+            return (
+                <ToolRenderer
+                    toolName="Glob"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={globError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {pattern && (
+                                <div className="font-mono text-xs text-muted-foreground">
+                                    Pattern: {pattern}
+                                </div>
+                            )}
+                            {Array.isArray(matches) && matches.length > 0 && (
+                                <div className="max-h-32 overflow-auto font-mono text-xs">
+                                    {matches.slice(0, 20).map((file, i) => (
+                                        <div key={i} className="text-foreground/70">
+                                            {file}
+                                        </div>
+                                    ))}
+                                    {matches.length > 20 && (
+                                        <div className="text-muted-foreground">
+                                            ...and {matches.length - 20} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Grep": {
+            // Code search - show pattern and matches
+            const searchPattern = input.pattern as string | undefined;
+            const grepOutput = output as string | string[] | undefined;
+            const grepError = getToolError(part, output, "Search failed");
+
+            return (
+                <ToolRenderer
+                    toolName="Grep"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={grepError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {searchPattern && (
+                                <div className="font-mono text-xs text-muted-foreground">
+                                    Pattern: {searchPattern}
+                                </div>
+                            )}
+                            {grepOutput && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {(typeof grepOutput === "string"
+                                        ? grepOutput
+                                        : grepOutput.join("\n")
+                                    ).slice(0, 3000)}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "Task": {
+            // Sub-agent task - show agent type and description
+            const agentType = input.subagent_type as string | undefined;
+            const description = input.description as string | undefined;
+            const taskResult = output as string | undefined;
+            const taskError = getToolError(part, output, "Sub-task failed");
+
+            return (
+                <ToolRenderer
+                    toolName="Task"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={taskError}
+                >
+                    {(agentType || description || taskResult) && (
+                        <div className="space-y-2">
+                            {agentType && (
+                                <div className="text-xs font-medium text-cyan-400">
+                                    Agent: {agentType}
+                                </div>
+                            )}
+                            {description && (
+                                <div className="text-xs text-muted-foreground">
+                                    {description}
+                                </div>
+                            )}
+                            {status === "completed" && taskResult && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {typeof taskResult === "string"
+                                        ? taskResult.slice(0, 2000)
+                                        : JSON.stringify(taskResult, null, 2).slice(
+                                              0,
+                                              2000
+                                          )}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "TodoWrite": {
+            // Task list management - use existing Plan component
+            const todosInput = input.todos as
+                | Array<{
+                      content?: string;
+                      status: "pending" | "in_progress" | "completed";
+                      activeForm?: string;
+                  }>
+                | undefined;
+
+            const todos: PlanTodo[] = (todosInput ?? []).map((todo, idx) => ({
+                id: `todo-${idx}`,
+                label: todo.content || todo.activeForm || "Task",
+                status: todo.status,
+            }));
+
+            return (
+                <ToolRenderer
+                    toolName="TodoWrite"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Failed to update tasks")}
+                >
+                    {todos.length > 0 && (
+                        <Plan
+                            id={`todo-${part.toolCallId}`}
+                            title="Task Progress"
+                            todos={todos}
+                            showProgress={true}
+                            maxVisibleTodos={6}
+                        />
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "LSP": {
+            // Code intelligence - show operation and results
+            const operation = input.operation as string | undefined;
+            const lspError = getToolError(part, output, "Code analysis failed");
+            const hasOutput = status === "completed" && output !== undefined;
+
+            return (
+                <ToolRenderer
+                    toolName="LSP"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={lspError}
+                >
+                    {(operation || hasOutput) && (
+                        <div className="space-y-2">
+                            {operation && (
+                                <div className="text-xs text-muted-foreground">
+                                    Operation: {operation}
+                                </div>
+                            )}
+                            {hasOutput && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {JSON.stringify(output, null, 2).slice(0, 2000)}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "NotebookEdit": {
+            // Jupyter notebook editing
+            const notebookPath = input.notebook_path as string | undefined;
+            const editMode = input.edit_mode as string | undefined;
+            const notebookError = getToolError(part, output, "Failed to edit notebook");
+
+            return (
+                <ToolRenderer
+                    toolName="NotebookEdit"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={notebookError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                            {notebookPath && (
+                                <div className="font-mono">{notebookPath}</div>
+                            )}
+                            {editMode && <div>Mode: {editMode}</div>}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "WebFetch": {
+            // Web page fetch - similar to fetchPage
+            const fetchUrl = input.url as string | undefined;
+            const fetchContent = output as
+                | { content?: string; title?: string }
+                | string
+                | undefined;
+            const fetchError = getToolError(part, output, "Failed to fetch page");
+
+            const title =
+                typeof fetchContent === "object" ? fetchContent?.title : undefined;
+            const content =
+                typeof fetchContent === "object" ? fetchContent?.content : fetchContent;
+
+            return (
+                <ToolRenderer
+                    toolName="WebFetch"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={fetchError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {fetchUrl && (
+                                <div className="truncate font-mono text-xs text-muted-foreground">
+                                    {fetchUrl}
+                                </div>
+                            )}
+                            {title && (
+                                <div className="text-sm font-medium">{title}</div>
+                            )}
+                            {content && (
+                                <pre className="max-h-32 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {content.slice(0, 1000)}
+                                    {content.length > 1000 && "..."}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "WebSearch": {
+            // Web search - Claude Code variant (capital W)
+            // Uses different output format than lowercase webSearch
+            const searchQuery = input.query as string | undefined;
+            const searchResults = output as
+                | string
+                | Array<{ title?: string; url?: string }>
+                | undefined;
+            const webSearchError = getToolError(part, output, "Search failed");
+
+            return (
+                <ToolRenderer
+                    toolName="WebSearch"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={webSearchError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {searchQuery && (
+                                <div className="text-xs text-muted-foreground">
+                                    Query: {searchQuery}
+                                </div>
+                            )}
+                            {searchResults && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {typeof searchResults === "string"
+                                        ? searchResults.slice(0, 2000)
+                                        : JSON.stringify(searchResults, null, 2).slice(
+                                              0,
+                                              2000
+                                          )}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
             // Log error and report to Sentry so we catch missing renderers in production.
@@ -1787,6 +2265,38 @@ function PendingAssistantMessage({
                     </div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+/**
+ * Code Mode Pending Message
+ *
+ * Shows while Claude Code is processing (before any assistant message exists).
+ * Displays transient status updates from tool execution.
+ */
+function PendingCodeModeMessage() {
+    const { hasActiveMessages } = useTransient();
+
+    return (
+        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
+            <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                    duration: 0.35,
+                    ease: [0.16, 1, 0.3, 1],
+                }}
+                className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-purple-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
+            >
+                <div className="px-4 py-3 sm:px-5 sm:py-4">
+                    {/* Transient status messages from code agent */}
+                    <TransientStatus />
+
+                    {/* Fallback thinking indicator when no transient messages yet */}
+                    {!hasActiveMessages && <ThinkingIndicator />}
+                </div>
+            </motion.div>
         </div>
     );
 }

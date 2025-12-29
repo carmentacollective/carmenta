@@ -459,11 +459,14 @@ function createFetchWrapper(
 
         // Code mode routing: when projectPath is set, use /api/code
         const isCodeMode = !!projectPathRef.current;
+        logger.info(
+            { url, method, isCodeMode, projectPath: projectPathRef.current },
+            "🚀 API request starting"
+        );
         if (isCodeMode && url.includes("/api/connection")) {
             url = url.replace("/api/connection", "/api/code");
+            logger.info({ newUrl: url }, "🔀 Routed to code API");
         }
-
-        logger.debug({ url, method, isCodeMode }, "API request starting");
 
         // Clear stale concierge data (not used in code mode)
         if (!isCodeMode) {
@@ -606,6 +609,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         initialMessages,
         addNewConnection,
         setIsStreaming,
+        projectPath,
     } = useConnection();
     const { handleDataPart, clearAll: clearTransientMessages } = useTransient();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
@@ -613,9 +617,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const [input, setInput] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
 
-    // Code mode: when projectPath is set, route to /api/code
-    const isCodeMode = !!activeConnection?.projectPath;
-    const projectPath = activeConnection?.projectPath ?? null;
+    // Code mode: when projectPath is set (from prop or activeConnection), route to /api/code
+    const isCodeMode = !!projectPath;
 
     // Generate a stable chat ID for new connections.
     // This matches Vercel's ai-chatbot pattern where the ID is known BEFORE sending.
@@ -727,6 +730,16 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         },
         // Handle transient data parts (status updates) as they stream
         onData: (dataPart) => {
+            const part = dataPart as Record<string, unknown>;
+            logger.debug(
+                {
+                    partType: part?.type,
+                    partId: part?.id,
+                    hasTransient: "transient" in (part ?? {}),
+                    keys: Object.keys(part ?? {}),
+                },
+                "📥 onData received"
+            );
             handleDataPart(dataPart);
         },
         // Clear transient messages when streaming completes

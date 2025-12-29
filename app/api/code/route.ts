@@ -16,7 +16,6 @@ import {
     createUIMessageStreamResponse,
     streamText,
     UIMessage,
-    UIMessageStreamWriter,
 } from "ai";
 import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
@@ -51,6 +50,8 @@ const requestSchema = z.object({
  * Execute a code query and stream results via AI SDK data stream.
  */
 export async function POST(req: Request) {
+    logger.info({}, "🔥 /api/code POST received");
+
     // Validate authentication
     const user = await currentUser();
     if (!user && process.env.NODE_ENV === "production") {
@@ -170,76 +171,85 @@ export async function POST(req: Request) {
         },
     });
 
-    // Transient writer reference - set when the stream is consumed
-    // This allows onChunk to emit status updates during streaming
-    let transientWriter: UIMessageStreamWriter | null = null;
+    // Convert messages before streaming (async operation)
+    const modelMessages = await convertToModelMessages(body.messages as UIMessage[]);
 
     // Stream response using AI SDK patterns with tool activity tracking
     try {
-        const result = streamText({
-            model: claudeCode(modelName),
-            messages: await convertToModelMessages(body.messages as UIMessage[]),
-            // Capture streaming events to show tool activity
-            // NOTE: tool-call and tool-result arrive simultaneously because
-            // Claude Code executes tools internally (providerExecuted: true).
-            // We use tool-input-start to show status early, while tool is preparing.
-            onChunk: ({ chunk }) => {
-                if (!transientWriter) return;
-
-                // Show status when Claude Code starts preparing a tool
-                // This arrives BEFORE tool-call/tool-result, giving us visibility
-                if (chunk.type === "tool-input-start") {
-                    const toolChunk = chunk as {
-                        type: "tool-input-start";
-                        id: string;
-                        toolName: string;
-                    };
-                    logger.debug(
-                        { toolName: toolChunk.toolName, toolCallId: toolChunk.id },
-                        "Code mode: tool starting"
-                    );
-                    // Show status without args initially - we'll get them in tool-input-delta
-                    writeStatus(
-                        transientWriter,
-                        `tool-${toolChunk.id}`,
-                        getCodeToolStatusMessage(toolChunk.toolName),
-                        getCodeToolIcon(toolChunk.toolName)
-                    );
-                }
-
-                // Update status with args when we get the full input
-                if (chunk.type === "tool-call") {
-                    const args = chunk.input as Record<string, unknown> | undefined;
-                    const message = getCodeToolStatusMessage(chunk.toolName, args);
-                    logger.debug(
-                        { toolName: chunk.toolName, toolCallId: chunk.toolCallId },
-                        "Code mode: tool call"
-                    );
-                    // Update with more specific message now that we have args
-                    writeStatus(
-                        transientWriter,
-                        `tool-${chunk.toolCallId}`,
-                        message,
-                        getCodeToolIcon(chunk.toolName)
-                    );
-                }
-
-                // Clear status when tool result arrives
-                if (chunk.type === "tool-result") {
-                    logger.debug(
-                        { toolCallId: chunk.toolCallId },
-                        "Code mode: tool result"
-                    );
-                    writeStatus(transientWriter, `tool-${chunk.toolCallId}`, "");
-                }
-            },
-        });
-
-        // Create UI message stream with transient status support
+        // Create UI message stream FIRST, then start streamText inside execute
+        // This ensures the writer is available when onChunk fires
         const stream = createUIMessageStream({
             execute: ({ writer }) => {
-                // Set the writer reference so onChunk can emit transient messages
-                transientWriter = writer;
+                // Start streaming INSIDE execute callback so writer is available
+                // from the very first chunk
+                const result = streamText({
+                    model: claudeCode(modelName),
+                    messages: modelMessages,
+                    // Capture streaming events to show tool activity
+                    // NOTE: tool-call and tool-result arrive simultaneously because
+                    // Claude Code executes tools internally (providerExecuted: true).
+                    // We use tool-input-start to show status early, while tool is preparing.
+                    onChunk: ({ chunk }) => {
+                        // Show status when Claude Code starts preparing a tool
+                        // This arrives BEFORE tool-call/tool-result, giving us visibility
+                        if (chunk.type === "tool-input-start") {
+                            const toolChunk = chunk as {
+                                type: "tool-input-start";
+                                id: string;
+                                toolName: string;
+                            };
+                            logger.debug(
+                                {
+                                    toolName: toolChunk.toolName,
+                                    toolCallId: toolChunk.id,
+                                },
+                                "Code mode: tool starting"
+                            );
+                            // Show status without args initially - we'll get them in tool-input-delta
+                            writeStatus(
+                                writer,
+                                `tool-${toolChunk.id}`,
+                                getCodeToolStatusMessage(toolChunk.toolName),
+                                getCodeToolIcon(toolChunk.toolName)
+                            );
+                        }
+
+                        // Update status with args when we get the full input
+                        if (chunk.type === "tool-call") {
+                            const args = chunk.input as
+                                | Record<string, unknown>
+                                | undefined;
+                            const message = getCodeToolStatusMessage(
+                                chunk.toolName,
+                                args
+                            );
+                            logger.debug(
+                                {
+                                    toolName: chunk.toolName,
+                                    toolCallId: chunk.toolCallId,
+                                },
+                                "Code mode: tool call"
+                            );
+                            // Update with more specific message now that we have args
+                            writeStatus(
+                                writer,
+                                `tool-${chunk.toolCallId}`,
+                                message,
+                                getCodeToolIcon(chunk.toolName)
+                            );
+                        }
+
+                        // Clear status when tool result arrives
+                        if (chunk.type === "tool-result") {
+                            logger.debug(
+                                { toolCallId: chunk.toolCallId },
+                                "Code mode: tool result"
+                            );
+                            writeStatus(writer, `tool-${chunk.toolCallId}`, "");
+                        }
+                    },
+                });
+
                 // Merge the streamText result into our stream
                 writer.merge(result.toUIMessageStream());
             },

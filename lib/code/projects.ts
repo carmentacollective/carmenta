@@ -340,3 +340,12 @@ export async function getProject(projectPath: string): Promise<Project | null> {
         gitBranch: branch,
     };
 }
+
+/**
+ * Find a project by its directory name (repo slug).
+ * Scans source directories for a matching project.
+ */
+export async function findProjectBySlug(slug: string): Promise<Project | null> {
+    const projects = await discoverProjects();
+    return projects.find((p) => path.basename(p.path) === slug) ?? null;
+}

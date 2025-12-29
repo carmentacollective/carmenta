@@ -13,6 +13,7 @@ import {
     useState,
     useCallback,
     useMemo,
+    useRef,
     type ReactNode,
 } from "react";
 import type { TransientMessage, TransientDestination } from "./types";
@@ -50,6 +51,11 @@ export function TransientProvider({ children }: { children: ReactNode }) {
      * Handle incoming data parts from useChat's onData callback.
      * Filters for transient parts and updates state.
      */
+    // Track when messages were first shown to enforce minimum display time
+    const messageTimestamps = useRef<Map<string, number>>(new Map());
+    const pendingClears = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+    const MINIMUM_DISPLAY_MS = 800; // Show status for at least 800ms
+
     const handleDataPart = useCallback((dataPart: unknown) => {
         if (!isTransientDataPart(dataPart)) {
             return;
@@ -57,17 +63,44 @@ export function TransientProvider({ children }: { children: ReactNode }) {
 
         const message = dataPart.data;
 
-        // Empty text means clear the message
+        // Empty text means clear the message (but enforce minimum display time)
         if (!message.text) {
-            setMessages((prev) => {
-                const next = new Map(prev);
-                next.delete(dataPart.id);
-                return next;
-            });
+            const timestamp = messageTimestamps.current.get(dataPart.id);
+            const elapsed = timestamp ? Date.now() - timestamp : MINIMUM_DISPLAY_MS;
+            const remainingTime = Math.max(0, MINIMUM_DISPLAY_MS - elapsed);
+
+            // Cancel any pending clear for this ID
+            const existingClear = pendingClears.current.get(dataPart.id);
+            if (existingClear) clearTimeout(existingClear);
+
+            if (remainingTime > 0) {
+                // Delay the clear to ensure minimum display time
+                const timeoutId = setTimeout(() => {
+                    setMessages((prev) => {
+                        const next = new Map(prev);
+                        next.delete(dataPart.id);
+                        return next;
+                    });
+                    messageTimestamps.current.delete(dataPart.id);
+                    pendingClears.current.delete(dataPart.id);
+                }, remainingTime);
+                pendingClears.current.set(dataPart.id, timeoutId);
+            } else {
+                // Already displayed long enough, clear immediately
+                setMessages((prev) => {
+                    const next = new Map(prev);
+                    next.delete(dataPart.id);
+                    return next;
+                });
+                messageTimestamps.current.delete(dataPart.id);
+            }
             return;
         }
 
         // Update or add the message
+        if (!messageTimestamps.current.has(dataPart.id)) {
+            messageTimestamps.current.set(dataPart.id, Date.now());
+        }
         setMessages((prev) => {
             const next = new Map(prev);
             next.set(dataPart.id, message);
@@ -80,6 +113,12 @@ export function TransientProvider({ children }: { children: ReactNode }) {
      * Should be called when streaming completes.
      */
     const clearAll = useCallback(() => {
+        // Cancel any pending delayed clears
+        for (const timeoutId of pendingClears.current.values()) {
+            clearTimeout(timeoutId);
+        }
+        pendingClears.current.clear();
+        messageTimestamps.current.clear();
         setMessages(new Map());
     }, []);
 

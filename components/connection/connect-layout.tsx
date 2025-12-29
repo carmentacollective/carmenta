@@ -276,6 +276,8 @@ interface ConnectLayoutProps {
     initialMessages?: UIMessageLike[];
     /** Initial concierge data for hydrating the display on page load */
     initialConcierge?: PersistedConciergeData | null;
+    /** Optional project path for code mode (used for new sessions before connection exists) */
+    projectPath?: string | null;
 }
 
 export function ConnectLayout({
@@ -284,6 +286,7 @@ export function ConnectLayout({
     activeConnection = null,
     initialMessages = [],
     initialConcierge = null,
+    projectPath = null,
 }: ConnectLayoutProps) {
     return (
         <ConnectionProvider
@@ -291,6 +294,7 @@ export function ConnectLayout({
             activeConnection={activeConnection}
             initialMessages={initialMessages}
             initialConcierge={initialConcierge}
+            projectPath={projectPath}
         >
             <ConnectLayoutInner>{children}</ConnectLayoutInner>
         </ConnectionProvider>
