@@ -192,7 +192,7 @@ function HoloThreadInner() {
             <div
                 ref={scrollRef}
                 className={cn(
-                    "chat-viewport-fade relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade landscape-compact-viewport relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -252,7 +252,7 @@ function HoloThreadInner() {
             </div>
 
             {/* Input container with safe area for notched devices - glass treatment matches header */}
-            <div className="flex flex-none items-center justify-center border-t border-foreground/5 bg-white/60 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl dark:bg-card/60 sm:px-4 sm:pb-4 sm:pt-3">
+            <div className="landscape-compact-input flex flex-none items-center justify-center border-t border-foreground/5 bg-white/60 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl dark:bg-card/60 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -313,7 +313,7 @@ interface ThreadWelcomeProps {
 function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
     return (
         <motion.div
-            className="flex h-full w-full flex-1 flex-col items-center justify-center gap-8"
+            className="landscape-compact-welcome flex h-full w-full flex-1 flex-col items-center justify-center gap-8"
             initial={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
                 opacity: 0,

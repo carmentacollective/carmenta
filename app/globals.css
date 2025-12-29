@@ -902,6 +902,57 @@
     .animate-greeting-enter .greeting-subtitle {
         animation-delay: 150ms;
     }
+
+    /* Landscape greeting - smaller on height-constrained viewports */
+    @media (orientation: landscape) and (max-height: 500px) {
+        .greeting-name-only {
+            @apply text-[2rem] md:text-[2.4rem];
+        }
+
+        .greeting-subtitle {
+            @apply mt-2 text-base md:text-lg;
+        }
+    }
+}
+
+/**
+ * Mobile Landscape Compact Layout
+ *
+ * When the viewport is landscape and height-constrained (< 500px),
+ * we compress vertical spacing to keep content visible above the fold.
+ * This targets mobile landscape without affecting desktop.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+    /* Header: reduce vertical padding and row spacing */
+    .landscape-compact-header {
+        padding-top: 0.375rem !important;
+        padding-bottom: 0.375rem !important;
+        gap: 0.25rem !important;
+    }
+
+    /* Override Tailwind's space-y-3 in landscape */
+    .landscape-compact-header > * + * {
+        margin-top: 0.25rem !important;
+    }
+
+    /* Viewport: reduce top/bottom padding */
+    .landscape-compact-viewport {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    /* Input container: compress vertical padding */
+    .landscape-compact-input {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+
+    /* Welcome screen: reduce gap and adjust vertical positioning */
+    .landscape-compact-welcome {
+        gap: 0.75rem !important;
+        justify-content: flex-start !important;
+        padding-top: 0.5rem !important;
+    }
 }
 
 @layer components {
