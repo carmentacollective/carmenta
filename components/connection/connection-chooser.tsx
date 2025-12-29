@@ -3,15 +3,15 @@
 /**
  * Connection Chooser
  *
- * Contextual navigation that grows with user's history.
+ * Split layout: Search bar (shows title or placeholder) + separate New button.
  *
  * States:
  * - S1: Fresh user (no connections) → renders nothing
- * - S2/S3/S4: Untitled connection → minimal "Recent Connections..." trigger
- * - S5: Titled connection → full [Search | Title | New] pill
+ * - State A: New/untitled connection → "Search conversations..." placeholder
+ * - State B: Titled connection → Title with typewriter animation on arrival
  *
- * The component gracefully expands when a title arrives,
- * creating a moment of delight as the conversation gets named.
+ * The typewriter effect creates a moment of delight when Carmenta
+ * understands what we're working on and names the conversation.
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -78,35 +78,65 @@ function RunningIndicator() {
 }
 
 /**
- * Animated title with Slide Cascade effect.
+ * Typewriter title animation.
  *
- * Each word slides up from below with staggered timing when the title changes.
- * Using key={title} forces Framer Motion to replay the animation on title change.
- * Creates a moment of delight: "Carmenta understood what we're doing."
+ * When a new title arrives, it types out character by character with a
+ * blinking cursor. Creates a moment of delight: "Carmenta understood
+ * what we're doing."
+ *
+ * Fixed 500ms total duration regardless of title length. Short titles
+ * type more deliberately, long titles move faster - consistent experience.
+ *
+ * Animates on mount (when transitioning from no-title state) and when
+ * title changes. This ensures the effect plays when Carmenta first names
+ * a conversation.
  */
-function AnimatedTitle({ title }: { title: string }) {
-    const words = title.split(" ");
+function TypewriterTitle({ title }: { title: string }) {
+    // Start with empty prevTitle so animation triggers on mount
+    const [prevTitle, setPrevTitle] = useState("");
+    const [displayedChars, setDisplayedChars] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(title.length > 0);
+
+    // Detect title change during render (this is allowed in React)
+    const isNewTitle = prevTitle !== title && title.length > 0;
+    if (prevTitle !== title) {
+        setPrevTitle(title);
+        // Reset animation state for new title
+        if (isNewTitle) {
+            setDisplayedChars(0);
+            setIsAnimating(true);
+        } else {
+            setDisplayedChars(title.length);
+            setIsAnimating(false);
+        }
+    }
+
+    // Run animation interval
+    useEffect(() => {
+        if (!isAnimating || displayedChars >= title.length) return;
+
+        // Fixed 500ms total - scales interval based on title length
+        const totalDuration = 500;
+        const intervalMs = Math.max(10, totalDuration / title.length);
+
+        const interval = setInterval(() => {
+            setDisplayedChars((c) => {
+                if (c >= title.length - 1) {
+                    setIsAnimating(false);
+                    return title.length;
+                }
+                return c + 1;
+            });
+        }, intervalMs);
+
+        return () => clearInterval(interval);
+    }, [isAnimating, displayedChars, title.length]);
 
     return (
-        <motion.span
-            key={title}
-            className="flex flex-wrap gap-1 text-sm text-foreground/70"
-        >
-            {words.map((word, i) => (
-                <motion.span
-                    key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                        duration: 0.4,
-                        delay: i * 0.08,
-                        ease: [0.16, 1, 0.3, 1],
-                    }}
-                >
-                    {word}
-                </motion.span>
-            ))}
-        </motion.span>
+        <span className="text-sm text-foreground/70">
+            {title.slice(0, displayedChars)}
+            {isAnimating && <span className="animate-pulse text-primary">|</span>}
+        </span>
     );
 }
 
@@ -188,10 +218,10 @@ function EditableTitle({
                         e.preventDefault(); // Prevents blur from firing first
                         handleSave();
                     }}
-                    className="rounded-md p-1 text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
                     aria-label="Save title"
                 >
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-5 w-5" />
                 </button>
             </div>
         );
@@ -202,14 +232,14 @@ function EditableTitle({
             {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="btn-subtle-text flex items-center gap-2 border border-transparent px-1.5 py-0.5 hover:border-foreground/10 hover:bg-foreground/[0.03]"
+                className="btn-subtle-text flex min-h-[44px] items-center gap-2 border border-transparent px-3 py-2 hover:border-foreground/10 hover:bg-foreground/[0.03]"
                 aria-label="Click to edit title"
                 data-tooltip-id="tip"
                 data-tooltip-content="Click to rename"
             >
-                <AnimatedTitle title={title} />
+                <TypewriterTitle title={title} />
                 {/* Pencil icon - more visible on hover */}
-                <Pencil className="h-3 w-3 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
+                <Pencil className="h-4 w-4 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
             </button>
         </div>
     );
@@ -220,6 +250,8 @@ function ConnectionRow({
     conn,
     isActive,
     isFresh,
+    isFocused,
+    isNavigating,
     isConfirming,
     index,
     onSelect,
@@ -231,6 +263,8 @@ function ConnectionRow({
     conn: PublicConnection;
     isActive: boolean;
     isFresh: boolean;
+    isFocused: boolean;
+    isNavigating: boolean;
     isConfirming: boolean;
     index: number;
     onSelect: (id: string, slug: string) => void;
@@ -286,6 +320,8 @@ function ConnectionRow({
                 "group relative flex min-h-[52px] items-center gap-2 overflow-hidden px-4 transition-all",
                 // Active connection has stronger visual distinction
                 isActive && "bg-primary/8 ring-1 ring-inset ring-primary/20",
+                // Keyboard focus highlight
+                isFocused && !isActive && "bg-foreground/[0.06]",
                 isFresh &&
                     "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
             )}
@@ -300,7 +336,9 @@ function ConnectionRow({
                     "pointer-events-none absolute inset-0 transition-all duration-200",
                     isActive
                         ? "bg-primary/3 opacity-0 group-hover:opacity-100"
-                        : "bg-foreground/[0.04] opacity-0 group-hover:opacity-100"
+                        : "bg-foreground/[0.04] opacity-0 group-hover:opacity-100",
+                    // Hide hover effect when keyboard focused (already has background)
+                    isFocused && "opacity-0 group-hover:opacity-0"
                 )}
             />
 
@@ -321,7 +359,8 @@ function ConnectionRow({
             {/* Connection info - clickable */}
             <button
                 onClick={() => onSelect(conn.id, conn.slug)}
-                className="interactive-focus relative flex flex-1 items-center gap-3 rounded-md text-left transition-all group-hover:translate-x-0.5"
+                disabled={isNavigating}
+                className="interactive-focus relative flex flex-1 items-center gap-3 rounded-md text-left transition-all disabled:opacity-70 group-hover:translate-x-0.5"
             >
                 <span
                     className={cn(
@@ -333,20 +372,24 @@ function ConnectionRow({
                 >
                     {conn.title || "New connection"}
                 </span>
-                {isFresh && (
+                {isFresh && !isNavigating && (
                     <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
                         new
                     </span>
                 )}
-                <span className="shrink-0 text-xs text-foreground/40 transition-colors group-hover:text-foreground/60">
-                    {isFresh ? "Just now" : getRelativeTime(conn.lastActivityAt)}
-                </span>
+                {isNavigating ? (
+                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+                ) : (
+                    <span className="shrink-0 text-xs text-foreground/40 transition-colors group-hover:text-foreground/60">
+                        {isFresh ? "Just now" : getRelativeTime(conn.lastActivityAt)}
+                    </span>
+                )}
             </button>
 
-            {/* Delete button - appears on hover */}
+            {/* Delete button - always visible, red on hover */}
             <button
                 onClick={(e) => onDeleteClick(e, conn.id)}
-                className="relative z-content rounded-md p-1.5 opacity-0 transition-all hover:bg-red-50 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-300 group-hover:opacity-100"
+                className="relative z-content rounded-md p-1.5 transition-all hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
                 aria-label={`Delete ${conn.title || "connection"}`}
             >
                 <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
@@ -388,7 +431,20 @@ function ConnectionDropdown({
     inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+    const [navigatingToId, setNavigatingToId] = useState<string | null>(null);
     const [showAllRecent, setShowAllRecent] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+
+    // Track previous values to reset state during render (React-recommended pattern)
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    const [prevQuery, setPrevQuery] = useState(debouncedQuery);
+    if (prevIsOpen !== isOpen || prevQuery !== debouncedQuery) {
+        setPrevIsOpen(isOpen);
+        setPrevQuery(debouncedQuery);
+        setFocusedIndex(-1);
+        setNavigatingToId(null); // Clear stale loading state when dropdown reopens
+    }
+
     const [starredCollapsed, setStarredCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         const stored = localStorage.getItem("carmenta:starred-collapsed");
@@ -419,8 +475,18 @@ function ConnectionDropdown({
     // Wrap onClose to also clear confirmation state
     const handleClose = useCallback(() => {
         setConfirmingDeleteId(null);
+        setNavigatingToId(null);
         onClose();
     }, [onClose]);
+
+    // Wrap onSelect to show loading state during navigation
+    const handleSelectConnection = useCallback(
+        (id: string, slug: string) => {
+            setNavigatingToId(id);
+            onSelect(id, slug);
+        },
+        [onSelect]
+    );
 
     // Handle ESC to cancel delete or close
     useEffect(() => {
@@ -470,6 +536,34 @@ function ConnectionDropdown({
                 hasMoreRecent: false,
             };
         }, [starredConnections, unstarredConnections, debouncedQuery, showAllRecent]);
+
+    // Flat list of visible connections for keyboard navigation
+    const visibleConnections = useMemo(() => {
+        const starred = starredCollapsed ? [] : filteredStarred;
+        return [...starred, ...filteredUnstarred];
+    }, [filteredStarred, filteredUnstarred, starredCollapsed]);
+
+    // Keyboard navigation: arrow keys + Enter
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setFocusedIndex((i) => (i < visibleConnections.length - 1 ? i + 1 : 0));
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setFocusedIndex((i) => (i > 0 ? i - 1 : visibleConnections.length - 1));
+            } else if (e.key === "Enter" && focusedIndex >= 0) {
+                e.preventDefault();
+                const conn = visibleConnections[focusedIndex];
+                if (conn) {
+                    handleSelectConnection(conn.id, conn.slug);
+                }
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, focusedIndex, visibleConnections, handleSelectConnection]);
 
     // Use portal to escape stacking context from Framer Motion transforms
     // Check runs on every render but createPortal only called client-side
@@ -583,13 +677,21 @@ function ConnectionDropdown({
                                                                         isFresh={freshConnectionIds.has(
                                                                             conn.id
                                                                         )}
+                                                                        isFocused={
+                                                                            focusedIndex ===
+                                                                            index
+                                                                        }
+                                                                        isNavigating={
+                                                                            navigatingToId ===
+                                                                            conn.id
+                                                                        }
                                                                         isConfirming={
                                                                             confirmingDeleteId ===
                                                                             conn.id
                                                                         }
                                                                         index={index}
                                                                         onSelect={
-                                                                            onSelect
+                                                                            handleSelectConnection
                                                                         }
                                                                         onDelete={
                                                                             onDelete
@@ -632,33 +734,53 @@ function ConnectionDropdown({
                                         <div className="py-1">
                                             <AnimatePresence mode="popLayout">
                                                 {filteredUnstarred.map(
-                                                    (conn, index) => (
-                                                        <ConnectionRow
-                                                            key={conn.id}
-                                                            conn={conn}
-                                                            isActive={
-                                                                conn.id ===
-                                                                activeConnection?.id
-                                                            }
-                                                            isFresh={freshConnectionIds.has(
-                                                                conn.id
-                                                            )}
-                                                            isConfirming={
-                                                                confirmingDeleteId ===
-                                                                conn.id
-                                                            }
-                                                            index={index}
-                                                            onSelect={onSelect}
-                                                            onDelete={onDelete}
-                                                            onToggleStar={onToggleStar}
-                                                            onDeleteClick={
-                                                                handleDeleteClick
-                                                            }
-                                                            onCancelDelete={
-                                                                cancelDelete
-                                                            }
-                                                        />
-                                                    )
+                                                    (conn, index) => {
+                                                        // Global index in visibleConnections
+                                                        const globalIndex =
+                                                            starredCollapsed
+                                                                ? index
+                                                                : filteredStarred.length +
+                                                                  index;
+                                                        return (
+                                                            <ConnectionRow
+                                                                key={conn.id}
+                                                                conn={conn}
+                                                                isActive={
+                                                                    conn.id ===
+                                                                    activeConnection?.id
+                                                                }
+                                                                isFresh={freshConnectionIds.has(
+                                                                    conn.id
+                                                                )}
+                                                                isFocused={
+                                                                    focusedIndex ===
+                                                                    globalIndex
+                                                                }
+                                                                isNavigating={
+                                                                    navigatingToId ===
+                                                                    conn.id
+                                                                }
+                                                                isConfirming={
+                                                                    confirmingDeleteId ===
+                                                                    conn.id
+                                                                }
+                                                                index={index}
+                                                                onSelect={
+                                                                    handleSelectConnection
+                                                                }
+                                                                onDelete={onDelete}
+                                                                onToggleStar={
+                                                                    onToggleStar
+                                                                }
+                                                                onDeleteClick={
+                                                                    handleDeleteClick
+                                                                }
+                                                                onCancelDelete={
+                                                                    cancelDelete
+                                                                }
+                                                            />
+                                                        );
+                                                    }
                                                 )}
                                             </AnimatePresence>
 
@@ -760,22 +882,6 @@ export function ConnectionChooser({
         }
     }, [isDropdownOpen, isMobile]);
 
-    // Keyboard shortcut: Cmd+Shift+S to toggle star on active connection
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Cmd+Shift+S (Mac) or Ctrl+Shift+S (Windows/Linux)
-            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "s") {
-                e.preventDefault();
-                if (activeConnection) {
-                    toggleStarConnection(activeConnection.id);
-                }
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [activeConnection, toggleStarConnection]);
-
     const hasConnections = connections.length > 0;
     const hasTitle = Boolean(displayTitle);
     const title = displayTitle ?? "";
@@ -785,140 +891,134 @@ export function ConnectionChooser({
         return null;
     }
 
-    // Unified trigger - adapts to container via CSS
-    // Max-width keeps it from stretching too wide on large screens
+    // Split layout: Glass pill (search/title) + standalone New button
+    // max-w keeps it from stretching too wide on large screens
     return (
-        <div className="relative w-full max-w-md sm:max-w-lg">
-            <motion.div
-                layout
-                className="glass-pill flex w-full items-center"
-                transition={{
-                    layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
-                }}
-            >
-                <AnimatePresence mode="popLayout" initial={false}>
-                    {hasTitle ? (
-                        // Has title: Search | Title | Star | New
-                        <motion.div
-                            key="full"
-                            className="flex w-full items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4"
-                            initial={{ opacity: 0, y: -8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                            {/* Search button */}
-                            <button
-                                onClick={openDropdown}
-                                className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
-                                aria-label="Search connections"
-                                data-tooltip-id="tip"
-                                data-tooltip-content="Find connections"
+        <div className="flex max-w-lg items-center gap-3">
+            {/* Glass pill with search/title */}
+            <div className="relative min-w-0 flex-1">
+                <motion.div
+                    layout
+                    className="flex h-10 w-full items-center rounded-full bg-foreground/[0.04] ring-1 ring-foreground/10 backdrop-blur-xl transition-all hover:bg-foreground/[0.06] hover:ring-foreground/15"
+                    transition={{
+                        layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                    }}
+                >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                        {hasTitle ? (
+                            // Has title: Search | Title | Star
+                            <motion.div
+                                key="full"
+                                className="flex h-full w-full items-center gap-2 px-3 sm:gap-3 sm:px-4"
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{
+                                    duration: 0.4,
+                                    ease: [0.16, 1, 0.3, 1],
+                                }}
                             >
-                                <Search className="h-4 w-4" />
-                            </button>
+                                {/* Search button */}
+                                <button
+                                    onClick={openDropdown}
+                                    className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
+                                    aria-label="Search connections"
+                                    data-tooltip-id="tip"
+                                    data-tooltip-content="Find connections"
+                                >
+                                    <Search className="h-4 w-4" />
+                                </button>
 
-                            {/* Divider */}
-                            <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
+                                {/* Divider */}
+                                <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
 
-                            {/* Title area - fills available space */}
-                            <div className="flex min-w-0 flex-1 items-center gap-2">
-                                {isStreaming && <RunningIndicator />}
-                                <EditableTitle title={title} onSave={handleSaveTitle} />
-                            </div>
+                                {/* Title area - fills available space */}
+                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                    {isStreaming && <RunningIndicator />}
+                                    <EditableTitle
+                                        title={title}
+                                        onSave={handleSaveTitle}
+                                    />
+                                </div>
 
-                            {/* Star button for active connection */}
-                            {activeConnection && (
-                                <StarButton
-                                    isStarred={activeConnection.isStarred}
-                                    onToggle={() =>
-                                        toggleStarConnection(activeConnection.id)
-                                    }
-                                    size="sm"
-                                    label={
-                                        activeConnection.isStarred
-                                            ? "Unstar this connection"
-                                            : "Star this connection"
-                                    }
-                                />
-                            )}
+                                {/* Star button for active connection */}
+                                {activeConnection && (
+                                    <StarButton
+                                        isStarred={activeConnection.isStarred}
+                                        onToggle={() =>
+                                            toggleStarConnection(activeConnection.id)
+                                        }
+                                        size="sm"
+                                        label={
+                                            activeConnection.isStarred
+                                                ? "Unstar this connection"
+                                                : "Star this connection"
+                                        }
+                                    />
+                                )}
+                            </motion.div>
+                        ) : (
+                            // No title yet: "Search conversations..." placeholder
+                            <motion.div
+                                key="minimal"
+                                className="flex h-full w-full items-center gap-2 px-3 sm:gap-3 sm:px-4"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <button
+                                    onClick={openDropdown}
+                                    className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/50 transition-colors hover:text-foreground/70"
+                                    aria-label="Search conversations"
+                                >
+                                    <Search className="h-4 w-4 shrink-0" />
+                                    {isStreaming && <RunningIndicator />}
+                                    <span className="truncate">
+                                        Search conversations...
+                                    </span>
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
 
-                            {/* New button */}
-                            {!hideNewButton && (
-                                <>
-                                    <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
-                                    <button
-                                        onClick={createNewConnection}
-                                        disabled={isPending}
-                                        className="interactive-focus flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/25 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                                        aria-label="New connection"
-                                        data-tooltip-id="tip"
-                                        data-tooltip-content="Start fresh"
-                                    >
-                                        {isPending ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Plus className="h-4 w-4" />
-                                        )}
-                                        <span className="hidden sm:inline">
-                                            New Connection
-                                        </span>
-                                    </button>
-                                </>
-                            )}
-                        </motion.div>
+                <ConnectionDropdown
+                    isOpen={isDropdownOpen}
+                    onClose={closeDropdown}
+                    connections={connections}
+                    starredConnections={starredConnections}
+                    unstarredConnections={unstarredConnections}
+                    activeConnection={activeConnection}
+                    freshConnectionIds={freshConnectionIds}
+                    onSelect={handleSelect}
+                    onDelete={deleteConnection}
+                    onToggleStar={toggleStarConnection}
+                    query={query}
+                    setQuery={setQuery}
+                    debouncedQuery={debouncedQuery}
+                    inputRef={inputRef}
+                />
+            </div>
+
+            {/* Standalone New button - outside the glass pill */}
+            {!hideNewButton && (
+                <button
+                    onClick={createNewConnection}
+                    disabled={isPending}
+                    className="interactive-focus flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-medium text-primary ring-1 ring-primary/20 transition-all duration-200 hover:bg-primary/15 hover:ring-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="New connection"
+                    data-tooltip-id="tip"
+                    data-tooltip-content="Start fresh"
+                >
+                    {isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                        // No title yet: Search | "X Conversations" (clickable to see history)
-                        <motion.div
-                            key="minimal"
-                            className="flex w-full items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <button
-                                onClick={openDropdown}
-                                className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
-                                aria-label="View all conversations"
-                                data-tooltip-id="tip"
-                                data-tooltip-content="View all conversations"
-                            >
-                                <Search className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={openDropdown}
-                                className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground/80"
-                            >
-                                {isStreaming && <RunningIndicator />}
-                                <Clock className="h-3.5 w-3.5" />
-                                <span className="truncate">
-                                    {connections.length} Conversation
-                                    {connections.length !== 1 ? "s" : ""}
-                                </span>
-                                <ChevronRight className="h-3.5 w-3.5 text-foreground/40" />
-                            </button>
-                        </motion.div>
+                        <Plus className="h-4 w-4" />
                     )}
-                </AnimatePresence>
-            </motion.div>
-
-            <ConnectionDropdown
-                isOpen={isDropdownOpen}
-                onClose={closeDropdown}
-                connections={connections}
-                starredConnections={starredConnections}
-                unstarredConnections={unstarredConnections}
-                activeConnection={activeConnection}
-                freshConnectionIds={freshConnectionIds}
-                onSelect={handleSelect}
-                onDelete={deleteConnection}
-                onToggleStar={toggleStarConnection}
-                query={query}
-                setQuery={setQuery}
-                debouncedQuery={debouncedQuery}
-                inputRef={inputRef}
-            />
+                    <span className="hidden sm:inline">New Connection</span>
+                </button>
+            )}
         </div>
     );
 }

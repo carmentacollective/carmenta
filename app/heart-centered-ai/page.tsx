@@ -324,7 +324,7 @@ export default function HeartCenteredAIPage() {
                             <ExternalLink className="h-4 w-4" />
                         </a>
                         <Link
-                            href="/connection/new"
+                            href="/connection?new"
                             className="inline-flex items-center justify-center gap-2 rounded-lg border bg-background px-6 py-3 font-medium transition-all hover:scale-105 hover:bg-muted"
                         >
                             Start a Connection

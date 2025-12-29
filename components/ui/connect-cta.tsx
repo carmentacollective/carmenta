@@ -2,12 +2,12 @@ import Link from "next/link";
 
 /**
  * CTA button that starts a new connection.
- * Always goes to /connection/new for a fresh conversation.
+ * The ?new param signals a fresh conversation state.
  */
 export function ConnectCTA() {
     return (
         <Link
-            href="/connection/new"
+            href="/connection?new"
             prefetch={false}
             className="btn-glass-interactive group/btn relative inline-flex overflow-hidden rounded-full px-8 py-3"
         >

@@ -139,7 +139,7 @@ export function ConnectionProvider({
 
     const handleCreateNewConnection = useCallback(() => {
         setDisplayTitle(null);
-        router.push("/connection/new");
+        router.push("/connection?new");
     }, [router]);
 
     const archiveActiveConnection = useCallback(() => {
@@ -172,7 +172,7 @@ export function ConnectionProvider({
                     logger.debug({ connectionId: id }, "Deleted connection");
                     setConnections((prev) => prev.filter((c) => c.id !== id));
                     if (id === activeConnectionId) {
-                        router.push("/connection/new");
+                        router.push("/connection?new");
                     }
                 } catch (err) {
                     const error = err instanceof Error ? err : new Error(String(err));

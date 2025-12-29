@@ -17,7 +17,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-// import { useHapticFeedback } from "./use-haptic-feedback"; // TODO: Re-enable
 
 export interface UsePullToRefreshOptions {
     /** Callback when refresh is triggered */

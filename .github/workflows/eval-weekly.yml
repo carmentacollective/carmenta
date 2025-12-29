@@ -49,7 +49,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "pnpm"
@@ -110,7 +110,7 @@ jobs:
 
       - name: Create GitHub issue on regression
         if: steps.regression.outputs.regression_exit_code != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const regressionDetails = String.raw`${{ steps.regression.outputs.regression_details }}`;
@@ -206,7 +206,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Upload eval output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: eval-output

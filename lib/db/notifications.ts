@@ -7,7 +7,8 @@
 
 import { eq, and, desc } from "drizzle-orm";
 
-import { db, schema } from "./index";
+import { db } from "./client";
+import * as schema from "./schema";
 import type { Notification, NewNotification } from "./schema";
 
 /**

@@ -6,7 +6,9 @@
  * Set BRAINTRUST_API_KEY in .env.local to enable Braintrust features.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { initLogger, type Logger } from "braintrust";
+
 import { env } from "@/lib/env";
 import { logger as pino } from "@/lib/logger";
 
@@ -62,6 +64,10 @@ export async function initBraintrustLogger(): Promise<Logger<any> | null> {
             return braintrustLogger;
         } catch (error) {
             pino.error({ error }, "❌ Failed to initialize Braintrust logger");
+            Sentry.captureException(error, {
+                level: "warning",
+                tags: { component: "braintrust", action: "init" },
+            });
             braintrustLogger = null;
             return null;
         }

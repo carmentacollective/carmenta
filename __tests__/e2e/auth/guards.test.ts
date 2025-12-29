@@ -20,10 +20,10 @@ test.describe("Protected Route Guards", () => {
         expect(page.url()).toContain("sign-in");
     });
 
-    test("/connection/new redirects to sign-in when not authenticated", async ({
+    test("/connection?new redirects to sign-in when not authenticated", async ({
         page,
     }) => {
-        await page.goto("/connection/new");
+        await page.goto("/connection?new");
 
         // Should redirect to sign-in
         await page.waitForURL(/sign-in/, { timeout: 10000 });

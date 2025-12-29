@@ -25,7 +25,7 @@ import type { PublicConnection } from "@/lib/actions/connections";
 
 // Mock Next.js router
 const mockPush = vi.fn();
-const mockPathname = vi.fn(() => "/connection/new");
+const mockPathname = vi.fn(() => "/connection");
 
 vi.mock("next/navigation", () => ({
     useRouter: () => ({
@@ -96,7 +96,7 @@ describe("ConnectionChooser Integration", () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        mockPathname.mockReturnValue("/connection/new");
+        mockPathname.mockReturnValue("/connection");
 
         // Create test user
         testUser = await getOrCreateUser("clerk_test_123", "test@example.com", {
@@ -138,10 +138,10 @@ describe("ConnectionChooser Integration", () => {
                 </ConnectionProvider>
             );
 
-            // 3. Verify connection appears in UI (title words are split into animated spans)
-            expect(screen.getByText("My")).toBeInTheDocument();
-            expect(screen.getByText("First")).toBeInTheDocument();
-            expect(screen.getByText("Chat")).toBeInTheDocument();
+            // 3. Verify connection appears in UI (typewriter animation renders full title)
+            await waitFor(() => {
+                expect(screen.getByText("My First Chat")).toBeInTheDocument();
+            });
 
             // 4. Open dropdown and verify both connections are listed
             fireEvent.click(screen.getByLabelText("Search connections"));
@@ -188,7 +188,7 @@ describe("ConnectionChooser Integration", () => {
             expect(deletedConn).toBeNull();
 
             // 10. Verify we navigated away (since we deleted the active connection)
-            expect(mockPush).toHaveBeenCalledWith("/connection/new");
+            expect(mockPush).toHaveBeenCalledWith("/connection?new");
         });
 
         it("deleting non-active connection does not navigate away", async () => {

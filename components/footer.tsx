@@ -89,13 +89,13 @@ function ThemePopover() {
             {/* Trigger: Palette icon with current theme color indicator */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="group flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110"
+                className="group flex h-11 w-11 items-center justify-center rounded-full transition-all hover:scale-110"
                 aria-label="Theme settings"
                 data-tooltip-id="tip"
                 data-tooltip-content="Appearance"
             >
                 <div className="relative">
-                    <Palette className="h-4 w-4 text-foreground/60 transition-colors group-hover:text-foreground/90" />
+                    <Palette className="h-5 w-5 text-foreground/60 transition-colors group-hover:text-foreground/90" />
                     {/* Small color indicator dot */}
                     <div
                         className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-background"
