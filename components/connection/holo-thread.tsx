@@ -49,7 +49,11 @@ import { ThinkingIndicator } from "./thinking-indicator";
 import { TransientStatus } from "./transient-status";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
-import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
+import {
+    useChatContext,
+    useModelOverrides,
+    useCodeMode,
+} from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
@@ -103,6 +107,7 @@ function HoloThreadInner() {
     const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
+    const { isCodeMode } = useCodeMode();
 
     // Track if we've done the initial scroll positioning
     // When loading a completed conversation (not streaming), we want to show
@@ -174,9 +179,11 @@ function HoloThreadInner() {
     // This happens when:
     // 1. isLoading is true (request in flight)
     // 2. The last message is from the user (assistant hasn't streamed yet)
+    // 3. NOT in code mode (code mode streams directly without concierge phase)
     // This bridges the gap between user submit and first assistant token.
     const lastMessage = messages[messages.length - 1];
-    const needsPendingAssistant = isLoading && lastMessage?.role === "user";
+    const needsPendingAssistant =
+        !isCodeMode && isLoading && lastMessage?.role === "user";
 
     return (
         <StickToBottom
@@ -1485,6 +1492,7 @@ function AssistantMessage({
     const { concierge } = useConcierge();
     const { regenerateFrom, regenerateFromWithModel, isLoading } = useChatContext();
     const { overrides } = useModelOverrides();
+    const { isCodeMode } = useCodeMode();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
@@ -1497,16 +1505,17 @@ function AssistantMessage({
     // Extract file parts
     const fileParts = getFileParts(message);
 
-    // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
-    // This eliminates the visual gap between user submit and Carmenta appearing.
-    // ALSO show for completed messages that have concierge data (last message after completion).
-    const showConcierge = isLast && (isStreaming || Boolean(concierge));
+    // Code mode: Skip concierge display entirely - Claude Code handles its own routing
+    // and doesn't produce concierge metadata. Content streams directly.
+    // Normal mode: Show concierge IMMEDIATELY when streaming starts.
+    const showConcierge = !isCodeMode && isLast && (isStreaming || Boolean(concierge));
 
     // We're in "selecting" state when streaming/running but don't have selection yet
     const isSelectingModel = isStreaming && !concierge;
 
     // We've selected when concierge data exists
-    const hasSelected = Boolean(concierge);
+    // In code mode, treat as always "selected" so content renders immediately
+    const hasSelected = isCodeMode || Boolean(concierge);
 
     // Derive avatar state for ConciergeDisplay
     const avatarState = isSelectingModel

@@ -163,13 +163,24 @@ export async function POST(req: Request) {
     });
 
     // Stream response using AI SDK patterns
-    const result = streamText({
-        model: claudeCode(modelName),
-        messages: await convertToModelMessages(body.messages as UIMessage[]),
-    });
+    try {
+        const result = streamText({
+            model: claudeCode(modelName),
+            messages: await convertToModelMessages(body.messages as UIMessage[]),
+        });
 
-    // Return standard AI SDK stream response
-    return result.toUIMessageStreamResponse();
+        // Return standard AI SDK stream response
+        return result.toUIMessageStreamResponse();
+    } catch (error) {
+        logger.error(
+            { error: error instanceof Error ? error.message : String(error) },
+            "Code API: streaming failed"
+        );
+        return new Response(JSON.stringify({ error: "Failed to stream response" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 }
 
 /**
