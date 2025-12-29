@@ -172,7 +172,11 @@ describe("OAuth State Management", () => {
             expect(result2).toBeNull();
         });
 
-        it("deletes expired state after failed validation", async () => {
+        it("leaves expired states for cleanup job (atomic validation)", async () => {
+            // The atomic DELETE...RETURNING approach doesn't clean up expired states
+            // during validation - that's handled by the cleanupExpiredStates cron job.
+            // This is intentional: it eliminates the race condition in the old
+            // read-then-delete pattern where parallel requests could both validate.
             const expiredState = "cleanup-expired-state";
             await db.insert(schema.oauthStates).values({
                 state: expiredState,
@@ -182,13 +186,18 @@ describe("OAuth State Management", () => {
             });
 
             // Validate (should fail due to expiration)
-            await validateState(expiredState);
+            const result = await validateState(expiredState);
+            expect(result).toBeNull();
 
-            // State should be cleaned up
+            // Expired state remains - will be cleaned by cron job
             const record = await db.query.oauthStates.findFirst({
                 where: eq(schema.oauthStates.state, expiredState),
             });
-            expect(record).toBeUndefined();
+            expect(record).toBeDefined();
+
+            // Cleanup job handles it
+            const deleted = await cleanupExpiredStates();
+            expect(deleted).toBe(1);
         });
 
         it("returns PKCE code verifier when present", async () => {
