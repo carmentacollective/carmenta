@@ -1,8 +1,8 @@
 ---
 description:
   Vision-first feature research - envision the ideal, then assess the landscape
-argument-hint: "[feature-area] [optional: --update existing-spec.md]"
-version: 2.1.0
+argument-hint: "[feature-area]"
+version: 2.2.0
 ---
 
 # /best-of - Vision-First Feature Research
@@ -257,7 +257,11 @@ applies]
 </output-format>
 
 <workflow>
+**Setup**: Check `knowledge/components/` for an existing spec matching the feature area.
+If one exists, read it first - this is an update, not a fresh start.
+
 **Vision Phase** (before any research):
+
 - Surface the underlying human need behind the request
 - Envision the ideal solution unconstrained by technology
 - Identify the core insight that separates ideal from current
@@ -274,9 +278,9 @@ applies]
 - Draft the spec with vision-first structure
 - Present draft for review before saving
 
-If a spec already exists for this feature, enter update mode: preserve Architecture
-Decisions marked ✅, refresh the vision if understanding has evolved, update landscape
-with new data, reassess gaps, and adjust milestones as needed.
+**For updates**: Preserve Architecture Decisions marked ✅, refresh the vision if
+understanding has evolved, update landscape with new data, reassess gaps, and adjust
+milestones as needed.
 
 Track progress with TodoWrite. </workflow>
 
