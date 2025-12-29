@@ -10,6 +10,8 @@
 
 import Sqids from "sqids";
 
+import { logger } from "@/lib/logger";
+
 /**
  * URL-safe alphabet: lowercase letters and numbers only.
  * No special characters, no uppercase - clean URLs that work everywhere.
@@ -68,10 +70,15 @@ export function decodeConnectionId(id: string): number | null {
     try {
         const decoded = sqids.decode(id);
         if (decoded.length !== 1) {
+            logger.debug(
+                { id, decodedLength: decoded.length },
+                "Sqid decode returned unexpected length"
+            );
             return null;
         }
         return decoded[0];
-    } catch {
+    } catch (error) {
+        logger.debug({ id, error }, "Failed to decode connection ID");
         return null;
     }
 }
