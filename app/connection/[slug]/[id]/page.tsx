@@ -62,6 +62,26 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
         notFound();
     }
 
+    // Handle new session - no existing connection to load
+    if (id === "new") {
+        const recentConnections = await getRecentConnections(10);
+        return (
+            <div className="fixed inset-0 overflow-hidden">
+                <HolographicBackground hideWatermark />
+                <div className="relative z-content h-full">
+                    <ConnectLayout
+                        initialConnections={recentConnections}
+                        activeConnection={null}
+                        initialMessages={[]}
+                        initialConcierge={null}
+                    >
+                        <Chat />
+                    </ConnectLayout>
+                </div>
+            </div>
+        );
+    }
+
     // Load the connection, messages, and concierge data
     const result = await loadConnection(id);
 
