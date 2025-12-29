@@ -22,7 +22,7 @@ product-market fit into hours instead of months.
 expressions of the same underlying consciousness. The interface uses "we" language,
 dissolving the human-machine boundary. AI as partner, not tool.
 
-**[100x Framework](knowledge/100x-framework.md)** - Three levels of AI leverage:
+**[100x Framework](knowledge/context/100x-framework.md)** - Three levels of AI leverage:
 
 - _1x Baseline_: Clarity before automation. Clean context, organized knowledge, personal
   systems that work. Don't automate chaos.
@@ -82,29 +82,31 @@ This project follows [AI-First Development](knowledge/ai-first-development.md): 
 
 ```
 /knowledge
-  vision.md                    Why Carmenta exists, for whom, what success looks like
-  100x-framework.md            The 1x/10x/100x leverage framework
+  roadmap.md                   Milestone progression (M0-M4)
   design-principles.md         Interface design standards
   users-should-feel.md         Emotional and experiential goals
-  roadmap.md                   Milestone progression (M0-M4)
   tech-architecture.md         Technical architecture decisions
 
   /product
+    vision.md                  Why Carmenta exists, for whom, what success looks like
     personas.md                Target users by milestone
     boundaries.md              What we're NOT building
 
-  /components                  Feature-level specifications
+  /context
+    100x-framework.md          The 1x/10x/100x leverage framework
+    heartcentered-ai.md        Heart-centered AI philosophy
+
+  /components                  Feature-level specifications (74 specs)
     foundation.md              Tech stack and tooling
     interface.md               Web app and AG-UI protocol
     memory.md                  Context and memory management
     voice.md                   Voice-first interaction
     ai-team.md                 Digital Chief of Staff and agents
-    [25+ more component specs]
 
-  /competitors                 Competitive analysis
-    [10 competitor deep-dives]
+  /competitors                 Competitive analysis (11 deep-dives)
 
-  /industry                    Industry research and trends
+  /decisions                   Architectural decision records
+  /research                    Industry research and model landscape
 ```
 
 See [knowledge/components/README.md](knowledge/components/README.md) for the full
