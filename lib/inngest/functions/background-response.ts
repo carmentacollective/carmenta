@@ -10,6 +10,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import {
+    convertToModelMessages,
     createUIMessageStream,
     JsonToSseTransformStream,
     stepCountIs,
@@ -27,7 +28,7 @@ import {
     type UIMessageLike,
 } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { getFallbackChain } from "@/lib/model-config";
+import { getFallbackChain, getModel } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
@@ -139,24 +140,22 @@ export const backgroundResponse = inngest.createFunction(
                 userId,
             });
 
-            // Get tools (integrations + built-in + knowledge base search)
-            const integrationTools = await getIntegrationTools(context.userEmail);
-            const searchKnowledgeTool = createSearchKnowledgeTool(userId);
-            const allTools = {
-                ...builtInTools,
-                ...integrationTools,
-                searchKnowledge: searchKnowledgeTool,
-            };
+            // Check if model supports tools (some models like Perplexity don't)
+            const modelConfig = getModel(modelId);
+            const modelSupportsTools = modelConfig?.supportsTools ?? false;
 
-            // Extract text content from message parts for LLM input
-            const extractTextFromParts = (parts: UIMessageLike["parts"]): string => {
-                return parts
-                    .filter(
-                        (p): p is { type: "text"; text: string } => p.type === "text"
-                    )
-                    .map((p) => p.text)
-                    .join("\n");
-            };
+            // Get tools only if model supports them (matches inline path)
+            const integrationTools = modelSupportsTools
+                ? await getIntegrationTools(context.userEmail)
+                : {};
+            const searchKnowledgeTool = createSearchKnowledgeTool(userId);
+            const allTools = modelSupportsTools
+                ? {
+                      ...builtInTools,
+                      ...integrationTools,
+                      searchKnowledge: searchKnowledgeTool,
+                  }
+                : {};
 
             functionLogger.info(
                 {
@@ -176,14 +175,13 @@ export const backgroundResponse = inngest.createFunction(
                 model: gateway(translateModelId(modelId)),
                 messages: [
                     ...systemMessages,
-                    ...context.messages.map((msg) => ({
-                        role: msg.role as "user" | "assistant",
-                        content: extractTextFromParts(msg.parts),
-                    })),
+                    // Use convertToModelMessages to preserve tool calls/results from history
+                    ...(await convertToModelMessages(context.messages as any)),
                 ],
                 temperature,
-                tools: allTools,
-                stopWhen: stepCountIs(10),
+                // Only pass tools and stopWhen if model supports them (matches inline path)
+                ...(modelSupportsTools && { tools: allTools }),
+                ...(modelSupportsTools && { stopWhen: stepCountIs(10) }),
                 providerOptions: translateOptions(modelId, {
                     reasoning: reasoning.enabled
                         ? {
