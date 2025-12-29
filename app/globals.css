@@ -923,9 +923,9 @@
  * This targets mobile landscape without affecting desktop.
  */
 @media (orientation: landscape) and (max-height: 500px) {
-    /* Header: reduce vertical padding and row spacing */
+    /* Header: reduce vertical padding and row spacing while respecting safe areas */
     .landscape-compact-header {
-        padding-top: 0.375rem !important;
+        padding-top: max(0.375rem, env(safe-area-inset-top)) !important;
         padding-bottom: 0.375rem !important;
         gap: 0.25rem !important;
     }
@@ -941,10 +941,10 @@
         padding-bottom: 0.5rem !important;
     }
 
-    /* Input container: compress vertical padding */
+    /* Input container: compress vertical padding while respecting safe areas */
     .landscape-compact-input {
         padding-top: 0.25rem !important;
-        padding-bottom: 0.25rem !important;
+        padding-bottom: max(0.25rem, env(safe-area-inset-bottom)) !important;
     }
 
     /* Welcome screen: reduce gap and adjust vertical positioning */
