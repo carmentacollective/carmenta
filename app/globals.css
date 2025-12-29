@@ -1878,7 +1878,7 @@
 
     /* Icon button variant */
     .btn-icon-glass {
-        @apply btn-glass-interactive h-10 w-10 sm:h-12 sm:w-12;
+        @apply btn-glass-interactive h-11 w-11 sm:h-12 sm:w-12;
     }
 
     /* ==========================================================================

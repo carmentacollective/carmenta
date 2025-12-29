@@ -188,10 +188,10 @@ function EditableTitle({
                         e.preventDefault(); // Prevents blur from firing first
                         handleSave();
                     }}
-                    className="rounded-md p-1 text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
                     aria-label="Save title"
                 >
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-5 w-5" />
                 </button>
             </div>
         );
@@ -202,14 +202,14 @@ function EditableTitle({
             {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="btn-subtle-text flex items-center gap-2 border border-transparent px-1.5 py-0.5 hover:border-foreground/10 hover:bg-foreground/[0.03]"
+                className="btn-subtle-text flex min-h-[44px] items-center gap-2 border border-transparent px-3 py-2 hover:border-foreground/10 hover:bg-foreground/[0.03]"
                 aria-label="Click to edit title"
                 data-tooltip-id="tip"
                 data-tooltip-content="Click to rename"
             >
                 <AnimatedTitle title={title} />
                 {/* Pencil icon - more visible on hover */}
-                <Pencil className="h-3 w-3 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
+                <Pencil className="h-4 w-4 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
             </button>
         </div>
     );
