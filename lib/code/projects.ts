@@ -24,12 +24,56 @@ export interface Project {
 }
 
 /**
+ * Dangerous system directories that should never be allowed as source directories
+ */
+const DANGEROUS_DIRS = new Set([
+    "/",
+    "/root",
+    "/etc",
+    "/usr",
+    "/bin",
+    "/sbin",
+    "/var",
+    "/boot",
+    "/sys",
+    "/proc",
+]);
+
+/**
+ * Check if a directory is safe to use as a source directory
+ */
+function isSafeSourceDir(dir: string): boolean {
+    const resolved = path.resolve(dir);
+
+    // Block exact matches of dangerous directories
+    if (DANGEROUS_DIRS.has(resolved)) {
+        logger.warn({ sourceDir: resolved }, "Blocked dangerous source directory");
+        return false;
+    }
+
+    // Block paths that start with dangerous directories (e.g., /etc/config)
+    for (const dangerousDir of DANGEROUS_DIRS) {
+        if (resolved === dangerousDir || resolved.startsWith(dangerousDir + path.sep)) {
+            logger.warn(
+                { sourceDir: resolved },
+                "Blocked path under dangerous directory"
+            );
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
  * Default source directories to scan for projects
  */
 const DEFAULT_SOURCE_DIRS = [
     process.env.CODE_SOURCE_DIR,
     process.env.HOME ? path.join(process.env.HOME, "src") : null,
-].filter(Boolean) as string[];
+]
+    .filter((dir): dir is string => Boolean(dir))
+    .filter(isSafeSourceDir);
 
 /**
  * Maximum depth to recurse when looking for git repos
