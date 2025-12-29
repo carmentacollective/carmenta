@@ -3,14 +3,14 @@
 /**
  * Code Mode Entry Point
  *
- * Presents project selection for code mode. Selecting a project creates
- * a code-mode connection and navigates to it.
+ * Presents project selection for code mode. Selecting a project navigates
+ * to the session picker for that project.
  *
  * Flow:
  * 1. User visits /code
  * 2. ProjectSelector shows available projects
- * 3. On selection, creates connection with projectPath
- * 4. Navigates to /connection/<slug>/<id>
+ * 3. On selection, navigates to /code/[repo] (session picker)
+ * 4. User picks existing session or starts new one
  */
 
 import { useState } from "react";
@@ -23,50 +23,34 @@ import Image from "next/image";
 import { ProjectSelector } from "@/components/code";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import type { Project } from "@/lib/code/projects";
-import { logger } from "@/lib/client-logger";
+
+/**
+ * Derive repo slug from project path or name
+ */
+function getRepoSlug(project: Project): string {
+    // Use the last segment of the path
+    const pathSlug = project.path.split("/").pop() ?? "";
+    // Fallback to name if path segment is empty
+    return pathSlug || project.name.toLowerCase().replace(/\s+/g, "-");
+}
 
 export default function CodePage() {
     const router = useRouter();
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isNavigating, setIsNavigating] = useState(false);
 
     const handleProjectSelect = async (project: Project) => {
         setSelectedProject(project);
-        setError(null);
     };
 
     const handleStartCoding = async () => {
         if (!selectedProject) return;
 
-        setIsCreating(true);
-        setError(null);
+        setIsNavigating(true);
 
-        try {
-            // Create a code-mode connection via API
-            const response = await fetch("/api/code/connection", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    projectPath: selectedProject.path,
-                    projectName: selectedProject.name,
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to create code session");
-            }
-
-            const { id, slug } = await response.json();
-
-            // Navigate to the connection
-            router.push(`/connection/${slug}/${id}`);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Something went wrong";
-            setError(message);
-            logger.error({ error: err }, "Failed to create code session");
-            setIsCreating(false);
-        }
+        // Navigate to the session picker for this project
+        const repoSlug = getRepoSlug(selectedProject);
+        router.push(`/code/${repoSlug}`);
     };
 
     return (
@@ -142,27 +126,20 @@ export default function CodePage() {
                         )}
                     </div>
 
-                    {/* Error */}
-                    {error && (
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                            {error}
-                        </p>
-                    )}
-
                     {/* Start Button */}
                     <button
                         onClick={handleStartCoding}
-                        disabled={!selectedProject || isCreating}
+                        disabled={!selectedProject || isNavigating}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 font-medium text-white transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {isCreating ? (
+                        {isNavigating ? (
                             <>
                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                Starting session...
+                                Loading sessions...
                             </>
                         ) : (
                             <>
-                                Start coding
+                                Continue
                                 <ArrowRight className="h-5 w-5" />
                             </>
                         )}

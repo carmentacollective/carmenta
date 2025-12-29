@@ -180,18 +180,42 @@ export async function POST(req: Request) {
             model: claudeCode(modelName),
             messages: await convertToModelMessages(body.messages as UIMessage[]),
             // Capture streaming events to show tool activity
+            // NOTE: tool-call and tool-result arrive simultaneously because
+            // Claude Code executes tools internally (providerExecuted: true).
+            // We use tool-input-start to show status early, while tool is preparing.
             onChunk: ({ chunk }) => {
                 if (!transientWriter) return;
 
-                // Show status when Claude Code invokes a tool
+                // Show status when Claude Code starts preparing a tool
+                // This arrives BEFORE tool-call/tool-result, giving us visibility
+                if (chunk.type === "tool-input-start") {
+                    const toolChunk = chunk as {
+                        type: "tool-input-start";
+                        id: string;
+                        toolName: string;
+                    };
+                    logger.debug(
+                        { toolName: toolChunk.toolName, toolCallId: toolChunk.id },
+                        "Code mode: tool starting"
+                    );
+                    // Show status without args initially - we'll get them in tool-input-delta
+                    writeStatus(
+                        transientWriter,
+                        `tool-${toolChunk.id}`,
+                        getCodeToolStatusMessage(toolChunk.toolName),
+                        getCodeToolIcon(toolChunk.toolName)
+                    );
+                }
+
+                // Update status with args when we get the full input
                 if (chunk.type === "tool-call") {
-                    // Cast input to access tool arguments
                     const args = chunk.input as Record<string, unknown> | undefined;
                     const message = getCodeToolStatusMessage(chunk.toolName, args);
                     logger.debug(
                         { toolName: chunk.toolName, toolCallId: chunk.toolCallId },
                         "Code mode: tool call"
                     );
+                    // Update with more specific message now that we have args
                     writeStatus(
                         transientWriter,
                         `tool-${chunk.toolCallId}`,

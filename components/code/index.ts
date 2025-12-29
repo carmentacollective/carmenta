@@ -5,3 +5,4 @@
  */
 
 export { ProjectSelector } from "./project-selector";
+export { SessionPicker, type CodeSession } from "./session-picker";
