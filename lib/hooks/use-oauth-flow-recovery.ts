@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/lib/client-logger";
 import { getServiceById } from "@/lib/integrations/services";
 
 const OAUTH_PENDING_KEY = "carmenta:oauth_pending";
@@ -53,8 +54,8 @@ function getAbandonedServiceFromStorage(): string | null {
             return pending.service;
         }
         return null;
-    } catch {
-        // Invalid storage state - clean it up
+    } catch (error) {
+        logger.debug({ error }, "Invalid OAuth pending state, cleaning up");
         sessionStorage.removeItem(OAUTH_PENDING_KEY);
         return null;
     }
