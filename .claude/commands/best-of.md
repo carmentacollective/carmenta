@@ -53,17 +53,9 @@ Understand the current state of the art.
 Look up library documentation for technical details.
 
 **Clone and analyze repos**: Check `knowledge/competitors/README.md` for tier
-recommendations. Clone relevant repos into `../reference/` for deep code analysis:
-
-```bash
-# Clone if not exists, pull if exists
-cd ../reference
-git clone <repo-url> || (cd <repo-name> && git pull)
-```
-
-This enables walking through full codebases with Explore agents rather than fetching
-individual files from GitHub. Spawn 2-3 Explore agents in parallel to analyze cloned
-repos for patterns.
+recommendations. Clone relevant repos into `../reference/` for deep code analysis - this
+enables walking through full codebases rather than fetching individual files from
+GitHub. Spawn 2-3 Explore agents in parallel to analyze cloned repos for patterns.
 
 **Existing specs**: Check `knowledge/components/` for related specs. This research may
 update an existing spec or create a new one.
