@@ -58,12 +58,11 @@
         --glass-surface: rgba(255, 255, 255, 0.9);
         --glass-shadow: 0 4px 16px rgba(139, 102, 184, 0.15);
 
-        /* Chat viewport fade - soft mask on content edges
-         * Uses fixed pixels, not percentages, for consistent subtlety
-         * Top fade (32px): gentle transition from header glass
-         * Bottom fade (40px): larger to transition into input dock area */
+        /* Chat viewport fade - soft mask at top edge only
+         * Top fade creates gentle transition from header glass
+         * Bottom has NO fade - users read newest content there */
         --chat-fade-top: 32px;
-        --chat-fade-bottom: 40px;
+        --chat-fade-bottom: 0px;
 
         /* Z-Index Scale (mirrors tailwind.config.ts)
          * Use Tailwind classes (z-content, z-modal, etc.) in components.
@@ -1195,18 +1194,18 @@
      * See knowledge/components/text-expansion.md for design decisions.
      */
 
-    /* Blur gradient fade for truncated content - matches chat viewport fade */
+    /* Blur gradient fade for truncated content - indicates "there's more below" */
     .expandable-text-fade {
         mask-image: linear-gradient(
             to bottom,
             black 0%,
-            black calc(100% - var(--chat-fade-bottom)),
+            black calc(100% - 40px),
             transparent 100%
         );
         -webkit-mask-image: linear-gradient(
             to bottom,
             black 0%,
-            black calc(100% - var(--chat-fade-bottom)),
+            black calc(100% - 40px),
             transparent 100%
         );
     }
