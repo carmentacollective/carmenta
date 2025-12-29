@@ -6,14 +6,23 @@
  * Full-page container for the connection/chat experience.
  * Intentionally excludes SiteHeader and Footer - this is a focused chat interface.
  *
- * Layout structure:
- * - Header row: Oracle | Connection Chooser | Account
- * - Chat messages area
- * - Chat input dock
+ * Layout structure (unified glass container):
+ * ┌─────────────────────────────────────────┐
+ * │ ┌─────────────────────────────────────┐ │
+ * │ │ Header (sticky inside container)   │ │
+ * │ ├─────────────────────────────────────┤ │
+ * │ │                                     │ │
+ * │ │   Chat messages (scrollable)       │ │
+ * │ │   + Breathing watermark behind     │ │
+ * │ │                                     │ │
+ * │ ├─────────────────────────────────────┤ │
+ * │ │ Input dock (sticky inside)         │ │
+ * │ └─────────────────────────────────────┘ │
+ * │        Holographic background          │
+ * └─────────────────────────────────────────┘
  *
- * The container is transparent - just for layout/max-width containment.
- * This specialized layout maximizes vertical space for conversation and provides
- * context-specific navigation (connections, recent chats) rather than global site nav.
+ * The glass container creates visual separation from the holographic background.
+ * Header, messages, and input ALL live inside this single container.
  */
 
 import { type ReactNode } from "react";
@@ -35,27 +44,28 @@ import type { UIMessageLike } from "@/lib/db/message-mapping";
 // Entrance Animation Variants
 // ============================================================
 
+const containerEntranceVariants = {
+    hidden: { opacity: 0, scale: 0.98 },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        transition: {
+            duration: 0.5,
+            ease: [0.16, 1, 0.3, 1] as const,
+        },
+    },
+};
+
 const entranceVariants = {
-    hidden: { opacity: 0, y: -20 },
+    hidden: { opacity: 0, y: -10 },
     visible: (delay: number) => ({
         opacity: 1,
         y: 0,
         transition: {
-            duration: 0.5,
+            duration: 0.4,
             delay,
         },
     }),
-};
-
-const mainEntranceVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            duration: 0.6,
-            delay: 0.2,
-        },
-    },
 };
 
 // ============================================================
@@ -74,29 +84,60 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
     const { activeConnection, connections, createNewConnection, isPending } =
         useConnection();
 
-    // Simple: key only changes on real navigation (when activeConnection changes)
+    // Key changes on real navigation (when activeConnection changes)
     const connectionKey = activeConnection?.id ?? "new";
 
     // Show connection chooser when we have at least one conversation
-    // Guard against undefined during SSR/hydration to prevent layout flash
     const hasConnections = connections.length > 0;
 
     return (
         <ConnectRuntimeProvider>
-            <div className="flex h-full items-center justify-center p-0 sm:p-4">
-                {/* ONE container for everything - header, chat, input - all same width */}
-                <div className="relative flex h-full w-full max-w-4xl flex-col">
-                    {/* Header - Two rows on mobile, single row on desktop */}
-                    {/* Mobile: Row 1 = Oracle | New | Avatar, Row 2 = Connection chooser */}
-                    {/* Desktop: Single row = Oracle | Connection chooser | Avatar */}
-                    {/* Uses glass effect matching the input dock (rgba(255,255,255,0.7) + blur) */}
-                    {/*
-                        Header spacing uses 8px grid:
-                        - Mobile: mx-3 (12px) + px-3 (12px) = 24px edge inset
-                        - sm+: mx-4 (16px) + px-4 (16px) = 32px edge inset
-                        Glass effect consistent at all sizes for visual continuity
-                    */}
-                    <header className="mx-3 mb-3 mt-[max(0.5rem,env(safe-area-inset-top))] space-y-3 rounded-3xl bg-white/70 px-4 py-3 backdrop-blur-xl dark:bg-card/70 sm:mx-4 sm:mb-4 sm:space-y-0 sm:px-5 sm:py-4">
+            <div className="flex h-full items-center justify-center p-2 sm:p-4">
+                {/* ═══════════════════════════════════════════════════════════════
+                    UNIFIED GLASS CONTAINER
+
+                    This is THE container. Everything lives inside:
+                    - Header (sticky at top)
+                    - Messages (scrollable middle)
+                    - Input dock (sticky at bottom)
+                    - Breathing watermark (behind messages)
+
+                    The glass effect creates visual separation from the
+                    holographic background while maintaining the ethereal feel.
+                ═══════════════════════════════════════════════════════════════ */}
+                <motion.div
+                    className="relative flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20 shadow-2xl shadow-black/5 dark:border-white/10"
+                    variants={containerEntranceVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    {/* ═══════════════════════════════════════════════════════════
+                        BREATHING WATERMARK
+
+                        Carmenta's presence - centered behind all content.
+                        Fixed position within the container, messages flow over it.
+                    ═══════════════════════════════════════════════════════════ */}
+                    <div
+                        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+                        aria-hidden="true"
+                    >
+                        <div className="oracle-breathing">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src="/logos/icon-transparent.png"
+                                alt=""
+                                className="watermark-size object-contain opacity-[0.08] dark:opacity-[0.06]"
+                            />
+                        </div>
+                    </div>
+
+                    {/* ═══════════════════════════════════════════════════════════
+                        HEADER - Sticky inside the glass container
+
+                        Two rows on mobile, single row on desktop.
+                        Uses subtle separator instead of heavy border.
+                    ═══════════════════════════════════════════════════════════ */}
+                    <header className="relative z-10 shrink-0 space-y-3 border-b border-foreground/5 bg-white/60 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl dark:bg-card/60 sm:space-y-0 sm:px-5 sm:pb-4 sm:pt-4">
                         {/* Row 1: Oracle | (desktop: ConnectionChooser) | (mobile: New) | Avatar */}
                         <div className="flex items-center justify-between">
                             {/* Oracle with whisper - Carmenta speaks */}
@@ -161,7 +202,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                             </motion.div>
                         </div>
 
-                        {/* Row 2 (Mobile only): Connection chooser - same component, CSS-hidden on desktop */}
+                        {/* Row 2 (Mobile only): Connection chooser */}
                         {hasConnections && (
                             <motion.div
                                 className="w-full sm:hidden"
@@ -175,17 +216,17 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                         )}
                     </header>
 
-                    {/* Chat (messages + input) fills the rest */}
-                    <motion.main
-                        key={connectionKey}
-                        className="relative z-base flex-1 overflow-hidden"
-                        variants={mainEntranceVariants}
-                        initial="hidden"
-                        animate="visible"
-                    >
+                    {/* ═══════════════════════════════════════════════════════════
+                        MAIN CONTENT AREA
+
+                        Messages + Input dock. This is where HoloThread renders.
+                        Takes remaining height, scrolls internally.
+                        z-10 to render above the watermark.
+                    ═══════════════════════════════════════════════════════════ */}
+                    <main key={connectionKey} className="relative z-10 min-h-0 flex-1">
                         {children}
-                    </motion.main>
-                </div>
+                    </main>
+                </motion.div>
             </div>
         </ConnectRuntimeProvider>
     );

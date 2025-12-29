@@ -750,7 +750,7 @@ export function HolographicBackground({
                             ref={watermarkRef}
                             src="/logos/icon-transparent.png"
                             alt=""
-                            className="animate-watermark-presence h-[min(80vh,80vw)] w-[min(80vh,80vw)] object-contain transition-[opacity,filter] duration-500"
+                            className="animate-watermark-presence watermark-size object-contain transition-[opacity,filter] duration-500"
                             style={{
                                 // CSS size classes provide SSR fallback, then JS sets explicit px dimensions on mount
                                 // Transform scale is animated via spring physics in the animation loop (no CSS transition to avoid conflicts)
