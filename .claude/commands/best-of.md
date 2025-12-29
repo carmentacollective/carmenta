@@ -1,7 +1,7 @@
 ---
 description: Best-in-class feature research - analyze landscape, then envision the ideal
 argument-hint: "[feature-area]"
-version: 3.0.0
+version: 3.1.0
 ---
 
 # /best-of - Best-in-Class Feature Research
@@ -34,7 +34,10 @@ Understand the current state of the art before envisioning beyond it.
 library docs, and expert comparisons.
 
 **Analyze competitor implementations**: Check `knowledge/competitors/README.md` for tier
-recommendations. Spawn Explore agents (2-3 in parallel) to analyze top competitors.
+recommendations. Clone relevant repos into `../reference/` for deep code analysis - this
+enables walking through full codebases with Claude Code tools rather than fetching
+individual files from GitHub. If a repo already exists there, `git pull` to get the
+latest. Spawn Explore agents (2-3 in parallel) to analyze.
 
 **Assess technical possibilities**: What's possible today that no one does yet? Emerging
 APIs, recent releases, research becoming productized.
