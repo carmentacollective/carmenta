@@ -131,8 +131,10 @@ export function RegenerateMenu({
                 aria-label="Regenerate this response"
                 disabled={disabled || isRegenerating || isAnimating}
                 className={cn(
-                    "inline-flex h-7 shrink-0 items-center justify-center transition-all",
-                    showDropdown ? "rounded-l-md pl-2 pr-1" : "rounded-md px-2",
+                    "inline-flex h-9 shrink-0 items-center justify-center transition-all",
+                    showDropdown
+                        ? "min-w-[44px] rounded-l-md pl-3 pr-2"
+                        : "min-w-[44px] rounded-md px-3",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "hover:bg-foreground/10 active:bg-foreground/15",
                     disabled || isRegenerating || isAnimating
@@ -157,7 +159,7 @@ export function RegenerateMenu({
                                 opacity: { duration: 0.15 },
                             }}
                         >
-                            <RotateCw className="h-3.5 w-3.5" />
+                            <RotateCw className="h-4 w-4" />
                         </motion.div>
                     ) : (
                         <motion.div
@@ -167,7 +169,7 @@ export function RegenerateMenu({
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <RotateCw className="h-3.5 w-3.5" />
+                            <RotateCw className="h-4 w-4" />
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -182,7 +184,7 @@ export function RegenerateMenu({
                         aria-label="Choose model for regeneration"
                         aria-expanded={isOpen}
                         className={cn(
-                            "inline-flex h-7 w-5 items-center justify-center rounded-r-md border-l border-foreground/10 transition-all",
+                            "inline-flex h-9 w-9 items-center justify-center rounded-r-md border-l border-foreground/10 transition-all",
                             "hover:bg-foreground/10 active:bg-foreground/15",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             disabled || isRegenerating
@@ -192,7 +194,7 @@ export function RegenerateMenu({
                     >
                         <ChevronDown
                             className={cn(
-                                "h-3 w-3 transition-transform",
+                                "h-4 w-4 transition-transform",
                                 isOpen && "rotate-180"
                             )}
                         />

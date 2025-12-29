@@ -1135,13 +1135,13 @@ function MessageActions({
                     data-tooltip-id="tip"
                     data-tooltip-content="Let's try that differently"
                     className={cn(
-                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
                     )}
                 >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-4 w-4" />
                 </button>
             )}
             <CopyButton
