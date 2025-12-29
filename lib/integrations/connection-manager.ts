@@ -173,13 +173,31 @@ export async function getCredentials(
                 isDefault: integration.isDefault,
             };
         } catch (error) {
-            // Token retrieval/refresh failed
             logger.error(
                 { service, userEmail, error },
                 "Failed to get OAuth access token"
             );
+
+            const errMsg = error instanceof Error ? error.message : String(error);
+
+            // Network/server errors are transient - don't tell user to reconnect
+            // Use word boundaries to avoid false positives (e.g., port :5000, code 15003)
+            const httpStatusPattern = /\b(500|502|503|504)\b/;
+            const isTransientError =
+                httpStatusPattern.test(errMsg) ||
+                errMsg.includes("ECONNREFUSED") ||
+                errMsg.includes("ECONNRESET") ||
+                errMsg.includes("ETIMEDOUT");
+
+            if (isTransientError) {
+                throw new ValidationError(
+                    `${service} isn't responding right now. Try again in a moment?`
+                );
+            }
+
+            // Default: assume token issue requiring reconnection
             throw new ValidationError(
-                `Your ${service} connection expired. Reconnect at /integrations to get back.`
+                `Our ${service} connection expired. Let's reconnect.`
             );
         }
     }
