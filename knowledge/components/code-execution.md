@@ -717,7 +717,7 @@ the experience feel like collaboration, not tool operation.
 - Pre-bundled shadcn/ui components
 - Basic artifact versioning
 
-**Cost:** $0 infrastructure (all client-side) **Timeline:** 2-4 weeks
+**Cost:** $0 infrastructure (all client-side)
 
 ### Tier 2: Leader Parity
 
@@ -728,7 +728,7 @@ the experience feel like collaboration, not tool operation.
 - File upload → sandbox filesystem
 - Multiple output types (charts, tables, files, interactive)
 
-**Cost:** E2B $150/mo or Fly usage-based **Timeline:** 4-8 weeks
+**Cost:** E2B $150/mo or Fly usage-based
 
 ### Tier 3: Vision
 
@@ -740,7 +740,7 @@ the experience feel like collaboration, not tool operation.
 - AG-UI integration (generated interfaces as first-class outputs)
 - Self-improving code (Carmenta fixes errors automatically)
 
-**Dependencies:** Voice, Memory, AG-UI components **Timeline:** 3-6 months
+**Dependencies:** Voice, Memory, AG-UI components
 
 ---
 
