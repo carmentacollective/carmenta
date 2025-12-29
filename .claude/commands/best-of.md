@@ -49,8 +49,8 @@ flow. Wrong assumptions can be corrected on review. </clarifying-questions>
 
 Understand the current state of the art.
 
-**Web research**: Use Exa for current implementations, comparisons, and expert analysis.
-Use Context7 for library documentation.
+**Web research**: Search for current implementations, comparisons, and expert analysis.
+Look up library documentation for technical details.
 
 **Clone and analyze repos**: Check `knowledge/competitors/README.md` for tier
 recommendations. Clone relevant repos into `../reference/` for deep code analysis:
