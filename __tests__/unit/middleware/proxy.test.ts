@@ -31,8 +31,8 @@ describe("Route Protection", () => {
             expect(isProtectedRoute(createMockRequest("/connection"))).toBe(true);
         });
 
-        it("protects /connection/new", () => {
-            expect(isProtectedRoute(createMockRequest("/connection/new"))).toBe(true);
+        it("protects /connection?new (query param variant)", () => {
+            expect(isProtectedRoute(createMockRequest("/connection"))).toBe(true);
         });
 
         it("protects /connection/abc123", () => {

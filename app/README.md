@@ -13,9 +13,8 @@ Next.js 16 app router structure. Routes, layouts, and page components.
   - Entry point for new users
 
 - **`/connection/`** - Connection (chat) interface
-  - `/connection` - Connection list/recent connections
-  - `/connection/new` - Start new connection
-  - `/connection/[slug]` - Active connection by slug ID
+  - `/connection` - New connection interface (or `/connection?new` to force fresh state)
+  - `/connection/[slug]/[id]` - Active connection by slug and ID
   - Core interaction experience
 
 #### Authentication (Clerk)

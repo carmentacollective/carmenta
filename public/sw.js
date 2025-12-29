@@ -16,7 +16,7 @@ const RUNTIME_CACHE = `carmenta-runtime-${BUILD_VERSION}`;
 // Assets to cache on install
 const PRECACHE_ASSETS = [
     "/",
-    "/connection/new",
+    "/connection",
     "/offline",
     "/logos/icon-transparent-192.png",
     "/logos/icon-transparent-512.png",
