@@ -89,6 +89,7 @@ export type {
 export {
     findUserByEmail,
     findUserByClerkId,
+    findUserById,
     getOrCreateUser,
     updateUserPreferences,
     updateLastSignedIn,

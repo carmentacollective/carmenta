@@ -16,6 +16,7 @@ import { after } from "next/server";
 import { logger } from "@/lib/logger";
 
 let globalStreamContext: ResumableStreamContext | null = null;
+let backgroundStreamContext: ResumableStreamContext | null = null;
 
 /**
  * Get the global resumable stream context singleton.
@@ -40,6 +41,38 @@ export function getStreamContext(): ResumableStreamContext | null {
             logger.info({}, "Resumable streams disabled (Redis not configured)");
         } else {
             logger.error({ error }, "Failed to create resumable stream context");
+        }
+        return null;
+    }
+}
+
+/**
+ * Get stream context for background/Inngest use.
+ *
+ * Unlike getStreamContext(), this doesn't use next/server's `after` function,
+ * making it suitable for use in Inngest functions and other background workers.
+ * The function runs to completion naturally, so waitUntil is a no-op.
+ */
+export function getBackgroundStreamContext(): ResumableStreamContext | null {
+    if (backgroundStreamContext) {
+        return backgroundStreamContext;
+    }
+
+    try {
+        // For background workers, waitUntil is a no-op since the function
+        // runs to completion anyway (Inngest manages the lifecycle)
+        backgroundStreamContext = createResumableStreamContext({
+            waitUntil: async () => {
+                // No-op: Inngest functions run to completion
+            },
+        });
+        logger.info({}, "Background stream context initialized");
+        return backgroundStreamContext;
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("REDIS_URL")) {
+            logger.info({}, "Background streams disabled (Redis not configured)");
+        } else {
+            logger.error({ error }, "Failed to create background stream context");
         }
         return null;
     }

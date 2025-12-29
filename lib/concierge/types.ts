@@ -267,6 +267,20 @@ export interface ConciergeResult {
         isWarning: boolean;
         isCritical: boolean;
     };
+
+    /**
+     * Background mode configuration.
+     *
+     * When enabled, the response runs via Inngest for durable execution.
+     * This allows long-running work to survive browser close, deploys,
+     * and connection drops. The user sees "still working" status.
+     */
+    backgroundMode?: {
+        /** Whether to run this response in background mode */
+        enabled: boolean;
+        /** Reason shown to user (e.g., "Deep research - this will take a few minutes") */
+        reason?: string;
+    };
 }
 
 /**

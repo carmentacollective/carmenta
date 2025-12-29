@@ -57,6 +57,7 @@ import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 import { type DiscoveryItem } from "@/lib/discovery";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 import { getStreamContext } from "@/lib/streaming/stream-context";
+import { inngest } from "@/lib/inngest/client";
 
 /**
  * Route segment config for Vercel
@@ -291,6 +292,98 @@ export async function POST(req: Request) {
 
         // Mark connection as streaming
         await updateStreamingStatus(connectionId!, "streaming");
+
+        // ================================================================
+        // BACKGROUND MODE: Dispatch to Inngest for durable execution
+        // ================================================================
+        // When concierge detects a long-running task, dispatch to Inngest
+        // which writes to the same resumable stream. Work survives browser
+        // close, deploys, and connection drops.
+        //
+        // Gracefully disabled if Inngest isn't configured - runs inline instead.
+        const inngestConfigured = !!process.env.INNGEST_EVENT_KEY;
+        if (conciergeResult.backgroundMode?.enabled && !inngestConfigured) {
+            logger.info(
+                { connectionId, reason: conciergeResult.backgroundMode.reason },
+                "Background mode requested but Inngest not configured, running inline"
+            );
+        }
+        if (conciergeResult.backgroundMode?.enabled && inngestConfigured) {
+            const streamId = nanoid();
+
+            // Save stream ID so client can resume
+            await updateActiveStreamId(connectionId!, streamId);
+
+            // Dispatch to Inngest - payloads contain only IDs for security
+            await inngest.send({
+                name: "connection/background",
+                data: {
+                    connectionId: connectionId!,
+                    userId: dbUser.id,
+                    streamId,
+                    modelId: concierge.modelId,
+                    temperature: concierge.temperature,
+                    reasoning: concierge.reasoning,
+                },
+            });
+
+            logger.info(
+                {
+                    connectionId,
+                    streamId,
+                    userId: dbUser.id,
+                    reason: conciergeResult.backgroundMode.reason,
+                },
+                "Dispatched to background mode"
+            );
+
+            // Build headers for background mode response
+            const headers = new Headers();
+            headers.set("X-Concierge-Model-Id", concierge.modelId);
+            headers.set("X-Concierge-Temperature", String(concierge.temperature));
+            headers.set(
+                "X-Concierge-Explanation",
+                encodeURIComponent(concierge.explanation)
+            );
+            headers.set(
+                "X-Concierge-Reasoning",
+                encodeURIComponent(JSON.stringify(concierge.reasoning))
+            );
+            headers.set("X-Connection-Id", connectionPublicId!);
+            headers.set("X-Background-Mode", "true");
+            headers.set("X-Stream-Id", streamId);
+
+            if (isNewConnection && connectionSlug) {
+                headers.set("X-Connection-Slug", connectionSlug);
+                headers.set("X-Connection-Is-New", "true");
+                if (conciergeResult.title) {
+                    headers.set(
+                        "X-Connection-Title",
+                        encodeURIComponent(conciergeResult.title)
+                    );
+                }
+            }
+
+            // Return immediately with background status message
+            // Client will connect to the resumable stream to follow progress
+            const stream = createUIMessageStream({
+                execute: ({ writer }) => {
+                    writeStatus(
+                        writer,
+                        "background-mode",
+                        STATUS_MESSAGES.background.starting,
+                        "🔄"
+                    );
+                },
+            });
+
+            return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
+                headers: {
+                    ...Object.fromEntries(headers.entries()),
+                    ...UI_MESSAGE_STREAM_HEADERS,
+                },
+            });
+        }
 
         // Check if the selected model supports tool calling
         // Default to false for unknown models to avoid runtime errors

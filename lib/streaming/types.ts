@@ -118,4 +118,11 @@ export const STATUS_MESSAGES = {
         considering: "Considering approaches...",
         analyzing: "Analyzing the problem...",
     },
+    // Background work
+    background: {
+        starting:
+            "We're still working on this. You can close this window and come back whenever.",
+        working: "Still working...",
+        complete: "We finished while you were away.",
+    },
 } as const;
