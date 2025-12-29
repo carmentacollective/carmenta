@@ -181,12 +181,16 @@ export async function getCredentials(
             const errMsg = error instanceof Error ? error.message : String(error);
 
             // Network/server errors are transient - don't tell user to reconnect
-            if (
+            const isTransientError =
                 errMsg.includes("500") ||
+                errMsg.includes("502") ||
                 errMsg.includes("503") ||
+                errMsg.includes("504") ||
                 errMsg.includes("ECONNREFUSED") ||
-                errMsg.includes("ETIMEDOUT")
-            ) {
+                errMsg.includes("ECONNRESET") ||
+                errMsg.includes("ETIMEDOUT");
+
+            if (isTransientError) {
                 throw new ValidationError(
                     `${service} is temporarily unavailable. Try again in a moment.`
                 );

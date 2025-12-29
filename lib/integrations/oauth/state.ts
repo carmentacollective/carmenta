@@ -110,7 +110,7 @@ export async function validateState(stateParam: string): Promise<OAuthState | nu
     if (deleted.length === 0) {
         logger.warn(
             { state: stateParam.slice(0, 8) + "..." },
-            "Invalid or expired OAuth state"
+            "⚠️ Invalid or expired OAuth state"
         );
         return null;
     }
@@ -119,7 +119,7 @@ export async function validateState(stateParam: string): Promise<OAuthState | nu
 
     logger.info(
         { provider: record.provider, userEmail: record.userEmail },
-        "Validated OAuth state"
+        "✅ Validated OAuth state"
     );
 
     return {
