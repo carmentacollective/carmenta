@@ -137,7 +137,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                         Two rows on mobile, single row on desktop.
                         Uses subtle separator instead of heavy border.
                     ═══════════════════════════════════════════════════════════ */}
-                    <header className="relative z-10 shrink-0 space-y-3 border-b border-foreground/5 bg-white/60 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl dark:bg-card/60 sm:space-y-0 sm:px-5 sm:pb-4 sm:pt-4">
+                    <header className="landscape-compact-header relative z-10 shrink-0 space-y-3 border-b border-foreground/5 bg-white/60 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl dark:bg-card/60 sm:space-y-0 sm:px-5 sm:pb-4 sm:pt-4">
                         {/* Row 1: Oracle | (desktop: ConnectionChooser) | (mobile: New) | Avatar */}
                         <div className="flex items-center justify-between">
                             {/* Oracle with whisper - Carmenta speaks */}
