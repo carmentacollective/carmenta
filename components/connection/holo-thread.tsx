@@ -2355,7 +2355,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                     className={cn(
                         "max-h-48 min-h-[2.75rem] w-full flex-none resize-none bg-transparent px-4 py-3 text-base leading-5 text-foreground/95 outline-none placeholder:text-foreground/40 sm:flex-1 sm:px-6 sm:py-4 md:max-h-60 md:min-h-[3.5rem]",
                         "rounded-2xl border transition-colors",
-                        input.includes(" ")
+                        /\n/.test(input)
                             ? "border-foreground/10 bg-background/30"
                             : "border-transparent"
                     )}
