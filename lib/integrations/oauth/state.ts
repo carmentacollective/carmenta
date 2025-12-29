@@ -15,7 +15,7 @@
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { oauthStates } from "@/lib/db/schema";
-import { eq, lt } from "drizzle-orm";
+import { and, eq, gte, lt } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import type { OAuthState } from "./types";
 
@@ -90,41 +90,32 @@ export async function generateState(
 /**
  * Validate OAuth state from callback.
  *
- * Checks:
- * - State exists in database
- * - State hasn't expired
- * - Deletes state after validation (one-time use)
+ * Uses atomic DELETE...RETURNING to prevent race conditions where parallel
+ * requests could both validate the same state token. Only the first request
+ * to delete wins; subsequent requests see an empty result.
  *
  * @param stateParam - State parameter from callback URL
- * @returns OAuthState if valid, null if invalid/expired
+ * @returns OAuthState if valid, null if invalid/expired/already-used
  */
 export async function validateState(stateParam: string): Promise<OAuthState | null> {
-    const record = await db.query.oauthStates.findFirst({
-        where: eq(oauthStates.state, stateParam),
-    });
+    const now = new Date();
 
-    if (!record) {
+    // Atomic delete-and-return: only succeeds if state exists AND not expired
+    // Prevents race condition where parallel requests both validate same token
+    const deleted = await db
+        .delete(oauthStates)
+        .where(and(eq(oauthStates.state, stateParam), gte(oauthStates.expiresAt, now)))
+        .returning();
+
+    if (deleted.length === 0) {
         logger.warn(
             { state: stateParam.slice(0, 8) + "..." },
-            "⚠️ Invalid OAuth state"
+            "⚠️ Invalid or expired OAuth state"
         );
         return null;
     }
 
-    // Check expiration
-    const now = new Date();
-    if (record.expiresAt < now) {
-        logger.warn(
-            { provider: record.provider, userEmail: record.userEmail },
-            "⚠️ Expired OAuth state"
-        );
-        // Clean up expired state
-        await db.delete(oauthStates).where(eq(oauthStates.state, stateParam));
-        return null;
-    }
-
-    // Delete state after successful validation (one-time use)
-    await db.delete(oauthStates).where(eq(oauthStates.state, stateParam));
+    const record = deleted[0];
 
     logger.info(
         { provider: record.provider, userEmail: record.userEmail },
