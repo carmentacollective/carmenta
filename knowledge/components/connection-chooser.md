@@ -47,12 +47,12 @@ When selecting a connection from the dropdown:
 
 When clicking the "New" button:
 
-1. Navigate to `/connection/new`
+1. Navigate to `/connection?new` (query param signals fresh state)
 2. Empty composer ready for input
 3. On first message, connection is created lazily
 4. Response headers include connection metadata (X-Connection-Id, X-Connection-Slug,
    X-Connection-Title)
-5. URL updates via `replaceState` to `/connection/${slug}`
+5. URL updates via `replaceState` to `/connection/${slug}/${id}`
 6. Connection added to list with "fresh" animation
 7. Header title updates when title is generated
 
@@ -195,7 +195,7 @@ connection creation.
 2. **Create new connection**
    - Click New button
    - Send first message
-   - Verify URL updates from /new to /slug
+   - Verify URL updates from /connection?new to /connection/slug/id
    - Verify title appears after generation
    - Verify connection appears in chooser with "fresh" animation
 

@@ -45,7 +45,7 @@ export default function manifest(): MetadataRoute.Manifest {
                 name: "New Conversation",
                 short_name: "New Chat",
                 description: "Start a new conversation with Carmenta",
-                url: "/connection/new",
+                url: "/connection?new",
                 icons: [
                     {
                         src: "/logos/icon-transparent-192.png",

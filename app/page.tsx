@@ -217,7 +217,7 @@ export default function HomePage() {
                         }
                     >
                         <Link
-                            href="/connection/new"
+                            href="/connection?new"
                             prefetch={false}
                             className="mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
                         >

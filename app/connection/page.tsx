@@ -23,7 +23,7 @@ interface ConnectionPageProps {
  * The connection is created lazily when the user sends their first message.
  *
  * This is the canonical URL for starting a new conversation.
- * /connection/new redirects here for fresh page loads.
+ * Use ?new query param to signal fresh conversation state (e.g., /connection?new).
  *
  * Discovery: Use ?reset-discovery=true to reset discovery state for testing.
  *

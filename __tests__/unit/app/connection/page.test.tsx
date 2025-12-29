@@ -136,7 +136,7 @@ describe("/connection page", () => {
         const ConnectionPage = (await import("@/app/connection/page")).default;
         const result = await ConnectionPage({ searchParams: createSearchParams() });
 
-        // Should still render (not redirect to /connection/new)
+        // Should still render (empty state is fine)
         expect(result).toBeDefined();
 
         const { getByTestId } = render(result as ReactElement);

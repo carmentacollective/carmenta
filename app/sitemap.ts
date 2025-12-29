@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.9, // Alternative landing page for authenticated users
         },
         {
-            url: `${baseUrl}/connection/new`,
+            url: `${baseUrl}/connection`,
             changeFrequency: "monthly",
             priority: 0.8,
         },
