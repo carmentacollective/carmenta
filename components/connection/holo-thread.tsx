@@ -22,8 +22,8 @@ import {
     forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { Square, ArrowDown, CornerDownLeft, X, Pencil, Check } from "lucide-react";
+import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -104,6 +104,11 @@ function HoloThreadInner() {
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
 
+    // Chat scroll behavior - auto-scroll during streaming, pause on user scroll-up
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({
+        isStreaming: isLoading,
+    });
+
     // Track if we've done the initial scroll positioning
     // When loading a completed conversation (not streaming), we want to show
     // the beginning of the last response, not the end (which is the default)
@@ -179,24 +184,19 @@ function HoloThreadInner() {
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
 
     return (
-        <StickToBottom
-            className="flex h-full flex-col bg-transparent"
-            initial="smooth"
-            resize="smooth"
-            role="log"
-        >
+        <div className="flex h-full flex-col bg-transparent" role="log">
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
 
             {/* Message viewport - watermark is in ConnectLayout parent */}
-            <div className="relative flex-1 overflow-hidden">
-                {/* Viewport - use-stick-to-bottom handles scroll container, we just provide content */}
-                <StickToBottom.Content
-                    className={cn(
-                        "chat-viewport-fade relative z-10 flex h-full flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
-                        isLoading ? "scrollbar-streaming" : "scrollbar-holo"
-                    )}
-                >
+            <div
+                ref={scrollRef}
+                className={cn(
+                    "chat-viewport-fade relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                    isLoading ? "scrollbar-streaming" : "scrollbar-holo"
+                )}
+            >
+                <div ref={contentRef} className="flex w-full flex-col">
                     {isEmpty ? (
                         <ThreadWelcome onPrefill={handleSparkPrefill} />
                     ) : (
@@ -248,7 +248,7 @@ function HoloThreadInner() {
                             )}
                         </div>
                     )}
-                </StickToBottom.Content>
+                </div>
             </div>
 
             {/* Input container with safe area for notched devices - glass treatment matches header */}
@@ -263,28 +263,37 @@ function HoloThreadInner() {
                         ease: [0.16, 1, 0.3, 1],
                     }}
                 >
-                    <ScrollToBottomButton />
+                    <ScrollToBottomButton
+                        isAtBottom={isAtBottom}
+                        onScrollToBottom={() => scrollToBottom("smooth")}
+                    />
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </motion.div>
             </div>
-        </StickToBottom>
+        </div>
     );
 }
 
-/**
- * Scroll-to-bottom button using use-stick-to-bottom context.
- * Only renders when user has scrolled up from the bottom.
- * Memoized to prevent unnecessary rerenders of the icon during scroll events.
- */
-const ScrollToBottomButton = memo(function ScrollToBottomButton() {
-    const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+interface ScrollToBottomButtonProps {
+    isAtBottom: boolean;
+    onScrollToBottom: () => void;
+}
 
+/**
+ * Scroll-to-bottom button.
+ * Only renders when user has scrolled up from the bottom.
+ * Memoized to prevent unnecessary rerenders during scroll events.
+ */
+const ScrollToBottomButton = memo(function ScrollToBottomButton({
+    isAtBottom,
+    onScrollToBottom,
+}: ScrollToBottomButtonProps) {
     if (isAtBottom) return null;
 
     return (
         <button
-            onClick={() => scrollToBottom()}
-            className="btn-glass-interactive absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
+            onClick={onScrollToBottom}
+            className="btn-glass-interactive absolute -top-14 z-sticky flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
             aria-label="Scroll to bottom"
         >
             <ArrowDown className="h-5 w-5 text-foreground/70" />
