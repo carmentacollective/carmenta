@@ -61,8 +61,8 @@ processing."
 
 Compare vision to reality:
 
-- **Achievable now**: Parts the vision current tech supports
-- **Emerging**: Parts becoming possible in 6-12 months
+- **Achievable now**: Parts of the vision current tech supports
+- **Emerging**: Parts of the vision becoming possible in 6-12 months
 - **Aspirational**: Parts requiring breakthroughs beyond our control
   </two-phase-exploration>
 
