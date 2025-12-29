@@ -58,12 +58,11 @@
         --glass-surface: rgba(255, 255, 255, 0.9);
         --glass-shadow: 0 4px 16px rgba(139, 102, 184, 0.15);
 
-        /* Chat viewport fade - soft mask on content edges
-         * Uses fixed pixels, not percentages, for consistent subtlety
-         * Top fade (32px): gentle transition from header glass
-         * Bottom fade (40px): larger to transition into input dock area */
+        /* Chat viewport fade - soft mask at top edge only
+         * Top fade creates gentle transition from header glass
+         * Bottom has NO fade - users read newest content there */
         --chat-fade-top: 32px;
-        --chat-fade-bottom: 40px;
+        --chat-fade-bottom: 0px;
 
         /* Z-Index Scale (mirrors tailwind.config.ts)
          * Use Tailwind classes (z-content, z-modal, etc.) in components.
@@ -902,6 +901,57 @@
     .animate-greeting-enter .greeting-subtitle {
         animation-delay: 150ms;
     }
+
+    /* Landscape greeting - smaller on height-constrained viewports */
+    @media (orientation: landscape) and (max-height: 500px) {
+        .greeting-name-only {
+            @apply text-[2rem] md:text-[2.4rem];
+        }
+
+        .greeting-subtitle {
+            @apply mt-2 text-base md:text-lg;
+        }
+    }
+}
+
+/**
+ * Mobile Landscape Compact Layout
+ *
+ * When the viewport is landscape and height-constrained (< 500px),
+ * we compress vertical spacing to keep content visible above the fold.
+ * This targets mobile landscape without affecting desktop.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+    /* Header: reduce vertical padding and row spacing while respecting safe areas */
+    .landscape-compact-header {
+        padding-top: max(0.375rem, env(safe-area-inset-top)) !important;
+        padding-bottom: 0.375rem !important;
+        gap: 0.25rem !important;
+    }
+
+    /* Override Tailwind's space-y-3 in landscape */
+    .landscape-compact-header > * + * {
+        margin-top: 0.25rem !important;
+    }
+
+    /* Viewport: reduce top/bottom padding */
+    .landscape-compact-viewport {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    /* Input container: compress vertical padding while respecting safe areas */
+    .landscape-compact-input {
+        padding-top: 0.25rem !important;
+        padding-bottom: max(0.25rem, env(safe-area-inset-bottom)) !important;
+    }
+
+    /* Welcome screen: reduce gap and adjust vertical positioning */
+    .landscape-compact-welcome {
+        gap: 0.75rem !important;
+        justify-content: flex-start !important;
+        padding-top: 0.5rem !important;
+    }
 }
 
 @layer components {
@@ -1144,18 +1194,18 @@
      * See knowledge/components/text-expansion.md for design decisions.
      */
 
-    /* Blur gradient fade for truncated content - matches chat viewport fade */
+    /* Blur gradient fade for truncated content - indicates "there's more below" */
     .expandable-text-fade {
         mask-image: linear-gradient(
             to bottom,
             black 0%,
-            black calc(100% - var(--chat-fade-bottom)),
+            black calc(100% - 40px),
             transparent 100%
         );
         -webkit-mask-image: linear-gradient(
             to bottom,
             black 0%,
-            black calc(100% - var(--chat-fade-bottom)),
+            black calc(100% - 40px),
             transparent 100%
         );
     }

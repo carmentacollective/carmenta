@@ -59,11 +59,11 @@ Full visibility—everything we remember is visible in your knowledge base. No h
 profiles or inferences. Editable—correct anything that's wrong. Portable—export your
 knowledge base anytime.
 
-See our [privacy documentation](./privacy.md) for the complete picture.
+See our [privacy documentation](../privacy.md) for the complete picture.
 
 ## Why This Matters
 
-Memory is foundational to everything else:
+Memory is foundational to our [100x Framework](../philosophy/100x-framework.md):
 
 **1x (Flow)**: No cognitive load re-establishing context. You're immediately in
 productive space.
@@ -75,6 +75,10 @@ shared knowledge that enables team function.
 preferences, and history. Without memory, every ambitious project starts from zero.
 
 The promise of AI leverage collapses without persistent context.
+
+This is also why we say "we remember" instead of "Carmenta stores data." Memory is how
+you show you care. See [Heart-Centered AI](../philosophy/heart-centered.md) for why this
+matters.
 
 ## The Feeling
 

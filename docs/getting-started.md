@@ -25,9 +25,9 @@ Carmenta becomes more useful when it can see your world. Connect the services yo
 - **Slack** — Search messages and stay connected
 - **Gmail** — Read and search your email
 - **Google Calendar** — See your schedule
-- **ClickUp / Linear** — Manage tasks and projects
-- **Google Drive** — Access your files
-- **GitHub** — Code context for development
+- **ClickUp** — Manage tasks and projects
+- **Dropbox** — Access your files
+- **Fireflies / Limitless** — Meeting transcripts and recordings
 
 Each integration uses OAuth—secure, scoped to what you authorize, encrypted at rest. One
 subscription covers everything.

@@ -102,9 +102,10 @@ jarring, too slow feels sluggish.
 120px at 1.5 line-height). Prefer semantic boundaries (paragraph breaks) over fixed
 character counts.
 
-**Blur gradient mask**: Use CSS `mask-image` with 56px fade distance to match our
-existing `--chat-fade-bottom` variable from the chat viewport fade. Gradient should fade
-from full opacity to transparent over the bottom 56px of truncated content.
+**Blur gradient mask**: Use CSS `mask-image` with 40px fade distance. This is hardcoded
+in `.expandable-text-fade` (not using the `--chat-fade-bottom` variable which is now 0px
+for viewport edges). Gradient fades from full opacity to transparent over the bottom
+40px of truncated content to indicate "there's more below."
 
 **Ellipsis indicator**: Display "..." centered below truncated text when collapsed
 (purple-300 color, text-xl size).
@@ -230,8 +231,9 @@ Interactive examples: `app/design-lab/expand-collapse/page.tsx`
 
 ## Related Patterns
 
-**Chat viewport fade**: Uses same 56px blur gradient for bottom edge
-(`app/globals.css:445-459`, CSS variable `--chat-fade-bottom`)
+**Chat viewport fade**: The expandable text uses a 40px blur gradient for truncation
+indication. The chat viewport fade (`--chat-fade-bottom` in `app/globals.css`) is set to
+0px to avoid cutting off message content at the viewport bottom.
 
 **LibreChat inspiration**: Grid-based animation approach
 (`grid-template-rows: 0fr → 1fr`)

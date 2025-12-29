@@ -29,17 +29,12 @@ connected service.
 
 **Storage**
 
-- [Google Drive](../integrations/google-drive.md) — Documents, spreadsheets, files
 - [Dropbox](../integrations/dropbox.md) _(Beta)_ — Files, folders, shared links
 
 **Meeting Intelligence**
 
 - [Limitless](../integrations/limitless.md) — Wearable audio transcripts
 - [Fireflies](../integrations/fireflies.md) — Meeting transcripts and notes
-
-**Development**
-
-- [GitHub](../integrations/github.md) — Repositories, issues, pull requests
 
 **Calendar and Contacts**
 
@@ -65,7 +60,7 @@ _"What meetings do I have tomorrow?"_
 
 _"Search my Slack for messages about the product launch"_
 
-_"Check if there are any open PRs on the main repo"_
+_"Search my Dropbox for the Q4 budget spreadsheet"_
 
 We figure out which integration to use. No special syntax. No commands to memorize.
 
@@ -114,4 +109,4 @@ features. MCP fills the gaps for custom needs.
 Integration credentials are encrypted at rest. Only decrypted when actively used for API
 calls. We store the minimum necessary to maintain your connections.
 
-See our [privacy documentation](./privacy.md) for the full picture.
+See our [privacy documentation](../privacy.md) for the full picture.

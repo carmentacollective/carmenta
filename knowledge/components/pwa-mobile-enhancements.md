@@ -208,36 +208,6 @@ await releaseWakeLock();
 
 **Use case**: Enable during active AI streaming, disable when conversation idle.
 
-#### use-scroll-header.ts
-
-**Location**: `/Users/nick/src/carmenta-mobile/lib/hooks/use-scroll-header.ts`
-
-Shows/hides header based on scroll direction for maximum content space.
-
-**Features**:
-
-- Hides header on scroll down (with threshold to prevent jitter)
-- Shows header on scroll up (more sensitive for quick access)
-- Always shows when at top of page
-- Performance optimized with `requestAnimationFrame`
-- Works with custom scroll containers
-
-**Integration pattern**:
-
-```typescript
-const { isVisible, scrollY, isAtTop } = useScrollHeader({
-  threshold: 10,  // minimum scroll delta to trigger
-  containerRef: scrollContainerRef,
-});
-
-// Apply to header:
-<header className={isVisible ? 'translate-y-0' : '-translate-y-full'}>
-```
-
-**Browser support**: All browsers with scroll support.
-
-**No permissions required**: Standard scroll events.
-
 ### Components
 
 #### InstallPrompt
@@ -580,9 +550,9 @@ Mobile gestures enhance the conversation experience:
 
 Mobile enhancements are part of the core interface:
 
-**Header**: Uses `useScrollHeader` for auto-hide behavior **Install flow**: Part of
-onboarding and retention strategy **Loading states**: Provide feedback during all async
-operations
+**Chat scroll**: Uses `useChatScroll` for optimal auto-scroll during streaming **Install
+flow**: Part of onboarding and retention strategy **Loading states**: Provide feedback
+during all async operations
 
 ## Open Questions
 

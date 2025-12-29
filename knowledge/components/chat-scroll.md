@@ -30,12 +30,15 @@ text).
 Lives in `lib/hooks/use-chat-scroll.ts`. The hook returns:
 
 ```tsx
-const { containerRef, isAtBottom, scrollToBottom } = useChatScroll({
+const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({
   isStreaming: isLoading,
 });
 ```
 
-**containerRef**: Attach to the scrollable container element.
+**scrollRef**: Attach to the scrollable container element.
+
+**contentRef**: Attach to the content wrapper inside the scroll container. This enables
+ResizeObserver and MutationObserver to track content changes.
 
 **isAtBottom**: Boolean for showing/hiding scroll-to-bottom button.
 

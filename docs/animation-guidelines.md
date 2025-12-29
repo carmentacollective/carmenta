@@ -109,11 +109,32 @@ import { variants } from "@/lib/motion/presets"
 
 ### Infinite Animations
 
-For animations with `repeat: Infinity`, consider pausing when off-screen:
+For animations with `repeat: Infinity`, pause when off-screen to save GPU cycles:
 
 ```typescript
-// TODO: Add Intersection Observer example when implemented
+import { motion, useInView } from "framer-motion"
+import { useRef } from "react"
+
+function PulsingIndicator() {
+  const ref = useRef(null)
+  const isInView = useInView(ref)
+
+  return (
+    <motion.div
+      ref={ref}
+      animate={isInView ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+      transition={{
+        duration: 2,
+        repeat: isInView ? Infinity : 0,
+        ease: "easeInOut",
+      }}
+    />
+  )
+}
 ```
+
+The `useInView` hook from Framer Motion uses Intersection Observer internally. Animation
+only runs when the element is visible in the viewport.
 
 ## Common Patterns
 
