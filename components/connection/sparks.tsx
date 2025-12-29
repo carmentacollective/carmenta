@@ -112,7 +112,7 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
                 ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-                "group flex items-center gap-2.5 rounded-full px-4 py-2.5",
+                "group flex min-h-[44px] items-center gap-2.5 rounded-full px-4 py-2.5",
                 "bg-foreground/5 backdrop-blur-sm",
                 "border border-foreground/10",
                 "text-sm text-foreground/70",
