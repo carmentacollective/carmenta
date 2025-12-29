@@ -19,7 +19,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-// import { useHapticFeedback } from "./use-haptic-feedback"; // TODO: Re-enable
 
 export interface UseSwipeNavigationOptions {
     /** Width of edge detection zone in pixels (default: 20) */

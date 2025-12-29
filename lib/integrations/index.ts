@@ -27,7 +27,6 @@ export {
     SERVICE_REGISTRY,
     getServiceById,
     getAvailableServices,
-    getConnectableServices,
     getOAuthServices,
     getApiKeyServices,
     type ServiceDefinition,

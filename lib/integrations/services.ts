@@ -265,16 +265,6 @@ export function getAvailableServices(includeInternal = false): ServiceDefinition
 }
 
 /**
- * Get services that can be connected
- */
-export function getConnectableServices(includeInternal = false): ServiceDefinition[] {
-    return SERVICE_REGISTRY.filter((s) => {
-        if (s.status === "internal" && !includeInternal) return false;
-        return true;
-    });
-}
-
-/**
  * Get OAuth services
  */
 export function getOAuthServices(): ServiceDefinition[] {

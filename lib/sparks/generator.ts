@@ -175,7 +175,7 @@ function getIconForService(serviceId: string): LucideIcon {
 /**
  * Get current time of day for contextual suggestions
  */
-export function getTimeOfDay(): "morning" | "afternoon" | "evening" {
+function getTimeOfDay(): "morning" | "afternoon" | "evening" {
     const hour = new Date().getHours();
     if (hour < 12) return "morning";
     if (hour < 17) return "afternoon";
