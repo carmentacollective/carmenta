@@ -127,35 +127,16 @@ Let the content dictate structure. Different features need different emphasis. <
 - Assumptions are documented when you proceeded without asking
 </quality-standards>
 
-<examples>
-### Example: Voice Input
+<depth-expectations>
+## Depth Expectations
 
-**Landscape**: OpenAI Realtime API, Gemini Live, Deepgram - all achieve low-latency
-speech-to-text. WebRTC for browser capture. VAD (voice activity detection) varies in
-quality.
+This is thorough research, not a summary. Read existing specs in `knowledge/components/`
+to calibrate - they run 200-400 lines with specific implementation details,
+architectural decisions, and actionable paths forward.
 
-**Pattern**: Leaders separate capture → transcription → processing. None do native
-speech-to-understanding yet.
+A good spec answers: "If I needed to build this tomorrow, would this give me everything
+I need to make informed decisions?"
 
-**Future Direction**: Multimodal models that process audio directly (GPT-4o, Gemini)
-point toward skipping the text intermediary. Emotional tone recognition emerging.
-
-**Gap**: Real-time achieved. Natural conversation flow (interruptions, backchannels)
-still awkward. Emotional attunement aspirational.
-
----
-
-### Example: Code Execution
-
-**Landscape**: ChatGPT Code Interpreter (Python in containers), Claude Artifacts
-(React/HTML in iframes), Pyodide (Python in browser via WASM).
-
-**Pattern**: Two camps - server-side containers (full Python) vs. browser-side WASM
-(zero infrastructure). LibreChat pre-bundles shadcn/ui components so AI can generate
-working UIs immediately.
-
-**Future Direction**: Browser-side execution expanding (WebContainers for Node.js). E2B
-and Koyeb offering managed sandboxes with sub-200ms cold starts.
-
-**Gap**: Basic execution solved. Full Python ecosystem requires server-side. GPU
-workloads require specialized infra. </examples>
+Invest the research time. Clone repos. Walk through implementations. Cite specific files
+and line numbers. The output should reflect hours of investigation, not minutes.
+</depth-expectations>
