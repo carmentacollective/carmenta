@@ -4,10 +4,12 @@
  * Discovers and lists available projects for code mode.
  */
 
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 import { discoverProjects, getProject } from "@/lib/code";
 import { logger } from "@/lib/logger";
+import { unauthorizedResponse } from "@/lib/api/responses";
 
 /**
  * GET /api/code/projects
@@ -15,6 +17,12 @@ import { logger } from "@/lib/logger";
  * List all available projects in the configured source directories.
  */
 export async function GET(req: Request) {
+    // Validate authentication in production
+    const user = await currentUser();
+    if (!user && process.env.NODE_ENV === "production") {
+        return unauthorizedResponse();
+    }
+
     try {
         const { searchParams } = new URL(req.url);
         const projectPath = searchParams.get("path");

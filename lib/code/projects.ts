@@ -239,14 +239,32 @@ export async function discoverProjects(): Promise<Project[]> {
 
 /**
  * Validate that a project path exists and is a git repository
+ * within allowed source directories (prevents path traversal)
  */
 export async function validateProject(projectPath: string): Promise<boolean> {
     try {
-        const stat = await fs.stat(projectPath);
+        // Normalize the path to prevent traversal tricks
+        const normalizedPath = path.resolve(projectPath);
+
+        // Ensure path is within allowed source directories
+        const isWithinSourceDir = DEFAULT_SOURCE_DIRS.some((sourceDir) =>
+            normalizedPath.startsWith(path.resolve(sourceDir))
+        );
+
+        if (!isWithinSourceDir) {
+            logger.warn(
+                { projectPath, normalizedPath },
+                "Project path outside allowed source directories"
+            );
+            return false;
+        }
+
+        const stat = await fs.stat(normalizedPath);
         if (!stat.isDirectory()) {
             return false;
         }
-        return await isGitRepo(projectPath);
+
+        return await isGitRepo(normalizedPath);
     } catch {
         return false;
     }

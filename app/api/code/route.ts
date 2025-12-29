@@ -14,7 +14,7 @@ import { convertToModelMessages, streamText, UIMessage } from "ai";
 import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
-import { getConnection, findUserByClerkId, getOrCreateUser } from "@/lib/db";
+import { getConnection, getOrCreateUser } from "@/lib/db";
 import { validateProject } from "@/lib/code";
 import { decodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
@@ -148,6 +148,11 @@ export async function POST(req: Request) {
     );
 
     // Create Claude Code provider with project-specific settings
+    // Security note: bypassPermissions allows the agent to execute code, read/write files,
+    // and make network requests within the project directory. This is safe because:
+    // 1. Connection ownership is validated (user can only access their own connections)
+    // 2. Project path is validated to be within allowed source directories
+    // 3. Code mode is intended for local development - it's the user's own projects
     const claudeCode = createClaudeCode({
         defaultSettings: {
             cwd: body.projectPath,
