@@ -226,8 +226,8 @@ export function CopyButton({
         variant === "ghost" && "hover:bg-foreground/10 active:bg-foreground/15",
         variant === "glass" &&
             "bg-white/50 backdrop-blur-sm hover:bg-white/70 active:bg-white/80",
-        size === "sm" && "h-7",
-        size === "md" && "h-8",
+        size === "sm" && "h-11",
+        size === "md" && "h-11",
         copied && "text-green-600",
         !copied && "text-foreground/60 hover:text-foreground/90"
     );
@@ -242,7 +242,7 @@ export function CopyButton({
                 className={cn(
                     buttonClasses,
                     "gap-1.5 overflow-hidden rounded-md",
-                    !copied && "w-7 sm:w-8",
+                    !copied && "w-11",
                     className
                 )}
             >

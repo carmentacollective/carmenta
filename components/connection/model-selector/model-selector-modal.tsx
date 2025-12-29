@@ -234,7 +234,7 @@ export function ModelSelectorModal({
                         {/* Close button - floats in corner, no header bar */}
                         <button
                             onClick={onClose}
-                            className="absolute right-3 top-3 z-content rounded-full bg-white/60 p-2 text-foreground/50 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground/70 dark:bg-white/10 dark:hover:bg-white/20"
+                            className="absolute right-3 top-3 z-content h-11 w-11 rounded-full bg-white/60 text-foreground/50 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground/70 dark:bg-white/10 dark:hover:bg-white/20"
                             aria-label="Close model selector"
                         >
                             <X className="h-4 w-4" />

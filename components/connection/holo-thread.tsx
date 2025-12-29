@@ -1179,7 +1179,7 @@ function MessageActions({
                     data-tooltip-id="tip"
                     data-tooltip-content="Let's try that differently"
                     className={cn(
-                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all",
+                        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
@@ -1409,7 +1409,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                     onClick={handleCancel}
                                     disabled={isSubmitting}
                                     className={cn(
-                                        "inline-flex h-7 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+                                        "inline-flex h-11 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium transition-all",
                                         "hover:bg-foreground/10 active:bg-foreground/15",
                                         "text-foreground/60 hover:text-foreground/90",
                                         isSubmitting && "cursor-not-allowed opacity-50"
@@ -1424,7 +1424,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                         isSubmitting || isLoading || !editContent.trim()
                                     }
                                     className={cn(
-                                        "inline-flex h-7 items-center justify-center gap-1.5 rounded-md bg-primary/10 px-2.5 text-xs font-medium transition-all",
+                                        "inline-flex h-11 items-center justify-center gap-1.5 rounded-md bg-primary/10 px-3 text-xs font-medium transition-all",
                                         "hover:bg-primary/20 active:bg-primary/25",
                                         "text-primary",
                                         (isSubmitting ||

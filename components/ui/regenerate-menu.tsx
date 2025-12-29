@@ -131,8 +131,8 @@ export function RegenerateMenu({
                 aria-label="Regenerate this response"
                 disabled={disabled || isRegenerating || isAnimating}
                 className={cn(
-                    "inline-flex h-7 shrink-0 items-center justify-center transition-all",
-                    showDropdown ? "rounded-l-md pl-2 pr-1" : "rounded-md px-2",
+                    "inline-flex h-11 shrink-0 items-center justify-center transition-all",
+                    showDropdown ? "rounded-l-md pl-3 pr-2" : "w-11 rounded-md",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "hover:bg-foreground/10 active:bg-foreground/15",
                     disabled || isRegenerating || isAnimating
@@ -182,7 +182,7 @@ export function RegenerateMenu({
                         aria-label="Choose model for regeneration"
                         aria-expanded={isOpen}
                         className={cn(
-                            "inline-flex h-7 w-5 items-center justify-center rounded-r-md border-l border-foreground/10 transition-all",
+                            "inline-flex h-11 w-11 items-center justify-center rounded-r-md border-l border-foreground/10 transition-all",
                             "hover:bg-foreground/10 active:bg-foreground/15",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             disabled || isRegenerating
