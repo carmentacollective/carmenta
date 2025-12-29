@@ -39,11 +39,11 @@ We're building the third option.
 
 Every aspect of Carmenta flows from this philosophy:
 
-**Memory features** enable relationship, not just utility. We remember because
-remembering is how you show you care.
+**[Memory](../features/memory.md)** enables relationship, not just utility. We remember
+because remembering is how you show you care.
 
-**Voice features** create intimacy, not just convenience. Speaking is personal. The
-voice experience should feel like conversation with presence.
+**Voice** creates intimacy, not just convenience. Speaking is personal. The voice
+experience should feel like conversation with presence.
 
 **Anticipatory care** meets needs before explicit requests. Noticing what matters to
 you, surfacing what's relevant, preparing for what's coming—attention expressed through
