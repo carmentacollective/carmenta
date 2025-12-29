@@ -202,16 +202,43 @@ export const backgroundResponse = inngest.createFunction(
                         userId,
                     },
                 },
-                onFinish: async ({ response }) => {
-                    // Capture complete response with all parts (text, reasoning, tool calls)
-                    // This runs after streaming completes, giving us the full message
+                onFinish: async ({
+                    text,
+                    toolCalls,
+                    toolResults,
+                    reasoningText,
+                    providerMetadata,
+                }) => {
+                    // Build UI message parts from the step result (matches inline path)
                     const parts: UIMessageLike["parts"] = [];
 
-                    // Extract all parts from the response messages
-                    for (const msg of response.messages) {
-                        if (msg.role === "assistant" && "parts" in msg) {
-                            parts.push(...(msg.parts as UIMessageLike["parts"]));
-                        }
+                    // Add reasoning part if present (with provider metadata for token counts)
+                    if (reasoningText) {
+                        parts.push({
+                            type: "reasoning",
+                            text: reasoningText,
+                            // Include provider metadata for reasoning tokens, cache info
+                            ...(providerMetadata && { providerMetadata }),
+                        });
+                    }
+
+                    // Add text part if present
+                    if (text) {
+                        parts.push({ type: "text", text });
+                    }
+
+                    // Add tool calls with their results
+                    for (const tc of toolCalls) {
+                        const toolResult = toolResults.find(
+                            (tr) => tr.toolCallId === tc.toolCallId
+                        );
+                        parts.push({
+                            type: `tool-${tc.toolName}`,
+                            toolCallId: tc.toolCallId,
+                            state: toolResult ? "output-available" : "input-available",
+                            input: tc.input,
+                            ...(toolResult && { output: toolResult.output }),
+                        });
                     }
 
                     finalResponseParts = parts;
