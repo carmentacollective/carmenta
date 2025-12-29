@@ -54,7 +54,7 @@ export function SessionPicker({
     const handleNewSession = () => {
         setIsCreating(true);
         // Navigate to new session - session will be created on first message
-        router.push(`/code/${repoSlug}/_/new`);
+        router.push(`/code/${repoSlug}/new`);
     };
 
     const handleSelectSession = (session: CodeSession) => {

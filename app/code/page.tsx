@@ -4,13 +4,13 @@
  * Code Mode Entry Point
  *
  * Presents project selection for code mode. Selecting a project navigates
- * to the session picker for that project.
+ * directly to a new session.
  *
  * Flow:
  * 1. User visits /code
  * 2. ProjectSelector shows available projects
- * 3. On selection, navigates to /code/[repo] (session picker)
- * 4. User picks existing session or starts new one
+ * 3. On selection, navigates to /code/[repo]/new (new session)
+ * 4. To resume past sessions, navigate to /code/[repo] (session picker)
  */
 
 import { useState } from "react";
@@ -48,9 +48,9 @@ export default function CodePage() {
 
         setIsNavigating(true);
 
-        // Navigate to the session picker for this project
+        // Navigate directly to a new session
         const repoSlug = getRepoSlug(selectedProject);
-        router.push(`/code/${repoSlug}`);
+        router.push(`/code/${repoSlug}/new`);
     };
 
     return (
@@ -135,11 +135,11 @@ export default function CodePage() {
                         {isNavigating ? (
                             <>
                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                Loading sessions...
+                                Starting session...
                             </>
                         ) : (
                             <>
-                                Continue
+                                Start Coding
                                 <ArrowRight className="h-5 w-5" />
                             </>
                         )}

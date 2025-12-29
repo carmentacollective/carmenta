@@ -6,19 +6,16 @@
  * URL: /code/[repo]/[slug]/[id]
  * Example: /code/carmenta-code/fix-auth-bug/abc123
  *
- * Special cases:
- * - /code/[repo]/_/new - New session (ephemeral, creates on first message)
+ * Special case:
  * - /code/[repo]/_/[id] - Session with placeholder slug (pre-auto-title)
  */
 
 import { redirect, notFound } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { connections } from "@/lib/db/schema";
-import { decodeConnectionId, encodeConnectionId } from "@/lib/sqids";
-import { getOrCreateUser } from "@/lib/db/users";
+import { decodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 
 // Import the existing connection page content
@@ -34,13 +31,6 @@ interface PageProps {
 
 export default async function CodeSessionPage({ params }: PageProps) {
     const { repo, slug, id } = await params;
-
-    // Handle "new" session - redirect to create flow
-    if (id === "new") {
-        // This is handled client-side - the session will be created on first message
-        // For now, render the connection page in "new session" mode
-        return <NewSessionPage repo={repo} />;
-    }
 
     // Decode the session ID
     const connectionId = decodeConnectionId(id);
@@ -95,19 +85,4 @@ export default async function CodeSessionPage({ params }: PageProps) {
     // Render the connection page with code mode context
     // Pass through to the existing connection infrastructure
     return <ConnectionPage params={Promise.resolve({ slug: connection.slug, id })} />;
-}
-
-/**
- * New Session Page - Ephemeral state before first message
- */
-function NewSessionPage({ repo }: { repo: string }) {
-    // This renders the chat interface in "new session" mode
-    // The session will be created when the user sends their first message
-    return (
-        <ConnectionPage
-            params={Promise.resolve({ slug: "_", id: "new" })}
-            // @ts-expect-error - Adding code mode context
-            codeMode={{ repo, isNew: true }}
-        />
-    );
 }
