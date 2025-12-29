@@ -267,6 +267,24 @@ export async function getTestDb() {
 }
 
 /**
+ * Mock the client module that provides the db instance.
+ * Sub-modules import db from client.ts to break circular dependencies.
+ *
+ * Uses a getter to ensure we always get the current test db instance,
+ * not a stale reference from mock evaluation time.
+ */
+vi.mock("./lib/db/client", async () => {
+    return {
+        get db() {
+            // Dynamic lookup - returns null if no test db is set up,
+            // or the current test db instance
+            if (!testDb) return null;
+            return testDb;
+        },
+    };
+});
+
+/**
  * Global mock replaces production db with PGlite
  *
  * IMPORTANT: Never create local vi.mock("@/lib/db") calls in test files.

@@ -7,7 +7,9 @@
 
 import { eq } from "drizzle-orm";
 
-import { db, schema, type User, type NewUser, type UserPreferences } from "./index";
+import { db } from "./client";
+import * as schema from "./schema";
+import type { User, NewUser, UserPreferences } from "./schema";
 
 /**
  * Find a user by their email address
