@@ -73,7 +73,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
 
     return (
         <div className="fixed inset-0 overflow-hidden">
-            <HolographicBackground />
+            <HolographicBackground hideWatermark />
 
             <div className="relative z-content h-full">
                 <ConnectLayout

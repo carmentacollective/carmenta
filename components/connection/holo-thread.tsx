@@ -187,68 +187,72 @@ function HoloThreadInner() {
         >
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
-            {/* Viewport - use-stick-to-bottom handles scroll container, we just provide content */}
-            <StickToBottom.Content
-                className={cn(
-                    "chat-viewport-fade flex flex-1 flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
-                    isLoading ? "scrollbar-streaming" : "scrollbar-holo"
-                )}
-            >
-                {isEmpty ? (
-                    <ThreadWelcome onPrefill={handleSparkPrefill} />
-                ) : (
-                    <div className="flex w-full flex-col">
-                        {messages.map((message, index) => {
-                            const isLastAssistant =
-                                index === messages.length - 1 &&
-                                message.role === "assistant" &&
-                                !needsPendingAssistant;
 
-                            // Wrap the last assistant message with a ref for scroll-to-top on load
-                            if (isLastAssistant) {
+            {/* Message viewport - watermark is in ConnectLayout parent */}
+            <div className="relative flex-1 overflow-hidden">
+                {/* Viewport - use-stick-to-bottom handles scroll container, we just provide content */}
+                <StickToBottom.Content
+                    className={cn(
+                        "relative z-10 flex h-full flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                        isLoading ? "scrollbar-streaming" : "scrollbar-holo"
+                    )}
+                >
+                    {isEmpty ? (
+                        <ThreadWelcome onPrefill={handleSparkPrefill} />
+                    ) : (
+                        <div className="flex w-full flex-col">
+                            {messages.map((message, index) => {
+                                const isLastAssistant =
+                                    index === messages.length - 1 &&
+                                    message.role === "assistant" &&
+                                    !needsPendingAssistant;
+
+                                // Wrap the last assistant message with a ref for scroll-to-top on load
+                                if (isLastAssistant) {
+                                    return (
+                                        <div key={message.id} ref={lastAssistantRef}>
+                                            <MessageBubble
+                                                message={message}
+                                                isLast
+                                                isStreaming={isLoading}
+                                                wasStopped={stoppedMessageIds.has(
+                                                    message.id
+                                                )}
+                                            />
+                                        </div>
+                                    );
+                                }
+
                                 return (
-                                    <div key={message.id} ref={lastAssistantRef}>
-                                        <MessageBubble
-                                            message={message}
-                                            isLast
-                                            isStreaming={isLoading}
-                                            wasStopped={stoppedMessageIds.has(
-                                                message.id
-                                            )}
-                                        />
-                                    </div>
+                                    <MessageBubble
+                                        key={message.id}
+                                        message={message}
+                                        isLast={
+                                            index === messages.length - 1 &&
+                                            !needsPendingAssistant
+                                        }
+                                        isStreaming={
+                                            isLoading && index === messages.length - 1
+                                        }
+                                        wasStopped={stoppedMessageIds.has(message.id)}
+                                    />
                                 );
-                            }
+                            })}
 
-                            return (
-                                <MessageBubble
-                                    key={message.id}
-                                    message={message}
-                                    isLast={
-                                        index === messages.length - 1 &&
-                                        !needsPendingAssistant
-                                    }
-                                    isStreaming={
-                                        isLoading && index === messages.length - 1
-                                    }
-                                    wasStopped={stoppedMessageIds.has(message.id)}
+                            {/* Pending assistant response - shows immediately after user sends */}
+                            {needsPendingAssistant && (
+                                <PendingAssistantMessage
+                                    concierge={concierge}
+                                    messageSeed={lastMessage.id}
                                 />
-                            );
-                        })}
+                            )}
+                        </div>
+                    )}
+                </StickToBottom.Content>
+            </div>
 
-                        {/* Pending assistant response - shows immediately after user sends */}
-                        {needsPendingAssistant && (
-                            <PendingAssistantMessage
-                                concierge={concierge}
-                                messageSeed={lastMessage.id}
-                            />
-                        )}
-                    </div>
-                )}
-            </StickToBottom.Content>
-
-            {/* Input container with safe area for notched devices */}
-            <div className="flex flex-none items-center justify-center bg-transparent px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-4 sm:pt-3">
+            {/* Input container with safe area for notched devices - glass treatment matches header */}
+            <div className="flex flex-none items-center justify-center border-t border-foreground/5 bg-white/60 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl dark:bg-card/60 sm:px-4 sm:pb-4 sm:pt-3">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -2332,7 +2336,7 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                 ref={formRef}
                 onSubmit={handleSubmit}
                 className={cn(
-                    "glass-input-dock relative flex w-full flex-col transition-all sm:flex-row sm:items-center",
+                    "relative flex w-full flex-col transition-all sm:flex-row sm:items-center",
                     shouldFlash && "ring-2 ring-primary/40"
                 )}
             >
