@@ -89,7 +89,7 @@ import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
-import { VoiceInputButton } from "@/components/voice";
+import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
 
 export function HoloThread() {
     return (
@@ -1877,10 +1877,25 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
         [handleInputChange, emitUserEngaged]
     );
 
+    // Voice input: track prefix text when session starts to preserve existing input
+    const voicePrefixRef = useRef("");
+    // Voice input: ref to stop recording on submit
+    const voiceInputRef = useRef<VoiceInputButtonRef>(null);
+
+    // Voice input: called when new session starts - preserve existing input as prefix
+    const handleVoiceSessionStart = useCallback(() => {
+        // If there's existing text when a new session starts, preserve it as prefix
+        // This prevents accidental replacement if connection dropped mid-recording
+        const currentInput = inputRef.current?.value || "";
+        voicePrefixRef.current = currentInput ? currentInput + " " : "";
+    }, []);
+
     // Voice input: update input field as user speaks
     const handleVoiceTranscript = useCallback(
         (transcript: string) => {
-            setInput(transcript);
+            // Append transcript to any preserved prefix from previous session
+            const fullText = voicePrefixRef.current + transcript;
+            setInput(fullText);
             emitUserEngaged();
         },
         [setInput, emitUserEngaged]
@@ -2044,6 +2059,11 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
             e.preventDefault();
+
+            // Stop voice recording if active - submit should finalize the input
+            voiceInputRef.current?.stop();
+            // Clear voice prefix since we're submitting
+            voicePrefixRef.current = "";
 
             // Auto-insert PASTED text file attachments inline (Anthropic doesn't support text files)
             // Only process text files that have pasted content stored (from large paste feature)
@@ -2402,7 +2422,9 @@ function Composer({ onMarkMessageStopped }: ComposerProps) {
                             </ComposerButton>
                         )}
                         <VoiceInputButton
+                            ref={voiceInputRef}
                             onTranscriptUpdate={handleVoiceTranscript}
+                            onSessionStart={handleVoiceSessionStart}
                             disabled={isLoading}
                             className={isMobile === true ? "h-11 w-11" : ""}
                         />

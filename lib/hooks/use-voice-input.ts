@@ -26,6 +26,8 @@ export interface UseVoiceInputOptions {
     onTranscriptComplete?: (transcript: string) => void;
     /** Called on each transcript update (interim and final) */
     onTranscriptUpdate?: (transcript: string, isFinal: boolean) => void;
+    /** Called when a new recording session starts (useful for clearing UI state) */
+    onSessionStart?: () => void;
     /** Called when an error occurs */
     onError?: (error: Error) => void;
 }
@@ -72,6 +74,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         language = "en",
         onTranscriptComplete,
         onTranscriptUpdate,
+        onSessionStart,
         onError,
     } = options;
 
@@ -87,17 +90,27 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const finalTranscriptRef = useRef("");
     const interimTranscriptRef = useRef("");
+    const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const keepaliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const isCancelledRef = useRef(false); // Track if connection was cancelled
+
+    // Connection timeout duration (10 seconds)
+    const CONNECTION_TIMEOUT_MS = 10000;
+    // Keepalive interval (8 seconds - Deepgram recommends < 12s to prevent timeout)
+    const KEEPALIVE_INTERVAL_MS = 8000;
 
     // Store callbacks in refs to avoid stale closures
     const onTranscriptCompleteRef = useRef(onTranscriptComplete);
     const onTranscriptUpdateRef = useRef(onTranscriptUpdate);
+    const onSessionStartRef = useRef(onSessionStart);
     const onErrorRef = useRef(onError);
 
     useEffect(() => {
         onTranscriptCompleteRef.current = onTranscriptComplete;
         onTranscriptUpdateRef.current = onTranscriptUpdate;
+        onSessionStartRef.current = onSessionStart;
         onErrorRef.current = onError;
-    }, [onTranscriptComplete, onTranscriptUpdate, onError]);
+    }, [onTranscriptComplete, onTranscriptUpdate, onSessionStart, onError]);
 
     const handleError = useCallback((err: Error) => {
         setError(err);
@@ -107,6 +120,21 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     }, []);
 
     const stopListening = useCallback(() => {
+        // Mark as cancelled to prevent race with Open event handler
+        isCancelledRef.current = true;
+
+        // Clear connection timeout
+        if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
+        }
+
+        // Clear keepalive interval
+        if (keepaliveIntervalRef.current) {
+            clearInterval(keepaliveIntervalRef.current);
+            keepaliveIntervalRef.current = null;
+        }
+
         // Stop media recorder
         if (mediaRecorderRef.current?.state === "recording") {
             mediaRecorderRef.current.stop();
@@ -125,12 +153,18 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             connectionRef.current = null;
         }
 
-        // Deliver final transcript before clearing
-        if (finalTranscriptRef.current) {
-            onTranscriptCompleteRef.current?.(finalTranscriptRef.current);
+        // Deliver combined transcript including any pending interim text
+        // This ensures partial speech isn't lost if user stops mid-utterance
+        const finalText = finalTranscriptRef.current;
+        const interimText = interimTranscriptRef.current;
+        const combinedTranscript =
+            finalText + (interimText ? (finalText ? " " : "") + interimText : "");
+
+        if (combinedTranscript) {
+            onTranscriptCompleteRef.current?.(combinedTranscript);
         }
 
-        // Clear transcript refs for next session
+        // Clear refs after delivery to prevent duplicate callbacks on Close event
         finalTranscriptRef.current = "";
         interimTranscriptRef.current = "";
 
@@ -143,6 +177,15 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             handleError(new Error("Voice input is not supported in this browser"));
             return;
         }
+
+        // Reset cancelled flag for new session
+        isCancelledRef.current = false;
+
+        // Clear refs at the start of a new session
+        // This ensures fresh transcription without lingering text from previous sessions
+        finalTranscriptRef.current = "";
+        interimTranscriptRef.current = "";
+        setTranscript("");
 
         // Get API key from environment
         const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
@@ -205,10 +248,35 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
             connectionRef.current = connection;
 
+            // Set connection timeout - if connection doesn't open in time, give up
+            connectionTimeoutRef.current = setTimeout(() => {
+                logger.warn({}, "Voice connection timed out");
+                handleError(
+                    new Error("Connection timed out. Check your network and try again.")
+                );
+                stopListening();
+            }, CONNECTION_TIMEOUT_MS);
+
             // Handle connection open
             connection.on(LiveTranscriptionEvents.Open, () => {
+                // Check if connection was cancelled before this event fired (race condition)
+                if (isCancelledRef.current) {
+                    logger.debug({}, "Connection opened but was cancelled, ignoring");
+                    return;
+                }
+
+                // Clear the connection timeout - we connected successfully
+                if (connectionTimeoutRef.current) {
+                    clearTimeout(connectionTimeoutRef.current);
+                    connectionTimeoutRef.current = null;
+                }
+
                 logger.debug({}, "Deepgram connection opened");
                 setConnectionState("connected");
+
+                // Notify parent now that connection is actually established
+                // This ensures parent only clears input after successful setup
+                onSessionStartRef.current?.();
 
                 // Start recording and sending audio
                 const mediaRecorder = new MediaRecorder(stream, {
@@ -228,6 +296,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
                 mediaRecorder.start(250); // Send audio every 250ms
                 mediaRecorderRef.current = mediaRecorder;
+
+                // Start keepalive interval to prevent connection timeout on long recordings
+                keepaliveIntervalRef.current = setInterval(() => {
+                    if (connectionRef.current?.getReadyState() === 1) {
+                        connectionRef.current.keepAlive();
+                        logger.debug({}, "Sent keepalive");
+                    }
+                }, KEEPALIVE_INTERVAL_MS);
 
                 logger.debug({}, "MediaRecorder started");
             });
@@ -308,7 +384,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     }, [isSupported, language, handleError, stopListening, connectionState]);
 
     const toggleListening = useCallback(async () => {
-        if (connectionState === "connected") {
+        if (connectionState === "connected" || connectionState === "connecting") {
+            // Allow stopping during connecting state (user changed their mind)
             stopListening();
         } else if (connectionState === "disconnected" || connectionState === "error") {
             await startListening();
@@ -324,6 +401,12 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     // Cleanup on unmount
     useEffect(() => {
         return () => {
+            if (connectionTimeoutRef.current) {
+                clearTimeout(connectionTimeoutRef.current);
+            }
+            if (keepaliveIntervalRef.current) {
+                clearInterval(keepaliveIntervalRef.current);
+            }
             if (mediaRecorderRef.current?.state === "recording") {
                 mediaRecorderRef.current.stop();
             }
