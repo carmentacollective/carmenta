@@ -10,7 +10,14 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
-import { convertToModelMessages, streamText, UIMessage } from "ai";
+import {
+    convertToModelMessages,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    streamText,
+    UIMessage,
+    UIMessageStreamWriter,
+} from "ai";
 import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
@@ -19,6 +26,7 @@ import { validateProject } from "@/lib/code";
 import { decodeConnectionId } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
+import { writeStatus } from "@/lib/streaming";
 
 /**
  * Route segment config for Vercel
@@ -162,15 +170,58 @@ export async function POST(req: Request) {
         },
     });
 
-    // Stream response using AI SDK patterns
+    // Transient writer reference - set when the stream is consumed
+    // This allows onChunk to emit status updates during streaming
+    let transientWriter: UIMessageStreamWriter | null = null;
+
+    // Stream response using AI SDK patterns with tool activity tracking
     try {
         const result = streamText({
             model: claudeCode(modelName),
             messages: await convertToModelMessages(body.messages as UIMessage[]),
+            // Capture streaming events to show tool activity
+            onChunk: ({ chunk }) => {
+                if (!transientWriter) return;
+
+                // Show status when Claude Code invokes a tool
+                if (chunk.type === "tool-call") {
+                    // Cast input to access tool arguments
+                    const args = chunk.input as Record<string, unknown> | undefined;
+                    const message = getCodeToolStatusMessage(chunk.toolName, args);
+                    logger.debug(
+                        { toolName: chunk.toolName, toolCallId: chunk.toolCallId },
+                        "Code mode: tool call"
+                    );
+                    writeStatus(
+                        transientWriter,
+                        `tool-${chunk.toolCallId}`,
+                        message,
+                        getCodeToolIcon(chunk.toolName)
+                    );
+                }
+
+                // Clear status when tool result arrives
+                if (chunk.type === "tool-result") {
+                    logger.debug(
+                        { toolCallId: chunk.toolCallId },
+                        "Code mode: tool result"
+                    );
+                    writeStatus(transientWriter, `tool-${chunk.toolCallId}`, "");
+                }
+            },
         });
 
-        // Return standard AI SDK stream response
-        return result.toUIMessageStreamResponse();
+        // Create UI message stream with transient status support
+        const stream = createUIMessageStream({
+            execute: ({ writer }) => {
+                // Set the writer reference so onChunk can emit transient messages
+                transientWriter = writer;
+                // Merge the streamText result into our stream
+                writer.merge(result.toUIMessageStream());
+            },
+        });
+
+        return createUIMessageStreamResponse({ stream });
     } catch (error) {
         logger.error(
             { error: error instanceof Error ? error.message : String(error) },
@@ -180,6 +231,84 @@ export async function POST(req: Request) {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });
+    }
+}
+
+/**
+ * Get a user-friendly status message for Claude Code tool calls.
+ */
+function getCodeToolStatusMessage(
+    toolName: string,
+    args?: Record<string, unknown>
+): string {
+    // Extract filename from path if available
+    const getFilename = (path?: string) => {
+        if (!path) return "file";
+        const parts = path.split("/");
+        return parts[parts.length - 1] || "file";
+    };
+
+    switch (toolName) {
+        case "Read":
+            return `Reading ${getFilename(args?.file_path as string)}...`;
+        case "Write":
+            return `Writing ${getFilename(args?.file_path as string)}...`;
+        case "Edit":
+            return `Editing ${getFilename(args?.file_path as string)}...`;
+        case "Bash":
+            return "Running command...";
+        case "Glob":
+            return `Finding files matching ${(args?.pattern as string) || "pattern"}...`;
+        case "Grep":
+            return `Searching for "${(args?.pattern as string)?.slice(0, 20) || "pattern"}"...`;
+        case "Task":
+            return `Spawning ${(args?.subagent_type as string) || "agent"}...`;
+        case "WebFetch":
+            return "Fetching web page...";
+        case "WebSearch":
+            return `Searching "${(args?.query as string)?.slice(0, 30) || "web"}"...`;
+        case "TodoWrite":
+            return "Updating task list...";
+        case "LSP":
+            return `Code intelligence: ${(args?.operation as string) || "analyzing"}...`;
+        case "NotebookEdit":
+            return "Editing notebook...";
+        default:
+            return `${toolName}...`;
+    }
+}
+
+/**
+ * Get an appropriate icon for Claude Code tools.
+ */
+function getCodeToolIcon(toolName: string): string {
+    switch (toolName) {
+        case "Read":
+            return "📂";
+        case "Write":
+            return "✏️";
+        case "Edit":
+            return "🔧";
+        case "Bash":
+            return "💻";
+        case "Glob":
+            return "🔍";
+        case "Grep":
+            return "🔎";
+        case "Task":
+            return "🤖";
+        case "WebFetch":
+            return "🌐";
+        case "WebSearch":
+            return "🔍";
+        case "TodoWrite":
+            return "📋";
+        case "LSP":
+            return "🧠";
+        case "NotebookEdit":
+            return "📓";
+        default:
+            return "⚙️";
     }
 }
 
