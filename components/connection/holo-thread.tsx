@@ -193,7 +193,7 @@ function HoloThreadInner() {
                 {/* Viewport - use-stick-to-bottom handles scroll container, we just provide content */}
                 <StickToBottom.Content
                     className={cn(
-                        "relative z-10 flex h-full flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                        "chat-viewport-fade relative z-10 flex h-full flex-col items-center bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
                         isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                     )}
                 >
