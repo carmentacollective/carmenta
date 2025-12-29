@@ -30,7 +30,7 @@ import { logger } from "@/lib/logger";
 import { getFallbackChain } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
-import { builtInTools } from "@/lib/tools/built-in";
+import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
 import { getBackgroundStreamContext } from "@/lib/streaming/stream-context";
 
 /**
@@ -139,11 +139,13 @@ export const backgroundResponse = inngest.createFunction(
                 userId,
             });
 
-            // Get tools (integrations + built-in)
+            // Get tools (integrations + built-in + knowledge base search)
             const integrationTools = await getIntegrationTools(context.userEmail);
+            const searchKnowledgeTool = createSearchKnowledgeTool(userId);
             const allTools = {
                 ...builtInTools,
                 ...integrationTools,
+                searchKnowledge: searchKnowledgeTool,
             };
 
             // Extract text content from message parts for LLM input
@@ -165,6 +167,9 @@ export const backgroundResponse = inngest.createFunction(
                 },
                 "Running LLM streaming generation"
             );
+
+            // Capture the final response parts for database persistence
+            let finalResponseParts: UIMessageLike["parts"] = [];
 
             // Run streaming LLM call
             const streamResult = streamText({
@@ -197,6 +202,20 @@ export const backgroundResponse = inngest.createFunction(
                         userId,
                     },
                 },
+                onFinish: async ({ response }) => {
+                    // Capture complete response with all parts (text, reasoning, tool calls)
+                    // This runs after streaming completes, giving us the full message
+                    const parts: UIMessageLike["parts"] = [];
+
+                    // Extract all parts from the response messages
+                    for (const msg of response.messages) {
+                        if (msg.role === "assistant" && "parts" in msg) {
+                            parts.push(...(msg.parts as UIMessageLike["parts"]));
+                        }
+                    }
+
+                    finalResponseParts = parts;
+                },
             });
 
             // Create UI message stream
@@ -222,43 +241,24 @@ export const backgroundResponse = inngest.createFunction(
             }
 
             // Consume the stream to completion
-            // This ensures all chunks are written to Redis
+            // This ensures all chunks are written to Redis for real-time client viewing
             const reader = resumableStream.getReader();
-            let fullText = "";
-
             while (true) {
-                const { done, value } = await reader.read();
+                const { done } = await reader.read();
                 if (done) break;
-                // Value may be Uint8Array or string depending on stream type
-                const chunk =
-                    typeof value === "string"
-                        ? value
-                        : new TextDecoder().decode(value as Uint8Array);
-                // Parse SSE format to extract text content
-                if (chunk.includes('"type":"text"')) {
-                    try {
-                        // SSE format: data: {...}\n\n
-                        const lines = chunk.split("\n");
-                        for (const line of lines) {
-                            if (line.startsWith("data: ")) {
-                                const data = JSON.parse(line.slice(6));
-                                if (data.type === "text" && data.text) {
-                                    fullText += data.text;
-                                }
-                            }
-                        }
-                    } catch {
-                        // Ignore parsing errors for non-text chunks
-                    }
-                }
+            }
+
+            // Verify we captured the response parts
+            if (finalResponseParts.length === 0) {
+                throw new Error("Failed to capture response parts from stream");
             }
 
             functionLogger.info(
-                { textLength: fullText.length },
+                { partCount: finalResponseParts.length },
                 "LLM streaming complete"
             );
 
-            return { text: fullText };
+            return { parts: finalResponseParts };
         });
 
         // Step 3: Save response to database
@@ -266,12 +266,15 @@ export const backgroundResponse = inngest.createFunction(
             const assistantMessage: UIMessageLike = {
                 id: `bg-${streamId}`,
                 role: "assistant",
-                parts: [{ type: "text", text: result.text }],
+                parts: result.parts,
             };
 
             await upsertMessage(connectionId, assistantMessage);
 
-            functionLogger.info({}, "Saved response to database");
+            functionLogger.info(
+                { partCount: result.parts.length },
+                "Saved response to database"
+            );
         });
 
         // Step 4: Update connection status
@@ -291,7 +294,7 @@ export const backgroundResponse = inngest.createFunction(
         return {
             success: true,
             connectionId,
-            textLength: result.text.length,
+            partCount: result.parts.length,
         };
     }
 );
