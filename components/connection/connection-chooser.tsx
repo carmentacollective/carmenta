@@ -860,10 +860,7 @@ export function ConnectionChooser({
                                         ) : (
                                             <Plus className="h-4 w-4" />
                                         )}
-                                        <span className="hidden sm:inline lg:hidden">
-                                            New
-                                        </span>
-                                        <span className="hidden lg:inline">
+                                        <span className="hidden sm:inline">
                                             New Connection
                                         </span>
                                     </button>
