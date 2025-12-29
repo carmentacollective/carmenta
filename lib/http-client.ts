@@ -131,6 +131,51 @@ export const httpClient = ky.create({
                 return response;
             },
         ],
+        beforeError: [
+            async (error) => {
+                // End span for requests that fail before reaching afterResponse
+                // (network timeouts, DNS failures, connection refused)
+                const request = error.request;
+
+                // Only log for network errors (no response received)
+                // HTTP errors (4xx/5xx) are already logged in afterResponse
+                if (!error.response) {
+                    const url = request?.url;
+                    const method = request?.method;
+
+                    logger.error(
+                        {
+                            url,
+                            method,
+                            error: error.message,
+                            errorName: error.name,
+                        },
+                        "HTTP Network Error"
+                    );
+
+                    Sentry.addBreadcrumb({
+                        category: "http.network_error",
+                        message: `Network error: ${method} ${url}`,
+                        level: "error",
+                        data: {
+                            url,
+                            method,
+                            error: error.message,
+                            errorName: error.name,
+                        },
+                    });
+
+                    // @ts-expect-error - Accessing custom property
+                    const span = request?._sentrySpan;
+                    if (span) {
+                        span.setStatus({ code: 2, message: error.message });
+                        span.end();
+                    }
+                }
+
+                return error;
+            },
+        ],
     },
 });
 
