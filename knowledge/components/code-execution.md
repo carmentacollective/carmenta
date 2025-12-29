@@ -1,12 +1,47 @@
 # Code Execution
 
-Sandboxed Python execution that transforms the agent from conversationalist to
-computational partner. Instead of approximating math or describing data analysis, the
-agent writes and runs real code.
+Sandboxed code execution that transforms Carmenta from conversationalist to
+computational partner. Instead of approximating math or describing data analysis, we
+write and run real code - and for web development, see our creations live instantly.
 
 **Infrastructure**: Code execution runs on the
 [ephemeral compute](./ephemeral-compute.md) layer - the same infrastructure that powers
 scheduled agents and powerhouse mode.
+
+---
+
+## Vision
+
+### Underlying Need
+
+**Immediate verification of ideas.** When we're building something - whether it's a data
+analysis, a visualization, or a web component - we need to see it work. The gap between
+"here's code" and "here's the running result" is where friction lives, context gets
+lost, and flow breaks.
+
+### The Ideal
+
+**Ideas become reality instantly.** We describe what we want. It appears - running,
+interactive, explorable. Python computes real numbers and renders real charts. React
+components render in a live preview. We iterate by talking: "make the bars blue," "add a
+trendline," "handle the edge case where the array is empty." Each change is immediate.
+The code is there when we want to learn from it, invisible when we don't.
+
+No copy-pasting. No setting up environments. No "here's the code, go run it somewhere."
+Creation happens in flow.
+
+### Core Insight
+
+**Current interfaces separate creation from verification.** Claude writes code, ChatGPT
+renders artifacts - but even the best implementations treat "show me the code" and "show
+me it working" as separate concerns. The ideal unifies them: execution is embedded in
+the creation flow, verification is instantaneous, iteration is conversational.
+
+The deeper insight: code execution isn't about "running Python." It's about closing the
+loop between intention and reality. When the loop is tight enough, creation becomes
+play.
+
+---
 
 ## Why This Exists
 
@@ -23,9 +58,10 @@ of purpose-built tools:
 - Data visualization? Matplotlib renders charts.
 - Statistical analysis? NumPy/SciPy compute real statistics.
 - JSON transformation? Python manipulates data structures.
+- React components? Sandpack renders them live.
 
-This is the "code interpreter" pattern that ChatGPT popularized, but implemented as a
-first-class tool in Carmenta's architecture.
+This is the "code interpreter" pattern that ChatGPT popularized, plus the "artifacts"
+pattern that Claude pioneered - unified into Carmenta's architecture.
 
 ## Core Functions
 
@@ -420,3 +456,317 @@ pricing, and data stays in our infrastructure.
 Fly.io has a steeper learning curve (CLI-first, more config) but unlocks the most
 capable and cost-effective path for code execution. The platform decision cascades into
 everything else.
+
+---
+
+## Landscape Analysis (December 2025)
+
+### What Leaders Do Today
+
+#### ChatGPT Advanced Data Analysis (Code Interpreter)
+
+The pattern that defined this category. Each conversation spins up a private,
+internet-blocked container with Python 3.11, pandas, NumPy, SciPy, scikit-learn,
+matplotlib. The sandbox lasts for the whole conversation and stores files in a shared
+folder users can download from.
+
+**Strengths:**
+
+- Seamless integration - users don't think about "the sandbox," they just ask questions
+- Files persist across turns within a conversation
+- Full scientific Python stack pre-installed
+- Charts and visualizations render inline
+- Data never leaves the sandbox (no network egress)
+
+**Limitations:**
+
+- No internet access from code (can't fetch live data)
+- Can't install additional packages
+- No GPU for heavy ML workloads
+- Container expires after conversation ends
+- 2-minute timeout on computations
+
+**Architecture:** Private containers with CPython 3.11, curated package list, TLS
+encryption in transit, hourly scrubbing of expired containers.
+
+#### Claude Artifacts
+
+Pioneered the "live preview" pattern for web content. When Claude generates HTML, React,
+SVG, or Mermaid diagrams, they render in a side panel instantly. Users can interact with
+generated UIs, iterate through conversation, and share artifacts independently.
+
+**Key Innovation:** AI-generated interfaces aren't just code - they're living, clickable
+things. The artifact becomes a first-class entity that can be versioned, shared, and
+remixed.
+
+**Architecture (from Anthropic engineering):**
+
+- iFrame sandboxes with full-site process isolation
+- Strict Content Security Policies (CSPs) for network access control
+- Built with React, Next.js, Tailwind - prototyped in 3 months by 2 engineers
+- No actual Python execution - artifacts are web content only
+
+**Limitation:** No code execution for Python/data analysis. Artifacts are for
+visualization, not computation.
+
+#### ChatGPT Canvas + Code Execution
+
+Recent addition that runs Python in-browser via Pyodide. Users can edit code in a
+Canvas-style interface and execute it without server round-trips.
+
+**Strengths:**
+
+- Zero latency for execution (runs locally)
+- Users can see and edit the code directly
+- No data leaves the browser
+
+**Limitations:**
+
+- WASM limits (2-3x slower than native Python)
+- Limited package availability
+- No network access
+- No persistent filesystem
+
+#### Vercel AI Chatbot (Open Source Reference)
+
+Best-in-class open-source implementation. Uses Pyodide v0.23.4 for Python execution
+directly in the browser.
+
+**Implementation Pattern:**
+
+```typescript
+// From ai-chatbot/artifacts/code/client.tsx
+const currentPyodideInstance = await globalThis.loadPyodide({
+  indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+});
+
+// Matplotlib output handling - captures base64 PNGs
+currentPyodideInstance.setStdout({
+  batched: (output: string) => {
+    outputContent.push({
+      type: output.startsWith("data:image/png;base64") ? "image" : "text",
+      value: output,
+    });
+  },
+});
+
+await currentPyodideInstance.loadPackagesFromImports(content);
+await currentPyodideInstance.runPythonAsync(content);
+```
+
+**Strengths:**
+
+- Zero infrastructure cost for execution
+- Privacy-first (code runs in browser)
+- Matplotlib charts render as inline images
+- Version history with undo/redo
+- Open source - we can study every line
+
+**Location:** `/Users/nick/src/reference/ai-chatbot/artifacts/code/client.tsx`
+
+#### LibreChat Artifacts
+
+Uses Sandpack (from Codesandbox) for React/HTML execution in sandboxed iframes. Ships
+with pre-bundled shadcn/ui components - AI generates imports like
+`import { Button } from '/components/ui/button'` and they work.
+
+**Implementation Pattern:**
+
+```typescript
+// From librechat client/src/components/Artifacts/ArtifactPreview.tsx
+<SandpackProvider
+  files={{ ...artifactFiles, ...sharedFiles }}
+  options={sharedOptions}
+  template={template}
+>
+  <SandpackPreview showOpenInCodeSandbox={false} ref={previewRef} />
+</SandpackProvider>
+```
+
+**Pre-bundled Dependencies:** Three.js, Lucide React, React Router, Radix UI (accordion,
+dialog, dropdown, popover, tabs, tooltip, etc.), Recharts, date-fns, Tailwind CSS.
+
+**Key Insight:** AI can only use what's available. Pre-bundling a component library
+means the AI generates usable, styled interfaces without setup.
+
+**Location:** `/Users/nick/src/reference/librechat/client/src/utils/artifacts.ts`
+
+#### Replit Agent
+
+Full development environment as a service. Replit Agent 3 (September 2025) is fully
+autonomous - plans, writes, tests, and deploys software from natural language.
+
+**Strengths:**
+
+- True multi-file, multi-language development
+- Full network access (can install packages, call APIs)
+- Persistent workspace across sessions
+- One-click deployment to production
+
+**Trade-off:** Heavyweight for simple computations. Overkill for "calculate the average
+of these numbers."
+
+#### v0 by Vercel
+
+AI-powered UI generation with instant preview deployments. Generates React/Next.js
+components from prompts and deploys them to preview URLs.
+
+**Key Pattern:** Every generated component is immediately deployable. The gap between
+"here's code" and "here's a URL you can share" is zero.
+
+#### WebContainers (StackBlitz)
+
+Node.js running entirely in the browser via WASM. Full npm, full filesystem, full dev
+server - no backend required.
+
+**Strengths:**
+
+- Sub-10ms boot time for Node.js
+- Full npm package installation
+- Hot module replacement in-browser
+- Network access via Service Workers
+
+**Use Case:** When we need to run JavaScript/TypeScript server-side code without a
+server.
+
+### Emerging Platforms (2025)
+
+#### Koyeb Sandboxes
+
+Serverless containers optimized for AI code execution. Sub-200ms wakeup via "Light
+Sleep," scale-to-zero billing, GPU available.
+
+**Pricing:** ~$0.0000012/s (cheaper than E2B)
+
+#### Cloudflare Sandbox SDK (Beta)
+
+Edge isolates for code execution. Uses Cloudflare Workers infrastructure. Fast cold
+starts, global distribution, limited runtime capabilities.
+
+#### Vercel Sandbox
+
+New offering (November 2025) for AI code execution in Vercel's infrastructure. Details
+still emerging.
+
+#### Google Agent Sandbox (GKE)
+
+Enterprise-focused sandbox for AI code execution in Kubernetes. Syscall filtering,
+network isolation, audit logging.
+
+---
+
+## Gap Analysis
+
+### Achievable Now (Table Stakes)
+
+These capabilities exist today and we can implement immediately:
+
+| Capability               | Best Pattern                          | Our Path                         |
+| ------------------------ | ------------------------------------- | -------------------------------- |
+| Python execution (basic) | Pyodide in browser                    | Vercel AI Chatbot pattern        |
+| Data analysis packages   | Pyodide has pandas, numpy, matplotlib | Already supported                |
+| Chart rendering          | matplotlib → base64 PNG               | Vercel pattern shows how         |
+| React/HTML preview       | Sandpack                              | LibreChat pattern                |
+| Component library        | Pre-bundled shadcn/ui                 | LibreChat's sharedFiles pattern  |
+| Versioning               | Artifact version history              | Vercel's (id, createdAt) pattern |
+| Stateful sessions        | Session-scoped sandbox                | All leaders do this              |
+
+### Achievable with Investment (6-12 months)
+
+| Capability             | Gap                                  | Path Forward            |
+| ---------------------- | ------------------------------------ | ----------------------- |
+| Full Python ecosystem  | Pyodide's ~200 packages vs full PyPI | E2B or Fly Machines     |
+| Persistent filesystems | Current sandboxes are ephemeral      | Fly Volumes or E2B      |
+| GPU workloads          | No WASM GPU support                  | E2B or Koyeb GPUs       |
+| Multi-file projects    | Current: single code blocks          | Workspace abstraction   |
+| Network access         | Security vs functionality            | Allowlist specific APIs |
+
+### Aspirational (Requires Breakthroughs)
+
+| Capability               | What's Missing                            | Dependencies                  |
+| ------------------------ | ----------------------------------------- | ----------------------------- |
+| True speech-to-code      | Voice → running code in one step          | Voice + execution integration |
+| Predictive execution     | Run code before user asks                 | Intent prediction models      |
+| Cross-conversation state | Variables persist forever                 | Memory + compute integration  |
+| Self-healing code        | Auto-fix errors without user intervention | More capable models           |
+
+### Carmenta's Differentiation Opportunity
+
+**None of the current leaders combine:**
+
+1. Python computation (ChatGPT's strength)
+2. Live web preview (Claude Artifacts' strength)
+3. Pre-bundled components (LibreChat's strength)
+4. Heart-centered philosophy (our unique value)
+
+**The gap we can fill:** A unified experience where data analysis, visualization, and
+interactive web creation flow together naturally - with the Carmenta personality making
+the experience feel like collaboration, not tool operation.
+
+---
+
+## Implementation Tiers
+
+### Tier 1: Table Stakes (MVP)
+
+**What we ship first:**
+
+- Pyodide-based Python execution (browser-side, Vercel pattern)
+- Matplotlib/Seaborn chart rendering as inline images
+- Sandpack-based React/HTML preview
+- Pre-bundled shadcn/ui components
+- Basic artifact versioning
+
+**Cost:** $0 infrastructure (all client-side) **Timeline:** 2-4 weeks
+
+### Tier 2: Leader Parity
+
+**What makes us competitive:**
+
+- E2B or Fly Machines for full Python ecosystem
+- Stateful sessions across conversation turns
+- File upload → sandbox filesystem
+- Multiple output types (charts, tables, files, interactive)
+
+**Cost:** E2B $150/mo or Fly usage-based **Timeline:** 4-8 weeks
+
+### Tier 3: Vision
+
+**What makes us best-in-class:**
+
+- Voice-first code iteration ("make the bars blue")
+- Unified data + web creation experience
+- Memory-aware execution (remember user's data patterns)
+- AG-UI integration (generated interfaces as first-class outputs)
+- Self-improving code (Carmenta fixes errors automatically)
+
+**Dependencies:** Voice, Memory, AG-UI components **Timeline:** 3-6 months
+
+---
+
+## Sources
+
+**Primary Research:**
+
+- [How Anthropic Built Artifacts](https://newsletter.pragmaticengineer.com/p/how-anthropic-built-artifacts) -
+  Pragmatic Engineer, Aug 2024
+- [ChatGPT Advanced Data Analysis Architecture](https://www.datastudios.org/post/how-chatgpt-s-advanced-data-analysis-works-architecture-features-limits-and-what-s-next) -
+  DataStudios, May 2025
+- [Top Sandbox Platforms for AI Code Execution 2025](https://www.koyeb.com/blog/top-sandbox-code-execution-platforms-for-ai-code-execution-2025) -
+  Koyeb, Nov 2025
+- [Claude Code Sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing) -
+  Anthropic Engineering, Oct 2025
+
+**Reference Implementations:**
+
+- `/Users/nick/src/reference/ai-chatbot/` - Vercel AI Chatbot (Pyodide pattern)
+- `/Users/nick/src/reference/librechat/` - LibreChat (Sandpack + shadcn pattern)
+- `/Users/nick/src/reference/assistant-ui/` - Composable primitives
+
+**Platform Documentation:**
+
+- [E2B](https://e2b.dev/) - Managed sandbox API
+- [Fly Machines](https://fly.io/docs/machines/) - Firecracker VMs
+- [Pyodide](https://pyodide.org/) - Python in WebAssembly
+- [WebContainers](https://webcontainers.io/) - Node.js in browser
+- [Sandpack](https://sandpack.codesandbox.io/) - React sandbox
