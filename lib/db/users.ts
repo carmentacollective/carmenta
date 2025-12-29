@@ -33,6 +33,18 @@ export async function findUserByClerkId(clerkId: string): Promise<User | null> {
     return user ?? null;
 }
 
+/**
+ * Find a user by their internal UUID
+ *
+ * Used by background workers that receive the internal user ID.
+ */
+export async function findUserById(userId: string): Promise<User | null> {
+    const user = await db.query.users.findFirst({
+        where: eq(schema.users.id, userId),
+    });
+    return user ?? null;
+}
+
 /** User profile data for getOrCreateUser */
 interface UserProfileData {
     firstName?: string | null;

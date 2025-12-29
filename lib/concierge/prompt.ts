@@ -134,6 +134,10 @@ Your JSON response must match this exact schema:
     "shouldSearch": true/false,
     "queries": ["search query 1", "search query 2"],
     "entities": ["entity name 1", "entity name 2"]
+  },
+  "backgroundMode": {
+    "enabled": true/false,
+    "reason": "User-facing reason for background work"
   }
 }
 
@@ -149,6 +153,7 @@ reasoning.effort: How deeply to think: high/medium/low/none (when enabled)
 responseDepth: How comprehensive the visible response should be (separate from reasoning)
 title: Short title for future reference (15-35 chars)
 kbSearch: Knowledge base search configuration for retrieving relevant context
+backgroundMode: For long-running work that needs durable execution
 
 Selection approach:
 
@@ -271,6 +276,12 @@ Use "comprehensive" when:
 - Long structured messages showing user invested effort
 
 Response depth tells the responding model how much detail to provide, not how hard to think.
+
+### Background Mode
+
+For work that takes several minutes: deep research across sources, multi-step analysis, or when user signals async intent ("I'll check back", "take your time").
+
+Default OFF. Enable only when the task genuinely needs extended time.
 
 ### Explanation Style
 
@@ -454,6 +465,21 @@ What's the probability of getting heads at least 3 times if I flip a fair coin 5
   "responseDepth": "balanced",
   "title": "🎲 Coin flip probability",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
+
+<user-message>
+Research the competitive landscape for AI coding assistants. Take your time and be thorough - I'll check back later.
+</user-message>
+
+{
+  "modelId": "anthropic/claude-opus-4.5",
+  "temperature": 0.5,
+  "explanation": "Deep competitive research ahead - we'll keep working while you're away 🔬",
+  "reasoning": { "enabled": true, "effort": "high" },
+  "responseDepth": "comprehensive",
+  "title": "🔬 AI coding assistant landscape",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
+  "backgroundMode": { "enabled": true, "reason": "Deep research ahead - we'll keep working while you're away" }
 }
 </examples>`;
 }

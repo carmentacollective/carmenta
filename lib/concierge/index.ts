@@ -271,6 +271,20 @@ const conciergeSchema = z.object({
         .describe(
             "Knowledge base search configuration for retrieving relevant context"
         ),
+    backgroundMode: z
+        .object({
+            enabled: z
+                .boolean()
+                .describe("Whether to run in background mode for durable execution"),
+            reason: z
+                .string()
+                .optional()
+                .describe("User-facing reason for background mode"),
+        })
+        .optional()
+        .describe(
+            "Background mode for long-running work that should survive browser close"
+        ),
 });
 
 /**
@@ -287,6 +301,7 @@ function processConciergeResponse(
         reasoning: rawReasoning,
         title,
         kbSearch: rawKbSearch,
+        backgroundMode: rawBackgroundMode,
     } = raw;
 
     // Validate model against whitelist
@@ -334,6 +349,14 @@ function processConciergeResponse(
         }
     }
 
+    // Process background mode config
+    const backgroundMode = rawBackgroundMode?.enabled
+        ? {
+              enabled: true as const,
+              reason: rawBackgroundMode.reason,
+          }
+        : undefined;
+
     return {
         modelId,
         temperature,
@@ -341,6 +364,7 @@ function processConciergeResponse(
         reasoning,
         title: cleanTitle,
         kbSearch,
+        backgroundMode,
     };
 }
 
