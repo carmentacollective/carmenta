@@ -15,7 +15,7 @@
  * - Tool activity inline, not above message
  */
 
-import { useState, useCallback, createElement } from "react";
+import { useState, createElement } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronRight,
@@ -30,12 +30,11 @@ import {
     Globe,
     Search,
     Loader2,
-    Copy,
-    Check,
 } from "lucide-react";
 import type { UIMessage } from "ai";
 
 import { cn } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/copy-button";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
 import type { TransientMessage } from "@/lib/streaming";
@@ -49,11 +48,12 @@ import { formatTerminalOutput } from "@/lib/code/transform";
 
 /**
  * Tool part from AI SDK
+ * Note: `state` may be undefined when loaded from database (historical messages)
  */
 interface ToolPart {
     type: `tool-${string}`;
     toolCallId: string;
-    state: "input-streaming" | "input-available" | "output-available" | "output-error";
+    state?: "input-streaming" | "input-available" | "output-available" | "output-error";
     input: unknown;
     output?: unknown;
     errorText?: string;
@@ -218,32 +218,20 @@ function getResultSummary(toolName: string, output: unknown): string | null {
     }
 }
 
+type ToolState = NonNullable<ToolPart["state"]>;
+
 /**
  * Status indicator - warm terminal aesthetic
  */
-function ToolStatus({ state }: { state: ToolPart["state"] }) {
+function ToolStatus({ state }: { state: ToolState }) {
     switch (state) {
         case "input-streaming":
         case "input-available":
-            return (
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    {/* Warm amber glow */}
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400/60" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 shadow-sm shadow-amber-500/30" />
-                </span>
-            );
+            return <span className="tool-status-dot tool-status-dot-running" />;
         case "output-available":
-            return (
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm shadow-emerald-500/30" />
-                </span>
-            );
+            return <span className="tool-status-dot tool-status-dot-success" />;
         case "output-error":
-            return (
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 shadow-sm shadow-rose-500/30" />
-                </span>
-            );
+            return <span className="tool-status-dot tool-status-dot-error" />;
     }
 }
 
@@ -262,11 +250,11 @@ function ToolIconDisplay({
     const icon = getToolIcon(toolName);
     return createElement(icon, {
         className: cn(
-            "h-4 w-4 shrink-0",
+            "h-3.5 w-3.5 shrink-0",
             isRunning
-                ? "text-amber-400/80"
+                ? "tool-status-running"
                 : isError
-                  ? "text-rose-400/80"
+                  ? "tool-status-error"
                   : "text-foreground/50"
         ),
     });
@@ -283,17 +271,20 @@ function InlineTool({
     elapsedSeconds?: number;
 }) {
     const [expanded, setExpanded] = useState(false);
-    const [copied, setCopied] = useState(false);
 
     const toolName = part.type.replace("tool-", "");
     const input = (part.input as Record<string, unknown>) || {};
     const output = part.output;
     const summary = getToolSummary(toolName, input);
+
+    // Derive state when not available (historical messages from database)
+    // Default to output-available for completed tools, or output-error if errorText exists
+    const state = part.state ?? (part.errorText ? "output-error" : "output-available");
+
     const resultSummary =
-        part.state === "output-available" ? getResultSummary(toolName, output) : null;
-    const isRunning =
-        part.state === "input-streaming" || part.state === "input-available";
-    const isError = part.state === "output-error";
+        state === "output-available" ? getResultSummary(toolName, output) : null;
+    const isRunning = state === "input-streaming" || state === "input-available";
+    const isError = state === "output-error";
 
     // Format elapsed time for display
     const elapsedDisplay =
@@ -303,145 +294,97 @@ function InlineTool({
                 : `${Math.round(elapsedSeconds * 1000)}ms`
             : null;
 
-    const handleCopy = useCallback(async () => {
-        const text =
-            typeof output === "string" ? output : JSON.stringify(output, null, 2);
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    }, [output]);
+    // Format output for copy
+    const outputText =
+        typeof output === "string" ? output : JSON.stringify(output, null, 2);
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 4 }}
+            initial={{ opacity: 0, y: 3 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className={cn(
-                "my-1.5 rounded-lg",
-                "border border-foreground/[0.06]",
-                "bg-gradient-to-br from-zinc-900/40 to-zinc-900/20",
-                "backdrop-blur-sm",
-                "overflow-hidden",
-                isRunning && "border-amber-500/20",
-                isError && "border-rose-500/20"
+                "tool-inline",
+                isRunning && "tool-inline-running",
+                isError && "tool-inline-error"
             )}
         >
-            {/* Compact row */}
             <button
                 type="button"
                 onClick={() => setExpanded(!expanded)}
-                className={cn(
-                    "group flex w-full items-center gap-2.5 px-3 py-2 text-left",
-                    "transition-all duration-150",
-                    "hover:bg-white/[0.03]"
-                )}
+                className="tool-inline-row group"
             >
-                {/* Status indicator */}
-                <ToolStatus state={part.state} />
+                <ToolStatus state={state} />
 
-                {/* Tool icon */}
                 <ToolIconDisplay
                     toolName={toolName}
                     isRunning={isRunning}
                     isError={isError}
                 />
 
-                {/* Tool name - monospace accent */}
                 <span
                     className={cn(
-                        "shrink-0 font-mono text-sm font-medium tracking-tight",
-                        isRunning
-                            ? "text-amber-300/90"
-                            : isError
-                              ? "text-rose-300/90"
-                              : "text-foreground/80"
+                        "tool-name",
+                        isRunning && "tool-name-running",
+                        isError && "tool-name-error"
                     )}
                 >
                     {toolName}
                 </span>
 
-                {/* Summary - muted monospace */}
-                {summary && (
-                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/40">
-                        {summary}
-                    </span>
-                )}
+                {summary && <span className="tool-summary">{summary}</span>}
 
-                {/* Spacer when no summary */}
                 {!summary && <span className="flex-1" />}
 
-                {/* Result summary */}
-                {resultSummary && (
-                    <span className="shrink-0 font-mono text-xs font-medium text-emerald-400/80">
-                        {resultSummary}
-                    </span>
-                )}
+                {resultSummary && <span className="tool-result">{resultSummary}</span>}
 
-                {/* Error indicator */}
                 {isError && (
-                    <span className="shrink-0 font-mono text-xs font-medium text-rose-400/80">
+                    <span className="tool-status-error shrink-0 font-mono text-xs">
                         failed
                     </span>
                 )}
 
-                {/* Running indicator with elapsed time */}
                 {isRunning && (
-                    <span className="flex shrink-0 items-center gap-1.5">
+                    <span className="flex shrink-0 items-center gap-1">
                         {elapsedDisplay && (
-                            <span className="font-mono text-xs text-amber-400/70">
+                            <span className="tool-status-running font-mono text-xs opacity-70">
                                 {elapsedDisplay}
                             </span>
                         )}
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400/60" />
+                        <Loader2 className="tool-status-running h-3 w-3 animate-spin opacity-60" />
                     </span>
                 )}
 
-                {/* Expand chevron */}
                 <motion.div
                     animate={{ rotate: expanded ? 90 : 0 }}
-                    transition={{ duration: 0.15 }}
+                    transition={{ duration: 0.1 }}
                 >
-                    <ChevronRight className="h-4 w-4 shrink-0 text-foreground/30 group-hover:text-foreground/50" />
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/30 group-hover:text-foreground/50" />
                 </motion.div>
             </button>
 
-            {/* Expanded output */}
             <AnimatePresence>
                 {expanded && output !== undefined && output !== null && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
                         className="overflow-hidden"
                     >
-                        <div className="relative border-t border-foreground/[0.06] bg-black/20">
-                            {/* Copy button */}
-                            <button
-                                onClick={handleCopy}
-                                className={cn(
-                                    "absolute right-2 top-2 rounded-md p-1.5",
-                                    "text-foreground/40 hover:text-foreground/70",
-                                    "transition-colors hover:bg-white/5"
-                                )}
-                            >
-                                {copied ? (
-                                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                                ) : (
-                                    <Copy className="h-3.5 w-3.5" />
-                                )}
-                            </button>
+                        <div className="tool-inline-output relative">
+                            <CopyButton
+                                text={outputText}
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-1.5 top-1.5"
+                            />
 
-                            {/* Output content - formatted for web display */}
-                            <div className="overflow-x-auto p-3 pr-10">
-                                <pre className="whitespace-pre-wrap break-words font-mono text-xs text-foreground/60">
+                            <div className="overflow-x-auto p-2 pr-9">
+                                <pre className="tool-output-text">
                                     {(() => {
-                                        const raw =
-                                            typeof output === "string"
-                                                ? output
-                                                : JSON.stringify(output, null, 2);
                                         const formatted = formatTerminalOutput(
-                                            raw,
+                                            outputText,
                                             toolName
                                         );
                                         const truncated =
@@ -458,7 +401,6 @@ function InlineTool({
                 )}
             </AnimatePresence>
 
-            {/* Error message */}
             <AnimatePresence>
                 {isError && part.errorText && (
                     <motion.div
@@ -467,10 +409,8 @@ function InlineTool({
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="border-t border-rose-500/20 bg-rose-950/20 px-3 py-2">
-                            <p className="font-mono text-xs text-rose-300/80">
-                                {part.errorText}
-                            </p>
+                        <div className="tool-inline-error-panel">
+                            <p className="tool-inline-error-text">{part.errorText}</p>
                         </div>
                     </motion.div>
                 )}
@@ -486,7 +426,7 @@ function TransientActivity({ messages }: { messages: TransientMessage[] }) {
     if (messages.length === 0) return null;
 
     return (
-        <div className="my-2 space-y-1">
+        <div className="my-1.5 space-y-1">
             {messages.map((msg) => (
                 <motion.div
                     key={msg.id}
@@ -494,24 +434,11 @@ function TransientActivity({ messages }: { messages: TransientMessage[] }) {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 8 }}
                     transition={{ duration: 0.15 }}
-                    className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-1.5",
-                        "border border-amber-500/10 bg-amber-500/[0.06]"
-                    )}
+                    className="tool-transient"
                 >
-                    {/* Pulsing dot */}
-                    <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400/60" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
-                    </span>
-
-                    {/* Icon if present */}
+                    <span className="tool-status-dot tool-status-dot-running" />
                     {msg.icon && <span className="text-sm">{msg.icon}</span>}
-
-                    {/* Message text */}
-                    <span className="font-mono text-sm text-amber-200/80">
-                        {msg.text}
-                    </span>
+                    <span className="tool-transient-text">{msg.text}</span>
                 </motion.div>
             ))}
         </div>

@@ -857,16 +857,27 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     }, [isLoading, setIsStreaming]);
 
     // Track previous connection ID to detect navigation between connections
-    const prevConnectionIdRef = useRef<string | null>(activeConnectionId);
+    const prevConnectionIdRef = useRef<string | null>(null);
+    const hasInitializedRef = useRef(false);
 
-    // Update messages when navigating to a different connection
+    // Update messages when navigating to a different connection OR on initial mount
     // Key: We DON'T clear messages when activeConnectionId is null (new connection)
     // because the chat hook is already tracking messages by effectiveChatId
     useEffect(() => {
         const prevId = prevConnectionIdRef.current;
         const currentId = activeConnectionId;
 
-        // Only act when connection ID actually changes
+        // Handle initial mount with existing connection (e.g., page refresh)
+        if (!hasInitializedRef.current) {
+            hasInitializedRef.current = true;
+            if (currentId && initialAIMessages && initialAIMessages.length > 0) {
+                setMessages(initialAIMessages);
+                prevConnectionIdRef.current = currentId;
+                return;
+            }
+        }
+
+        // Handle navigation between connections
         if (prevId !== currentId) {
             prevConnectionIdRef.current = currentId;
 
