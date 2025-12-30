@@ -196,12 +196,11 @@ jobs:
           retention-days: 1
 
   # E2E Tests (OAuth flows, public URL validation)
-  # Runs against production build to catch production-only bugs
+  # Runs in parallel with other jobs using dev server
   e2e:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: build
     if: github.actor != 'dependabot[bot]'
 
     services:
@@ -234,20 +233,10 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/carmenta_test
 
-      - name: 📥 Download build artifacts
-        uses: actions/download-artifact@v7
-        with:
-          name: nextjs-build
-
-      - name: 📦 Extract build artifacts
-        run: |
-          tar -xzf nextjs-build.tar.gz
-          rm nextjs-build.tar.gz
-
       - name: 🎭 Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: 🧪 Run E2E tests against production build
+      - name: 🧪 Run E2E tests
         run: pnpm run test:e2e
         env:
           CI: true
