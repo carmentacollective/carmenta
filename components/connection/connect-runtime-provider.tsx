@@ -656,11 +656,27 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 document.title = `${title} | Carmenta`;
             }
             if (slug && id) {
-                window.history.replaceState(
-                    { ...window.history.state },
-                    "",
-                    `/connection/${slug}/${id}`
-                );
+                // Check if we're in code mode based on current URL
+                const currentPath = window.location.pathname;
+                if (currentPath.startsWith("/code/")) {
+                    // Code mode URL: /code/[repo]/[slug]/[id]
+                    const pathParts = currentPath.split("/");
+                    const repo = pathParts[2];
+                    if (repo) {
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/code/${repo}/${slug}/${id}`
+                        );
+                    }
+                } else {
+                    // Standard connection URL: /connection/[slug]/[id]
+                    window.history.replaceState(
+                        { ...window.history.state },
+                        "",
+                        `/connection/${slug}/${id}`
+                    );
+                }
             }
         },
         []
