@@ -14,13 +14,15 @@
 import { logger } from "@/lib/logger";
 
 /**
- * Tool lifecycle states
+ * Tool lifecycle states for flat message array
+ *
+ * Simpler state names than the legacy format:
+ * - streaming: Input arguments streaming
+ * - running: Executing (input complete)
+ * - complete: Success, result available
+ * - error: Failed with error
  */
-export type ToolState =
-    | "streaming" // Input arguments streaming
-    | "running" // Executing (input complete)
-    | "complete" // Success, result available
-    | "error"; // Failed with error
+export type CodeToolState = "streaming" | "running" | "complete" | "error";
 
 /**
  * Message types in the flat array
@@ -45,7 +47,7 @@ export interface ToolMessage {
     type: "tool";
     id: string; // toolCallId
     toolName: string;
-    state: ToolState;
+    state: CodeToolState;
     input: Record<string, unknown>;
     result?: unknown;
     errorText?: string;
