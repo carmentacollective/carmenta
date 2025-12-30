@@ -17,6 +17,10 @@ import {
     ListTodo,
     Code,
     NotebookPen,
+    MessageCircleQuestion,
+    Link2,
+    CircleHelp,
+    Heart,
     type LucideIcon,
 } from "lucide-react";
 import { logger } from "@/lib/client-logger";
@@ -422,6 +426,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
     },
 
+<<<<<<< HEAD
     // =========================================================================
     // Claude Code tools - code mode file and shell operations
     // =========================================================================
@@ -659,6 +664,72 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Found results", "Searched", "Discovered"],
             fast: ["Quick search!"],
+=======
+    // Post-response enhancement tools
+    suggestQuestions: {
+        displayName: "Follow-ups",
+        icon: MessageCircleQuestion,
+        getDescription: (args) => {
+            const suggestions = args.suggestions as
+                | Array<{ prompt: string }>
+                | undefined;
+            if (!suggestions?.length) return undefined;
+            return `${suggestions.length} suggestion${suggestions.length > 1 ? "s" : ""}`;
+        },
+        messages: {
+            pending: "Thinking...",
+            running: "Finding follow-ups...",
+            completed: "Here are some ideas",
+            error: "Couldn't generate suggestions",
+        },
+        delightMessages: {
+            completed: ["What's next?", "Keep going?", "Curious about more?"],
+        },
+    },
+    showReferences: {
+        displayName: "Sources",
+        icon: Link2,
+        getDescription: (args) => {
+            const refs = args.references as Array<{ title: string }> | undefined;
+            if (!refs?.length) return undefined;
+            return `${refs.length} source${refs.length > 1 ? "s" : ""}`;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Gathering sources...",
+            completed: "Sources ready",
+            error: "Couldn't load sources",
+        },
+        delightMessages: {
+            completed: ["Here's where this came from", "Check the sources"],
+        },
+    },
+    askUserInput: {
+        displayName: "Question",
+        icon: CircleHelp,
+        getDescription: (args) => {
+            const question = args.question as string | undefined;
+            return question ? truncate(question, 40) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Preparing question...",
+            completed: "Your input needed",
+            error: "Couldn't prepare question",
+        },
+    },
+    acknowledge: {
+        displayName: "Appreciation",
+        icon: Heart,
+        messages: {
+            pending: "Getting ready...",
+            running: "Thinking...",
+            completed: "With gratitude",
+            error: "Couldn't express appreciation",
+        },
+        delightMessages: {
+            completed: ["From the heart", "With care", "Truly appreciated"],
+>>>>>>> dad1efe (✨ Add post-response experience tools and components)
         },
     },
 };
