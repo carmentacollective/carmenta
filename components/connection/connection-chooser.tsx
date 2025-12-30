@@ -975,7 +975,7 @@ export function ConnectionChooser({
                                     <Search className="h-4 w-4 shrink-0" />
                                     {isStreaming && <RunningIndicator />}
                                     <span className="truncate">
-                                        Search conversations...
+                                        Search connections...
                                     </span>
                                 </button>
                             </motion.div>
@@ -1008,8 +1008,6 @@ export function ConnectionChooser({
                     disabled={isPending}
                     className="interactive-focus flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-medium text-primary ring-1 ring-primary/20 transition-all duration-200 hover:bg-primary/15 hover:ring-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="New connection"
-                    data-tooltip-id="tip"
-                    data-tooltip-content="Start fresh"
                 >
                     {isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

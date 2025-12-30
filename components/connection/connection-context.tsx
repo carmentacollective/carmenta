@@ -144,8 +144,9 @@ export function ConnectionProvider({
 
     const handleCreateNewConnection = useCallback(() => {
         setDisplayTitle(null);
-        router.push("/connection?new");
-    }, [router]);
+        // Hard navigation to reset all React state (including chat messages)
+        window.location.href = "/connection?new";
+    }, []);
 
     const archiveActiveConnection = useCallback(() => {
         if (!activeConnectionId) return;
@@ -177,7 +178,8 @@ export function ConnectionProvider({
                     logger.debug({ connectionId: id }, "Deleted connection");
                     setConnections((prev) => prev.filter((c) => c.id !== id));
                     if (id === activeConnectionId) {
-                        router.push("/connection?new");
+                        // Hard navigation to reset all React state (including chat messages)
+                        window.location.href = "/connection?new";
                     }
                 } catch (err) {
                     const error = err instanceof Error ? err : new Error(String(err));
@@ -186,7 +188,7 @@ export function ConnectionProvider({
                 }
             });
         },
-        [activeConnectionId, router]
+        [activeConnectionId]
     );
 
     const addNewConnection = useCallback(
