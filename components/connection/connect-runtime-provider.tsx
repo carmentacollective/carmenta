@@ -39,7 +39,7 @@ import { useConnection } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { TransientProvider, useTransient } from "@/lib/streaming";
-import { ToolStateProvider, useToolState } from "@/lib/code";
+import { ToolStateProvider, useToolState } from "@/lib/code/tool-state-context";
 
 /**
  * Convert our DB UIMessageLike format to AI SDK UIMessage format

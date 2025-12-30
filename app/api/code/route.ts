@@ -55,10 +55,15 @@ const requestSchema = z.object({
  * Execute a code query and stream results via AI SDK data stream.
  */
 export async function POST(req: Request) {
-    logger.info({}, "🔥 /api/code POST received");
+    const startTime = Date.now();
+    const timing = (label: string) =>
+        logger.info({ elapsed: Date.now() - startTime }, `⏱️ ${label}`);
+
+    timing("POST received");
 
     // Validate authentication
     const user = await currentUser();
+    timing("Clerk auth completed");
     if (!user && process.env.NODE_ENV === "production") {
         return unauthorizedResponse();
     }
@@ -71,6 +76,7 @@ export async function POST(req: Request) {
         displayName: user?.fullName ?? "Dev User",
         imageUrl: user?.imageUrl ?? null,
     });
+    timing("DB user resolved");
 
     // Parse request body
     let body: z.infer<typeof requestSchema>;
@@ -157,6 +163,7 @@ export async function POST(req: Request) {
 
     // Validate the project exists
     const isValid = await validateProject(body.projectPath);
+    timing("Project validated");
     if (!isValid) {
         return new Response(JSON.stringify({ error: "Invalid project path" }), {
             status: 400,
@@ -183,6 +190,7 @@ export async function POST(req: Request) {
     // 1. Connection ownership is validated (user can only access their own connections)
     // 2. Project path is validated to be within allowed source directories
     // 3. Code mode is intended for local development - it's the user's own projects
+    timing("Creating Claude Code provider...");
     const claudeCode = createClaudeCode({
         defaultSettings: {
             cwd: body.projectPath,
@@ -191,9 +199,11 @@ export async function POST(req: Request) {
             systemPrompt: { type: "preset", preset: "claude_code" },
         },
     });
+    timing("Claude Code provider created");
 
     // Convert messages before streaming (async operation)
     const modelMessages = await convertToModelMessages(body.messages as UIMessage[]);
+    timing("Messages converted");
 
     // Extract first user message content for title generation
     const firstUserMessage = (body.messages as UIMessage[]).find(
@@ -206,8 +216,10 @@ export async function POST(req: Request) {
     // clearing transient messages. This prevents the race condition where tools
     // would disappear before parts were populated on the client.
     try {
+        timing("Creating stream...");
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
+                timing("Stream execute started");
                 // Track title generation promise to await before stream closes
                 let titlePromise: Promise<void> | null = null;
 
@@ -263,6 +275,7 @@ export async function POST(req: Request) {
 
                 // Create accumulator to track tool state through lifecycle
                 const accumulator = new ToolStateAccumulator();
+                let firstChunkReceived = false;
 
                 // Helper to emit current tool state as data part
                 // AI SDK requires data parts to use `data-${name}` format
@@ -273,10 +286,25 @@ export async function POST(req: Request) {
                     });
                 };
 
+                timing("Starting streamText...");
                 const result = streamText({
                     model: claudeCode(modelName),
                     messages: modelMessages,
                     onChunk: ({ chunk }) => {
+                        if (!firstChunkReceived) {
+                            firstChunkReceived = true;
+                            timing(`First chunk received: ${chunk.type}`);
+                        }
+
+                        // CAPTURE: Log every chunk type and full data for analysis
+                        logger.info(
+                            {
+                                chunkType: chunk.type,
+                                chunk: JSON.stringify(chunk, null, 2),
+                            },
+                            `📦 CHUNK: ${chunk.type}`
+                        );
+
                         // Tool input starts - create tool in streaming state
                         if (chunk.type === "tool-input-start") {
                             const toolChunk = chunk as {
@@ -292,6 +320,18 @@ export async function POST(req: Request) {
                                 "Code mode: tool starting"
                             );
                             accumulator.onInputStart(toolChunk.id, toolChunk.toolName);
+                            emitToolState();
+                        }
+
+                        // Tool input delta - parse input as it streams
+                        // This makes filename/pattern available immediately
+                        if (chunk.type === "tool-input-delta") {
+                            const deltaChunk = chunk as {
+                                type: "tool-input-delta";
+                                id: string;
+                                delta: string;
+                            };
+                            accumulator.onInputDelta(deltaChunk.id, deltaChunk.delta);
                             emitToolState();
                         }
 
@@ -337,15 +377,18 @@ export async function POST(req: Request) {
                 });
 
                 // Merge the streamText result into our stream
+                timing("Merging stream...");
                 writer.merge(result.toUIMessageStream());
 
                 // Ensure title update is written before stream closes
                 if (titlePromise) {
                     await titlePromise;
                 }
+                timing("Stream execute complete");
             },
         });
 
+        timing("Returning stream response");
         return createUIMessageStreamResponse({ stream });
     } catch (error) {
         logger.error(

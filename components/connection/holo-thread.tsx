@@ -238,13 +238,17 @@ function HoloThreadInner() {
                                 );
                             })}
 
-                            {/* Pending assistant response - shows immediately after user sends (regular mode only) */}
-                            {/* Code mode: AssistantMessage handles status via TransientStatus */}
+                            {/* Pending assistant response - shows immediately after user sends */}
                             {needsPendingRegular && (
                                 <PendingAssistantMessage
                                     concierge={concierge}
                                     messageSeed={lastMessage.id}
                                 />
+                            )}
+
+                            {/* Code mode pending - simple working indicator */}
+                            {isCodeMode && needsPendingAssistant && (
+                                <PendingCodeModeMessage />
                             )}
                         </div>
                     )}
@@ -2003,6 +2007,32 @@ function AssistantMessage({
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Pending code mode message - simple working indicator
+ *
+ * Code mode doesn't use concierge routing, so we show a simpler
+ * "Working..." indicator immediately after user sends.
+ */
+function PendingCodeModeMessage() {
+    return (
+        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 px-1 py-2"
+            >
+                {/* Pulsing status indicator */}
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />
+                </span>
+                <span className="text-sm text-muted-foreground">Working...</span>
+            </motion.div>
         </div>
     );
 }

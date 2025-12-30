@@ -39,7 +39,8 @@ import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
 import type { TransientMessage } from "@/lib/streaming";
-import { useToolsArray, type RenderableToolPart } from "@/lib/code";
+import { useToolsArray } from "@/lib/code/tool-state-context";
+import type { RenderableToolPart } from "@/lib/code/transform";
 
 /**
  * Tool part from AI SDK
@@ -581,6 +582,20 @@ export function CodeModeMessage({
     const transientMessages = useTransientChat();
     const accumulatedTools = useToolsArray();
     const parts = message.parts as MessagePart[] | undefined;
+
+    // Debug: log parts state when streaming ends
+    if (!isStreaming && isLast && parts?.some((p) => p.type.startsWith("tool-"))) {
+        console.log(
+            "[CodeModeMessage] Streaming ended, tool parts:",
+            parts
+                .filter((p) => p.type.startsWith("tool-"))
+                .map((p) => ({
+                    toolCallId: (p as ToolPart).toolCallId,
+                    state: (p as ToolPart).state,
+                    hasOutput: !!(p as ToolPart).output,
+                }))
+        );
+    }
 
     // During streaming of the last message, use accumulated tool state
     // This prevents the race condition where tools would disappear
