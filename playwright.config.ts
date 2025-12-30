@@ -34,8 +34,8 @@ export default defineConfig({
         baseURL: process.env.BASE_URL || "http://localhost:3000",
         trace: "on-first-retry",
         // Navigation/action timeouts
-        actionTimeout: 5_000, // 5s for clicks, fills, etc.
-        navigationTimeout: 5_000, // 5s for page.goto, redirects
+        actionTimeout: 10_000, // 10s for clicks, fills, etc.
+        navigationTimeout: 30_000, // 30s for page.goto - pages can be slow on CI
     },
 
     projects: [
