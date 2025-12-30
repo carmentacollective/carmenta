@@ -20,12 +20,13 @@ import {
 import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
-import { getConnection, getOrCreateUser } from "@/lib/db";
+import { getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
 import { validateProject } from "@/lib/code";
-import { decodeConnectionId } from "@/lib/sqids";
+import { decodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
-import { writeStatus } from "@/lib/streaming";
+import { writeStatus, writeTitleUpdate } from "@/lib/streaming";
+import { generateTitle } from "@/lib/title";
 
 /**
  * Route segment config for Vercel
@@ -89,17 +90,22 @@ export async function POST(req: Request) {
         });
     }
 
+    // Connection info for title generation
+    let decodedConnectionId: number | null = null;
+    let connection: Awaited<ReturnType<typeof getConnection>> | null = null;
+    let needsTitleGeneration = false;
+
     // Validate connection ownership if connectionId provided
     if (body.connectionId) {
-        const connectionId = decodeConnectionId(body.connectionId);
-        if (connectionId === null) {
+        decodedConnectionId = decodeConnectionId(body.connectionId);
+        if (decodedConnectionId === null) {
             return new Response(JSON.stringify({ error: "Invalid connection ID" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        const connection = await getConnection(connectionId);
+        connection = await getConnection(decodedConnectionId);
         if (!connection) {
             return new Response(JSON.stringify({ error: "Connection not found" }), {
                 status: 404,
@@ -121,7 +127,11 @@ export async function POST(req: Request) {
         // Verify user owns the connection
         if (connection.userId !== dbUser.id) {
             logger.warn(
-                { connectionId, userId: dbUser.id, ownerId: connection.userId },
+                {
+                    connectionId: decodedConnectionId,
+                    userId: dbUser.id,
+                    ownerId: connection.userId,
+                },
                 "Unauthorized code mode access attempt"
             );
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -132,6 +142,13 @@ export async function POST(req: Request) {
 
         // Use the connection's projectPath (trusted source)
         body.projectPath = connection.projectPath;
+
+        // Check if this connection needs a title generated
+        // Titles like "Code: project-name" or "Code Session" are placeholders
+        needsTitleGeneration =
+            !connection.title ||
+            connection.title.startsWith("Code:") ||
+            connection.title === "Code Session";
     }
 
     // Validate the project exists
@@ -174,12 +191,71 @@ export async function POST(req: Request) {
     // Convert messages before streaming (async operation)
     const modelMessages = await convertToModelMessages(body.messages as UIMessage[]);
 
+    // Extract first user message content for title generation
+    const firstUserMessage = (body.messages as UIMessage[]).find(
+        (m) => m.role === "user"
+    );
+    const userMessageContent = extractUserMessageText(firstUserMessage);
+
     // Stream response using AI SDK patterns with tool activity tracking
     try {
         // Create UI message stream FIRST, then start streamText inside execute
         // This ensures the writer is available when onChunk fires
         const stream = createUIMessageStream({
-            execute: ({ writer }) => {
+            execute: async ({ writer }) => {
+                // Track title generation promise to await before stream closes
+                let titlePromise: Promise<void> | null = null;
+
+                // Fire off async title generation in parallel with streaming
+                if (
+                    needsTitleGeneration &&
+                    decodedConnectionId &&
+                    body.connectionId &&
+                    userMessageContent
+                ) {
+                    const projectName = body.projectPath.split("/").pop() || "project";
+
+                    titlePromise = (async () => {
+                        try {
+                            const result = await generateTitle(userMessageContent, {
+                                type: "code",
+                                projectName,
+                            });
+
+                            if (result.success && result.title) {
+                                // Update connection in database
+                                await updateConnection(decodedConnectionId!, {
+                                    title: result.title,
+                                });
+
+                                // Generate slug and send title update to client
+                                const slug = generateSlug(result.title);
+                                writeTitleUpdate(
+                                    writer,
+                                    result.title,
+                                    slug,
+                                    body.connectionId!
+                                );
+
+                                logger.info(
+                                    {
+                                        connectionId: body.connectionId,
+                                        title: result.title,
+                                        slug,
+                                    },
+                                    "Code mode: title generated and sent"
+                                );
+                            }
+                        } catch (error) {
+                            logger.error(
+                                { error, connectionId: body.connectionId },
+                                "Code mode: title generation failed"
+                            );
+                            // Don't throw - title generation failure shouldn't affect streaming
+                        }
+                    })();
+                }
+
                 // Start streaming INSIDE execute callback so writer is available
                 // from the very first chunk
                 const result = streamText({
@@ -252,6 +328,11 @@ export async function POST(req: Request) {
 
                 // Merge the streamText result into our stream
                 writer.merge(result.toUIMessageStream());
+
+                // Ensure title update is written before stream closes
+                if (titlePromise) {
+                    await titlePromise;
+                }
             },
         });
 
@@ -415,4 +496,18 @@ function mapModelToClaudeCode(
 
     // Default to sonnet for all other models (including claude-sonnet-4)
     return "sonnet";
+}
+
+/**
+ * Extract text content from a UIMessage.
+ * AI SDK 5.x uses parts array with type-based content.
+ */
+function extractUserMessageText(msg: UIMessage | undefined): string {
+    if (!msg?.parts || !Array.isArray(msg.parts)) {
+        return "";
+    }
+    return msg.parts
+        .filter((part): part is { type: "text"; text: string } => part.type === "text")
+        .map((part) => part.text)
+        .join(" ");
 }

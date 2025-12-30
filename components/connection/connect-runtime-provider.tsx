@@ -740,6 +740,57 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 },
                 "📥 onData received"
             );
+
+            // Handle title-update events (async title generation for code mode)
+            if (
+                part?.type === "data-transient" &&
+                (part?.data as Record<string, unknown>)?.type === "title-update"
+            ) {
+                const metadata = (part?.data as Record<string, unknown>)?.metadata as
+                    | Record<string, unknown>
+                    | undefined;
+                if (metadata?.title && metadata?.slug && metadata?.connectionId) {
+                    const title = metadata.title as string;
+                    const slug = metadata.slug as string;
+                    const connectionId = metadata.connectionId as string;
+
+                    logger.info(
+                        { title, slug, connectionId },
+                        "Received title update from stream"
+                    );
+
+                    // Update document title
+                    document.title = `${title} | Carmenta`;
+
+                    // Update URL based on whether this is code mode
+                    const currentPath = window.location.pathname;
+                    if (currentPath.startsWith("/code/")) {
+                        // Code mode URL: /code/[repo]/[slug]/[id]
+                        const pathParts = currentPath.split("/");
+                        const repo = pathParts[2];
+                        if (repo) {
+                            window.history.replaceState(
+                                { ...window.history.state },
+                                "",
+                                `/code/${repo}/${slug}/${connectionId}`
+                            );
+                        } else {
+                            logger.warn(
+                                { currentPath },
+                                "Cannot update URL: missing repo in path"
+                            );
+                        }
+                    } else {
+                        // Standard connection URL: /connection/[slug]/[id]
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/connection/${slug}/${connectionId}`
+                        );
+                    }
+                }
+            }
+
             handleDataPart(dataPart);
         },
         // Clear transient messages when streaming completes

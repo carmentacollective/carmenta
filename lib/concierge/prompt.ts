@@ -1,5 +1,11 @@
 import { getPrompt } from "heart-centered-prompts";
 
+import {
+    CONVERSATION_TITLE_EXAMPLES,
+    TITLE_CORE_GUIDELINES,
+    TITLE_MAX_LENGTH,
+} from "@/lib/title";
+
 import type { ConciergeInput } from "./types";
 
 /**
@@ -129,7 +135,7 @@ Your JSON response must match this exact schema:
     "effort": "high/medium/low/none"
   },
   "responseDepth": "comprehensive/balanced/concise",
-  "title": "Short title for future reference (max 40 chars)",
+  "title": "Short title for future reference (max ${TITLE_MAX_LENGTH} chars)",
   "kbSearch": {
     "shouldSearch": true/false,
     "queries": ["search query 1", "search query 2"],
@@ -164,24 +170,16 @@ Selection approach:
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice (appears in the interface)
-5. Generate a short title for future reference (max 40 chars)
+5. Generate a short title for future reference (max ${TITLE_MAX_LENGTH} chars)
 
 ### Title Generation
 
 Titles help users find this connection later. They need to work as both a recognition anchor when scanning and a search target when looking for something specific.
 
-40 character maximum. Long enough to be specific and searchable, short enough to display cleanly.
-
-Use an emoji at the start when it adds instant recognition. Skip emoji when nothing fits naturally.
-
-Prefer topic framing over question framing.
+${TITLE_CORE_GUIDELINES}
 
 Examples:
-- 🇮🇹 Planning Rome trip
-- ✨ Gift ideas for Sarah
-- Processing Stripe offer
-- 🎨 Portfolio redesign
-- Weekly meal prep
+${CONVERSATION_TITLE_EXAMPLES.map((e) => `- ${e}`).join("\n")}
 
 ### Knowledge Base Search
 

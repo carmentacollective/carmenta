@@ -241,9 +241,9 @@ describe("title evolution", () => {
 
             const result = await evaluateTitleEvolution("Old title", "User: test");
 
-            // 40 char max (from types.ts)
+            // 40 char max (from guidelines.ts)
             expect(result.title!.length).toBeLessThanOrEqual(40);
-            expect(result.title).toContain("...");
+            expect(result.title).toContain("…"); // Unicode ellipsis from cleanTitle
         });
 
         it("returns keep on API error", async () => {
