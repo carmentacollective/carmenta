@@ -39,6 +39,7 @@ import { useConnection } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { TransientProvider, useTransient } from "@/lib/streaming";
+import { ToolStateProvider, useToolState } from "@/lib/code";
 
 /**
  * Convert our DB UIMessageLike format to AI SDK UIMessage format
@@ -604,14 +605,15 @@ function createFetchWrapper(
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
     const {
-        activeConnection,
         activeConnectionId,
         initialMessages,
         addNewConnection,
         setIsStreaming,
         projectPath,
     } = useConnection();
-    const { handleDataPart, clearAll: clearTransientMessages } = useTransient();
+    const { handleDataPart: handleTransientData, clearAll: clearTransientMessages } =
+        useTransient();
+    const { handleDataPart: handleToolStateData } = useToolState();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
@@ -728,7 +730,10 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             setDisplayError(err);
             clearTransientMessages();
         },
-        // Handle transient data parts (status updates) as they stream
+        // Handle data parts as they stream
+        // - Transient data parts: ephemeral status messages
+        // - Tool state data parts: accumulated tool execution state
+        // - Title update data parts: async title updates for code mode
         onData: (dataPart) => {
             const part = dataPart as Record<string, unknown>;
             logger.debug(
@@ -791,11 +796,14 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 }
             }
 
-            handleDataPart(dataPart);
+            // Pass to both handlers
+            handleTransientData(dataPart);
+            handleToolStateData(dataPart);
         },
-        // Clear transient messages when streaming completes
+        // Clear ephemeral state when streaming completes
         onFinish: () => {
             clearTransientMessages();
+            // Note: We don't clear tool state here - tools persist in the message
         },
         experimental_throttle: 50,
     });
@@ -1139,6 +1147,7 @@ function ConciergeWrapper({ children }: { children: ReactNode }) {
  * This wraps the app with:
  * - ConciergeProvider for concierge data (hydrated from persisted state)
  * - TransientProvider for ephemeral status messages during streaming
+ * - ToolStateProvider for accumulated tool state in code mode
  * - ChatContext for message state and actions
  * - Runtime error display with retry capability
  */
@@ -1146,7 +1155,11 @@ export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps
     return (
         <ConciergeWrapper>
             <TransientProvider>
-                <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
+                <ToolStateProvider>
+                    <ConnectRuntimeProviderInner>
+                        {children}
+                    </ConnectRuntimeProviderInner>
+                </ToolStateProvider>
             </TransientProvider>
         </ConciergeWrapper>
     );

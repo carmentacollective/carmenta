@@ -9,6 +9,8 @@
  * - Grep search results
  * - Glob file listings
  * - Agent task spawning
+ *
+ * Plus inline activity display for compact sequential view.
  */
 
 export { TerminalOutput } from "./terminal-output";
@@ -18,3 +20,5 @@ export { DiffViewer } from "./diff-viewer";
 export { SearchResults } from "./search-results";
 export { FileList } from "./file-list";
 export { AgentTask } from "./agent-task";
+export { ToolActivityItem, ResultRow } from "./tool-activity-item";
+export { InlineToolActivity } from "./inline-tool-activity";

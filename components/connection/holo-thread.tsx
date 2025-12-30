@@ -41,6 +41,8 @@ import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { TransientStatus } from "./transient-status";
+import { CodeModeActivity } from "./code-mode-activity";
+import { CodeModeMessage } from "./code-mode-message";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import {
@@ -74,7 +76,7 @@ import { OptionList } from "@/components/tool-ui/option-list";
 import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
 import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
-import { renderCodeTool } from "@/components/tools";
+import { renderCodeTool, InlineToolActivity } from "@/components/tools";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -1332,11 +1334,25 @@ function MessageBubble({
     isStreaming: boolean;
     wasStopped?: boolean;
 }) {
+    const { isCodeMode } = useCodeMode();
+
     if (message.role === "user") {
         return <UserMessage message={message} isLast={isLast} />;
     }
 
     if (message.role === "assistant") {
+        // Code mode: Use CodeModeMessage with inline tool rendering
+        if (isCodeMode) {
+            return (
+                <CodeModeMessage
+                    message={message}
+                    isLast={isLast}
+                    isStreaming={isStreaming}
+                />
+            );
+        }
+
+        // Normal mode: Use AssistantMessage with concierge flow
         return (
             <AssistantMessage
                 message={message}
@@ -1802,7 +1818,15 @@ function AssistantMessage({
             )}
 
             {/* TRANSIENT STATUS - Real-time tool execution status */}
-            {isStreaming && isLast && <TransientStatus className="mt-2" />}
+            {/* Code mode: Use inline activity display instead of pills */}
+            {/* Normal mode: Use pill-based TransientStatus */}
+            {isStreaming &&
+                isLast &&
+                (isCodeMode ? (
+                    <CodeModeActivity className="mt-2" />
+                ) : (
+                    <TransientStatus className="mt-2" />
+                ))}
 
             {/* LLM ZONE - Model's output (neutral glass) */}
             {/* Only renders for the LAST message when concierge is active */}
@@ -1836,20 +1860,31 @@ function AssistantMessage({
                             )}
 
                             {/* Tool UIs - nested inside LLM zone */}
+                            {/* Code mode: Use inline activity display */}
+                            {/* Normal mode: Use detailed card renderers */}
                             {toolParts.length > 0 && (
-                                <div className="overflow-x-auto border-b border-foreground/10">
-                                    {toolParts.map((part, idx) => (
-                                        <div
-                                            key={part.toolCallId}
-                                            className={cn(
-                                                "max-w-full",
-                                                idx > 0 &&
-                                                    "border-t border-foreground/5"
-                                            )}
-                                        >
-                                            <ToolPartRenderer part={part} />
+                                <div className="border-b border-foreground/10">
+                                    {isCodeMode ? (
+                                        <InlineToolActivity
+                                            parts={toolParts}
+                                            className="px-2 py-1"
+                                        />
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            {toolParts.map((part, idx) => (
+                                                <div
+                                                    key={part.toolCallId}
+                                                    className={cn(
+                                                        "max-w-full",
+                                                        idx > 0 &&
+                                                            "border-t border-foreground/5"
+                                                    )}
+                                                >
+                                                    <ToolPartRenderer part={part} />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             )}
 
@@ -1944,9 +1979,14 @@ function AssistantMessage({
                             className="mb-3"
                         />
                     )}
-                    {toolParts.map((part) => (
-                        <ToolPartRenderer key={part.toolCallId} part={part} />
-                    ))}
+                    {toolParts.length > 0 &&
+                        (isCodeMode ? (
+                            <InlineToolActivity parts={toolParts} />
+                        ) : (
+                            toolParts.map((part) => (
+                                <ToolPartRenderer key={part.toolCallId} part={part} />
+                            ))
+                        ))}
                 </div>
             )}
 

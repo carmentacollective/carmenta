@@ -21,11 +21,15 @@ import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
 import { getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
-import { validateProject } from "@/lib/code";
+import {
+    validateProject,
+    ToolStateAccumulator,
+    getToolStatusMessage,
+} from "@/lib/code";
 import { decodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
-import { writeStatus, writeTitleUpdate } from "@/lib/streaming";
+import { writeTitleUpdate } from "@/lib/streaming";
 import { generateTitle } from "@/lib/title";
 
 /**
@@ -197,10 +201,11 @@ export async function POST(req: Request) {
     );
     const userMessageContent = extractUserMessageText(firstUserMessage);
 
-    // Stream response using AI SDK patterns with tool activity tracking
+    // Stream response using AI SDK patterns with tool state accumulation
+    // Key insight: we accumulate tool state and emit as data parts instead of
+    // clearing transient messages. This prevents the race condition where tools
+    // would disappear before parts were populated on the client.
     try {
-        // Create UI message stream FIRST, then start streamText inside execute
-        // This ensures the writer is available when onChunk fires
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
                 // Track title generation promise to await before stream closes
@@ -256,18 +261,23 @@ export async function POST(req: Request) {
                     })();
                 }
 
-                // Start streaming INSIDE execute callback so writer is available
-                // from the very first chunk
+                // Create accumulator to track tool state through lifecycle
+                const accumulator = new ToolStateAccumulator();
+
+                // Helper to emit current tool state as data part
+                // AI SDK requires data parts to use `data-${name}` format
+                const emitToolState = () => {
+                    writer.write({
+                        type: "data-tool-state" as const,
+                        data: accumulator.getAllTools(),
+                    });
+                };
+
                 const result = streamText({
                     model: claudeCode(modelName),
                     messages: modelMessages,
-                    // Capture streaming events to show tool activity
-                    // NOTE: tool-call and tool-result arrive simultaneously because
-                    // Claude Code executes tools internally (providerExecuted: true).
-                    // We use tool-input-start to show status early, while tool is preparing.
                     onChunk: ({ chunk }) => {
-                        // Show status when Claude Code starts preparing a tool
-                        // This arrives BEFORE tool-call/tool-result, giving us visibility
+                        // Tool input starts - create tool in streaming state
                         if (chunk.type === "tool-input-start") {
                             const toolChunk = chunk as {
                                 type: "tool-input-start";
@@ -281,47 +291,47 @@ export async function POST(req: Request) {
                                 },
                                 "Code mode: tool starting"
                             );
-                            // Show status without args initially - we'll get them in tool-input-delta
-                            writeStatus(
-                                writer,
-                                `tool-${toolChunk.id}`,
-                                getCodeToolStatusMessage(toolChunk.toolName),
-                                getCodeToolIcon(toolChunk.toolName)
-                            );
+                            accumulator.onInputStart(toolChunk.id, toolChunk.toolName);
+                            emitToolState();
                         }
 
-                        // Update status with args when we get the full input
+                        // Tool call with complete args - transition to executing
                         if (chunk.type === "tool-call") {
-                            const args = chunk.input as
-                                | Record<string, unknown>
-                                | undefined;
-                            const message = getCodeToolStatusMessage(
-                                chunk.toolName,
-                                args
-                            );
+                            const args = (chunk.input as Record<string, unknown>) ?? {};
                             logger.debug(
                                 {
                                     toolName: chunk.toolName,
                                     toolCallId: chunk.toolCallId,
+                                    summary: getToolStatusMessage(chunk.toolName, args),
                                 },
                                 "Code mode: tool call"
                             );
-                            // Update with more specific message now that we have args
-                            writeStatus(
-                                writer,
-                                `tool-${chunk.toolCallId}`,
-                                message,
-                                getCodeToolIcon(chunk.toolName)
+                            accumulator.onToolCall(
+                                chunk.toolCallId,
+                                chunk.toolName,
+                                args
                             );
+                            emitToolState();
                         }
 
-                        // Clear status when tool result arrives
+                        // Tool result - transition to complete (NOT clearing!)
                         if (chunk.type === "tool-result") {
+                            const isError =
+                                chunk.output?.startsWith?.("Error:") ?? false;
                             logger.debug(
-                                { toolCallId: chunk.toolCallId },
+                                {
+                                    toolCallId: chunk.toolCallId,
+                                    isError,
+                                },
                                 "Code mode: tool result"
                             );
-                            writeStatus(writer, `tool-${chunk.toolCallId}`, "");
+                            accumulator.onResult(
+                                chunk.toolCallId,
+                                chunk.output,
+                                isError,
+                                isError ? String(chunk.output) : undefined
+                            );
+                            emitToolState();
                         }
                     },
                 });
@@ -346,137 +356,6 @@ export async function POST(req: Request) {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });
-    }
-}
-
-/**
- * Get a user-friendly status message for Claude Code tool calls.
- * These messages should be specific and informative - the user is watching
- * and wants to know exactly what's happening during long operations.
- */
-function getCodeToolStatusMessage(
-    toolName: string,
-    args?: Record<string, unknown>
-): string {
-    // Extract filename from path if available
-    const getFilename = (path?: string) => {
-        if (!path) return "file";
-        const parts = path.split("/");
-        return parts[parts.length - 1] || "file";
-    };
-
-    // Truncate long strings with ellipsis
-    const truncate = (str: string | undefined, maxLen: number) => {
-        if (!str) return "";
-        return str.length > maxLen ? str.slice(0, maxLen) + "…" : str;
-    };
-
-    switch (toolName) {
-        case "Read":
-            return `Reading ${getFilename(args?.file_path as string)}`;
-        case "Write":
-            return `Writing ${getFilename(args?.file_path as string)}`;
-        case "Edit":
-            return `Editing ${getFilename(args?.file_path as string)}`;
-        case "Bash": {
-            // Show actual command for visibility
-            const cmd = args?.command as string | undefined;
-            const desc = args?.description as string | undefined;
-            if (desc) return truncate(desc, 50);
-            if (cmd) return `Running: ${truncate(cmd, 40)}`;
-            return "Running command";
-        }
-        case "Glob":
-            return `Finding ${(args?.pattern as string) || "files"}`;
-        case "Grep": {
-            const pattern = args?.pattern as string | undefined;
-            return pattern ? `Searching: ${truncate(pattern, 35)}` : "Searching";
-        }
-        case "Task": {
-            // Show agent type and brief description for visibility
-            const agentType = args?.subagent_type as string | undefined;
-            const desc = args?.description as string | undefined;
-            if (agentType && desc) {
-                return `${agentType}: ${truncate(desc, 40)}`;
-            }
-            return agentType ? `Spawning ${agentType}` : "Spawning agent";
-        }
-        case "WebFetch": {
-            const url = args?.url as string | undefined;
-            if (url) {
-                try {
-                    const hostname = new URL(url).hostname;
-                    return `Fetching ${hostname}`;
-                } catch {
-                    return `Fetching ${truncate(url, 40)}`;
-                }
-            }
-            return "Fetching web page";
-        }
-        case "WebSearch":
-            return `Searching: ${truncate(args?.query as string, 35) || "web"}`;
-        case "TodoWrite":
-            return "Updating task list";
-        case "LSP": {
-            const op = args?.operation as string | undefined;
-            const file = getFilename(args?.filePath as string);
-            if (op && file !== "file") return `${op} in ${file}`;
-            return op ? `Code: ${op}` : "Analyzing code";
-        }
-        case "NotebookEdit":
-            return `Editing ${getFilename(args?.notebook_path as string)}`;
-        case "AskUserQuestion":
-            return "Waiting for your input";
-        case "EnterPlanMode":
-            return "Entering plan mode";
-        case "ExitPlanMode":
-            return "Exiting plan mode";
-        case "KillShell":
-            return "Stopping background process";
-        default:
-            return toolName;
-    }
-}
-
-/**
- * Get an appropriate icon for Claude Code tools.
- */
-function getCodeToolIcon(toolName: string): string {
-    switch (toolName) {
-        case "Read":
-            return "📖";
-        case "Write":
-            return "✍️";
-        case "Edit":
-            return "✏️";
-        case "Bash":
-            return "💻";
-        case "Glob":
-            return "📁";
-        case "Grep":
-            return "🔎";
-        case "Task":
-            return "🤖";
-        case "WebFetch":
-            return "🌐";
-        case "WebSearch":
-            return "🔍";
-        case "TodoWrite":
-            return "📋";
-        case "LSP":
-            return "🧠";
-        case "NotebookEdit":
-            return "📓";
-        case "AskUserQuestion":
-            return "❓";
-        case "EnterPlanMode":
-            return "📐";
-        case "ExitPlanMode":
-            return "✅";
-        case "KillShell":
-            return "🛑";
-        default:
-            return "⚙️";
     }
 }
 
