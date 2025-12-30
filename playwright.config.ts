@@ -32,7 +32,7 @@ export default defineConfig({
 
     use: {
         baseURL: process.env.BASE_URL || "http://localhost:3000",
-        trace: "on-first-retry",
+        trace: "retain-on-failure", // Changed from on-first-retry since retries=0
         // Navigation/action timeouts
         actionTimeout: 10_000, // 10s for clicks, fills, etc.
         navigationTimeout: 30_000, // 30s for page.goto - pages can be slow on CI
