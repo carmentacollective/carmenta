@@ -417,6 +417,9 @@ function mapModelToClaudeCode(
     if (lower.includes("haiku")) return "haiku";
 
     // Default to sonnet for all other models (including claude-sonnet-4)
+    if (!lower.includes("sonnet")) {
+        logger.warn({ modelId }, "Unknown model, defaulting to sonnet");
+    }
     return "sonnet";
 }
 
