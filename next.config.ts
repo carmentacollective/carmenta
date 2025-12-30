@@ -99,32 +99,7 @@ const config: NextConfig = {
         ];
     },
 
-    // Turbopack configuration (Next.js 16 uses Turbopack by default)
-    turbopack: {},
-
-    // Keep webpack config for backward compatibility
-    webpack: (config, { isServer }) => {
-        config.cache = {
-            type: "filesystem",
-            buildDependencies: {
-                config: [__filename],
-            },
-        };
-
-        config.infrastructureLogging = {
-            ...config.infrastructureLogging,
-            level: "error",
-        };
-
-        if (isServer) {
-            // Mark Pino and related packages as external to prevent bundling
-            config.externals = config.externals || [];
-            config.externals.push("pino", "pino-pretty", "thread-stream");
-        }
-
-        return config;
-    },
-
+    // Prevent bundling of native Node packages (works with both Turbopack and Webpack)
     serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
 };
 
@@ -148,12 +123,6 @@ const sentryConfig = {
 
     // Tunnel Sentry requests through our own domain to avoid ad blockers
     tunnelRoute: "/monitoring",
-
-    // Disable Sentry during development unless explicitly enabled
-    hideSourceMaps: process.env.NODE_ENV === "development",
-
-    // Turbopack is supported as of SDK 10.13.0
-    // No special configuration needed
 };
 
 export default withBundleAnalyzer(withSentryConfig(config, sentryConfig));
