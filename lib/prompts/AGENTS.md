@@ -3,9 +3,7 @@
 This directory contains prompts that Carmenta uses. These are LLM-to-LLM communications:
 prompts written for an LLM to execute.
 
-## Required Reading
-
-@.cursor/rules/prompt-engineering.mdc
+**Before writing or editing prompts here, invoke the `writing-for-llms` skill.**
 
 ## Core Principles
 
