@@ -414,6 +414,7 @@ function ConnectionDropdown({
     setQuery,
     debouncedQuery,
     inputRef,
+    isMobile,
 }: {
     isOpen: boolean;
     onClose: () => void;
@@ -429,6 +430,7 @@ function ConnectionDropdown({
     setQuery: (q: string) => void;
     debouncedQuery: string;
     inputRef: React.RefObject<HTMLInputElement | null>;
+    isMobile: boolean;
 }) {
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
     const [navigatingToId, setNavigatingToId] = useState<string | null>(null);
@@ -583,15 +585,30 @@ function ConnectionDropdown({
                         transition={{ duration: 0.15 }}
                     />
 
-                    {/* Dropdown panel - always positioned below header */}
+                    {/* Dropdown panel - full-screen on mobile, centered modal on desktop */}
                     <motion.div
-                        className="fixed inset-x-0 top-32 z-modal mx-auto w-[calc(100vw-2rem)] sm:top-24 sm:w-[420px]"
-                        initial={{ opacity: 0, y: -12, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="fixed inset-0 z-modal sm:inset-x-0 sm:top-24 sm:mx-auto sm:h-auto sm:w-[420px]"
+                        initial={
+                            isMobile
+                                ? { opacity: 0, y: "100%" }
+                                : { opacity: 0, y: -12, scale: 0.96 }
+                        }
+                        animate={
+                            isMobile
+                                ? { opacity: 1, y: 0 }
+                                : { opacity: 1, y: 0, scale: 1 }
+                        }
+                        exit={
+                            isMobile
+                                ? { opacity: 0, y: "100%" }
+                                : { opacity: 0, y: -8, scale: 0.98 }
+                        }
+                        transition={{
+                            duration: isMobile ? 0.3 : 0.2,
+                            ease: [0.16, 1, 0.3, 1],
+                        }}
                     >
-                        <div className="glass-container-mobile overflow-hidden rounded-2xl shadow-2xl">
+                        <div className="glass-container-mobile flex h-full flex-col overflow-hidden rounded-none shadow-2xl sm:rounded-2xl">
                             {/* Search header */}
                             <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
                                 <Search className="h-5 w-5 text-foreground/40" />
@@ -613,7 +630,7 @@ function ConnectionDropdown({
                             </div>
 
                             {/* Connection list */}
-                            <div className="max-h-[50vh] overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto sm:max-h-[50vh]">
                                 {/* Empty state */}
                                 {filteredStarred.length === 0 &&
                                     filteredUnstarred.length === 0 && (
@@ -847,6 +864,9 @@ export function ConnectionChooser({
     const debouncedQuery = useDebouncedValue(query, 300);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Detect mobile for responsive animation and layout
+    const isMobile = useMediaQuery("(max-width: 639px)");
+
     const openDropdown = useCallback(() => setIsDropdownOpen(true), []);
     const closeDropdown = useCallback(() => {
         setIsDropdownOpen(false);
@@ -869,9 +889,6 @@ export function ConnectionChooser({
         },
         [activeConnection, updateConnectionTitle]
     );
-
-    // Detect mobile to avoid disruptive keyboard popup
-    const isMobile = useMediaQuery("(max-width: 639px)");
 
     // Focus search input when dropdown opens (skip on mobile to avoid keyboard popup)
     useEffect(() => {
@@ -998,6 +1015,7 @@ export function ConnectionChooser({
                     setQuery={setQuery}
                     debouncedQuery={debouncedQuery}
                     inputRef={inputRef}
+                    isMobile={isMobile}
                 />
             </div>
 
