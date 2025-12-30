@@ -15,7 +15,7 @@
 import type { ReactNode } from "react";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
-import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
+import { ToolRenderer } from "./shared";
 
 // Code tool renderers - beautiful UI for Claude Code operations
 import {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ToolStatusBadge } from "@/components/generative-ui/tool-status-badge";
+import { ToolStatusBadge } from "@/components/tools/shared";
 
 describe("ToolStatusBadge", () => {
     it("renders pending state correctly", () => {
