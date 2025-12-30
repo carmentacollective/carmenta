@@ -587,7 +587,7 @@ function ConnectionDropdown({
 
                     {/* Dropdown panel - full-screen on mobile, centered modal on desktop */}
                     <motion.div
-                        className="fixed inset-0 z-modal sm:inset-x-0 sm:top-24 sm:mx-auto sm:h-auto sm:w-[420px]"
+                        className="fixed inset-0 z-modal sm:inset-x-0 sm:bottom-auto sm:top-24 sm:mx-auto sm:h-auto sm:w-[420px]"
                         initial={
                             isMobile
                                 ? { opacity: 0, y: "100%" }

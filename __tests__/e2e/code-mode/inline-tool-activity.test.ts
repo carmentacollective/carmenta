@@ -209,6 +209,12 @@ test.describe("Code Mode Inline Tool Activity", () => {
     });
 
     test("visual quality - inline activity has beautiful styling", async ({ page }) => {
+        // Track JavaScript errors
+        const errors: string[] = [];
+        page.on("pageerror", (error) => {
+            errors.push(error.message);
+        });
+
         // Navigate to code mode
         await page.goto("/code/carmenta-code/new");
 
@@ -231,11 +237,6 @@ test.describe("Code Mode Inline Tool Activity", () => {
         });
 
         // Verify no JavaScript errors occurred
-        const errors: string[] = [];
-        page.on("pageerror", (error) => {
-            errors.push(error.message);
-        });
-
         expect(errors).toHaveLength(0);
 
         // Verify the page has the expected structure
