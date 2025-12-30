@@ -3,23 +3,29 @@
 /**
  * FileViewer - Syntax-highlighted file content display for Read tool
  *
- * Features:
- * - Syntax highlighting via Shiki
- * - Line numbers
+ * Shows file content inline with proper visibility:
+ * - Syntax highlighting via Shiki/Prism (through MarkdownRenderer)
+ * - Line numbers in code blocks
  * - File path header with icon
  * - Copy button
- * - Expandable for large files
+ * - Collapsible for large files (visible first, can expand/collapse)
  */
 
-import { useMemo } from "react";
-import { FileText, FileCode, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useMemo, useState, useCallback } from "react";
+import {
+    FileText,
+    FileCode,
+    Copy,
+    Check,
+    ChevronDown,
+    ChevronUp,
+    Loader2,
+} from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { useState } from "react";
 
 interface FileViewerProps {
     toolCallId: string;
@@ -31,8 +37,10 @@ interface FileViewerProps {
     error?: string;
 }
 
+const MAX_COLLAPSED_LINES = 25;
+
 /**
- * Get file extension for syntax highlighting
+ * Get language for syntax highlighting from file path
  */
 function getLanguageFromPath(filePath: string): string {
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
@@ -82,6 +90,32 @@ function getLanguageFromPath(filePath: string): string {
 }
 
 /**
+ * Check if file is a code file (for icon selection)
+ */
+function isCodeFile(filePath: string): boolean {
+    const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+    const codeExts = [
+        "ts",
+        "tsx",
+        "js",
+        "jsx",
+        "py",
+        "rb",
+        "rs",
+        "go",
+        "java",
+        "kt",
+        "swift",
+        "c",
+        "cpp",
+        "h",
+        "cs",
+        "php",
+    ];
+    return codeExts.includes(ext);
+}
+
+/**
  * Extract filename from path
  */
 function getFileName(filePath: string): string {
@@ -98,54 +132,31 @@ export function FileViewer({
     error,
 }: FileViewerProps) {
     const { copy, copiedId } = useCopyToClipboard();
-    const isCopied = copiedId === "content";
+    const isCopied = copiedId === toolCallId;
     const [isExpanded, setIsExpanded] = useState(false);
     const isCompleted = status === "completed";
+    const isRunning = status === "running";
+    const isCodeFileType = filePath ? isCodeFile(filePath) : false;
 
     const language = useMemo(() => {
         if (!filePath) return "text";
         return getLanguageFromPath(filePath);
     }, [filePath]);
 
-    const isCodeFile = useMemo(() => {
-        if (!filePath) return false;
-        const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-        const codeExts = [
-            "ts",
-            "tsx",
-            "js",
-            "jsx",
-            "py",
-            "rb",
-            "rs",
-            "go",
-            "java",
-            "kt",
-            "swift",
-            "c",
-            "cpp",
-            "h",
-            "cs",
-            "php",
-        ];
-        return codeExts.includes(ext);
-    }, [filePath]);
-
     const fileName = filePath ? getFileName(filePath) : "file";
 
-    // Count lines and determine if we need expansion
+    // Process content for display
     const lines = useMemo(() => content?.split("\n") ?? [], [content]);
     const lineCount = lines.length;
-    const MAX_COLLAPSED_LINES = 30;
-    const needsExpansion = lineCount > MAX_COLLAPSED_LINES;
+    const shouldCollapse = lineCount > MAX_COLLAPSED_LINES;
+    const isCollapsed = shouldCollapse && !isExpanded;
 
-    // Build the code block for markdown rendering
+    // Build the markdown code block
     const displayContent = useMemo(() => {
         if (!content) return "";
-        const displayLines =
-            needsExpansion && !isExpanded ? lines.slice(0, MAX_COLLAPSED_LINES) : lines;
+        const displayLines = isCollapsed ? lines.slice(0, MAX_COLLAPSED_LINES) : lines;
         return `\`\`\`${language}\n${displayLines.join("\n")}\n\`\`\``;
-    }, [content, language, needsExpansion, isExpanded, lines, MAX_COLLAPSED_LINES]);
+    }, [content, language, isCollapsed, lines]);
 
     // Build range info text
     const rangeInfo = useMemo(() => {
@@ -155,118 +166,135 @@ export function FileViewer({
         return `Lines ${start}-${end}`;
     }, [offset, limit, lineCount]);
 
+    const handleCopy = useCallback(() => {
+        if (content) copy(content, toolCallId);
+    }, [content, copy, toolCallId]);
+
     return (
-        <ToolRenderer
-            toolName="Read"
-            toolCallId={toolCallId}
-            status={status}
-            input={{ file_path: filePath, offset, limit }}
-            output={content ? { content: content.slice(0, 200) + "..." } : undefined}
-            error={error}
+        <div
+            className="mb-3 w-full overflow-hidden rounded-lg border border-border bg-card"
+            data-tool-call-id={toolCallId}
         >
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {/* File header */}
-                <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                        {isCodeFile ? (
-                            <FileCode className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        ) : (
-                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
-                        <span className="truncate font-mono text-sm text-foreground">
-                            {fileName}
+            {/* File header */}
+            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    {isCodeFileType ? (
+                        <FileCode className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="truncate font-mono text-sm text-foreground">
+                        {fileName}
+                    </span>
+                    {rangeInfo && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                            ({rangeInfo})
                         </span>
-                        {rangeInfo && (
-                            <span className="shrink-0 text-xs text-muted-foreground">
-                                ({rangeInfo})
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                        {isCompleted && content && (
-                            <button
-                                onClick={() => copy(content, "content")}
-                                className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                aria-label="Copy content"
-                            >
-                                {isCopied ? (
-                                    <Check className="h-4 w-4 text-green-500" />
-                                ) : (
-                                    <Copy className="h-4 w-4" />
-                                )}
-                            </button>
-                        )}
-                    </div>
+                    )}
+                    {lineCount > 0 && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                            {lineCount} lines
+                        </span>
+                    )}
                 </div>
 
-                {/* File path tooltip */}
-                {filePath && filePath !== fileName && (
-                    <div className="border-b border-border bg-muted/30 px-3 py-1">
-                        <span className="font-mono text-xs text-muted-foreground">
-                            {filePath}
-                        </span>
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    {/* Loading indicator */}
+                    {isRunning && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
 
-                {/* Content */}
-                <div className="max-h-96 overflow-auto">
-                    <AnimatePresence mode="wait">
-                        {status === "running" && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center gap-2 p-4 text-muted-foreground"
-                            >
-                                <FileText className="h-4 w-4 animate-pulse" />
-                                <span className="text-sm">Reading file...</span>
-                            </motion.div>
-                        )}
-
-                        {isCompleted && content && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0"
-                            >
-                                <MarkdownRenderer content={displayContent} />
-                            </motion.div>
-                        )}
-
-                        {isCompleted && !content && !error && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="p-4 text-sm text-muted-foreground"
-                            >
-                                File is empty
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {/* Copy button */}
+                    {isCompleted && content && (
+                        <button
+                            onClick={handleCopy}
+                            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            aria-label="Copy content"
+                        >
+                            {isCopied ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                                <Copy className="h-4 w-4" />
+                            )}
+                        </button>
+                    )}
                 </div>
-
-                {/* Expansion toggle */}
-                {needsExpansion && isCompleted && (
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="flex w-full items-center justify-center gap-1 border-t border-border bg-muted/30 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                        {isExpanded ? (
-                            <>
-                                <ChevronUp className="h-3 w-3" />
-                                Show less
-                            </>
-                        ) : (
-                            <>
-                                <ChevronDown className="h-3 w-3" />
-                                Show all {lineCount} lines
-                            </>
-                        )}
-                    </button>
-                )}
             </div>
-        </ToolRenderer>
+
+            {/* Full file path (if different from filename) */}
+            {filePath && filePath !== fileName && (
+                <div className="border-b border-border bg-muted/30 px-3 py-1">
+                    <span className="font-mono text-xs text-muted-foreground">
+                        {filePath}
+                    </span>
+                </div>
+            )}
+
+            {/* Content - VISIBLE BY DEFAULT */}
+            <div className="relative">
+                {/* Loading state */}
+                {isRunning && (
+                    <div className="flex items-center gap-2 p-4 text-muted-foreground">
+                        <FileText className="h-4 w-4 animate-pulse" />
+                        <span className="text-sm">Reading file...</span>
+                    </div>
+                )}
+
+                {/* File content with syntax highlighting */}
+                {isCompleted && content && (
+                    <div
+                        className={cn(
+                            "[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0",
+                            isCollapsed && "max-h-[400px] overflow-hidden"
+                        )}
+                    >
+                        <MarkdownRenderer content={displayContent} />
+
+                        {/* Gradient fade when collapsed */}
+                        {isCollapsed && (
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
+                        )}
+                    </div>
+                )}
+
+                {/* Empty file */}
+                {isCompleted && !content && !error && (
+                    <div className="p-4 text-sm italic text-muted-foreground">
+                        File is empty
+                    </div>
+                )}
+
+                {/* Error message */}
+                {error && <div className="p-4 text-sm text-red-500">{error}</div>}
+            </div>
+
+            {/* Expand/collapse button for long files */}
+            {shouldCollapse && isCompleted && (
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={cn(
+                        "flex w-full items-center justify-center gap-1.5 border-t border-border py-2",
+                        "text-sm text-muted-foreground transition-colors",
+                        "hover:bg-muted/50 hover:text-foreground"
+                    )}
+                >
+                    {isCollapsed ? (
+                        <>
+                            <ChevronDown className="h-4 w-4" />
+                            Show all {lineCount} lines
+                            <span className="text-muted-foreground/60">
+                                (+{lineCount - MAX_COLLAPSED_LINES} more)
+                            </span>
+                        </>
+                    ) : (
+                        <>
+                            <ChevronUp className="h-4 w-4" />
+                            Collapse
+                        </>
+                    )}
+                </button>
+            )}
+        </div>
     );
 }

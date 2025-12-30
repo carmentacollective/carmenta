@@ -3,11 +3,12 @@
 /**
  * SearchResults - Grep search results display
  *
- * Features:
- * - Pattern and path display
+ * Shows search results inline with clear visibility:
+ * - Pattern and path display in header
  * - Results grouped by file
  * - Line numbers with highlighted matches
  * - Match count badges
+ * - Content visible immediately (not hidden)
  */
 
 import { useMemo, useState } from "react";
@@ -18,11 +19,10 @@ import {
     ChevronUp,
     ChevronRight,
     Hash,
+    Loader2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
-import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 interface SearchResultsProps {
@@ -98,6 +98,7 @@ export function SearchResults({
     const [isExpanded, setIsExpanded] = useState(false);
     const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
     const isCompleted = status === "completed";
+    const isRunning = status === "running";
 
     // Match type for grouped results
     type Match = { file: string; line: number; content: string };
@@ -120,7 +121,7 @@ export function SearchResults({
         matches?.length ?? counts?.reduce((sum, c) => sum + c.count, 0) ?? fileCount;
 
     // Collapsed limits
-    const MAX_FILES_COLLAPSED = 5;
+    const MAX_FILES_COLLAPSED = 8;
     const needsExpansion = fileCount > MAX_FILES_COLLAPSED;
 
     const toggleFileExpanded = (file: string) => {
@@ -136,23 +137,22 @@ export function SearchResults({
     };
 
     return (
-        <ToolRenderer
-            toolName="Grep"
-            toolCallId={toolCallId}
-            status={status}
-            input={{ pattern, path, glob, type, output_mode: outputMode }}
-            output={isCompleted ? { files: fileCount, matches: matchCount } : undefined}
-            error={error}
+        <div
+            className="mb-3 w-full overflow-hidden rounded-lg border border-border bg-card"
+            data-tool-call-id={toolCallId}
         >
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                        <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <code className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">
-                            {pattern}
-                        </code>
-                    </div>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <code className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">
+                        {pattern}
+                    </code>
+                </div>
+                <div className="flex items-center gap-2">
+                    {isRunning && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
                     {isCompleted && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>
@@ -169,221 +169,179 @@ export function SearchResults({
                         </div>
                     )}
                 </div>
+            </div>
 
-                {/* Search scope */}
-                {(path || glob || type) && (
-                    <div className="flex flex-wrap gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
-                        {path && <span>in {path}</span>}
-                        {glob && (
-                            <span className="rounded bg-muted px-1">glob: {glob}</span>
-                        )}
-                        {type && (
-                            <span className="rounded bg-muted px-1">type: {type}</span>
-                        )}
+            {/* Search scope */}
+            {(path || glob || type) && (
+                <div className="flex flex-wrap gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+                    {path && <span>in {path}</span>}
+                    {glob && (
+                        <span className="rounded bg-muted px-1">glob: {glob}</span>
+                    )}
+                    {type && (
+                        <span className="rounded bg-muted px-1">type: {type}</span>
+                    )}
+                </div>
+            )}
+
+            {/* Results - VISIBLE BY DEFAULT */}
+            <div className="max-h-96 overflow-auto">
+                {/* Loading state */}
+                {isRunning && (
+                    <div className="flex items-center gap-2 p-4 text-muted-foreground">
+                        <Search className="h-4 w-4 animate-pulse" />
+                        <span className="text-sm">Searching...</span>
                     </div>
                 )}
 
-                {/* Results */}
-                <div className="max-h-96 overflow-auto">
-                    <AnimatePresence mode="wait">
-                        {status === "running" && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center gap-2 p-4 text-muted-foreground"
+                {/* Files only mode */}
+                {isCompleted && outputMode === "files_with_matches" && files && (
+                    <ul className="divide-y divide-border">
+                        {(needsExpansion && !isExpanded
+                            ? files.slice(0, MAX_FILES_COLLAPSED)
+                            : files
+                        ).map((file, idx) => (
+                            <li
+                                key={`${file}-${idx}`}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50"
                             >
-                                <Search className="h-4 w-4 animate-pulse" />
-                                <span className="text-sm">Searching...</span>
-                            </motion.div>
-                        )}
-
-                        {/* Files only mode */}
-                        {isCompleted &&
-                            outputMode === "files_with_matches" &&
-                            files && (
-                                <motion.ul
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="divide-y divide-border"
-                                >
-                                    {(needsExpansion && !isExpanded
-                                        ? files.slice(0, MAX_FILES_COLLAPSED)
-                                        : files
-                                    ).map((file, idx) => (
-                                        <li
-                                            key={`${file}-${idx}`}
-                                            className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50"
-                                        >
-                                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                            <span className="truncate font-mono text-sm text-foreground">
-                                                {file}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </motion.ul>
-                            )}
-
-                        {/* Count mode */}
-                        {isCompleted && outputMode === "count" && counts && (
-                            <motion.ul
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="divide-y divide-border"
-                            >
-                                {(needsExpansion && !isExpanded
-                                    ? counts.slice(0, MAX_FILES_COLLAPSED)
-                                    : counts
-                                ).map((item, idx) => (
-                                    <li
-                                        key={`${item.file}-${idx}`}
-                                        className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50"
-                                    >
-                                        <div className="flex items-center gap-2 overflow-hidden">
-                                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                            <span className="truncate font-mono text-sm text-foreground">
-                                                {item.file}
-                                            </span>
-                                        </div>
-                                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                                            {item.count}
-                                        </span>
-                                    </li>
-                                ))}
-                            </motion.ul>
-                        )}
-
-                        {/* Content mode with line matches */}
-                        {isCompleted &&
-                            outputMode === "content" &&
-                            matchesByFile.size > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="divide-y divide-border"
-                                >
-                                    {Array.from(matchesByFile.entries())
-                                        .slice(
-                                            0,
-                                            needsExpansion && !isExpanded
-                                                ? MAX_FILES_COLLAPSED
-                                                : undefined
-                                        )
-                                        .map(([file, fileMatches]) => {
-                                            const isFileExpanded =
-                                                expandedFiles.has(file);
-                                            const fileName = getFileName(file);
-
-                                            return (
-                                                <div key={file}>
-                                                    {/* File header */}
-                                                    <button
-                                                        onClick={() =>
-                                                            toggleFileExpanded(file)
-                                                        }
-                                                        className="flex w-full items-center gap-2 bg-muted/30 px-3 py-2 text-left hover:bg-muted/50"
-                                                    >
-                                                        <ChevronRight
-                                                            className={cn(
-                                                                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                                                                isFileExpanded &&
-                                                                    "rotate-90"
-                                                            )}
-                                                        />
-                                                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                                        <span className="truncate font-mono text-sm text-foreground">
-                                                            {fileName}
-                                                        </span>
-                                                        <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                                                            {fileMatches.length}
-                                                        </span>
-                                                    </button>
-
-                                                    {/* Line matches */}
-                                                    <AnimatePresence>
-                                                        {isFileExpanded && (
-                                                            <motion.ul
-                                                                initial={{
-                                                                    opacity: 0,
-                                                                    height: 0,
-                                                                }}
-                                                                animate={{
-                                                                    opacity: 1,
-                                                                    height: "auto",
-                                                                }}
-                                                                exit={{
-                                                                    opacity: 0,
-                                                                    height: 0,
-                                                                }}
-                                                                className="overflow-hidden"
-                                                            >
-                                                                {fileMatches.map(
-                                                                    (match, idx) => (
-                                                                        <li
-                                                                            key={`${match.line}-${idx}`}
-                                                                            className="flex items-start gap-2 border-t border-border/50 bg-background px-3 py-1.5 font-mono text-sm"
-                                                                        >
-                                                                            <span className="flex w-12 shrink-0 items-center justify-end gap-1 text-xs text-muted-foreground">
-                                                                                <Hash className="h-3 w-3" />
-                                                                                {
-                                                                                    match.line
-                                                                                }
-                                                                            </span>
-                                                                            <code className="flex-1 overflow-hidden text-ellipsis whitespace-pre text-foreground">
-                                                                                {highlightMatches(
-                                                                                    match.content,
-                                                                                    pattern ??
-                                                                                        ""
-                                                                                )}
-                                                                            </code>
-                                                                        </li>
-                                                                    )
-                                                                )}
-                                                            </motion.ul>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                            );
-                                        })}
-                                </motion.div>
-                            )}
-
-                        {/* No results */}
-                        {isCompleted &&
-                            !files?.length &&
-                            !matchesByFile.size &&
-                            !counts?.length && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="p-4 text-center text-sm text-muted-foreground"
-                                >
-                                    No matches found
-                                </motion.div>
-                            )}
-                    </AnimatePresence>
-                </div>
-
-                {/* Expand/collapse */}
-                {needsExpansion && isCompleted && (
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="flex w-full items-center justify-center gap-1 border-t border-border bg-muted/30 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                        {isExpanded ? (
-                            <>
-                                <ChevronUp className="h-3 w-3" />
-                                Show less
-                            </>
-                        ) : (
-                            <>
-                                <ChevronDown className="h-3 w-3" />
-                                Show all {fileCount} files
-                            </>
-                        )}
-                    </button>
+                                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate font-mono text-sm text-foreground">
+                                    {file}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
                 )}
+
+                {/* Count mode */}
+                {isCompleted && outputMode === "count" && counts && (
+                    <ul className="divide-y divide-border">
+                        {(needsExpansion && !isExpanded
+                            ? counts.slice(0, MAX_FILES_COLLAPSED)
+                            : counts
+                        ).map((item, idx) => (
+                            <li
+                                key={`${item.file}-${idx}`}
+                                className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50"
+                            >
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="truncate font-mono text-sm text-foreground">
+                                        {item.file}
+                                    </span>
+                                </div>
+                                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                    {item.count}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* Content mode with line matches */}
+                {isCompleted && outputMode === "content" && matchesByFile.size > 0 && (
+                    <div className="divide-y divide-border">
+                        {Array.from(matchesByFile.entries())
+                            .slice(
+                                0,
+                                needsExpansion && !isExpanded
+                                    ? MAX_FILES_COLLAPSED
+                                    : undefined
+                            )
+                            .map(([file, fileMatches]) => {
+                                const isFileExpanded = expandedFiles.has(file);
+                                const fileName = getFileName(file);
+
+                                return (
+                                    <div key={file}>
+                                        {/* File header */}
+                                        <button
+                                            onClick={() => toggleFileExpanded(file)}
+                                            className="flex w-full items-center gap-2 bg-muted/30 px-3 py-2 text-left hover:bg-muted/50"
+                                        >
+                                            <ChevronRight
+                                                className={cn(
+                                                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                                                    isFileExpanded && "rotate-90"
+                                                )}
+                                            />
+                                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                            <span className="truncate font-mono text-sm text-foreground">
+                                                {fileName}
+                                            </span>
+                                            <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                                {fileMatches.length}
+                                            </span>
+                                        </button>
+
+                                        {/* Line matches */}
+                                        {isFileExpanded && (
+                                            <ul className="overflow-hidden">
+                                                {fileMatches.map((match, idx) => (
+                                                    <li
+                                                        key={`${match.line}-${idx}`}
+                                                        className="flex items-start gap-2 border-t border-border/50 bg-background px-3 py-1.5 font-mono text-sm"
+                                                    >
+                                                        <span className="flex w-12 shrink-0 items-center justify-end gap-1 text-xs text-muted-foreground">
+                                                            <Hash className="h-3 w-3" />
+                                                            {match.line}
+                                                        </span>
+                                                        <code className="flex-1 overflow-hidden text-ellipsis whitespace-pre text-foreground">
+                                                            {highlightMatches(
+                                                                match.content,
+                                                                pattern ?? ""
+                                                            )}
+                                                        </code>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                    </div>
+                )}
+
+                {/* No results */}
+                {isCompleted &&
+                    !files?.length &&
+                    !matchesByFile.size &&
+                    !counts?.length &&
+                    !error && (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            No matches found
+                        </div>
+                    )}
+
+                {/* Error message */}
+                {error && <div className="p-4 text-sm text-red-500">{error}</div>}
             </div>
-        </ToolRenderer>
+
+            {/* Expand/collapse */}
+            {needsExpansion && isCompleted && (
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={cn(
+                        "flex w-full items-center justify-center gap-1.5 border-t border-border py-2",
+                        "text-sm text-muted-foreground transition-colors",
+                        "hover:bg-muted/50 hover:text-foreground"
+                    )}
+                >
+                    {isExpanded ? (
+                        <>
+                            <ChevronUp className="h-4 w-4" />
+                            Collapse
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown className="h-4 w-4" />
+                            Show all {fileCount} files
+                        </>
+                    )}
+                </button>
+            )}
+        </div>
     );
 }

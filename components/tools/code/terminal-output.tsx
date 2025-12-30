@@ -1,23 +1,29 @@
 "use client";
 
 /**
- * TerminalOutput - Beautiful terminal-style display for Bash command results
+ * TerminalOutput - Terminal-style display for Bash command results
  *
- * Renders command output with:
- * - Dark terminal aesthetic
+ * Shows command output inline with Claude Code CLI aesthetics:
+ * - Dark terminal theme with traffic light dots
  * - Command prompt with $ prefix
- * - Scrollable output area
- * - Copy button for output
- * - Exit code indicator
+ * - Output visible immediately (not hidden behind click)
+ * - Long output collapses with "Show all X lines" expansion
+ * - Copy button and exit code indicator
  */
 
-import { useMemo } from "react";
-import { Terminal, Copy, Check, AlertCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useMemo, useCallback } from "react";
+import {
+    Terminal,
+    Copy,
+    Check,
+    AlertCircle,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
-import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 interface TerminalOutputProps {
@@ -32,14 +38,24 @@ interface TerminalOutputProps {
     timeout?: number;
 }
 
-/**
- * Parse ANSI escape codes to styled spans (basic support)
- * Full ANSI support would need a library like ansi-to-html
- */
-function formatTerminalOutput(output: string): string {
-    // Strip ANSI codes for now - could enhance later with full color support
+const MAX_COLLAPSED_LINES = 15;
 
-    return output.replace(/\x1b\[[0-9;]*m/g, "");
+/**
+ * Strip ANSI escape codes for clean display
+ */
+function stripAnsi(str: string): string {
+    return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/**
+ * Format duration in human-readable form
+ */
+function formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return `${minutes}m ${seconds}s`;
 }
 
 export function TerminalOutput({
@@ -53,52 +69,79 @@ export function TerminalOutput({
     cwd,
 }: TerminalOutputProps) {
     const { copy, copiedId } = useCopyToClipboard();
-    const isCopied = copiedId === "output";
+    const isCopied = copiedId === toolCallId;
     const isCompleted = status === "completed";
+    const isRunning = status === "running";
     const isError = status === "error" || (exitCode !== undefined && exitCode !== 0);
 
-    const formattedOutput = useMemo(() => {
-        if (!output) return "";
-        return formatTerminalOutput(output);
-    }, [output]);
+    // Process output
+    const cleanOutput = useMemo(() => (output ? stripAnsi(output) : ""), [output]);
+    const lines = useMemo(() => cleanOutput.split("\n"), [cleanOutput]);
+    const lineCount = lines.length;
+    const shouldCollapse = lineCount > MAX_COLLAPSED_LINES;
+    const [isExpanded, setIsExpanded] = useState(false);
+    const isCollapsed = shouldCollapse && !isExpanded;
 
-    // Truncate very long output for display
-    const MAX_LINES = 50;
-    const lines = formattedOutput.split("\n");
-    const isTruncated = lines.length > MAX_LINES;
-    const displayOutput = isTruncated
-        ? lines.slice(0, MAX_LINES).join("\n") +
-          `\n... (${lines.length - MAX_LINES} more lines)`
-        : formattedOutput;
+    const displayOutput = useMemo(() => {
+        if (!isCollapsed) return cleanOutput;
+        return lines.slice(0, MAX_COLLAPSED_LINES).join("\n");
+    }, [cleanOutput, lines, isCollapsed]);
+
+    const handleCopy = useCallback(() => {
+        if (output) copy(output, toolCallId);
+    }, [output, copy, toolCallId]);
+
+    const hasOutput = cleanOutput.length > 0;
 
     return (
-        <ToolRenderer
-            toolName="Bash"
-            toolCallId={toolCallId}
-            status={status}
-            input={{ command, description, cwd }}
-            output={output ? { output, exitCode } : undefined}
-            error={error}
+        <div
+            className="mb-3 w-full overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900"
+            data-tool-call-id={toolCallId}
         >
-            <div className="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900">
-                {/* Terminal header */}
-                <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                        {/* Traffic light dots */}
-                        <div className="flex gap-1.5">
-                            <div className="h-3 w-3 rounded-full bg-red-500/80" />
-                            <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
-                            <div className="h-3 w-3 rounded-full bg-green-500/80" />
-                        </div>
-                        <span className="ml-2 text-xs text-zinc-400">
-                            {cwd ? `${cwd}` : "Terminal"}
-                        </span>
+            {/* Terminal header */}
+            <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800 px-3 py-2">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    {/* Traffic light dots */}
+                    <div className="flex gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
                     </div>
+
+                    {/* Directory path */}
+                    <span className="ml-2 truncate text-xs text-zinc-400">
+                        {cwd || "Terminal"}
+                    </span>
+
+                    {/* Running indicator */}
+                    {isRunning && (
+                        <span className="flex items-center gap-1 text-xs text-zinc-400">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+                            </span>
+                            running
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Exit code */}
+                    {isCompleted && exitCode !== undefined && (
+                        <span
+                            className={cn(
+                                "font-mono text-xs tabular-nums",
+                                exitCode === 0 ? "text-emerald-400" : "text-red-400"
+                            )}
+                        >
+                            exit {exitCode}
+                        </span>
+                    )}
 
                     {/* Copy button */}
                     {isCompleted && output && (
                         <button
-                            onClick={() => copy(output, "output")}
+                            onClick={handleCopy}
                             className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
                             aria-label="Copy output"
                         >
@@ -110,9 +153,11 @@ export function TerminalOutput({
                         </button>
                     )}
                 </div>
+            </div>
 
-                {/* Terminal content */}
-                <div className="max-h-80 overflow-auto p-3 font-mono text-sm">
+            {/* Terminal content */}
+            <div className="relative font-mono text-sm">
+                <div className="p-3">
                     {/* Command prompt */}
                     {command && (
                         <div className="flex items-start gap-2 text-zinc-300">
@@ -130,33 +175,44 @@ export function TerminalOutput({
                         </div>
                     )}
 
-                    {/* Output */}
-                    <AnimatePresence mode="wait">
-                        {status === "running" && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="mt-2 flex items-center gap-2 text-zinc-500"
-                            >
-                                <Terminal className="h-4 w-4 animate-pulse" />
-                                <span>Running...</span>
-                            </motion.div>
-                        )}
+                    {/* Running state */}
+                    {isRunning && !hasOutput && (
+                        <div className="mt-2 flex items-center gap-2 text-zinc-500">
+                            <Terminal className="h-4 w-4 animate-pulse" />
+                            <span>Running...</span>
+                        </div>
+                    )}
 
-                        {isCompleted && displayOutput && (
-                            <motion.pre
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+                    {/* Output - VISIBLE BY DEFAULT */}
+                    {hasOutput && (
+                        <div
+                            className={cn(
+                                "mt-2",
+                                isCollapsed && "max-h-[280px] overflow-hidden"
+                            )}
+                        >
+                            <pre
                                 className={cn(
-                                    "mt-2 whitespace-pre-wrap break-words text-zinc-300",
+                                    "whitespace-pre-wrap break-words text-zinc-300",
                                     isError && "text-red-400"
                                 )}
                             >
                                 {displayOutput}
-                            </motion.pre>
-                        )}
-                    </AnimatePresence>
+                            </pre>
+
+                            {/* Gradient fade when collapsed */}
+                            {isCollapsed && (
+                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-zinc-900 to-transparent" />
+                            )}
+                        </div>
+                    )}
+
+                    {/* No output message */}
+                    {isCompleted && !hasOutput && !error && (
+                        <div className="mt-2 text-xs italic text-zinc-500">
+                            No output
+                        </div>
+                    )}
 
                     {/* Error message */}
                     {error && (
@@ -167,20 +223,34 @@ export function TerminalOutput({
                     )}
                 </div>
 
-                {/* Exit code footer */}
-                {isCompleted && exitCode !== undefined && (
-                    <div
+                {/* Expand/collapse button for long output */}
+                {shouldCollapse && (
+                    <button
+                        type="button"
+                        onClick={() => setIsExpanded(!isExpanded)}
                         className={cn(
-                            "border-t border-zinc-700 px-3 py-1.5 text-xs",
-                            exitCode === 0
-                                ? "bg-green-900/20 text-green-400"
-                                : "bg-red-900/20 text-red-400"
+                            "flex w-full items-center justify-center gap-1.5 border-t border-zinc-700 py-2",
+                            "text-sm text-zinc-400 transition-colors",
+                            "hover:bg-zinc-800 hover:text-zinc-200"
                         )}
                     >
-                        Exit code: {exitCode}
-                    </div>
+                        {isCollapsed ? (
+                            <>
+                                <ChevronDown className="h-4 w-4" />
+                                Show all {lineCount} lines
+                                <span className="text-zinc-500">
+                                    (+{lineCount - MAX_COLLAPSED_LINES} more)
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <ChevronUp className="h-4 w-4" />
+                                Collapse
+                            </>
+                        )}
+                    </button>
                 )}
             </div>
-        </ToolRenderer>
+        </div>
     );
 }
