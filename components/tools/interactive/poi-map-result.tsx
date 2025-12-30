@@ -42,7 +42,20 @@ export function POIMapResult({
     error,
 }: POIMapResultProps) {
     // Use output if available (server-side updates), fall back to input
-    const pois = output?.pois ?? input?.pois ?? [];
+    // Ensure each POI has required fields with fallbacks
+    const rawPois = output?.pois ?? input?.pois ?? [];
+    const pois: POI[] = rawPois.map((poi, idx) => ({
+        id: poi.id || `poi-${idx}`,
+        name: poi.name,
+        description: poi.description,
+        category: (poi.category as POI["category"]) ?? "other",
+        lat: poi.lat,
+        lng: poi.lng,
+        address: poi.address,
+        rating: poi.rating,
+        imageUrl: poi.imageUrl,
+        tags: poi.tags,
+    }));
     const center = output?.center ?? input?.center;
     const zoom = output?.zoom ?? input?.zoom;
     const title = output?.title ?? input?.title;

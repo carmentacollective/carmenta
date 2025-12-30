@@ -42,7 +42,14 @@ export function OptionListResult({
     error,
 }: OptionListResultProps) {
     // Use output options if available (server-side updates), fall back to input
-    const options = output?.options ?? input?.options ?? [];
+    // Ensure each option has an ID (fallback to index-based ID)
+    const rawOptions = output?.options ?? input?.options ?? [];
+    const options: OptionListOption[] = rawOptions.map((opt, idx) => ({
+        id: opt.id || `option-${idx}`,
+        label: opt.label,
+        description: opt.description,
+        disabled: opt.disabled,
+    }));
     const selectionMode = output?.selectionMode ?? input?.selectionMode ?? "single";
     const confirmed = output?.confirmed ?? null;
 
