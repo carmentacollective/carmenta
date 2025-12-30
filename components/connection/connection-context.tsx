@@ -158,7 +158,8 @@ export function ConnectionProvider({
                     { connectionId: activeConnectionId },
                     "Archived connection"
                 );
-                router.push("/connection");
+                // Hard navigation to reset all React state (including chat messages)
+                window.location.href = "/connection?new";
             } catch (err) {
                 const error = err instanceof Error ? err : new Error(String(err));
                 logger.error(
@@ -168,7 +169,7 @@ export function ConnectionProvider({
                 setError(error);
             }
         });
-    }, [activeConnectionId, router]);
+    }, [activeConnectionId]);
 
     const handleDeleteConnection = useCallback(
         (id: string) => {
