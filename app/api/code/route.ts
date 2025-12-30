@@ -22,11 +22,7 @@ import { z } from "zod";
 
 import { db, getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
 import { connections } from "@/lib/db/schema";
-import {
-    validateProject,
-    ToolStateAccumulator,
-    getToolStatusMessage,
-} from "@/lib/code";
+import { validateProject, getToolStatusMessage, MessageProcessor } from "@/lib/code";
 import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
@@ -317,21 +313,17 @@ export async function POST(req: Request) {
                     })();
                 }
 
-                // Create accumulator to track tool state through lifecycle
-                const accumulator = new ToolStateAccumulator();
+                // Create message processor for flat message array
+                const processor = new MessageProcessor();
                 let firstChunkReceived = false;
                 let lastTextEmit = 0;
 
-                // Helper to emit current tool state + content order + text segments
+                // Helper to emit flat message array
                 // AI SDK requires data parts to use `data-${name}` format
-                const emitToolState = () => {
+                const emitMessages = () => {
                     writer.write({
-                        type: "data-tool-state" as const,
-                        data: {
-                            tools: accumulator.getAllTools(),
-                            contentOrder: accumulator.getContentOrder(),
-                            textSegments: accumulator.getTextSegments(),
-                        },
+                        type: "data-code-messages" as const,
+                        data: processor.getMessages(),
                     });
                     lastTextEmit = Date.now();
                 };
@@ -360,8 +352,11 @@ export async function POST(req: Request) {
                                 },
                                 "Code mode: tool starting"
                             );
-                            accumulator.onInputStart(toolChunk.id, toolChunk.toolName);
-                            emitToolState();
+                            processor.onToolInputStart(
+                                toolChunk.id,
+                                toolChunk.toolName
+                            );
+                            emitMessages();
                         }
 
                         // Tool input delta - parse input as it streams
@@ -372,11 +367,11 @@ export async function POST(req: Request) {
                                 id: string;
                                 delta: string;
                             };
-                            accumulator.onInputDelta(deltaChunk.id, deltaChunk.delta);
-                            emitToolState();
+                            processor.onToolInputDelta(deltaChunk.id, deltaChunk.delta);
+                            emitMessages();
                         }
 
-                        // Tool call with complete args - transition to executing
+                        // Tool call with complete args - transition to running
                         if (chunk.type === "tool-call") {
                             const args = (chunk.input as Record<string, unknown>) ?? {};
                             logger.debug(
@@ -387,15 +382,15 @@ export async function POST(req: Request) {
                                 },
                                 "Code mode: tool call"
                             );
-                            accumulator.onToolCall(
+                            processor.onToolCall(
                                 chunk.toolCallId,
                                 chunk.toolName,
                                 args
                             );
-                            emitToolState();
+                            emitMessages();
                         }
 
-                        // Tool result - transition to complete (NOT clearing!)
+                        // Tool result - transition to complete/error
                         if (chunk.type === "tool-result") {
                             const isError =
                                 chunk.output?.startsWith?.("Error:") ?? false;
@@ -406,31 +401,29 @@ export async function POST(req: Request) {
                                 },
                                 "Code mode: tool result"
                             );
-                            accumulator.onResult(
+                            processor.onToolResult(
                                 chunk.toolCallId,
                                 chunk.output,
                                 isError,
                                 isError ? String(chunk.output) : undefined
                             );
-                            emitToolState();
+                            emitMessages();
                         }
 
-                        // Text delta - track for content ordering and accumulate content
-                        // (detects when text segments start relative to tools)
+                        // Text delta - accumulate into current text message
+                        // Throttle to ~200ms to balance responsiveness vs network overhead
                         if (chunk.type === "text-delta") {
-                            accumulator.onTextDelta(chunk.text);
-                            // Emit periodically to enable progressive text streaming
-                            // Throttle to ~200ms to balance responsiveness vs network overhead
+                            processor.onTextDelta(chunk.text);
                             const now = Date.now();
                             if (now - lastTextEmit >= 200) {
-                                emitToolState();
+                                emitMessages();
                             }
                         }
                     },
                     onFinish: () => {
-                        // Emit final content order after all chunks processed
-                        // This captures any trailing text after the last tool
-                        emitToolState();
+                        // Emit final messages after all chunks processed
+                        processor.finalizeText();
+                        emitMessages();
                     },
                 });
 

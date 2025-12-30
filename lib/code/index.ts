@@ -14,3 +14,4 @@ export * from "./projects";
 // but should be imported directly in client components
 export * from "./transform";
 export * from "./tool-state-context";
+export * from "./messages";
