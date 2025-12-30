@@ -3,7 +3,7 @@
 Research into hosting options for running Claude Code SDK for multiple users. This
 captures learnings from prototype testing, not decisions.
 
-Related: [God Mode Development](./god-mode-development.md) for the full vision.
+Related: [Vision](./vision.md) for the full vision of building Carmenta in Carmenta.
 
 ## Current State
 

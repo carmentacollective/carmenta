@@ -1,11 +1,11 @@
-# God Mode Development
+# Code Mode Vision
 
 Build Carmenta in Carmenta. Replace terminal entirely with a web-based agentic coding
 interface that runs 24/7 on dedicated infrastructure with full access to all repos.
 
-**This is the convergence of [Dev Mode](./dev-mode.md) and [God Mode](./god-mode.md)**:
-Dev Mode's coding capabilities + God Mode's always-on infrastructure + multi-repo
-orchestration for how Nick actually works.
+**This is the convergence of [Dev Mode](../components/dev-mode.md) and
+[God Mode](../components/god-mode.md)**: Dev Mode's coding capabilities + God Mode's
+always-on infrastructure + multi-repo orchestration for how Nick actually works.
 
 ## Why This Exists
 
