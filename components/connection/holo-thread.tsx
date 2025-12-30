@@ -41,7 +41,6 @@ import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { TransientStatus } from "./transient-status";
-import { useTransient } from "@/lib/streaming";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
 import {
@@ -174,23 +173,11 @@ function HoloThreadInner() {
     // 2. The last message is from the user (assistant hasn't streamed yet)
     // This bridges the gap between user submit and first assistant token.
     const lastMessage = messages[messages.length - 1];
-    const lastAssistantMessage = messages.findLast((m) => m.role === "assistant");
-
-    // Check if the last assistant message has any real content
-    // (AI SDK adds an empty assistant message immediately when streaming starts)
-    const hasAssistantContent =
-        lastAssistantMessage?.parts?.some(
-            (p) =>
-                (p.type === "text" && (p as { text?: string }).text?.trim()) ||
-                p.type === "reasoning" ||
-                p.type?.startsWith("tool-")
-        ) ?? false;
 
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
 
-    // Code mode: show pending when streaming but no content yet
-    // This handles the gap where the model is thinking before producing output
-    const needsPendingCodeMode = isCodeMode && isLoading && !hasAssistantContent;
+    // Regular mode: show pending when last message is from user and we're loading
+    // Code mode: AssistantMessage handles all status display directly via TransientStatus
     const needsPendingRegular = !isCodeMode && needsPendingAssistant;
 
     return (
@@ -249,16 +236,14 @@ function HoloThreadInner() {
                                 );
                             })}
 
-                            {/* Pending assistant response - shows immediately after user sends */}
+                            {/* Pending assistant response - shows immediately after user sends (regular mode only) */}
+                            {/* Code mode: AssistantMessage handles status via TransientStatus */}
                             {needsPendingRegular && (
                                 <PendingAssistantMessage
                                     concierge={concierge}
                                     messageSeed={lastMessage.id}
                                 />
                             )}
-
-                            {/* Code mode pending - shows transient status during agent processing */}
-                            {needsPendingCodeMode && <PendingCodeModeMessage />}
                         </div>
                     )}
                 </div>
@@ -2054,38 +2039,6 @@ function PendingAssistantMessage({
                     </div>
                 )}
             </AnimatePresence>
-        </div>
-    );
-}
-
-/**
- * Code Mode Pending Message
- *
- * Shows while Claude Code is processing (before any assistant message exists).
- * Displays transient status updates from tool execution.
- */
-function PendingCodeModeMessage() {
-    const { hasActiveMessages } = useTransient();
-
-    return (
-        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
-            <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                    duration: 0.35,
-                    ease: [0.16, 1, 0.3, 1],
-                }}
-                className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-purple-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
-            >
-                <div className="px-4 py-3 sm:px-5 sm:py-4">
-                    {/* Transient status messages from code agent */}
-                    <TransientStatus />
-
-                    {/* Fallback thinking indicator when no transient messages yet */}
-                    {!hasActiveMessages && <ThinkingIndicator />}
-                </div>
-            </motion.div>
         </div>
     );
 }
