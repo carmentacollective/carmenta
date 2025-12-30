@@ -862,6 +862,207 @@ describe("Full Tool Execution Sequence", () => {
  * ============================================================================
  */
 
+/**
+ * ============================================================================
+ * CONTENT ORDER TRACKING TESTS
+ * ============================================================================
+ *
+ * Tests for the content order tracking feature that enables proper interleaving
+ * of text and tool parts after streaming ends. The AI SDK doesn't preserve
+ * chronological order in message.parts, so we track it ourselves.
+ */
+
+describe("Content Order Tracking", () => {
+    let accumulator: ToolStateAccumulator;
+
+    beforeEach(() => {
+        accumulator = new ToolStateAccumulator();
+    });
+
+    describe("onTextDelta", () => {
+        it("creates text segment entry on first text delta", () => {
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toHaveLength(1);
+            expect(order[0]).toEqual({ type: "text", id: "text-0" });
+        });
+
+        it("does NOT create duplicate entries for consecutive text deltas", () => {
+            // Simulating multiple text-delta chunks in a row
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toHaveLength(1);
+            expect(order[0]).toEqual({ type: "text", id: "text-0" });
+        });
+
+        it("increments text segment index for new segments", () => {
+            // First text segment
+            accumulator.onTextDelta();
+
+            // Tool interrupts text flow
+            accumulator.onInputStart("tool_1", "Read");
+
+            // Second text segment (after tool)
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toHaveLength(3);
+            expect(order[0]).toEqual({ type: "text", id: "text-0" });
+            expect(order[1]).toEqual({ type: "tool", id: "tool_1" });
+            expect(order[2]).toEqual({ type: "text", id: "text-1" });
+        });
+    });
+
+    describe("onInputStart content order tracking", () => {
+        it("adds tool entry to content order", () => {
+            accumulator.onInputStart("tool_abc", "Read");
+
+            const order = accumulator.getContentOrder();
+            expect(order).toHaveLength(1);
+            expect(order[0]).toEqual({ type: "tool", id: "tool_abc" });
+        });
+
+        it("resets text tracking when tool starts", () => {
+            // Text, then tool, then more text
+            accumulator.onTextDelta();
+            accumulator.onInputStart("tool_1", "Bash");
+            accumulator.onTextDelta(); // Should create text-1
+
+            const order = accumulator.getContentOrder();
+            expect(order[2]).toEqual({ type: "text", id: "text-1" });
+        });
+    });
+
+    describe("getContentOrder", () => {
+        it("returns empty array when no content", () => {
+            expect(accumulator.getContentOrder()).toEqual([]);
+        });
+
+        it("returns a copy (not the internal array)", () => {
+            accumulator.onTextDelta();
+            const order1 = accumulator.getContentOrder();
+            const order2 = accumulator.getContentOrder();
+
+            expect(order1).not.toBe(order2);
+            expect(order1).toEqual(order2);
+        });
+    });
+
+    describe("realistic interleaving scenarios", () => {
+        it("text → tool → text pattern", () => {
+            // Claude says something
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+
+            // Claude uses a tool
+            accumulator.onInputStart("toolu_read", "Read");
+            accumulator.onToolCall("toolu_read", "Read", { file_path: "/test.ts" });
+            accumulator.onResult("toolu_read", "content", false);
+
+            // Claude says more
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([
+                { type: "text", id: "text-0" },
+                { type: "tool", id: "toolu_read" },
+                { type: "text", id: "text-1" },
+            ]);
+        });
+
+        it("tool → text → tool → text pattern", () => {
+            // Starts with a tool
+            accumulator.onInputStart("toolu_1", "Glob");
+            accumulator.onResult("toolu_1", ["file.ts"], false);
+
+            // Then text
+            accumulator.onTextDelta();
+
+            // Another tool
+            accumulator.onInputStart("toolu_2", "Read");
+            accumulator.onResult("toolu_2", "content", false);
+
+            // More text
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([
+                { type: "tool", id: "toolu_1" },
+                { type: "text", id: "text-0" },
+                { type: "tool", id: "toolu_2" },
+                { type: "text", id: "text-1" },
+            ]);
+        });
+
+        it("multiple tools in sequence (no text between)", () => {
+            accumulator.onInputStart("toolu_1", "Glob");
+            accumulator.onInputStart("toolu_2", "Read");
+            accumulator.onInputStart("toolu_3", "Grep");
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([
+                { type: "tool", id: "toolu_1" },
+                { type: "tool", id: "toolu_2" },
+                { type: "tool", id: "toolu_3" },
+            ]);
+        });
+
+        it("complex realistic flow with thinking", () => {
+            // Claude thinks/reasons (text)
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+
+            // First tool call
+            accumulator.onInputStart("toolu_glob", "Glob");
+            accumulator.onResult("toolu_glob", ["/src/a.ts", "/src/b.ts"], false);
+
+            // Claude explains what it found
+            accumulator.onTextDelta();
+
+            // Reads multiple files back-to-back
+            accumulator.onInputStart("toolu_read1", "Read");
+            accumulator.onResult("toolu_read1", "content a", false);
+
+            accumulator.onInputStart("toolu_read2", "Read");
+            accumulator.onResult("toolu_read2", "content b", false);
+
+            // Claude summarizes
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([
+                { type: "text", id: "text-0" },
+                { type: "tool", id: "toolu_glob" },
+                { type: "text", id: "text-1" },
+                { type: "tool", id: "toolu_read1" },
+                { type: "tool", id: "toolu_read2" },
+                { type: "text", id: "text-2" },
+            ]);
+        });
+
+        it("text only (no tools)", () => {
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([{ type: "text", id: "text-0" }]);
+        });
+
+        it("tools only (no text)", () => {
+            accumulator.onInputStart("toolu_1", "Bash");
+            accumulator.onResult("toolu_1", "output", false);
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([{ type: "tool", id: "toolu_1" }]);
+        });
+    });
+});
+
 describe("Helper Functions", () => {
     describe("getToolStatusMessage", () => {
         it("formats Read tool message", () => {

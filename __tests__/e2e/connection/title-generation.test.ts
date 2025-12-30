@@ -6,7 +6,7 @@ import { setupClerkTestingToken, clerk } from "@clerk/testing/playwright";
  *
  * Tests the title generation feature in the /connection flow:
  * 1. Title is generated after first message
- * 2. URL updates from /connection?new to /connection/[slug]/[id]
+ * 2. URL updates from /connection/new/[id] to /connection/[slug]/[id]
  * 3. Page title updates
  * 4. Title may evolve on subsequent messages
  */
