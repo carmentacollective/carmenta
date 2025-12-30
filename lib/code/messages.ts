@@ -106,6 +106,9 @@ export class MessageProcessor {
      * Add a user message
      */
     addUserMessage(content: string): UserMessage {
+        // Finalize any pending text before user message
+        this.finalizeText();
+
         const message: UserMessage = {
             type: "user",
             id: `user-${this.messageIndex++}`,
@@ -287,6 +290,9 @@ export class MessageProcessor {
      * Add a system message
      */
     addSystemMessage(content: string, isError = false): SystemMessage {
+        // Finalize any pending text before system message
+        this.finalizeText();
+
         const message: SystemMessage = {
             type: "system",
             id: `system-${this.messageIndex++}`,
@@ -294,6 +300,7 @@ export class MessageProcessor {
             isError,
         };
         this.messages.push(message);
+        this.currentTextId = null; // System message interrupts text flow
         return message;
     }
 
