@@ -970,7 +970,7 @@ export function ConnectionChooser({
                                 <button
                                     onClick={openDropdown}
                                     className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/50 transition-colors hover:text-foreground/70"
-                                    aria-label="Search conversations"
+                                    aria-label="Search connections"
                                 >
                                     <Search className="h-4 w-4 shrink-0" />
                                     {isStreaming && <RunningIndicator />}
