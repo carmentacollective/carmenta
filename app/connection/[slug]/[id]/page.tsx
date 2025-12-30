@@ -20,6 +20,15 @@ export async function generateMetadata({
 }: ConnectionPageProps): Promise<Metadata> {
     const { id } = await params;
 
+    // Special case for new sessions
+    if (id === "new") {
+        return {
+            title: "Create · Carmenta",
+            description:
+                "Connect with Carmenta - a heart-centered AI interface for thinking together.",
+        };
+    }
+
     if (!isValidConnectionId(id)) {
         return { title: "Lost · Carmenta" };
     }
@@ -48,8 +57,29 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
     const { slug, id } = await params;
 
     // Invalid ID format - show 404
-    if (!isValidConnectionId(id)) {
+    // Special case: "new" is allowed for new session creation
+    if (id !== "new" && !isValidConnectionId(id)) {
         notFound();
+    }
+
+    // Handle new session - no existing connection to load
+    if (id === "new") {
+        const recentConnections = await getRecentConnections(10);
+        return (
+            <div className="fixed inset-0 overflow-hidden">
+                <HolographicBackground hideWatermark />
+                <div className="relative z-content h-full">
+                    <ConnectLayout
+                        initialConnections={recentConnections}
+                        activeConnection={null}
+                        initialMessages={[]}
+                        initialConcierge={null}
+                    >
+                        <Chat />
+                    </ConnectLayout>
+                </div>
+            </div>
+        );
     }
 
     // Load the connection, messages, and concierge data

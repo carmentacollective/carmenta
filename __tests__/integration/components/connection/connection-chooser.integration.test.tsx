@@ -87,9 +87,11 @@ describe("ConnectionChooser Integration", () => {
         lastActivityAt: Date;
         createdAt: Date;
         updatedAt: Date;
+        projectPath?: string | null;
     }): PublicConnection => ({
         ...conn,
         id: encodeConnectionId(conn.id),
+        projectPath: conn.projectPath ?? null,
     });
 
     beforeEach(async () => {

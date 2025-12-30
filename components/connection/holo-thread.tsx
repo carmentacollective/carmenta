@@ -41,9 +41,15 @@ import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { TransientStatus } from "./transient-status";
+import { CodeModeActivity } from "./code-mode-activity";
+import { CodeModeMessage } from "./code-mode-message";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
-import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
+import {
+    useChatContext,
+    useModelOverrides,
+    useCodeMode,
+} from "./connect-runtime-provider";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
 import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
@@ -70,6 +76,7 @@ import { OptionList } from "@/components/tool-ui/option-list";
 import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
 import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
+import { renderCodeTool, InlineToolActivity } from "@/components/tools";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -89,6 +96,7 @@ function HoloThreadInner() {
     const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
+    const { isCodeMode } = useCodeMode();
 
     // Chat scroll behavior - auto-scroll during streaming, pause on user scroll-up
     const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({
@@ -167,7 +175,12 @@ function HoloThreadInner() {
     // 2. The last message is from the user (assistant hasn't streamed yet)
     // This bridges the gap between user submit and first assistant token.
     const lastMessage = messages[messages.length - 1];
+
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
+
+    // Regular mode: show pending when last message is from user and we're loading
+    // Code mode: AssistantMessage handles all status display directly via TransientStatus
+    const needsPendingRegular = !isCodeMode && needsPendingAssistant;
 
     return (
         <div className="flex h-full flex-col bg-transparent" role="log">
@@ -226,11 +239,16 @@ function HoloThreadInner() {
                             })}
 
                             {/* Pending assistant response - shows immediately after user sends */}
-                            {needsPendingAssistant && (
+                            {needsPendingRegular && (
                                 <PendingAssistantMessage
                                     concierge={concierge}
                                     messageSeed={lastMessage.id}
                                 />
+                            )}
+
+                            {/* Code mode pending - simple working indicator */}
+                            {isCodeMode && needsPendingAssistant && (
+                                <PendingCodeModeMessage />
                             )}
                         </div>
                     )}
@@ -446,7 +464,7 @@ function getToolStatus(state: ToolPart["state"]): ToolStatus {
 function getToolError(
     part: ToolPart,
     output: Record<string, unknown> | undefined,
-    fallbackMessage: string
+    fallbackMessage = "Operation failed"
 ): string | undefined {
     // AI SDK pattern: errorText field on the part itself
     if (part.errorText) return part.errorText;
@@ -470,6 +488,19 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
     const status = getToolStatus(part.state);
     const input = part.input as Record<string, unknown>;
     const output = part.output as Record<string, unknown> | undefined;
+
+    // Try code tools registry first - returns beautiful renderers for Claude Code tools
+    const codeToolResult = renderCodeTool({
+        toolCallId: part.toolCallId,
+        toolName,
+        status,
+        input,
+        output,
+        error: getToolError(part, output),
+    });
+    if (codeToolResult) {
+        return codeToolResult;
+    }
 
     switch (toolName) {
         case "webSearch": {
@@ -1030,6 +1061,240 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
+        // =====================================================================
+        // Claude Code tools - handled by registry (components/tools/registry.tsx)
+        // Read, Write, Edit, Bash, Glob, Grep now use beautiful dedicated renderers
+        // =====================================================================
+
+        case "Task": {
+            // Sub-agent task - show agent type and description
+            const agentType = input.subagent_type as string | undefined;
+            const description = input.description as string | undefined;
+            const taskResult = output as string | undefined;
+            const taskError = getToolError(part, output, "Sub-task failed");
+
+            return (
+                <ToolRenderer
+                    toolName="Task"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={taskError}
+                >
+                    {(agentType || description || taskResult) && (
+                        <div className="space-y-2">
+                            {agentType && (
+                                <div className="text-xs font-medium text-cyan-400">
+                                    Agent: {agentType}
+                                </div>
+                            )}
+                            {description && (
+                                <div className="text-xs text-muted-foreground">
+                                    {description}
+                                </div>
+                            )}
+                            {status === "completed" && taskResult && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {typeof taskResult === "string"
+                                        ? taskResult.slice(0, 2000)
+                                        : JSON.stringify(taskResult, null, 2).slice(
+                                              0,
+                                              2000
+                                          )}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "TodoWrite": {
+            // Task list management - use existing Plan component
+            const todosInput = input.todos as
+                | Array<{
+                      content?: string;
+                      status: "pending" | "in_progress" | "completed";
+                      activeForm?: string;
+                  }>
+                | undefined;
+
+            const todos: PlanTodo[] = (todosInput ?? []).map((todo, idx) => ({
+                id: `todo-${idx}`,
+                label: todo.content || todo.activeForm || "Task",
+                status: todo.status,
+            }));
+
+            return (
+                <ToolRenderer
+                    toolName="TodoWrite"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Failed to update tasks")}
+                >
+                    {todos.length > 0 && (
+                        <Plan
+                            id={`todo-${part.toolCallId}`}
+                            title="Task Progress"
+                            todos={todos}
+                            showProgress={true}
+                            maxVisibleTodos={6}
+                        />
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "LSP": {
+            // Code intelligence - show operation and results
+            const operation = input.operation as string | undefined;
+            const lspError = getToolError(part, output, "Code analysis failed");
+            const hasOutput = status === "completed" && output !== undefined;
+
+            return (
+                <ToolRenderer
+                    toolName="LSP"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={lspError}
+                >
+                    {(operation || hasOutput) && (
+                        <div className="space-y-2">
+                            {operation && (
+                                <div className="text-xs text-muted-foreground">
+                                    Operation: {operation}
+                                </div>
+                            )}
+                            {hasOutput && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {JSON.stringify(output, null, 2).slice(0, 2000)}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "NotebookEdit": {
+            // Jupyter notebook editing
+            const notebookPath = input.notebook_path as string | undefined;
+            const editMode = input.edit_mode as string | undefined;
+            const notebookError = getToolError(part, output, "Failed to edit notebook");
+
+            return (
+                <ToolRenderer
+                    toolName="NotebookEdit"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={notebookError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                            {notebookPath && (
+                                <div className="font-mono">{notebookPath}</div>
+                            )}
+                            {editMode && <div>Mode: {editMode}</div>}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "WebFetch": {
+            // Web page fetch - similar to fetchPage
+            const fetchUrl = input.url as string | undefined;
+            const fetchContent = output as
+                | { content?: string; title?: string }
+                | string
+                | undefined;
+            const fetchError = getToolError(part, output, "Failed to fetch page");
+
+            const title =
+                typeof fetchContent === "object" ? fetchContent?.title : undefined;
+            const content =
+                typeof fetchContent === "object" ? fetchContent?.content : fetchContent;
+
+            return (
+                <ToolRenderer
+                    toolName="WebFetch"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={fetchError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {fetchUrl && (
+                                <div className="truncate font-mono text-xs text-muted-foreground">
+                                    {fetchUrl}
+                                </div>
+                            )}
+                            {title && (
+                                <div className="text-sm font-medium">{title}</div>
+                            )}
+                            {content && (
+                                <pre className="max-h-32 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {content.slice(0, 1000)}
+                                    {content.length > 1000 && "..."}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
+        case "WebSearch": {
+            // Web search - Claude Code variant (capital W)
+            // Uses different output format than lowercase webSearch
+            const searchQuery = input.query as string | undefined;
+            const searchResults = output as
+                | string
+                | Array<{ title?: string; url?: string }>
+                | undefined;
+            const webSearchError = getToolError(part, output, "Search failed");
+
+            return (
+                <ToolRenderer
+                    toolName="WebSearch"
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={webSearchError}
+                >
+                    {status === "completed" && (
+                        <div className="space-y-2">
+                            {searchQuery && (
+                                <div className="text-xs text-muted-foreground">
+                                    Query: {searchQuery}
+                                </div>
+                            )}
+                            {searchResults && (
+                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
+                                    {typeof searchResults === "string"
+                                        ? searchResults.slice(0, 2000)
+                                        : JSON.stringify(searchResults, null, 2).slice(
+                                              0,
+                                              2000
+                                          )}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </ToolRenderer>
+            );
+        }
+
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
             // Log error and report to Sentry so we catch missing renderers in production.
@@ -1073,11 +1338,25 @@ function MessageBubble({
     isStreaming: boolean;
     wasStopped?: boolean;
 }) {
+    const { isCodeMode } = useCodeMode();
+
     if (message.role === "user") {
         return <UserMessage message={message} isLast={isLast} />;
     }
 
     if (message.role === "assistant") {
+        // Code mode: Use CodeModeMessage with inline tool rendering
+        if (isCodeMode) {
+            return (
+                <CodeModeMessage
+                    message={message}
+                    isLast={isLast}
+                    isStreaming={isStreaming}
+                />
+            );
+        }
+
+        // Normal mode: Use AssistantMessage with concierge flow
         return (
             <AssistantMessage
                 message={message}
@@ -1480,6 +1759,7 @@ function AssistantMessage({
     const { concierge } = useConcierge();
     const { regenerateFrom, regenerateFromWithModel, isLoading } = useChatContext();
     const { overrides } = useModelOverrides();
+    const { isCodeMode } = useCodeMode();
     const content = getMessageContent(message);
     const hasContent = content.trim().length > 0;
 
@@ -1492,16 +1772,17 @@ function AssistantMessage({
     // Extract file parts
     const fileParts = getFileParts(message);
 
-    // Show concierge IMMEDIATELY when streaming starts, not just when isConciergeRunning kicks in.
-    // This eliminates the visual gap between user submit and Carmenta appearing.
-    // ALSO show for completed messages that have concierge data (last message after completion).
-    const showConcierge = isLast && (isStreaming || Boolean(concierge));
+    // Code mode: Skip concierge display entirely - Claude Code handles its own routing
+    // and doesn't produce concierge metadata. Content streams directly.
+    // Normal mode: Show concierge IMMEDIATELY when streaming starts.
+    const showConcierge = !isCodeMode && isLast && (isStreaming || Boolean(concierge));
 
     // We're in "selecting" state when streaming/running but don't have selection yet
     const isSelectingModel = isStreaming && !concierge;
 
     // We've selected when concierge data exists
-    const hasSelected = Boolean(concierge);
+    // In code mode, treat as always "selected" so content renders immediately
+    const hasSelected = isCodeMode || Boolean(concierge);
 
     // Derive avatar state for ConciergeDisplay
     const avatarState = isSelectingModel
@@ -1541,7 +1822,15 @@ function AssistantMessage({
             )}
 
             {/* TRANSIENT STATUS - Real-time tool execution status */}
-            {isStreaming && isLast && <TransientStatus className="mt-2" />}
+            {/* Code mode: Use inline activity display instead of pills */}
+            {/* Normal mode: Use pill-based TransientStatus */}
+            {isStreaming &&
+                isLast &&
+                (isCodeMode ? (
+                    <CodeModeActivity className="mt-2" />
+                ) : (
+                    <TransientStatus className="mt-2" />
+                ))}
 
             {/* LLM ZONE - Model's output (neutral glass) */}
             {/* Only renders for the LAST message when concierge is active */}
@@ -1575,20 +1864,31 @@ function AssistantMessage({
                             )}
 
                             {/* Tool UIs - nested inside LLM zone */}
+                            {/* Code mode: Use inline activity display */}
+                            {/* Normal mode: Use detailed card renderers */}
                             {toolParts.length > 0 && (
-                                <div className="overflow-x-auto border-b border-foreground/10">
-                                    {toolParts.map((part, idx) => (
-                                        <div
-                                            key={part.toolCallId}
-                                            className={cn(
-                                                "max-w-full",
-                                                idx > 0 &&
-                                                    "border-t border-foreground/5"
-                                            )}
-                                        >
-                                            <ToolPartRenderer part={part} />
+                                <div className="border-b border-foreground/10">
+                                    {isCodeMode ? (
+                                        <InlineToolActivity
+                                            parts={toolParts}
+                                            className="px-2 py-1"
+                                        />
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            {toolParts.map((part, idx) => (
+                                                <div
+                                                    key={part.toolCallId}
+                                                    className={cn(
+                                                        "max-w-full",
+                                                        idx > 0 &&
+                                                            "border-t border-foreground/5"
+                                                    )}
+                                                >
+                                                    <ToolPartRenderer part={part} />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             )}
 
@@ -1683,9 +1983,14 @@ function AssistantMessage({
                             className="mb-3"
                         />
                     )}
-                    {toolParts.map((part) => (
-                        <ToolPartRenderer key={part.toolCallId} part={part} />
-                    ))}
+                    {toolParts.length > 0 &&
+                        (isCodeMode ? (
+                            <InlineToolActivity parts={toolParts} />
+                        ) : (
+                            toolParts.map((part) => (
+                                <ToolPartRenderer key={part.toolCallId} part={part} />
+                            ))
+                        ))}
                 </div>
             )}
 
@@ -1702,6 +2007,32 @@ function AssistantMessage({
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Pending code mode message - simple working indicator
+ *
+ * Code mode doesn't use concierge routing, so we show a simpler
+ * "Working..." indicator immediately after user sends.
+ */
+function PendingCodeModeMessage() {
+    return (
+        <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 px-1 py-2"
+            >
+                {/* Pulsing status indicator */}
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />
+                </span>
+                <span className="text-sm text-muted-foreground">Working...</span>
+            </motion.div>
         </div>
     );
 }

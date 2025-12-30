@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "connections_user_project_path_unique_idx" ON "connections" USING btree ("user_id","project_path") WHERE "connections"."project_path" IS NOT NULL;

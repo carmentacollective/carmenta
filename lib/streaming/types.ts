@@ -27,13 +27,15 @@ export type TransientDestination = "chat" | "oracle" | "toast";
  * - notification: Carmenta notification (wisdom, tips, encouragement)
  * - progress: Operation with percentage (e.g., "Uploading 45%...")
  * - celebration: Success celebration (e.g., "Found what we needed!")
+ * - title-update: Async title generation result (for code mode, etc.)
  */
 export type TransientType =
     | "status"
     | "thinking"
     | "notification"
     | "progress"
-    | "celebration";
+    | "celebration"
+    | "title-update";
 
 /**
  * A transient message payload.

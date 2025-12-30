@@ -162,6 +162,30 @@ export function clearTransient(writer: UIMessageStreamWriter, id: string): void 
 }
 
 /**
+ * Write a title update event.
+ * Used when a title is generated async (e.g., code mode).
+ * The client should update the document title and URL slug.
+ */
+export function writeTitleUpdate(
+    writer: UIMessageStreamWriter,
+    title: string,
+    slug: string,
+    connectionId: string
+): void {
+    writeTransient(writer, {
+        id: "title-update",
+        text: title,
+        type: "title-update",
+        destination: "chat",
+        metadata: {
+            title,
+            slug,
+            connectionId,
+        },
+    });
+}
+
+/**
  * Helper to create a scoped transient writer for a specific operation.
  * Useful for tool implementations.
  *

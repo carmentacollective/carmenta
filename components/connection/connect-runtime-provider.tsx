@@ -39,6 +39,7 @@ import { useConnection } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { TransientProvider, useTransient } from "@/lib/streaming";
+import { ToolStateProvider, useToolState } from "@/lib/code/tool-state-context";
 
 /**
  * Convert our DB UIMessageLike format to AI SDK UIMessage format
@@ -248,6 +249,26 @@ export function useSettingsModal() {
 }
 
 /**
+ * Context for code mode - allows components to know when in code mode
+ * and access the project path.
+ */
+export interface CodeModeContextType {
+    /** Whether the current connection is in code mode */
+    isCodeMode: boolean;
+    /** Project path when in code mode, null otherwise */
+    projectPath: string | null;
+}
+
+const CodeModeContext = createContext<CodeModeContextType>({
+    isCodeMode: false,
+    projectPath: null,
+});
+
+export function useCodeMode() {
+    return useContext(CodeModeContext);
+}
+
+/**
  * Parses an error message and extracts a user-friendly message.
  * Handles JSON error responses, HTML error pages, provider errors, and plain text.
  *
@@ -412,11 +433,15 @@ interface ConnectRuntimeProviderProps {
 /**
  * Custom fetch wrapper that injects connectionId, model overrides,
  * and extracts concierge headers from responses.
+ *
+ * For code mode (when projectPathRef has a value), routes to /api/code
+ * and includes projectPath in the request body.
  */
 function createFetchWrapper(
     setConcierge: (data: ReturnType<typeof parseConciergeHeaders>) => void,
     overridesRef: React.MutableRefObject<ModelOverrides>,
     connectionIdRef: React.MutableRefObject<string | null>,
+    projectPathRef: React.MutableRefObject<string | null>,
     addNewConnection: (connection: {
         id: string;
         slug: string;
@@ -430,15 +455,46 @@ function createFetchWrapper(
     ) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        const url = typeof input === "string" ? input : input.toString();
+        // Extract URL from various input types
+        // - string: use directly
+        // - URL: use toString()
+        // - Request: use .url property (toString() returns "[object Request]")
+        let url: string;
+        if (typeof input === "string") {
+            url = input;
+        } else if (input instanceof URL) {
+            url = input.toString();
+        } else if (input instanceof Request) {
+            url = input.url;
+        } else {
+            url = String(input);
+        }
         const method = init?.method || "GET";
 
-        logger.debug({ url, method }, "API request starting");
+        // Code mode routing: when projectPath is set, use /api/code
+        const isCodeMode = !!projectPathRef.current;
+        logger.info(
+            { url, method, isCodeMode, projectPath: projectPathRef.current },
+            "🚀 API request starting"
+        );
+        if (isCodeMode && url.includes("/api/connection")) {
+            // Main POST endpoint: /api/connection → /api/code
+            // Stream resume: /api/connection/[id]/stream → /api/code/session/[id]/stream
+            if (url.includes("/stream")) {
+                // Stream endpoint has different path structure
+                url = url.replace("/api/connection/", "/api/code/session/");
+            } else {
+                url = url.replace("/api/connection", "/api/code");
+            }
+            logger.info({ newUrl: url }, "🔀 Routed to code API");
+        }
 
-        // Clear stale concierge data
-        setConcierge(null);
+        // Clear stale concierge data (not used in code mode)
+        if (!isCodeMode) {
+            setConcierge(null);
+        }
 
-        // Inject connectionId and model overrides into POST body
+        // Inject connectionId, model overrides, and projectPath into POST body
         let modifiedInit = init;
         if (method === "POST" && init?.body) {
             try {
@@ -446,6 +502,11 @@ function createFetchWrapper(
 
                 if (connectionIdRef.current) {
                     body.connectionId = connectionIdRef.current;
+                }
+
+                // Code mode: include projectPath
+                if (projectPathRef.current) {
+                    body.projectPath = projectPathRef.current;
                 }
 
                 if (overridesRef.current.modelId) {
@@ -466,14 +527,18 @@ function createFetchWrapper(
                 logger.debug(
                     {
                         connectionId: connectionIdRef.current,
+                        projectPath: projectPathRef.current,
                         modelOverride: overridesRef.current.modelId,
                     },
-                    "Applied connectionId and model overrides"
+                    "Applied request overrides"
                 );
             } catch {
                 logger.warn({}, "Failed to parse request body for override injection");
             }
         }
+
+        // Update the input URL for the actual fetch
+        input = url;
 
         try {
             const response = await fetch(input, modifiedInit);
@@ -559,13 +624,23 @@ function createFetchWrapper(
  */
 function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const { activeConnectionId, initialMessages, addNewConnection, setIsStreaming } =
-        useConnection();
-    const { handleDataPart, clearAll: clearTransientMessages } = useTransient();
+    const {
+        activeConnectionId,
+        initialMessages,
+        addNewConnection,
+        setIsStreaming,
+        projectPath,
+    } = useConnection();
+    const { handleDataPart: handleTransientData, clearAll: clearTransientMessages } =
+        useTransient();
+    const { handleDataPart: handleToolStateData } = useToolState();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
+
+    // Code mode: when projectPath is set (from prop or activeConnection), route to /api/code
+    const isCodeMode = !!projectPath;
 
     // Generate a stable chat ID for new connections.
     // This matches Vercel's ai-chatbot pattern where the ID is known BEFORE sending.
@@ -579,6 +654,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Use refs for values that change but shouldn't recreate the transport
     const overridesRef = useRef(overrides);
     const connectionIdRef = useRef(activeConnectionId);
+    const projectPathRef = useRef(projectPath);
 
     useEffect(() => {
         overridesRef.current = overrides;
@@ -588,6 +664,10 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         connectionIdRef.current = activeConnectionId;
     }, [activeConnectionId]);
 
+    useEffect(() => {
+        projectPathRef.current = projectPath;
+    }, [projectPath]);
+
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
     const handleNewConnectionCreated = useCallback(
@@ -596,11 +676,27 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                 document.title = `${title} | Carmenta`;
             }
             if (slug && id) {
-                window.history.replaceState(
-                    { ...window.history.state },
-                    "",
-                    `/connection/${slug}/${id}`
-                );
+                // Check if we're in code mode based on current URL
+                const currentPath = window.location.pathname;
+                if (currentPath.startsWith("/code/")) {
+                    // Code mode URL: /code/[repo]/[slug]/[id]
+                    const pathParts = currentPath.split("/");
+                    const repo = pathParts[2];
+                    if (repo) {
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/code/${repo}/${slug}/${id}`
+                        );
+                    }
+                } else {
+                    // Standard connection URL: /connection/[slug]/[id]
+                    window.history.replaceState(
+                        { ...window.history.state },
+                        "",
+                        `/connection/${slug}/${id}`
+                    );
+                }
             }
         },
         []
@@ -614,6 +710,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Create transport with custom fetch
     // Note: We pass ref objects (not .current) to be read at fetch time, not render time
+    // The fetch wrapper handles routing to /api/code when projectPath is set
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
@@ -623,6 +720,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     setConcierge,
                     overridesRef,
                     connectionIdRef,
+                    projectPathRef,
                     addNewConnection,
                     handleNewConnectionCreated
                 ),
@@ -668,13 +766,80 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             setDisplayError(err);
             clearTransientMessages();
         },
-        // Handle transient data parts (status updates) as they stream
+        // Handle data parts as they stream
+        // - Transient data parts: ephemeral status messages
+        // - Tool state data parts: accumulated tool execution state
+        // - Title update data parts: async title updates for code mode
         onData: (dataPart) => {
-            handleDataPart(dataPart);
+            const part = dataPart as Record<string, unknown>;
+            logger.debug(
+                {
+                    partType: part?.type,
+                    partId: part?.id,
+                    hasTransient: "transient" in (part ?? {}),
+                    keys: Object.keys(part ?? {}),
+                },
+                "📥 onData received"
+            );
+
+            // Handle title-update events (async title generation for code mode)
+            if (
+                part?.type === "data-transient" &&
+                (part?.data as Record<string, unknown>)?.type === "title-update"
+            ) {
+                const metadata = (part?.data as Record<string, unknown>)?.metadata as
+                    | Record<string, unknown>
+                    | undefined;
+                if (metadata?.title && metadata?.slug && metadata?.connectionId) {
+                    const title = metadata.title as string;
+                    const slug = metadata.slug as string;
+                    const connectionId = metadata.connectionId as string;
+
+                    logger.info(
+                        { title, slug, connectionId },
+                        "Received title update from stream"
+                    );
+
+                    // Update document title
+                    document.title = `${title} | Carmenta`;
+
+                    // Update URL based on whether this is code mode
+                    const currentPath = window.location.pathname;
+                    if (currentPath.startsWith("/code/")) {
+                        // Code mode URL: /code/[repo]/[slug]/[id]
+                        const pathParts = currentPath.split("/");
+                        const repo = pathParts[2];
+                        if (repo) {
+                            window.history.replaceState(
+                                { ...window.history.state },
+                                "",
+                                `/code/${repo}/${slug}/${connectionId}`
+                            );
+                        } else {
+                            logger.warn(
+                                { currentPath },
+                                "Cannot update URL: missing repo in path"
+                            );
+                        }
+                    } else {
+                        // Standard connection URL: /connection/[slug]/[id]
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/connection/${slug}/${connectionId}`
+                        );
+                    }
+                }
+            }
+
+            // Pass to both handlers
+            handleTransientData(dataPart);
+            handleToolStateData(dataPart);
         },
-        // Clear transient messages when streaming completes
+        // Clear ephemeral state when streaming completes
         onFinish: () => {
             clearTransientMessages();
+            // Note: We don't clear tool state here - tools persist in the message
         },
         experimental_throttle: 50,
     });
@@ -960,23 +1125,30 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         [settingsOpen]
     );
 
+    const codeModeContextValue = useMemo<CodeModeContextType>(
+        () => ({ isCodeMode, projectPath }),
+        [isCodeMode, projectPath]
+    );
+
     return (
-        <SettingsModalContext.Provider value={settingsModalContextValue}>
-            <ModelOverridesContext.Provider value={overridesContextValue}>
-                <ChatErrorContext.Provider value={errorContextValue}>
-                    <ChatContext.Provider value={chatContextValue}>
-                        {children}
-                        {displayError && (
-                            <RuntimeErrorBanner
-                                error={displayError}
-                                onDismiss={clearError}
-                                onRetry={handleRetry}
-                            />
-                        )}
-                    </ChatContext.Provider>
-                </ChatErrorContext.Provider>
-            </ModelOverridesContext.Provider>
-        </SettingsModalContext.Provider>
+        <CodeModeContext.Provider value={codeModeContextValue}>
+            <SettingsModalContext.Provider value={settingsModalContextValue}>
+                <ModelOverridesContext.Provider value={overridesContextValue}>
+                    <ChatErrorContext.Provider value={errorContextValue}>
+                        <ChatContext.Provider value={chatContextValue}>
+                            {children}
+                            {displayError && (
+                                <RuntimeErrorBanner
+                                    error={displayError}
+                                    onDismiss={clearError}
+                                    onRetry={handleRetry}
+                                />
+                            )}
+                        </ChatContext.Provider>
+                    </ChatErrorContext.Provider>
+                </ModelOverridesContext.Provider>
+            </SettingsModalContext.Provider>
+        </CodeModeContext.Provider>
     );
 }
 
@@ -1011,6 +1183,7 @@ function ConciergeWrapper({ children }: { children: ReactNode }) {
  * This wraps the app with:
  * - ConciergeProvider for concierge data (hydrated from persisted state)
  * - TransientProvider for ephemeral status messages during streaming
+ * - ToolStateProvider for accumulated tool state in code mode
  * - ChatContext for message state and actions
  * - Runtime error display with retry capability
  */
@@ -1018,7 +1191,11 @@ export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps
     return (
         <ConciergeWrapper>
             <TransientProvider>
-                <ConnectRuntimeProviderInner>{children}</ConnectRuntimeProviderInner>
+                <ToolStateProvider>
+                    <ConnectRuntimeProviderInner>
+                        {children}
+                    </ConnectRuntimeProviderInner>
+                </ToolStateProvider>
             </TransientProvider>
         </ConciergeWrapper>
     );

@@ -158,17 +158,57 @@ Managed sandboxed execution as an API. Zero infrastructure.
 - Vendor dependency
 - May not support full dev toolchain (git, gh, Node) for powerhouse mode
 
+### Option C: GitHub Codespaces
+
+User-owned dev environments managed via GitHub API. Billing flows to user's account.
+
+**Pros:**
+
+- User pays for compute directly (billed to their GitHub account)
+- Full dev environment - git, Node, any tooling
+- Codespaces API supports creation via GitHub App
+- Pre-built devcontainers for fast startup
+- `billable_owner` field confirms billing target
+
+**Cons:**
+
+- Requires GitHub App with user access tokens (not installation tokens)
+- Need SSH or WebSocket tunnel from Carmenta to Codespace
+- More complex orchestration (create → connect → execute → cleanup)
+- User must have Codespaces enabled on their account
+- Cold start slower than Fly.io machines
+
+**Execution Architecture Options:**
+
+1. **SSH tunnel**: Carmenta server SSHs into codespace, runs commands
+2. **Agent process**: Codespace runs Carmenta agent with Claude Code SDK, exposes API
+3. **Actions glue**: GitHub Actions orchestrates codespace lifecycle (less real-time)
+
+**Billing model**: Codespaces are billed to whoever owns them:
+
+- Personal repos → user pays
+- Org repos with org-owned policy → org pays
+
+When Carmenta (as GitHub App) creates codespace using user access token, the user owns
+it and pays. This aligns costs with usage without Carmenta bearing compute costs.
+
 ### Current Status
 
-**Undecided.** Both options work for code execution and scheduled agents. The key
-question is whether E2B can support powerhouse mode's full dev toolchain, or if we need
-Fly.io's flexibility.
+**Undecided.** Three viable paths:
+
+1. **Fly.io** - Full control, self-managed, any workload
+2. **E2B** - Turnkey, but may not support full dev toolchain
+3. **Codespaces** - User-billed, but more complex orchestration
+
+For immediate development, local dev mode (PR #501) works. Infrastructure decision
+deferred until code mode proves valuable.
 
 Research needed:
 
 - Can E2B run git, gh CLI, and Node in a sandbox?
 - What's realistic E2B pricing at our expected usage?
 - What's the actual migration effort to set up Fly.io Machines?
+- Codespaces: prototype SSH tunnel or agent architecture
 
 ## Integration with Carmenta Interaction
 
