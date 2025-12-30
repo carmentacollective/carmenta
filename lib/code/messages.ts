@@ -272,8 +272,9 @@ export class MessageProcessor {
             tool.result = result;
         }
 
-        // Clear elapsed time on completion
+        // Clear elapsed time and input buffer on completion
         tool.elapsedSeconds = undefined;
+        this.inputBuffers.delete(toolCallId);
 
         logger.debug(
             { toolCallId, state: tool.state, isError },
