@@ -49,16 +49,24 @@ export default async function CodeSessionPage({ params }: PageProps) {
         notFound();
     }
 
+    // Verify this is a code mode connection (has projectPath)
+    // Regular connections should not be accessible via /code/ URLs
+    if (!connection.projectPath) {
+        logger.warn(
+            { connectionId, repo },
+            "Non-code-mode connection accessed via code URL"
+        );
+        notFound();
+    }
+
     // Verify this connection belongs to the repo
-    if (connection.projectPath) {
-        const pathBasename = connection.projectPath.split("/").pop();
-        if (pathBasename !== repo) {
-            logger.warn(
-                { connectionId, repo, actualRepo: pathBasename },
-                "Session does not belong to this repo"
-            );
-            notFound();
-        }
+    const pathBasename = connection.projectPath.split("/").pop();
+    if (pathBasename !== repo) {
+        logger.warn(
+            { connectionId, repo, actualRepo: pathBasename },
+            "Session does not belong to this repo"
+        );
+        notFound();
     }
 
     // Check if slug needs correction (redirect if wrong)

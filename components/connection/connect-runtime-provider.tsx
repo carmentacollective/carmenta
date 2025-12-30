@@ -455,7 +455,20 @@ function createFetchWrapper(
     ) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        let url = typeof input === "string" ? input : input.toString();
+        // Extract URL from various input types
+        // - string: use directly
+        // - URL: use toString()
+        // - Request: use .url property (toString() returns "[object Request]")
+        let url: string;
+        if (typeof input === "string") {
+            url = input;
+        } else if (input instanceof URL) {
+            url = input.toString();
+        } else if (input instanceof Request) {
+            url = input.url;
+        } else {
+            url = String(input);
+        }
         const method = init?.method || "GET";
 
         // Code mode routing: when projectPath is set, use /api/code
@@ -465,7 +478,14 @@ function createFetchWrapper(
             "🚀 API request starting"
         );
         if (isCodeMode && url.includes("/api/connection")) {
-            url = url.replace("/api/connection", "/api/code");
+            // Main POST endpoint: /api/connection → /api/code
+            // Stream resume: /api/connection/[id]/stream → /api/code/session/[id]/stream
+            if (url.includes("/stream")) {
+                // Stream endpoint has different path structure
+                url = url.replace("/api/connection/", "/api/code/session/");
+            } else {
+                url = url.replace("/api/connection", "/api/code");
+            }
             logger.info({ newUrl: url }, "🔀 Routed to code API");
         }
 

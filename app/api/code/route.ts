@@ -20,13 +20,14 @@ import {
 import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
-import { getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
+import { db, getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
+import { connections } from "@/lib/db/schema";
 import {
     validateProject,
     ToolStateAccumulator,
     getToolStatusMessage,
 } from "@/lib/code";
-import { decodeConnectionId, generateSlug } from "@/lib/sqids";
+import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
 import { writeTitleUpdate } from "@/lib/streaming";
@@ -100,10 +101,13 @@ export async function POST(req: Request) {
         });
     }
 
-    // Connection info for title generation
+    // Connection info for title generation and new connection creation
     let decodedConnectionId: number | null = null;
     let connection: Awaited<ReturnType<typeof getConnection>> | null = null;
     let needsTitleGeneration = false;
+    let isNewConnection = false;
+    let connectionPublicId: string | null = null;
+    let connectionSlug: string | null = null;
 
     // Validate connection ownership if connectionId provided
     if (body.connectionId) {
@@ -161,7 +165,7 @@ export async function POST(req: Request) {
             connection.title === "Code Session";
     }
 
-    // Validate the project exists
+    // Validate the project exists (do this before creating connection)
     const isValid = await validateProject(body.projectPath);
     timing("Project validated");
     if (!isValid) {
@@ -169,6 +173,44 @@ export async function POST(req: Request) {
             status: 400,
             headers: { "Content-Type": "application/json" },
         });
+    }
+
+    // Create new connection for new code sessions (no connectionId provided)
+    if (!body.connectionId) {
+        isNewConnection = true;
+        needsTitleGeneration = true;
+
+        // Extract project name from path for initial title
+        const projectName = body.projectPath.split("/").pop() || "project";
+        const initialTitle = `Code: ${projectName}`;
+        const slug = generateSlug(initialTitle);
+
+        // Create connection with projectPath
+        const [newConnection] = await db
+            .insert(connections)
+            .values({
+                userId: dbUser.id,
+                title: initialTitle,
+                slug,
+                projectPath: body.projectPath,
+                status: "active",
+                streamingStatus: "streaming",
+            })
+            .returning();
+
+        decodedConnectionId = newConnection.id;
+        connectionPublicId = encodeConnectionId(newConnection.id);
+        connectionSlug = newConnection.slug;
+
+        logger.info(
+            {
+                connectionId: newConnection.id,
+                publicId: connectionPublicId,
+                projectPath: body.projectPath,
+                slug: connectionSlug,
+            },
+            "Created new code-mode connection"
+        );
     }
 
     // Map model override to Claude Code model names
@@ -224,10 +266,12 @@ export async function POST(req: Request) {
                 let titlePromise: Promise<void> | null = null;
 
                 // Fire off async title generation in parallel with streaming
+                // Use connectionPublicId for new connections, body.connectionId for existing
+                const effectiveConnectionId = connectionPublicId ?? body.connectionId;
                 if (
                     needsTitleGeneration &&
                     decodedConnectionId &&
-                    body.connectionId &&
+                    effectiveConnectionId &&
                     userMessageContent
                 ) {
                     const projectName = body.projectPath.split("/").pop() || "project";
@@ -251,12 +295,12 @@ export async function POST(req: Request) {
                                     writer,
                                     result.title,
                                     slug,
-                                    body.connectionId!
+                                    effectiveConnectionId
                                 );
 
                                 logger.info(
                                     {
-                                        connectionId: body.connectionId,
+                                        connectionId: effectiveConnectionId,
                                         title: result.title,
                                         slug,
                                     },
@@ -265,7 +309,7 @@ export async function POST(req: Request) {
                             }
                         } catch (error) {
                             logger.error(
-                                { error, connectionId: body.connectionId },
+                                { error, connectionId: effectiveConnectionId },
                                 "Code mode: title generation failed"
                             );
                             // Don't throw - title generation failure shouldn't affect streaming
@@ -295,15 +339,6 @@ export async function POST(req: Request) {
                             firstChunkReceived = true;
                             timing(`First chunk received: ${chunk.type}`);
                         }
-
-                        // CAPTURE: Log every chunk type and full data for analysis
-                        logger.info(
-                            {
-                                chunkType: chunk.type,
-                                chunk: JSON.stringify(chunk, null, 2),
-                            },
-                            `📦 CHUNK: ${chunk.type}`
-                        );
 
                         // Tool input starts - create tool in streaming state
                         if (chunk.type === "tool-input-start") {
@@ -389,7 +424,24 @@ export async function POST(req: Request) {
         });
 
         timing("Returning stream response");
-        return createUIMessageStreamResponse({ stream });
+
+        // Build response with headers for new connections
+        const response = createUIMessageStreamResponse({ stream });
+
+        // Add headers for new connections so client can update URL/state
+        if (isNewConnection && connectionPublicId && connectionSlug) {
+            response.headers.set("X-Connection-Id", connectionPublicId);
+            response.headers.set("X-Connection-Slug", connectionSlug);
+            response.headers.set("X-Connection-Is-New", "true");
+            // Initial title will be updated via stream when AI generates one
+            const projectName = body.projectPath.split("/").pop() || "project";
+            response.headers.set(
+                "X-Connection-Title",
+                encodeURIComponent(`Code: ${projectName}`)
+            );
+        }
+
+        return response;
     } catch (error) {
         logger.error(
             { error: error instanceof Error ? error.message : String(error) },
