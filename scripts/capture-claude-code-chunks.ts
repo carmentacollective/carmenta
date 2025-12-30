@@ -124,7 +124,6 @@ Keep it brief.
     // Convert to model messages
     const messages = await convertToModelMessages([
         {
-            id: "user-1",
             role: "user" as const,
             parts: [{ type: "text" as const, text: userMessage }],
         },
