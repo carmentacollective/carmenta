@@ -46,6 +46,9 @@ jobs:
             - Security concerns
             - Test coverage
 
+            **Do NOT flag:**
+            - Accessibility issues (ARIA labels, keyboard navigation, screen reader support, etc.) - not a project priority
+
             Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
