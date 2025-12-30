@@ -644,30 +644,10 @@ export function CodeModeMessage({
         ) : null;
     }
 
-    // Separate parts by type for proper ordering
-    // During Claude Code streaming: tools execute first, then text arrives
-    // We need to render: tools → text (not text → tools)
-    const textParts = (parts ?? []).filter((p): p is TextPart => p.type === "text");
-    const reasoningParts = (parts ?? []).filter(
-        (p): p is ReasoningPart => p.type === "reasoning"
-    );
-    const toolPartsFromMessage = (parts ?? []).filter((p): p is ToolPart =>
-        p.type.startsWith("tool-")
-    );
-
-    // Build ordered tool list: prefer accumulated state, fall back to message parts
-    const orderedTools =
-        streamingTools.length > 0
-            ? streamingTools
-            : toolPartsFromMessage.map((tp) => ({
-                  type: tp.type as `tool-${string}`,
-                  toolCallId: tp.toolCallId,
-                  toolName: tp.type.replace("tool-", ""),
-                  state: tp.state,
-                  input: tp.input as Record<string, unknown>,
-                  output: tp.output,
-                  errorText: tp.errorText,
-              }));
+    // During STREAMING: tools execute first, then text arrives
+    // So for the streaming case, show accumulated tools BEFORE message.parts
+    // After streaming: parts have correct interleaved order, render as-is
+    const isActivelyStreaming = isStreaming && isLast;
 
     return (
         <motion.div
@@ -676,23 +656,52 @@ export function CodeModeMessage({
             transition={{ duration: 0.3 }}
             className="my-3 max-w-full"
         >
-            {/* 1. Reasoning first (if any) */}
-            {reasoningParts.map((part, idx) => (
-                <ReasoningSegment key={`reasoning-${idx}`} text={part.text} />
-            ))}
+            {/* During streaming: show accumulated tools first (they execute before text) */}
+            {isActivelyStreaming &&
+                additionalTools.map((tool) => (
+                    <InlineToolFromState key={tool.toolCallId} tool={tool} />
+                ))}
 
-            {/* 2. Tools (execute before text in Claude Code) */}
-            {orderedTools.map((tool) => (
-                <InlineToolFromState
-                    key={tool.toolCallId}
-                    tool={tool as RenderableToolPart}
-                />
-            ))}
+            {/* Render parts in natural order (preserves text/tool interleaving) */}
+            {parts?.map((part, idx) => {
+                // Text part
+                if (part.type === "text") {
+                    const textPart = part as TextPart;
+                    return <TextSegment key={`text-${idx}`} text={textPart.text} />;
+                }
 
-            {/* 3. Text content (arrives after tools complete) */}
-            {textParts.map((part, idx) => (
-                <TextSegment key={`text-${idx}`} text={part.text} />
-            ))}
+                // Reasoning part
+                if (part.type === "reasoning") {
+                    const reasoningPart = part as ReasoningPart;
+                    return (
+                        <ReasoningSegment
+                            key={`reasoning-${idx}`}
+                            text={reasoningPart.text}
+                        />
+                    );
+                }
+
+                // Tool part - prefer accumulated state for accurate status
+                if (part.type.startsWith("tool-")) {
+                    const toolPart = part as ToolPart;
+                    // Look for updated state from accumulator
+                    const streamingTool = streamingTools.find(
+                        (t) => t.toolCallId === toolPart.toolCallId
+                    );
+                    if (streamingTool) {
+                        return (
+                            <InlineToolFromState
+                                key={streamingTool.toolCallId}
+                                tool={streamingTool}
+                            />
+                        );
+                    }
+                    return <InlineTool key={toolPart.toolCallId} part={toolPart} />;
+                }
+
+                // Unknown part type - skip
+                return null;
+            })}
 
             {/* Transient activity (fallback when no accumulated tools) */}
             {showTransient && <TransientActivity messages={transientMessages} />}
