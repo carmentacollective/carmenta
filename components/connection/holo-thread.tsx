@@ -77,6 +77,16 @@ import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
 import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import { renderCodeTool, InlineToolActivity } from "@/components/tools";
+import { SuggestQuestionsResult } from "@/components/generative-ui/suggest-questions";
+import { ShowReferencesResult } from "@/components/generative-ui/show-references";
+import { AskUserInputResult } from "@/components/generative-ui/ask-user-input";
+import { AcknowledgeResult } from "@/components/generative-ui/acknowledge";
+import type {
+    SuggestQuestionsOutput,
+    ShowReferencesOutput,
+    AskUserInputOutput,
+    AcknowledgeOutput,
+} from "@/lib/tools/post-response";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -1292,6 +1302,51 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                         </div>
                     )}
                 </ToolRenderer>
+            );
+        }
+
+        // Post-response enhancement tools
+        case "suggestQuestions": {
+            return (
+                <SuggestQuestionsResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as SuggestQuestionsOutput | undefined}
+                    error={getToolError(part, output, "Couldn't generate suggestions")}
+                />
+            );
+        }
+
+        case "showReferences": {
+            return (
+                <ShowReferencesResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as ShowReferencesOutput | undefined}
+                    error={getToolError(part, output, "Couldn't load sources")}
+                />
+            );
+        }
+
+        case "askUserInput": {
+            return (
+                <AskUserInputResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as AskUserInputOutput | undefined}
+                    error={getToolError(part, output, "Couldn't prepare question")}
+                />
+            );
+        }
+
+        case "acknowledge": {
+            return (
+                <AcknowledgeResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as AcknowledgeOutput | undefined}
+                    error={getToolError(part, output, "Couldn't express appreciation")}
+                />
             );
         }
 

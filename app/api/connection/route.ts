@@ -47,6 +47,7 @@ import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import { postResponseTools } from "@/lib/tools/post-response";
 import {
     unauthorizedResponse,
     validationErrorResponse,
@@ -407,10 +408,11 @@ export async function POST(req: Request) {
         const pendingDiscoveries: DiscoveryItem[] = [];
         const discoveryTools = {};
 
-        // Merge built-in tools, integration tools, searchKnowledge, and discovery tools
+        // Merge built-in tools, integration tools, searchKnowledge, post-response, and discovery tools
         const allTools = {
             ...builtInTools,
             ...integrationTools,
+            ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
             ...discoveryTools,
         };
