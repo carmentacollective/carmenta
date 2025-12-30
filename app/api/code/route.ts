@@ -321,12 +321,15 @@ export async function POST(req: Request) {
                 const accumulator = new ToolStateAccumulator();
                 let firstChunkReceived = false;
 
-                // Helper to emit current tool state as data part
+                // Helper to emit current tool state + content order as data part
                 // AI SDK requires data parts to use `data-${name}` format
                 const emitToolState = () => {
                     writer.write({
                         type: "data-tool-state" as const,
-                        data: accumulator.getAllTools(),
+                        data: {
+                            tools: accumulator.getAllTools(),
+                            contentOrder: accumulator.getContentOrder(),
+                        },
                     });
                 };
 
@@ -408,8 +411,19 @@ export async function POST(req: Request) {
                             );
                             emitToolState();
                         }
+
+                        // Text delta - track for content ordering
+                        // (detects when text segments start relative to tools)
+                        if (chunk.type === "text-delta") {
+                            accumulator.onTextDelta();
+                            // Don't emit on every text chunk - too frequent
+                            // Content order is included when tools emit
+                        }
                     },
                 });
+
+                // Emit final content order (captures any trailing text after last tool)
+                emitToolState();
 
                 // Merge the streamText result into our stream
                 timing("Merging stream...");

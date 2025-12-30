@@ -39,8 +39,8 @@ import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
 import type { TransientMessage } from "@/lib/streaming";
-import { useToolsArray } from "@/lib/code/tool-state-context";
-import type { RenderableToolPart } from "@/lib/code/transform";
+import { useToolsArray, useContentOrder } from "@/lib/code/tool-state-context";
+import type { ContentOrderEntry, RenderableToolPart } from "@/lib/code/transform";
 import { formatTerminalOutput } from "@/lib/code/transform";
 
 /**
@@ -592,51 +592,21 @@ export function CodeModeMessage({
 }: CodeModeMessageProps) {
     const transientMessages = useTransientChat();
     const accumulatedTools = useToolsArray();
+    const contentOrder = useContentOrder();
     const parts = message.parts as MessagePart[] | undefined;
 
-    // Debug: log parts state when streaming ends
-    if (!isStreaming && isLast && parts?.some((p) => p.type.startsWith("tool-"))) {
-        console.log(
-            "[CodeModeMessage] Streaming ended, tool parts:",
-            parts
-                .filter((p) => p.type.startsWith("tool-"))
-                .map((p) => ({
-                    toolCallId: (p as ToolPart).toolCallId,
-                    state: (p as ToolPart).state,
-                    hasOutput: !!(p as ToolPart).output,
-                }))
-        );
-    }
-
-    // For the last message, always use accumulated tool state
-    // This prevents tools from disappearing when streaming ends
-    // (the AI SDK may not fully populate message.parts for provider-executed tools)
-    // Accumulated state is replaced when next message starts streaming
+    // For the last message, use accumulated state (prevents tools disappearing)
     const streamingTools = isLast ? accumulatedTools : [];
 
-    // Merge streaming tools with message parts
-    // Create a Set of tool IDs already in parts to avoid duplicates
-    const partToolIds = new Set(
-        (parts ?? [])
-            .filter((p): p is ToolPart => p.type.startsWith("tool-"))
-            .map((p) => p.toolCallId)
-    );
-
-    // Streaming tools that aren't yet in parts
-    const additionalTools = streamingTools.filter(
-        (t) => !partToolIds.has(t.toolCallId)
-    );
-
-    // Show transient activity only if we have transient messages AND no accumulated tools
-    // (Accumulated tools replace transient for tool execution visibility)
+    // Show transient activity only if streaming with no accumulated tools
     const showTransient =
         isStreaming &&
         isLast &&
         transientMessages.length > 0 &&
         streamingTools.length === 0;
 
-    // If no parts and no streaming tools, render nothing (or just transient)
-    if ((!parts || parts.length === 0) && additionalTools.length === 0) {
+    // If no content at all, render nothing (or just transient)
+    if ((!parts || parts.length === 0) && streamingTools.length === 0) {
         return showTransient ? (
             <div className="my-3">
                 <TransientActivity messages={transientMessages} />
@@ -644,10 +614,12 @@ export function CodeModeMessage({
         ) : null;
     }
 
-    // During STREAMING: tools execute first, then text arrives
-    // So for the streaming case, show accumulated tools BEFORE message.parts
-    // After streaming: parts have correct interleaved order, render as-is
     const isActivelyStreaming = isStreaming && isLast;
+
+    // For the last message with tools: use contentOrder to properly interleave
+    // For historical messages: render parts as-is (order already fixed)
+    const useOrderedRendering =
+        isLast && contentOrder.length > 0 && streamingTools.length > 0;
 
     return (
         <motion.div
@@ -656,36 +628,160 @@ export function CodeModeMessage({
             transition={{ duration: 0.3 }}
             className="my-3 max-w-full"
         >
-            {/* During streaming: show accumulated tools first (they execute before text) */}
-            {isActivelyStreaming &&
+            {useOrderedRendering ? (
+                <OrderedContent
+                    contentOrder={contentOrder}
+                    parts={parts}
+                    tools={streamingTools}
+                />
+            ) : (
+                <UnorderedContent
+                    parts={parts}
+                    tools={streamingTools}
+                    isStreaming={isActivelyStreaming}
+                />
+            )}
+
+            {/* Transient activity (fallback when no accumulated tools) */}
+            {showTransient && <TransientActivity messages={transientMessages} />}
+        </motion.div>
+    );
+}
+
+/**
+ * Render content in proper chronological order using contentOrder
+ * Used for the last message where we have ordering metadata
+ */
+function OrderedContent({
+    contentOrder,
+    parts,
+    tools,
+}: {
+    contentOrder: ContentOrderEntry[];
+    parts: MessagePart[] | undefined;
+    tools: RenderableToolPart[];
+}) {
+    // Build maps for quick lookup
+    const toolsMap = new Map(tools.map((t) => [t.toolCallId, t]));
+
+    // Extract text and reasoning parts in order (for matching to contentOrder)
+    const textParts = (parts ?? []).filter((p): p is TextPart => p.type === "text");
+    const reasoningParts = (parts ?? []).filter(
+        (p): p is ReasoningPart => p.type === "reasoning"
+    );
+
+    // Track which text part we're on
+    let textIndex = 0;
+
+    // Tools we've rendered (to handle any extras not in contentOrder)
+    const renderedToolIds = new Set<string>();
+
+    const elements: React.ReactNode[] = [];
+
+    // Render in contentOrder sequence
+    for (const entry of contentOrder) {
+        if (entry.type === "text") {
+            // Render next text part
+            if (textIndex < textParts.length) {
+                elements.push(
+                    <TextSegment
+                        key={`text-${textIndex}`}
+                        text={textParts[textIndex].text}
+                    />
+                );
+                textIndex++;
+            }
+        } else if (entry.type === "tool") {
+            // Render tool from accumulated state
+            const tool = toolsMap.get(entry.id);
+            if (tool) {
+                elements.push(
+                    <InlineToolFromState key={tool.toolCallId} tool={tool} />
+                );
+                renderedToolIds.add(entry.id);
+            }
+        }
+    }
+
+    // Render any remaining text parts (trailing text after last tool)
+    while (textIndex < textParts.length) {
+        elements.push(
+            <TextSegment key={`text-${textIndex}`} text={textParts[textIndex].text} />
+        );
+        textIndex++;
+    }
+
+    // Render any tools not in contentOrder (edge case: tools added after order was emitted)
+    for (const tool of tools) {
+        if (!renderedToolIds.has(tool.toolCallId)) {
+            elements.push(<InlineToolFromState key={tool.toolCallId} tool={tool} />);
+        }
+    }
+
+    // Also render reasoning parts (usually at the start)
+    const reasoningElements = reasoningParts.map((part, idx) => (
+        <ReasoningSegment key={`reasoning-${idx}`} text={part.text} />
+    ));
+
+    return (
+        <>
+            {reasoningElements}
+            {elements}
+        </>
+    );
+}
+
+/**
+ * Fallback rendering when we don't have contentOrder (historical messages)
+ */
+function UnorderedContent({
+    parts,
+    tools,
+    isStreaming,
+}: {
+    parts: MessagePart[] | undefined;
+    tools: RenderableToolPart[];
+    isStreaming: boolean;
+}) {
+    // During streaming: show accumulated tools first (they execute before text arrives)
+    // After streaming: render parts as-is
+    const partToolIds = new Set(
+        (parts ?? [])
+            .filter((p): p is ToolPart => p.type.startsWith("tool-"))
+            .map((p) => p.toolCallId)
+    );
+
+    const additionalTools = tools.filter((t) => !partToolIds.has(t.toolCallId));
+
+    return (
+        <>
+            {/* During streaming: show tools first */}
+            {isStreaming &&
                 additionalTools.map((tool) => (
                     <InlineToolFromState key={tool.toolCallId} tool={tool} />
                 ))}
 
-            {/* Render parts in natural order (preserves text/tool interleaving) */}
+            {/* Render parts in their native order */}
             {parts?.map((part, idx) => {
-                // Text part
                 if (part.type === "text") {
-                    const textPart = part as TextPart;
-                    return <TextSegment key={`text-${idx}`} text={textPart.text} />;
-                }
-
-                // Reasoning part
-                if (part.type === "reasoning") {
-                    const reasoningPart = part as ReasoningPart;
                     return (
-                        <ReasoningSegment
-                            key={`reasoning-${idx}`}
-                            text={reasoningPart.text}
+                        <TextSegment
+                            key={`text-${idx}`}
+                            text={(part as TextPart).text}
                         />
                     );
                 }
-
-                // Tool part - prefer accumulated state for accurate status
+                if (part.type === "reasoning") {
+                    return (
+                        <ReasoningSegment
+                            key={`reasoning-${idx}`}
+                            text={(part as ReasoningPart).text}
+                        />
+                    );
+                }
                 if (part.type.startsWith("tool-")) {
                     const toolPart = part as ToolPart;
-                    // Look for updated state from accumulator
-                    const streamingTool = streamingTools.find(
+                    const streamingTool = tools.find(
                         (t) => t.toolCallId === toolPart.toolCallId
                     );
                     if (streamingTool) {
@@ -698,14 +794,9 @@ export function CodeModeMessage({
                     }
                     return <InlineTool key={toolPart.toolCallId} part={toolPart} />;
                 }
-
-                // Unknown part type - skip
                 return null;
             })}
-
-            {/* Transient activity (fallback when no accumulated tools) */}
-            {showTransient && <TransientActivity messages={transientMessages} />}
-        </motion.div>
+        </>
     );
 }
 

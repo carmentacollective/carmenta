@@ -40,14 +40,30 @@ export interface RenderableToolPart {
 }
 
 /**
+ * Content order entry - tracks chronological order of tools and text segments
+ * Used to reconstruct proper interleaving after streaming ends
+ */
+export interface ContentOrderEntry {
+    type: "tool" | "text";
+    /** toolCallId for tools, `text-${index}` for text segments */
+    id: string;
+}
+
+/**
  * Tool state accumulator
  *
  * Maintains accumulated state for all tools in a streaming session.
  * State only moves forward - tools never disappear.
+ *
+ * Also tracks content order to reconstruct proper text/tool interleaving
+ * after streaming ends (AI SDK doesn't preserve this order in message.parts).
  */
 export class ToolStateAccumulator {
     private tools = new Map<string, RenderableToolPart>();
     private inputBuffers = new Map<string, string>();
+    private contentOrder: ContentOrderEntry[] = [];
+    private lastChunkWasText = false;
+    private textSegmentIndex = 0;
 
     /**
      * Handle tool-input-start chunk
@@ -64,8 +80,26 @@ export class ToolStateAccumulator {
         this.tools.set(toolCallId, tool);
         this.inputBuffers.set(toolCallId, "");
 
+        // Track in content order (tools interrupt text flow)
+        this.contentOrder.push({ type: "tool", id: toolCallId });
+        this.lastChunkWasText = false;
+
         logger.debug({ toolName, toolCallId }, "Tool input started");
         return tool;
+    }
+
+    /**
+     * Handle text-delta chunk
+     * Tracks text segments for content ordering (detects new segments)
+     */
+    onTextDelta(): void {
+        // Only record when transitioning from non-text to text
+        // (consecutive text-delta chunks are one segment)
+        if (!this.lastChunkWasText) {
+            const id = `text-${this.textSegmentIndex++}`;
+            this.contentOrder.push({ type: "text", id });
+            this.lastChunkWasText = true;
+        }
     }
 
     /**
@@ -178,6 +212,13 @@ export class ToolStateAccumulator {
      */
     getAllTools(): RenderableToolPart[] {
         return Array.from(this.tools.values());
+    }
+
+    /**
+     * Get content order (sequence of tools and text segments)
+     */
+    getContentOrder(): ContentOrderEntry[] {
+        return [...this.contentOrder];
     }
 
     /**
