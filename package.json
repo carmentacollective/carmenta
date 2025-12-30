@@ -15,6 +15,7 @@
       "core-js",
       "esbuild",
       "msw",
+      "protobufjs",
       "sharp",
       "unrs-resolver"
     ]
