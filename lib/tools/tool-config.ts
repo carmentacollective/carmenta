@@ -426,7 +426,6 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
     },
 
-<<<<<<< HEAD
     // =========================================================================
     // Claude Code tools - code mode file and shell operations
     // =========================================================================
@@ -664,7 +663,8 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Found results", "Searched", "Discovered"],
             fast: ["Quick search!"],
-=======
+        },
+    },
     // Post-response enhancement tools
     suggestQuestions: {
         displayName: "Follow-ups",
@@ -729,7 +729,6 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         delightMessages: {
             completed: ["From the heart", "With care", "Truly appreciated"],
->>>>>>> dad1efe (✨ Add post-response experience tools and components)
         },
     },
 };

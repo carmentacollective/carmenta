@@ -27,7 +27,11 @@ interface AskUserInputResultProps {
  * - Free-form text input (optional)
  * - Or both combined
  */
-export function AskUserInputResult({ status, output }: AskUserInputResultProps) {
+export function AskUserInputResult({
+    toolCallId,
+    status,
+    output,
+}: AskUserInputResultProps) {
     const { append } = useChatContext();
     const [freeformText, setFreeformText] = useState("");
     const [selectedOption, setSelectedOption] = useState<OptionItem | null>(null);
@@ -41,7 +45,7 @@ export function AskUserInputResult({ status, output }: AskUserInputResultProps) 
 
     const handleOptionClick = (option: OptionItem) => {
         logger.info(
-            { option: option.value, question: output.question },
+            { toolCallId, option: option.value, question: output.question },
             "Option selected"
         );
         setSelectedOption(option);
@@ -54,7 +58,11 @@ export function AskUserInputResult({ status, output }: AskUserInputResultProps) 
     const handleFreeformSubmit = () => {
         if (!freeformText.trim()) return;
         logger.info(
-            { question: output.question, responseLength: freeformText.trim().length },
+            {
+                toolCallId,
+                question: output.question,
+                responseLength: freeformText.trim().length,
+            },
             "Freeform response submitted"
         );
         append({
@@ -93,7 +101,7 @@ export function AskUserInputResult({ status, output }: AskUserInputResultProps) 
                                 glass.standard,
                                 border.container,
                                 "text-sm",
-                                selectedOption === option
+                                selectedOption?.value === option.value
                                     ? "border-primary/40 bg-primary/20 text-primary"
                                     : "hover:border-border/60 hover:bg-white/50 dark:hover:bg-black/30",
                                 "transition-all duration-200",

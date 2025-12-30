@@ -56,7 +56,11 @@ function groupByType(references: ReferenceItem[]): Record<string, ReferenceItem[
  * Groups references by type (web, document, tool, memory) and displays
  * them in a collapsible container.
  */
-export function ShowReferencesResult({ status, output }: ShowReferencesResultProps) {
+export function ShowReferencesResult({
+    toolCallId,
+    status,
+    output,
+}: ShowReferencesResultProps) {
     const [expanded, setExpanded] = useState(false);
 
     if (status !== "completed" || !output?.references?.length) {
@@ -78,7 +82,7 @@ export function ShowReferencesResult({ status, output }: ShowReferencesResultPro
                 onClick={() => {
                     const newExpanded = !expanded;
                     logger.info(
-                        { expanded: newExpanded, referenceCount },
+                        { toolCallId, expanded: newExpanded, referenceCount },
                         "References panel toggled"
                     );
                     setExpanded(newExpanded);
@@ -140,6 +144,15 @@ function ReferenceGroup({
     );
 }
 
+function isSafeUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return ["http:", "https:"].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
+}
+
 function ReferenceItemComponent({ reference }: { reference: ReferenceItem }) {
     const content = (
         <div className="flex items-start gap-3">
@@ -157,7 +170,7 @@ function ReferenceItemComponent({ reference }: { reference: ReferenceItem }) {
         </div>
     );
 
-    if (reference.url) {
+    if (reference.url && isSafeUrl(reference.url)) {
         return (
             <a
                 href={reference.url}

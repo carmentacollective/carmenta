@@ -24,6 +24,7 @@ interface SuggestQuestionsResultProps {
  * not formal tool outputs.
  */
 export function SuggestQuestionsResult({
+    toolCallId,
     status,
     output,
 }: SuggestQuestionsResultProps) {
@@ -35,7 +36,7 @@ export function SuggestQuestionsResult({
 
     const handleSuggestionClick = (suggestion: SuggestionItem) => {
         logger.info(
-            { prompt: suggestion.prompt, category: suggestion.category },
+            { toolCallId, prompt: suggestion.prompt, category: suggestion.category },
             "Follow-up suggestion clicked"
         );
         append({

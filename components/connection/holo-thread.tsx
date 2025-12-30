@@ -1071,7 +1071,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
-<<<<<<< HEAD
         // =====================================================================
         // Claude Code tools - handled by registry (components/tools/registry.tsx)
         // Read, Write, Edit, Bash, Glob, Grep now use beautiful dedicated renderers
