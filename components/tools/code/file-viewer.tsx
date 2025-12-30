@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { ToolRenderer } from "../tool-renderer";
+import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useState } from "react";
 

@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
-import { ToolRenderer } from "../tool-renderer";
+import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 interface TerminalOutputProps {

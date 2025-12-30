@@ -75,6 +75,7 @@ import { OptionList } from "@/components/tool-ui/option-list";
 import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
 import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
+import { renderCodeTool } from "@/components/tools";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -472,7 +473,7 @@ function getToolStatus(state: ToolPart["state"]): ToolStatus {
 function getToolError(
     part: ToolPart,
     output: Record<string, unknown> | undefined,
-    fallbackMessage: string
+    fallbackMessage = "Operation failed"
 ): string | undefined {
     // AI SDK pattern: errorText field on the part itself
     if (part.errorText) return part.errorText;
@@ -496,6 +497,19 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
     const status = getToolStatus(part.state);
     const input = part.input as Record<string, unknown>;
     const output = part.output as Record<string, unknown> | undefined;
+
+    // Try code tools registry first - returns beautiful renderers for Claude Code tools
+    const codeToolResult = renderCodeTool({
+        toolCallId: part.toolCallId,
+        toolName,
+        status,
+        input,
+        output,
+        error: getToolError(part, output),
+    });
+    if (codeToolResult) {
+        return codeToolResult;
+    }
 
     switch (toolName) {
         case "webSearch": {
@@ -1057,234 +1071,9 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         // =====================================================================
-        // Claude Code tools - code mode file and shell operations
+        // Claude Code tools - handled by registry (components/tools/registry.tsx)
+        // Read, Write, Edit, Bash, Glob, Grep now use beautiful dedicated renderers
         // =====================================================================
-
-        case "Read": {
-            // File read operation - show file path and content preview
-            const filePath = input.file_path as string | undefined;
-            const content = output as string | undefined;
-            const readError = getToolError(part, output, "Failed to read file");
-
-            return (
-                <ToolRenderer
-                    toolName="Read"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={readError}
-                >
-                    {status === "completed" && content && (
-                        <div className="space-y-2">
-                            {filePath && (
-                                <div className="font-mono text-xs text-muted-foreground">
-                                    {filePath}
-                                </div>
-                            )}
-                            <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
-                                {typeof content === "string"
-                                    ? content.slice(0, 2000)
-                                    : JSON.stringify(content, null, 2).slice(0, 2000)}
-                                {typeof content === "string" &&
-                                    content.length > 2000 &&
-                                    "..."}
-                            </pre>
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
-
-        case "Write": {
-            // File write operation - show file path and bytes written
-            const filePath = input.file_path as string | undefined;
-            const writeError = getToolError(part, output, "Failed to write file");
-
-            return (
-                <ToolRenderer
-                    toolName="Write"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={writeError}
-                >
-                    {status === "completed" && filePath && (
-                        <div className="font-mono text-xs text-muted-foreground">
-                            {filePath}
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
-
-        case "Edit": {
-            // File edit operation - show file path and diff preview
-            const filePath = input.file_path as string | undefined;
-            const oldString = input.old_string as string | undefined;
-            const newString = input.new_string as string | undefined;
-            const editError = getToolError(part, output, "Failed to edit file");
-
-            return (
-                <ToolRenderer
-                    toolName="Edit"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={editError}
-                >
-                    {status === "completed" && (
-                        <div className="space-y-2">
-                            {filePath && (
-                                <div className="font-mono text-xs text-muted-foreground">
-                                    {filePath}
-                                </div>
-                            )}
-                            {oldString && newString && (
-                                <div className="space-y-1">
-                                    <div className="rounded bg-red-500/10 p-2 font-mono text-xs text-red-400">
-                                        - {oldString.slice(0, 200)}
-                                        {oldString.length > 200 && "..."}
-                                    </div>
-                                    <div className="rounded bg-green-500/10 p-2 font-mono text-xs text-green-400">
-                                        + {newString.slice(0, 200)}
-                                        {newString.length > 200 && "..."}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
-
-        case "Bash": {
-            // Shell command execution - show command and output
-            const command = input.command as string | undefined;
-            const bashOutput = output as
-                | string
-                | { stdout?: string; stderr?: string }
-                | undefined;
-            const bashError = getToolError(part, output, "Command failed");
-
-            // Extract stdout/stderr from output
-            const stdout =
-                typeof bashOutput === "string" ? bashOutput : bashOutput?.stdout;
-            const stderr =
-                typeof bashOutput === "object" ? bashOutput?.stderr : undefined;
-
-            return (
-                <ToolRenderer
-                    toolName="Bash"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={bashError}
-                >
-                    {(command || stdout || stderr) && (
-                        <div className="space-y-2">
-                            {command && (
-                                <div className="rounded bg-black/30 p-2 font-mono text-xs text-cyan-400">
-                                    $ {command}
-                                </div>
-                            )}
-                            {stdout && (
-                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
-                                    {stdout.slice(0, 3000)}
-                                    {stdout.length > 3000 && "\n..."}
-                                </pre>
-                            )}
-                            {stderr && (
-                                <pre className="max-h-32 overflow-auto rounded bg-red-500/10 p-2 font-mono text-xs text-red-400">
-                                    {stderr.slice(0, 1000)}
-                                </pre>
-                            )}
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
-
-        case "Glob": {
-            // File pattern matching - show pattern and matched files
-            const pattern = input.pattern as string | undefined;
-            const matches = output as string[] | undefined;
-            const globError = getToolError(part, output, "Failed to find files");
-
-            return (
-                <ToolRenderer
-                    toolName="Glob"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={globError}
-                >
-                    {status === "completed" && (
-                        <div className="space-y-2">
-                            {pattern && (
-                                <div className="font-mono text-xs text-muted-foreground">
-                                    Pattern: {pattern}
-                                </div>
-                            )}
-                            {Array.isArray(matches) && matches.length > 0 && (
-                                <div className="max-h-32 overflow-auto font-mono text-xs">
-                                    {matches.slice(0, 20).map((file, i) => (
-                                        <div key={i} className="text-foreground/70">
-                                            {file}
-                                        </div>
-                                    ))}
-                                    {matches.length > 20 && (
-                                        <div className="text-muted-foreground">
-                                            ...and {matches.length - 20} more
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
-
-        case "Grep": {
-            // Code search - show pattern and matches
-            const searchPattern = input.pattern as string | undefined;
-            const grepOutput = output as string | string[] | undefined;
-            const grepError = getToolError(part, output, "Search failed");
-
-            return (
-                <ToolRenderer
-                    toolName="Grep"
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    input={input}
-                    output={output}
-                    error={grepError}
-                >
-                    {status === "completed" && (
-                        <div className="space-y-2">
-                            {searchPattern && (
-                                <div className="font-mono text-xs text-muted-foreground">
-                                    Pattern: {searchPattern}
-                                </div>
-                            )}
-                            {grepOutput && (
-                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
-                                    {(typeof grepOutput === "string"
-                                        ? grepOutput
-                                        : grepOutput.join("\n")
-                                    ).slice(0, 3000)}
-                                </pre>
-                            )}
-                        </div>
-                    )}
-                </ToolRenderer>
-            );
-        }
 
         case "Task": {
             // Sub-agent task - show agent type and description
