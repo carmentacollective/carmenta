@@ -420,10 +420,12 @@ export async function POST(req: Request) {
                             // Content order is included when tools emit
                         }
                     },
+                    onFinish: () => {
+                        // Emit final content order after all chunks processed
+                        // This captures any trailing text after the last tool
+                        emitToolState();
+                    },
                 });
-
-                // Emit final content order (captures any trailing text after last tool)
-                emitToolState();
 
                 // Merge the streamText result into our stream
                 timing("Merging stream...");

@@ -633,7 +633,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     } = useConnection();
     const { handleDataPart: handleTransientData, clearAll: clearTransientMessages } =
         useTransient();
-    const { handleDataPart: handleToolStateData } = useToolState();
+    const { handleDataPart: handleToolStateData, clear: clearToolState } =
+        useToolState();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
     const [input, setInput] = useState("");
@@ -955,9 +956,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!input.trim() || isLoading) return;
+            // Clear tool state from previous message before starting new one
+            clearToolState();
             await append({ role: "user", content: input.trim() });
         },
-        [input, isLoading, append]
+        [input, isLoading, append, clearToolState]
     );
 
     const clearError = useCallback(() => {

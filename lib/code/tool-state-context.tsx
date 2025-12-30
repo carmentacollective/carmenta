@@ -48,10 +48,13 @@ export function isToolStateDataPart(part: unknown): part is ToolStateDataPart {
     if (Array.isArray(data)) {
         return true; // Legacy format
     }
+    if (typeof data !== "object" || data === null) {
+        return false;
+    }
+    const objData = data as { tools: unknown; contentOrder?: unknown };
     return (
-        typeof data === "object" &&
-        data !== null &&
-        Array.isArray((data as { tools: unknown }).tools)
+        Array.isArray(objData.tools) &&
+        (objData.contentOrder === undefined || Array.isArray(objData.contentOrder))
     );
 }
 
