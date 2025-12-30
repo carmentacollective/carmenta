@@ -8,7 +8,16 @@
  * the context to the database and back.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    beforeAll,
+    afterAll,
+    beforeEach,
+    afterEach,
+} from "vitest";
 import { setupTestDb } from "@/vitest.setup";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 
@@ -35,6 +44,29 @@ vi.mock("next/navigation", () => ({
     }),
     usePathname: () => mockPathname(),
 }));
+
+// Track window.location.href assignments (used for hard navigation)
+let mockLocationHref: string | undefined;
+const originalHref = Object.getOwnPropertyDescriptor(window, "location")!;
+
+beforeAll(() => {
+    Object.defineProperty(window, "location", {
+        configurable: true,
+        value: {
+            ...window.location,
+            get href() {
+                return mockLocationHref ?? "http://localhost/";
+            },
+            set href(url: string) {
+                mockLocationHref = url;
+            },
+        },
+    });
+});
+
+afterAll(() => {
+    Object.defineProperty(window, "location", originalHref);
+});
 
 // Mock server actions to bypass Clerk auth and use direct DB calls
 vi.mock("@/lib/actions/connections", async () => {
@@ -97,6 +129,7 @@ describe("ConnectionChooser Integration", () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         mockPathname.mockReturnValue("/connection");
+        mockLocationHref = undefined; // Reset hard navigation tracking
 
         // Create test user
         testUser = await getOrCreateUser("clerk_test_123", "test@example.com", {
@@ -187,8 +220,8 @@ describe("ConnectionChooser Integration", () => {
             const deletedConn = await getConnectionWithMessages(conn1.id);
             expect(deletedConn).toBeNull();
 
-            // 10. Verify we navigated away (since we deleted the active connection)
-            expect(mockPush).toHaveBeenCalledWith("/connection?new");
+            // 10. Verify we hard-navigated away (since we deleted the active connection)
+            expect(mockLocationHref).toBe("/connection?new");
         });
 
         it("deleting non-active connection does not navigate away", async () => {
@@ -249,7 +282,7 @@ describe("ConnectionChooser Integration", () => {
             });
 
             // Should NOT navigate since we didn't delete the active connection
-            expect(mockPush).not.toHaveBeenCalled();
+            expect(mockLocationHref).toBeUndefined();
 
             // Active connection should still be displayed (appears in both pill and dropdown)
             expect(screen.getAllByText("Active Chat").length).toBeGreaterThanOrEqual(1);

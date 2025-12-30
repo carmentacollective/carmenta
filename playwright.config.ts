@@ -7,8 +7,8 @@ config({ path: ".env.local" });
 /**
  * Playwright configuration for E2E tests
  *
- * CI runs against production build (pnpm start) to catch production-only bugs.
- * Local development uses dev server (pnpm dev) for faster iteration.
+ * Uses dev server for both CI and local to enable parallel job execution.
+ * The build job separately verifies production builds work.
  *
  * Uses @clerk/testing for authenticated test flows. Requires:
  * - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
@@ -42,9 +42,7 @@ export default defineConfig({
     ],
 
     webServer: {
-        // CI: Use production server with pre-built .next directory
-        // Local: Use dev server for faster iteration
-        command: process.env.CI ? "pnpm start" : "pnpm dev",
+        command: "pnpm dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,

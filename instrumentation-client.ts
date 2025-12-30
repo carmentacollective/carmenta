@@ -1,15 +1,17 @@
 /**
- * PostHog Analytics Instrumentation
+ * Client-Side Instrumentation
  *
- * Initializes PostHog analytics using the latest 2025 methodology for Next.js.
+ * Initializes PostHog analytics for client-side tracking.
  * This file is automatically loaded by Next.js 16+ for client-side instrumentation.
+ *
+ * Note: Sentry client initialization is handled separately in sentry.client.config.ts
  */
 
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { logger } from "@/lib/client-logger";
 
-// Only initialize PostHog in production to avoid dev traffic
+// Initialize PostHog analytics (production only)
 if (
     process.env.NODE_ENV === "production" &&
     process.env.NEXT_PUBLIC_POSTHOG_KEY &&
@@ -18,11 +20,12 @@ if (
     try {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
             api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-            // Latest 2025 default: automatically handles $pageview and $pageleave events
+            // Latest 2025 defaults enable history_change tracking
             defaults: "2025-11-30",
-            // Capture errors and console logs for better debugging
-            capture_pageview: false, // Handled by defaults above
-            capture_pageleave: false, // Handled by defaults above
+            // Explicitly disable automatic pageview/pageleave capture
+            // (defaults would enable them via history_change)
+            capture_pageview: false,
+            capture_pageleave: false,
         });
     } catch (error) {
         logger.error({ error }, "Failed to initialize PostHog analytics");
@@ -32,7 +35,7 @@ if (
     }
 }
 
-// Router transition tracking for Sentry
+// Router transition tracking for Sentry performance monitoring
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 export { posthog };

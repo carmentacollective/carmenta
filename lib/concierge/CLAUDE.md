@@ -3,9 +3,7 @@
 Routes incoming requests to the optimal model, temperature, reasoning level, and
 generates connection titles. Uses Haiku 4.5 for fast inference (~200ms).
 
-When editing the concierge prompt, follow LLM-to-LLM communication patterns.
-
-@.cursor/rules/prompt-engineering.mdc
+**Before editing `prompt.ts`, invoke the `writing-for-llms` skill.**
 
 ## Key Files
 

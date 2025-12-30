@@ -129,7 +129,7 @@ self.addEventListener("fetch", (event) => {
  *   title: "Notification Title",
  *   body: "Notification body text",
  *   icon: "/logos/icon-transparent-192.png",
- *   url: "/connection/new",
+ *   url: "/connection?new",
  *   actions: [{ action: "view", title: "View" }]
  * }
  */

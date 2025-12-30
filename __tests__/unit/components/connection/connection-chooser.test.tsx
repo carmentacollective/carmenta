@@ -455,8 +455,8 @@ describe("ConnectionChooser", () => {
             });
             render(<ConnectionChooser />);
 
-            // S2-S4 state: untitled connection shows "Search conversations..." placeholder
-            fireEvent.click(screen.getByLabelText("Search conversations"));
+            // S2-S4 state: untitled connection shows "Search connections..." placeholder
+            fireEvent.click(screen.getByLabelText("Search connections"));
             // "New connection" appears as fallback title in the dropdown
             expect(screen.getAllByText("New connection").length).toBeGreaterThanOrEqual(
                 1

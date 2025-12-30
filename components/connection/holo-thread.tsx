@@ -77,6 +77,16 @@ import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
 import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import { renderCodeTool, InlineToolActivity } from "@/components/tools";
+import { SuggestQuestionsResult } from "@/components/generative-ui/suggest-questions";
+import { ShowReferencesResult } from "@/components/generative-ui/show-references";
+import { AskUserInputResult } from "@/components/generative-ui/ask-user-input";
+import { AcknowledgeResult } from "@/components/generative-ui/acknowledge";
+import type {
+    SuggestQuestionsOutput,
+    ShowReferencesOutput,
+    AskUserInputOutput,
+    AcknowledgeOutput,
+} from "@/lib/tools/post-response";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
@@ -1295,6 +1305,51 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
         }
 
+        // Post-response enhancement tools
+        case "suggestQuestions": {
+            return (
+                <SuggestQuestionsResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as SuggestQuestionsOutput | undefined}
+                    error={getToolError(part, output, "Couldn't generate suggestions")}
+                />
+            );
+        }
+
+        case "showReferences": {
+            return (
+                <ShowReferencesResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as ShowReferencesOutput | undefined}
+                    error={getToolError(part, output, "Couldn't load sources")}
+                />
+            );
+        }
+
+        case "askUserInput": {
+            return (
+                <AskUserInputResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as AskUserInputOutput | undefined}
+                    error={getToolError(part, output, "Couldn't prepare question")}
+                />
+            );
+        }
+
+        case "acknowledge": {
+            return (
+                <AcknowledgeResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    output={output as AcknowledgeOutput | undefined}
+                    error={getToolError(part, output, "Couldn't express appreciation")}
+                />
+            );
+        }
+
         default: {
             // Unknown tool - this is a bug. Every tool needs an explicit renderer.
             // Log error and report to Sentry so we catch missing renderers in production.
@@ -1453,7 +1508,7 @@ function MessageActions({
                     data-tooltip-id="tip"
                     data-tooltip-content="Let's try that differently"
                     className={cn(
-                        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-all",
+                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
