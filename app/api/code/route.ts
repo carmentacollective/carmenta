@@ -320,8 +320,9 @@ export async function POST(req: Request) {
                 // Create accumulator to track tool state through lifecycle
                 const accumulator = new ToolStateAccumulator();
                 let firstChunkReceived = false;
+                let lastTextEmit = 0;
 
-                // Helper to emit current tool state + content order as data part
+                // Helper to emit current tool state + content order + text segments
                 // AI SDK requires data parts to use `data-${name}` format
                 const emitToolState = () => {
                     writer.write({
@@ -329,8 +330,10 @@ export async function POST(req: Request) {
                         data: {
                             tools: accumulator.getAllTools(),
                             contentOrder: accumulator.getContentOrder(),
+                            textSegments: accumulator.getTextSegments(),
                         },
                     });
+                    lastTextEmit = Date.now();
                 };
 
                 timing("Starting streamText...");
@@ -412,12 +415,16 @@ export async function POST(req: Request) {
                             emitToolState();
                         }
 
-                        // Text delta - track for content ordering
+                        // Text delta - track for content ordering and accumulate content
                         // (detects when text segments start relative to tools)
                         if (chunk.type === "text-delta") {
-                            accumulator.onTextDelta();
-                            // Don't emit on every text chunk - too frequent
-                            // Content order is included when tools emit
+                            accumulator.onTextDelta(chunk.text);
+                            // Emit periodically to enable progressive text streaming
+                            // Throttle to ~200ms to balance responsiveness vs network overhead
+                            const now = Date.now();
+                            if (now - lastTextEmit >= 200) {
+                                emitToolState();
+                            }
                         }
                     },
                     onFinish: () => {

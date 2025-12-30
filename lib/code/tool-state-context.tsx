@@ -19,16 +19,17 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import type { ContentOrderEntry, RenderableToolPart } from "./transform";
+import type { ContentOrderEntry, RenderableToolPart, TextSegment } from "./transform";
 
 /**
- * Data part shape from the API (now includes content order)
+ * Data part shape from the API (includes content order and text segments)
  */
 interface ToolStateDataPart {
     type: "data-tool-state";
     data: {
         tools: RenderableToolPart[];
         contentOrder: ContentOrderEntry[];
+        textSegments?: TextSegment[];
     };
 }
 
@@ -66,6 +67,8 @@ interface ToolStateContextValue {
     tools: Map<string, RenderableToolPart>;
     /** Content order for proper interleaving (tools + text segments) */
     contentOrder: ContentOrderEntry[];
+    /** Text segments with actual content (AI SDK concatenates text, so we track separately) */
+    textSegments: Map<string, string>;
     /** Handle incoming data parts from useChat onData */
     handleDataPart: (dataPart: unknown) => void;
     /** Clear all tool state (call when streaming ends or new message) */
@@ -80,6 +83,7 @@ const ToolStateContext = createContext<ToolStateContextValue | null>(null);
 export function ToolStateProvider({ children }: { children: ReactNode }) {
     const [tools, setTools] = useState<Map<string, RenderableToolPart>>(new Map());
     const [contentOrder, setContentOrder] = useState<ContentOrderEntry[]>([]);
+    const [textSegments, setTextSegments] = useState<Map<string, string>>(new Map());
 
     const handleDataPart = useCallback((dataPart: unknown) => {
         if (!isToolStateDataPart(dataPart)) {
@@ -90,6 +94,7 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
         const data = dataPart.data;
         const toolsArray = Array.isArray(data) ? data : data.tools;
         const order = Array.isArray(data) ? [] : data.contentOrder;
+        const segments = Array.isArray(data) ? undefined : data.textSegments;
 
         // Merge incoming tools into state
         setTools((prev) => {
@@ -104,16 +109,28 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
         if (order.length > 0) {
             setContentOrder(order);
         }
+
+        // Update text segments
+        if (segments && segments.length > 0) {
+            setTextSegments((prev) => {
+                const next = new Map(prev);
+                for (const segment of segments) {
+                    next.set(segment.id, segment.text);
+                }
+                return next;
+            });
+        }
     }, []);
 
     const clear = useCallback(() => {
         setTools(new Map());
         setContentOrder([]);
+        setTextSegments(new Map());
     }, []);
 
     return (
         <ToolStateContext.Provider
-            value={{ tools, contentOrder, handleDataPart, clear }}
+            value={{ tools, contentOrder, textSegments, handleDataPart, clear }}
         >
             {children}
         </ToolStateContext.Provider>
@@ -130,6 +147,7 @@ export function useToolState(): ToolStateContextValue {
         return {
             tools: new Map(),
             contentOrder: [],
+            textSegments: new Map(),
             handleDataPart: () => {},
             clear: () => {},
         };
@@ -151,4 +169,13 @@ export function useToolsArray(): RenderableToolPart[] {
 export function useContentOrder(): ContentOrderEntry[] {
     const { contentOrder } = useToolState();
     return contentOrder;
+}
+
+/**
+ * Hook to get text segments for proper interleaving
+ * Returns a Map of segment id -> text content
+ */
+export function useTextSegments(): Map<string, string> {
+    const { textSegments } = useToolState();
+    return textSegments;
 }

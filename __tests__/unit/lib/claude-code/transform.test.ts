@@ -1061,6 +1061,95 @@ describe("Content Order Tracking", () => {
             expect(order).toEqual([{ type: "tool", id: "toolu_1" }]);
         });
     });
+
+    describe("text segment accumulation", () => {
+        it("accumulates text content when delta is provided", () => {
+            accumulator.onTextDelta("Hello ");
+            accumulator.onTextDelta("world");
+
+            const segments = accumulator.getTextSegments();
+            expect(segments).toEqual([{ id: "text-0", text: "Hello world" }]);
+        });
+
+        it("creates separate segments when interrupted by tools", () => {
+            // First text segment
+            accumulator.onTextDelta("I'll pull ");
+            accumulator.onTextDelta("the changes.");
+
+            // Tool interrupts
+            accumulator.onInputStart("toolu_1", "Bash");
+            accumulator.onToolCall("toolu_1", "Bash", { command: "git pull" });
+            accumulator.onResult("toolu_1", "success", false);
+
+            // Second text segment
+            accumulator.onTextDelta("Pulled ");
+            accumulator.onTextDelta("successfully!");
+
+            const segments = accumulator.getTextSegments();
+            expect(segments).toEqual([
+                { id: "text-0", text: "I'll pull the changes." },
+                { id: "text-1", text: "Pulled successfully!" },
+            ]);
+
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([
+                { type: "text", id: "text-0" },
+                { type: "tool", id: "toolu_1" },
+                { type: "text", id: "text-1" },
+            ]);
+        });
+
+        it("handles multiple tools between text segments", () => {
+            accumulator.onTextDelta("Let me search.");
+
+            accumulator.onInputStart("toolu_1", "Glob");
+            accumulator.onResult("toolu_1", ["file.ts"], false);
+
+            accumulator.onInputStart("toolu_2", "Read");
+            accumulator.onResult("toolu_2", "content", false);
+
+            accumulator.onTextDelta("Found it!");
+
+            const segments = accumulator.getTextSegments();
+            expect(segments).toEqual([
+                { id: "text-0", text: "Let me search." },
+                { id: "text-1", text: "Found it!" },
+            ]);
+        });
+
+        it("handles text-only messages", () => {
+            accumulator.onTextDelta("This is ");
+            accumulator.onTextDelta("a simple ");
+            accumulator.onTextDelta("response.");
+
+            const segments = accumulator.getTextSegments();
+            expect(segments).toEqual([
+                { id: "text-0", text: "This is a simple response." },
+            ]);
+        });
+
+        it("handles tool-only messages with no text segments", () => {
+            accumulator.onInputStart("toolu_1", "Bash");
+            accumulator.onResult("toolu_1", "output", false);
+
+            const segments = accumulator.getTextSegments();
+            expect(segments).toEqual([]);
+        });
+
+        it("handles backward compatibility when delta is undefined", () => {
+            // Old code path that doesn't provide delta content
+            accumulator.onTextDelta();
+            accumulator.onTextDelta();
+
+            const segments = accumulator.getTextSegments();
+            // Segment exists but with empty content
+            expect(segments).toEqual([{ id: "text-0", text: "" }]);
+
+            // Order should still be tracked
+            const order = accumulator.getContentOrder();
+            expect(order).toEqual([{ type: "text", id: "text-0" }]);
+        });
+    });
 });
 
 describe("Helper Functions", () => {
