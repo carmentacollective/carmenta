@@ -52,35 +52,43 @@ import {
 } from "./connect-runtime-provider";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
-import { ToolRenderer } from "@/components/generative-ui/tool-renderer";
-import { WebSearchResults } from "@/components/generative-ui/web-search";
-import { CompareTable } from "@/components/generative-ui/data-table";
-import { DeepResearchResult } from "@/components/generative-ui/deep-research";
-import { ClickUpToolResult } from "@/components/generative-ui/clickup";
-import { CoinMarketCapToolResult } from "@/components/generative-ui/coinmarketcap";
-import { DropboxToolResult } from "@/components/generative-ui/dropbox";
-import { FetchPageResult } from "@/components/generative-ui/fetch-page";
-import { FirefliesToolResult } from "@/components/generative-ui/fireflies";
-import { GiphyToolResult } from "@/components/generative-ui/giphy";
-import { ImgflipToolResult } from "@/components/generative-ui/imgflip";
-import { GmailToolResult } from "@/components/generative-ui/gmail";
-import { GoogleCalendarContactsToolResult } from "@/components/generative-ui/google-calendar-contacts";
-import { LimitlessToolResult } from "@/components/generative-ui/limitless";
-import { NotionToolResult } from "@/components/generative-ui/notion";
-import { SlackToolResult } from "@/components/generative-ui/slack";
-import { TwitterToolResult } from "@/components/generative-ui/twitter";
+import { ToolRenderer } from "@/components/tools/shared";
+import {
+    WebSearchResults,
+    CompareTable,
+    DeepResearchResult,
+    FetchPageResult,
+} from "@/components/tools/research";
+import {
+    ClickUpToolResult,
+    CoinMarketCapToolResult,
+    DropboxToolResult,
+    FirefliesToolResult,
+    GiphyToolResult,
+    ImgflipToolResult,
+    GmailToolResult,
+    GoogleCalendarContactsToolResult,
+    LimitlessToolResult,
+    NotionToolResult,
+    SlackToolResult,
+    TwitterToolResult,
+} from "@/components/tools/integrations";
 import { Plan } from "@/components/tool-ui/plan";
 import type { PlanTodo } from "@/components/tool-ui/plan/schema";
-import { LinkPreview } from "@/components/tool-ui/link-preview";
-import { OptionList } from "@/components/tool-ui/option-list";
-import type { OptionListOption } from "@/components/tool-ui/option-list/schema";
-import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
-import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import { renderCodeTool, InlineToolActivity } from "@/components/tools";
-import { SuggestQuestionsResult } from "@/components/generative-ui/suggest-questions";
-import { ShowReferencesResult } from "@/components/generative-ui/show-references";
-import { AskUserInputResult } from "@/components/generative-ui/ask-user-input";
-import { AcknowledgeResult } from "@/components/generative-ui/acknowledge";
+import {
+    SuggestQuestionsResult,
+    ShowReferencesResult,
+    AskUserInputResult,
+    AcknowledgeResult,
+} from "@/components/tools/post-response";
+import {
+    PlanResult,
+    LinkPreviewResult,
+    OptionListResult,
+    POIMapResult,
+    CalculateResult,
+} from "@/components/tools/interactive";
 import type {
     SuggestQuestionsOutput,
     ShowReferencesOutput,
@@ -784,290 +792,77 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         // Tool-UI Components - Rich interactive displays
         case "plan":
         case "taskPlan": {
-            // Plan component for showing task progress and workflow steps
-            // Maps TodoWrite-style data to a visual progress display
-            const planOutput = output as
-                | {
-                      title?: string;
-                      description?: string;
-                      todos?: Array<{
-                          id: string;
-                          label?: string;
-                          content?: string;
-                          status: "pending" | "in_progress" | "completed" | "cancelled";
-                          description?: string;
-                          activeForm?: string;
-                      }>;
-                  }
-                | undefined;
-
-            // Transform todos to match Plan component schema
-            // Support both 'label' (Plan schema) and 'content' (TodoWrite schema)
-            const todos: PlanTodo[] = (planOutput?.todos ?? []).map((todo, idx) => ({
-                id: todo.id || `todo-${idx}`,
-                label: todo.label || todo.content || todo.activeForm || "Task",
-                status: todo.status,
-                description: todo.description,
-            }));
-
             const planError = getToolError(part, output, "Plan creation failed");
-            const hasPlan = status === "completed" && todos.length > 0;
-
             return (
-                <ToolRenderer
-                    toolName={toolName}
+                <PlanResult
                     toolCallId={part.toolCallId}
                     status={status}
+                    toolName={toolName}
                     input={input}
                     output={output}
                     error={planError}
-                >
-                    {hasPlan && (
-                        <Plan
-                            id={`plan-${part.toolCallId}`}
-                            title={planOutput?.title ?? "Task Plan"}
-                            description={planOutput?.description}
-                            todos={todos}
-                            showProgress={true}
-                            maxVisibleTodos={6}
-                        />
-                    )}
-                </ToolRenderer>
+                />
             );
         }
 
         case "linkPreview":
         case "previewLink": {
-            const previewOutput = output as
-                | {
-                      href?: string;
-                      url?: string;
-                      title?: string;
-                      description?: string;
-                      image?: string;
-                      domain?: string;
-                      favicon?: string;
-                  }
-                | undefined;
-
-            const href =
-                previewOutput?.href || previewOutput?.url || (input?.url as string);
             const previewError = getToolError(part, output, "Link preview failed");
-            const hasPreview = status === "completed" && previewOutput;
-
             return (
-                <ToolRenderer
-                    toolName={toolName}
+                <LinkPreviewResult
                     toolCallId={part.toolCallId}
                     status={status}
+                    toolName={toolName}
                     input={input}
                     output={output}
                     error={previewError}
-                >
-                    {hasPreview && (
-                        <LinkPreview
-                            id={`link-preview-${part.toolCallId}`}
-                            href={href ?? ""}
-                            title={previewOutput.title}
-                            description={previewOutput.description}
-                            image={previewOutput.image}
-                            domain={previewOutput.domain}
-                            favicon={previewOutput.favicon}
-                        />
-                    )}
-                </ToolRenderer>
+                />
             );
         }
 
         case "optionList":
         case "selectOption":
         case "presentOptions": {
-            // OptionList component for interactive user selection
-            // Shows options with checkboxes/radio buttons for user choice
-            const optionsOutput = output as
-                | {
-                      options?: Array<{
-                          id: string;
-                          label: string;
-                          description?: string;
-                          disabled?: boolean;
-                      }>;
-                      selectionMode?: "single" | "multi";
-                      confirmed?: string | string[] | null;
-                      title?: string;
-                  }
-                | undefined;
-
-            const optionsInput = input as
-                | {
-                      options?: Array<{
-                          id: string;
-                          label: string;
-                          description?: string;
-                          disabled?: boolean;
-                      }>;
-                      selectionMode?: "single" | "multi";
-                      title?: string;
-                  }
-                | undefined;
-
-            // Use options from output if available, otherwise from input
-            const options: OptionListOption[] = (
-                optionsOutput?.options ??
-                optionsInput?.options ??
-                []
-            ).map((opt, idx) => ({
-                id: opt.id || `option-${idx}`,
-                label: opt.label,
-                description: opt.description,
-                disabled: opt.disabled,
-            }));
-
-            const selectionMode =
-                optionsOutput?.selectionMode ?? optionsInput?.selectionMode ?? "single";
             const optionsError = getToolError(part, output, "Options display failed");
-
             return (
-                <ToolRenderer
-                    toolName={toolName}
+                <OptionListResult
                     toolCallId={part.toolCallId}
                     status={status}
+                    toolName={toolName}
                     input={input}
                     output={output}
                     error={optionsError}
-                >
-                    {status === "completed" && options.length > 0 && (
-                        <div className="p-3 sm:p-4">
-                            <OptionList
-                                id={`option-list-${part.toolCallId}`}
-                                options={options}
-                                selectionMode={selectionMode}
-                                confirmed={optionsOutput?.confirmed}
-                            />
-                        </div>
-                    )}
-                </ToolRenderer>
+                />
             );
         }
 
         case "poiMap":
         case "showLocations":
         case "mapLocations": {
-            // POIMap component for interactive location maps
-            // Shows points of interest on a map with list, favorites, filtering
-            const mapOutput = output as
-                | {
-                      pois?: Array<{
-                          id: string;
-                          name: string;
-                          description?: string;
-                          category?: string;
-                          lat: number;
-                          lng: number;
-                          address?: string;
-                          rating?: number;
-                          imageUrl?: string;
-                          tags?: string[];
-                      }>;
-                      center?: { lat: number; lng: number };
-                      zoom?: number;
-                      title?: string;
-                  }
-                | undefined;
-
-            const mapInput = input as
-                | {
-                      pois?: Array<{
-                          id: string;
-                          name: string;
-                          description?: string;
-                          category?: string;
-                          lat: number;
-                          lng: number;
-                          address?: string;
-                          rating?: number;
-                          imageUrl?: string;
-                          tags?: string[];
-                      }>;
-                      center?: { lat: number; lng: number };
-                      zoom?: number;
-                      title?: string;
-                  }
-                | undefined;
-
-            // Use POIs from output if available, otherwise from input
-            const pois: POI[] = (mapOutput?.pois ?? mapInput?.pois ?? []).map(
-                (poi, idx) => ({
-                    id: poi.id || `poi-${idx}`,
-                    name: poi.name,
-                    description: poi.description,
-                    category: (poi.category as POI["category"]) ?? "other",
-                    lat: poi.lat,
-                    lng: poi.lng,
-                    address: poi.address,
-                    rating: poi.rating,
-                    imageUrl: poi.imageUrl,
-                    tags: poi.tags,
-                })
-            );
-
-            const center: MapCenter | undefined = mapOutput?.center ?? mapInput?.center;
-            const zoom = mapOutput?.zoom ?? mapInput?.zoom;
-            const title = mapOutput?.title ?? mapInput?.title;
             const mapError = getToolError(part, output, "Map display failed");
-
             return (
-                <ToolRenderer
-                    toolName={toolName}
+                <POIMapResult
                     toolCallId={part.toolCallId}
                     status={status}
+                    toolName={toolName}
                     input={input}
                     output={output}
                     error={mapError}
-                >
-                    {status === "completed" && pois.length > 0 && (
-                        <POIMapWrapper
-                            id={`poi-map-${part.toolCallId}`}
-                            pois={pois}
-                            initialCenter={center}
-                            initialZoom={zoom}
-                            title={title}
-                        />
-                    )}
-                </ToolRenderer>
+                />
             );
         }
 
         case "calculate": {
-            const calcOutput = output as
-                | { result?: unknown; explanation?: string }
-                | undefined;
             const calcError = getToolError(part, output, "Calculation failed");
-            const hasResult =
-                status === "completed" && calcOutput?.result !== undefined;
-
             return (
-                <ToolRenderer
-                    toolName="calculate"
+                <CalculateResult
                     toolCallId={part.toolCallId}
                     status={status}
+                    toolName={toolName}
                     input={input}
                     output={output}
                     error={calcError}
-                >
-                    {hasResult && (
-                        <div className="space-y-1 text-sm">
-                            <div className="font-mono text-base font-medium">
-                                {String(calcOutput.result)}
-                            </div>
-                            {calcOutput.explanation && (
-                                <div className="text-xs text-muted-foreground">
-                                    {calcOutput.explanation}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </ToolRenderer>
+                />
             );
         }
 

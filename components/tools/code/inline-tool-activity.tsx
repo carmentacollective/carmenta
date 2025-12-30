@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { ToolIcon } from "@/components/generative-ui/tool-icon";
+import { ToolIcon } from "../shared";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 // Import detailed renderers
