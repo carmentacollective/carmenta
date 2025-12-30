@@ -1,59 +1,15 @@
 /**
  * Client-Side Instrumentation
  *
- * Initializes Sentry error tracking and PostHog analytics.
+ * Initializes PostHog analytics for client-side tracking.
  * This file is automatically loaded by Next.js 16+ for client-side instrumentation.
  *
- * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
+ * Note: Sentry client initialization is handled separately in sentry.client.config.ts
  */
 
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { logger } from "@/lib/client-logger";
-
-// Initialize Sentry for client-side error tracking
-Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-
-    // Only send errors in production
-    enabled: process.env.NODE_ENV === "production",
-
-    // Performance monitoring - capture 100% in dev, 10% in prod
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-
-    // Session replay for debugging user issues
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-
-    environment: process.env.NODE_ENV,
-
-    integrations: [
-        Sentry.breadcrumbsIntegration({
-            console: true,
-            dom: true,
-            fetch: true,
-            history: true,
-        }),
-        Sentry.replayIntegration({
-            maskAllText: false,
-            blockAllMedia: false,
-        }),
-    ],
-
-    // Filter out noisy errors
-    ignoreErrors: [
-        /^chrome-extension:\/\//,
-        /^moz-extension:\/\//,
-        "Network request failed",
-        "Failed to fetch",
-        "Load failed",
-        "AbortError",
-    ],
-
-    initialScope: {
-        tags: { component: "client" },
-    },
-});
 
 // Initialize PostHog analytics (production only)
 if (
