@@ -41,6 +41,7 @@ import { useTransientChat } from "@/lib/streaming";
 import type { TransientMessage } from "@/lib/streaming";
 import { useToolsArray } from "@/lib/code/tool-state-context";
 import type { RenderableToolPart } from "@/lib/code/transform";
+import { formatTerminalOutput } from "@/lib/code/transform";
 
 /**
  * Tool part from AI SDK
@@ -427,15 +428,25 @@ function InlineTool({
                                 )}
                             </button>
 
-                            {/* Output content */}
+                            {/* Output content - formatted for web display */}
                             <div className="overflow-x-auto p-3 pr-10">
                                 <pre className="whitespace-pre-wrap break-words font-mono text-xs text-foreground/60">
-                                    {typeof output === "string"
-                                        ? output.slice(0, 2000) +
-                                          (output.length > 2000
-                                              ? "\n\n... (truncated)"
-                                              : "")
-                                        : JSON.stringify(output, null, 2)}
+                                    {(() => {
+                                        const raw =
+                                            typeof output === "string"
+                                                ? output
+                                                : JSON.stringify(output, null, 2);
+                                        const formatted = formatTerminalOutput(
+                                            raw,
+                                            toolName
+                                        );
+                                        const truncated =
+                                            formatted.length > 2000
+                                                ? formatted.slice(0, 2000) +
+                                                  "\n\n... (truncated)"
+                                                : formatted;
+                                        return truncated;
+                                    })()}
                                 </pre>
                             </div>
                         </div>
@@ -597,9 +608,11 @@ export function CodeModeMessage({
         );
     }
 
-    // During streaming of the last message, use accumulated tool state
-    // This prevents the race condition where tools would disappear
-    const streamingTools = isStreaming && isLast ? accumulatedTools : [];
+    // For the last message, always use accumulated tool state
+    // This prevents tools from disappearing when streaming ends
+    // (the AI SDK may not fully populate message.parts for provider-executed tools)
+    // Accumulated state is replaced when next message starts streaming
+    const streamingTools = isLast ? accumulatedTools : [];
 
     // Merge streaming tools with message parts
     // Create a Set of tool IDs already in parts to avoid duplicates
@@ -631,6 +644,31 @@ export function CodeModeMessage({
         ) : null;
     }
 
+    // Separate parts by type for proper ordering
+    // During Claude Code streaming: tools execute first, then text arrives
+    // We need to render: tools → text (not text → tools)
+    const textParts = (parts ?? []).filter((p): p is TextPart => p.type === "text");
+    const reasoningParts = (parts ?? []).filter(
+        (p): p is ReasoningPart => p.type === "reasoning"
+    );
+    const toolPartsFromMessage = (parts ?? []).filter((p): p is ToolPart =>
+        p.type.startsWith("tool-")
+    );
+
+    // Build ordered tool list: prefer accumulated state, fall back to message parts
+    const orderedTools =
+        streamingTools.length > 0
+            ? streamingTools
+            : toolPartsFromMessage.map((tp) => ({
+                  type: tp.type as `tool-${string}`,
+                  toolCallId: tp.toolCallId,
+                  toolName: tp.type.replace("tool-", ""),
+                  state: tp.state,
+                  input: tp.input as Record<string, unknown>,
+                  output: tp.output,
+                  errorText: tp.errorText,
+              }));
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -638,50 +676,22 @@ export function CodeModeMessage({
             transition={{ duration: 0.3 }}
             className="my-3 max-w-full"
         >
-            {/* Render parts in order */}
-            {parts?.map((part, idx) => {
-                // Text part
-                if (part.type === "text") {
-                    const textPart = part as TextPart;
-                    return <TextSegment key={`text-${idx}`} text={textPart.text} />;
-                }
+            {/* 1. Reasoning first (if any) */}
+            {reasoningParts.map((part, idx) => (
+                <ReasoningSegment key={`reasoning-${idx}`} text={part.text} />
+            ))}
 
-                // Reasoning part
-                if (part.type === "reasoning") {
-                    const reasoningPart = part as ReasoningPart;
-                    return (
-                        <ReasoningSegment
-                            key={`reasoning-${idx}`}
-                            text={reasoningPart.text}
-                        />
-                    );
-                }
+            {/* 2. Tools (execute before text in Claude Code) */}
+            {orderedTools.map((tool) => (
+                <InlineToolFromState
+                    key={tool.toolCallId}
+                    tool={tool as RenderableToolPart}
+                />
+            ))}
 
-                // Tool part - prefer accumulated state during streaming for accurate status
-                if (part.type.startsWith("tool-")) {
-                    const toolPart = part as ToolPart;
-                    // Look for updated state from accumulator
-                    const streamingTool = streamingTools.find(
-                        (t) => t.toolCallId === toolPart.toolCallId
-                    );
-                    if (streamingTool) {
-                        return (
-                            <InlineToolFromState
-                                key={streamingTool.toolCallId}
-                                tool={streamingTool}
-                            />
-                        );
-                    }
-                    return <InlineTool key={toolPart.toolCallId} part={toolPart} />;
-                }
-
-                // Unknown part type - skip
-                return null;
-            })}
-
-            {/* Render additional streaming tools not yet in parts */}
-            {additionalTools.map((tool) => (
-                <InlineToolFromState key={tool.toolCallId} tool={tool} />
+            {/* 3. Text content (arrives after tools complete) */}
+            {textParts.map((part, idx) => (
+                <TextSegment key={`text-${idx}`} text={part.text} />
             ))}
 
             {/* Transient activity (fallback when no accumulated tools) */}

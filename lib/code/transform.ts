@@ -291,3 +291,64 @@ export function getToolIcon(toolName: string): string {
     };
     return icons[toolName] ?? "⚙️";
 }
+
+/**
+ * Format terminal output for web display
+ *
+ * Claude Code outputs are designed for terminal display with:
+ * - ANSI escape codes for colors
+ * - Line number prefixes like "     1→"
+ * - Tab characters and terminal formatting
+ *
+ * This cleans them up for readable web display.
+ */
+export function formatTerminalOutput(output: string, toolName?: string): string {
+    if (!output) return "";
+
+    let result = output;
+
+    // Strip ANSI escape codes (color codes, cursor movement, etc.)
+
+    result = result.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+
+    result = result.replace(/\x1b\][^\x07]*\x07/g, ""); // OSC sequences
+
+    // For Read/Write/Edit tools, clean up line number prefixes
+    // Format: "     1→content" or "    12→content" (right-aligned numbers with arrow)
+    if (toolName === "Read" || toolName === "Write" || toolName === "Edit") {
+        // Match line numbers with arrow separator
+        result = result.replace(/^\s*\d+→/gm, "");
+    }
+
+    // Clean up excessive blank lines (more than 2 in a row)
+    result = result.replace(/\n{4,}/g, "\n\n\n");
+
+    // Trim leading/trailing whitespace from the whole output
+    result = result.trim();
+
+    return result;
+}
+
+/**
+ * Parse Bash tool output which may have complex structure
+ */
+export function parseBashOutput(output: unknown): {
+    stdout: string;
+    stderr?: string;
+    exitCode?: number;
+} {
+    if (typeof output === "string") {
+        return { stdout: output };
+    }
+
+    if (typeof output === "object" && output !== null) {
+        const obj = output as Record<string, unknown>;
+        return {
+            stdout: String(obj.stdout ?? obj.output ?? ""),
+            stderr: obj.stderr ? String(obj.stderr) : undefined,
+            exitCode: typeof obj.exitCode === "number" ? obj.exitCode : undefined,
+        };
+    }
+
+    return { stdout: String(output ?? "") };
+}
