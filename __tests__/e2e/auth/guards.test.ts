@@ -16,7 +16,8 @@ test.describe("Protected Route Guards", () => {
         await page.goto("/connection");
 
         // Should redirect to sign-in (Clerk handles this)
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        // Uses global navigationTimeout (5s) - redirects should be fast
+        await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
 
@@ -24,9 +25,7 @@ test.describe("Protected Route Guards", () => {
         page,
     }) => {
         await page.goto("/connection?new");
-
-        // Should redirect to sign-in
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
 
@@ -34,9 +33,7 @@ test.describe("Protected Route Guards", () => {
         page,
     }) => {
         await page.goto("/connection/some-random-slug");
-
-        // Should redirect to sign-in
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
 
@@ -44,9 +41,7 @@ test.describe("Protected Route Guards", () => {
         page,
     }) => {
         await page.goto("/knowledge-base");
-
-        // Should redirect to sign-in
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
 });
@@ -55,15 +50,13 @@ test.describe("Navigation to Protected Routes", () => {
     test("clicking Connect link triggers auth redirect when not authenticated", async ({
         page,
     }) => {
-        // Start at home page
         await page.goto("/");
 
-        // Click connect link (use first match)
         const connectLink = page.getByRole("link", { name: /connect/i }).first();
         await connectLink.click();
 
         // Should redirect to sign-in when unauthenticated
-        await page.waitForURL(/sign-in/, { timeout: 10000 });
+        await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
 });

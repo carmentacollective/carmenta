@@ -55,7 +55,7 @@ test.describe("Authenticated User Redirects", () => {
         await page.goto("/");
 
         // Should be redirected to /connection
-        await expect(page).toHaveURL(/\/connection/, { timeout: 10000 });
+        await expect(page).toHaveURL(/\/connection/);
     });
 
     test("authenticated users stay on /connection after redirect", async ({ page }) => {
