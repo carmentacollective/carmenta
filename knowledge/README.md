@@ -65,6 +65,12 @@ knowledge/
 │   ├── architecture.md        Data flows and actors
 │   └── milestones.md          M1-M8 implementation phases
 │
+├── code-mode/                 Claude Code SDK integration
+│   ├── README.md              Overview and current state
+│   ├── message-threading.md   Text/tool interleaving architecture
+│   ├── tool-display.md        Tool widget patterns
+│   └── infrastructure.md      Multi-user hosting options
+│
 ├── research/                  Research notes and findings
 │   └── 2025-12-22-knowledge-ingestion-design.md
 ├── incidents/                 Operational learnings
@@ -100,6 +106,7 @@ knowledge/
 | Design UI                           | [design-principles.md](./design-principles.md), [design-system.md](./design-system.md)                 |
 | Write copy                          | [language-audit.md](./language-audit.md), [brand-essence.md](./brand-essence.md)                       |
 | Choose a model                      | [model-rubric.md](./model-rubric.md)                                                                   |
+| Build code mode features            | [code-mode/](./code-mode/)                                                                             |
 | Understand knowledge ingestion      | [components/knowledge-ingestion-engine.md](./components/knowledge-ingestion-engine.md)                 |
 | Understand knowledge organization   | [decisions/knowledge-organization-architecture.md](./decisions/knowledge-organization-architecture.md) |
 

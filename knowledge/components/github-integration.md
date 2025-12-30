@@ -175,7 +175,7 @@ is a future milestone when code mode moves to hosted infrastructure.
 
 ## Related
 
-- [God Mode Development](./god-mode-development.md) - phased rollout plan
+- [Code Mode Vision](../code-mode/vision.md) - phased rollout plan
 - [Ephemeral Compute](./ephemeral-compute.md) - execution environment options
 
 ## Sources

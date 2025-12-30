@@ -497,7 +497,7 @@ incrementally while shipping the main product.
 - Context survives across sessions/days
 - Background agents complete work while Nick sleeps
 
-See [God Mode Development spec](./components/god-mode-development.md) for full details.
+See [Code Mode Vision](./code-mode/vision.md) for full details.
 
 ---
 
@@ -634,9 +634,8 @@ Detailed specifications live in `knowledge/components/`. Key specs by milestone:
 - [Connection Chooser](./components/connection-chooser.md) - Navigation, state
   management
 
-### God Mode Development (Parallel Track)
+### Code Mode (Parallel Track)
 
-- [God Mode Development](./components/god-mode-development.md) - Full spec for agentic
-  coding interface
+- [Code Mode](./code-mode/) - Full spec for agentic coding interface
 - [Dev Mode](./components/dev-mode.md) - Original dev mode concept (foundation)
 - [God Mode](./components/god-mode.md) - Always-on infrastructure concept (foundation)
