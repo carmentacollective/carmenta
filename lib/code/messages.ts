@@ -81,6 +81,7 @@ export class MessageProcessor {
     private messages: CodeMessage[] = [];
     private currentTextId: string | null = null;
     private textIndex = 0;
+    private messageIndex = 0; // Counter for unique message IDs
     private inputBuffers = new Map<string, string>();
 
     /**
@@ -97,6 +98,7 @@ export class MessageProcessor {
         this.messages = [];
         this.currentTextId = null;
         this.textIndex = 0;
+        this.messageIndex = 0;
         this.inputBuffers.clear();
     }
 
@@ -106,7 +108,7 @@ export class MessageProcessor {
     addUserMessage(content: string): UserMessage {
         const message: UserMessage = {
             type: "user",
-            id: `user-${Date.now()}`,
+            id: `user-${this.messageIndex++}`,
             content,
         };
         this.messages.push(message);
@@ -227,6 +229,7 @@ export class MessageProcessor {
             this.messages.push(tool);
         } else {
             tool.state = "running";
+            tool.toolName = toolName; // Update in case input-start had placeholder
             tool.input = input;
         }
 
@@ -285,7 +288,7 @@ export class MessageProcessor {
     addSystemMessage(content: string, isError = false): SystemMessage {
         const message: SystemMessage = {
             type: "system",
-            id: `system-${Date.now()}`,
+            id: `system-${this.messageIndex++}`,
             content,
             isError,
         };

@@ -43,8 +43,10 @@ import {
     useToolsArray,
     useContentOrder,
     useTextSegments,
+    useCodeMessages,
 } from "@/lib/code/tool-state-context";
 import type { ContentOrderEntry, RenderableToolPart } from "@/lib/code/transform";
+import type { CodeMessage, ToolMessage, TextMessage } from "@/lib/code/messages";
 import { formatTerminalOutput } from "@/lib/code/transform";
 
 /**
