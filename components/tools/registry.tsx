@@ -25,6 +25,7 @@ import {
     DiffViewer,
     SearchResults,
     FileList,
+    AgentTask,
 } from "./code";
 
 /**
@@ -178,6 +179,20 @@ export function renderCodeTool(data: ToolPartData): ReactNode | null {
                     pattern={input.pattern as string | undefined}
                     path={input.path as string | undefined}
                     files={files}
+                    error={error}
+                />
+            );
+        }
+
+        case "Task": {
+            // Agent spawning - show agent type, description, and result
+            return (
+                <AgentTask
+                    toolCallId={toolCallId}
+                    status={status}
+                    agentType={input.subagent_type as string | undefined}
+                    description={input.description as string | undefined}
+                    output={output as string | undefined}
                     error={error}
                 />
             );

@@ -8,6 +8,7 @@
  * - Edit diffs
  * - Grep search results
  * - Glob file listings
+ * - Agent task spawning
  */
 
 export { TerminalOutput } from "./terminal-output";
@@ -16,3 +17,4 @@ export { FileWriter } from "./file-writer";
 export { DiffViewer } from "./diff-viewer";
 export { SearchResults } from "./search-results";
 export { FileList } from "./file-list";
+export { AgentTask } from "./agent-task";

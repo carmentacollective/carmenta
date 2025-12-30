@@ -270,6 +270,8 @@ export async function POST(req: Request) {
 
 /**
  * Get a user-friendly status message for Claude Code tool calls.
+ * These messages should be specific and informative - the user is watching
+ * and wants to know exactly what's happening during long operations.
  */
 function getCodeToolStatusMessage(
     toolName: string,
@@ -282,33 +284,76 @@ function getCodeToolStatusMessage(
         return parts[parts.length - 1] || "file";
     };
 
+    // Truncate long strings with ellipsis
+    const truncate = (str: string | undefined, maxLen: number) => {
+        if (!str) return "";
+        return str.length > maxLen ? str.slice(0, maxLen) + "…" : str;
+    };
+
     switch (toolName) {
         case "Read":
-            return `Reading ${getFilename(args?.file_path as string)}...`;
+            return `Reading ${getFilename(args?.file_path as string)}`;
         case "Write":
-            return `Writing ${getFilename(args?.file_path as string)}...`;
+            return `Writing ${getFilename(args?.file_path as string)}`;
         case "Edit":
-            return `Editing ${getFilename(args?.file_path as string)}...`;
-        case "Bash":
-            return "Running command...";
+            return `Editing ${getFilename(args?.file_path as string)}`;
+        case "Bash": {
+            // Show actual command for visibility
+            const cmd = args?.command as string | undefined;
+            const desc = args?.description as string | undefined;
+            if (desc) return truncate(desc, 50);
+            if (cmd) return `Running: ${truncate(cmd, 40)}`;
+            return "Running command";
+        }
         case "Glob":
-            return `Finding files matching ${(args?.pattern as string) || "pattern"}...`;
-        case "Grep":
-            return `Searching for "${(args?.pattern as string)?.slice(0, 20) || "pattern"}"...`;
-        case "Task":
-            return `Spawning ${(args?.subagent_type as string) || "agent"}...`;
-        case "WebFetch":
-            return "Fetching web page...";
+            return `Finding ${(args?.pattern as string) || "files"}`;
+        case "Grep": {
+            const pattern = args?.pattern as string | undefined;
+            return pattern ? `Searching: ${truncate(pattern, 35)}` : "Searching";
+        }
+        case "Task": {
+            // Show agent type and brief description for visibility
+            const agentType = args?.subagent_type as string | undefined;
+            const desc = args?.description as string | undefined;
+            if (agentType && desc) {
+                return `${agentType}: ${truncate(desc, 40)}`;
+            }
+            return agentType ? `Spawning ${agentType}` : "Spawning agent";
+        }
+        case "WebFetch": {
+            const url = args?.url as string | undefined;
+            if (url) {
+                try {
+                    const hostname = new URL(url).hostname;
+                    return `Fetching ${hostname}`;
+                } catch {
+                    return `Fetching ${truncate(url, 40)}`;
+                }
+            }
+            return "Fetching web page";
+        }
         case "WebSearch":
-            return `Searching "${(args?.query as string)?.slice(0, 30) || "web"}"...`;
+            return `Searching: ${truncate(args?.query as string, 35) || "web"}`;
         case "TodoWrite":
-            return "Updating task list...";
-        case "LSP":
-            return `Code intelligence: ${(args?.operation as string) || "analyzing"}...`;
+            return "Updating task list";
+        case "LSP": {
+            const op = args?.operation as string | undefined;
+            const file = getFilename(args?.filePath as string);
+            if (op && file !== "file") return `${op} in ${file}`;
+            return op ? `Code: ${op}` : "Analyzing code";
+        }
         case "NotebookEdit":
-            return "Editing notebook...";
+            return `Editing ${getFilename(args?.notebook_path as string)}`;
+        case "AskUserQuestion":
+            return "Waiting for your input";
+        case "EnterPlanMode":
+            return "Entering plan mode";
+        case "ExitPlanMode":
+            return "Exiting plan mode";
+        case "KillShell":
+            return "Stopping background process";
         default:
-            return `${toolName}...`;
+            return toolName;
     }
 }
 
@@ -318,15 +363,15 @@ function getCodeToolStatusMessage(
 function getCodeToolIcon(toolName: string): string {
     switch (toolName) {
         case "Read":
-            return "📂";
+            return "📖";
         case "Write":
-            return "✏️";
+            return "✍️";
         case "Edit":
-            return "🔧";
+            return "✏️";
         case "Bash":
             return "💻";
         case "Glob":
-            return "🔍";
+            return "📁";
         case "Grep":
             return "🔎";
         case "Task":
@@ -341,6 +386,14 @@ function getCodeToolIcon(toolName: string): string {
             return "🧠";
         case "NotebookEdit":
             return "📓";
+        case "AskUserQuestion":
+            return "❓";
+        case "EnterPlanMode":
+            return "📐";
+        case "ExitPlanMode":
+            return "✅";
+        case "KillShell":
+            return "🛑";
         default:
             return "⚙️";
     }
