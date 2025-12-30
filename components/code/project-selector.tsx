@@ -121,6 +121,7 @@ export function ProjectSelector({
                         placeholder="Search projects..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
                         className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     />
                     <Button
