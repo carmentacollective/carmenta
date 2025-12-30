@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
+import { Outfit, Source_Code_Pro, Cormorant_Garamond } from "next/font/google";
 
 import { ViewTransitions } from "next-view-transitions";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -34,9 +34,10 @@ const outfit = Outfit({
 });
 
 /**
- * JetBrains Mono - For code blocks and technical content.
+ * Source Code Pro - For code blocks and technical content.
+ * Adobe's monospace with excellent readability at all sizes.
  */
-const jetbrainsMono = JetBrains_Mono({
+const sourceCodePro = Source_Code_Pro({
     subsets: ["latin"],
     variable: "--font-mono",
     display: "swap",
@@ -139,7 +140,7 @@ export default function RootLayout({
                     <ViewTransitions>
                         <html
                             lang="en"
-                            className={`${outfit.variable} ${jetbrainsMono.variable} ${cormorant.variable}`}
+                            className={`${outfit.variable} ${sourceCodePro.variable} ${cormorant.variable}`}
                             suppressHydrationWarning
                         >
                             <head>
