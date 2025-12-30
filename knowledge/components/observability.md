@@ -90,9 +90,9 @@ const result = await streamText({
 
 ### Sentry Configuration
 
-- **Server**: `sentry.server.config.ts` with `vercelAIIntegration`
-- **Client**: `sentry.client.config.ts` for frontend errors
-- **Instrumentation**: `instrumentation.ts` for Next.js integration
+- **Server**: `instrumentation.ts` → `sentry.server.config.ts` with
+  `vercelAIIntegration`
+- **Client**: `instrumentation-client.ts` (unified with PostHog init)
 - **Sampling**: 100% in dev, 10% in production
 
 ## Core Functions

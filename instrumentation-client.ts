@@ -1,15 +1,61 @@
 /**
- * PostHog Analytics Instrumentation
+ * Client-Side Instrumentation
  *
- * Initializes PostHog analytics using the latest 2025 methodology for Next.js.
+ * Initializes Sentry error tracking and PostHog analytics.
  * This file is automatically loaded by Next.js 16+ for client-side instrumentation.
+ *
+ * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
  */
 
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { logger } from "@/lib/client-logger";
 
-// Only initialize PostHog in production to avoid dev traffic
+// Initialize Sentry for client-side error tracking
+Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+    // Only send errors in production
+    enabled: process.env.NODE_ENV === "production",
+
+    // Performance monitoring - capture 100% in dev, 10% in prod
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+
+    // Session replay for debugging user issues
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+
+    environment: process.env.NODE_ENV,
+
+    integrations: [
+        Sentry.breadcrumbsIntegration({
+            console: true,
+            dom: true,
+            fetch: true,
+            history: true,
+        }),
+        Sentry.replayIntegration({
+            maskAllText: false,
+            blockAllMedia: false,
+        }),
+    ],
+
+    // Filter out noisy errors
+    ignoreErrors: [
+        /^chrome-extension:\/\//,
+        /^moz-extension:\/\//,
+        "Network request failed",
+        "Failed to fetch",
+        "Load failed",
+        "AbortError",
+    ],
+
+    initialScope: {
+        tags: { component: "client" },
+    },
+});
+
+// Initialize PostHog analytics (production only)
 if (
     process.env.NODE_ENV === "production" &&
     process.env.NEXT_PUBLIC_POSTHOG_KEY &&
@@ -18,11 +64,9 @@ if (
     try {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
             api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-            // Latest 2025 default: automatically handles $pageview and $pageleave events
             defaults: "2025-11-30",
-            // Capture errors and console logs for better debugging
-            capture_pageview: false, // Handled by defaults above
-            capture_pageleave: false, // Handled by defaults above
+            capture_pageview: false,
+            capture_pageleave: false,
         });
     } catch (error) {
         logger.error({ error }, "Failed to initialize PostHog analytics");
@@ -32,7 +76,7 @@ if (
     }
 }
 
-// Router transition tracking for Sentry
+// Router transition tracking for Sentry performance monitoring
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 export { posthog };
