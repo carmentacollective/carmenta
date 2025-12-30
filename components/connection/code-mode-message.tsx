@@ -594,20 +594,6 @@ export function CodeModeMessage({
     const accumulatedTools = useToolsArray();
     const parts = message.parts as MessagePart[] | undefined;
 
-    // Debug: log parts state when streaming ends
-    if (!isStreaming && isLast && parts?.some((p) => p.type.startsWith("tool-"))) {
-        console.log(
-            "[CodeModeMessage] Streaming ended, tool parts:",
-            parts
-                .filter((p) => p.type.startsWith("tool-"))
-                .map((p) => ({
-                    toolCallId: (p as ToolPart).toolCallId,
-                    state: (p as ToolPart).state,
-                    hasOutput: !!(p as ToolPart).output,
-                }))
-        );
-    }
-
     // For the last message, always use accumulated tool state
     // This prevents tools from disappearing when streaming ends
     // (the AI SDK may not fully populate message.parts for provider-executed tools)
