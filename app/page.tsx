@@ -112,59 +112,50 @@ export default function HomePage() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [goNext, goPrev]);
 
-    const animateNextChar = useCallback(() => {
-        if (charIndex.current < headline.length) {
-            setDisplayedChars(headline.slice(0, charIndex.current + 1));
-            charIndex.current++;
-        } else {
-            setPhase("pause");
-        }
-    }, [headline]);
-
-    // Typing phase
+    // Consolidated carousel state machine
+    // Single effect handles all phase transitions to avoid StrictMode race conditions
     useEffect(() => {
-        if (phase === "typing" && charIndex.current <= headline.length) {
-            const timeout = setTimeout(animateNextChar, 40);
-            return () => clearTimeout(timeout);
-        }
-    }, [displayedChars, animateNextChar, headline.length, phase]);
+        let timeout: ReturnType<typeof setTimeout>;
 
-    // Pause before description
-    useEffect(() => {
-        if (phase === "pause") {
-            const timeout = setTimeout(() => setPhase("description"), 500);
-            return () => clearTimeout(timeout);
-        }
-    }, [phase]);
+        switch (phase) {
+            case "typing":
+                if (charIndex.current < headline.length) {
+                    timeout = setTimeout(() => {
+                        setDisplayedChars(headline.slice(0, charIndex.current + 1));
+                        charIndex.current++;
+                    }, 40);
+                } else {
+                    // Typing complete, move to pause
+                    timeout = setTimeout(() => setPhase("pause"), 40);
+                }
+                break;
 
-    // Hold after description reveals
-    useEffect(() => {
-        if (phase === "description") {
-            const timeout = setTimeout(() => setPhase("hold"), 800);
-            return () => clearTimeout(timeout);
-        }
-    }, [phase]);
+            case "pause":
+                timeout = setTimeout(() => setPhase("description"), 500);
+                break;
 
-    // Hold then exit (respects paused state)
-    useEffect(() => {
-        if (phase === "hold" && !paused) {
-            const timeout = setTimeout(() => setPhase("exit"), 4000);
-            return () => clearTimeout(timeout);
-        }
-    }, [phase, paused]);
+            case "description":
+                timeout = setTimeout(() => setPhase("hold"), 800);
+                break;
 
-    // Exit animation then next slide
-    useEffect(() => {
-        if (phase === "exit") {
-            const timeout = setTimeout(() => {
-                setActiveSlide((prev) => (prev + 1) % shuffledFeatures.length);
-                setDisplayedChars("");
-                charIndex.current = 0;
-                setPhase("typing");
-            }, 600);
-            return () => clearTimeout(timeout);
+            case "hold":
+                if (!paused) {
+                    timeout = setTimeout(() => setPhase("exit"), 4000);
+                }
+                break;
+
+            case "exit":
+                timeout = setTimeout(() => {
+                    setActiveSlide((prev) => (prev + 1) % shuffledFeatures.length);
+                    setDisplayedChars("");
+                    charIndex.current = 0;
+                    setPhase("typing");
+                }, 600);
+                break;
         }
-    }, [phase, shuffledFeatures.length]);
+
+        return () => clearTimeout(timeout);
+    }, [phase, displayedChars, headline, paused, shuffledFeatures.length]);
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden">
