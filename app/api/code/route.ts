@@ -321,7 +321,7 @@ export async function POST(req: Request) {
                 const accumulator = new ToolStateAccumulator();
                 let firstChunkReceived = false;
 
-                // Helper to emit current tool state + content order as data part
+                // Helper to emit current tool state + content order + text segments
                 // AI SDK requires data parts to use `data-${name}` format
                 const emitToolState = () => {
                     writer.write({
@@ -329,6 +329,7 @@ export async function POST(req: Request) {
                         data: {
                             tools: accumulator.getAllTools(),
                             contentOrder: accumulator.getContentOrder(),
+                            textSegments: accumulator.getTextSegments(),
                         },
                     });
                 };
@@ -412,12 +413,13 @@ export async function POST(req: Request) {
                             emitToolState();
                         }
 
-                        // Text delta - track for content ordering
+                        // Text delta - track for content ordering and accumulate content
                         // (detects when text segments start relative to tools)
                         if (chunk.type === "text-delta") {
-                            accumulator.onTextDelta();
+                            accumulator.onTextDelta(chunk.text);
                             // Don't emit on every text chunk - too frequent
-                            // Content order is included when tools emit
+                            // Content order and text segments are included when tools emit
+                            // and in onFinish
                         }
                     },
                     onFinish: () => {

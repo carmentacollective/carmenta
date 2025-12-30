@@ -50,6 +50,15 @@ export interface ContentOrderEntry {
 }
 
 /**
+ * Text segment - actual text content for a segment
+ * AI SDK concatenates all text into one part, so we track segments separately
+ */
+export interface TextSegment {
+    id: string;
+    text: string;
+}
+
+/**
  * Tool state accumulator
  *
  * Maintains accumulated state for all tools in a streaming session.
@@ -62,8 +71,10 @@ export class ToolStateAccumulator {
     private tools = new Map<string, RenderableToolPart>();
     private inputBuffers = new Map<string, string>();
     private contentOrder: ContentOrderEntry[] = [];
+    private textSegments = new Map<string, string>();
     private lastChunkWasText = false;
     private textSegmentIndex = 0;
+    private currentTextSegmentId: string | null = null;
 
     /**
      * Handle tool-input-start chunk
@@ -83,6 +94,7 @@ export class ToolStateAccumulator {
         // Track in content order (tools interrupt text flow)
         this.contentOrder.push({ type: "tool", id: toolCallId });
         this.lastChunkWasText = false;
+        this.currentTextSegmentId = null; // End current text segment
 
         logger.debug({ toolName, toolCallId }, "Tool input started");
         return tool;
@@ -90,15 +102,24 @@ export class ToolStateAccumulator {
 
     /**
      * Handle text-delta chunk
-     * Tracks text segments for content ordering (detects new segments)
+     * Tracks text segments for content ordering and accumulates text content
+     * @param delta The text delta content (optional for backwards compatibility)
      */
-    onTextDelta(): void {
+    onTextDelta(delta?: string): void {
         // Only record when transitioning from non-text to text
         // (consecutive text-delta chunks are one segment)
         if (!this.lastChunkWasText) {
             const id = `text-${this.textSegmentIndex++}`;
             this.contentOrder.push({ type: "text", id });
+            this.currentTextSegmentId = id;
+            this.textSegments.set(id, "");
             this.lastChunkWasText = true;
+        }
+
+        // Accumulate text content if provided
+        if (delta && this.currentTextSegmentId) {
+            const current = this.textSegments.get(this.currentTextSegmentId) ?? "";
+            this.textSegments.set(this.currentTextSegmentId, current + delta);
         }
     }
 
@@ -219,6 +240,18 @@ export class ToolStateAccumulator {
      */
     getContentOrder(): ContentOrderEntry[] {
         return [...this.contentOrder];
+    }
+
+    /**
+     * Get text segments as array
+     * Returns actual text content for each segment (AI SDK concatenates all text,
+     * so we need to track segments separately for proper interleaving)
+     */
+    getTextSegments(): TextSegment[] {
+        return Array.from(this.textSegments.entries()).map(([id, text]) => ({
+            id,
+            text,
+        }));
     }
 
     /**

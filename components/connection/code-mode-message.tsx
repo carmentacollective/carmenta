@@ -39,7 +39,11 @@ import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
 import type { TransientMessage } from "@/lib/streaming";
-import { useToolsArray, useContentOrder } from "@/lib/code/tool-state-context";
+import {
+    useToolsArray,
+    useContentOrder,
+    useTextSegments,
+} from "@/lib/code/tool-state-context";
 import type { ContentOrderEntry, RenderableToolPart } from "@/lib/code/transform";
 import { formatTerminalOutput } from "@/lib/code/transform";
 
@@ -593,6 +597,7 @@ export function CodeModeMessage({
     const transientMessages = useTransientChat();
     const accumulatedTools = useToolsArray();
     const contentOrder = useContentOrder();
+    const textSegmentsMap = useTextSegments();
     const parts = message.parts as MessagePart[] | undefined;
 
     // For the last message, use accumulated state (prevents tools disappearing)
@@ -633,6 +638,7 @@ export function CodeModeMessage({
                     contentOrder={contentOrder}
                     parts={parts}
                     tools={streamingTools}
+                    textSegments={textSegmentsMap}
                 />
             ) : (
                 <UnorderedContent
@@ -650,46 +656,41 @@ export function CodeModeMessage({
 
 /**
  * Render content in proper chronological order using contentOrder
- * Used for the last message where we have ordering metadata
+ * Used for the last message where we have ordering metadata and text segments
  */
 function OrderedContent({
     contentOrder,
     parts,
     tools,
+    textSegments,
 }: {
     contentOrder: ContentOrderEntry[];
     parts: MessagePart[] | undefined;
     tools: RenderableToolPart[];
+    textSegments: Map<string, string>;
 }) {
     // Build maps for quick lookup
     const toolsMap = new Map(tools.map((t) => [t.toolCallId, t]));
 
-    // Extract text and reasoning parts in order (for matching to contentOrder)
-    const textParts = (parts ?? []).filter((p): p is TextPart => p.type === "text");
+    // Extract reasoning parts (these aren't tracked in contentOrder)
     const reasoningParts = (parts ?? []).filter(
         (p): p is ReasoningPart => p.type === "reasoning"
     );
-
-    // Track which text part we're on
-    let textIndex = 0;
 
     // Tools we've rendered (to handle any extras not in contentOrder)
     const renderedToolIds = new Set<string>();
 
     const elements: React.ReactNode[] = [];
 
-    // Render in contentOrder sequence
+    // Render in contentOrder sequence using text segments from context
+    // This is the key fix: we use the actual text content accumulated per segment,
+    // not the concatenated text from message.parts
     for (const entry of contentOrder) {
         if (entry.type === "text") {
-            // Render next text part
-            if (textIndex < textParts.length) {
-                elements.push(
-                    <TextSegment
-                        key={`text-${textIndex}`}
-                        text={textParts[textIndex].text}
-                    />
-                );
-                textIndex++;
+            // Get text content for this segment from accumulated state
+            const text = textSegments.get(entry.id);
+            if (text) {
+                elements.push(<TextSegment key={entry.id} text={text} />);
             }
         } else if (entry.type === "tool") {
             // Render tool from accumulated state
@@ -701,14 +702,6 @@ function OrderedContent({
                 renderedToolIds.add(entry.id);
             }
         }
-    }
-
-    // Render any remaining text parts (trailing text after last tool)
-    while (textIndex < textParts.length) {
-        elements.push(
-            <TextSegment key={`text-${textIndex}`} text={textParts[textIndex].text} />
-        );
-        textIndex++;
     }
 
     // Render any tools not in contentOrder (edge case: tools added after order was emitted)
