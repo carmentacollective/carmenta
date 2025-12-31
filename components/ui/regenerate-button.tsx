@@ -90,7 +90,7 @@ export function RegenerateButton({
             data-tooltip-content="Another angle?"
             className={cn(
                 "inline-flex h-7 shrink-0 items-center justify-center rounded-md transition-all",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                 "hover:bg-foreground/10 active:bg-foreground/15",
                 disabled || isRegenerating
                     ? "cursor-not-allowed opacity-40"

@@ -89,13 +89,13 @@ export function ShowReferencesResult({
                 }}
                 className="flex w-full items-center justify-between p-3 text-sm transition-colors hover:bg-white/10 dark:hover:bg-black/10"
             >
-                <span className="flex items-center gap-2 text-muted-foreground">
+                <span className="text-muted-foreground flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
                     {referenceCount} source{referenceCount !== 1 ? "s" : ""} referenced
                 </span>
                 <ChevronDown
                     className={cn(
-                        "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                        "text-muted-foreground h-4 w-4 transition-transform duration-200",
                         expanded && "rotate-180"
                     )}
                 />
@@ -133,7 +133,7 @@ function ReferenceGroup({
 }) {
     return (
         <div className="space-y-2 p-3">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wide uppercase">
                 {typeIcons[type]}
                 {typeLabels[type]}
             </div>
@@ -156,13 +156,13 @@ function isSafeUrl(url: string): boolean {
 function ReferenceItemComponent({ reference }: { reference: ReferenceItem }) {
     const content = (
         <div className="flex items-start gap-3">
-            <div className="mt-0.5 text-muted-foreground">
+            <div className="text-muted-foreground mt-0.5">
                 {typeIcons[reference.type]}
             </div>
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{reference.title}</div>
                 {reference.description && (
-                    <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
                         {reference.description}
                     </div>
                 )}

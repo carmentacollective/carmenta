@@ -92,11 +92,11 @@ function SearchResultsList({ results }: { results: SearchResultItem[] }) {
                         >
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="font-medium text-foreground">
+                                    <span className="text-foreground font-medium">
                                         {item.title}
                                     </span>
                                 </div>
-                                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
                                     <span>{domain}</span>
                                     {item.publishedDate && (
                                         <>
@@ -112,22 +112,22 @@ function SearchResultsList({ results }: { results: SearchResultItem[] }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                    className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
                                     aria-label={`Open ${item.title} in new tab`}
                                 >
                                     <ExternalLink className="h-3.5 w-3.5" />
                                 </a>
                                 {isResultExpanded ? (
-                                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                                 ) : (
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                                 )}
                             </div>
                         </button>
 
                         {/* Expanded snippet */}
                         {isResultExpanded && (
-                            <div className="mt-3 border-t border-white/10 pt-3 text-sm text-muted-foreground duration-150 animate-in fade-in slide-in-from-top-1">
+                            <div className="text-muted-foreground animate-in fade-in slide-in-from-top-1 mt-3 border-t border-white/10 pt-3 text-sm duration-150">
                                 <MarkdownRenderer content={item.snippet} inline />
                             </div>
                         )}

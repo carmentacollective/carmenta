@@ -123,11 +123,11 @@ export default async function KnowledgeBasePage() {
             <section className="space-y-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-primary/20 p-3">
-                            <Book className="h-6 w-6 text-primary" />
+                        <div className="bg-primary/20 rounded-xl p-3">
+                            <Book className="text-primary h-6 w-6" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-light tracking-tight text-foreground">
+                            <h1 className="text-foreground text-3xl font-light tracking-tight">
                                 Knowledge Base
                             </h1>
                             <p className="text-foreground/70">
@@ -146,12 +146,12 @@ export default async function KnowledgeBasePage() {
             {/* Knowledge Viewer */}
             <section className="min-h-[500px] flex-1">
                 {allFolders.length === 0 ? (
-                    <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
-                        <Sparkles className="mb-4 h-12 w-12 text-foreground/30" />
-                        <h3 className="text-lg font-medium text-foreground/80">
+                    <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
+                        <Sparkles className="text-foreground/30 mb-4 h-12 w-12" />
+                        <h3 className="text-foreground/80 text-lg font-medium">
                             We're setting up your knowledge base
                         </h3>
-                        <p className="mt-2 text-sm text-foreground/60">
+                        <p className="text-foreground/60 mt-2 text-sm">
                             Refresh the page in a moment.
                         </p>
                     </div>

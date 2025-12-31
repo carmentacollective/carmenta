@@ -114,11 +114,11 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
             className={cn(
                 "group flex min-h-[44px] items-center gap-2.5 rounded-full px-4 py-2.5",
                 "bg-foreground/5 backdrop-blur-sm",
-                "border border-foreground/10",
-                "text-sm text-foreground/70",
+                "border-foreground/10 border",
+                "text-foreground/70 text-sm",
                 "transition-all duration-200",
                 "hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground/90",
-                "hover:shadow-lg hover:shadow-primary/5",
+                "hover:shadow-primary/5 hover:shadow-lg",
                 // Setup sparks get slightly different styling
                 spark.category === "setup" &&
                     "border-primary/20 bg-primary/5 hover:border-primary/30 hover:bg-primary/10"
@@ -134,7 +134,7 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
             />
             <span className="max-w-[200px] truncate">{spark.label}</span>
             {(isNavigate || isDeeplink) && (
-                <ArrowRight className="h-3.5 w-3.5 text-foreground/30 transition-all group-hover:translate-x-0.5 group-hover:text-foreground/50" />
+                <ArrowRight className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
             )}
         </motion.button>
     );

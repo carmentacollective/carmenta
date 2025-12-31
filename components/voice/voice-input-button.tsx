@@ -217,10 +217,10 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             transition={{ duration: 0.15 }}
                             className="relative"
                         >
-                            <Mic className="h-5 w-5 text-primary-foreground sm:h-6 sm:w-6" />
+                            <Mic className="text-primary-foreground h-5 w-5 sm:h-6 sm:w-6" />
                             {/* Pulsing ring animation */}
                             <motion.div
-                                className="absolute inset-0 rounded-full border-2 border-primary-foreground/60"
+                                className="border-primary-foreground/60 absolute inset-0 rounded-full border-2"
                                 initial={{ scale: 1, opacity: 0.6 }}
                                 animate={{ scale: 1.8, opacity: 0 }}
                                 transition={{

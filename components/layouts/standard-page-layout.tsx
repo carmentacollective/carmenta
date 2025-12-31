@@ -69,9 +69,9 @@ export function StandardPageLayout({
     contentClassName,
 }: StandardPageLayoutProps) {
     return (
-        <div className="relative min-h-screen bg-background">
+        <div className="bg-background relative min-h-screen">
             <HolographicBackground />
-            <div className="relative z-content">
+            <div className="z-content relative">
                 {/* Header with safe-area padding for iPhone PWA */}
                 <div className="pt-safe-top">
                     <SiteHeader bordered showThemeSwitcher={showThemeSwitcher} />

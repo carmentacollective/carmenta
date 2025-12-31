@@ -146,13 +146,13 @@ export function InstallPrompt() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.95 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="fixed bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 right-4 z-modal mx-auto max-w-sm"
+                    className="z-modal fixed right-4 bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 mx-auto max-w-sm"
                 >
-                    <div className="glass-card overflow-hidden rounded-2xl border border-white/10 bg-background/95 p-5 shadow-2xl backdrop-blur-xl">
+                    <div className="glass-card bg-background/95 overflow-hidden rounded-2xl border border-white/10 p-5 shadow-2xl backdrop-blur-xl">
                         {/* Dismiss button - 44px touch target (Apple HIG minimum) */}
                         <button
                             onClick={handleDismiss}
-                            className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60 active:scale-95"
+                            className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60 absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95"
                             aria-label="Dismiss install prompt"
                         >
                             <X className="h-4 w-4" />
@@ -160,25 +160,25 @@ export function InstallPrompt() {
 
                         {/* Header with icon */}
                         <div className="mb-4 flex items-center gap-3">
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                                <Home className="h-6 w-6 text-primary" />
+                            <div className="from-primary/20 to-primary/10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br">
+                                <Home className="text-primary h-6 w-6" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-foreground">
+                                <h3 className="text-foreground font-semibold">
                                     Add Carmenta to Home
                                 </h3>
-                                <p className="text-sm text-foreground/60">
+                                <p className="text-foreground/60 text-sm">
                                     Faster access, native experience
                                 </p>
                             </div>
                         </div>
 
                         {/* iOS Instructions */}
-                        <div className="rounded-lg bg-foreground/5 p-3">
-                            <p className="mb-2 text-xs font-medium text-foreground/80">
+                        <div className="bg-foreground/5 rounded-lg p-3">
+                            <p className="text-foreground/80 mb-2 text-xs font-medium">
                                 To install on iOS:
                             </p>
-                            <ol className="space-y-1.5 text-xs text-foreground/60">
+                            <ol className="text-foreground/60 space-y-1.5 text-xs">
                                 <li className="flex items-start gap-2">
                                     <span className="text-foreground/30">1.</span>
                                     <span>

@@ -35,7 +35,7 @@ export function SiteHeader({
                 className="vt-app-logo interactive-focus group flex items-center gap-3 rounded-lg transition-all duration-300"
             >
                 <InteractiveLogo />
-                <span className="text-xl font-semibold tracking-tight text-foreground/90">
+                <span className="text-foreground/90 text-xl font-semibold tracking-tight">
                     Carmenta
                 </span>
             </Link>

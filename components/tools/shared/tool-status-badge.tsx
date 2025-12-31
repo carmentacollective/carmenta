@@ -53,7 +53,7 @@ function StatusIcon({ status }: { status: ToolStatus }) {
         case "pending":
             return <Circle className={cn(iconClass, "text-muted-foreground/60")} />;
         case "running":
-            return <Clock className={cn(iconClass, "animate-pulse text-primary/70")} />;
+            return <Clock className={cn(iconClass, "text-primary/70 animate-pulse")} />;
         case "completed":
             return (
                 <CheckCircle

@@ -53,7 +53,7 @@ export function POIListSidebar({
             <div
                 className={cn("flex h-full items-center justify-center p-4", className)}
             >
-                <p className="text-sm text-muted-foreground">No locations found</p>
+                <p className="text-muted-foreground text-sm">No locations found</p>
             </div>
         );
     }

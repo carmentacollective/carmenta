@@ -171,9 +171,9 @@ export default function HomePage() {
             <HolographicBackground hideWatermark />
 
             {/* Content layer */}
-            <div className="relative z-content flex min-h-screen flex-col">
+            <div className="z-content relative flex min-h-screen flex-col">
                 {/* User avatar - top right, doesn't push content */}
-                <div className="absolute right-6 top-4 z-sticky">
+                <div className="z-sticky absolute top-4 right-6">
                     <UserAuthButton />
                 </div>
 
@@ -187,7 +187,7 @@ export default function HomePage() {
                             duration: prefersReducedMotion ? 0 : 0.5,
                             ease: smoothOut,
                         }}
-                        className="max-w-3xl text-4xl font-light text-foreground/90 sm:text-5xl lg:text-6xl"
+                        className="text-foreground/90 max-w-3xl text-4xl font-light sm:text-5xl lg:text-6xl"
                     >
                         The best interface to AI for people who create at the speed of
                         thought
@@ -219,7 +219,7 @@ export default function HomePage() {
                         <Link
                             href="/connection?new"
                             prefetch={false}
-                            className="mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40 active:translate-y-0.5 active:shadow-sm"
+                            className="hover:ring-primary/40 focus:ring-primary/40 mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none active:translate-y-0.5 active:shadow-sm"
                         >
                             Connect to AI
                             <ArrowRight className="h-5 w-5" />
@@ -247,22 +247,22 @@ export default function HomePage() {
                                     : "breathe-exit -translate-y-2 opacity-0"
                             )}
                         >
-                            <h2 className="min-h-[1.5em] text-2xl font-light text-foreground/80 sm:text-3xl">
+                            <h2 className="text-foreground/80 min-h-[1.5em] text-2xl font-light sm:text-3xl">
                                 {displayedChars}
                                 {phase === "typing" &&
                                     displayedChars.length < headline.length && (
-                                        <span className="ml-1 inline-block h-6 w-0.5 animate-pulse bg-primary/70 align-middle sm:h-8" />
+                                        <span className="bg-primary/70 ml-1 inline-block h-6 w-0.5 animate-pulse align-middle sm:h-8" />
                                     )}
                             </h2>
 
                             {/* Description */}
                             <p
                                 className={cn(
-                                    "mt-3 min-h-[4rem] text-base leading-relaxed text-foreground/50 sm:text-lg",
+                                    "text-foreground/50 mt-3 min-h-[4rem] text-base leading-relaxed sm:text-lg",
                                     phase === "description" ||
                                         phase === "hold" ||
                                         phase === "exit"
-                                        ? "breathe-enter translate-y-0 opacity-100 blur-0"
+                                        ? "breathe-enter blur-0 translate-y-0 opacity-100"
                                         : "breathe-exit translate-y-3 opacity-0 blur-sm"
                                 )}
                             >
@@ -274,15 +274,15 @@ export default function HomePage() {
                                             href={currentFeature.link.href}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
+                                            className="text-primary decoration-primary/30 hover:decoration-primary underline transition-colors"
                                         >
                                             {currentFeature.link.text} →
                                         </a>
                                     </>
                                 )}
                                 {!currentFeature.available && (
-                                    <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-0.5 text-sm font-medium text-primary">
-                                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                                    <span className="bg-primary/15 text-primary ml-2 inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm font-medium">
+                                        <span className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
                                         Coming soon
                                     </span>
                                 )}
@@ -293,7 +293,7 @@ export default function HomePage() {
                         <div className="mt-8 flex items-center justify-center gap-3">
                             <button
                                 onClick={goPrev}
-                                className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
+                                className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Previous slide"
                             >
                                 <ChevronLeft className="h-4 w-4" />
@@ -306,8 +306,8 @@ export default function HomePage() {
                                         className={cn(
                                             "h-1.5 rounded-full transition-all duration-300",
                                             activeSlide === i
-                                                ? "w-6 bg-primary/50"
-                                                : "w-1.5 bg-foreground/20 hover:bg-foreground/30"
+                                                ? "bg-primary/50 w-6"
+                                                : "bg-foreground/20 hover:bg-foreground/30 w-1.5"
                                         )}
                                         aria-label={`Go to slide ${i + 1}`}
                                     />
@@ -315,7 +315,7 @@ export default function HomePage() {
                             </div>
                             <button
                                 onClick={goNext}
-                                className="rounded-full p-2 text-foreground/40 transition-all hover:scale-110 hover:bg-foreground/5 hover:text-foreground/70"
+                                className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Next slide"
                             >
                                 <ChevronRight className="h-4 w-4" />

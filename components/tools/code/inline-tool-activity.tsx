@@ -338,19 +338,19 @@ function ToolActivityRow({ part }: { part: ToolPart }) {
                 <ToolIcon
                     toolName={toolName}
                     className={cn(
-                        "h-3.5 w-3.5 shrink-0 text-muted-foreground/70",
+                        "text-muted-foreground/70 h-3.5 w-3.5 shrink-0",
                         isRunning && "animate-pulse"
                     )}
                 />
 
                 {/* Tool name */}
-                <span className="shrink-0 text-sm font-medium text-foreground/80">
+                <span className="text-foreground/80 shrink-0 text-sm font-medium">
                     {toolName}
                 </span>
 
                 {/* Summary - params/context */}
                 {summary && (
-                    <span className="min-w-0 flex-1 truncate font-mono text-sm text-muted-foreground/70">
+                    <span className="text-muted-foreground/70 min-w-0 flex-1 truncate font-mono text-sm">
                         {summary}
                     </span>
                 )}
@@ -360,7 +360,7 @@ function ToolActivityRow({ part }: { part: ToolPart }) {
 
                 {/* Result summary */}
                 {resultSummary && (
-                    <span className="shrink-0 text-xs font-medium tabular-nums text-emerald-500/80">
+                    <span className="shrink-0 text-xs font-medium text-emerald-500/80 tabular-nums">
                         {resultSummary}
                     </span>
                 )}
@@ -374,9 +374,9 @@ function ToolActivityRow({ part }: { part: ToolPart }) {
 
                 {/* Expand chevron */}
                 {expanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+                    <ChevronDown className="text-muted-foreground/40 h-3.5 w-3.5 shrink-0" />
                 ) : (
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground/60" />
+                    <ChevronRight className="text-muted-foreground/40 group-hover:text-muted-foreground/60 h-3.5 w-3.5 shrink-0" />
                 )}
             </button>
 
@@ -566,11 +566,11 @@ function DetailedToolView({
         default:
             // Fallback for tools without custom UI
             return (
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
-                    <div className="text-sm text-muted-foreground">
+                <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="text-muted-foreground text-sm">
                         {status === "running" && "Running..."}
                         {status === "completed" && (
-                            <pre className="whitespace-pre-wrap font-mono text-xs">
+                            <pre className="font-mono text-xs whitespace-pre-wrap">
                                 {JSON.stringify(output, null, 2)}
                             </pre>
                         )}

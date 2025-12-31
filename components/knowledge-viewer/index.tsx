@@ -194,9 +194,9 @@ export function KnowledgeViewer({
             : "";
 
         return (
-            <div key="mobile" className="flex h-full flex-col bg-background">
+            <div key="mobile" className="bg-background flex h-full flex-col">
                 {/* Header with named back + search */}
-                <div className="border-b border-foreground/10 pt-safe-top">
+                <div className="border-foreground/10 pt-safe-top border-b">
                     <div className="flex items-center justify-between px-4 py-3">
                         <AnimatePresence mode="wait">
                             {mobileView === "folders" ? (
@@ -205,7 +205,7 @@ export function KnowledgeViewer({
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-lg font-medium text-foreground"
+                                    className="text-foreground text-lg font-medium"
                                 >
                                     {title}
                                 </motion.span>
@@ -216,7 +216,7 @@ export function KnowledgeViewer({
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     onClick={handleMobileBack}
-                                    className="flex items-center gap-1 font-medium text-primary"
+                                    className="text-primary flex items-center gap-1 font-medium"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
                                     <span>{folderDisplayName}</span>
@@ -228,7 +228,7 @@ export function KnowledgeViewer({
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     onClick={handleMobileBack}
-                                    className="flex items-center gap-1 font-medium text-primary"
+                                    className="text-primary flex items-center gap-1 font-medium"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
                                     <span>{folderDisplayName || "Back"}</span>
@@ -277,7 +277,7 @@ export function KnowledgeViewer({
                                         }
                                         placeholder={`Search ${mobileView === "folders" ? "folders" : "documents"}...`}
                                         autoFocus
-                                        className="w-full rounded-xl bg-foreground/5 px-4 py-3 text-base outline-none transition-colors focus:bg-foreground/10"
+                                        className="bg-foreground/5 focus:bg-foreground/10 w-full rounded-xl px-4 py-3 text-base transition-colors outline-none"
                                     />
                                 </div>
                             </motion.div>
@@ -295,10 +295,10 @@ export function KnowledgeViewer({
                                 animate={{ x: 0, opacity: 1 }}
                                 exit={{ x: -20, opacity: 0 }}
                                 transition={{ duration: 0.2 }}
-                                className="h-full overflow-y-auto pb-safe-bottom"
+                                className="pb-safe-bottom h-full overflow-y-auto"
                             >
                                 {displayFolders.length === 0 ? (
-                                    <p className="px-4 py-8 text-center text-foreground/40">
+                                    <p className="text-foreground/40 px-4 py-8 text-center">
                                         No folders match "{mobileSearchQuery}"
                                     </p>
                                 ) : (
@@ -314,16 +314,16 @@ export function KnowledgeViewer({
                                                 onClick={() =>
                                                     handleMobileFolderSelect(folder.id)
                                                 }
-                                                className="flex w-full items-center gap-4 border-b border-foreground/5 px-4 py-4 transition-colors active:bg-foreground/5"
+                                                className="border-foreground/5 active:bg-foreground/5 flex w-full items-center gap-4 border-b px-4 py-4 transition-colors"
                                             >
-                                                <Icon className="h-5 w-5 text-primary/70" />
+                                                <Icon className="text-primary/70 h-5 w-5" />
                                                 <span className="flex-1 text-left text-base font-medium">
                                                     {displayName}
                                                 </span>
-                                                <span className="text-sm text-foreground/40">
+                                                <span className="text-foreground/40 text-sm">
                                                     {folder.documents.length}
                                                 </span>
-                                                <ChevronRight className="h-5 w-5 text-foreground/30" />
+                                                <ChevronRight className="text-foreground/30 h-5 w-5" />
                                             </button>
                                         );
                                     })
@@ -338,10 +338,10 @@ export function KnowledgeViewer({
                                 animate={{ x: 0, opacity: 1 }}
                                 exit={{ x: 20, opacity: 0 }}
                                 transition={{ duration: 0.2 }}
-                                className="h-full overflow-y-auto pb-safe-bottom"
+                                className="pb-safe-bottom h-full overflow-y-auto"
                             >
                                 {displayDocs.length === 0 ? (
-                                    <p className="px-4 py-8 text-center text-foreground/40">
+                                    <p className="text-foreground/40 px-4 py-8 text-center">
                                         {mobileSearchQuery
                                             ? `No documents match "${mobileSearchQuery}"`
                                             : "No documents in this folder"}
@@ -354,24 +354,24 @@ export function KnowledgeViewer({
                                                 handleMobileDocSelect(doc.path)
                                             }
                                             className={cn(
-                                                "flex w-full items-center gap-4 border-b border-foreground/5 px-4 py-4 transition-colors",
+                                                "border-foreground/5 flex w-full items-center gap-4 border-b px-4 py-4 transition-colors",
                                                 selectedPath === doc.path
                                                     ? "bg-primary/10"
                                                     : "active:bg-foreground/5"
                                             )}
                                         >
-                                            <FileText className="h-5 w-5 text-foreground/40" />
+                                            <FileText className="text-foreground/40 h-5 w-5" />
                                             <div className="flex-1 text-left">
                                                 <span className="text-base font-medium">
                                                     {doc.name}
                                                 </span>
                                                 {doc.description && (
-                                                    <p className="mt-0.5 text-sm text-foreground/50">
+                                                    <p className="text-foreground/50 mt-0.5 text-sm">
                                                         {doc.description}
                                                     </p>
                                                 )}
                                             </div>
-                                            <ChevronRight className="h-5 w-5 text-foreground/30" />
+                                            <ChevronRight className="text-foreground/30 h-5 w-5" />
                                         </button>
                                     ))
                                 )}

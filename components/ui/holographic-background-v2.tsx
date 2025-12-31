@@ -308,7 +308,7 @@ export function HolographicBackground({
 
     return (
         <div
-            className="fixed inset-0 z-base overflow-hidden"
+            className="z-base fixed inset-0 overflow-hidden"
             style={{ backgroundColor: isDark ? bg.dark : bg.light }}
         >
             {/* Blobs - pure CSS animation */}

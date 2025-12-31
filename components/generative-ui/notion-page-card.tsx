@@ -39,18 +39,18 @@ export function NotionPageCard({ page, className }: NotionPageCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-                "group flex items-start gap-3 rounded-lg border border-border/50 bg-card/50 p-3",
-                "transition-all hover:border-border hover:bg-card hover:shadow-sm",
+                "group border-border/50 bg-card/50 flex items-start gap-3 rounded-lg border p-3",
+                "hover:border-border hover:bg-card transition-all hover:shadow-sm",
                 className
             )}
         >
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
 
             <div className="min-w-0 flex-1">
-                <h4 className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                <h4 className="text-foreground group-hover:text-primary truncate text-sm font-medium">
                     {page.title || "Untitled"}
                 </h4>
-                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
                     <span className="capitalize">{page.type}</span>
                     {formattedDate && (
                         <>
@@ -64,7 +64,7 @@ export function NotionPageCard({ page, className }: NotionPageCardProps) {
                 </div>
             </div>
 
-            <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            <ExternalLink className="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </a>
     );
 }

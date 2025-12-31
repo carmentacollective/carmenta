@@ -74,7 +74,7 @@ function HighlightedText({ html }: { html: string }) {
                     return (
                         <mark
                             key={i}
-                            className="rounded-sm bg-primary/20 px-0.5 text-primary"
+                            className="bg-primary/20 text-primary rounded-sm px-0.5"
                         >
                             {text}
                         </mark>
@@ -287,7 +287,7 @@ export function CommandPalette({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="fixed inset-0 z-modal flex items-start justify-center bg-black/20 pt-[15vh] backdrop-blur-sm"
+                    className="z-modal fixed inset-0 flex items-start justify-center bg-black/20 pt-[15vh] backdrop-blur-sm"
                     onClick={handleOverlayClick}
                 >
                     <motion.div
@@ -295,13 +295,13 @@ export function CommandPalette({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
                         transition={{ type: "spring", duration: 0.2, bounce: 0.1 }}
-                        className="w-full max-w-lg overflow-hidden rounded-2xl border border-foreground/10 bg-white/95 shadow-2xl backdrop-blur-xl dark:bg-gray-900/95"
+                        className="border-foreground/10 w-full max-w-lg overflow-hidden rounded-2xl border bg-white/95 shadow-2xl backdrop-blur-xl dark:bg-gray-900/95"
                     >
                         {/* Search input */}
-                        <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
+                        <div className="border-foreground/10 flex items-center gap-3 border-b px-4 py-3">
                             <Search
                                 className={cn(
-                                    "h-5 w-5 text-foreground/40",
+                                    "text-foreground/40 h-5 w-5",
                                     isSearching && "animate-pulse"
                                 )}
                             />
@@ -311,12 +311,12 @@ export function CommandPalette({
                                 placeholder="Search knowledge..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-foreground/40"
+                                className="text-foreground placeholder:text-foreground/40 flex-1 bg-transparent text-base outline-none"
                             />
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
                                 className={cn(
-                                    "rounded-md p-1.5 transition-colors hover:bg-foreground/5",
+                                    "hover:bg-foreground/5 rounded-md p-1.5 transition-colors",
                                     showFilters || hasActiveFilters
                                         ? "text-primary"
                                         : "text-foreground/40"
@@ -326,11 +326,11 @@ export function CommandPalette({
                                 <Filter className="h-4 w-4" />
                             </button>
                             {isSearching ? (
-                                <span className="text-xs text-foreground/40">
+                                <span className="text-foreground/40 text-xs">
                                     searching...
                                 </span>
                             ) : (
-                                <kbd className="rounded bg-foreground/5 px-2 py-0.5 text-xs text-foreground/50">
+                                <kbd className="bg-foreground/5 text-foreground/50 rounded px-2 py-0.5 text-xs">
                                     esc
                                 </kbd>
                             )}
@@ -344,7 +344,7 @@ export function CommandPalette({
                                     animate={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={{ duration: 0.15 }}
-                                    className="overflow-hidden border-b border-foreground/10"
+                                    className="border-foreground/10 overflow-hidden border-b"
                                 >
                                     {/*
                                         PLACEHOLDER: Filter UI is scaffolded but not yet wired to search.
@@ -353,8 +353,8 @@ export function CommandPalette({
                                     */}
                                     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
                                         {/* Date Range Filter - UI only, not yet applied */}
-                                        <div className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1">
-                                            <Calendar className="h-3.5 w-3.5 text-foreground/50" />
+                                        <div className="bg-foreground/5 flex items-center gap-1.5 rounded-md px-2 py-1">
+                                            <Calendar className="text-foreground/50 h-3.5 w-3.5" />
                                             <select
                                                 value={filters.dateRange ?? "all"}
                                                 onChange={(e) =>
@@ -364,7 +364,7 @@ export function CommandPalette({
                                                             .value as SearchFilters["dateRange"],
                                                     })
                                                 }
-                                                className="bg-transparent text-xs text-foreground/70 outline-none"
+                                                className="text-foreground/70 bg-transparent text-xs outline-none"
                                             >
                                                 <option value="all">All time</option>
                                                 <option value="today">Today</option>
@@ -401,12 +401,12 @@ export function CommandPalette({
                                         </button>
 
                                         {/* Model Filter - placeholder for future */}
-                                        <div className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1 opacity-50">
-                                            <Bot className="h-3.5 w-3.5 text-foreground/50" />
-                                            <span className="text-xs text-foreground/50">
+                                        <div className="bg-foreground/5 flex items-center gap-1.5 rounded-md px-2 py-1 opacity-50">
+                                            <Bot className="text-foreground/50 h-3.5 w-3.5" />
+                                            <span className="text-foreground/50 text-xs">
                                                 Model
                                             </span>
-                                            <ChevronDown className="h-3 w-3 text-foreground/50" />
+                                            <ChevronDown className="text-foreground/50 h-3 w-3" />
                                         </div>
                                     </div>
                                 </motion.div>
@@ -415,15 +415,15 @@ export function CommandPalette({
 
                         {/* Recent searches (shown when no query) */}
                         {!query.trim() && recentSearches.length > 0 && (
-                            <div className="border-b border-foreground/10 px-4 py-2">
+                            <div className="border-foreground/10 border-b px-4 py-2">
                                 <div className="mb-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/50">
+                                    <div className="text-foreground/50 flex items-center gap-1.5 text-xs font-medium">
                                         <Clock className="h-3.5 w-3.5" />
                                         Recent
                                     </div>
                                     <button
                                         onClick={handleClearRecent}
-                                        className="text-xs text-foreground/40 hover:text-foreground/60"
+                                        className="text-foreground/40 hover:text-foreground/60 text-xs"
                                     >
                                         Clear
                                     </button>
@@ -435,7 +435,7 @@ export function CommandPalette({
                                             onClick={() =>
                                                 handleRecentSearchClick(search)
                                             }
-                                            className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/70 transition-colors hover:bg-foreground/10"
+                                            className="bg-foreground/5 text-foreground/70 hover:bg-foreground/10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors"
                                         >
                                             <Search className="h-3 w-3" />
                                             {search}
@@ -448,13 +448,13 @@ export function CommandPalette({
                         {/* Results */}
                         <div className="max-h-80 overflow-y-auto p-2">
                             {Object.keys(grouped).length === 0 ? (
-                                <p className="py-8 text-center text-sm text-foreground/40">
+                                <p className="text-foreground/40 py-8 text-center text-sm">
                                     {query ? "No matches found" : "No documents yet"}
                                 </p>
                             ) : (
                                 Object.entries(grouped).map(([folderPath, group]) => (
                                     <div key={folderPath} className="mb-3 last:mb-0">
-                                        <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium uppercase tracking-wide text-foreground/50">
+                                        <div className="text-foreground/50 flex items-center gap-2 px-2 py-1 text-xs font-medium tracking-wide uppercase">
                                             <User className="h-3.5 w-3.5" />
                                             {group.name}
                                         </div>
@@ -508,7 +508,7 @@ export function CommandPalette({
                                                     </div>
                                                     {/* Show highlighted snippet for search results */}
                                                     {hasSnippet && (
-                                                        <div className="ml-6 line-clamp-2 text-xs text-foreground/50">
+                                                        <div className="text-foreground/50 ml-6 line-clamp-2 text-xs">
                                                             <HighlightedText
                                                                 html={
                                                                     searchResult.snippet

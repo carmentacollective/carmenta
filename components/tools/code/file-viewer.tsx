@@ -172,27 +172,27 @@ export function FileViewer({
 
     return (
         <div
-            className="mb-3 w-full overflow-hidden rounded-lg border border-border bg-card"
+            className="border-border bg-card mb-3 w-full overflow-hidden rounded-lg border"
             data-tool-call-id={toolCallId}
         >
             {/* File header */}
-            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+            <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
                     {isCodeFileType ? (
-                        <FileCode className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <FileCode className="text-muted-foreground h-4 w-4 shrink-0" />
                     ) : (
-                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
                     )}
-                    <span className="truncate font-mono text-sm text-foreground">
+                    <span className="text-foreground truncate font-mono text-sm">
                         {fileName}
                     </span>
                     {rangeInfo && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
+                        <span className="text-muted-foreground shrink-0 text-xs">
                             ({rangeInfo})
                         </span>
                     )}
                     {lineCount > 0 && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
+                        <span className="text-muted-foreground shrink-0 text-xs">
                             {lineCount} lines
                         </span>
                     )}
@@ -201,14 +201,14 @@ export function FileViewer({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Copy button */}
                     {isCompleted && content && (
                         <button
                             onClick={handleCopy}
-                            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
                             aria-label="Copy content"
                         >
                             {isCopied ? (
@@ -223,8 +223,8 @@ export function FileViewer({
 
             {/* Full file path (if different from filename) */}
             {filePath && filePath !== fileName && (
-                <div className="border-b border-border bg-muted/30 px-3 py-1">
-                    <span className="font-mono text-xs text-muted-foreground">
+                <div className="border-border bg-muted/30 border-b px-3 py-1">
+                    <span className="text-muted-foreground font-mono text-xs">
                         {filePath}
                     </span>
                 </div>
@@ -234,7 +234,7 @@ export function FileViewer({
             <div className="relative">
                 {/* Loading state */}
                 {isRunning && (
-                    <div className="flex items-center gap-2 p-4 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-2 p-4">
                         <FileText className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Reading file...</span>
                     </div>
@@ -252,14 +252,14 @@ export function FileViewer({
 
                         {/* Gradient fade when collapsed */}
                         {isCollapsed && (
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
+                            <div className="from-card pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t to-transparent" />
                         )}
                     </div>
                 )}
 
                 {/* Empty file */}
                 {isCompleted && !content && !error && (
-                    <div className="p-4 text-sm italic text-muted-foreground">
+                    <div className="text-muted-foreground p-4 text-sm italic">
                         File is empty
                     </div>
                 )}
@@ -274,8 +274,8 @@ export function FileViewer({
                     type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={cn(
-                        "flex w-full items-center justify-center gap-1.5 border-t border-border py-2",
-                        "text-sm text-muted-foreground transition-colors",
+                        "border-border flex w-full items-center justify-center gap-1.5 border-t py-2",
+                        "text-muted-foreground text-sm transition-colors",
                         "hover:bg-muted/50 hover:text-foreground"
                     )}
                 >

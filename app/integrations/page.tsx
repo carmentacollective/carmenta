@@ -424,11 +424,11 @@ function IntegrationsContent() {
             {/* Header */}
             <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-primary/20 p-3">
-                        <Plug className="h-6 w-6 text-primary" />
+                    <div className="bg-primary/20 rounded-xl p-3">
+                        <Plug className="text-primary h-6 w-6" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-light tracking-tight text-foreground">
+                        <h1 className="text-foreground text-3xl font-light tracking-tight">
                             Integrations
                         </h1>
                         <p className="text-foreground/70">
@@ -459,7 +459,7 @@ function IntegrationsContent() {
                     </div>
                     <button
                         onClick={() => setGlobalMessage(null)}
-                        className="rounded-lg p-1 hover:bg-foreground/10"
+                        className="hover:bg-foreground/10 rounded-lg p-1"
                         aria-label="Dismiss message"
                     >
                         <X className="h-4 w-4" />
@@ -485,7 +485,7 @@ function IntegrationsContent() {
                         </button>
                         <button
                             onClick={dismissRecovery}
-                            className="rounded-lg p-1 hover:bg-foreground/10"
+                            className="hover:bg-foreground/10 rounded-lg p-1"
                             aria-label="Dismiss"
                         >
                             <X className="h-4 w-4" />
@@ -497,17 +497,17 @@ function IntegrationsContent() {
             {loading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
-                        <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                        <Sparkles className="text-primary h-8 w-8 animate-pulse" />
                         <p className="text-foreground/60">Loading integrations...</p>
                     </div>
                 </div>
             ) : sortedList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
-                    <Plug className="mb-4 h-12 w-12 text-foreground/30" />
-                    <h3 className="text-lg font-medium text-foreground/80">
+                <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-16 text-center">
+                    <Plug className="text-foreground/30 mb-4 h-12 w-12" />
+                    <h3 className="text-foreground/80 text-lg font-medium">
                         No connections yet
                     </h3>
-                    <p className="mt-2 text-sm text-foreground/60">
+                    <p className="text-foreground/60 mt-2 text-sm">
                         We're adding more integrations soon.
                     </p>
                 </div>
@@ -544,7 +544,7 @@ function IntegrationsContent() {
 
             {/* Security Note */}
             <section className="pt-4 text-center">
-                <p className="text-sm text-foreground/50">
+                <p className="text-foreground/50 text-sm">
                     All credentials and OAuth tokens are encrypted with AES-256-GCM and
                     stored securely.
                 </p>
@@ -584,7 +584,7 @@ export default function IntegrationsPage() {
                 <StandardPageLayout maxWidth="standard" contentClassName="py-12">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
-                            <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                            <Sparkles className="text-primary h-8 w-8 animate-pulse" />
                             <p className="text-foreground/60">
                                 Loading integrations...
                             </p>

@@ -231,7 +231,7 @@ export function ToolWrapper({
         } else {
             // Lucide icon component
             const Icon = config.icon;
-            return <Icon className={cn(sizeClass, "shrink-0 text-muted-foreground")} />;
+            return <Icon className={cn(sizeClass, "text-muted-foreground shrink-0")} />;
         }
     };
 
@@ -270,7 +270,7 @@ export function ToolWrapper({
                     </CollapsibleTrigger>
 
                     {status === "completed" && children && (
-                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+                        <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 overflow-hidden">
                             <div className="mt-2 text-sm">{children}</div>
                         </CollapsibleContent>
                     )}
@@ -305,7 +305,7 @@ export function ToolWrapper({
                     </span>
                     {/* First use celebration */}
                     {celebrationMessage && (
-                        <span className="bg-holo-mint/40 rounded-full px-2 py-0.5 text-xs animate-in fade-in slide-in-from-left-2">
+                        <span className="bg-holo-mint/40 animate-in fade-in slide-in-from-left-2 rounded-full px-2 py-0.5 text-xs">
                             {celebrationMessage}
                         </span>
                     )}
@@ -314,7 +314,7 @@ export function ToolWrapper({
                     <ToolStatusBadge status={status} label={statusLabel} />
                     <ChevronDown
                         className={cn(
-                            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                            "text-muted-foreground h-4 w-4 transition-transform duration-200",
                             isOpen ? "rotate-180" : "rotate-0"
                         )}
                     />

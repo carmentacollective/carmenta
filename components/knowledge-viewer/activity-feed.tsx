@@ -120,7 +120,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
             >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 )}
@@ -134,21 +134,21 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
                         className={cn(
-                            "absolute right-0 top-12 z-modal w-80",
-                            "rounded-xl border border-foreground/10 bg-background",
+                            "z-modal absolute top-12 right-0 w-80",
+                            "border-foreground/10 bg-background rounded-xl border",
                             "shadow-lg shadow-black/10"
                         )}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-foreground/5 px-4 py-3">
-                            <h3 className="text-sm font-medium text-foreground">
+                        <div className="border-foreground/5 flex items-center justify-between border-b px-4 py-3">
+                            <h3 className="text-foreground text-sm font-medium">
                                 Recent Activity
                             </h3>
                             <div className="flex items-center gap-2">
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={handleMarkAllRead}
-                                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                                        className="text-foreground/60 hover:bg-foreground/5 hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
                                     >
                                         <Check className="h-3 w-3" />
                                         Mark all read
@@ -156,7 +156,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                                 )}
                                 <button
                                     onClick={() => setIsExpanded(false)}
-                                    className="rounded-md p-1 text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                                    className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground rounded-md p-1 transition-colors"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -175,7 +175,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                                         onClick={() => handleItemClick(item)}
                                         className={cn(
                                             "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
-                                            "border-b border-foreground/5 last:border-b-0",
+                                            "border-foreground/5 border-b last:border-b-0",
                                             "hover:bg-foreground/5",
                                             !item.read && "bg-primary/5"
                                         )}
@@ -201,7 +201,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                                             >
                                                 {item.message}
                                             </p>
-                                            <p className="mt-0.5 text-xs text-foreground/40">
+                                            <p className="text-foreground/40 mt-0.5 text-xs">
                                                 {formatDistanceToNow(
                                                     new Date(item.createdAt),
                                                     {
@@ -211,7 +211,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                                             </p>
                                         </div>
                                         {!item.read && (
-                                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                            <span className="bg-primary mt-2 h-2 w-2 shrink-0 rounded-full" />
                                         )}
                                     </button>
                                 );

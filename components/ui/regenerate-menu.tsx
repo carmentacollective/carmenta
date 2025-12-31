@@ -133,9 +133,9 @@ export function RegenerateMenu({
                 className={cn(
                     "inline-flex h-9 shrink-0 items-center justify-center transition-all",
                     showDropdown
-                        ? "min-w-[44px] rounded-l-md pl-3 pr-2"
+                        ? "min-w-[44px] rounded-l-md pr-2 pl-3"
                         : "min-w-[44px] rounded-md px-3",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     "hover:bg-foreground/10 active:bg-foreground/15",
                     disabled || isRegenerating || isAnimating
                         ? "cursor-not-allowed opacity-40"
@@ -184,9 +184,9 @@ export function RegenerateMenu({
                         aria-label="Choose model for regeneration"
                         aria-expanded={isOpen}
                         className={cn(
-                            "inline-flex h-9 w-9 items-center justify-center rounded-r-md border-l border-foreground/10 transition-all",
+                            "border-foreground/10 inline-flex h-9 w-9 items-center justify-center rounded-r-md border-l transition-all",
                             "hover:bg-foreground/10 active:bg-foreground/15",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                             disabled || isRegenerating
                                 ? "cursor-not-allowed opacity-40"
                                 : "text-foreground/60 hover:text-foreground/90"
@@ -208,9 +208,9 @@ export function RegenerateMenu({
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute bottom-full left-0 z-dropdown mb-1 min-w-[200px] overflow-hidden rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur-xl"
+                                className="z-dropdown border-foreground/10 bg-background/95 absolute bottom-full left-0 mb-1 min-w-[200px] overflow-hidden rounded-lg border shadow-lg backdrop-blur-xl"
                             >
-                                <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-foreground/40">
+                                <div className="text-foreground/40 px-2 py-1.5 text-[10px] font-medium tracking-wider uppercase">
                                     Regenerate with
                                 </div>
                                 <div className="max-h-[280px] overflow-y-auto py-1">
@@ -229,7 +229,7 @@ export function RegenerateMenu({
                                                         "bg-primary/5 text-primary"
                                                 )}
                                             >
-                                                <div className="flex h-5 w-5 items-center justify-center rounded bg-foreground/5">
+                                                <div className="bg-foreground/5 flex h-5 w-5 items-center justify-center rounded">
                                                     <ProviderIcon
                                                         provider={model.provider}
                                                         className="h-3 w-3"
@@ -239,7 +239,7 @@ export function RegenerateMenu({
                                                     {model.displayName}
                                                 </span>
                                                 {isActive && (
-                                                    <Check className="h-3.5 w-3.5 text-primary" />
+                                                    <Check className="text-primary h-3.5 w-3.5" />
                                                 )}
                                             </button>
                                         );

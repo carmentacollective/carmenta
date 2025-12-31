@@ -29,7 +29,7 @@ export function CategoryBreakdown({
 
     if (categoriesWithData.length === 0) {
         return (
-            <div className="rounded-xl border border-foreground/10 bg-foreground/5 p-6 text-center">
+            <div className="border-foreground/10 bg-foreground/5 rounded-xl border p-6 text-center">
                 <p className="text-foreground/70">No category data available yet.</p>
             </div>
         );
@@ -40,7 +40,7 @@ export function CategoryBreakdown({
     };
 
     return (
-        <div className="overflow-hidden rounded-xl border border-foreground/10">
+        <div className="border-foreground/10 overflow-hidden rounded-xl border">
             {categoriesWithData.map((category, idx) => {
                 const isExpanded = expandedCategory === category.category;
                 const queries = getQueriesForCategory(category.category);
@@ -49,10 +49,10 @@ export function CategoryBreakdown({
                 return (
                     <div
                         key={category.category}
-                        className={!isLast ? "border-b border-foreground/10" : ""}
+                        className={!isLast ? "border-foreground/10 border-b" : ""}
                     >
                         <button
-                            className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-foreground/5"
+                            className="hover:bg-foreground/5 flex w-full items-center justify-between p-4 text-left transition-colors"
                             onClick={() =>
                                 setExpandedCategory(
                                     isExpanded ? null : category.category
@@ -61,15 +61,15 @@ export function CategoryBreakdown({
                         >
                             <div className="flex items-center gap-3">
                                 {isExpanded ? (
-                                    <ChevronUp className="h-4 w-4 text-foreground/40" />
+                                    <ChevronUp className="text-foreground/40 h-4 w-4" />
                                 ) : (
-                                    <ChevronDown className="h-4 w-4 text-foreground/40" />
+                                    <ChevronDown className="text-foreground/40 h-4 w-4" />
                                 )}
                                 <div>
-                                    <span className="font-medium text-foreground">
+                                    <span className="text-foreground font-medium">
                                         {formatCategoryName(category.category)}
                                     </span>
-                                    <span className="ml-2 text-sm text-foreground/50">
+                                    <span className="text-foreground/50 ml-2 text-sm">
                                         ({queries.length} queries)
                                     </span>
                                 </div>
@@ -83,7 +83,7 @@ export function CategoryBreakdown({
                                 <div className="hidden sm:block">
                                     <WinRateBar winRate={category.winRate} />
                                 </div>
-                                <span className="text-sm text-foreground/50">
+                                <span className="text-foreground/50 text-sm">
                                     <span className="text-green-500">
                                         {category.wins}W
                                     </span>{" "}
@@ -100,7 +100,7 @@ export function CategoryBreakdown({
                         </button>
 
                         {isExpanded && (
-                            <div className="border-t border-foreground/5 bg-foreground/[0.02] p-4">
+                            <div className="border-foreground/5 bg-foreground/[0.02] border-t p-4">
                                 <div className="space-y-3">
                                     {queries.map((qr) => (
                                         <QuerySummaryCard
@@ -127,20 +127,20 @@ function QuerySummaryCard({ queryResult }: { queryResult: QueryResult }) {
     const ties = pairwiseResults.filter((p) => p.winner === "tie").length;
 
     return (
-        <div className="rounded-lg border border-foreground/5 bg-background/50 p-4">
+        <div className="border-foreground/5 bg-background/50 rounded-lg border p-4">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                    <p className="text-sm leading-relaxed text-foreground">
+                    <p className="text-foreground text-sm leading-relaxed">
                         {query.query}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground/60">
+                        <span className="bg-foreground/10 text-foreground/60 rounded-full px-2 py-0.5 text-xs">
                             {query.difficulty}
                         </span>
                         {query.tags?.slice(0, 3).map((tag) => (
                             <span
                                 key={tag}
-                                className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-foreground/50"
+                                className="bg-foreground/5 text-foreground/50 rounded-full px-2 py-0.5 text-xs"
                             >
                                 {tag}
                             </span>
@@ -173,7 +173,7 @@ function QuerySummaryCard({ queryResult }: { queryResult: QueryResult }) {
 
 function WinRateBar({ winRate }: { winRate: number }) {
     return (
-        <div className="h-2 w-20 overflow-hidden rounded-full bg-foreground/10">
+        <div className="bg-foreground/10 h-2 w-20 overflow-hidden rounded-full">
             <div
                 className={`h-full transition-all duration-300 ${getWinRateBarClass(winRate)}`}
                 style={{ width: `${winRate * 100}%` }}

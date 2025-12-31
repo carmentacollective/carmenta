@@ -29,14 +29,14 @@ export default async function BenchmarksPage() {
         return (
             <div className="relative flex min-h-screen flex-col">
                 <HolographicBackground />
-                <div className="relative z-content flex flex-1 flex-col">
+                <div className="z-content relative flex flex-1 flex-col">
                     <SiteHeader bordered />
                     <main className="flex flex-1 items-center justify-center px-6 py-8">
                         <div className="text-center">
-                            <h1 className="text-2xl font-light text-foreground">
+                            <h1 className="text-foreground text-2xl font-light">
                                 No benchmark data available
                             </h1>
-                            <p className="mt-2 text-foreground/70">
+                            <p className="text-foreground/70 mt-2">
                                 Check back soon for our latest results.
                             </p>
                         </div>
@@ -53,7 +53,7 @@ export default async function BenchmarksPage() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-content flex flex-1 flex-col">
+            <div className="z-content relative flex flex-1 flex-col">
                 <SiteHeader bordered />
 
                 <main className="flex-1 px-6 py-8">
@@ -61,11 +61,11 @@ export default async function BenchmarksPage() {
                         {/* Header */}
                         <section className="space-y-2">
                             <div className="flex items-center gap-3">
-                                <div className="rounded-xl bg-primary/20 p-3">
-                                    <BarChart3 className="h-6 w-6 text-primary" />
+                                <div className="bg-primary/20 rounded-xl p-3">
+                                    <BarChart3 className="text-primary h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl font-light tracking-tight text-foreground">
+                                    <h1 className="text-foreground text-3xl font-light tracking-tight">
                                         Benchmarks
                                     </h1>
                                     <p className="text-foreground/70">
@@ -88,7 +88,7 @@ export default async function BenchmarksPage() {
 
                         {/* Head-to-Head Results */}
                         <section className="space-y-4">
-                            <h2 className="text-xl font-medium text-foreground">
+                            <h2 className="text-foreground text-xl font-medium">
                                 Head-to-Head Results
                             </h2>
                             <CompetitorLeaderboard
@@ -99,7 +99,7 @@ export default async function BenchmarksPage() {
 
                         {/* Category Breakdown */}
                         <section className="space-y-4">
-                            <h2 className="text-xl font-medium text-foreground">
+                            <h2 className="text-foreground text-xl font-medium">
                                 Performance by Category
                             </h2>
                             <CategoryBreakdown
@@ -109,9 +109,9 @@ export default async function BenchmarksPage() {
                         </section>
 
                         {/* Methodology Note */}
-                        <section className="rounded-xl border border-foreground/10 bg-foreground/5 p-6">
-                            <h3 className="font-medium text-foreground">Methodology</h3>
-                            <p className="mt-2 text-sm leading-relaxed text-foreground/70">
+                        <section className="border-foreground/10 bg-foreground/5 rounded-xl border p-6">
+                            <h3 className="text-foreground font-medium">Methodology</h3>
+                            <p className="text-foreground/70 mt-2 text-sm leading-relaxed">
                                 We evaluate Carmenta against frontier models using an
                                 LLM-as-judge approach (Arena-Hard style). Each query is
                                 sent to Carmenta and competitor models, then an

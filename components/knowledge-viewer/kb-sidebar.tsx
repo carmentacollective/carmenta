@@ -89,8 +89,8 @@ export function KBSidebar({
         >
             {/* Header - hidden on mobile (parent provides header) */}
             {!mobile && (
-                <div className="border-b border-foreground/10 p-4">
-                    <span className="text-sm font-medium text-foreground/70">
+                <div className="border-foreground/10 border-b p-4">
+                    <span className="text-foreground/70 text-sm font-medium">
                         Knowledge
                     </span>
                 </div>
@@ -99,7 +99,7 @@ export function KBSidebar({
             {/* Tree */}
             <div className={cn("flex-1 overflow-y-auto", mobile ? "p-4" : "p-3")}>
                 {folders.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-foreground/40">
+                    <p className="text-foreground/40 py-8 text-center text-sm">
                         No knowledge yet
                     </p>
                 ) : (
@@ -114,8 +114,8 @@ export function KBSidebar({
                                     className={cn(
                                         "flex w-full items-center gap-3 rounded-lg transition-all",
                                         mobile
-                                            ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
-                                            : "px-3 py-2 text-sm hover:bg-foreground/5"
+                                            ? "active:bg-foreground/5 min-h-[48px] px-4 py-3 text-base"
+                                            : "hover:bg-foreground/5 px-3 py-2 text-sm"
                                     )}
                                 >
                                     <FolderIcon
@@ -124,12 +124,12 @@ export function KBSidebar({
                                             mobile ? "h-5 w-5" : "h-4 w-4"
                                         )}
                                     />
-                                    <span className="flex-1 text-left font-medium capitalize text-foreground/80">
+                                    <span className="text-foreground/80 flex-1 text-left font-medium capitalize">
                                         {FOLDER_DISPLAY_NAMES[folder.path] ??
                                             folder.name}
                                     </span>
                                     {!isExpanded && (
-                                        <span className="rounded-full bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground/50">
+                                        <span className="bg-foreground/10 text-foreground/50 rounded-full px-1.5 py-0.5 text-xs">
                                             {folder.documents.length}
                                         </span>
                                     )}
@@ -155,7 +155,7 @@ export function KBSidebar({
                                             exit={{ maxHeight: 0, opacity: 0 }}
                                             transition={transitions.standard}
                                             className={cn(
-                                                "overflow-hidden border-l-2 border-foreground/10",
+                                                "border-foreground/10 overflow-hidden border-l-2",
                                                 mobile ? "ml-7" : "ml-6"
                                             )}
                                         >
@@ -180,7 +180,7 @@ export function KBSidebar({
                                                         className={cn(
                                                             "flex w-full items-center gap-3 text-left transition-colors",
                                                             mobile
-                                                                ? "min-h-[48px] px-4 py-3 text-base active:bg-foreground/5"
+                                                                ? "active:bg-foreground/5 min-h-[48px] px-4 py-3 text-base"
                                                                 : "px-3 py-3 text-sm",
                                                             selectedPath === doc.path
                                                                 ? "bg-primary/10 text-primary"

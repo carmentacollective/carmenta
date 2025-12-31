@@ -52,7 +52,7 @@ export default async function ConnectionPage({ searchParams }: ConnectionPagePro
         <div className="fixed inset-0 overflow-hidden">
             <HolographicBackground hideWatermark />
 
-            <div className="relative z-content h-full">
+            <div className="z-content relative h-full">
                 <ConnectLayout
                     initialConnections={recentConnections}
                     activeConnection={null}

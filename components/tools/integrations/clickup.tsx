@@ -162,7 +162,7 @@ function TeamsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (teams.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -177,7 +177,7 @@ function TeamsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-2 flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -193,14 +193,14 @@ function TeamsDisplay({ output }: { output?: Record<string, unknown> }) {
                 {teams.map((team) => (
                     <div
                         key={team.id}
-                        className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+                        className="border-border/50 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-2"
                     >
                         <div
                             className="h-3 w-3 rounded-full"
                             style={{ backgroundColor: team.color || "#7B68EE" }}
                         />
                         <span className="text-sm font-medium">{team.name}</span>
-                        <code className="text-xs text-muted-foreground">{team.id}</code>
+                        <code className="text-muted-foreground text-xs">{team.id}</code>
                     </div>
                 ))}
             </div>
@@ -219,7 +219,7 @@ function SpacesDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (spaces.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -234,7 +234,7 @@ function SpacesDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-2 flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -250,16 +250,16 @@ function SpacesDisplay({ output }: { output?: Record<string, unknown> }) {
                 {spaces.map((space) => (
                     <div
                         key={space.id}
-                        className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+                        className="border-border/50 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-2"
                     >
-                        <ChevronRight className="h-4 w-4 text-primary" />
+                        <ChevronRight className="text-primary h-4 w-4" />
                         <span className="text-sm font-medium">{space.name}</span>
                         {space.private && (
                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                                 Private
                             </span>
                         )}
-                        <code className="text-xs text-muted-foreground">
+                        <code className="text-muted-foreground text-xs">
                             {space.id}
                         </code>
                     </div>
@@ -279,7 +279,7 @@ function ListsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (lists.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -294,7 +294,7 @@ function ListsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-2 flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -310,11 +310,11 @@ function ListsDisplay({ output }: { output?: Record<string, unknown> }) {
                 {lists.map((list) => (
                     <div
                         key={list.id}
-                        className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+                        className="border-border/50 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-2"
                     >
-                        <div className="h-2 w-2 rounded-sm bg-primary" />
+                        <div className="bg-primary h-2 w-2 rounded-sm" />
                         <span className="text-sm font-medium">{list.name}</span>
-                        <code className="text-xs text-muted-foreground">{list.id}</code>
+                        <code className="text-muted-foreground text-xs">{list.id}</code>
                     </div>
                 ))}
             </div>
@@ -353,7 +353,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
     return (
         <div
             className={cn(
-                "group rounded-lg border border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:shadow-md",
+                "group border-border/50 bg-card/50 hover:border-primary/30 rounded-lg border transition-all hover:shadow-md",
                 compact ? "p-2" : "p-3"
             )}
         >
@@ -372,7 +372,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                     <div className="flex items-start justify-between gap-2">
                         <h4
                             className={cn(
-                                "font-medium text-foreground",
+                                "text-foreground font-medium",
                                 compact ? "text-sm" : "text-base"
                             )}
                         >
@@ -386,7 +386,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                                 className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                                 title="Open in ClickUp"
                             >
-                                <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                <ExternalLink className="text-muted-foreground hover:text-primary h-4 w-4" />
                             </a>
                         )}
                     </div>
@@ -394,7 +394,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                     {/* Meta row */}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                         {/* Status badge */}
-                        <span className="rounded px-1.5 py-0.5 text-xs font-medium capitalize text-muted-foreground">
+                        <span className="text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium capitalize">
                             {task.status}
                         </span>
 
@@ -414,7 +414,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
 
                         {/* Due date */}
                         {task.dueDate && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <span className="text-muted-foreground flex items-center gap-1 text-xs">
                                 <Clock className="h-3 w-3" />
                                 {formatDate(task.dueDate)}
                             </span>
@@ -422,7 +422,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
 
                         {/* Assignees */}
                         {task.assignees && task.assignees.length > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <span className="text-muted-foreground flex items-center gap-1 text-xs">
                                 <Users className="h-3 w-3" />
                                 {task.assignees.slice(0, 2).join(", ")}
                                 {task.assignees.length > 2 &&
@@ -436,7 +436,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                                 {task.tags.slice(0, 3).map((tag) => (
                                     <span
                                         key={tag}
-                                        className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                                        className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs"
                                     >
                                         {tag}
                                     </span>
@@ -447,7 +447,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
 
                     {/* Description preview (non-compact only) */}
                     {!compact && task.description && (
-                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
                             {task.description}
                         </p>
                     )}
@@ -463,7 +463,7 @@ function TasksDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (tasks.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -478,7 +478,7 @@ function TasksDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-3 flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -502,7 +502,7 @@ function TasksDisplay({ output }: { output?: Record<string, unknown> }) {
 function TaskDetailDisplay({ output }: { output?: Record<string, unknown> }) {
     if (!output) {
         return (
-            <div className="px-4 py-3 text-sm text-muted-foreground">No task data</div>
+            <div className="text-muted-foreground px-4 py-3 text-sm">No task data</div>
         );
     }
 
@@ -539,7 +539,7 @@ function TaskDetailDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-3 flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/clickup.svg"
                     alt="ClickUp"
@@ -568,8 +568,8 @@ function CustomFieldsSection({ customFields }: { customFields: unknown }) {
     const fields = customFields as Array<{ id?: string; name: string; value: unknown }>;
 
     return (
-        <div className="mt-3 rounded-lg border border-border/50 bg-muted/20 p-3">
-            <h5 className="mb-2 text-xs font-medium text-muted-foreground">
+        <div className="border-border/50 bg-muted/20 mt-3 rounded-lg border p-3">
+            <h5 className="text-muted-foreground mb-2 text-xs font-medium">
                 Custom Fields
             </h5>
             <div className="flex flex-wrap gap-2">
@@ -605,7 +605,7 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (comments.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <MessageSquare className="h-4 w-4" />
                 <span>No comments</span>
             </div>
@@ -616,7 +616,7 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mb-3 flex items-center gap-2 text-sm">
                 <MessageSquare className="h-4 w-4" />
                 <span>
                     {comments.length} comment{comments.length !== 1 ? "s" : ""}
@@ -626,24 +626,24 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
                 {displayComments.map((comment) => (
                     <div
                         key={comment.id}
-                        className="rounded-lg border border-border/50 bg-muted/20 p-3"
+                        className="border-border/50 bg-muted/20 rounded-lg border p-3"
                     >
                         <div className="mb-1 flex items-center justify-between">
                             <span className="text-sm font-medium">
                                 {comment.author}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                                 {formatDate(comment.date)}
                             </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{comment.text}</p>
+                        <p className="text-muted-foreground text-sm">{comment.text}</p>
                     </div>
                 ))}
             </div>
             {comments.length > 3 && (
                 <button
                     onClick={() => setExpanded(!expanded)}
-                    className="mt-2 flex items-center gap-1 text-sm text-primary hover:underline"
+                    className="text-primary mt-2 flex items-center gap-1 text-sm hover:underline"
                 >
                     <ChevronDown
                         className={cn(
@@ -676,7 +676,7 @@ function TimeEntriesDisplay({ output }: { output?: Record<string, unknown> }) {
 
     if (entries.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
                 <Clock className="h-4 w-4" />
                 <span>No time entries</span>
             </div>
@@ -688,13 +688,13 @@ function TimeEntriesDisplay({ output }: { output?: Record<string, unknown> }) {
     return (
         <div className="px-4 py-3">
             <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4" />
                     <span>
                         {entries.length} entr{entries.length !== 1 ? "ies" : "y"}
                     </span>
                 </div>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-foreground text-sm font-medium">
                     Total: {formatDuration(totalMs)}
                 </span>
             </div>
@@ -702,12 +702,12 @@ function TimeEntriesDisplay({ output }: { output?: Record<string, unknown> }) {
                 {entries.map((entry) => (
                     <div
                         key={entry.id}
-                        className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2"
+                        className="border-border/50 bg-muted/20 flex items-center justify-between rounded-lg border px-3 py-2"
                     >
                         <div>
                             <span className="text-sm font-medium">{entry.user}</span>
                             {entry.description && (
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-muted-foreground text-xs">
                                     {entry.description}
                                 </p>
                             )}
@@ -716,7 +716,7 @@ function TimeEntriesDisplay({ output }: { output?: Record<string, unknown> }) {
                             <span className="text-sm font-medium">
                                 {formatDuration(entry.durationMs)}
                             </span>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                                 {formatDate(entry.start)}
                             </p>
                         </div>

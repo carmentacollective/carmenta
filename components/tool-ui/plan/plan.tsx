@@ -112,7 +112,7 @@ function PlanTodoItem({ todo }: PlanTodoItemProps) {
     }
 
     return (
-        <li className="-mx-2 cursor-default rounded-md hover:bg-muted">
+        <li className="hover:bg-muted -mx-2 cursor-default rounded-md">
             <Collapsible>
                 <CollapsibleTrigger className="group/todo flex w-full cursor-default items-start gap-2 px-2 py-2 text-left">
                     <TodoIcon
@@ -120,13 +120,13 @@ function PlanTodoItem({ todo }: PlanTodoItemProps) {
                         className={iconClassName}
                         isAnimating={isInProgress}
                     />
-                    <span className={cn("flex-1 text-pretty text-sm", labelClassName)}>
+                    <span className={cn("flex-1 text-sm text-pretty", labelClassName)}>
                         {todo.label}
                     </span>
-                    <ChevronRight className="mt-0.5 size-4 shrink-0 rotate-90 text-muted-foreground/50 transition-transform duration-150 group-data-[state=open]/todo:[transform:rotateY(180deg)]" />
+                    <ChevronRight className="text-muted-foreground/50 mt-0.5 size-4 shrink-0 rotate-90 transition-transform duration-150 group-data-[state=open]/todo:[transform:rotateY(180deg)]" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <p className="text-pretty pb-1.5 pl-8 pr-2 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground pr-2 pb-1.5 pl-8 text-sm text-pretty">
                         {todo.description}
                     </p>
                 </CollapsibleContent>
@@ -156,7 +156,7 @@ interface ProgressBarProps {
 
 function ProgressBar({ progress, isCelebrating }: ProgressBarProps) {
     return (
-        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="bg-muted mb-3 h-1.5 overflow-hidden rounded-full">
             <div
                 className={cn(
                     "h-full transition-all duration-500",
@@ -200,13 +200,13 @@ export function Plan({
     return (
         <Card
             variant="glass"
-            className={cn("w-full min-w-80 max-w-xl gap-4 py-4", className)}
+            className={cn("w-full max-w-xl min-w-80 gap-4 py-4", className)}
             data-tool-ui-id={id}
             data-slot="plan"
         >
             <CardHeader className="flex flex-row items-start justify-between gap-4">
                 <div className="space-y-1.5">
-                    <CardTitle className="text-pretty font-medium leading-5">
+                    <CardTitle className="leading-5 font-medium text-pretty">
                         {title}
                     </CardTitle>
                     {description && <CardDescription>{description}</CardDescription>}
@@ -226,7 +226,7 @@ export function Plan({
                 >
                     {showProgress && (
                         <>
-                            <div className="mb-2 text-sm text-muted-foreground">
+                            <div className="text-muted-foreground mb-2 text-sm">
                                 {completedCount} of {todos.length} complete
                             </div>
 
@@ -244,11 +244,11 @@ export function Plan({
                             <li className="mt-1">
                                 <Accordion type="single" collapsible>
                                     <AccordionItem value="more" className="border-0">
-                                        <AccordionTrigger className="flex cursor-default items-start justify-start gap-2 py-1 text-sm font-normal text-muted-foreground hover:text-primary [&>svg:last-child]:hidden">
-                                            <MoreHorizontal className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" />
+                                        <AccordionTrigger className="text-muted-foreground hover:text-primary flex cursor-default items-start justify-start gap-2 py-1 text-sm font-normal [&>svg:last-child]:hidden">
+                                            <MoreHorizontal className="text-muted-foreground/70 mt-0.5 size-4 shrink-0" />
                                             <span>{hiddenTodos.length} more</span>
                                         </AccordionTrigger>
-                                        <AccordionContent className="pb-0 pt-2">
+                                        <AccordionContent className="pt-2 pb-0">
                                             <ul className="-mx-2 space-y-2 px-2">
                                                 <TodoList todos={hiddenTodos} />
                                             </ul>

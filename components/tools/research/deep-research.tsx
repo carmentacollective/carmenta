@@ -81,14 +81,14 @@ function ResearchInProgress({
 
             {/* Header */}
             <div className="relative flex items-center gap-2">
-                <BookOpen className="h-4 w-4 animate-pulse text-primary" />
-                <span className="text-sm text-foreground">
+                <BookOpen className="text-primary h-4 w-4 animate-pulse" />
+                <span className="text-foreground text-sm">
                     Conducting {depthLabel} research...
                 </span>
             </div>
 
             {/* Objective */}
-            <p className="relative mt-2 text-xs text-muted-foreground/70">
+            <p className="text-muted-foreground/70 relative mt-2 text-xs">
                 &quot;{objective}&quot;
             </p>
 
@@ -101,7 +101,7 @@ function ResearchInProgress({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="text-sm text-muted-foreground"
+                        className="text-muted-foreground text-sm"
                     >
                         {currentTip}
                     </motion.p>
@@ -109,9 +109,9 @@ function ResearchInProgress({
             </div>
 
             {/* Activity indicator - indeterminate progress bar */}
-            <div className="relative mt-4 h-0.5 w-full overflow-hidden rounded-full bg-muted/50">
+            <div className="bg-muted/50 relative mt-4 h-0.5 w-full overflow-hidden rounded-full">
                 <motion.div
-                    className="absolute h-full w-1/4 rounded-full bg-primary/40"
+                    className="bg-primary/40 absolute h-full w-1/4 rounded-full"
                     animate={{
                         x: ["0%", "300%", "0%"],
                     }}
@@ -130,7 +130,7 @@ function ResearchInProgress({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="relative mt-3 text-right text-xs text-muted-foreground/40"
+                        className="text-muted-foreground/40 relative mt-3 text-right text-xs"
                     >
                         {elapsedSeconds}s
                     </motion.p>
@@ -170,7 +170,7 @@ const ConfidenceIcon = ({ confidence }: { confidence: string }) => {
         case "medium":
             return <HelpCircle className="h-3 w-3 text-yellow-500" />;
         default:
-            return <HelpCircle className="h-3 w-3 text-muted-foreground" />;
+            return <HelpCircle className="text-muted-foreground h-3 w-3" />;
     }
 };
 
@@ -196,14 +196,14 @@ export function DeepResearchResult({
     // Error state
     if (status === "error" || error) {
         return (
-            <div className="glass-card max-w-2xl border-destructive/50 bg-destructive/10">
+            <div className="glass-card border-destructive/50 bg-destructive/10 max-w-2xl">
                 <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <p className="text-sm text-destructive">
+                    <AlertCircle className="text-destructive h-4 w-4" />
+                    <p className="text-destructive text-sm">
                         {error || "Research didn't complete. Try again?"}
                     </p>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-2 text-xs">
                     Objective: &quot;{objective}&quot;
                 </p>
             </div>
@@ -214,28 +214,28 @@ export function DeepResearchResult({
     return (
         <div className="glass-card max-w-2xl">
             <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <span className="font-medium text-foreground">Research Complete</span>
+                <BookOpen className="text-primary h-4 w-4" />
+                <span className="text-foreground font-medium">Research Complete</span>
             </div>
 
             {/* Summary */}
             {summary && (
                 <div className="mt-4">
-                    <p className="text-sm text-foreground/90">{summary}</p>
+                    <p className="text-foreground/90 text-sm">{summary}</p>
                 </div>
             )}
 
             {/* Findings */}
             {findings && findings.length > 0 && (
                 <div className="mt-4">
-                    <h4 className="text-xs font-medium uppercase text-muted-foreground">
+                    <h4 className="text-muted-foreground text-xs font-medium uppercase">
                         Key Findings
                     </h4>
                     <ul className="mt-2 space-y-2">
                         {findings.map((finding, index) => (
                             <li key={index} className="flex items-start gap-2">
                                 <ConfidenceIcon confidence={finding.confidence} />
-                                <span className="text-sm text-foreground/80">
+                                <span className="text-foreground/80 text-sm">
                                     {finding.insight}
                                 </span>
                             </li>
@@ -247,7 +247,7 @@ export function DeepResearchResult({
             {/* Sources */}
             {sources && sources.length > 0 && (
                 <details className="mt-4">
-                    <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                    <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs">
                         {sources.length} sources
                     </summary>
                     <ul className="mt-2 space-y-1">
@@ -257,7 +257,7 @@ export function DeepResearchResult({
                                     href={source.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                                    className="group text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                                 >
                                     <span className="truncate">{source.title}</span>
                                     <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 opacity-0 group-hover:opacity-100" />

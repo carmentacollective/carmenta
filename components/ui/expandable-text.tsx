@@ -123,7 +123,7 @@ export function ExpandableText({
                     // Active state
                     "active:translate-y-1/2 active:scale-105",
                     // Focus state
-                    "focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    "focus:ring-primary/60 focus:ring-2 focus:outline-none"
                 )}
             >
                 <ChevronDown

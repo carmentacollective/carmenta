@@ -103,18 +103,18 @@ function PartnerCard({ partner }: { partner: SecurityPartner }) {
             href={partner.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative rounded-xl border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg"
+            className="group bg-card hover:border-primary/50 relative rounded-xl border p-6 transition-all hover:shadow-lg"
         >
             <div className="mb-4 flex items-start justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold transition-colors group-hover:text-primary">
+                    <h3 className="group-hover:text-primary text-lg font-semibold transition-colors">
                         {partner.name}
                     </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-sm">
                         {partner.description}
                     </p>
                 </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                <ExternalLink className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
             </div>
 
             {partner.certifications && partner.certifications.length > 0 && (
@@ -134,15 +134,15 @@ export default function SecurityPage() {
             {/* Hero Section */}
             <section className="relative py-12 sm:py-16 lg:py-20">
                 <div className="text-center">
-                    <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
-                        <ShieldCheck className="h-8 w-8 text-primary" />
+                    <div className="bg-primary/10 mb-4 inline-flex items-center justify-center rounded-2xl p-3">
+                        <ShieldCheck className="text-primary h-8 w-8" />
                     </div>
 
                     <h1 className="text-5xl font-bold tracking-tight">
                         Security First, Always
                     </h1>
 
-                    <p className="mx-auto mt-6 max-w-3xl text-xl text-muted-foreground">
+                    <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-xl">
                         Your conversations are precious. We protect them with
                         enterprise-grade security while making AI accessible and
                         powerful.
@@ -150,15 +150,15 @@ export default function SecurityPage() {
 
                     {/* Trust Indicators */}
                     <div className="mt-8 flex flex-wrap justify-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Lock className="h-4 w-4 text-green-600 dark:text-green-400" />
                             <span>SSL/TLS Encrypted</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
                             <span>SOC 2 Partners</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
                             <span>Private by Default</span>
                         </div>
@@ -168,7 +168,7 @@ export default function SecurityPage() {
 
             {/* Core Security Promise */}
             <section className="py-16">
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 lg:p-12">
+                <div className="border-primary/20 bg-primary/5 rounded-2xl border p-8 lg:p-12">
                     <h2 className="mb-6 text-3xl font-bold">Our Security Promise</h2>
 
                     <div className="grid gap-8 md:grid-cols-2">
@@ -177,7 +177,7 @@ export default function SecurityPage() {
                                 <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 What We Protect
                             </h3>
-                            <ul className="space-y-2 text-muted-foreground">
+                            <ul className="text-muted-foreground space-y-2">
                                 <li>• Our conversations and message history</li>
                                 <li>• Files and attachments we share</li>
                                 <li>• Authentication credentials</li>
@@ -191,7 +191,7 @@ export default function SecurityPage() {
                                 <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 What We Never Do
                             </h3>
-                            <ul className="space-y-2 text-muted-foreground">
+                            <ul className="text-muted-foreground space-y-2">
                                 <li>• Sell or share our conversations</li>
                                 <li>• Train models on our data without consent</li>
                                 <li>• Allow unauthorized human access</li>
@@ -201,7 +201,7 @@ export default function SecurityPage() {
                         </div>
                     </div>
 
-                    <div className="mt-8 rounded-lg bg-background/50 p-4 backdrop-blur">
+                    <div className="bg-background/50 mt-8 rounded-lg p-4 backdrop-blur">
                         <p className="text-sm">
                             <strong>How it works:</strong> Our conversations are
                             encrypted in transit and at rest. When we chat with AI
@@ -218,7 +218,7 @@ export default function SecurityPage() {
                     <h2 className="text-3xl font-bold">
                         Enterprise-Grade Security Features
                     </h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
+                    <p className="text-muted-foreground mt-4 text-lg">
                         Built on industry-leading security infrastructure
                     </p>
                 </div>
@@ -229,10 +229,10 @@ export default function SecurityPage() {
                         return (
                             <div
                                 key={feature.title}
-                                className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
+                                className="bg-card rounded-xl border p-6 transition-shadow hover:shadow-md"
                             >
-                                <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-2">
-                                    <Icon className="h-6 w-6 text-primary" />
+                                <div className="bg-primary/10 mb-4 inline-flex items-center justify-center rounded-lg p-2">
+                                    <Icon className="text-primary h-6 w-6" />
                                 </div>
                                 <h3 className="mb-2 text-lg font-semibold">
                                     {feature.title}
@@ -250,7 +250,7 @@ export default function SecurityPage() {
             <section className="py-16">
                 <div className="mb-12 text-center">
                     <h2 className="text-3xl font-bold">Trusted Security Partners</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
+                    <p className="text-muted-foreground mt-4 text-lg">
                         We leverage the security certifications of industry leaders
                     </p>
                 </div>
@@ -261,7 +261,7 @@ export default function SecurityPage() {
                     ))}
                 </div>
 
-                <div className="mt-12 rounded-xl border bg-muted/50 p-6">
+                <div className="bg-muted/50 mt-12 rounded-xl border p-6">
                     <h3 className="mb-3 font-semibold">
                         Compliance & Certifications We Inherit
                     </h3>
@@ -271,7 +271,7 @@ export default function SecurityPage() {
                         <SecurityBadge certification="CCPA Compliant" />
                         <SecurityBadge certification="ISO 27001" />
                     </div>
-                    <p className="mt-4 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-4 text-sm">
                         Through our security partners, Carmenta benefits from
                         enterprise-grade compliance and certifications. Your data is
                         protected by the same standards used by Fortune 500 companies.
@@ -281,7 +281,7 @@ export default function SecurityPage() {
 
             {/* Technical Security Details */}
             <section className="py-16">
-                <div className="rounded-xl border bg-card p-8">
+                <div className="bg-card rounded-xl border p-8">
                     <h2 className="mb-6 text-2xl font-bold">
                         Technical Security Implementation
                     </h2>
@@ -289,7 +289,7 @@ export default function SecurityPage() {
                     <div className="space-y-6">
                         <div>
                             <h3 className="mb-2 font-semibold">Encryption</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                            <ul className="text-muted-foreground list-disc space-y-1 pl-6">
                                 <li>TLS 1.3 for all data in transit</li>
                                 <li>AES-256 for data at rest</li>
                                 <li>Encrypted database connections and backups</li>
@@ -299,7 +299,7 @@ export default function SecurityPage() {
 
                         <div>
                             <h3 className="mb-2 font-semibold">Access Control</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                            <ul className="text-muted-foreground list-disc space-y-1 pl-6">
                                 <li>
                                     Strict user isolation - you can only access your own
                                     data
@@ -316,7 +316,7 @@ export default function SecurityPage() {
                             <h3 className="mb-2 font-semibold">
                                 Monitoring & Response
                             </h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                            <ul className="text-muted-foreground list-disc space-y-1 pl-6">
                                 <li>Real-time error tracking with Sentry</li>
                                 <li>Automated security scanning on all deployments</li>
                                 <li>24/7 infrastructure monitoring by Vercel</li>
@@ -328,7 +328,7 @@ export default function SecurityPage() {
 
                         <div>
                             <h3 className="mb-2 font-semibold">Data Handling</h3>
-                            <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                            <ul className="text-muted-foreground list-disc space-y-1 pl-6">
                                 <li>Encrypted storage of conversations and files</li>
                                 <li>
                                     Request logs retained for 90 days (metadata only)
@@ -396,9 +396,9 @@ export default function SecurityPage() {
 
             {/* Contact Section */}
             <section className="py-16">
-                <div className="rounded-xl bg-muted/50 p-8 text-center">
+                <div className="bg-muted/50 rounded-xl p-8 text-center">
                     <h2 className="mb-4 text-2xl font-bold">Security Questions?</h2>
-                    <p className="mb-6 text-muted-foreground">
+                    <p className="text-muted-foreground mb-6">
                         We take security seriously. If you have questions about our
                         security practices, found a vulnerability, or need more
                         information for your compliance requirements, please reach out.
@@ -406,14 +406,14 @@ export default function SecurityPage() {
                     <div className="flex flex-col justify-center gap-4 sm:flex-row">
                         <a
                             href="mailto:security@carmenta.ai"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground transition-colors hover:bg-primary/90"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 transition-colors"
                         >
                             <Shield className="h-5 w-5" />
                             security@carmenta.ai
                         </a>
                         <a
                             href="/privacy"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border bg-background px-6 py-3 transition-colors hover:bg-muted"
+                            className="bg-background hover:bg-muted inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 transition-colors"
                         >
                             View Privacy Policy
                         </a>

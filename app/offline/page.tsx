@@ -26,10 +26,10 @@ export const metadata: Metadata = {
  */
 export default function OfflinePage() {
     return (
-        <div className="relative min-h-screen bg-background">
+        <div className="bg-background relative min-h-screen">
             <HolographicBackground />
 
-            <div className="relative z-content flex min-h-screen flex-col">
+            <div className="z-content relative flex min-h-screen flex-col">
                 <SiteHeader bordered showThemeSwitcher />
 
                 <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
@@ -53,12 +53,12 @@ export default function OfflinePage() {
                         </div>
 
                         {/* Heading */}
-                        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
                             You're Offline
                         </h1>
 
                         {/* Description */}
-                        <p className="text-lg text-muted-foreground">
+                        <p className="text-muted-foreground text-lg">
                             Carmenta needs an internet connection. We&apos;ll reconnect
                             automatically when your network returns.
                         </p>
@@ -68,7 +68,7 @@ export default function OfflinePage() {
                             <OfflineRetryButton />
                             <Link
                                 href="/"
-                                className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-6 py-3 font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                                className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-ring inline-flex items-center justify-center rounded-lg border px-6 py-3 font-medium shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                             >
                                 Go Home
                             </Link>
@@ -76,7 +76,7 @@ export default function OfflinePage() {
 
                         {/* Network Status Indicator */}
                         <div className="pt-4">
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                                 <span
                                     id="network-status"
                                     className="inline-flex items-center gap-2"

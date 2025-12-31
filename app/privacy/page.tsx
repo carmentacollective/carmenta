@@ -14,7 +14,7 @@ export default function PrivacyPage() {
                 <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
 
                 {/* TL;DR - Transparent Summary */}
-                <div className="mt-8 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-background p-6">
+                <div className="border-primary/20 from-primary/5 to-background mt-8 rounded-xl border-2 bg-gradient-to-br p-6">
                     <h2 className="mb-4 text-2xl font-bold">
                         TL;DR - The Straight Truth
                     </h2>
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
                         </div>
 
                         <div className="mt-4">
-                            <h3 className="mb-2 font-semibold text-primary">
+                            <h3 className="text-primary mb-2 font-semibold">
                                 → Our control:
                             </h3>
                             <ul className="list-disc space-y-1 pl-6 text-sm">
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
                             </ul>
                         </div>
 
-                        <p className="mt-4 border-t border-primary/20 pt-4 text-sm font-medium">
+                        <p className="border-primary/20 mt-4 border-t pt-4 text-sm font-medium">
                             How we work: We unify multiple AI models (Claude, ChatGPT,
                             Gemini, and more) into one interface. Our conversations are
                             stored to maintain context across models and sessions. We
@@ -366,7 +366,7 @@ export default function PrivacyPage() {
                         </ul>
                     </section>
 
-                    <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
+                    <footer className="text-muted-foreground mt-12 border-t pt-8 text-center text-sm">
                         <p>Last updated: December 9, 2025</p>
                     </footer>
                 </div>

@@ -51,7 +51,7 @@ export class ToolUIErrorBoundary extends React.Component<
         if (this.state.hasError) {
             return (
                 this.props.fallback ?? (
-                    <div className="rounded-lg border border-destructive p-4 text-destructive">
+                    <div className="border-destructive text-destructive rounded-lg border p-4">
                         <p className="font-semibold">
                             {this.props.componentName} failed to render
                         </p>

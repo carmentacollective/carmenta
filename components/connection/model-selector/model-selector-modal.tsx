@@ -220,7 +220,7 @@ export function ModelSelectorModal({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+                    className="z-modal fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
                     onClick={(e) => e.target === e.currentTarget && onClose()}
                 >
                     <motion.div
@@ -234,7 +234,7 @@ export function ModelSelectorModal({
                         {/* Close button - floats in corner, no header bar */}
                         <button
                             onClick={onClose}
-                            className="absolute right-3 top-3 z-content flex h-11 w-11 items-center justify-center rounded-full bg-white/60 text-foreground/50 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 hover:text-foreground/70 dark:bg-white/10 dark:hover:bg-white/20"
+                            className="z-content text-foreground/50 hover:text-foreground/70 absolute top-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/60 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 dark:bg-white/10 dark:hover:bg-white/20"
                             aria-label="Close model selector"
                         >
                             <X className="h-5 w-5" />
@@ -247,15 +247,15 @@ export function ModelSelectorModal({
                                 className={cn(
                                     "relative flex w-full items-center gap-5 rounded-2xl p-5 text-left transition-all",
                                     overrides.modelId === null
-                                        ? "bg-white/90 shadow-xl ring-2 ring-primary/50 dark:bg-white/15"
+                                        ? "ring-primary/50 bg-white/90 shadow-xl ring-2 dark:bg-white/15"
                                         : "bg-white/50 hover:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15"
                                 )}
                             >
                                 {/* Recommended badge */}
-                                <span className="absolute -top-2 left-4 rounded-full bg-gradient-to-r from-primary to-purple-500 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white shadow-sm">
+                                <span className="from-primary absolute -top-2 left-4 rounded-full bg-gradient-to-r to-purple-500 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-white uppercase shadow-sm">
                                     Recommended
                                 </span>
-                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-purple-500 shadow-lg">
+                                <div className="from-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br to-purple-500 shadow-lg">
                                     {switchingTo === "auto" ? (
                                         <Loader2 className="h-7 w-7 animate-spin text-white" />
                                     ) : (
@@ -267,18 +267,18 @@ export function ModelSelectorModal({
                                         className={cn(
                                             "text-xl font-bold",
                                             overrides.modelId === null
-                                                ? "bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent"
+                                                ? "from-primary bg-gradient-to-r to-purple-500 bg-clip-text text-transparent"
                                                 : "text-foreground/90"
                                         )}
                                     >
                                         Automagically
                                     </span>
-                                    <p className="mt-1 text-sm text-foreground/60">
+                                    <p className="text-foreground/60 mt-1 text-sm">
                                         Picks the best model for your message
                                     </p>
                                 </div>
                                 {overrides.modelId === null && (
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary shadow-md">
+                                    <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md">
                                         <Check className="h-5 w-5 text-white" />
                                     </div>
                                 )}
@@ -286,7 +286,7 @@ export function ModelSelectorModal({
                         </div>
 
                         {/* Strong visual separator */}
-                        <div className="h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+                        <div className="via-foreground/15 h-px bg-gradient-to-r from-transparent to-transparent" />
 
                         {/* Model cards grid with scroll fade */}
                         <div className="relative">
@@ -308,24 +308,24 @@ export function ModelSelectorModal({
                                                 className={cn(
                                                     "group relative flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-200",
                                                     isSelected
-                                                        ? "bg-primary/12 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
-                                                        : "bg-foreground/5 hover:-translate-y-0.5 hover:bg-foreground/10 hover:shadow-md"
+                                                        ? "bg-primary/12 shadow-primary/20 ring-primary/50 shadow-lg ring-2"
+                                                        : "bg-foreground/5 hover:bg-foreground/10 hover:-translate-y-0.5 hover:shadow-md"
                                                 )}
                                             >
                                                 {/* Info icon - reveals on hover */}
                                                 <div
-                                                    className="absolute right-2 top-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                                                    className="absolute top-2 right-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
                                                     data-tooltip-id="tip"
                                                     data-tooltip-html={getModelTooltipHtml(
                                                         model
                                                     )}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    <Info className="h-3.5 w-3.5 text-foreground/40 transition-colors hover:text-foreground/70" />
+                                                    <Info className="text-foreground/40 hover:text-foreground/70 h-3.5 w-3.5 transition-colors" />
                                                 </div>
                                                 <div className="relative mt-0.5 h-6 w-6 shrink-0">
                                                     {isSwitching ? (
-                                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                        <Loader2 className="text-primary h-6 w-6 animate-spin" />
                                                     ) : (
                                                         <ProviderIcon
                                                             provider={model.provider}
@@ -336,7 +336,7 @@ export function ModelSelectorModal({
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between gap-2 pr-6">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="font-semibold text-foreground/90">
+                                                            <span className="text-foreground/90 font-semibold">
                                                                 {model.displayName}
                                                             </span>
                                                             <span
@@ -348,13 +348,13 @@ export function ModelSelectorModal({
                                                                 {speedQuality.emoji}
                                                             </span>
                                                         </div>
-                                                        <span className="text-[10px] tabular-nums text-foreground/40">
+                                                        <span className="text-foreground/40 text-[10px] tabular-nums">
                                                             {formatContextWindow(
                                                                 model.contextWindow
                                                             )}
                                                         </span>
                                                     </div>
-                                                    <p className="mt-1 text-xs leading-relaxed text-foreground/50">
+                                                    <p className="text-foreground/50 mt-1 text-xs leading-relaxed">
                                                         {model.description}
                                                     </p>
                                                     {model.tags.length > 0 && (
@@ -362,7 +362,7 @@ export function ModelSelectorModal({
                                                             {model.tags.map((tag) => (
                                                                 <span
                                                                     key={tag}
-                                                                    className="rounded-full bg-foreground/5 px-1.5 py-0.5 text-[10px] text-foreground/60"
+                                                                    className="bg-foreground/5 text-foreground/60 rounded-full px-1.5 py-0.5 text-[10px]"
                                                                 >
                                                                     {TAG_EMOJI[tag]}{" "}
                                                                     {tag}
@@ -373,7 +373,7 @@ export function ModelSelectorModal({
                                                 </div>
                                                 {/* Consistent selection indicator */}
                                                 {isSelected && (
-                                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
+                                                    <div className="bg-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-sm">
                                                         <Check className="h-4 w-4 text-white" />
                                                     </div>
                                                 )}
@@ -383,11 +383,11 @@ export function ModelSelectorModal({
                                 </div>
                             </div>
                             {/* Scroll fade indicator at bottom */}
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/80 to-transparent dark:from-background/80" />
+                            <div className="dark:from-background/80 pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/80 to-transparent" />
                         </div>
 
                         {/* Slider Footer - Same as popover */}
-                        <div className="border-t-2 border-foreground/10 bg-gradient-to-b from-slate-50/80 to-slate-100/60 dark:from-white/5 dark:to-transparent">
+                        <div className="border-foreground/10 border-t-2 bg-gradient-to-b from-slate-50/80 to-slate-100/60 dark:from-white/5 dark:to-transparent">
                             {/* Two distinct sections with visual separator */}
                             <div className="flex flex-col sm:flex-row">
                                 {/* Creativity section */}
@@ -406,9 +406,9 @@ export function ModelSelectorModal({
 
                                 {/* Strong visual divider */}
                                 <div className="mx-2 hidden items-center sm:flex">
-                                    <div className="h-16 w-px bg-gradient-to-b from-transparent via-foreground/20 to-transparent" />
+                                    <div className="via-foreground/20 h-16 w-px bg-gradient-to-b from-transparent to-transparent" />
                                 </div>
-                                <div className="mx-4 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent sm:hidden" />
+                                <div className="via-foreground/20 mx-4 h-px bg-gradient-to-r from-transparent to-transparent sm:hidden" />
 
                                 {/* Reasoning section */}
                                 <div className="flex-1 p-4">
@@ -424,7 +424,7 @@ export function ModelSelectorModal({
                             </div>
 
                             {/* AI Concierge button */}
-                            <div className="flex justify-center border-t border-foreground/10 p-2">
+                            <div className="border-foreground/10 flex justify-center border-t p-2">
                                 <button
                                     onClick={() => {
                                         onChange({
@@ -434,7 +434,7 @@ export function ModelSelectorModal({
                                         });
                                         onClose();
                                     }}
-                                    className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs text-foreground/50 transition-all hover:bg-gradient-to-r hover:from-primary/10 hover:to-purple-500/10 hover:text-foreground/70"
+                                    className="text-foreground/50 hover:from-primary/10 hover:text-foreground/70 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs transition-all hover:bg-gradient-to-r hover:to-purple-500/10"
                                 >
                                     <Sparkles className="h-3 w-3" />
                                     Let Carmenta decide automagically

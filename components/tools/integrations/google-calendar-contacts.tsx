@@ -153,7 +153,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
             </div>
             <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                    <h4 className="truncate font-medium text-foreground">
+                    <h4 className="text-foreground truncate font-medium">
                         {event.summary || "Untitled Event"}
                     </h4>
                     {hasLink && (
@@ -161,14 +161,14 @@ function EventCard({ event }: { event: CalendarEvent }) {
                             href={event.htmlLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                            className="text-muted-foreground hover:text-foreground shrink-0 rounded transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                             aria-label={`Open "${event.summary || "event"}" in Google Calendar`}
                         >
                             <ExternalLink className="h-4 w-4" />
                         </a>
                     )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
                         {timeStr}
@@ -181,7 +181,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
                     )}
                 </div>
                 {event.attendees && event.attendees.length > 0 && (
-                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 flex items-center gap-1 text-xs">
                         <Users className="h-3 w-3" />
                         <span>
                             {event.attendees.length} attendee
@@ -231,20 +231,20 @@ function ContactCard({ contact }: { contact: Contact }) {
                 )}
             </div>
             <div className="min-w-0 flex-1">
-                <h4 className="truncate font-medium text-foreground">{name}</h4>
+                <h4 className="text-foreground truncate font-medium">{name}</h4>
                 {org && (
-                    <p className="truncate text-sm text-muted-foreground">
+                    <p className="text-muted-foreground truncate text-sm">
                         {org.title && org.name
                             ? `${org.title} at ${org.name}`
                             : org.title || org.name}
                     </p>
                 )}
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     {email && (
                         <a
                             href={`mailto:${email}`}
                             aria-label={`Email ${name} at ${email}`}
-                            className="flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                            className="hover:text-foreground flex items-center gap-1 rounded transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                             <Mail className="h-3.5 w-3.5" />
                             <span className="truncate">{email}</span>
@@ -254,7 +254,7 @@ function ContactCard({ contact }: { contact: Contact }) {
                         <a
                             href={`tel:${phone}`}
                             aria-label={`Call ${name} at ${phone}`}
-                            className="flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                            className="hover:text-foreground flex items-center gap-1 rounded transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                             <Phone className="h-3.5 w-3.5" />
                             <span>{phone}</span>
@@ -293,13 +293,13 @@ function FreeBusySummary({
     return (
         <div className="rounded-md border border-white/10 bg-white/5 p-4">
             <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="text-muted-foreground h-4 w-4" />
                 <span className="text-foreground">
                     Checked availability for {calendarIds.length} calendar
                     {calendarIds.length !== 1 ? "s" : ""}
                 </span>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-2 text-sm">
                 {totalBusyBlocks === 0
                     ? `Completely free during ${dateRange}`
                     : `Found ${totalBusyBlocks} busy block${totalBusyBlocks !== 1 ? "s" : ""} during ${dateRange}`}
@@ -332,7 +332,7 @@ function EventConfirmation({
 
     if (action === "deleted") {
         return (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
                 <ActionIcon className="h-4 w-4" />
                 <span>{actionText}</span>
             </div>
@@ -341,17 +341,17 @@ function EventConfirmation({
 
     return (
         <div className="rounded-md border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center gap-2 text-sm text-foreground">
+            <div className="text-foreground flex items-center gap-2 text-sm">
                 <ActionIcon className="h-4 w-4 text-green-400" />
                 <span className="font-medium">{actionText}</span>
             </div>
             <div className="mt-3 space-y-2 text-sm">
-                <div className="font-medium text-foreground">
+                <div className="text-foreground font-medium">
                     {event.summary || "Untitled Event"}
                 </div>
                 <div className="text-muted-foreground">{formatEventTime(event)}</div>
                 {event.location && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-1.5">
                         <MapPin className="h-3.5 w-3.5" />
                         {event.location}
                     </div>
@@ -361,7 +361,7 @@ function EventConfirmation({
                         href={event.htmlLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                        className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         <ExternalLink className="h-3.5 w-3.5" />
                         Open in Google Calendar
@@ -390,7 +390,7 @@ function ContactConfirmation({
         "Contact";
 
     return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-green-400" />
             <span>
                 {action === "created" ? "Created" : "Updated"} contact: {name}
@@ -461,7 +461,7 @@ function renderOutput(
                         <EventCard key={event.id || idx} event={event} />
                     ))}
                     {events.length > 5 && (
-                        <p className="text-center text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-center text-xs">
                             + {events.length - 5} more events
                         </p>
                     )}
@@ -516,7 +516,7 @@ function renderOutput(
                         />
                     ))}
                     {contacts.length > 5 && (
-                        <p className="text-center text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-center text-xs">
                             + {contacts.length - 5} more contacts
                         </p>
                     )}

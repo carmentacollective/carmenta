@@ -18,7 +18,7 @@
 
 export default function Loading() {
     return (
-        <div className="fixed inset-0 z-loading flex items-center justify-center bg-background">
+        <div className="z-loading bg-background fixed inset-0 flex items-center justify-center">
             {/* Keyframe animations and dark mode adjustments - inline to ensure they're available before CSS loads */}
             <style
                 dangerouslySetInnerHTML={{
@@ -56,7 +56,7 @@ export default function Loading() {
                     style={{ animation: "loaderSpin 4.4s linear infinite" }}
                 >
                     <div
-                        className="orbit-dot-dark absolute left-1/2 top-0 rounded-full"
+                        className="orbit-dot-dark absolute top-0 left-1/2 rounded-full"
                         style={{
                             width: "min(2vh, 12px)",
                             height: "min(2vh, 12px)",

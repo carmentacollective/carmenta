@@ -385,11 +385,11 @@ function RuntimeErrorBanner({
     return (
         <div
             className={cn(
-                "fixed bottom-24 left-1/2 z-toast -translate-x-1/2",
+                "z-toast fixed bottom-24 left-1/2 -translate-x-1/2",
                 "flex max-w-md items-center gap-3 rounded-xl px-4 py-3",
                 "bg-red-50/95 shadow-lg backdrop-blur-sm",
                 "border border-red-200/50",
-                "duration-300 animate-in fade-in slide-in-from-bottom-4"
+                "animate-in fade-in slide-in-from-bottom-4 duration-300"
             )}
             role="alert"
         >

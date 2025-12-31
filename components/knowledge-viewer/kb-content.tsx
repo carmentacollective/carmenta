@@ -282,15 +282,15 @@ export function KBContent({
             <header
                 role="banner"
                 aria-label={`Editing ${kbDocument.name}`}
-                className="flex items-center gap-3 border-b border-foreground/5 px-6 py-4"
+                className="border-foreground/5 flex items-center gap-3 border-b px-6 py-4"
             >
-                <Icon className="h-5 w-5 text-foreground/50" aria-hidden="true" />
+                <Icon className="text-foreground/50 h-5 w-5" aria-hidden="true" />
                 <div className="flex flex-col">
-                    <h2 className="text-lg font-medium text-foreground">
+                    <h2 className="text-foreground text-lg font-medium">
                         {kbDocument.name}
                     </h2>
                     {kbDocument.description && (
-                        <p className="line-clamp-2 text-sm text-foreground/50">
+                        <p className="text-foreground/50 line-clamp-2 text-sm">
                             {kbDocument.description}
                         </p>
                     )}
@@ -336,12 +336,12 @@ export function KBContent({
                         aria-invalid={isOverLimit}
                         className={cn(
                             "h-full w-full resize-none overflow-y-auto bg-transparent px-6 py-5",
-                            "font-sans text-[15px] leading-[1.7] text-foreground/80",
-                            "placeholder:italic placeholder:text-foreground/30",
+                            "text-foreground/80 font-sans text-[15px] leading-[1.7]",
+                            "placeholder:text-foreground/30 placeholder:italic",
                             "focus:outline-none",
                             "transition-colors duration-200",
                             // Stronger focus indication
-                            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+                            "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-inset",
                             "focus:bg-foreground/[0.04]"
                         )}
                         style={{
@@ -352,7 +352,7 @@ export function KBContent({
                     <div className="h-full overflow-y-auto px-6 py-5">
                         <MarkdownRenderer
                             content={kbDocument.content}
-                            className="text-[15px] leading-[1.7] text-foreground/80"
+                            className="text-foreground/80 text-[15px] leading-[1.7]"
                         />
                     </div>
                 )}
@@ -360,7 +360,7 @@ export function KBContent({
 
             {/* Footer: Character Count (when approaching limit) + Save Actions */}
             {isEditable && (
-                <footer className="flex items-center justify-between border-t border-foreground/5 px-6 py-3">
+                <footer className="border-foreground/5 flex items-center justify-between border-t px-6 py-3">
                     {/* Character Counter - only shown when approaching or exceeding limit */}
                     <AnimatePresence>
                         {shouldShowCounter ? (
@@ -372,7 +372,7 @@ export function KBContent({
                                 className="flex items-center gap-3"
                             >
                                 {/* Progress Bar */}
-                                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-foreground/10 sm:h-2 sm:w-40">
+                                <div className="bg-foreground/10 h-1.5 w-32 overflow-hidden rounded-full sm:h-2 sm:w-40">
                                     <motion.div
                                         className={cn(
                                             "h-full rounded-full transition-colors duration-300",
@@ -440,7 +440,7 @@ export function KBContent({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
                                 transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
+                                className="bg-primary text-primary-foreground flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium opacity-50"
                             >
                                 <Loader2
                                     className="h-3.5 w-3.5 animate-spin"
@@ -463,10 +463,10 @@ export function KBContent({
                                     disabled={isPending}
                                     className={cn(
                                         "flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-2",
-                                        "text-sm text-foreground/60",
+                                        "text-foreground/60 text-sm",
                                         "transition-colors duration-150",
                                         "hover:bg-foreground/5 hover:text-foreground/80",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                                        "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:outline-none",
                                         "disabled:opacity-50"
                                     )}
                                 >
@@ -486,15 +486,15 @@ export function KBContent({
                                         "text-sm font-medium",
                                         "transition-all duration-150",
                                         isOverLimit
-                                            ? "cursor-not-allowed bg-foreground/10 text-foreground/40"
+                                            ? "bg-foreground/10 text-foreground/40 cursor-not-allowed"
                                             : "bg-primary text-primary-foreground hover:bg-primary/90",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+                                        "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                                         "disabled:opacity-50"
                                     )}
                                 >
                                     <Save className="h-3.5 w-3.5" aria-hidden="true" />
                                     <span>Save</span>
-                                    <kbd className="ml-1.5 hidden rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-normal sm:inline-block">
+                                    <kbd className="bg-primary-foreground/20 ml-1.5 hidden rounded px-1.5 py-0.5 text-[10px] font-normal sm:inline-block">
                                         ⌘S
                                     </kbd>
                                 </button>

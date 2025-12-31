@@ -113,13 +113,13 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.3 }}
-                        className="text-sm text-muted-foreground"
+                        className="text-muted-foreground text-sm"
                     >
                         {currentMessage}
                     </motion.span>
                 </AnimatePresence>
                 {showTime && (
-                    <span className="text-xs text-muted-foreground/60">
+                    <span className="text-muted-foreground/60 text-xs">
                         {elapsedSeconds}s
                     </span>
                 )}

@@ -64,23 +64,23 @@ export default function ConnectServicePage() {
         return (
             <>
                 <HolographicBackground />
-                <div className="relative z-content flex min-h-screen items-center justify-center">
+                <div className="z-content relative flex min-h-screen items-center justify-center">
                     <div className="glass-card mx-auto max-w-md p-8 text-center">
                         <div className="mb-4 text-4xl">⚠️</div>
-                        <h1 className="mb-4 text-2xl font-semibold text-foreground">
+                        <h1 className="text-foreground mb-4 text-2xl font-semibold">
                             Connection Failed
                         </h1>
-                        <p className="mb-6 text-foreground/70">{error}</p>
+                        <p className="text-foreground/70 mb-6">{error}</p>
                         <div className="flex justify-center gap-4">
                             <Link
                                 href="/integrations"
-                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-accent"
+                                className="border-border bg-background text-foreground/80 hover:bg-accent rounded-lg border px-4 py-2 text-sm font-medium"
                             >
                                 Back to Integrations
                             </Link>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium"
                             >
                                 Try Again
                             </button>
@@ -94,12 +94,12 @@ export default function ConnectServicePage() {
     return (
         <>
             <HolographicBackground />
-            <div className="relative z-content flex min-h-screen items-center justify-center">
+            <div className="z-content relative flex min-h-screen items-center justify-center">
                 <div className="glass-card mx-auto max-w-md p-8 text-center">
                     <div className="mb-4 flex justify-center">
-                        <Sparkles className="h-12 w-12 animate-pulse text-primary" />
+                        <Sparkles className="text-primary h-12 w-12 animate-pulse" />
                     </div>
-                    <h1 className="mb-2 text-2xl font-semibold text-foreground">
+                    <h1 className="text-foreground mb-2 text-2xl font-semibold">
                         Connecting {serviceName}...
                     </h1>
                     <p className="text-foreground/70">

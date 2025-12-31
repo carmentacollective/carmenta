@@ -53,7 +53,7 @@ export function InteractiveLogo({ className }: InteractiveLogoProps) {
                     {[...Array(8)].map((_, i) => (
                         <span
                             key={i}
-                            className="absolute h-1.5 w-1.5 rounded-full bg-primary"
+                            className="bg-primary absolute h-1.5 w-1.5 rounded-full"
                             style={{
                                 animation: `sparkle-burst 0.6s ease-out forwards`,
                                 animationDelay: `${i * 0.04}s`,

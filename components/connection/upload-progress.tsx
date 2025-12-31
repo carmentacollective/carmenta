@@ -32,7 +32,7 @@ export function UploadProgressDisplay({
     if (pendingFiles.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-2 rounded-xl bg-background/40 p-3 backdrop-blur-sm">
+        <div className="bg-background/40 flex flex-col gap-2 rounded-xl p-3 backdrop-blur-sm">
             {pendingFiles.map((upload) => (
                 <UploadItem
                     key={upload.id}
@@ -44,7 +44,7 @@ export function UploadProgressDisplay({
             ))}
             {/* Total size summary for multiple files */}
             {pendingFiles.length > 1 && (
-                <div className="border-t border-foreground/10 pt-1 text-right text-xs text-foreground/50">
+                <div className="border-foreground/10 text-foreground/50 border-t pt-1 text-right text-xs">
                     {pendingFiles.length} files · {formatFileSize(totalSize)} total
                 </div>
             )}
@@ -80,7 +80,7 @@ function FilePreviewThumbnail({ file }: { file: File }) {
     // Image thumbnail
     if (isImage && objectUrl) {
         return (
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-foreground/5">
+            <div className="bg-foreground/5 relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={objectUrl}
@@ -96,8 +96,8 @@ function FilePreviewThumbnail({ file }: { file: File }) {
         category === "document" ? FileText : category === "audio" ? Music : File;
 
     return (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-foreground/5">
-            <Icon className="h-5 w-5 text-foreground/60" />
+        <div className="bg-foreground/5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md">
+            <Icon className="text-foreground/60 h-5 w-5" />
         </div>
     );
 }
@@ -137,17 +137,17 @@ function UploadItem({
     };
 
     return (
-        <div className="flex items-center gap-3 rounded-lg bg-background/60 p-2">
+        <div className="bg-background/60 flex items-center gap-3 rounded-lg p-2">
             {/* File preview: thumbnail for images, icon for others */}
             <div className="relative shrink-0">
                 {isComplete && (
-                    <div className="absolute -right-1 -top-1 z-10">
-                        <CheckCircle2 className="h-4 w-4 rounded-full bg-background text-green-500" />
+                    <div className="absolute -top-1 -right-1 z-10">
+                        <CheckCircle2 className="bg-background h-4 w-4 rounded-full text-green-500" />
                     </div>
                 )}
                 {isError && (
-                    <div className="absolute -right-1 -top-1 z-10">
-                        <AlertCircle className="h-4 w-4 rounded-full bg-background text-destructive" />
+                    <div className="absolute -top-1 -right-1 z-10">
+                        <AlertCircle className="bg-background text-destructive h-4 w-4 rounded-full" />
                     </div>
                 )}
                 <FilePreviewThumbnail file={file} />
@@ -156,10 +156,10 @@ function UploadItem({
             {/* Filename, size, and status */}
             <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                    <span className="truncate text-sm font-medium text-foreground/90">
+                    <span className="text-foreground/90 truncate text-sm font-medium">
                         {file.name}
                     </span>
-                    <span className="shrink-0 text-xs text-foreground/40">
+                    <span className="text-foreground/40 shrink-0 text-xs">
                         {formatFileSize(file.size)}
                     </span>
                 </div>
@@ -167,7 +167,7 @@ function UploadItem({
                     className={cn(
                         "text-xs",
                         isError && "text-destructive",
-                        isComplete && placeholder && "font-mono text-foreground/70",
+                        isComplete && placeholder && "text-foreground/70 font-mono",
                         isComplete &&
                             !placeholder &&
                             "text-green-600 dark:text-green-400",
@@ -181,7 +181,7 @@ function UploadItem({
                     <button
                         type="button"
                         onClick={() => onInsertInline(id)}
-                        className="mt-1 text-xs text-muted-foreground underline hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground mt-1 text-xs underline"
                     >
                         Insert inline
                     </button>
@@ -192,7 +192,7 @@ function UploadItem({
             <button
                 type="button"
                 onClick={() => onRemove(id)}
-                className="shrink-0 rounded-full p-1 text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/80"
+                className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/80 shrink-0 rounded-full p-1 transition-colors"
                 aria-label="Remove file"
                 data-tooltip-id="tip"
                 data-tooltip-content="Remove"

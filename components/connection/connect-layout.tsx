@@ -163,7 +163,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                         Two rows on mobile, single row on desktop.
                         Uses subtle separator instead of heavy border.
                     ═══════════════════════════════════════════════════════════ */}
-                    <header className="landscape-compact-header relative z-10 shrink-0 space-y-3 border-b border-foreground/5 bg-white/60 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl dark:bg-card/60 sm:space-y-0 sm:px-5 sm:pb-4 sm:pt-4">
+                    <header className="landscape-compact-header border-foreground/5 dark:bg-card/60 relative z-10 shrink-0 space-y-3 border-b bg-white/60 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-2xl sm:space-y-0 sm:px-5 sm:pt-4 sm:pb-4">
                         {/* Row 1: Oracle | (desktop: ConnectionChooser) | (mobile: New) | Avatar */}
                         <div className="flex items-center justify-between">
                             {/* Oracle with whisper - Carmenta speaks */}
@@ -200,7 +200,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                                     <button
                                         onClick={createNewConnection}
                                         disabled={isPending}
-                                        className="flex h-8 items-center gap-1.5 rounded-full bg-primary/15 px-3 text-sm font-medium text-primary transition-all hover:bg-primary/25 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="bg-primary/15 text-primary hover:bg-primary/25 flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                         aria-label="New connection"
                                     >
                                         {isPending ? (

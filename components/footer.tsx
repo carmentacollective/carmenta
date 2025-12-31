@@ -76,7 +76,7 @@ function ThemePopover() {
     if (!isClient) {
         return (
             <button
-                className="flex h-8 w-8 items-center justify-center rounded-full text-foreground/60"
+                className="text-foreground/60 flex h-8 w-8 items-center justify-center rounded-full"
                 aria-label="Theme settings"
             >
                 <Palette className="h-4 w-4" />
@@ -95,10 +95,10 @@ function ThemePopover() {
                 data-tooltip-content="Appearance"
             >
                 <div className="relative">
-                    <Palette className="h-5 w-5 text-foreground/60 transition-colors group-hover:text-foreground/90" />
+                    <Palette className="text-foreground/60 group-hover:text-foreground/90 h-5 w-5 transition-colors" />
                     {/* Small color indicator dot */}
                     <div
-                        className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-background"
+                        className="ring-background absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full ring-1"
                         style={{ backgroundColor: currentColor }}
                     />
                 </div>
@@ -109,7 +109,7 @@ function ThemePopover() {
                     <>
                         {/* Backdrop */}
                         <motion.div
-                            className="fixed inset-0 z-backdrop"
+                            className="z-backdrop fixed inset-0"
                             onClick={() => setIsOpen(false)}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -119,7 +119,7 @@ function ThemePopover() {
 
                         {/* Popover - positioned above the trigger */}
                         <motion.div
-                            className="absolute bottom-full right-0 z-modal mb-2"
+                            className="z-modal absolute right-0 bottom-full mb-2"
                             initial={{ opacity: 0, y: 8, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98 }}
@@ -131,10 +131,10 @@ function ThemePopover() {
                             <div className="glass-container w-56 overflow-hidden rounded-xl p-3 shadow-xl">
                                 {/* Light/Dark/System toggle */}
                                 <div className="mb-3">
-                                    <div className="mb-2 text-xs font-medium text-foreground/50">
+                                    <div className="text-foreground/50 mb-2 text-xs font-medium">
                                         Mode
                                     </div>
-                                    <div className="flex rounded-lg bg-foreground/5 p-0.5">
+                                    <div className="bg-foreground/5 flex rounded-lg p-0.5">
                                         {THEME_OPTIONS.map((option) => {
                                             const isSelected = theme === option.value;
                                             const Icon = option.icon;
@@ -161,7 +161,7 @@ function ThemePopover() {
 
                                 {/* Color swatches */}
                                 <div>
-                                    <div className="mb-2 text-xs font-medium text-foreground/50">
+                                    <div className="text-foreground/50 mb-2 text-xs font-medium">
                                         Palette
                                     </div>
                                     <div
@@ -186,7 +186,7 @@ function ThemePopover() {
                                                     className={cn(
                                                         "h-7 w-7 rounded-full transition-all",
                                                         isCommitted
-                                                            ? "ring-2 ring-foreground/60 ring-offset-2 ring-offset-background"
+                                                            ? "ring-foreground/60 ring-offset-background ring-2 ring-offset-2"
                                                             : "opacity-70 hover:scale-110 hover:opacity-100"
                                                     )}
                                                     style={{
@@ -214,18 +214,18 @@ export function Footer() {
         <footer className="px-6 py-8 sm:py-10">
             <div className="mx-auto flex max-w-5xl flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
                 {/* Links - grouped for visual hierarchy */}
-                <nav className="flex flex-wrap items-center gap-x-8 gap-y-4 text-sm text-foreground/60">
+                <nav className="text-foreground/60 flex flex-wrap items-center gap-x-8 gap-y-4 text-sm">
                     {/* Primary links with icons */}
                     <Link
                         href="/heart-centered-ai"
-                        className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
                     >
-                        <Heart className="h-4 w-4 fill-primary text-primary" />
+                        <Heart className="fill-primary text-primary h-4 w-4" />
                         <span>Heart-Centered AI</span>
                     </Link>
                     <Link
                         href="/ai-first-development"
-                        className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
                     >
                         <Code2 className="h-4 w-4" />
                         <span>How We Build</span>
@@ -234,7 +234,7 @@ export function Footer() {
                         href="https://github.com/carmentacollective/carmenta"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
                     >
                         <Github className="h-4 w-4" />
                         <span>Source</span>
@@ -243,19 +243,19 @@ export function Footer() {
                     {/* Secondary links - legal */}
                     <Link
                         href="/privacy"
-                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 transition-all hover:scale-105"
                     >
                         Privacy
                     </Link>
                     <Link
                         href="/terms"
-                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 transition-all hover:scale-105"
                     >
                         Terms
                     </Link>
                     <Link
                         href="/security"
-                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 transition-all hover:scale-105"
                     >
                         Security
                     </Link>
@@ -265,15 +265,15 @@ export function Footer() {
                 </nav>
 
                 {/* Credits */}
-                <div className="text-sm text-foreground/60">
+                <div className="text-foreground/60 text-sm">
                     <span>Built with </span>
-                    <Heart className="inline h-3.5 w-3.5 fill-primary text-primary" />
+                    <Heart className="fill-primary text-primary inline h-3.5 w-3.5" />
                     <span> by </span>
                     <Link
                         href="https://technick.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="transition-all hover:scale-105 hover:text-foreground/90"
+                        className="hover:text-foreground/90 transition-all hover:scale-105"
                     >
                         technick.ai
                     </Link>
