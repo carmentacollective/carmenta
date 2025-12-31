@@ -19,7 +19,7 @@ product.
 
 ## The Decision
 
-**Clerk + Supabase Architecture**
+**Clerk + Render Architecture**
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -32,22 +32,28 @@ product.
 │    - User profiles                          │
 │    - Status: Integrated ✅                  │
 │                                             │
-│ 2. Database:        Supabase Postgres       │
+│ 2. Hosting:         Render                  │
+│    - Next.js web service                    │
+│    - Persistent disk for Claude Code        │
+│    - No serverless timeouts                 │
+│    - Background workers available           │
+│                                             │
+│ 3. Database:        Render PostgreSQL       │
 │    - Conversations & messages               │
 │    - Memory (profile, facts, preferences)   │
 │    - Knowledge base (ltree + FTS)           │
 │    - Encrypted credentials (OAuth + API)    │
 │    - File metadata                          │
 │    - ORM: Drizzle                           │
-│    - Admin: Supabase Studio                 │
+│    - Admin: Drizzle Studio                  │
 │                                             │
-│ 3. File Storage:    Supabase Storage        │
+│ 4. File Storage:    Supabase Storage        │
 │    - User uploads (PDFs, images, audio)     │
 │    - Processed artifacts                    │
 │    - CDN delivery (Cloudflare)              │
 │    - Image transformations (on-the-fly)     │
 │                                             │
-│ 4. Service OAuth:   In-House                │
+│ 5. Service OAuth:   In-House                │
 │    - Custom OAuth flows per provider        │
 │    - Token storage (encrypted in Postgres)  │
 │    - Automatic token refresh                │
@@ -77,32 +83,38 @@ product.
 - **Supabase Auth**: Good, but Clerk's DX is better for our stage
 - **Custom**: Months of work for commodity functionality
 
-### Why Supabase for Database
+### Why Render for Hosting + Database
 
-**Decision**: Supabase Postgres (with Drizzle ORM)
+**Decision**: Render for both hosting and PostgreSQL
 
-**Why**:
+**Why Render (not Vercel)**:
 
-- ✅ **Supabase Studio** = Django admin equivalent (visual table editor, SQL runner)
-- ✅ **ltree extension** ready for knowledge base hierarchy (from
-  knowledge-base-storage.md decision)
-- ✅ **pgvector** ready for Phase 2 memory embeddings
-- ✅ **Includes file storage** (one vendor, one bill)
-- ✅ **Free tier** to start (500MB DB, 1GB storage)
-- ✅ **Drizzle works perfectly** (type-safe, lightweight ORM we want)
+We initially used Vercel for its excellent Next.js DX. However, Carmenta's workloads
+outgrew serverless constraints:
 
-**vs. Alternatives**:
+- ❌ Vercel 300s timeout incompatible with deep research (10-30 min)
+- ❌ Vercel has no filesystem for Claude Code execution
+- ❌ Vercel requires step gymnastics for Inngest long-running tasks
+- ✅ Render has persistent compute with no timeouts
+- ✅ Render has persistent disk for Claude Code workspaces
+- ✅ Render PostgreSQL on same platform = simpler architecture
+- ✅ Drizzle Studio for admin (replaces Supabase Studio)
 
-- **Neon**: Great product, but no built-in admin UI or file storage
-- **Vercel Postgres**: More expensive than Neon directly, tied to Vercel
-- **Railway**: Good, but less features than Supabase
-- **Render**: No free tier for databases
+**Why Render PostgreSQL (not Supabase)**:
 
-**Schema Foundation** (from mcp-hubby patterns + Vercel ai-chatbot + our requirements):
+- ✅ **Same platform** as hosting = simpler ops, one dashboard
+- ✅ **No cross-platform latency** between app and database
+- ✅ **ltree extension** available for knowledge base hierarchy
+- ✅ **pgvector** available for Phase 2 memory embeddings
+- ✅ **Drizzle Studio** for admin (`pnpm db:studio`)
+
+**File storage stays on Supabase** - image transformations and CDN still valuable.
+
+**Schema Foundation**:
 
 - Users (extends Clerk data)
 - Conversations & Messages (chat foundation)
-- Service Connections (Nango integration metadata)
+- Service Connections (OAuth integration metadata)
 - Documents (knowledge base with ltree paths)
 - Files (attachment metadata + processing status)
 - Memory (profile facts, eventual embeddings)

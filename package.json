@@ -24,7 +24,7 @@
     "analyze": "next experimental-analyze",
     "analyze:webpack": "ANALYZE=true next build --webpack",
     "build": "next build",
-    "vercel-build": "bash ./scripts/vercel-deploy.sh",
+    "render-build": "bash ./scripts/render-deploy.sh",
     "dev": "next dev --turbopack",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev --turbopack",
     "dev:inngest": "npx inngest-cli@latest dev",

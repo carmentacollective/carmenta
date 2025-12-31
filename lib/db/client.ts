@@ -9,9 +9,8 @@
  * without going through the barrel file.
  *
  * Environment:
- * - POSTGRES_URL: Vercel Postgres connection string (preferred)
- * - DATABASE_URL: PostgreSQL connection string (fallback)
- * - Defaults to localhost:5432/carmenta for Mac Homebrew PostgreSQL
+ * - DATABASE_URL: PostgreSQL connection string (Render PostgreSQL in production)
+ * - Defaults to localhost:5432/carmenta for local development
  */
 
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -21,10 +20,9 @@ import { env } from "@/lib/env";
 import * as schema from "./schema";
 
 /**
- * Database connection string.
- * Prefers Vercel's POSTGRES_URL (auto-injected), falls back to DATABASE_URL.
+ * Database connection string from environment.
  */
-const connectionString = process.env.POSTGRES_URL ?? env.DATABASE_URL;
+const connectionString = env.DATABASE_URL;
 
 /**
  * PostgreSQL client instance.
