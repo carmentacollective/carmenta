@@ -69,20 +69,28 @@ export function sanitizeRepoName(name: string): string {
 
 /**
  * Build the directory name for a workspace
- * Format: {owner}_{repo} with sanitized names
+ * Format: {owner}__{repo} with sanitized names
+ * Uses double underscore to prevent collisions (e.g., "a/b_c" vs "a_b/c")
  */
 export function buildWorkspaceDirName(owner: string, repo: string): string {
-    return `${sanitizeRepoName(owner)}_${sanitizeRepoName(repo)}`;
+    return `${sanitizeRepoName(owner)}__${sanitizeRepoName(repo)}`;
 }
 
 /**
  * Build the full filesystem path for a workspace
+ * Validates userId is a UUID to prevent path traversal
  */
 export function buildWorkspacePath(
     userId: string,
     owner: string,
     repo: string
 ): string {
+    // Validate userId is a valid UUID (defense in depth)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+        throw new Error(`Invalid userId format: ${userId}`);
+    }
+
     const workspacesDir = getWorkspacesDir();
     const dirName = buildWorkspaceDirName(owner, repo);
     return path.join(workspacesDir, userId, dirName);

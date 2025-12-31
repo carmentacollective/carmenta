@@ -8,14 +8,15 @@ How we handle multi-user workspaces for code mode on Render.
 /data/                              # Render persistent disk (10GB)
   workspaces/
     {userId}/                       # User-isolated directory (database UUID)
-      {owner}_{repo}/              # Repository workspace
+      {owner}__{repo}/             # Repository workspace (double underscore separator)
         .git/
         .workspace.json            # Metadata
         ...project files...
 ```
 
-Each user gets complete isolation via their database UUID. The `owner_repo` format uses
-sanitized names (alphanumeric, dash, underscore only) to prevent path traversal.
+Each user gets complete isolation via their database UUID. The `owner__repo` format uses
+sanitized names (alphanumeric, dash, underscore only) with double underscore separator
+to prevent path traversal and directory name collisions.
 
 ## Two Operating Modes
 
