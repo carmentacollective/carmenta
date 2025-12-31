@@ -34,11 +34,13 @@ if (openRouterKey) {
             "X-Title": "Carmenta Evals",
         },
     });
-    initAutoevals({ client });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initAutoevals({ client: client as any });
 } else if (openAiKey) {
     // Fall back to OpenAI directly
     const client = new OpenAI({ apiKey: openAiKey });
-    initAutoevals({ client });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initAutoevals({ client: client as any });
 }
 
 interface AutoevalScorerArgs {
@@ -125,11 +127,14 @@ Evaluate the title on these criteria:
 
 Rate the title quality:`,
     choiceScores: {
-        Excellent:
-            "The title is concise, topic-focused, specific, and avoids generic phrases. Perfect for finding this conversation later.",
-        Good: "The title meets most criteria but could be slightly improved in one area.",
-        Acceptable: "The title is functional but generic or could be more specific.",
-        Poor: "The title is too generic, too long, question-formatted, or doesn't capture the topic.",
+        // Excellent: concise, topic-focused, specific, avoids generic phrases
+        Excellent: 1.0,
+        // Good: meets most criteria, minor room for improvement
+        Good: 0.75,
+        // Acceptable: functional but generic or could be more specific
+        Acceptable: 0.5,
+        // Poor: too generic, too long, question-formatted, or misses topic
+        Poor: 0.25,
     },
     model: "gpt-4o-mini",
     useCoT: false,
@@ -153,10 +158,11 @@ export async function LLMTitleQualityScorer({
     }
 
     try {
+        // Type assertion needed due to autoevals type definitions
         const result = await TitleQualityLLM({
             input: input.userMessage.slice(0, 500),
             output: output.title,
-        });
+        } as Parameters<typeof TitleQualityLLM>[0]);
 
         return {
             name: "LLM Title Quality",
