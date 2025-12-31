@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { all, create } from "mathjs";
 import { z } from "zod";
 
+import { env } from "@/lib/env";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
@@ -252,7 +253,7 @@ export const builtInTools = {
                 .describe("Maximum number of GIFs to return (default: 10, max: 50)"),
         }),
         execute: async ({ action, query, tag, limit = 10 }) => {
-            const apiKey = process.env.GIPHY_API_KEY;
+            const apiKey = env.GIPHY_API_KEY;
             if (!apiKey) {
                 logger.error(
                     { tool: "giphy" },
@@ -412,8 +413,8 @@ export const builtInTools = {
                     }
 
                     case "create_meme": {
-                        const username = process.env.IMGFLIP_USERNAME;
-                        const password = process.env.IMGFLIP_PASSWORD;
+                        const username = env.IMGFLIP_USERNAME;
+                        const password = env.IMGFLIP_PASSWORD;
 
                         if (!username || !password) {
                             logger.error(
