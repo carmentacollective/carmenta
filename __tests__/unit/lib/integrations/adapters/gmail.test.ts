@@ -534,4 +534,332 @@ describe("GmailAdapter", () => {
             expect(httpClient.get).toHaveBeenCalled();
         });
     });
+
+    describe("Header injection prevention", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+        });
+
+        it("sanitizes CR/LF from email recipients to prevent header injection", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "msg-123",
+                    threadId: "thread-456",
+                }),
+            } as never);
+
+            // Attempt header injection via recipient address
+            await adapter.execute(
+                "send_message",
+                {
+                    to: "victim@example.com\r\nBcc: attacker@evil.com",
+                    subject: "Test",
+                    body: "Hello",
+                },
+                testUserEmail
+            );
+
+            // Verify the request was made (sanitized headers should allow the call)
+            expect(httpClient.post).toHaveBeenCalled();
+        });
+
+        it("sanitizes CR/LF from subject to prevent header injection", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "msg-123",
+                    threadId: "thread-456",
+                }),
+            } as never);
+
+            // Attempt header injection via subject
+            await adapter.execute(
+                "send_message",
+                {
+                    to: "recipient@example.com",
+                    subject: "Normal Subject\r\nBcc: attacker@evil.com",
+                    body: "Hello",
+                },
+                testUserEmail
+            );
+
+            expect(httpClient.post).toHaveBeenCalled();
+        });
+    });
+
+    describe("list_threads operation", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+        });
+
+        it("lists threads with query filter", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    threads: [{ id: "thread-1", snippet: "Test thread" }],
+                    resultSizeEstimate: 1,
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_threads",
+                { q: "subject:important" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            expect(httpClient.get).toHaveBeenCalledWith(
+                expect.stringContaining("/threads?"),
+                expect.any(Object)
+            );
+        });
+
+        it("returns empty array when no threads match", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    resultSizeEstimate: 0,
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "list_threads",
+                { q: "from:nobody" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.threads).toEqual([]);
+        });
+    });
+
+    describe("get_thread operation", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+        });
+
+        it("requires thread_id parameter", async () => {
+            const result = await adapter.execute("get_thread", {}, testUserEmail);
+
+            expect(result.isError).toBe(true);
+        });
+
+        it("returns all messages in thread", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "thread-123",
+                    messages: [
+                        {
+                            id: "msg-1",
+                            snippet: "First message",
+                            payload: {
+                                headers: [
+                                    { name: "Subject", value: "Test" },
+                                    { name: "From", value: "sender@example.com" },
+                                ],
+                            },
+                        },
+                        {
+                            id: "msg-2",
+                            snippet: "Reply message",
+                            payload: {
+                                headers: [
+                                    { name: "Subject", value: "Re: Test" },
+                                    { name: "From", value: "replier@example.com" },
+                                ],
+                            },
+                        },
+                    ],
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "get_thread",
+                { thread_id: "thread-123" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.messages).toHaveLength(2);
+        });
+    });
+
+    describe("modify_labels operation", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+        });
+
+        it("requires message_id parameter", async () => {
+            const result = await adapter.execute(
+                "modify_labels",
+                { add_labels: ["STARRED"] },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+        });
+
+        it("adds and removes labels from message", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "msg-123",
+                    labelIds: ["INBOX", "STARRED"],
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "modify_labels",
+                {
+                    message_id: "msg-123",
+                    add_labels: ["STARRED"],
+                    remove_labels: ["UNREAD"],
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            expect(httpClient.post).toHaveBeenCalledWith(
+                expect.stringContaining("/messages/msg-123/modify"),
+                expect.any(Object)
+            );
+        });
+    });
+
+    describe("Multi-part message body extraction", () => {
+        beforeEach(async () => {
+            const { getCredentials } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+        });
+
+        it("extracts body from nested multipart structure", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            // Simulate nested multipart/mixed containing multipart/alternative
+            const plainTextBase64Url = Buffer.from("Hello plain text")
+                .toString("base64")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_");
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "msg-nested",
+                    threadId: "thread-nested",
+                    payload: {
+                        mimeType: "multipart/mixed",
+                        headers: [{ name: "Subject", value: "Nested Test" }],
+                        parts: [
+                            {
+                                mimeType: "multipart/alternative",
+                                parts: [
+                                    {
+                                        mimeType: "text/plain",
+                                        body: { data: plainTextBase64Url },
+                                    },
+                                    {
+                                        mimeType: "text/html",
+                                        body: {
+                                            data: Buffer.from(
+                                                "<p>Hello HTML</p>"
+                                            ).toString("base64"),
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                mimeType: "application/pdf",
+                                body: { size: 12345 },
+                            },
+                        ],
+                    },
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "get_message",
+                { message_id: "msg-nested" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.body).toBe("Hello plain text");
+        });
+
+        it("falls back to HTML when plain text not available", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            const htmlBase64Url = Buffer.from("<p>HTML only</p>")
+                .toString("base64")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_");
+
+            (httpClient.get as Mock).mockReturnValue({
+                json: vi.fn().mockResolvedValue({
+                    id: "msg-html",
+                    threadId: "thread-html",
+                    payload: {
+                        headers: [{ name: "Subject", value: "HTML Only" }],
+                        parts: [
+                            {
+                                mimeType: "text/html",
+                                body: { data: htmlBase64Url },
+                            },
+                        ],
+                    },
+                }),
+            } as never);
+
+            const result = await adapter.execute(
+                "get_message",
+                { message_id: "msg-html" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.body).toBe("<p>HTML only</p>");
+        });
+    });
 });

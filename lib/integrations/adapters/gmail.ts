@@ -28,6 +28,23 @@ function encodeEmail(email: string): string {
         .replace(/=+$/, "");
 }
 
+/**
+ * Decode base64url data from Gmail API.
+ * Gmail uses URL-safe base64 (with - and _ instead of + and /).
+ */
+function decodeBase64Url(data: string): string {
+    const base64 = data.replace(/-/g, "+").replace(/_/g, "/");
+    return Buffer.from(base64, "base64").toString("utf-8");
+}
+
+/**
+ * Sanitize email header value to prevent header injection attacks.
+ * Removes CR, LF, and null bytes that could be used to inject additional headers.
+ */
+function sanitizeHeader(value: string): string {
+    return value.replace(/[\r\n\x00]/g, "");
+}
+
 /** Build RFC 2822 email from parameters */
 function buildRfc2822Email(params: {
     to: string;
@@ -42,13 +59,16 @@ function buildRfc2822Email(params: {
 }): string {
     const lines: string[] = [];
 
-    lines.push(`To: ${params.to}`);
-    if (params.cc) lines.push(`Cc: ${params.cc}`);
-    if (params.bcc) lines.push(`Bcc: ${params.bcc}`);
-    lines.push(`Subject: ${params.subject}`);
-    if (params.replyTo) lines.push(`Reply-To: ${params.replyTo}`);
-    if (params.inReplyTo) lines.push(`In-Reply-To: ${params.inReplyTo}`);
-    if (params.references) lines.push(`References: ${params.references}`);
+    // Sanitize all header values to prevent header injection attacks
+    lines.push(`To: ${sanitizeHeader(params.to)}`);
+    if (params.cc) lines.push(`Cc: ${sanitizeHeader(params.cc)}`);
+    if (params.bcc) lines.push(`Bcc: ${sanitizeHeader(params.bcc)}`);
+    lines.push(`Subject: ${sanitizeHeader(params.subject)}`);
+    if (params.replyTo) lines.push(`Reply-To: ${sanitizeHeader(params.replyTo)}`);
+    if (params.inReplyTo)
+        lines.push(`In-Reply-To: ${sanitizeHeader(params.inReplyTo)}`);
+    if (params.references)
+        lines.push(`References: ${sanitizeHeader(params.references)}`);
 
     if (params.isHtml) {
         lines.push("Content-Type: text/html; charset=utf-8");
@@ -62,6 +82,13 @@ function buildRfc2822Email(params: {
     return lines.join("\r\n");
 }
 
+/** Gmail message part - can be nested for multipart emails */
+interface GmailPart {
+    mimeType: string;
+    body?: { data?: string; size?: number };
+    parts?: GmailPart[]; // Nested parts for multipart messages
+}
+
 /** Gmail message format from API */
 interface GmailMessage {
     id: string;
@@ -71,12 +98,45 @@ interface GmailMessage {
     payload?: {
         headers?: Array<{ name: string; value: string }>;
         body?: { data?: string; size?: number };
-        parts?: Array<{
-            mimeType: string;
-            body?: { data?: string; size?: number };
-        }>;
+        parts?: GmailPart[];
+        mimeType?: string;
     };
     internalDate?: string;
+}
+
+/**
+ * Recursively extract body content from MIME parts.
+ * Prefers text/plain, falls back to text/html.
+ * Handles nested multipart structures (multipart/alternative inside multipart/mixed, etc.).
+ */
+function extractBodyFromParts(parts: GmailPart[] | undefined): string | undefined {
+    if (!parts) return undefined;
+
+    // First pass: look for text/plain
+    for (const part of parts) {
+        if (part.mimeType === "text/plain" && part.body?.data) {
+            return decodeBase64Url(part.body.data);
+        }
+        // Recurse into nested parts
+        if (part.parts) {
+            const nested = extractBodyFromParts(part.parts);
+            if (nested) return nested;
+        }
+    }
+
+    // Second pass: fallback to text/html
+    for (const part of parts) {
+        if (part.mimeType === "text/html" && part.body?.data) {
+            return decodeBase64Url(part.body.data);
+        }
+        // Recurse into nested parts
+        if (part.parts) {
+            const nested = extractBodyFromParts(part.parts);
+            if (nested) return nested;
+        }
+    }
+
+    return undefined;
 }
 
 /** Gmail thread format from API */
@@ -627,28 +687,17 @@ export class GmailAdapter extends ServiceAdapter {
         const getHeader = (name: string) =>
             headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
 
-        // Extract body content
+        // Extract body content using proper base64url decoding
+        // Gmail API returns body data in base64url format (with - and _ instead of + and /)
         let bodyContent = "";
         try {
             if (response.payload?.body?.data) {
-                bodyContent = Buffer.from(
-                    response.payload.body.data,
-                    "base64"
-                ).toString("utf-8");
+                // Single-part message with body directly in payload
+                bodyContent = decodeBase64Url(response.payload.body.data);
             } else if (response.payload?.parts) {
-                // Multi-part message - prefer text/plain, fallback to text/html
-                const textPart = response.payload.parts.find(
-                    (p) => p.mimeType === "text/plain"
-                );
-                const htmlPart = response.payload.parts.find(
-                    (p) => p.mimeType === "text/html"
-                );
-                const part = textPart ?? htmlPart;
-                if (part?.body?.data) {
-                    bodyContent = Buffer.from(part.body.data, "base64").toString(
-                        "utf-8"
-                    );
-                }
+                // Multi-part message - recursively search for text content
+                // Handles nested structures like multipart/alternative inside multipart/mixed
+                bodyContent = extractBodyFromParts(response.payload.parts) ?? "";
             }
         } catch (error) {
             logger.warn(
