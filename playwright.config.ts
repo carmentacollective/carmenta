@@ -39,15 +39,9 @@ export default defineConfig({
     },
 
     projects: [
-        // Global setup initializes Clerk testing token
-        {
-            name: "setup",
-            testMatch: /global\.setup\.ts/,
-        },
         {
             name: "chromium",
             use: { ...devices["Desktop Chrome"] },
-            dependencies: ["setup"],
         },
     ],
 
