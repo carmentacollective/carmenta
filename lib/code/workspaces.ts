@@ -239,11 +239,12 @@ export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
                 });
             } else {
                 // Workspace without metadata - try to infer from directory name
-                const [owner, ...repoParts] = entry.name.split("_");
-                const repo = repoParts.join("_");
+                // Uses __ as separator (matches buildWorkspaceDirName)
+                const [owner, ...repoParts] = entry.name.split("__");
+                const repo = repoParts.join("__");
                 workspaces.push({
-                    owner: owner ?? "unknown",
-                    repo: repo ?? entry.name,
+                    owner: owner || "unknown",
+                    repo: repo || entry.name,
                     fullName: `${owner}/${repo}`,
                     defaultBranch: "main",
                     lastAccessedAt: new Date().toISOString(),
@@ -370,6 +371,7 @@ export async function deleteWorkspace(
 /**
  * Check if workspace has uncommitted changes
  * Uses execFile to prevent command injection
+ * Returns true on error to preserve potentially modified workspaces during cleanup
  */
 export async function hasUncommittedChanges(workspacePath: string): Promise<boolean> {
     try {
@@ -381,7 +383,8 @@ export async function hasUncommittedChanges(workspacePath: string): Promise<bool
         ]);
         return stdout.trim().length > 0;
     } catch {
-        return false;
+        // Return true on error to be safe - don't delete workspaces we can't verify
+        return true;
     }
 }
 
