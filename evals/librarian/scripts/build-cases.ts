@@ -507,9 +507,8 @@ ${allCases
         const contentPatterns = (c.expected as any).contentPatterns
             ?.map((p: string | RegExp) => {
                 if (p instanceof RegExp) return p.toString();
-                // Escape special chars and wrap as regex
-                const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                return `/${escaped}/i`;
+                // Ground truth patterns are already regex strings - wrap them directly
+                return `/${p}/i`;
             })
             .join(", ");
 

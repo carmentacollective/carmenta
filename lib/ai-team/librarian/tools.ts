@@ -95,7 +95,7 @@ export const createDocumentTool = tool({
         path: z
             .string()
             .describe(
-                "Document path in dot notation. Follow conventions: 'knowledge.people.{Name}' for people, 'knowledge.preferences.{category}' for preferences, 'knowledge.projects.{name}' for projects, 'knowledge.decisions.{topic}' for decisions."
+                "Document path in dot notation. Follow conventions: 'profile.identity' for core identity facts, 'knowledge.people.{Name}' for people, 'knowledge.preferences.{category}' for preferences, 'knowledge.projects.{name}' for projects, 'knowledge.decisions.{topic}' for decisions."
             ),
         name: z.string().describe("Human-readable document name"),
         content: z.string().describe("Document content in plain text"),

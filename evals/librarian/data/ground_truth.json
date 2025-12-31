@@ -157,7 +157,7 @@
     "extractions": [
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": ["pursuing.*career.*law", "law student", "legal.*career"],
         "reasoning": "Major career shift from pharmaceutical chemistry to law represents significant identity change"
@@ -316,7 +316,7 @@
     "extractions": [
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "pursuing.*career.*law",
@@ -717,7 +717,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "Pacific music festival",
@@ -787,7 +787,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "Pacific music festival",
@@ -807,7 +807,7 @@
     "extractions": [
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "organized.*family reunion",
@@ -985,7 +985,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
         "reasoning": "Currently actively dating and seeking genuine connections, which is relevant personal context for understanding current life phase"
@@ -1168,7 +1168,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "organiz.*family reunion",
@@ -1212,7 +1212,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
         "reasoning": "User is actively navigating dating and seeking romantic companionship - this is a current life phase/situation worth remembering"
@@ -1466,7 +1466,7 @@
       },
       {
         "path": "profile.identity",
-        "pathPattern": "knowledge\\.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "extensive travel experience",
