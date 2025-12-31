@@ -15,7 +15,11 @@
 
 import "dotenv/config";
 import { Eval } from "braintrust";
-import { competitiveQueries, type CompetitiveQuery } from "./queries";
+import {
+    competitiveQueries,
+    type CompetitiveQuery,
+    type QueryCategory,
+} from "./queries";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
@@ -498,11 +502,46 @@ function CompetitiveScorer({
 }
 
 /**
+ * Sample queries based on SAMPLE_RATE env var (0.0 - 1.0)
+ * Uses stratified sampling to maintain category distribution
+ */
+function sampleQueries(
+    queries: CompetitiveQuery[],
+    sampleRate: number
+): CompetitiveQuery[] {
+    if (sampleRate >= 1.0) return queries;
+    if (sampleRate <= 0) return [];
+
+    // Group by category for stratified sampling
+    const byCategory = new Map<QueryCategory, CompetitiveQuery[]>();
+    for (const q of queries) {
+        if (!byCategory.has(q.category)) byCategory.set(q.category, []);
+        byCategory.get(q.category)!.push(q);
+    }
+
+    // Sample proportionally from each category
+    const sampled: CompetitiveQuery[] = [];
+    for (const [_category, items] of byCategory) {
+        const sampleCount = Math.max(1, Math.ceil(items.length * sampleRate));
+        sampled.push(...items.slice(0, sampleCount));
+    }
+
+    console.log(
+        `📊 Sampling ${sampled.length}/${queries.length} queries (${(sampleRate * 100).toFixed(0)}%)`
+    );
+    return sampled;
+}
+
+// Configuration for sampling
+const SAMPLE_RATE = parseFloat(process.env.SAMPLE_RATE ?? "1.0");
+
+/**
  * Run the competitive benchmark eval
  */
 Eval("Carmenta Competitive Benchmark", {
-    data: () =>
-        competitiveQueries.map((q) => ({
+    data: () => {
+        const sampled = sampleQueries(competitiveQueries, SAMPLE_RATE);
+        return sampled.map((q) => ({
             input: q,
             expected: {}, // No expected output - we're measuring quality
             tags: [q.category, q.difficulty, ...q.tags],
@@ -512,7 +551,8 @@ Eval("Carmenta Competitive Benchmark", {
                 difficulty: q.difficulty,
                 rationale: q.rationale,
             },
-        })),
+        }));
+    },
 
     task: async (input: CompetitiveQuery): Promise<CompetitiveOutput> => {
         return executeQuery(input);
