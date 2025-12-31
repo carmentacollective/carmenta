@@ -97,7 +97,7 @@ const ADVERSARIAL_CASES = [
         ],
         existingKB: [
             {
-                path: "knowledge.identity",
+                path: "profile.identity",
                 name: "Who I Am",
                 content: "Lives in Austin, Texas. Software engineer.",
             },
@@ -160,17 +160,17 @@ const ADVERSARIAL_CASES = [
         ],
         existingKB: [
             {
-                path: "knowledge.identity",
+                path: "profile.identity",
                 name: "Who I Am",
                 content: "Lives in Austin, Texas.",
             },
         ],
         expected: {
             shouldSave: true,
-            expectedPath: /^knowledge\.identity$/,
+            expectedPath: /^profile\.identity$/,
             expectedAction: "update" as const,
             contentPatterns: [/san francisco/i],
-            updateTarget: "knowledge.identity",
+            updateTarget: "profile.identity",
         },
         tags: ["adversarial", "edge-cases", "conflict"],
     },

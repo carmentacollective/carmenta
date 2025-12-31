@@ -156,7 +156,7 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "update",
         "contentPatterns": ["pursuing.*career.*law", "law student", "legal.*career"],
@@ -315,7 +315,7 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "update",
         "contentPatterns": [
@@ -716,7 +716,7 @@
         "reasoning": "A distinct project/activity that became integral to his social gatherings and deepened his understanding of music's emotional impact"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "update",
         "contentPatterns": [
@@ -786,7 +786,7 @@
         "reasoning": "Shows deep appreciation for live music and blending cultural heritage into his musical interests"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "update",
         "contentPatterns": [
@@ -806,7 +806,7 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "append",
         "contentPatterns": [
@@ -984,7 +984,7 @@
         "reasoning": "Shows consistent pattern of engaging in creative and social activities like storytelling workshops, comedy shows, and hosting intimate dinner parties"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
@@ -1167,7 +1167,7 @@
         "reasoning": "Shows consistent pattern of valuing and actively organizing family bonding activities - this represents a durable personal preference and behavioral pattern"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "append",
         "contentPatterns": [
@@ -1211,7 +1211,7 @@
         "reasoning": "User actively seeks out comedy shows and storytelling workshops as venues for social connection - reveals preferences for these types of social activities"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
@@ -1465,7 +1465,7 @@
         "reasoning": "Active travel planning project with specific upcoming Italy trip and systematic approach to future travel"
       },
       {
-        "path": "knowledge.identity",
+        "path": "profile.identity",
         "pathPattern": "knowledge\\.identity",
         "action": "append",
         "contentPatterns": [
