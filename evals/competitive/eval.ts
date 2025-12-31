@@ -521,7 +521,7 @@ function sampleQueries(
 
     // Sample proportionally from each category
     const sampled: CompetitiveQuery[] = [];
-    for (const [category, items] of byCategory) {
+    for (const [_category, items] of byCategory) {
         const sampleCount = Math.max(1, Math.ceil(items.length * sampleRate));
         sampled.push(...items.slice(0, sampleCount));
     }

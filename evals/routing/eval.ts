@@ -274,15 +274,10 @@ function sampleTestData<T extends { input: { category: string } }>(
 
     // Sample proportionally from each category
     const sampled: T[] = [];
-    for (const [category, items] of byCategory) {
+    for (const [_category, items] of byCategory) {
         const sampleCount = Math.max(1, Math.ceil(items.length * sampleRate));
-        // Deterministic shuffle using category name as seed
-        const shuffled = items.slice().sort((a, b) => {
-            const hashA = `${category}-${a.input.category}`.length;
-            const hashB = `${category}-${b.input.category}`.length;
-            return hashA - hashB;
-        });
-        sampled.push(...shuffled.slice(0, sampleCount));
+        // Take first N items from each category (maintains original order for consistency)
+        sampled.push(...items.slice(0, sampleCount));
     }
 
     console.log(
