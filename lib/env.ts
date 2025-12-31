@@ -64,6 +64,11 @@ export const env = createEnv({
         // PostgreSQL connection string
         // Defaults to Mac Homebrew PostgreSQL localhost
         DATABASE_URL: z.string().url().default("postgresql://localhost:5432/carmenta"),
+        // Giphy API key for GIF search tool
+        GIPHY_API_KEY: z.string().min(1).optional(),
+        // Imgflip credentials for meme generation tool
+        IMGFLIP_USERNAME: z.string().min(1).optional(),
+        IMGFLIP_PASSWORD: z.string().min(1).optional(),
     },
     client: {
         // App URL for generating integration URLs
@@ -78,6 +83,9 @@ export const env = createEnv({
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
         // Marker.io project ID for visual feedback widget
         NEXT_PUBLIC_MARKER_PROJECT_ID: z.string().min(1).optional(),
+        // PostHog analytics (production-only, see instrumentation-client.ts)
+        NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
+        NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
     },
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
@@ -115,6 +123,11 @@ export const env = createEnv({
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
         NEXT_PUBLIC_MARKER_PROJECT_ID: process.env.NEXT_PUBLIC_MARKER_PROJECT_ID,
+        NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+        NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+        GIPHY_API_KEY: process.env.GIPHY_API_KEY,
+        IMGFLIP_USERNAME: process.env.IMGFLIP_USERNAME,
+        IMGFLIP_PASSWORD: process.env.IMGFLIP_PASSWORD,
     },
 
     /**
