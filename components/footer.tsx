@@ -212,9 +212,9 @@ function ThemePopover() {
 export function Footer() {
     return (
         <footer className="px-6 py-8 sm:py-10">
-            <div className="mx-auto flex max-w-5xl flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mx-auto flex max-w-5xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                 {/* Links - grouped for visual hierarchy */}
-                <nav className="text-foreground/60 flex flex-wrap items-center gap-x-8 gap-y-4 text-sm">
+                <nav className="text-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-3 text-xs sm:gap-x-8 sm:gap-y-4 sm:text-sm">
                     {/* Primary links with icons */}
                     <Link
                         href="/heart-centered-ai"
@@ -259,24 +259,24 @@ export function Footer() {
                     >
                         Security
                     </Link>
-
-                    {/* Theme controls */}
-                    <ThemePopover />
                 </nav>
 
-                {/* Credits */}
-                <div className="text-foreground/60 text-sm">
-                    <span>Built with </span>
-                    <Heart className="fill-primary text-primary inline h-3.5 w-3.5" />
-                    <span> by </span>
-                    <Link
-                        href="https://technick.ai"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-foreground/90 transition-all hover:scale-105"
-                    >
-                        technick.ai
-                    </Link>
+                {/* Credits + Theme - grouped on right */}
+                <div className="flex items-center gap-4">
+                    <ThemePopover />
+                    <div className="text-foreground/60 text-xs sm:text-sm">
+                        <span>Built with </span>
+                        <Heart className="fill-primary text-primary inline h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <span> by </span>
+                        <Link
+                            href="https://technick.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-foreground/90 transition-all hover:scale-105"
+                        >
+                            technick.ai
+                        </Link>
+                    </div>
                 </div>
             </div>
         </footer>
