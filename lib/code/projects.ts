@@ -17,7 +17,6 @@ import {
     type Workspace,
     getWorkspace,
     listUserWorkspaces,
-    touchWorkspace,
     validateWorkspacePath,
 } from "./workspaces";
 
@@ -381,9 +380,9 @@ function workspaceToProject(workspace: Workspace): Project {
         name: workspace.repo,
         path: workspace.path,
         description: workspace.fullName,
-        lastModified: new Date(workspace.lastAccessedAt),
+        lastModified: undefined,
         hasClaudeMd: false, // Will be checked on demand
-        gitBranch: workspace.currentBranch ?? workspace.defaultBranch,
+        gitBranch: undefined, // Fetched on demand if needed
     };
 }
 
@@ -445,9 +444,6 @@ export async function validateUserProject(
         return null;
     }
 
-    // Touch to update last accessed time
-    await touchWorkspace(workspace.path);
-
     return workspace.path;
 }
 
@@ -479,9 +475,6 @@ export async function validateUserProjectPath(
         return false;
     }
 
-    // Touch to update last accessed time
-    await touchWorkspace(projectPath);
-
     return true;
 }
 
@@ -512,9 +505,6 @@ export async function getUserProject(
         // No CLAUDE.md
     }
 
-    // Touch to update last accessed time
-    await touchWorkspace(workspace.path);
-
     return {
         ...workspaceToProject(workspace),
         hasClaudeMd: hasClaudeMdFile,
@@ -525,21 +515,13 @@ export async function getUserProject(
 export {
     type Workspace,
     buildWorkspacePath,
-    getWorkspace,
-    getWorkspaceMetadata,
-    getWorkspacesDir,
-    listUserWorkspaces,
-    touchWorkspace,
-    validateWorkspacePath,
-} from "./workspaces";
-
-export {
-    calculateUserDiskUsage,
-    calculateWorkspaceSize,
     deleteWorkspace,
     ensureUserWorkspaceDir,
     getCurrentBranch,
     getCurrentCommitSha,
+    getWorkspace,
+    getWorkspacesDir,
     hasUncommittedChanges,
-    updateWorkspaceMetadata,
+    listUserWorkspaces,
+    validateWorkspacePath,
 } from "./workspaces";

@@ -2,7 +2,7 @@
  * Workspace Management for Multi-User Code Mode
  *
  * Handles user-isolated workspaces on persistent disk storage.
- * Each user gets their own directory: /data/workspaces/{userId}/{owner}_{repo}/
+ * Each user gets their own directory: /data/workspaces/{userId}/{owner}__{repo}/
  *
  * Security model:
  * - Paths are always built from database-controlled values
@@ -21,32 +21,17 @@ import { logger } from "@/lib/logger";
 const execFileAsync = promisify(execFile);
 
 /**
- * Metadata stored in .workspace.json for each workspace
+ * A workspace is just a git repo in the user's directory
  */
-export interface WorkspaceMetadata {
+export interface Workspace {
     owner: string;
     repo: string;
     fullName: string;
-    defaultBranch: string;
-    currentBranch?: string;
-    lastCommitSha?: string;
-    lastAccessedAt: string;
-    lastSyncedAt?: string;
-    createdAt: string;
-    hasUncommittedChanges?: boolean;
-}
-
-/**
- * Workspace with computed properties
- */
-export interface Workspace extends WorkspaceMetadata {
     path: string;
-    sizeBytes?: number;
 }
 
 /**
  * Get the base data directory from environment
- * Falls back to /data for production, /tmp/carmenta-workspaces for dev
  */
 export function getDataDir(): string {
     return process.env.DATA_DIR ?? "/data";
@@ -77,6 +62,21 @@ export function buildWorkspaceDirName(owner: string, repo: string): string {
 }
 
 /**
+ * Parse owner and repo from directory name
+ */
+export function parseWorkspaceDirName(dirName: string): {
+    owner: string;
+    repo: string;
+} {
+    const [owner, ...repoParts] = dirName.split("__");
+    const repo = repoParts.join("__");
+    return {
+        owner: owner || "unknown",
+        repo: repo || dirName,
+    };
+}
+
+/**
  * Build the full filesystem path for a workspace
  * Validates userId is a UUID to prevent path traversal
  */
@@ -104,11 +104,9 @@ export function validateWorkspacePath(userId: string, targetPath: string): boole
     const workspacesDir = getWorkspacesDir();
     const userDir = path.join(workspacesDir, userId);
 
-    // Resolve to absolute path
     const resolvedTarget = path.resolve(targetPath);
     const resolvedUserDir = path.resolve(userDir);
 
-    // Must be within user's directory (not equal to it, and not escaping it)
     if (!resolvedTarget.startsWith(resolvedUserDir + path.sep)) {
         logger.warn(
             { targetPath: resolvedTarget, allowedBase: resolvedUserDir, userId },
@@ -142,63 +140,6 @@ export async function ensureUserWorkspaceDir(userId: string): Promise<string> {
 }
 
 /**
- * Read workspace metadata from .workspace.json
- */
-export async function getWorkspaceMetadata(
-    workspacePath: string
-): Promise<WorkspaceMetadata | null> {
-    try {
-        const metadataPath = path.join(workspacePath, ".workspace.json");
-        const content = await fs.readFile(metadataPath, "utf-8");
-        return JSON.parse(content) as WorkspaceMetadata;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Write workspace metadata to .workspace.json
- */
-export async function updateWorkspaceMetadata(
-    workspacePath: string,
-    metadata: Partial<WorkspaceMetadata>
-): Promise<void> {
-    const metadataPath = path.join(workspacePath, ".workspace.json");
-
-    // Read existing metadata or create new
-    let existing: WorkspaceMetadata | null = null;
-    try {
-        const content = await fs.readFile(metadataPath, "utf-8");
-        existing = JSON.parse(content) as WorkspaceMetadata;
-    } catch {
-        // No existing metadata
-    }
-
-    const updated: WorkspaceMetadata = {
-        ...(existing ?? {
-            owner: "",
-            repo: "",
-            fullName: "",
-            defaultBranch: "main",
-            createdAt: new Date().toISOString(),
-        }),
-        ...metadata,
-        lastAccessedAt: new Date().toISOString(),
-    } as WorkspaceMetadata;
-
-    await fs.writeFile(metadataPath, JSON.stringify(updated, null, 2));
-}
-
-/**
- * Touch workspace to update last accessed time
- */
-export async function touchWorkspace(workspacePath: string): Promise<void> {
-    await updateWorkspaceMetadata(workspacePath, {
-        lastAccessedAt: new Date().toISOString(),
-    });
-}
-
-/**
  * List all workspaces for a user
  */
 export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
@@ -221,7 +162,7 @@ export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
                 continue;
             }
 
-            // Check for .git directory (must be a git repo)
+            // Must have .git directory
             try {
                 const gitStat = await fs.stat(path.join(workspacePath, ".git"));
                 if (!gitStat.isDirectory()) {
@@ -231,41 +172,19 @@ export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
                 continue;
             }
 
-            const metadata = await getWorkspaceMetadata(workspacePath);
-            if (metadata) {
-                workspaces.push({
-                    ...metadata,
-                    path: workspacePath,
-                });
-            } else {
-                // Workspace without metadata - try to infer from directory name
-                // Uses __ as separator (matches buildWorkspaceDirName)
-                const [owner, ...repoParts] = entry.name.split("__");
-                const repo = repoParts.join("__");
-                workspaces.push({
-                    owner: owner || "unknown",
-                    repo: repo || entry.name,
-                    fullName: `${owner}/${repo}`,
-                    defaultBranch: "main",
-                    lastAccessedAt: new Date().toISOString(),
-                    createdAt: new Date().toISOString(),
-                    path: workspacePath,
-                });
-            }
+            const { owner, repo } = parseWorkspaceDirName(entry.name);
+            workspaces.push({
+                owner,
+                repo,
+                fullName: `${owner}/${repo}`,
+                path: workspacePath,
+            });
         }
     } catch (error) {
-        // User directory doesn't exist yet - that's fine
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
             logger.warn({ error, userId }, "Failed to list user workspaces");
         }
     }
-
-    // Sort by last accessed (most recent first)
-    workspaces.sort((a, b) => {
-        const aTime = new Date(a.lastAccessedAt).getTime();
-        const bTime = new Date(b.lastAccessedAt).getTime();
-        return bTime - aTime;
-    });
 
     return workspaces;
 }
@@ -280,12 +199,10 @@ export async function getWorkspace(
 ): Promise<Workspace | null> {
     const workspacePath = buildWorkspacePath(userId, owner, repo);
 
-    // Validate path is within user's directory
     if (!validateWorkspacePath(userId, workspacePath)) {
         return null;
     }
 
-    // Check directory exists and is not a symlink
     try {
         if (await isSymlink(workspacePath)) {
             logger.warn({ workspacePath }, "Workspace is a symlink - rejecting");
@@ -296,41 +213,19 @@ export async function getWorkspace(
         if (!stat.isDirectory()) {
             return null;
         }
-    } catch {
-        return null;
-    }
 
-    // Check it's a git repo
-    try {
+        // Must have .git
         await fs.stat(path.join(workspacePath, ".git"));
     } catch {
         return null;
     }
 
-    const metadata = await getWorkspaceMetadata(workspacePath);
-    return metadata ? { ...metadata, path: workspacePath } : null;
-}
-
-/**
- * Calculate disk usage for a directory using du
- * Uses execFile to prevent command injection
- */
-export async function calculateWorkspaceSize(workspacePath: string): Promise<number> {
-    try {
-        const { stdout } = await execFileAsync("du", ["-sb", workspacePath]);
-        const sizeStr = stdout.split("\t")[0];
-        return parseInt(sizeStr ?? "0", 10);
-    } catch {
-        return 0;
-    }
-}
-
-/**
- * Calculate total disk usage for a user's workspaces
- */
-export async function calculateUserDiskUsage(userId: string): Promise<number> {
-    const userDir = path.join(getWorkspacesDir(), userId);
-    return calculateWorkspaceSize(userDir);
+    return {
+        owner,
+        repo,
+        fullName: `${owner}/${repo}`,
+        path: workspacePath,
+    };
 }
 
 /**
@@ -343,7 +238,6 @@ export async function deleteWorkspace(
 ): Promise<boolean> {
     const workspacePath = buildWorkspacePath(userId, owner, repo);
 
-    // Validate path is within user's directory
     if (!validateWorkspacePath(userId, workspacePath)) {
         logger.error(
             { userId, owner, repo },
@@ -352,7 +246,6 @@ export async function deleteWorkspace(
         return false;
     }
 
-    // Check it's not a symlink
     if (await isSymlink(workspacePath)) {
         logger.error({ workspacePath }, "Attempted to delete symlink workspace");
         return false;
@@ -370,8 +263,6 @@ export async function deleteWorkspace(
 
 /**
  * Check if workspace has uncommitted changes
- * Uses execFile to prevent command injection
- * Returns true on error to preserve potentially modified workspaces during cleanup
  */
 export async function hasUncommittedChanges(workspacePath: string): Promise<boolean> {
     try {
@@ -383,14 +274,12 @@ export async function hasUncommittedChanges(workspacePath: string): Promise<bool
         ]);
         return stdout.trim().length > 0;
     } catch {
-        // Return true on error to be safe - don't delete workspaces we can't verify
-        return true;
+        return true; // Assume dirty on error to be safe
     }
 }
 
 /**
  * Get current git branch for workspace
- * Uses execFile to prevent command injection
  */
 export async function getCurrentBranch(
     workspacePath: string
@@ -411,7 +300,6 @@ export async function getCurrentBranch(
 
 /**
  * Get current commit SHA for workspace
- * Uses execFile to prevent command injection
  */
 export async function getCurrentCommitSha(
     workspacePath: string
@@ -427,142 +315,4 @@ export async function getCurrentCommitSha(
     } catch {
         return undefined;
     }
-}
-
-/**
- * Cleanup options
- */
-export interface CleanupOptions {
-    maxAgeDays: number;
-    maxSizeBytes?: number;
-    dryRun?: boolean;
-}
-
-/**
- * Cleanup result
- */
-export interface CleanupResult {
-    deleted: Array<{ owner: string; repo: string; reason: string }>;
-    skipped: Array<{ owner: string; repo: string; reason: string }>;
-    freedBytes: number;
-}
-
-/**
- * Cleanup old workspaces for a user
- */
-export async function cleanupUserWorkspaces(
-    userId: string,
-    options: CleanupOptions
-): Promise<CleanupResult> {
-    const result: CleanupResult = {
-        deleted: [],
-        skipped: [],
-        freedBytes: 0,
-    };
-
-    const workspaces = await listUserWorkspaces(userId);
-    const now = Date.now();
-    const maxAgeMs = options.maxAgeDays * 24 * 60 * 60 * 1000;
-
-    for (const workspace of workspaces) {
-        const lastAccessed = new Date(workspace.lastAccessedAt).getTime();
-
-        // Skip workspaces with invalid timestamps
-        if (Number.isNaN(lastAccessed)) {
-            result.skipped.push({
-                owner: workspace.owner,
-                repo: workspace.repo,
-                reason: "Invalid lastAccessedAt timestamp",
-            });
-            continue;
-        }
-
-        const age = now - lastAccessed;
-
-        if (age < maxAgeMs) {
-            // Not old enough to clean up
-            continue;
-        }
-
-        // Check for uncommitted changes
-        const hasChanges = await hasUncommittedChanges(workspace.path);
-        if (hasChanges) {
-            result.skipped.push({
-                owner: workspace.owner,
-                repo: workspace.repo,
-                reason: "Has uncommitted changes",
-            });
-            continue;
-        }
-
-        // Calculate size before deleting
-        const size = await calculateWorkspaceSize(workspace.path);
-
-        if (options.dryRun) {
-            result.deleted.push({
-                owner: workspace.owner,
-                repo: workspace.repo,
-                reason: `Inactive for ${Math.floor(age / (24 * 60 * 60 * 1000))} days (dry run)`,
-            });
-            result.freedBytes += size;
-        } else {
-            const deleted = await deleteWorkspace(
-                userId,
-                workspace.owner,
-                workspace.repo
-            );
-            if (deleted) {
-                result.deleted.push({
-                    owner: workspace.owner,
-                    repo: workspace.repo,
-                    reason: `Inactive for ${Math.floor(age / (24 * 60 * 60 * 1000))} days`,
-                });
-                result.freedBytes += size;
-            }
-        }
-    }
-
-    logger.info(
-        {
-            userId,
-            deleted: result.deleted.length,
-            skipped: result.skipped.length,
-            freedBytes: result.freedBytes,
-            dryRun: options.dryRun,
-        },
-        "Workspace cleanup completed"
-    );
-
-    return result;
-}
-
-/**
- * Cleanup old workspaces for all users
- */
-export async function cleanupAllWorkspaces(
-    options: CleanupOptions
-): Promise<Map<string, CleanupResult>> {
-    const results = new Map<string, CleanupResult>();
-    const workspacesDir = getWorkspacesDir();
-
-    try {
-        const entries = await fs.readdir(workspacesDir, { withFileTypes: true });
-
-        for (const entry of entries) {
-            if (!entry.isDirectory() || entry.name.startsWith(".")) {
-                continue;
-            }
-
-            // entry.name is the userId
-            const userId = entry.name;
-            const result = await cleanupUserWorkspaces(userId, options);
-            results.set(userId, result);
-        }
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-            logger.error({ error }, "Failed to cleanup workspaces");
-        }
-    }
-
-    return results;
 }
