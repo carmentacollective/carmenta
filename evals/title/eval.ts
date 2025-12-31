@@ -15,9 +15,12 @@
  *   # Filter by category:
  *   TITLE_CATEGORY=code pnpm braintrust eval evals/title/eval.ts
  *
+ *   # Enable autoevals (semantic similarity + LLM-as-judge):
+ *   ENABLE_AUTOEVALS=true pnpm braintrust eval evals/title/eval.ts
+ *
  * Requirements:
  *   - BRAINTRUST_API_KEY in .env.local
- *   - OPENROUTER_API_KEY in .env.local
+ *   - OPENROUTER_API_KEY in .env.local (also used for autoevals)
  *
  * What this evaluates:
  *   - Topic capture (does the title reflect message content?)
@@ -25,12 +28,18 @@
  *   - Length compliance (max 40 chars)
  *   - Emoji conventions (gitmoji for code context)
  *   - Latency (fast generation is important for UX)
+ *
+ * Autoevals (when enabled):
+ *   - Semantic similarity (embedding-based)
+ *   - LLM title quality (GPT-4o-mini judge)
+ *   - Gitmoji format matching (for code context)
  */
 
 import "dotenv/config";
 import { Eval } from "braintrust";
 
 import { TitleScorer } from "./scorer";
+import { AutoevalsScorer } from "./autoevals-scorers";
 import { titleTestData, type TitleTestInput, type TitleExpectations } from "./cases";
 import {
     runTitleEval,
@@ -82,6 +91,15 @@ if (categoryFilter && filteredTestData.length === 0) {
     process.exit(1);
 }
 
+// Autoevals configuration - uses OpenRouter (preferred) or OpenAI
+const ENABLE_AUTOEVALS = process.env.ENABLE_AUTOEVALS === "true";
+const hasAutoevalsKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+if (ENABLE_AUTOEVALS && !hasAutoevalsKey) {
+    console.error("⚠️  ENABLE_AUTOEVALS=true but no API key found");
+    console.error("   Autoevals need OPENROUTER_API_KEY (preferred) or OPENAI_API_KEY");
+    process.exit(1);
+}
+
 console.log(`\n🏷️  Title Generation Eval`);
 console.log(`   Testing ${modelsToTest.length} model(s):`);
 for (const model of modelsToTest) {
@@ -90,6 +108,9 @@ for (const model of modelsToTest) {
 console.log(`   Running ${filteredTestData.length} test cases`);
 if (categoryFilter) {
     console.log(`   Category filter: ${categoryFilter}`);
+}
+if (ENABLE_AUTOEVALS) {
+    console.log(`   📊 Autoevals enabled (semantic similarity + LLM judge)`);
 }
 console.log("");
 
@@ -121,7 +142,7 @@ for (const model of modelsToTest) {
                 });
             },
 
-            scores: [TitleScorer],
+            scores: ENABLE_AUTOEVALS ? [TitleScorer, AutoevalsScorer] : [TitleScorer],
 
             metadata: {
                 titleModel: model.id,
@@ -132,6 +153,7 @@ for (const model of modelsToTest) {
                 environment: process.env.NODE_ENV ?? "development",
                 testCount: filteredTestData.length,
                 categoryFilter: categoryFilter ?? "all",
+                autoevalsEnabled: ENABLE_AUTOEVALS,
             },
         }
     );

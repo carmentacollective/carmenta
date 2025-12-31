@@ -21,6 +21,9 @@ TITLE_MODEL=openai/gpt-4o-mini pnpm braintrust eval evals/title/eval.ts
 
 # Filter by category
 TITLE_CATEGORY=code pnpm braintrust eval evals/title/eval.ts
+
+# Enable autoevals (semantic similarity + LLM-as-judge)
+ENABLE_AUTOEVALS=true pnpm braintrust eval evals/title/eval.ts
 ```
 
 ## Available Models
@@ -43,11 +46,12 @@ TITLE_CATEGORY=code pnpm braintrust eval evals/title/eval.ts
 ## Requirements
 
 - `BRAINTRUST_API_KEY` in `.env.local`
-- `OPENROUTER_API_KEY` in `.env.local`
+- `OPENROUTER_API_KEY` in `.env.local` (also used for autoevals via OpenAI-compatible
+  API)
 
 ## Scoring
 
-Each test case produces multiple scores:
+### Core Scores (always enabled)
 
 | Score         | Weight | Description              |
 | ------------- | ------ | ------------------------ |
@@ -58,3 +62,15 @@ Each test case produces multiple scores:
 | Gitmoji       | 1      | Emoji for code context   |
 | Latency       | 1      | Response time            |
 | Ideal Length  | 1      | 10-30 chars is ideal     |
+
+### Autoevals Scores (ENABLE_AUTOEVALS=true)
+
+Uses Braintrust's [autoevals](https://github.com/braintrustdata/autoevals) library:
+
+| Score               | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| Semantic Similarity | Embedding-based similarity to input message    |
+| LLM Title Quality   | GPT-4o-mini judges conciseness and specificity |
+| Gitmoji Format      | Edit distance to expected gitmoji patterns     |
+
+Note: Autoevals require OpenAI API calls and incur additional cost.
