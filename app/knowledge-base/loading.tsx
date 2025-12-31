@@ -14,7 +14,7 @@ export default function KnowledgeBaseLoading() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-content flex flex-1 flex-col">
+            <div className="z-content relative flex flex-1 flex-col">
                 <SiteHeader bordered />
 
                 <main className="flex-1 px-6 py-8">
@@ -22,11 +22,11 @@ export default function KnowledgeBaseLoading() {
                         {/* Header */}
                         <section className="space-y-2">
                             <div className="flex items-center gap-3">
-                                <div className="rounded-xl bg-primary/20 p-3">
-                                    <Book className="h-6 w-6 text-primary" />
+                                <div className="bg-primary/20 rounded-xl p-3">
+                                    <Book className="text-primary h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl font-light tracking-tight text-foreground">
+                                    <h1 className="text-foreground text-3xl font-light tracking-tight">
                                         Knowledge Base
                                     </h1>
                                     <p className="text-foreground/70">
@@ -39,7 +39,7 @@ export default function KnowledgeBaseLoading() {
                         {/* Loading state */}
                         <section className="flex min-h-[500px] flex-1 items-center justify-center">
                             <div className="flex flex-col items-center gap-4">
-                                <Sparkles className="h-8 w-8 animate-pulse text-primary" />
+                                <Sparkles className="text-primary h-8 w-8 animate-pulse" />
                                 <p className="text-foreground/60">
                                     Loading your knowledge base...
                                 </p>

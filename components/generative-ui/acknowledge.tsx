@@ -65,7 +65,7 @@ export function AcknowledgeResult({ status, output }: AcknowledgeResultProps) {
                 <Icon
                     className={cn("mt-0.5 h-5 w-5 flex-shrink-0", config.iconColor)}
                 />
-                <p className="text-sm text-foreground/90">{output.message}</p>
+                <p className="text-foreground/90 text-sm">{output.message}</p>
             </div>
         </motion.div>
     );

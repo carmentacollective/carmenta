@@ -48,13 +48,13 @@ export function Oracle({
             className={cn(
                 // Glass appearance
                 "flex items-center justify-center rounded-full",
-                "glass-bg glass-shadow ring-1 ring-foreground/20 backdrop-blur-xl",
+                "glass-bg glass-shadow ring-foreground/20 ring-1 backdrop-blur-xl",
                 "dark:ring-white/15",
                 // Hover: shadow + ring only (no scale - let breathing handle transform)
                 "transition-[box-shadow,ring-color] duration-300",
-                "hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                 // Focus
-                "focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                "focus:ring-primary/40 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
                 config.container,
                 // Breathing animation
                 state === "breathing" && "oracle-breathing",

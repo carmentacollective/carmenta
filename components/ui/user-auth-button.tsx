@@ -193,7 +193,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                       <>
                           {/* Backdrop */}
                           <motion.div
-                              className="fixed inset-0 z-backdrop bg-black/30"
+                              className="z-backdrop fixed inset-0 bg-black/30"
                               onClick={() => setIsOpen(false)}
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
@@ -203,7 +203,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                           {/* Dropdown menu - positioned via portal */}
                           <motion.div
-                              className="fixed z-modal"
+                              className="z-modal fixed"
                               style={{
                                   top: dropdownPosition.top,
                                   right: dropdownPosition.right,
@@ -218,7 +218,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                           >
                               <div className="glass-container-mobile w-64 overflow-hidden rounded-2xl shadow-2xl">
                                   {/* User info header */}
-                                  <div className="border-b border-foreground/10 px-4 py-3">
+                                  <div className="border-foreground/10 border-b px-4 py-3">
                                       <div className="flex items-center gap-3">
                                           {profileImageUrl ? (
                                               <img
@@ -227,15 +227,15 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                   className="h-10 w-10 rounded-full object-cover"
                                               />
                                           ) : (
-                                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                                              <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold">
                                                   {displayName.charAt(0).toUpperCase()}
                                               </div>
                                           )}
                                           <div className="flex-1 overflow-hidden">
-                                              <div className="truncate text-sm font-medium text-foreground">
+                                              <div className="text-foreground truncate text-sm font-medium">
                                                   {displayName}
                                               </div>
-                                              <div className="truncate text-xs text-foreground/60">
+                                              <div className="text-foreground/60 truncate text-xs">
                                                   {email}
                                               </div>
                                           </div>
@@ -250,33 +250,33 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                               openUserProfile();
                                               setIsOpen(false);
                                           }}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <User className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <User className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Account</span>
                                       </button>
 
                                       <Link
                                           href="/integrations"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Plug className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Plug className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Integrations</span>
                                       </Link>
 
                                       {/* Personal Settings */}
-                                      <div className="my-1 border-t border-foreground/10" />
+                                      <div className="border-foreground/10 my-1 border-t" />
 
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <BookOpen className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <BookOpen className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
                                               Knowledge Base
                                           </span>
@@ -285,10 +285,10 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/communication"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <MessageSquare className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <MessageSquare className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
                                               Communication
                                           </span>
@@ -297,20 +297,20 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/guide"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Compass className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Compass className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Guide</span>
                                       </Link>
 
                                       <Link
                                           href="/heart-centered-ai"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Heart className="relative h-4 w-4 fill-primary text-primary" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Heart className="fill-primary text-primary relative h-4 w-4" />
                                           <span className="relative">
                                               Heart-Centered AI
                                           </span>
@@ -319,24 +319,24 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/ai-first-development"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Code2 className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Code2 className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">How We Build</span>
                                       </Link>
 
                                       {/* Appearance section - compact redesign */}
                                       {isClient && (
-                                          <div className="border-t border-foreground/10 px-4 py-3">
+                                          <div className="border-foreground/10 border-t px-4 py-3">
                                               {/* Header row: "Theme" label + Light/Dark/System segmented control */}
                                               <div className="mb-3 flex items-center justify-between">
-                                                  <span className="text-xs font-medium text-foreground/50">
+                                                  <span className="text-foreground/50 text-xs font-medium">
                                                       Theme
                                                   </span>
 
                                                   {/* Segmented control for light/dark/system */}
-                                                  <div className="flex rounded-lg bg-foreground/5 p-0.5">
+                                                  <div className="bg-foreground/5 flex rounded-lg p-0.5">
                                                       {themeOptions.map((option) => {
                                                           const isSelected =
                                                               theme === option.value;
@@ -402,7 +402,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                               className={cn(
                                                                   "h-10 w-10 rounded-full transition-all",
                                                                   isCommitted
-                                                                      ? "ring-2 ring-foreground/60 ring-offset-2 ring-offset-background"
+                                                                      ? "ring-foreground/60 ring-offset-background ring-2 ring-offset-2"
                                                                       : "opacity-60 hover:scale-110 hover:opacity-100"
                                                               )}
                                                               style={{
@@ -420,10 +420,10 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                               {/* Theme label + description (updates on hover) */}
                                               <div className="mt-3">
-                                                  <div className="text-sm font-medium text-foreground/80">
+                                                  <div className="text-foreground/80 text-sm font-medium">
                                                       {displayTheme?.label}
                                                   </div>
-                                                  <div className="text-xs text-foreground/50">
+                                                  <div className="text-foreground/50 text-xs">
                                                       {displayTheme?.description}
                                                   </div>
                                               </div>
@@ -431,17 +431,17 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       )}
 
                                       {/* Meta actions */}
-                                      <div className="border-t border-foreground/10">
+                                      <div className="border-foreground/10 border-t">
                                           <button
                                               onClick={() => {
                                                   captureMarker();
                                                   setIsOpen(false);
                                               }}
                                               disabled={!isMarkerReady}
-                                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground disabled:opacity-50"
+                                              className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all disabled:opacity-50"
                                           >
-                                              <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                              <Sparkles className="relative h-4 w-4 text-foreground/60" />
+                                              <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                              <Sparkles className="text-foreground/60 relative h-4 w-4" />
                                               <span className="relative">
                                                   Improve Carmenta
                                               </span>
@@ -451,10 +451,10 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/exit"
                                           onClick={() => setIsOpen(false)}
-                                          className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-all hover:text-foreground"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
-                                          <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <LogOut className="relative h-4 w-4 text-foreground/60" />
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <LogOut className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Exit</span>
                                       </Link>
                                   </div>
@@ -478,7 +478,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                 data-tooltip-id="tip"
                 data-tooltip-content="Settings & integrations"
             >
-                <UserCircle2 className="h-6 w-6 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-7 sm:w-7 md:h-8 md:w-8" />
+                <UserCircle2 className="text-foreground/50 group-hover:text-foreground/80 h-6 w-6 transition-colors sm:h-7 sm:w-7 md:h-8 md:w-8" />
             </button>
 
             {/* Dropdown rendered via portal to escape stacking contexts */}

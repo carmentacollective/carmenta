@@ -79,10 +79,10 @@ export function EnterAuthWrapper() {
                     className="mb-4 h-16 w-16"
                     priority
                 />
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground/90">
+                <h1 className="text-foreground/90 text-2xl font-semibold tracking-tight">
                     Enter Carmenta
                 </h1>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-2 text-sm">
                     {rememberedEmail ? "Welcome back" : "We remember you"}
                 </p>
             </div>

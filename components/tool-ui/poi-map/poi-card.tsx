@@ -68,9 +68,9 @@ export const POICard = memo(function POICard({
                 onClick={() => onSelect(poi.id)}
                 className={cn(
                     "group relative flex h-20 w-40 shrink-0 snap-start flex-col rounded-lg border p-2.5 text-left shadow-lg transition-all",
-                    "bg-card/95 backdrop-blur-sm hover:bg-card",
+                    "bg-card/95 hover:bg-card backdrop-blur-sm",
                     isSelected
-                        ? "border-primary ring-2 ring-primary/20"
+                        ? "border-primary ring-primary/20 ring-2"
                         : "border-border hover:border-primary/50"
                 )}
             >
@@ -83,13 +83,13 @@ export const POICard = memo(function POICard({
                         <Heart className="size-3 shrink-0 fill-rose-500 text-rose-500" />
                     )}
                 </div>
-                <span className="mt-1 line-clamp-2 text-sm font-medium leading-tight">
+                <span className="mt-1 line-clamp-2 text-sm leading-tight font-medium">
                     {poi.name}
                 </span>
                 {poi.rating !== undefined && (
                     <div className="mt-auto flex items-center gap-0.5">
                         <Star className="size-3 fill-amber-400 text-amber-400" />
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                             {poi.rating.toFixed(1)}
                         </span>
                     </div>
@@ -113,7 +113,7 @@ export const POICard = memo(function POICard({
                     className="object-cover"
                 />
                 <AvatarFallback className="rounded-md">
-                    <CategoryIcon className="size-6 text-muted-foreground" />
+                    <CategoryIcon className="text-muted-foreground size-6" />
                 </AvatarFallback>
             </Avatar>
 
@@ -171,13 +171,13 @@ export const POICard = memo(function POICard({
                 </div>
 
                 {poi.description && (
-                    <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1.5 line-clamp-2 text-xs">
                         {poi.description}
                     </p>
                 )}
 
                 {poi.address && (
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 truncate text-xs">
                         {poi.address}
                     </p>
                 )}
@@ -186,7 +186,7 @@ export const POICard = memo(function POICard({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="mt-1 h-7 gap-1.5 self-start px-2 text-xs text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground mt-1 h-7 gap-1.5 self-start px-2 text-xs"
                         onClick={(e) => {
                             e.stopPropagation();
                             onViewDetails(poi.id);

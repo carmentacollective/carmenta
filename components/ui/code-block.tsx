@@ -30,7 +30,7 @@ export function CodeBlock({ children, className, inline, ...props }: CodeBlockPr
         return (
             <code
                 className={cn(
-                    "rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm",
+                    "bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-sm",
                     className
                 )}
                 {...props}
@@ -43,10 +43,10 @@ export function CodeBlock({ children, className, inline, ...props }: CodeBlockPr
     // Code block with copy button
     return (
         <div className="group relative my-4">
-            <div className="overflow-x-auto rounded-lg border border-foreground/10 bg-foreground/5">
+            <div className="border-foreground/10 bg-foreground/5 overflow-x-auto rounded-lg border">
                 {/* Language label */}
                 {language && (
-                    <div className="border-b border-foreground/10 px-4 py-2 text-xs text-foreground/60">
+                    <div className="border-foreground/10 text-foreground/60 border-b px-4 py-2 text-xs">
                         {language}
                     </div>
                 )}
@@ -60,7 +60,7 @@ export function CodeBlock({ children, className, inline, ...props }: CodeBlockPr
             </div>
 
             {/* Copy button - appears on hover */}
-            <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                 <CopyButton
                     text={codeContent}
                     ariaLabel={`Copy ${language || "code"}`}

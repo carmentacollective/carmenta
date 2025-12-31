@@ -47,7 +47,7 @@ export function OracleHero() {
                     {[0, 1, 2, 3, 4, 5].map((i) => (
                         <div
                             key={`outer-${i}`}
-                            className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-primary/50 transition-all duration-500 group-hover:bg-primary/80"
+                            className="bg-primary/50 group-hover:bg-primary/80 absolute top-1/2 left-1/2 h-2 w-2 rounded-full transition-all duration-500"
                             style={{
                                 transform: `rotate(${i * 60}deg) translateX(115px) translateY(-50%)`,
                                 animation: `oracle-twinkle ${1.5 + i * 0.2}s ease-in-out infinite`,
@@ -66,7 +66,7 @@ export function OracleHero() {
                     {[0, 1, 2, 3].map((i) => (
                         <div
                             key={`inner-${i}`}
-                            className="absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-cyan-400/40 transition-all duration-500 group-hover:bg-cyan-400/70"
+                            className="absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full bg-cyan-400/40 transition-all duration-500 group-hover:bg-cyan-400/70"
                             style={{
                                 transform: `rotate(${i * 90 + 45}deg) translateX(135px) translateY(-50%)`,
                             }}
@@ -75,20 +75,20 @@ export function OracleHero() {
                 </div>
 
                 {/* Hover reveal - expanding ring */}
-                <div className="absolute inset-0 rounded-full border-2 border-transparent transition-all duration-700 group-hover:scale-[1.5] group-hover:border-primary/15" />
+                <div className="group-hover:border-primary/15 absolute inset-0 rounded-full border-2 border-transparent transition-all duration-700 group-hover:scale-[1.5]" />
 
                 {/* Hover reveal - sparkle burst */}
                 {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
                     <div
                         key={`sparkle-${i}`}
-                        className="absolute left-1/2 top-1/2 opacity-0 transition-all duration-700 group-hover:opacity-100"
+                        className="absolute top-1/2 left-1/2 opacity-0 transition-all duration-700 group-hover:opacity-100"
                         style={{
                             transform: `rotate(${i * 45}deg)`,
                             transitionDelay: `${i * 30}ms`,
                         }}
                     >
                         <div
-                            className="h-1 w-1 rounded-full bg-primary/70 shadow-sm transition-transform duration-700 group-hover:translate-x-36"
+                            className="bg-primary/70 h-1 w-1 rounded-full shadow-sm transition-transform duration-700 group-hover:translate-x-36"
                             style={{
                                 transitionDelay: `${i * 30}ms`,
                             }}
@@ -112,12 +112,12 @@ export function OracleHero() {
             </div>
 
             {/* Wordmark */}
-            <h1 className="mb-2 text-4xl font-light tracking-wide text-foreground/80 md:text-5xl">
+            <h1 className="text-foreground/80 mb-2 text-4xl font-light tracking-wide md:text-5xl">
                 Carmenta
             </h1>
 
             {/* Tagline */}
-            <p className="mb-8 max-w-md text-center text-base text-foreground/50">
+            <p className="text-foreground/50 mb-8 max-w-md text-center text-base">
                 Create at the speed of thought
             </p>
 
@@ -127,7 +127,7 @@ export function OracleHero() {
                 prefetch={false}
                 className="btn-glass-interactive group/btn relative inline-flex overflow-hidden rounded-full px-8 py-3"
             >
-                <span className="relative z-content text-base font-medium text-foreground/80 transition-colors group-hover/btn:text-foreground">
+                <span className="z-content text-foreground/80 group-hover/btn:text-foreground relative text-base font-medium transition-colors">
                     Connect
                 </span>
                 <div

@@ -104,24 +104,24 @@ export function ToolActivityItem({
                 <ToolIcon
                     toolName={toolName}
                     className={cn(
-                        "h-4 w-4 shrink-0 text-muted-foreground",
+                        "text-muted-foreground h-4 w-4 shrink-0",
                         isRunning && "animate-pulse"
                     )}
                 />
 
                 {/* Tool name */}
-                <span className="shrink-0 text-sm font-medium text-foreground/90">
+                <span className="text-foreground/90 shrink-0 text-sm font-medium">
                     {toolName}
                 </span>
 
                 {/* Summary / params */}
-                <span className="min-w-0 flex-1 truncate font-mono text-sm text-muted-foreground">
+                <span className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-sm">
                     {summary}
                 </span>
 
                 {/* Result summary - elegant right-aligned */}
                 {resultSummary && isComplete && (
-                    <span className="shrink-0 text-xs font-medium text-muted-foreground/70">
+                    <span className="text-muted-foreground/70 shrink-0 text-xs font-medium">
                         {resultSummary}
                     </span>
                 )}
@@ -129,7 +129,7 @@ export function ToolActivityItem({
                 {/* Expand chevron */}
                 <ChevronRight
                     className={cn(
-                        "h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200",
+                        "text-muted-foreground/40 h-4 w-4 shrink-0 transition-transform duration-200",
                         "group-hover:text-muted-foreground/60",
                         expanded && "rotate-90"
                     )}
@@ -146,7 +146,7 @@ export function ToolActivityItem({
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         className="overflow-hidden"
                     >
-                        <div className="pb-2 pl-7 pt-1">{children}</div>
+                        <div className="pt-1 pb-2 pl-7">{children}</div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -167,9 +167,9 @@ export function ResultRow({ children, className }: ResultRowProps) {
     return (
         <div className={cn("flex items-start gap-2.5 py-0.5 pl-5", className)}>
             {/* Tree connector */}
-            <span className="select-none text-sm text-muted-foreground/40">└</span>
+            <span className="text-muted-foreground/40 text-sm select-none">└</span>
             {/* Result content */}
-            <span className="text-sm text-muted-foreground">{children}</span>
+            <span className="text-muted-foreground text-sm">{children}</span>
         </div>
     );
 }

@@ -21,7 +21,7 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
     const isGlass = variant !== "loading";
 
     return (
-        <div className="flex min-h-[80px] items-center justify-center rounded-lg bg-foreground/5 p-4">
+        <div className="bg-foreground/5 flex min-h-[80px] items-center justify-center rounded-lg p-4">
             <button
                 onClick={handleClick}
                 disabled={variant === "disabled"}
@@ -33,14 +33,14 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
                     variant === "click" && "active:translate-y-0.5 active:shadow-sm",
                     variant === "hover" && "hover:scale-105 hover:shadow-2xl",
                     variant === "focus" &&
-                        "focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                        "focus:ring-primary/40 focus:ring-[3px] focus:outline-none",
                     variant === "disabled" && "cursor-not-allowed opacity-50 grayscale",
                     variant === "loading" && "cursor-default"
                 )}
             >
                 {/* Ripple effect for click */}
                 {variant === "click" && showRipple && (
-                    <span className="animate-ripple absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30" />
+                    <span className="animate-ripple bg-primary/30 absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full" />
                 )}
 
                 {/* Loading spinner */}
@@ -56,7 +56,7 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
                                     "conic-gradient(from 0deg, #C4A3D4, #A3D4E8, #E8A3D4, #C4A3D4)",
                             }}
                         >
-                            <div className="h-full w-full rounded-full bg-background" />
+                            <div className="bg-background h-full w-full rounded-full" />
                         </div>
                     </div>
                 )}

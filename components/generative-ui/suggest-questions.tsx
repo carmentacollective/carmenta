@@ -56,7 +56,7 @@ export function SuggestQuestionsResult({
                             "rounded-full px-4 py-2",
                             glass.subtle,
                             border.container,
-                            "text-sm text-foreground/80",
+                            "text-foreground/80 text-sm",
                             "hover:bg-white/50 dark:hover:bg-black/30",
                             "hover:border-border/60",
                             "transition-all duration-200",

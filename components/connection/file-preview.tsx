@@ -40,7 +40,7 @@ export function FilePreview({
         // Show error state if image failed to load
         if (hasError) {
             return (
-                <div className="flex items-center gap-2 rounded-lg border border-foreground/10 bg-background/80 px-3 py-2 text-foreground/50">
+                <div className="border-foreground/10 bg-background/80 text-foreground/50 flex items-center gap-2 rounded-lg border px-3 py-2">
                     <ImageOff className="h-5 w-5 shrink-0" />
                     <span className="text-sm">Image unavailable</span>
                 </div>
@@ -66,7 +66,7 @@ export function FilePreview({
                     }}
                     className={cn(
                         "max-h-64 w-auto object-cover transition-opacity group-hover:opacity-90",
-                        isLoading && "animate-pulse bg-foreground/10"
+                        isLoading && "bg-foreground/10 animate-pulse"
                     )}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/10 group-hover:opacity-100">
@@ -88,16 +88,16 @@ export function FilePreview({
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-                "flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-foreground/5",
+                "hover:bg-foreground/5 flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors",
                 isUserMessage
                     ? "border-white/20 bg-white/10"
                     : "border-foreground/10 bg-background/80"
             )}
         >
-            <Icon className="h-5 w-5 shrink-0 text-foreground/60" />
+            <Icon className="text-foreground/60 h-5 w-5 shrink-0" />
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{filename}</div>
-                <div className="text-xs text-foreground/50">
+                <div className="text-foreground/50 text-xs">
                     {mediaType.split("/")[1]}
                 </div>
             </div>

@@ -104,7 +104,7 @@ export function CollapsibleStreamingContent({
                     {/* Pulsing indicator when streaming */}
                     {isStreaming && (
                         <motion.div
-                            className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                            className="bg-primary h-2 w-2 shrink-0 rounded-full"
                             animate={{ opacity: [0.4, 1, 0.4] }}
                             transition={{
                                 duration: 1.5,
@@ -129,7 +129,7 @@ export function CollapsibleStreamingContent({
                 {/* Expand/collapse chevron */}
                 <ChevronDown
                     className={cn(
-                        "h-4 w-4 shrink-0 text-foreground/40 transition-transform duration-200",
+                        "text-foreground/40 h-4 w-4 shrink-0 transition-transform duration-200",
                         !isCollapsed && "rotate-180",
                         "group-hover:text-foreground/60"
                     )}

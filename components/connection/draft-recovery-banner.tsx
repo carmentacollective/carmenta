@@ -45,23 +45,23 @@ export function DraftRecoveryBanner({
                     }}
                     className="overflow-hidden"
                 >
-                    <div className="mb-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3">
+                    <div className="bg-primary/10 mb-3 flex items-center justify-between rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2">
-                            <History className="h-4 w-4 text-primary" />
-                            <span className="text-sm text-foreground/80">
+                            <History className="text-primary h-4 w-4" />
+                            <span className="text-foreground/80 text-sm">
                                 We kept your message safe.
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={onStartFresh}
-                                className="text-sm text-foreground/50 transition-colors hover:text-foreground/70"
+                                className="text-foreground/50 hover:text-foreground/70 text-sm transition-colors"
                             >
                                 Start fresh
                             </button>
                             <button
                                 onClick={onContinue}
-                                className="rounded-lg bg-primary/20 px-3 py-1 text-sm text-primary transition-colors hover:bg-primary/30"
+                                className="bg-primary/20 text-primary hover:bg-primary/30 rounded-lg px-3 py-1 text-sm transition-colors"
                             >
                                 Continue
                             </button>

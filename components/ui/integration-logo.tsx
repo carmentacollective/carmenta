@@ -42,7 +42,7 @@ export function IntegrationLogo({
     return (
         <div
             className={cn(
-                "relative flex-shrink-0 overflow-hidden border-border/40 bg-white shadow-sm dark:bg-gray-50",
+                "border-border/40 relative flex-shrink-0 overflow-hidden bg-white shadow-sm dark:bg-gray-50",
                 sizeClasses[size],
                 className
             )}

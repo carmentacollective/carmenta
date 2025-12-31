@@ -79,11 +79,11 @@ export default async function CommunicationPage() {
             {/* Header */}
             <section className="space-y-2">
                 <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-primary/20 p-3">
-                        <MessageSquare className="h-6 w-6 text-primary" />
+                    <div className="bg-primary/20 rounded-xl p-3">
+                        <MessageSquare className="text-primary h-6 w-6" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-light tracking-tight text-foreground">
+                        <h1 className="text-foreground text-3xl font-light tracking-tight">
                             Communication
                         </h1>
                         <p className="text-foreground/70">How we connect</p>
@@ -94,12 +94,12 @@ export default async function CommunicationPage() {
             {/* Communication Viewer */}
             <section className="min-h-[400px] flex-1">
                 {allFolders.length === 0 || allFolders[0]?.documents.length === 0 ? (
-                    <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-foreground/[0.02] py-16 text-center">
-                        <MessageSquare className="mb-4 h-12 w-12 text-foreground/30" />
-                        <h3 className="text-lg font-medium text-foreground/80">
+                    <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
+                        <MessageSquare className="text-foreground/30 mb-4 h-12 w-12" />
+                        <h3 className="text-foreground/80 text-lg font-medium">
                             Communication preferences
                         </h3>
-                        <p className="mt-2 text-sm text-foreground/60">
+                        <p className="text-foreground/60 mt-2 text-sm">
                             Start a conversation to shape how we connect.
                         </p>
                     </div>

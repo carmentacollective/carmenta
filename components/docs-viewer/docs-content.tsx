@@ -19,7 +19,7 @@ export function DocsContent({ document: doc }: DocsContentProps) {
         return (
             <main className="glass-card flex h-full max-h-[calc(100vh-16rem)] flex-1 items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <BookOpen className="h-12 w-12 text-foreground/30" />
+                    <BookOpen className="text-foreground/30 h-12 w-12" />
                     <p className="text-foreground/40">Select a document to read</p>
                 </div>
             </main>
@@ -32,13 +32,13 @@ export function DocsContent({ document: doc }: DocsContentProps) {
             <header
                 role="banner"
                 aria-label={doc.name}
-                className="flex items-center gap-3 border-b border-foreground/5 px-6 py-4"
+                className="border-foreground/5 flex items-center gap-3 border-b px-6 py-4"
             >
-                <FileText className="h-5 w-5 text-foreground/50" aria-hidden="true" />
+                <FileText className="text-foreground/50 h-5 w-5" aria-hidden="true" />
                 <div className="flex flex-col">
-                    <h2 className="text-lg font-medium text-foreground">{doc.name}</h2>
+                    <h2 className="text-foreground text-lg font-medium">{doc.name}</h2>
                     {doc.description && (
-                        <p className="line-clamp-2 text-sm text-foreground/50">
+                        <p className="text-foreground/50 line-clamp-2 text-sm">
                             {doc.description}
                         </p>
                     )}
@@ -49,7 +49,7 @@ export function DocsContent({ document: doc }: DocsContentProps) {
             <div className="flex-1 overflow-y-auto px-6 py-5">
                 <MarkdownRenderer
                     content={doc.content}
-                    className="text-[15px] leading-[1.7] text-foreground/80"
+                    className="text-foreground/80 text-[15px] leading-[1.7]"
                 />
             </div>
         </main>

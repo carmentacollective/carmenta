@@ -56,7 +56,7 @@ export function ToolStatus({
                 // Base styles
                 "text-left text-sm transition-colors",
                 // Interactive states
-                "hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
+                "focus-visible:ring-primary/50 hover:bg-white/5 focus-visible:ring-1 focus-visible:outline-none",
                 // Status-specific backgrounds
                 status === "error" && "bg-holo-blush/10",
                 status === "running" && "bg-holo-lavender/5",
@@ -73,7 +73,7 @@ export function ToolStatus({
             />
 
             {/* Tool name */}
-            <span className="shrink-0 font-medium text-foreground/90">
+            <span className="text-foreground/90 shrink-0 font-medium">
                 {config.displayName}
             </span>
 
@@ -81,7 +81,7 @@ export function ToolStatus({
             {description && (
                 <>
                     <span className="text-muted-foreground/50">·</span>
-                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                    <span className="text-muted-foreground min-w-0 flex-1 truncate">
                         {description}
                     </span>
                 </>
@@ -95,7 +95,7 @@ export function ToolStatus({
 
             {/* Duration */}
             {duration !== undefined && status === "completed" && (
-                <span className="shrink-0 text-xs text-muted-foreground/60">
+                <span className="text-muted-foreground/60 shrink-0 text-xs">
                     {formatDuration(duration)}
                 </span>
             )}
@@ -103,7 +103,7 @@ export function ToolStatus({
             {/* Expand chevron */}
             <ChevronRight
                 className={cn(
-                    "h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform duration-200",
+                    "text-muted-foreground/50 h-4 w-4 shrink-0 transition-transform duration-200",
                     expanded && "rotate-90"
                 )}
             />
@@ -118,7 +118,7 @@ function StatusIndicator({ status }: { status: ToolStatusType }) {
     switch (status) {
         case "pending":
             return (
-                <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/30" />
+                <span className="bg-muted-foreground/30 h-2 w-2 shrink-0 rounded-full" />
             );
         case "running":
             return (

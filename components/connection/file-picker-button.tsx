@@ -47,7 +47,7 @@ export function FilePickerButton({ className }: FilePickerButtonProps) {
                 data-tooltip-content="Add files · up to 10MB"
                 aria-label="Attach file"
             >
-                <Paperclip className="h-5 w-5 text-foreground/50 transition-colors group-hover:text-foreground/80 sm:h-6 sm:w-6" />
+                <Paperclip className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6" />
             </button>
             <input
                 ref={inputRef}

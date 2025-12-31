@@ -84,7 +84,7 @@ export function IntegrationCard({
     return (
         <div
             className={cn(
-                "group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-card p-6 shadow-md transition-colors duration-300",
+                "group bg-card relative flex flex-col overflow-hidden rounded-2xl border-2 p-6 shadow-md transition-colors duration-300",
                 state === "needs_attention"
                     ? "border-amber-400/80 hover:shadow-lg"
                     : state === "connected"
@@ -95,7 +95,7 @@ export function IntegrationCard({
             {/* Header: Logo, Name, Status Icon */}
             <div className="flex flex-1 flex-col">
                 <div className="flex items-start gap-4">
-                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-border/40 bg-white p-3 shadow-sm dark:bg-gray-50">
+                    <div className="border-border/40 relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-3 shadow-sm dark:bg-gray-50">
                         <Image
                             src={service.logo}
                             alt={service.name}
@@ -105,7 +105,7 @@ export function IntegrationCard({
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2.5">
-                            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                            <h3 className="text-foreground text-lg font-semibold tracking-tight">
                                 {service.name}
                             </h3>
                             {state === "connected" && (
@@ -119,7 +119,7 @@ export function IntegrationCard({
                                 </div>
                             )}
                         </div>
-                        <p className="mt-2 line-clamp-2 min-h-[2.8rem] text-sm leading-relaxed text-muted-foreground">
+                        <p className="text-muted-foreground mt-2 line-clamp-2 min-h-[2.8rem] text-sm leading-relaxed">
                             {service.description}
                         </p>
                     </div>
@@ -153,7 +153,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onTest}
                                     disabled={isLoading}
-                                    className="interactive-focus interactive-press rounded-xl border-2 border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent hover:shadow disabled:opacity-50"
+                                    className="interactive-focus interactive-press border-border bg-background text-foreground hover:bg-accent rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all hover:shadow disabled:opacity-50"
                                 >
                                     {isTesting ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,7 +164,7 @@ export function IntegrationCard({
                                 <button
                                     onClick={onDisconnect}
                                     disabled={isLoading}
-                                    className="interactive-focus-destructive interactive-press rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
+                                    className="interactive-focus-destructive interactive-press border-border text-muted-foreground rounded-xl border-2 px-4 py-3 text-sm transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                                 >
                                     Disconnect
                                 </button>
@@ -189,7 +189,7 @@ export function IntegrationCard({
                         <button
                             onClick={onDisconnect}
                             disabled={isLoading}
-                            className="interactive-focus-destructive interactive-press rounded-xl border-2 border-border px-4 py-3 text-sm text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
+                            className="interactive-focus-destructive interactive-press border-border text-muted-foreground rounded-xl border-2 px-4 py-3 text-sm transition-all hover:border-red-500/50 hover:bg-red-50/50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/20"
                         >
                             Disconnect
                         </button>
@@ -200,7 +200,7 @@ export function IntegrationCard({
                     <button
                         onClick={onConnect}
                         disabled={isLoading}
-                        className="interactive-focus-offset interactive-press rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
+                        className="interactive-focus-offset interactive-press bg-primary text-primary-foreground rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
                     >
                         {isConnecting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

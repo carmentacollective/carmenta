@@ -78,10 +78,10 @@ export function ThemeVariantSelector() {
             <Popover.Trigger
                 className={cn(
                     "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    "hover:bg-foreground/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    "hover:bg-foreground/5 focus:ring-primary/40 focus:ring-2 focus:outline-none"
                 )}
             >
-                <Palette className="h-4 w-4 text-foreground/60" />
+                <Palette className="text-foreground/60 h-4 w-4" />
                 <span className="text-foreground/90">{currentTheme?.label}</span>
             </Popover.Trigger>
 
@@ -118,7 +118,7 @@ export function ThemeVariantSelector() {
                                     {theme.colors.map((color, i) => (
                                         <div
                                             key={i}
-                                            className="h-4 w-4 rounded-full border border-foreground/10"
+                                            className="border-foreground/10 h-4 w-4 rounded-full border"
                                             style={{ backgroundColor: color }}
                                         />
                                     ))}

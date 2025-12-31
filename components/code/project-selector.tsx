@@ -115,14 +115,14 @@ export function ProjectSelector({
             <DropdownMenuContent align="start" className="w-[400px]">
                 {/* Search input */}
                 <div className="flex items-center gap-2 border-b px-3 py-2">
-                    <Search className="size-4 text-muted-foreground" />
+                    <Search className="text-muted-foreground size-4" />
                     <input
                         type="text"
                         placeholder="Search projects..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.stopPropagation()}
-                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                        className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
                     />
                     <Button
                         variant="ghost"
@@ -142,19 +142,19 @@ export function ProjectSelector({
                 {/* Project list */}
                 <div className="max-h-[400px] overflow-y-auto p-1">
                     {isLoading && projects.length === 0 && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="text-muted-foreground p-4 text-center text-sm">
                             Loading projects...
                         </div>
                     )}
 
                     {error && (
-                        <div className="p-4 text-center text-sm text-destructive">
+                        <div className="text-destructive p-4 text-center text-sm">
                             {error}
                         </div>
                     )}
 
                     {!isLoading && !error && filteredProjects.length === 0 && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="text-muted-foreground p-4 text-center text-sm">
                             {searchQuery
                                 ? "No projects match your search"
                                 : "No projects found. Set CODE_SOURCE_DIR in your environment."}
@@ -182,10 +182,10 @@ export function ProjectSelector({
                                 <span className="font-medium">{project.name}</span>
                                 {project.hasClaudeMd && (
                                     <span title="Has CLAUDE.md">
-                                        <FileCode className="size-3 text-primary" />
+                                        <FileCode className="text-primary size-3" />
                                     </span>
                                 )}
-                                <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground ml-auto flex items-center gap-2 text-xs">
                                     {project.gitBranch && (
                                         <span className="flex items-center gap-1">
                                             <GitBranch className="size-3" />
@@ -201,11 +201,11 @@ export function ProjectSelector({
                                 </div>
                             </div>
                             {project.description && (
-                                <p className="line-clamp-1 text-xs text-muted-foreground">
+                                <p className="text-muted-foreground line-clamp-1 text-xs">
                                     {project.description}
                                 </p>
                             )}
-                            <p className="line-clamp-1 text-xs text-muted-foreground/50">
+                            <p className="text-muted-foreground/50 line-clamp-1 text-xs">
                                 {project.path}
                             </p>
                         </DropdownMenuItem>
@@ -213,7 +213,7 @@ export function ProjectSelector({
                 </div>
 
                 <DropdownMenuSeparator />
-                <div className="p-2 text-center text-xs text-muted-foreground">
+                <div className="text-muted-foreground p-2 text-center text-xs">
                     {projects.length} project{projects.length === 1 ? "" : "s"}{" "}
                     available
                 </div>

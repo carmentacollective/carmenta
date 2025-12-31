@@ -136,23 +136,23 @@ export function FileList({
 
     return (
         <div
-            className="mb-3 w-full overflow-hidden rounded-lg border border-border bg-card"
+            className="border-border bg-card mb-3 w-full overflow-hidden rounded-lg border"
             data-tool-call-id={toolCallId}
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+            <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <code className="truncate font-mono text-sm text-foreground">
+                    <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                    <code className="text-foreground truncate font-mono text-sm">
                         {pattern}
                     </code>
                 </div>
                 <div className="flex items-center gap-2">
                     {isRunning && (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
                     {isCompleted && (
-                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">
                             {fileCount} file{fileCount !== 1 ? "s" : ""}
                         </span>
                     )}
@@ -161,8 +161,8 @@ export function FileList({
 
             {/* Search path */}
             {path && (
-                <div className="border-b border-border bg-muted/30 px-3 py-1">
-                    <span className="font-mono text-xs text-muted-foreground">
+                <div className="border-border bg-muted/30 border-b px-3 py-1">
+                    <span className="text-muted-foreground font-mono text-xs">
                         in {path}
                     </span>
                 </div>
@@ -172,7 +172,7 @@ export function FileList({
             <div className="max-h-80 overflow-auto">
                 {/* Loading state */}
                 {isRunning && (
-                    <div className="flex items-center gap-2 p-4 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-2 p-4">
                         <Search className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Searching for files...</span>
                     </div>
@@ -180,7 +180,7 @@ export function FileList({
 
                 {/* File listing */}
                 {isCompleted && files && files.length > 0 && (
-                    <ul className="divide-y divide-border">
+                    <ul className="divide-border divide-y">
                         {displayFiles.map((file, idx) => {
                             const Icon = getFileIcon(file);
                             const name = getFileName(file);
@@ -189,7 +189,7 @@ export function FileList({
                             return (
                                 <li
                                     key={`${file}-${idx}`}
-                                    className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50"
+                                    className="hover:bg-muted/50 flex items-center gap-2 px-3 py-2"
                                 >
                                     <Icon
                                         className={cn(
@@ -200,11 +200,11 @@ export function FileList({
                                         )}
                                     />
                                     <div className="min-w-0 flex-1">
-                                        <span className="block truncate font-mono text-sm text-foreground">
+                                        <span className="text-foreground block truncate font-mono text-sm">
                                             {name}
                                         </span>
                                         {parent && (
-                                            <span className="block truncate font-mono text-xs text-muted-foreground">
+                                            <span className="text-muted-foreground block truncate font-mono text-xs">
                                                 {parent}
                                             </span>
                                         )}
@@ -217,7 +217,7 @@ export function FileList({
 
                 {/* No files found */}
                 {isCompleted && files && files.length === 0 && !error && (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="text-muted-foreground p-4 text-center text-sm">
                         No files matched the pattern
                     </div>
                 )}
@@ -232,8 +232,8 @@ export function FileList({
                     type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={cn(
-                        "flex w-full items-center justify-center gap-1.5 border-t border-border py-2",
-                        "text-sm text-muted-foreground transition-colors",
+                        "border-border flex w-full items-center justify-center gap-1.5 border-t py-2",
+                        "text-muted-foreground text-sm transition-colors",
                         "hover:bg-muted/50 hover:text-foreground"
                     )}
                 >

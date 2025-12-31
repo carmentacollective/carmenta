@@ -37,11 +37,11 @@ interface ToolProgressProps {
  */
 function IndeterminateBar() {
     return (
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className="bg-muted relative h-1 w-full overflow-hidden rounded-full">
             <div
                 className={cn(
                     "absolute inset-0 rounded-full",
-                    "bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20",
+                    "from-primary/20 via-primary/60 to-primary/20 bg-gradient-to-r",
                     "animate-[indeterminate-progress_1.5s_ease-in-out_infinite]"
                 )}
             />
@@ -60,7 +60,7 @@ function DeterminateBar({
     isComplete: boolean;
 }) {
     return (
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className="bg-muted relative h-1 w-full overflow-hidden rounded-full">
             <div
                 className={cn(
                     "h-full rounded-full transition-all duration-700 ease-out",
@@ -80,12 +80,12 @@ function StepIcon({ status }: { status: ToolProgressStepStatus }) {
         case "completed":
             return <CheckCircle2 className="size-3.5 text-emerald-500" />;
         case "active":
-            return <Loader2 className="size-3.5 animate-spin text-primary" />;
+            return <Loader2 className="text-primary size-3.5 animate-spin" />;
         case "error":
-            return <XCircle className="size-3.5 text-destructive" />;
+            return <XCircle className="text-destructive size-3.5" />;
         case "pending":
         default:
-            return <Circle className="size-3.5 text-muted-foreground/40" />;
+            return <Circle className="text-muted-foreground/40 size-3.5" />;
     }
 }
 
@@ -105,7 +105,7 @@ function StepItem({ step }: { step: ToolProgressStep }) {
             <span
                 className={cn(
                     "transition-colors duration-300",
-                    step.status === "active" && "font-medium text-foreground",
+                    step.status === "active" && "text-foreground font-medium",
                     step.status === "completed" && "text-muted-foreground",
                     step.status === "pending" && "text-muted-foreground"
                 )}
@@ -129,7 +129,7 @@ function StepsList({ steps }: { steps: ToolProgressStep[] }) {
                 <StepItem key={step.id} step={step} />
             ))}
             {hiddenCount > 0 && (
-                <li className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                <li className="text-muted-foreground/60 flex items-center gap-2 text-xs">
                     <span className="size-3.5" />
                     <span>+{hiddenCount} more steps</span>
                 </li>
@@ -184,7 +184,7 @@ export function ToolProgress({ progress, className }: ToolProgressProps) {
 
             {/* Additional context */}
             {progress.context && (
-                <p className="mt-2 text-xs text-muted-foreground/70">
+                <p className="text-muted-foreground/70 mt-2 text-xs">
                     {progress.context}
                 </p>
             )}

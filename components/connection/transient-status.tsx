@@ -58,7 +58,7 @@ function TransientMessageBubble({ message }: { message: TransientMessage }) {
             className={cn(
                 "flex items-center gap-2 rounded-full px-3 py-1.5",
                 "border border-white/20 bg-white/20 backdrop-blur-sm",
-                "text-sm text-muted-foreground",
+                "text-muted-foreground text-sm",
                 // Celebration type gets a subtle highlight
                 message.type === "celebration" &&
                     "border-yellow-500/30 bg-yellow-500/10"

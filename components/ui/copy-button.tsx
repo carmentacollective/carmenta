@@ -254,7 +254,7 @@ export function CopyButton({
                             animate={{ opacity: 1, width: "auto" }}
                             exit={{ opacity: 0, width: 0 }}
                             transition={transitions.quick}
-                            className="whitespace-nowrap text-xs font-medium"
+                            className="text-xs font-medium whitespace-nowrap"
                             aria-live="polite"
                         >
                             {currentMessage || "Copied"}
@@ -290,7 +290,7 @@ export function CopyButton({
                                 animate={{ opacity: 1, width: "auto" }}
                                 exit={{ opacity: 0, width: 0 }}
                                 transition={transitions.quick}
-                                className="whitespace-nowrap text-xs font-medium"
+                                className="text-xs font-medium whitespace-nowrap"
                                 aria-live="polite"
                             >
                                 {currentMessage || "Copied"}

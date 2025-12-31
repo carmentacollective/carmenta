@@ -93,7 +93,7 @@ export function AgentTask({
                 {/* Agent info */}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground/90">
+                        <span className="text-foreground/90 text-sm font-medium">
                             {displayName}
                         </span>
                         {status === "completed" && (
@@ -101,7 +101,7 @@ export function AgentTask({
                         )}
                     </div>
                     {description && (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="text-muted-foreground truncate text-xs">
                             {description}
                         </p>
                     )}
@@ -109,7 +109,7 @@ export function AgentTask({
 
                 {/* Expand indicator */}
                 {hasOutput && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                         {isExpanded ? "▼" : "▶"}
                     </span>
                 )}
@@ -126,11 +126,11 @@ export function AgentTask({
             {hasOutput && !error && (
                 <div className="bg-black/20 px-3 py-2">
                     {isExpanded ? (
-                        <div className="max-h-96 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-xs text-foreground/80">
+                        <div className="text-foreground/80 max-h-96 overflow-y-auto font-mono text-sm text-xs whitespace-pre-wrap">
                             {output}
                         </div>
                     ) : (
-                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                        <p className="text-muted-foreground line-clamp-2 text-xs">
                             {truncatedOutput}
                         </p>
                     )}
@@ -139,7 +139,7 @@ export function AgentTask({
 
             {/* Running indicator */}
             {isRunning && !hasOutput && (
-                <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 px-3 py-2 text-xs">
                     <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-purple-400" />
                     Working...
                 </div>

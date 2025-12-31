@@ -65,8 +65,8 @@ function FetchPageContent({
         <div className="max-w-2xl">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">
+                    <FileText className="text-primary h-4 w-4" />
+                    <span className="text-foreground font-medium">
                         {title || "Page Content"}
                     </span>
                 </div>
@@ -74,22 +74,22 @@ function FetchPageContent({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                    className="text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                 >
                     <span className="hidden sm:inline">Open</span>
                     <ExternalLink className="h-3 w-3" />
                 </a>
             </div>
 
-            <p className="mt-1 truncate text-xs text-muted-foreground/70">{url}</p>
+            <p className="text-muted-foreground/70 mt-1 truncate text-xs">{url}</p>
 
             {content && (
                 <details className="mt-3">
-                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                    <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-sm">
                         Preview content ({content.length.toLocaleString()} chars)
                     </summary>
-                    <div className="mt-2 max-h-48 overflow-y-auto rounded bg-muted/50 p-3 text-xs text-foreground/80">
-                        <pre className="whitespace-pre-wrap font-sans">
+                    <div className="bg-muted/50 text-foreground/80 mt-2 max-h-48 overflow-y-auto rounded p-3 text-xs">
+                        <pre className="font-sans whitespace-pre-wrap">
                             {contentPreview}
                         </pre>
                     </div>

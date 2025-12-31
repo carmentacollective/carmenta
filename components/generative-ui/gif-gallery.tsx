@@ -32,7 +32,7 @@ interface GifGalleryProps {
 export function GifGallery({ gifs, totalCount, query, className }: GifGalleryProps) {
     if (!gifs || gifs.length === 0) {
         return (
-            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
                 <Image
                     src="/logos/giphy.svg"
                     alt="GIPHY"
@@ -53,7 +53,7 @@ export function GifGallery({ gifs, totalCount, query, className }: GifGalleryPro
     return (
         <div className={cn("space-y-3", className)}>
             {/* Context header */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/giphy.svg"
                     alt="GIPHY"
@@ -83,7 +83,7 @@ export function GifGallery({ gifs, totalCount, query, className }: GifGalleryPro
 
             {/* Show "more available" hint if truncated */}
             {totalCount && totalCount > gifs.length && (
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-muted-foreground/70 text-xs">
                     Showing {gifs.length} of {totalCount.toLocaleString()} results
                 </p>
             )}

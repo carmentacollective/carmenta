@@ -32,7 +32,7 @@ export function NotionSearchResults({
 }: NotionSearchResultsProps) {
     if (!results || results.length === 0) {
         return (
-            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
                 <Image
                     src="/logos/notion.svg"
                     alt="Notion"
@@ -53,7 +53,7 @@ export function NotionSearchResults({
     return (
         <div className={cn("space-y-3", className)}>
             {/* Context header */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
                 <Image
                     src="/logos/notion.svg"
                     alt="Notion"
@@ -76,7 +76,7 @@ export function NotionSearchResults({
 
             {/* Show "more available" hint if truncated */}
             {results.length > 5 && (
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-muted-foreground/70 text-xs">
                     + {results.length - 5} more result
                     {results.length - 5 > 1 ? "s" : ""}
                 </p>

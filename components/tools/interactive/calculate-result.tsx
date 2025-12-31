@@ -51,7 +51,7 @@ export function CalculateResult({
                         {String(output.result)}
                     </div>
                     {output.explanation && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                             {output.explanation}
                         </div>
                     )}

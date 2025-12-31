@@ -148,7 +148,7 @@ export default function RootLayout({
                                     dangerouslySetInnerHTML={{ __html: criticalCss }}
                                 />
                             </head>
-                            <body className="min-h-screen bg-background font-sans antialiased">
+                            <body className="bg-background min-h-screen font-sans antialiased">
                                 <ThemeProvider>
                                     <MarkerProvider>
                                         <FloatingEmojiProvider>

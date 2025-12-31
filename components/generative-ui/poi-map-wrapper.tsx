@@ -93,7 +93,7 @@ export function POIMapWrapper({
     // Fullscreen mode needs a fixed container
     if (displayMode === "fullscreen") {
         return (
-            <div className="fixed inset-0 z-modal bg-background">
+            <div className="z-modal bg-background fixed inset-0">
                 <POIMap
                     id={id}
                     pois={pois}

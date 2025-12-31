@@ -27,7 +27,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
             {/* Backdrop overlay - deep purple twilight fade */}
             <div
                 className={cn(
-                    "fixed inset-0 z-backdrop transition-all duration-300 ease-out",
+                    "z-backdrop fixed inset-0 transition-all duration-300 ease-out",
                     isActive
                         ? "pointer-events-auto visible opacity-100"
                         : "pointer-events-none invisible opacity-0"
@@ -44,7 +44,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
             {/* Content overlay - centered drop zone */}
             <div
                 className={cn(
-                    "fixed inset-0 z-modal flex flex-col items-center justify-center transition-all duration-300 ease-out",
+                    "z-modal fixed inset-0 flex flex-col items-center justify-center transition-all duration-300 ease-out",
                     isActive
                         ? "pointer-events-auto visible opacity-100"
                         : "pointer-events-none invisible opacity-0"
@@ -109,15 +109,15 @@ export const DragDropOverlay = memo(function DragDropOverlay({
                         <div
                             className={cn(
                                 "relative flex h-20 w-20 items-center justify-center rounded-full",
-                                "bg-gradient-to-br from-primary/20 to-primary/5",
-                                "border border-primary/30",
+                                "from-primary/20 to-primary/5 bg-gradient-to-br",
+                                "border-primary/30 border",
                                 "transition-transform duration-500 ease-out",
                                 isActive && "scale-110"
                             )}
                         >
                             <Upload
                                 className={cn(
-                                    "h-10 w-10 text-primary transition-transform duration-300",
+                                    "text-primary h-10 w-10 transition-transform duration-300",
                                     isActive && "-translate-y-1"
                                 )}
                             />
@@ -125,12 +125,12 @@ export const DragDropOverlay = memo(function DragDropOverlay({
                     </div>
 
                     {/* Heading */}
-                    <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                    <h3 className="text-foreground text-xl font-semibold tracking-tight">
                         Drop to attach
                     </h3>
 
                     {/* Subtext */}
-                    <p className="mt-2 text-sm text-foreground/50">
+                    <p className="text-foreground/50 mt-2 text-sm">
                         Release to add files to your message
                     </p>
 
@@ -155,9 +155,9 @@ function FileTypeIndicator({
     label: string;
 }) {
     return (
-        <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-            <Icon className="h-3.5 w-3.5 text-primary/70" />
-            <span className="text-xs font-medium text-foreground/60">{label}</span>
+        <div className="bg-primary/10 flex items-center gap-1.5 rounded-full px-3 py-1.5">
+            <Icon className="text-primary/70 h-3.5 w-3.5" />
+            <span className="text-foreground/60 text-xs font-medium">{label}</span>
         </div>
     );
 }

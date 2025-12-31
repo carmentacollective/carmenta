@@ -11,7 +11,7 @@ export function ConnectCTA() {
             prefetch={false}
             className="btn-glass-interactive group/btn relative inline-flex overflow-hidden rounded-full px-8 py-3"
         >
-            <span className="relative z-content text-base font-medium text-foreground/80 transition-colors group-hover/btn:text-foreground">
+            <span className="z-content text-foreground/80 group-hover/btn:text-foreground relative text-base font-medium transition-colors">
                 Connect
             </span>
             <div

@@ -66,7 +66,7 @@ export function ToolDebugPanel({
         >
             {/* Easter egg tooltip */}
             {tooltipVisible && (
-                <div className="absolute -top-8 left-0 z-content rounded-md bg-foreground/90 px-2 py-1 text-xs text-background shadow-lg">
+                <div className="z-content bg-foreground/90 text-background absolute -top-8 left-0 rounded-md px-2 py-1 text-xs shadow-lg">
                     Welcome behind the curtain
                 </div>
             )}
@@ -74,7 +74,7 @@ export function ToolDebugPanel({
             <CollapsibleTrigger
                 className={cn(
                     "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs",
-                    "text-muted-foreground/50 transition-colors hover:text-muted-foreground",
+                    "text-muted-foreground/50 hover:text-muted-foreground transition-colors",
                     "hover:bg-muted/30"
                 )}
             >
@@ -94,10 +94,10 @@ export function ToolDebugPanel({
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0"
                 )}
             >
-                <div className="space-y-3 rounded-lg border border-dashed border-muted-foreground/20 bg-muted/20 p-3">
+                <div className="border-muted-foreground/20 bg-muted/20 space-y-3 rounded-lg border border-dashed p-3">
                     {/* Tool name */}
                     <div>
-                        <h5 className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        <h5 className="text-muted-foreground mb-1 text-[10px] font-medium tracking-wide uppercase">
                             Tool
                         </h5>
                         <code className="text-xs">{toolName}</code>
@@ -106,10 +106,10 @@ export function ToolDebugPanel({
                     {/* Timing */}
                     {(startedAt || durationMs !== undefined) && (
                         <div>
-                            <h5 className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <h5 className="text-muted-foreground mb-1 text-[10px] font-medium tracking-wide uppercase">
                                 Timing
                             </h5>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                                 {durationMs !== undefined && (
                                     <span>{durationMs}ms</span>
                                 )}
@@ -119,10 +119,10 @@ export function ToolDebugPanel({
 
                     {/* Parameters */}
                     <div>
-                        <h5 className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        <h5 className="text-muted-foreground mb-1 text-[10px] font-medium tracking-wide uppercase">
                             Parameters
                         </h5>
-                        <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[10px] leading-relaxed">
+                        <pre className="bg-muted/50 overflow-x-auto rounded p-2 text-[10px] leading-relaxed">
                             {JSON.stringify(input, null, 2)}
                         </pre>
                     </div>
@@ -130,10 +130,10 @@ export function ToolDebugPanel({
                     {/* Result */}
                     {output !== undefined && (
                         <div>
-                            <h5 className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <h5 className="text-muted-foreground mb-1 text-[10px] font-medium tracking-wide uppercase">
                                 Result
                             </h5>
-                            <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[10px] leading-relaxed">
+                            <pre className="bg-muted/50 overflow-x-auto rounded p-2 text-[10px] leading-relaxed">
                                 {JSON.stringify(output, null, 2)}
                             </pre>
                         </div>
@@ -142,7 +142,7 @@ export function ToolDebugPanel({
                     {/* Error */}
                     {error && (
                         <div>
-                            <h5 className="mb-1 text-[10px] font-medium uppercase tracking-wide text-red-500">
+                            <h5 className="mb-1 text-[10px] font-medium tracking-wide text-red-500 uppercase">
                                 Error
                             </h5>
                             <pre className="overflow-x-auto rounded bg-red-500/10 p-2 text-[10px] leading-relaxed text-red-600">

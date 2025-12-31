@@ -148,10 +148,10 @@ function ActivityItem({ message }: { message: TransientMessage }) {
             <ToolIconDisplay message={message} />
 
             {/* Tool name */}
-            <span className="shrink-0 font-medium text-foreground/80">{toolName}</span>
+            <span className="text-foreground/80 shrink-0 font-medium">{toolName}</span>
 
             {/* Full message text - truncated */}
-            <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground/60">
+            <span className="text-muted-foreground/60 min-w-0 flex-1 truncate font-mono text-xs">
                 {message.text}
             </span>
 
@@ -194,7 +194,7 @@ export function CodeModeActivity({ className }: CodeModeActivityProps) {
     return (
         <div
             className={cn(
-                "rounded-lg border border-foreground/10 bg-black/30 backdrop-blur-sm",
+                "border-foreground/10 rounded-lg border bg-black/30 backdrop-blur-sm",
                 "overflow-hidden",
                 className
             )}

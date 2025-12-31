@@ -361,7 +361,7 @@ function InlineTool({
                     animate={{ rotate: expanded ? 90 : 0 }}
                     transition={{ duration: 0.1 }}
                 >
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/30 group-hover:text-foreground/50" />
+                    <ChevronRight className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 shrink-0" />
                 </motion.div>
             </button>
 
@@ -379,7 +379,7 @@ function InlineTool({
                                 text={outputText}
                                 variant="ghost"
                                 size="sm"
-                                className="absolute right-1.5 top-1.5"
+                                className="absolute top-1.5 right-1.5"
                             />
 
                             <div className="overflow-x-auto p-2 pr-9">
@@ -501,7 +501,7 @@ function ReasoningSegment({ text }: { text: string }) {
                         className="overflow-hidden"
                     >
                         <div className="mt-1 rounded-lg border border-purple-500/10 bg-purple-950/20 p-3">
-                            <p className="whitespace-pre-wrap font-mono text-xs text-purple-200/60">
+                            <p className="font-mono text-xs whitespace-pre-wrap text-purple-200/60">
                                 {text}
                             </p>
                         </div>
