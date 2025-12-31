@@ -11,7 +11,7 @@
  * pre-merge CI check in .github/workflows/build.yml
  */
 
-import { describe, test, expect, beforeAll } from "vitest";
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "@/lib/db/schema";
@@ -38,6 +38,10 @@ describe("Schema Drift Detection", () => {
             const migration = readFileSync(join(migrationsPath, file), "utf-8");
             await client.exec(migration);
         }
+    });
+
+    afterAll(async () => {
+        await client.close();
     });
 
     test("integrations table has all expected columns", async () => {

@@ -61,6 +61,12 @@ async function waitForStreamingComplete(page: Page, timeout = 60000): Promise<vo
 }
 
 test.describe("Code Mode Inline Tool Activity", () => {
+    // Skip on CI - these tests call real AI APIs and are slow/expensive
+    // Run locally for development verification
+    test.skip(
+        !!process.env.CI,
+        "Skipping on CI: real AI API tests are slow and expensive"
+    );
     test.skip(
         !hasCredentials,
         "Skipping: Clerk API keys or TEST_USER_* credentials not set"
@@ -247,6 +253,11 @@ test.describe("Code Mode Inline Tool Activity", () => {
 });
 
 test.describe("Code Mode Streaming Performance", () => {
+    // Skip on CI - these tests call real AI APIs and are slow/expensive
+    test.skip(
+        !!process.env.CI,
+        "Skipping on CI: real AI API tests are slow and expensive"
+    );
     test.skip(
         !hasCredentials,
         "Skipping: Clerk API keys or TEST_USER_* credentials not set"

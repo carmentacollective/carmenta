@@ -13,6 +13,8 @@ const testUserPassword = process.env.TEST_USER_PASSWORD;
 const hasCredentials = testUserEmail && testUserPassword;
 
 test.describe("Code Mode Browser Verification", () => {
+    // Skip on CI - this is a manual verification test with screenshots
+    test.skip(!!process.env.CI, "Skipping on CI: manual browser verification test");
     test.skip(!hasCredentials, "Skipping: TEST_USER_* credentials not set");
 
     test("visual verification of code mode streaming", async ({ page }) => {
