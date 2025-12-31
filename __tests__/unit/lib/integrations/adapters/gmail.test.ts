@@ -11,6 +11,7 @@ import { ValidationError } from "@/lib/errors";
 // Mock connection manager
 vi.mock("@/lib/integrations/connection-manager", () => ({
     getCredentials: vi.fn(),
+    listServiceAccounts: vi.fn(),
 }));
 
 // Mock HTTP client
@@ -740,7 +741,7 @@ describe("GmailAdapter", () => {
             });
         });
 
-        it("requires message_id parameter", async () => {
+        it("requires message_ids parameter", async () => {
             const result = await adapter.execute(
                 "modify_labels",
                 { add_labels: ["STARRED"] },
@@ -748,13 +749,15 @@ describe("GmailAdapter", () => {
             );
 
             expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("message_ids");
         });
 
-        it("adds and removes labels from message", async () => {
+        it("adds and removes labels from single message", async () => {
             const { httpClient } = await import("@/lib/http-client");
             (httpClient.post as Mock).mockReturnValue({
                 json: vi.fn().mockResolvedValue({
                     id: "msg-123",
+                    threadId: "thread-456",
                     labelIds: ["INBOX", "STARRED"],
                 }),
             } as never);
@@ -762,7 +765,7 @@ describe("GmailAdapter", () => {
             const result = await adapter.execute(
                 "modify_labels",
                 {
-                    message_id: "msg-123",
+                    message_ids: ["msg-123"],
                     add_labels: ["STARRED"],
                     remove_labels: ["UNREAD"],
                 },
@@ -774,6 +777,113 @@ describe("GmailAdapter", () => {
                 expect.stringContaining("/messages/msg-123/modify"),
                 expect.any(Object)
             );
+        });
+
+        it("uses batchModify for multiple messages", async () => {
+            const { httpClient } = await import("@/lib/http-client");
+            (httpClient.post as Mock).mockReturnValue({
+                text: vi.fn().mockResolvedValue(""),
+            } as never);
+
+            const result = await adapter.execute(
+                "modify_labels",
+                {
+                    message_ids: ["msg-1", "msg-2", "msg-3"],
+                    add_labels: ["STARRED"],
+                    remove_labels: ["UNREAD"],
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(false);
+            expect(httpClient.post).toHaveBeenCalledWith(
+                expect.stringContaining("/messages/batchModify"),
+                expect.objectContaining({
+                    json: expect.objectContaining({
+                        ids: ["msg-1", "msg-2", "msg-3"],
+                        addLabelIds: ["STARRED"],
+                        removeLabelIds: ["UNREAD"],
+                    }),
+                })
+            );
+
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.message_count).toBe(3);
+        });
+
+        it("rejects more than 1000 messages", async () => {
+            const manyIds = Array.from({ length: 1001 }, (_, i) => `msg-${i}`);
+
+            const result = await adapter.execute(
+                "modify_labels",
+                {
+                    message_ids: manyIds,
+                    add_labels: ["STARRED"],
+                },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("1000");
+        });
+    });
+
+    describe("list_accounts operation", () => {
+        it("returns connected accounts", async () => {
+            const { getCredentials, listServiceAccounts } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+            (listServiceAccounts as Mock).mockResolvedValue([
+                {
+                    accountId: "personal@gmail.com",
+                    accountDisplayName: "Personal Account",
+                    isDefault: true,
+                    status: "connected",
+                    connectedAt: new Date(),
+                },
+                {
+                    accountId: "work@company.com",
+                    accountDisplayName: "Work Account",
+                    isDefault: false,
+                    status: "connected",
+                    connectedAt: new Date(),
+                },
+            ]);
+
+            const result = await adapter.execute("list_accounts", {}, testUserEmail);
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.accounts).toHaveLength(2);
+            expect(content.accounts[0].accountId).toBe("personal@gmail.com");
+            expect(content.accounts[0].isDefault).toBe(true);
+            expect(content.hint).toContain("accountId");
+        });
+
+        it("handles no connected accounts", async () => {
+            const { getCredentials, listServiceAccounts } =
+                await import("@/lib/integrations/connection-manager");
+            (getCredentials as Mock).mockResolvedValue({
+                type: "oauth",
+                accessToken: "test-access-token",
+                accountId: "test@gmail.com",
+                accountDisplayName: "test@gmail.com",
+                isDefault: true,
+            });
+            (listServiceAccounts as Mock).mockResolvedValue([]);
+
+            const result = await adapter.execute("list_accounts", {}, testUserEmail);
+
+            expect(result.isError).toBe(false);
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.accounts).toHaveLength(0);
+            expect(content.message).toContain("No Gmail accounts");
         });
     });
 

@@ -18,6 +18,7 @@ import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./b
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { GMAIL_API_BASE } from "../oauth/providers/gmail";
+import { listServiceAccounts } from "../connection-manager";
 
 /** Encode email to base64url format required by Gmail API */
 function encodeEmail(email: string): string {
@@ -187,8 +188,21 @@ export class GmailAdapter extends ServiceAdapter {
     getHelp(): HelpResponse {
         return {
             service: this.serviceDisplayName,
+            description:
+                "Gmail integration supports multiple connected accounts. " +
+                "Use list_accounts to see connected accounts, then pass accountId to any operation " +
+                "to use a specific account (defaults to primary account if not specified).",
             commonOperations: ["send_message", "search_messages", "get_message"],
             operations: [
+                {
+                    name: "list_accounts",
+                    description: "List all connected Gmail accounts for this user",
+                    parameters: [],
+                    returns:
+                        "Array of connected accounts with accountId, displayName, isDefault, and status",
+                    example: `list_accounts()`,
+                    annotations: { readOnlyHint: true },
+                },
                 {
                     name: "send_message",
                     description: "Send an email message",
@@ -408,13 +422,16 @@ export class GmailAdapter extends ServiceAdapter {
                 },
                 {
                     name: "modify_labels",
-                    description: "Add or remove labels from a message",
+                    description:
+                        "Add or remove labels from one or more messages. " +
+                        "Uses batch API for multiple messages (up to 1000 per request).",
                     parameters: [
                         {
-                            name: "message_id",
-                            type: "string",
+                            name: "message_ids",
+                            type: "array",
                             required: true,
-                            description: "Message ID to modify",
+                            description: "Message ID(s) to modify",
+                            example: '["18abc123", "18abc456"]',
                         },
                         {
                             name: "add_labels",
@@ -431,8 +448,10 @@ export class GmailAdapter extends ServiceAdapter {
                             example: '["UNREAD"]',
                         },
                     ],
-                    returns: "Updated message with new labels",
-                    example: `modify_labels({ message_id: "18abc", add_labels: ["STARRED"], remove_labels: ["UNREAD"] })`,
+                    returns:
+                        "For single message: updated message with labels. " +
+                        "For batch: success confirmation with count.",
+                    example: `modify_labels({ message_ids: ["18abc"], add_labels: ["STARRED"], remove_labels: ["UNREAD"] })`,
                     annotations: { readOnlyHint: false, destructiveHint: false },
                 },
                 {
@@ -500,6 +519,8 @@ export class GmailAdapter extends ServiceAdapter {
 
         try {
             switch (action) {
+                case "list_accounts":
+                    return await this.handleListAccounts(userId);
                 case "send_message":
                     return await this.handleSendMessage(params, accessToken);
                 case "search_messages":
@@ -865,32 +886,126 @@ export class GmailAdapter extends ServiceAdapter {
         });
     }
 
+    /**
+     * List all connected Gmail accounts for this user
+     */
+    private async handleListAccounts(userId: string): Promise<MCPToolResponse> {
+        const accounts = await listServiceAccounts(userId, this.serviceName);
+
+        if (accounts.length === 0) {
+            return this.createJSONResponse({
+                accounts: [],
+                message: "No Gmail accounts connected. Connect an account first.",
+            });
+        }
+
+        return this.createJSONResponse({
+            accounts: accounts.map((account) => ({
+                accountId: account.accountId,
+                displayName: account.accountDisplayName ?? account.accountId,
+                isDefault: account.isDefault,
+                status: account.status,
+            })),
+            hint:
+                "To use a specific account, pass accountId parameter to any operation. " +
+                `Example: search_messages({ q: "is:unread", accountId: "${accounts[0].accountId}" })`,
+        });
+    }
+
+    /**
+     * Modify labels on one or more messages
+     * Uses batchModify for multiple messages (more efficient)
+     */
     private async handleModifyLabels(
         params: unknown,
         accessToken: string
     ): Promise<MCPToolResponse> {
-        const { message_id, add_labels, remove_labels } = params as {
-            message_id: string;
+        const { message_ids, add_labels, remove_labels } = params as {
+            message_ids: string[];
             add_labels?: string[];
             remove_labels?: string[];
         };
 
-        const response = await httpClient
-            .post(`${GMAIL_API_BASE}/users/me/messages/${message_id}/modify`, {
-                headers: this.buildHeaders(accessToken),
-                json: {
-                    addLabelIds: add_labels ?? [],
-                    removeLabelIds: remove_labels ?? [],
-                },
-            })
-            .json<{ id: string; threadId: string; labelIds: string[] }>();
+        // Validate message_ids is an array
+        if (!Array.isArray(message_ids) || message_ids.length === 0) {
+            return this.createErrorResponse(
+                "message_ids must be a non-empty array of message IDs"
+            );
+        }
 
-        return this.createJSONResponse({
-            success: true,
-            message_id: response.id,
-            thread_id: response.threadId,
-            labels: response.labelIds,
-        });
+        // Gmail batch API limit is 1000 messages
+        if (message_ids.length > 1000) {
+            return this.createErrorResponse(
+                `Batch limit is 1000 messages per request. Got ${message_ids.length}. ` +
+                    "Split into multiple requests."
+            );
+        }
+
+        const addLabelIds = add_labels ?? [];
+        const removeLabelIds = remove_labels ?? [];
+
+        try {
+            // Single message: use standard modify endpoint (returns updated message)
+            if (message_ids.length === 1) {
+                const response = await httpClient
+                    .post(
+                        `${GMAIL_API_BASE}/users/me/messages/${message_ids[0]}/modify`,
+                        {
+                            headers: this.buildHeaders(accessToken),
+                            json: { addLabelIds, removeLabelIds },
+                        }
+                    )
+                    .json<{ id: string; threadId: string; labelIds: string[] }>();
+
+                return this.createJSONResponse({
+                    success: true,
+                    message_id: response.id,
+                    thread_id: response.threadId,
+                    labels: response.labelIds,
+                });
+            }
+
+            // Multiple messages: use batchModify endpoint (more efficient, returns empty on success)
+            await httpClient
+                .post(`${GMAIL_API_BASE}/users/me/messages/batchModify`, {
+                    headers: this.buildHeaders(accessToken),
+                    json: {
+                        ids: message_ids,
+                        addLabelIds,
+                        removeLabelIds,
+                    },
+                })
+                .text(); // batchModify returns empty body on success
+
+            return this.createJSONResponse({
+                success: true,
+                message_count: message_ids.length,
+                labels_added: addLabelIds,
+                labels_removed: removeLabelIds,
+            });
+        } catch (error) {
+            // Provide helpful error context for batch operations
+            const messagePreview = message_ids.slice(0, 3).join(", ");
+            const suffix =
+                message_ids.length > 3 ? ` (+${message_ids.length - 3} more)` : "";
+
+            if (error instanceof Error) {
+                if (error.message.includes("400")) {
+                    return this.createErrorResponse(
+                        `Batch modify failed for messages [${messagePreview}${suffix}]: ` +
+                            "One or more message IDs may be incorrect, messages may have been deleted, " +
+                            "or the specified labels don't exist."
+                    );
+                }
+                if (error.message.includes("404")) {
+                    return this.createErrorResponse(
+                        `Messages not found [${messagePreview}${suffix}]: ` +
+                            "Verify message IDs by searching again - messages may have been deleted."
+                    );
+                }
+            }
+            throw error;
+        }
     }
 
     /**
