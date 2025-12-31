@@ -20,6 +20,7 @@ import {
     type CompetitiveQuery,
     type QueryCategory,
 } from "./queries";
+import { SemanticCorrectnessScorer } from "./semantic-scorer";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
@@ -532,8 +533,9 @@ function sampleQueries(
     return sampled;
 }
 
-// Configuration for sampling
+// Configuration for sampling and semantic scoring
 const SAMPLE_RATE = parseFloat(process.env.SAMPLE_RATE ?? "1.0");
+const ENABLE_SEMANTIC_SCORING = process.env.ENABLE_SEMANTIC_SCORING === "true";
 
 /**
  * Run the competitive benchmark eval
@@ -558,7 +560,9 @@ Eval("Carmenta Competitive Benchmark", {
         return executeQuery(input);
     },
 
-    scores: [CompetitiveScorer],
+    scores: ENABLE_SEMANTIC_SCORING
+        ? [CompetitiveScorer, SemanticCorrectnessScorer]
+        : [CompetitiveScorer],
 
     metadata: {
         baseUrl: BASE_URL,
