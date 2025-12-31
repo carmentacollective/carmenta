@@ -249,7 +249,7 @@ Keep reasoning off (default) when:
 - Creative writing (reasoning reduces creativity)
 - Tool-heavy workflows where speed matters more
 
-When signals conflict (e.g., long message + speed signals), prefer the explicit user intent (speed signals) over implicit effort signals.
+When signals conflict (e.g., long message + speed signals), prefer the explicit user intent (speed signals) over implicit effort signals. This applies to BOTH reasoning configuration AND model selection - "quick" + complex topic = still use a fast model (Haiku/Grok).
 
 ### Response Depth (Verbosity)
 
@@ -420,6 +420,24 @@ What's the capital of France?
   "reasoning": { "enabled": false },
   "responseDepth": "concise",
   "title": "Quick geography question",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
+
+<user-message>
+Quick question - explain the theory of relativity
+</user-message>
+<query-signals>
+Speed signals detected: yes (quick/just/simply)
+Depth indicators detected: yes (why/how/explain/analyze)
+</query-signals>
+
+{
+  "modelId": "anthropic/claude-haiku-4.5",
+  "temperature": 0.4,
+  "explanation": "Quick question gets a quick answer - keeping pace with your flow! 🚀",
+  "reasoning": { "enabled": false },
+  "responseDepth": "concise",
+  "title": "🔬 Quick relativity explainer",
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
 }
 

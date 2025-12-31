@@ -254,18 +254,60 @@ async function executeMultiTurnTest(input: TestInput): Promise<RoutingOutput> {
 }
 
 /**
+ * Sample test data based on SAMPLE_RATE env var (0.0 - 1.0)
+ * Uses stratified sampling to maintain category distribution
+ */
+function sampleTestData<T extends { input: { category: string } }>(
+    data: T[],
+    sampleRate: number
+): T[] {
+    if (sampleRate >= 1.0) return data;
+    if (sampleRate <= 0) return [];
+
+    // Group by category for stratified sampling
+    const byCategory = new Map<string, T[]>();
+    for (const item of data) {
+        const cat = item.input.category;
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(item);
+    }
+
+    // Sample proportionally from each category
+    const sampled: T[] = [];
+    for (const [category, items] of byCategory) {
+        const sampleCount = Math.max(1, Math.ceil(items.length * sampleRate));
+        // Deterministic shuffle using category name as seed
+        const shuffled = items.slice().sort((a, b) => {
+            const hashA = `${category}-${a.input.category}`.length;
+            const hashB = `${category}-${b.input.category}`.length;
+            return hashA - hashB;
+        });
+        sampled.push(...shuffled.slice(0, sampleCount));
+    }
+
+    console.log(
+        `📊 Sampling ${sampled.length}/${data.length} test cases (${(sampleRate * 100).toFixed(0)}%)`
+    );
+    return sampled;
+}
+
+// Configuration for sampling
+const SAMPLE_RATE = parseFloat(process.env.SAMPLE_RATE ?? "1.0");
+
+/**
  * Run the Braintrust eval
  */
 Eval("Carmenta Routing", {
-    data: () =>
-        testData
-            .filter((t) => !t.input.slow) // Skip slow tests by default
-            .map((t) => ({
-                input: t.input,
-                expected: t.expected,
-                tags: t.tags,
-                metadata: { id: t.input.id, category: t.input.category },
-            })),
+    data: () => {
+        const filtered = testData.filter((t) => !t.input.slow); // Skip slow tests by default
+        const sampled = sampleTestData(filtered, SAMPLE_RATE);
+        return sampled.map((t) => ({
+            input: t.input,
+            expected: t.expected,
+            tags: t.tags,
+            metadata: { id: t.input.id, category: t.input.category },
+        }));
+    },
 
     task: async (input: TestInput): Promise<RoutingOutput> => {
         if (input.multiTurn) {
