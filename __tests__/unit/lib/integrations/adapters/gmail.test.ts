@@ -568,8 +568,15 @@ describe("GmailAdapter", () => {
                 testUserEmail
             );
 
-            // Verify the request was made (sanitized headers should allow the call)
-            expect(httpClient.post).toHaveBeenCalled();
+            // Verify the injected header was sanitized (not present in the raw email)
+            expect(httpClient.post).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    json: expect.objectContaining({
+                        raw: expect.not.stringContaining("attacker@evil.com"),
+                    }),
+                })
+            );
         });
 
         it("sanitizes CR/LF from subject to prevent header injection", async () => {
@@ -592,7 +599,15 @@ describe("GmailAdapter", () => {
                 testUserEmail
             );
 
-            expect(httpClient.post).toHaveBeenCalled();
+            // Verify the injected header was sanitized (not present in the raw email)
+            expect(httpClient.post).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    json: expect.objectContaining({
+                        raw: expect.not.stringContaining("attacker@evil.com"),
+                    }),
+                })
+            );
         });
     });
 
