@@ -8,9 +8,18 @@
  * Uses browser-image-compression to resize images to Claude's sweet spot (1092px).
  */
 
-import imageCompression from "browser-image-compression";
 import { logger } from "@/lib/client-logger";
 import { ALLOWED_MIME_TYPES } from "./file-config";
+
+/**
+ * Lazy-loaded image compression library.
+ * Only imported when optimizeImage is called (user uploads an image),
+ * saving ~15-25KB from the initial bundle.
+ */
+async function getImageCompression() {
+    const { default: imageCompression } = await import("browser-image-compression");
+    return imageCompression;
+}
 
 /**
  * Target dimensions for image optimization.
@@ -67,6 +76,8 @@ export async function optimizeImage(file: File): Promise<File> {
     };
 
     try {
+        // Lazy load compression library only when needed
+        const imageCompression = await getImageCompression();
         const optimizedFile = await imageCompression(file, options);
 
         const endSize = optimizedFile.size;

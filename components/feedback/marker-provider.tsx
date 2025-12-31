@@ -10,13 +10,23 @@
  *
  * @see https://github.com/marker-io/browser-sdk
  */
-import markerSDK from "@marker.io/browser";
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { useUserContext } from "@/lib/auth/user-context";
+import { logger } from "@/lib/client-logger";
 import { env } from "@/lib/env";
 
-type MarkerWidget = Awaited<ReturnType<typeof markerSDK.loadWidget>>;
+/**
+ * Lazy-loaded Marker.io SDK.
+ * Only imported when MarkerProvider mounts and projectId is configured,
+ * saving ~20-30KB from the initial bundle.
+ */
+async function loadMarkerWidget(projectId: string) {
+    const { default: markerSDK } = await import("@marker.io/browser");
+    return markerSDK.loadWidget({ project: projectId });
+}
+
+type MarkerWidget = Awaited<ReturnType<typeof loadMarkerWidget>>;
 
 interface MarkerContextValue {
     /** Trigger feedback capture */
@@ -62,19 +72,22 @@ export function MarkerProvider({ children }: MarkerProviderProps) {
         let loadedWidget: MarkerWidget | null = null;
 
         const initMarker = async () => {
-            loadedWidget = await markerSDK.loadWidget({
-                project: projectId,
-            });
+            try {
+                loadedWidget = await loadMarkerWidget(projectId);
 
-            if (!isMounted) {
-                loadedWidget.unload();
-                return;
+                if (!isMounted) {
+                    loadedWidget.unload();
+                    return;
+                }
+
+                // Hide Marker.io's default button - we use our custom one
+                loadedWidget.hide();
+
+                setWidget(loadedWidget);
+            } catch (error) {
+                // Graceful degradation - feedback button stays disabled
+                logger.error({ error }, "Failed to load Marker.io widget");
             }
-
-            // Hide Marker.io's default button - we use our custom one
-            loadedWidget.hide();
-
-            setWidget(loadedWidget);
         };
 
         void initMarker();
