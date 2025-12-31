@@ -254,7 +254,10 @@ export const builtInTools = {
         execute: async ({ action, query, tag, limit = 10 }) => {
             const apiKey = process.env.GIPHY_API_KEY;
             if (!apiKey) {
-                logger.error("GIPHY_API_KEY environment variable not configured");
+                logger.error(
+                    { tool: "giphy" },
+                    "GIPHY_API_KEY environment variable not configured"
+                );
                 return {
                     error: true,
                     message: "Giphy is not configured. Missing API key.",
@@ -383,7 +386,7 @@ export const builtInTools = {
             try {
                 switch (action) {
                     case "list_templates": {
-                        logger.info("Fetching Imgflip meme templates");
+                        logger.info({ tool: "imgflip" }, "Fetching meme templates");
 
                         const response = await httpClient
                             .get(`${IMGFLIP_API_BASE}/get_memes`)

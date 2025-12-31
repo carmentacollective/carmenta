@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
 
     if (process.env.NODE_ENV === "production" && cronSecret) {
         if (authHeader !== `Bearer ${cronSecret}`) {
-            logger.warn("Unauthorized cron request to cleanup-oauth-states");
+            logger.warn(
+                { endpoint: "cleanup-oauth-states" },
+                "Unauthorized cron request"
+            );
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
     }
