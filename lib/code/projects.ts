@@ -536,8 +536,6 @@ export {
 export {
     calculateUserDiskUsage,
     calculateWorkspaceSize,
-    cleanupAllWorkspaces,
-    cleanupUserWorkspaces,
     deleteWorkspace,
     ensureUserWorkspaceDir,
     getCurrentBranch,

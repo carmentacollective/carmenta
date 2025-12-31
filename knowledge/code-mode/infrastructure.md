@@ -168,13 +168,11 @@ services:
 ### Environment
 
 - `DATA_DIR=/data` - enables workspace mode
-- `CRON_SECRET` - protects cleanup cron endpoint
 
 ### What's Working
 
 - Persistent disk survives deploys
 - Claude Code streaming works through Render's infrastructure
-- Cleanup cron can run on schedule
 
 ### What's Next
 

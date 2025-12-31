@@ -64,39 +64,26 @@ This enables cleanup decisions without database queries - filesystem is source o
 4. **Sanitized names**: Owner/repo stripped of special chars before path construction
 5. **Symlink rejection**: `lstat` checks prevent symlink attacks
 
-## Cleanup Strategy
-
-Cron job runs every 6 hours (or triggered manually):
-
-1. Delete workspaces inactive for 7+ days
-2. Skip workspaces with uncommitted changes (warn instead)
-3. Log freed space
-
-With 10GB disk and 2-5 users, ~2GB soft quota per user. Re-cloning is cheap, so
-aggressive cleanup is acceptable.
-
 ## Clone Flow (Requires GitHub Integration)
 
 This is implemented separately via GitHub OAuth or GitHub App:
 
 1. User selects repo from connected GitHub account
 2. Check if workspace exists for this user/repo
-3. If not, clone to `/data/workspaces/{userId}/{owner}_{repo}/`
+3. If not, clone to `/data/workspaces/{userId}/{owner}__{repo}/`
 4. Create `.workspace.json` with metadata
 5. On subsequent access, pull latest (if no uncommitted changes)
 
 ## Key Files
 
-- `lib/code/workspaces.ts` - Workspace utilities (paths, metadata, cleanup)
+- `lib/code/workspaces.ts` - Workspace utilities (paths, metadata)
 - `lib/code/projects.ts` - Project discovery (uses workspaces in production)
-- `app/api/cron/cleanup/route.ts` - Cleanup cron endpoint
 
 ## Environment Variables
 
-| Variable      | Description               | Example     |
-| ------------- | ------------------------- | ----------- |
-| `DATA_DIR`    | Persistent disk path      | `/data`     |
-| `CRON_SECRET` | Secret for cron endpoints | `secret123` |
+| Variable   | Description          | Example |
+| ---------- | -------------------- | ------- |
+| `DATA_DIR` | Persistent disk path | `/data` |
 
 ## What's Not Implemented Yet
 
