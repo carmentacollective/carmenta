@@ -417,6 +417,7 @@ export const builtInTools = {
 
                         if (!username || !password) {
                             logger.error(
+                                { tool: "imgflip" },
                                 "IMGFLIP_USERNAME or IMGFLIP_PASSWORD not configured"
                             );
                             return {
