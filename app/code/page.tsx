@@ -57,9 +57,9 @@ export default function CodePage() {
         <div className="fixed inset-0 overflow-hidden">
             <HolographicBackground hideWatermark />
 
-            <div className="relative z-content flex h-full items-center justify-center p-4">
+            <div className="z-content relative flex h-full items-center justify-center p-4">
                 <motion.div
-                    className="w-full max-w-md space-y-6 rounded-3xl border border-white/20 bg-white/70 p-8 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-card/70"
+                    className="dark:bg-card/70 w-full max-w-md space-y-6 rounded-3xl border border-white/20 bg-white/70 p-8 shadow-2xl backdrop-blur-xl dark:border-white/10"
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -75,10 +75,10 @@ export default function CodePage() {
                             />
                         </div>
                         <div>
-                            <h1 className="text-xl font-semibold text-foreground">
+                            <h1 className="text-foreground text-xl font-semibold">
                                 Code Mode
                             </h1>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                                 Choose a project to work on together
                             </p>
                         </div>
@@ -86,7 +86,7 @@ export default function CodePage() {
 
                     {/* Project Selection */}
                     <div className="space-y-4">
-                        <label className="block text-sm font-medium text-foreground">
+                        <label className="text-foreground block text-sm font-medium">
                             Project
                         </label>
                         <ProjectSelector
@@ -146,7 +146,7 @@ export default function CodePage() {
                     </button>
 
                     {/* Hint */}
-                    <p className="text-center text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-center text-xs">
                         We&apos;ll use Claude Agent SDK to work on your code together.
                         <br />
                         All changes happen in your local filesystem.

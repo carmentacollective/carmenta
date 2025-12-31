@@ -88,7 +88,7 @@ function MemeContent({
                     sizes="(max-width: 768px) 100vw, 448px"
                 />
             </div>
-            <div className="p-3 text-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground p-3 text-center text-xs">
                 Powered by Imgflip
             </div>
         </Card>

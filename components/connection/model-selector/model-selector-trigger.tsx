@@ -72,9 +72,9 @@ export function ModelSelectorTrigger({
                 className={cn(
                     // When showLabel with text: pill style. Otherwise: icon button style
                     showLabel && labelText
-                        ? "group relative flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors hover:bg-foreground/5"
+                        ? "group hover:bg-foreground/5 relative flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors"
                         : "btn-icon-glass group relative",
-                    hasOverrides && !isAuto ? "ring-2 ring-primary/40" : "",
+                    hasOverrides && !isAuto ? "ring-primary/40 ring-2" : "",
                     disabled && "btn-disabled",
                     className
                 )}
@@ -94,7 +94,7 @@ export function ModelSelectorTrigger({
                             )}
                         />
                         {labelText && (
-                            <span className="text-sm font-medium text-foreground/80">
+                            <span className="text-foreground/80 text-sm font-medium">
                                 {labelText}
                             </span>
                         )}
@@ -112,7 +112,7 @@ export function ModelSelectorTrigger({
                         )}
                     />
                 ) : (
-                    <Sparkles className="h-5 w-5 text-primary/70 transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+                    <Sparkles className="text-primary/70 group-hover:text-primary h-5 w-5 transition-colors sm:h-6 sm:w-6" />
                 )}
             </button>
 

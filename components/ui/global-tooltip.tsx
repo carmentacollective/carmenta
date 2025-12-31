@@ -18,7 +18,7 @@ export function GlobalTooltip() {
             place="top"
             delayShow={400}
             delayHide={100}
-            className="!z-tooltip !max-w-xs !rounded-lg !border !border-border/50 !bg-popover !px-3 !py-2 !text-sm !text-popover-foreground !shadow-lg !backdrop-blur-md"
+            className="!z-tooltip !border-border/50 !bg-popover !text-popover-foreground !max-w-xs !rounded-lg !border !px-3 !py-2 !text-sm !shadow-lg !backdrop-blur-md"
             classNameArrow="!border-border/50"
             opacity={1}
         />

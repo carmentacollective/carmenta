@@ -15,14 +15,14 @@ const CONTENT_SPACING = "px-5 py-4 gap-2";
 function LinkPreviewProgress() {
     return (
         <div className="flex w-full flex-col motion-safe:animate-pulse">
-            <div className="aspect-[5/3] w-full bg-muted" />
+            <div className="bg-muted aspect-[5/3] w-full" />
             <div className={cn("flex flex-col", CONTENT_SPACING)}>
                 <div className="flex items-center gap-2">
-                    <div className="size-4 rounded-full bg-muted" />
-                    <div className="h-3 w-24 rounded bg-muted" />
+                    <div className="bg-muted size-4 rounded-full" />
+                    <div className="bg-muted h-3 w-24 rounded" />
                 </div>
-                <div className="h-5 w-3/4 rounded bg-muted" />
-                <div className="h-4 w-full rounded bg-muted" />
+                <div className="bg-muted h-5 w-3/4 rounded" />
+                <div className="bg-muted h-4 w-full rounded" />
             </div>
         </div>
     );
@@ -86,7 +86,7 @@ export function LinkPreview(props: LinkPreviewProps) {
 
     return (
         <article
-            className={cn("relative w-full min-w-80 max-w-md", className)}
+            className={cn("relative w-full max-w-md min-w-80", className)}
             lang={locale}
             aria-busy={isLoading}
             data-tool-ui-id={id}
@@ -94,7 +94,7 @@ export function LinkPreview(props: LinkPreviewProps) {
         >
             <div
                 className={cn(
-                    "@container group relative isolate flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm",
+                    "group @container relative isolate flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm",
                     glass.standard,
                     border.container,
                     sanitizedHref && "cursor-pointer"
@@ -120,7 +120,7 @@ export function LinkPreview(props: LinkPreviewProps) {
                         {image && (
                             <div
                                 className={cn(
-                                    "relative w-full overflow-hidden bg-muted",
+                                    "bg-muted relative w-full overflow-hidden",
                                     ratio !== "auto"
                                         ? RATIO_CLASS_MAP[ratio]
                                         : "aspect-[5/3]"
@@ -141,7 +141,7 @@ export function LinkPreview(props: LinkPreviewProps) {
                         )}
                         <div className={cn("flex flex-col", CONTENT_SPACING)}>
                             {domain && (
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground flex items-center gap-2 text-xs">
                                     {favicon ? (
                                         <img
                                             src={favicon}
@@ -152,7 +152,7 @@ export function LinkPreview(props: LinkPreviewProps) {
                                             decoding="async"
                                         />
                                     ) : (
-                                        <div className="flex size-4 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted">
+                                        <div className="border-border/60 bg-muted flex size-4 shrink-0 items-center justify-center rounded-full border">
                                             <Globe
                                                 className="h-2.5 w-2.5"
                                                 aria-hidden="true"
@@ -163,12 +163,12 @@ export function LinkPreview(props: LinkPreviewProps) {
                                 </div>
                             )}
                             {title && (
-                                <h3 className="text-pretty text-base font-medium text-foreground">
+                                <h3 className="text-foreground text-base font-medium text-pretty">
                                     <span className="line-clamp-2">{title}</span>
                                 </h3>
                             )}
                             {description && (
-                                <p className="text-pretty leading-snug text-muted-foreground">
+                                <p className="text-muted-foreground leading-snug text-pretty">
                                     <span className="line-clamp-2">{description}</span>
                                 </p>
                             )}

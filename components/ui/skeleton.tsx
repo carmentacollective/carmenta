@@ -16,7 +16,7 @@ function Skeleton({ className, variant = "shimmer", ...props }: SkeletonProps) {
                 "rounded-md",
                 variant === "shimmer"
                     ? "animate-shimmer"
-                    : "animate-pulse bg-primary/10",
+                    : "bg-primary/10 animate-pulse",
                 className
             )}
             {...props}

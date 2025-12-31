@@ -56,7 +56,7 @@ export function SteppedSlider({
     return (
         <div>
             <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-medium text-foreground/60">
+                <label className="text-foreground/60 text-xs font-medium">
                     {label}
                 </label>
                 <span
@@ -92,8 +92,8 @@ export function SteppedSlider({
                                         "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
                                         isSelected
                                             ? isPrimary
-                                                ? "scale-110 border-primary bg-primary shadow-md"
-                                                : "scale-110 border-secondary bg-secondary shadow-md"
+                                                ? "border-primary bg-primary scale-110 shadow-md"
+                                                : "border-secondary bg-secondary scale-110 shadow-md"
                                             : isActive && progressMode
                                               ? isPrimary
                                                   ? "border-primary/40 bg-primary/10"
@@ -116,8 +116,8 @@ export function SteppedSlider({
                                         "mt-1.5 text-[9px] transition-colors",
                                         isSelected
                                             ? isPrimary
-                                                ? "font-semibold text-primary"
-                                                : "font-semibold text-secondary-foreground"
+                                                ? "text-primary font-semibold"
+                                                : "text-secondary-foreground font-semibold"
                                             : "text-foreground/30"
                                     )}
                                 >
@@ -127,7 +127,7 @@ export function SteppedSlider({
 
                             {/* Connecting segment between circles */}
                             {!isLast && (
-                                <div className="mx-1 h-0.5 flex-1 rounded-full bg-foreground/10">
+                                <div className="bg-foreground/10 mx-1 h-0.5 flex-1 rounded-full">
                                     {progressMode && (
                                         <div
                                             className={cn(

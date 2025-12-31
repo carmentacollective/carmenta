@@ -33,10 +33,10 @@ class ChatErrorBoundary extends Component<
             return (
                 <div className="flex h-full flex-col items-center justify-center p-8 text-center">
                     <div className="glass-card max-w-md">
-                        <h2 className="mb-2 text-lg font-semibold text-foreground/90">
+                        <h2 className="text-foreground/90 mb-2 text-lg font-semibold">
                             We hit a snag
                         </h2>
-                        <p className="mb-4 text-sm text-foreground/60">
+                        <p className="text-foreground/60 mb-4 text-sm">
                             Something went sideways. A quick refresh should get us back
                             on track.
                         </p>

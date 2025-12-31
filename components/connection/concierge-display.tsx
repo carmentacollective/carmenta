@@ -184,7 +184,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                     className={cn(
                         "group -mx-2 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-200 sm:gap-2.5 sm:py-2",
                         // Transparent by default, subtle hover state
-                        "bg-transparent hover:bg-foreground/[0.03]",
+                        "hover:bg-foreground/[0.03] bg-transparent",
                         !hasSelected && "cursor-default",
                         // Subtle glow during celebrating
                         isCelebrating && "bg-purple-500/5"
@@ -213,10 +213,10 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 }}
                                 className="flex items-center gap-2"
                             >
-                                <span className="text-sm text-foreground/90">
+                                <span className="text-foreground/90 text-sm">
                                     {selectingMessage}
                                 </span>
-                                <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground/50" />
+                                <Loader2 className="text-foreground/50 h-3.5 w-3.5 animate-spin" />
                             </motion.div>
                         )}
 
@@ -237,7 +237,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                     initial={{ opacity: 0, x: -4 }}
                                     animate={{ opacity: 0.3, x: 0 }}
                                     transition={{ duration: 0.3, delay: 0.15 }}
-                                    className="text-sm text-foreground"
+                                    className="text-foreground text-sm"
                                 >
                                     →
                                 </motion.span>
@@ -251,7 +251,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                     >
                                         <ProviderIcon
                                             provider={modelConfig.provider}
-                                            className="h-4 w-4 shrink-0 text-foreground/60"
+                                            className="text-foreground/60 h-4 w-4 shrink-0"
                                         />
                                     </motion.div>
                                 )}
@@ -261,7 +261,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.25, delay: 0.25 }}
-                                    className="truncate text-sm font-medium text-foreground/80"
+                                    className="text-foreground/80 truncate text-sm font-medium"
                                 >
                                     {displayName}
                                 </motion.span>
@@ -271,7 +271,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 0.25 }}
                                     transition={{ duration: 0.2, delay: 0.3 }}
-                                    className="text-sm text-foreground"
+                                    className="text-foreground text-sm"
                                 >
                                     ·
                                 </motion.span>
@@ -330,7 +330,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 {/* Expand chevron - appears on hover */}
                                 <ChevronDown
                                     className={cn(
-                                        "ml-auto h-4 w-4 shrink-0 text-foreground/25 transition-all duration-200",
+                                        "text-foreground/25 ml-auto h-4 w-4 shrink-0 transition-all duration-200",
                                         "opacity-0 group-hover:opacity-100",
                                         isOpen && "rotate-180 opacity-100"
                                     )}
@@ -357,19 +357,19 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                             {/* Header */}
                             <div className="mb-3 flex items-center gap-2">
                                 <CarmentaAvatar size="xs" state="idle" />
-                                <span className="font-medium text-foreground/80">
+                                <span className="text-foreground/80 font-medium">
                                     Why this choice
                                 </span>
                             </div>
 
                             {/* Explanation */}
                             {explanation && (
-                                <p className="mb-4 text-foreground/70">{explanation}</p>
+                                <p className="text-foreground/70 mb-4">{explanation}</p>
                             )}
 
                             {/* Badges row */}
                             <div className="flex flex-wrap gap-2">
-                                <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+                                <span className="bg-primary/10 text-primary rounded-full px-3 py-1 font-medium">
                                     {tempBadge.emoji} {tempBadge.label}
                                 </span>
                                 {reasoningBadge && (

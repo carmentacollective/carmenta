@@ -102,7 +102,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
         return (
             <div
                 className={cn(
-                    "flex items-center justify-center rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground",
+                    "bg-muted/50 text-muted-foreground flex items-center justify-center rounded-lg p-4 text-sm",
                     compact ? "h-32" : "h-48",
                     className
                 )}
@@ -115,7 +115,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
     return (
         <div
             className={cn(
-                "group relative overflow-hidden rounded-lg bg-muted/30",
+                "group bg-muted/30 relative overflow-hidden rounded-lg",
                 className
             )}
         >
@@ -123,7 +123,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
             {!imageLoaded && (
                 <div
                     className={cn(
-                        "absolute inset-0 animate-pulse bg-muted/50",
+                        "bg-muted/50 absolute inset-0 animate-pulse",
                         compact ? "h-32" : "h-48"
                     )}
                 />
@@ -220,7 +220,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
 
             {/* Always-visible attribution badge in corner (compact mode) */}
             {compact && (
-                <div className="absolute bottom-1 right-1 rounded bg-black/50 px-1.5 py-0.5 opacity-60 group-hover:opacity-0">
+                <div className="absolute right-1 bottom-1 rounded bg-black/50 px-1.5 py-0.5 opacity-60 group-hover:opacity-0">
                     <Image
                         src="/logos/giphy.svg"
                         alt="GIPHY"

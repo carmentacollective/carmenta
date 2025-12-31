@@ -175,16 +175,16 @@ export function POIMap({
         const isFavorite = favoriteIds.has(modalPoi.id);
 
         return (
-            <div className="absolute inset-0 z-modal flex items-center justify-center p-6">
+            <div className="z-modal absolute inset-0 flex items-center justify-center p-6">
                 <div
                     className="absolute inset-0 bg-black/40"
                     onClick={onDismissModal}
                     aria-hidden="true"
                 />
-                <div className="relative z-content flex max-h-full w-full max-w-sm flex-col overflow-hidden rounded-xl bg-card shadow-xl">
+                <div className="z-content bg-card relative flex max-h-full w-full max-w-sm flex-col overflow-hidden rounded-xl shadow-xl">
                     <button
                         onClick={onDismissModal}
-                        className="absolute right-3 top-3 z-content flex size-8 items-center justify-center rounded-full border bg-background/80 shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+                        className="z-content bg-background/80 hover:bg-background absolute top-3 right-3 flex size-8 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-colors"
                         aria-label="Close"
                     >
                         <X className="size-4" />
@@ -238,14 +238,14 @@ export function POIMap({
                         </div>
 
                         {modalPoi.description && (
-                            <p className="text-sm leading-relaxed text-muted-foreground">
+                            <p className="text-muted-foreground text-sm leading-relaxed">
                                 {modalPoi.description}
                             </p>
                         )}
 
                         {modalPoi.address && (
                             <div className="flex items-start gap-2 text-sm">
-                                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                <MapPin className="text-muted-foreground mt-0.5 size-4 shrink-0" />
                                 <span>{modalPoi.address}</span>
                             </div>
                         )}
@@ -357,7 +357,7 @@ export function POIMap({
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="text-muted-foreground mt-1 text-xs">
                             {filteredPois.length} location
                             {filteredPois.length !== 1 && "s"}
                             {categoryFilter && ` · ${CATEGORY_LABELS[categoryFilter]}`}
@@ -374,7 +374,7 @@ export function POIMap({
                     />
                 </div>
 
-                <div className="relative isolate min-w-0 flex-1 overflow-hidden rounded-xl border border-border">
+                <div className="border-border relative isolate min-w-0 flex-1 overflow-hidden rounded-xl border">
                     <MapView
                         pois={filteredPois}
                         center={mapCenter}
@@ -387,14 +387,14 @@ export function POIMap({
                         className="h-full w-full"
                     />
 
-                    <div className="absolute right-3 top-3 z-content flex gap-1">
+                    <div className="z-content absolute top-3 right-3 flex gap-1">
                         {onRefresh && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="secondary"
                                         size="icon"
-                                        className="size-8 bg-background/80 backdrop-blur-md"
+                                        className="bg-background/80 size-8 backdrop-blur-md"
                                         onClick={onRefresh}
                                     >
                                         <RefreshCw className="size-4" />
@@ -410,7 +410,7 @@ export function POIMap({
                                 <Button
                                     variant="secondary"
                                     size="icon"
-                                    className="size-8 bg-background/80 backdrop-blur-md"
+                                    className="bg-background/80 size-8 backdrop-blur-md"
                                     onClick={handleToggleFullscreen}
                                 >
                                     <Minimize2 className="size-4" />
@@ -430,7 +430,7 @@ export function POIMap({
         <div
             id={id}
             className={cn(
-                "relative isolate h-full w-full overflow-hidden rounded-xl border border-border",
+                "border-border relative isolate h-full w-full overflow-hidden rounded-xl border",
                 className
             )}
             data-tool-ui-id={id}
@@ -449,14 +449,14 @@ export function POIMap({
                 className="h-full w-full"
             />
 
-            <div className="absolute right-3 top-3 z-content flex gap-1">
+            <div className="z-content absolute top-3 right-3 flex gap-1">
                 {onRefresh && (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 variant="secondary"
                                 size="icon"
-                                className="size-8 bg-background/80 backdrop-blur-md"
+                                className="bg-background/80 size-8 backdrop-blur-md"
                                 onClick={onRefresh}
                             >
                                 <RefreshCw className="size-4" />
@@ -472,7 +472,7 @@ export function POIMap({
                         <Button
                             variant="secondary"
                             size="icon"
-                            className="size-8 bg-background/80 backdrop-blur-md"
+                            className="bg-background/80 size-8 backdrop-blur-md"
                             onClick={handleToggleFullscreen}
                         >
                             <Maximize2 className="size-4" />
@@ -485,12 +485,12 @@ export function POIMap({
             </div>
 
             {title && (
-                <div className="absolute left-3 top-3 z-content rounded-lg bg-background/80 px-3 py-1.5 backdrop-blur-md">
+                <div className="z-content bg-background/80 absolute top-3 left-3 rounded-lg px-3 py-1.5 backdrop-blur-md">
                     <span className="text-sm font-medium">{title}</span>
                 </div>
             )}
 
-            <div className="absolute bottom-3 left-3 right-3 z-content">
+            <div className="z-content absolute right-3 bottom-3 left-3">
                 <POIListInline
                     pois={filteredPois}
                     selectedPoiId={selectedPoiId}

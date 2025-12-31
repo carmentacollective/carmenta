@@ -68,7 +68,7 @@ Respond with a JSON object:
   "shouldSave": boolean,
   "extractions": [
     {
-      "path": "knowledge.identity" | "knowledge.people.{Name}" | "knowledge.projects.{name}" | "knowledge.preferences.{category}",
+      "path": "profile.identity" | "knowledge.people.{Name}" | "knowledge.projects.{name}" | "knowledge.preferences.{category}" | "knowledge.decisions.{topic}" | "knowledge.meetings.{date}.{slug}",
       "pathPattern": "regex pattern to match the path",
       "action": "create" | "update" | "append",
       "contentPatterns": ["regex patterns that should appear in saved content"],

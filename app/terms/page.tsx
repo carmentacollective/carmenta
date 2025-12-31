@@ -380,7 +380,7 @@ export default function TermsPage() {
                         </ul>
                     </section>
 
-                    <footer className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
+                    <footer className="text-muted-foreground mt-12 border-t pt-8 text-center text-sm">
                         <p>Last updated: December 9, 2025</p>
                     </footer>
                 </div>

@@ -132,16 +132,16 @@ export function DesignLabShell({
         <div className="relative min-h-screen">
             <HolographicBackground />
 
-            <div className="relative z-content flex min-h-screen flex-col">
+            <div className="z-content relative flex min-h-screen flex-col">
                 {/* Header */}
-                <header className="border-b border-foreground/10 bg-white/40 backdrop-blur-xl">
+                <header className="border-foreground/10 border-b bg-white/40 backdrop-blur-xl">
                     <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                         <div>
-                            <h1 className="text-2xl font-light text-foreground/90">
+                            <h1 className="text-foreground/90 text-2xl font-light">
                                 {topic}
                             </h1>
                             {iteration > 0 && (
-                                <p className="text-sm text-foreground/60">
+                                <p className="text-foreground/60 text-sm">
                                     Iteration {iteration}
                                 </p>
                             )}
@@ -158,7 +158,7 @@ export function DesignLabShell({
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
 
-                            <span className="min-w-[4rem] text-center font-medium text-foreground/80">
+                            <span className="text-foreground/80 min-w-[4rem] text-center font-medium">
                                 {currentIndex + 1} of {totalOptions}
                             </span>
 
@@ -171,7 +171,7 @@ export function DesignLabShell({
                                 <ChevronRight className="h-5 w-5" />
                             </Button>
 
-                            <div className="ml-4 h-6 w-px bg-foreground/10" />
+                            <div className="bg-foreground/10 ml-4 h-6 w-px" />
 
                             <Button
                                 variant={showCode ? "default" : "ghost"}
@@ -225,7 +225,7 @@ export function DesignLabShell({
                                         >
                                             <button
                                                 onClick={copyCode}
-                                                className="absolute right-4 top-4 flex items-center gap-2 rounded-lg bg-white/50 px-3 py-1.5 text-sm text-foreground/70 backdrop-blur-sm transition-colors hover:bg-white/70 hover:text-foreground/90"
+                                                className="text-foreground/70 hover:text-foreground/90 absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-white/50 px-3 py-1.5 text-sm backdrop-blur-sm transition-colors hover:bg-white/70"
                                             >
                                                 {copied ? (
                                                     <>
@@ -241,7 +241,7 @@ export function DesignLabShell({
                                             </button>
 
                                             <pre className="h-full overflow-auto p-6">
-                                                <code className="font-mono text-sm text-foreground/80">
+                                                <code className="text-foreground/80 font-mono text-sm">
                                                     {currentOption.code}
                                                 </code>
                                             </pre>
@@ -266,22 +266,22 @@ export function DesignLabShell({
                                 {/* Current option details */}
                                 <div className="glass-card space-y-4">
                                     <div>
-                                        <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                        <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
                                             Option {currentOption.id}
                                         </span>
-                                        <h2 className="mt-1 text-xl font-medium text-foreground/90">
+                                        <h2 className="text-foreground/90 mt-1 text-xl font-medium">
                                             {currentOption.name}
                                         </h2>
                                     </div>
 
-                                    <p className="text-sm leading-relaxed text-foreground/70">
+                                    <p className="text-foreground/70 text-sm leading-relaxed">
                                         {currentOption.rationale}
                                     </p>
 
                                     {Object.keys(currentOption.characteristics).length >
                                         0 && (
-                                        <div className="space-y-2 border-t border-foreground/10 pt-4">
-                                            <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                        <div className="border-foreground/10 space-y-2 border-t pt-4">
+                                            <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
                                                 Characteristics
                                             </span>
                                             <dl className="space-y-1.5">
@@ -291,7 +291,7 @@ export function DesignLabShell({
                                                         <dt className="text-foreground/60">
                                                             Animation
                                                         </dt>
-                                                        <dd className="font-mono text-foreground/80">
+                                                        <dd className="text-foreground/80 font-mono">
                                                             {
                                                                 currentOption
                                                                     .characteristics
@@ -337,7 +337,7 @@ export function DesignLabShell({
 
                                 {/* Option thumbnails */}
                                 <div className="glass-card">
-                                    <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                    <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
                                         All Options
                                     </span>
                                     <div className="mt-3 grid grid-cols-3 gap-2">
@@ -348,7 +348,7 @@ export function DesignLabShell({
                                                 className={cn(
                                                     "flex aspect-square items-center justify-center rounded-lg text-sm font-medium transition-all",
                                                     currentIndex === index
-                                                        ? "bg-primary/20 text-primary ring-2 ring-primary/40"
+                                                        ? "bg-primary/20 text-primary ring-primary/40 ring-2"
                                                         : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground/80"
                                                 )}
                                             >
@@ -360,7 +360,7 @@ export function DesignLabShell({
 
                                 {/* Keyboard shortcuts */}
                                 <div className="glass-card">
-                                    <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                    <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
                                         Keyboard Shortcuts
                                     </span>
                                     <dl className="mt-3 space-y-1.5 text-sm">
@@ -368,7 +368,7 @@ export function DesignLabShell({
                                             <dt className="text-foreground/60">
                                                 Navigate
                                             </dt>
-                                            <dd className="font-mono text-foreground/80">
+                                            <dd className="text-foreground/80 font-mono">
                                                 ← → or h l
                                             </dd>
                                         </div>
@@ -376,7 +376,7 @@ export function DesignLabShell({
                                             <dt className="text-foreground/60">
                                                 Jump to
                                             </dt>
-                                            <dd className="font-mono text-foreground/80">
+                                            <dd className="text-foreground/80 font-mono">
                                                 1-9
                                             </dd>
                                         </div>
@@ -384,7 +384,7 @@ export function DesignLabShell({
                                             <dt className="text-foreground/60">
                                                 Toggle code
                                             </dt>
-                                            <dd className="font-mono text-foreground/80">
+                                            <dd className="text-foreground/80 font-mono">
                                                 c
                                             </dd>
                                         </div>
@@ -392,15 +392,15 @@ export function DesignLabShell({
                                 </div>
 
                                 {/* Iteration instructions */}
-                                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                                    <span className="text-xs font-medium uppercase tracking-wider text-primary/70">
+                                <div className="border-primary/20 bg-primary/5 rounded-xl border p-4">
+                                    <span className="text-primary/70 text-xs font-medium tracking-wider uppercase">
                                         To Iterate
                                     </span>
-                                    <p className="mt-2 text-sm leading-relaxed text-foreground/70">
+                                    <p className="text-foreground/70 mt-2 text-sm leading-relaxed">
                                         Tell me which options you like and what
                                         direction to explore:
                                     </p>
-                                    <p className="mt-2 font-mono text-xs text-foreground/60">
+                                    <p className="text-foreground/60 mt-2 font-mono text-xs">
                                         "I like 3 and 7 - iterate with softer
                                         transitions"
                                     </p>

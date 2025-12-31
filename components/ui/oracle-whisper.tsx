@@ -241,7 +241,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                             className="absolute -inset-2 rounded-full"
                         >
                             <motion.div
-                                className="h-full w-full rounded-full bg-gradient-to-br from-primary/30 via-cyan-500/20 to-primary/30"
+                                className="from-primary/30 to-primary/30 h-full w-full rounded-full bg-gradient-to-br via-cyan-500/20"
                                 animate={{
                                     opacity: [0.4, 0.7, 0.4],
                                     scale: [1, 1.1, 1],
@@ -261,11 +261,11 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                     className={cn(
                         "relative flex items-center justify-center rounded-full",
                         "h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14",
-                        "glass-bg glass-shadow ring-1 ring-foreground/20 backdrop-blur-xl",
+                        "glass-bg glass-shadow ring-foreground/20 ring-1 backdrop-blur-xl",
                         "dark:ring-white/15",
                         "transition-all duration-300",
-                        "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
-                        "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                        "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
+                        "focus:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
                         isStreaming && "oracle-working",
                         !isStreaming && "oracle-breathing"
                     )}
@@ -294,26 +294,26 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                             delay: 0.6,
                             ease: [0.23, 1, 0.32, 1],
                         }}
-                        className="absolute left-1/2 top-full z-modal mt-3 w-56 -translate-x-1/2 sm:w-72"
+                        className="z-modal absolute top-full left-1/2 mt-3 w-56 -translate-x-1/2 sm:w-72"
                     >
                         {/* Speech tail pointing up to Oracle */}
-                        <div className="absolute -top-2 left-6 h-4 w-4 rotate-45 border-l border-t border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
+                        <div className="absolute -top-2 left-6 h-4 w-4 rotate-45 border-t border-l border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
 
                         {/* Whisper card - more compact on mobile */}
-                        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-black/50 sm:p-3">
+                        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-lg backdrop-blur-xl sm:p-3 dark:border-white/10 dark:bg-black/50">
                             {/* Subtle shimmer */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-cyan-500/5" />
+                            <div className="from-primary/5 absolute inset-0 bg-gradient-to-br via-transparent to-cyan-500/5" />
 
                             <div className="relative z-10">
                                 {/* Header with title and dismiss */}
                                 <div className="mb-1.5 flex items-start justify-between gap-2">
-                                    <h3 className="text-xs font-semibold text-foreground/90 sm:text-sm">
+                                    <h3 className="text-foreground/90 text-xs font-semibold sm:text-sm">
                                         {tip.tipTitle}
                                     </h3>
                                     <button
                                         type="button"
                                         onClick={handleDismiss}
-                                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-all hover:bg-foreground/10 hover:text-foreground/60"
+                                        className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all"
                                         aria-label="Dismiss"
                                     >
                                         <X className="h-3 w-3" />
@@ -321,15 +321,15 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                 </div>
 
                                 {/* Description - tighter line height on mobile */}
-                                <p className="text-xs leading-snug text-foreground/70 sm:leading-relaxed">
+                                <p className="text-foreground/70 text-xs leading-snug sm:leading-relaxed">
                                     {tip.tipDescription}
                                 </p>
 
                                 {/* Coming soon badge or CTA */}
                                 <div className="mt-2 flex items-center gap-2">
                                     {!tip.available && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
-                                            <span className="h-1 w-1 animate-pulse rounded-full bg-primary" />
+                                        <span className="bg-primary/15 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
+                                            <span className="bg-primary h-1 w-1 animate-pulse rounded-full" />
                                             Coming soon
                                         </span>
                                     )}
@@ -350,7 +350,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                                                 ? "noopener noreferrer"
                                                                 : undefined
                                                         }
-                                                        className="group/cta inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-all hover:bg-primary/20"
+                                                        className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
                                                     >
                                                         {tip.cta.label}
                                                         <ArrowRight className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
@@ -360,7 +360,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                                 <button
                                                     type="button"
                                                     onClick={handleCtaClick}
-                                                    className="group/cta inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-all hover:bg-primary/20"
+                                                    className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
                                                 >
                                                     {tip.cta.label}
                                                     <ArrowRight className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />

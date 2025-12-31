@@ -156,8 +156,8 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": ["pursuing.*career.*law", "law student", "legal.*career"],
         "reasoning": "Major career shift from pharmaceutical chemistry to law represents significant identity change"
@@ -315,8 +315,8 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "pursuing.*career.*law",
@@ -716,8 +716,8 @@
         "reasoning": "A distinct project/activity that became integral to his social gatherings and deepened his understanding of music's emotional impact"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "Pacific music festival",
@@ -786,8 +786,8 @@
         "reasoning": "Shows deep appreciation for live music and blending cultural heritage into his musical interests"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "update",
         "contentPatterns": [
           "Pacific music festival",
@@ -806,8 +806,8 @@
     "shouldSave": true,
     "extractions": [
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "organized.*family reunion",
@@ -984,8 +984,8 @@
         "reasoning": "Shows consistent pattern of engaging in creative and social activities like storytelling workshops, comedy shows, and hosting intimate dinner parties"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
         "reasoning": "Currently actively dating and seeking genuine connections, which is relevant personal context for understanding current life phase"
@@ -1167,8 +1167,8 @@
         "reasoning": "Shows consistent pattern of valuing and actively organizing family bonding activities - this represents a durable personal preference and behavioral pattern"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "organiz.*family reunion",
@@ -1211,8 +1211,8 @@
         "reasoning": "User actively seeks out comedy shows and storytelling workshops as venues for social connection - reveals preferences for these types of social activities"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": ["dating", "seeking companionship", "relationship"],
         "reasoning": "User is actively navigating dating and seeking romantic companionship - this is a current life phase/situation worth remembering"
@@ -1465,8 +1465,8 @@
         "reasoning": "Active travel planning project with specific upcoming Italy trip and systematic approach to future travel"
       },
       {
-        "path": "knowledge.identity",
-        "pathPattern": "knowledge\\.identity",
+        "path": "profile.identity",
+        "pathPattern": "profile\\.identity",
         "action": "append",
         "contentPatterns": [
           "extensive travel experience",

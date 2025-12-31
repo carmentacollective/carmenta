@@ -71,10 +71,10 @@ export function SessionPicker({
             {/* Header */}
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-foreground">
+                    <h1 className="text-foreground text-2xl font-semibold">
                         {repoName}
                     </h1>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {sessions.length === 0
                             ? "Start a new coding session"
                             : `${sessions.length} session${sessions.length !== 1 ? "s" : ""}`}
@@ -101,10 +101,10 @@ export function SessionPicker({
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 py-12"
+                            className="border-border bg-muted/30 flex flex-col items-center justify-center rounded-2xl border border-dashed py-12"
                         >
-                            <Sparkles className="mb-3 h-8 w-8 text-muted-foreground" />
-                            <p className="text-center text-muted-foreground">
+                            <Sparkles className="text-muted-foreground mb-3 h-8 w-8" />
+                            <p className="text-muted-foreground text-center">
                                 No sessions yet.
                                 <br />
                                 Start one to begin coding together.
@@ -119,7 +119,7 @@ export function SessionPicker({
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: index * 0.05 }}
                                 onClick={() => handleSelectSession(session)}
-                                className="group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-purple-300 hover:bg-purple-50/50 dark:hover:border-purple-800 dark:hover:bg-purple-950/20"
+                                className="group border-border bg-card flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-purple-300 hover:bg-purple-50/50 dark:hover:border-purple-800 dark:hover:bg-purple-950/20"
                             >
                                 {/* Icon */}
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
@@ -133,7 +133,7 @@ export function SessionPicker({
                                 {/* Content */}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="truncate font-medium text-foreground">
+                                        <span className="text-foreground truncate font-medium">
                                             {session.title || "Untitled Session"}
                                         </span>
                                         {session.isStreaming && (
@@ -142,7 +142,7 @@ export function SessionPicker({
                                             </span>
                                         )}
                                     </div>
-                                    <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                                    <div className="text-muted-foreground mt-1 flex items-center gap-3 text-sm">
                                         <span className="flex items-center gap-1">
                                             <Clock className="h-3.5 w-3.5" />
                                             {formatTime(session.lastActivityAt)}
@@ -154,14 +154,14 @@ export function SessionPicker({
                                         </span>
                                     </div>
                                     {session.lastMessagePreview && (
-                                        <p className="mt-1.5 truncate text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground mt-1.5 truncate text-sm">
                                             {session.lastMessagePreview}
                                         </p>
                                     )}
                                 </div>
 
                                 {/* Arrow */}
-                                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                                <ChevronRight className="text-muted-foreground h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                             </motion.button>
                         ))
                     )}

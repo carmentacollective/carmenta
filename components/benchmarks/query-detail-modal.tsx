@@ -38,15 +38,15 @@ export function QueryDetailModal({ query, pairwise, onClose }: QueryDetailModalP
 
     return (
         <div
-            className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="z-modal fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className="relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-foreground/10 bg-background shadow-2xl"
+                className="border-foreground/10 bg-background relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl border shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between border-b border-foreground/10 p-6">
+                <div className="border-foreground/10 flex items-start justify-between border-b p-6">
                     <div className="flex-1 pr-8">
                         <div className="flex items-center gap-2">
                             <WinnerIcon winner={pairwise.winner} />
@@ -59,36 +59,36 @@ export function QueryDetailModal({ query, pairwise, onClose }: QueryDetailModalP
                                       ? `${pairwise.competitor} Won`
                                       : "Tie"}
                             </span>
-                            <span className="text-sm text-foreground/50">
+                            <span className="text-foreground/50 text-sm">
                                 ({Math.round(pairwise.confidence * 100)}% confidence)
                             </span>
                         </div>
-                        <h2 className="mt-2 text-lg font-medium text-foreground">
+                        <h2 className="text-foreground mt-2 text-lg font-medium">
                             {query.query.query}
                         </h2>
                         <div className="mt-2 flex flex-wrap gap-2">
-                            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground/60">
+                            <span className="bg-foreground/10 text-foreground/60 rounded-full px-2 py-0.5 text-xs">
                                 {query.query.category}
                             </span>
-                            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground/60">
+                            <span className="bg-foreground/10 text-foreground/60 rounded-full px-2 py-0.5 text-xs">
                                 {query.query.difficulty}
                             </span>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-2 transition-colors hover:bg-foreground/10"
+                        className="hover:bg-foreground/10 rounded-lg p-2 transition-colors"
                     >
-                        <X className="h-5 w-5 text-foreground/60" />
+                        <X className="text-foreground/60 h-5 w-5" />
                     </button>
                 </div>
 
                 {/* Judge's Reasoning */}
-                <div className="border-b border-foreground/10 bg-foreground/5 p-6">
-                    <h3 className="text-sm font-medium text-foreground/70">
+                <div className="border-foreground/10 bg-foreground/5 border-b p-6">
+                    <h3 className="text-foreground/70 text-sm font-medium">
                         Judge&apos;s Reasoning
                     </h3>
-                    <p className="mt-2 leading-relaxed text-foreground">
+                    <p className="text-foreground mt-2 leading-relaxed">
                         {pairwise.reasoning}
                     </p>
                 </div>
@@ -99,16 +99,16 @@ export function QueryDetailModal({ query, pairwise, onClose }: QueryDetailModalP
                         {/* Carmenta Response */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h3 className="font-medium text-foreground">
+                                <h3 className="text-foreground font-medium">
                                     Carmenta
                                 </h3>
-                                <div className="flex items-center gap-1 text-sm text-foreground/50">
+                                <div className="text-foreground/50 flex items-center gap-1 text-sm">
                                     <Clock className="h-3 w-3" />
                                     {formatLatency(query.carmentaResponse.latencyMs)}
                                 </div>
                             </div>
-                            <div className="rounded-lg border border-foreground/10 bg-foreground/[0.02] p-4">
-                                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-foreground/80">
+                            <div className="border-foreground/10 bg-foreground/[0.02] rounded-lg border p-4">
+                                <pre className="text-foreground/80 font-sans text-sm leading-relaxed break-words whitespace-pre-wrap">
                                     {truncate(query.carmentaResponse.text, 2000)}
                                 </pre>
                             </div>
@@ -117,18 +117,18 @@ export function QueryDetailModal({ query, pairwise, onClose }: QueryDetailModalP
                         {/* Competitor Response */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h3 className="font-medium text-foreground">
+                                <h3 className="text-foreground font-medium">
                                     {pairwise.competitor}
                                 </h3>
                                 {competitorResponse && (
-                                    <div className="flex items-center gap-1 text-sm text-foreground/50">
+                                    <div className="text-foreground/50 flex items-center gap-1 text-sm">
                                         <Clock className="h-3 w-3" />
                                         {formatLatency(competitorResponse.latencyMs)}
                                     </div>
                                 )}
                             </div>
-                            <div className="rounded-lg border border-foreground/10 bg-foreground/[0.02] p-4">
-                                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-foreground/80">
+                            <div className="border-foreground/10 bg-foreground/[0.02] rounded-lg border p-4">
+                                <pre className="text-foreground/80 font-sans text-sm leading-relaxed break-words whitespace-pre-wrap">
                                     {competitorResponse
                                         ? truncate(competitorResponse.text, 2000)
                                         : "Response not available"}

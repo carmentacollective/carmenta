@@ -161,8 +161,8 @@ export function TerminalOutput({
                     {/* Command prompt */}
                     {command && (
                         <div className="flex items-start gap-2 text-zinc-300">
-                            <span className="select-none text-green-400">$</span>
-                            <span className="whitespace-pre-wrap break-all">
+                            <span className="text-green-400 select-none">$</span>
+                            <span className="break-all whitespace-pre-wrap">
                                 {command}
                             </span>
                         </div>
@@ -193,7 +193,7 @@ export function TerminalOutput({
                         >
                             <pre
                                 className={cn(
-                                    "whitespace-pre-wrap break-words text-zinc-300",
+                                    "break-words whitespace-pre-wrap text-zinc-300",
                                     isError && "text-red-400"
                                 )}
                             >
@@ -209,7 +209,7 @@ export function TerminalOutput({
 
                     {/* No output message */}
                     {isCompleted && !hasOutput && !error && (
-                        <div className="mt-2 text-xs italic text-zinc-500">
+                        <div className="mt-2 text-xs text-zinc-500 italic">
                             No output
                         </div>
                     )}

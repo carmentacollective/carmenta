@@ -55,7 +55,7 @@ export function ActionButtons({
                             "min-h-11 w-full text-base",
                             "sm:min-h-0 sm:w-auto sm:px-3 sm:py-2 sm:text-sm",
                             action.isConfirming &&
-                                "animate-pulse ring-2 ring-destructive ring-offset-2"
+                                "ring-destructive animate-pulse ring-2 ring-offset-2"
                         )}
                         aria-label={
                             action.shortcut ? `${label} (${action.shortcut})` : label
@@ -88,7 +88,7 @@ export function ActionButtons({
                         )}
                         {label}
                         {action.shortcut && !action.isLoading && (
-                            <kbd className="ml-2.5 hidden rounded-lg border border-border bg-muted px-2 py-0.5 font-mono text-xs font-medium sm:inline-block">
+                            <kbd className="border-border bg-muted ml-2.5 hidden rounded-lg border px-2 py-0.5 font-mono text-xs font-medium sm:inline-block">
                                 {action.shortcut}
                             </kbd>
                         )}

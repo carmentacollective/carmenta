@@ -86,7 +86,7 @@ export function ApiKeyModal({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-foreground/5 p-2">
+                        <div className="bg-foreground/5 relative h-10 w-10 overflow-hidden rounded-xl p-2">
                             <Image
                                 src={service.logo}
                                 alt={service.name}
@@ -104,15 +104,15 @@ export function ApiKeyModal({
                 <form key={resetKey} action={formAction} className="space-y-4">
                     {/* Get API Key Link */}
                     {service.getApiKeyUrl && (
-                        <div className="rounded-lg bg-foreground/5 p-3">
-                            <p className="mb-2 text-sm text-foreground/70">
+                        <div className="bg-foreground/5 rounded-lg p-3">
+                            <p className="text-foreground/70 mb-2 text-sm">
                                 We need an API key to connect to {service.name}.
                             </p>
                             <a
                                 href={service.getApiKeyUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm text-primary underline decoration-primary/30 transition-colors hover:decoration-primary"
+                                className="text-primary decoration-primary/30 hover:decoration-primary inline-flex items-center gap-1.5 text-sm underline transition-colors"
                             >
                                 <Key className="h-3.5 w-3.5" />
                                 Get your API key
@@ -125,7 +125,7 @@ export function ApiKeyModal({
                     <div className="space-y-2">
                         <label
                             htmlFor="api-key"
-                            className="text-sm font-medium text-foreground/80"
+                            className="text-foreground/80 text-sm font-medium"
                         >
                             API Key
                         </label>
@@ -139,7 +139,7 @@ export function ApiKeyModal({
                                 placeholder={
                                     service.apiKeyPlaceholder || "Enter your API key"
                                 }
-                                className="w-full rounded-lg border border-foreground/15 bg-background px-4 py-3 pr-12 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="border-foreground/15 bg-background text-foreground placeholder:text-foreground/40 focus:border-primary focus:ring-primary/20 w-full rounded-lg border px-4 py-3 pr-12 text-sm focus:ring-2 focus:outline-none"
                                 disabled={isPending}
                                 autoComplete="off"
                                 autoFocus
@@ -147,7 +147,7 @@ export function ApiKeyModal({
                             <button
                                 type="button"
                                 onClick={() => setShowKey(!showKey)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground/80"
+                                className="text-foreground/50 hover:text-foreground/80 absolute top-1/2 right-3 -translate-y-1/2"
                                 data-tooltip-id="tip"
                                 data-tooltip-content={
                                     showKey ? "Hide key" : "Reveal key"
@@ -175,14 +175,14 @@ export function ApiKeyModal({
                             type="button"
                             onClick={handleClose}
                             disabled={isPending}
-                            className="flex-1 rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:opacity-50"
+                            className="border-foreground/15 text-foreground/70 hover:bg-foreground/5 flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isPending || !apiKey.trim()}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="bg-primary hover:bg-primary/90 flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isPending ? (
                                 <>
@@ -197,7 +197,7 @@ export function ApiKeyModal({
                 </form>
 
                 {/* Security Note */}
-                <p className="pt-2 text-center text-xs text-foreground/50">
+                <p className="text-foreground/50 pt-2 text-center text-xs">
                     Your API key is encrypted and stored securely.
                 </p>
             </DialogContent>

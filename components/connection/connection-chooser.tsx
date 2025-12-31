@@ -71,8 +71,8 @@ function getRelativeTime(date: Date | null): string {
 function RunningIndicator() {
     return (
         <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            <span className="bg-primary/60 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+            <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
         </span>
     );
 }
@@ -133,9 +133,9 @@ function TypewriterTitle({ title }: { title: string }) {
     }, [isAnimating, displayedChars, title.length]);
 
     return (
-        <span className="text-sm text-foreground/70">
+        <span className="text-foreground/70 text-sm">
             {title.slice(0, displayedChars)}
-            {isAnimating && <span className="animate-pulse text-primary">|</span>}
+            {isAnimating && <span className="text-primary animate-pulse">|</span>}
         </span>
     );
 }
@@ -210,7 +210,7 @@ function EditableTitle({
                     onBlur={handleSave}
                     onKeyDown={handleKeyDown}
                     maxLength={40}
-                    className="w-[200px] rounded-md border border-primary/30 bg-background/50 px-2 py-0.5 text-sm text-foreground/90 outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
+                    className="border-primary/30 bg-background/50 text-foreground/90 focus:border-primary/60 focus:ring-primary/30 w-[200px] rounded-md border px-2 py-0.5 text-sm outline-none focus:ring-1"
                     placeholder="Connection title..."
                 />
                 <button
@@ -218,7 +218,7 @@ function EditableTitle({
                         e.preventDefault(); // Prevents blur from firing first
                         handleSave();
                     }}
-                    className="flex h-9 w-9 items-center justify-center rounded-md text-primary/60 transition-colors hover:bg-primary/10 hover:text-primary"
+                    className="text-primary/60 hover:bg-primary/10 hover:text-primary flex h-9 w-9 items-center justify-center rounded-md transition-colors"
                     aria-label="Save title"
                 >
                     <Check className="h-5 w-5" />
@@ -232,14 +232,14 @@ function EditableTitle({
             {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="btn-subtle-text flex min-h-[44px] items-center gap-2 border border-transparent px-3 py-2 hover:border-foreground/10 hover:bg-foreground/[0.03]"
+                className="btn-subtle-text hover:border-foreground/10 hover:bg-foreground/[0.03] flex min-h-[44px] items-center gap-2 border border-transparent px-3 py-2"
                 aria-label="Click to edit title"
                 data-tooltip-id="tip"
                 data-tooltip-content="Click to rename"
             >
                 <TypewriterTitle title={title} />
                 {/* Pencil icon - more visible on hover */}
-                <Pencil className="h-4 w-4 text-foreground/20 transition-all group-hover/title:text-foreground/50" />
+                <Pencil className="text-foreground/20 group-hover/title:text-foreground/50 h-4 w-4 transition-all" />
             </button>
         </div>
     );
@@ -294,7 +294,7 @@ function ConnectionRow({
                             e.stopPropagation();
                             onCancelDelete();
                         }}
-                        className="rounded-lg px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:bg-foreground/5"
+                        className="text-foreground/60 hover:bg-foreground/5 rounded-lg px-3 py-1 text-sm font-medium transition-colors"
                     >
                         Cancel
                     </button>
@@ -319,11 +319,11 @@ function ConnectionRow({
             className={cn(
                 "group relative flex min-h-[52px] items-center gap-2 overflow-hidden px-4 transition-all",
                 // Active connection has stronger visual distinction
-                isActive && "bg-primary/8 ring-1 ring-inset ring-primary/20",
+                isActive && "bg-primary/8 ring-primary/20 ring-1 ring-inset",
                 // Keyboard focus highlight
                 isFocused && !isActive && "bg-foreground/[0.06]",
                 isFresh &&
-                    "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
+                    "from-primary/10 via-primary/5 bg-gradient-to-r to-transparent"
             )}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -344,7 +344,7 @@ function ConnectionRow({
 
             {/* Left accent bar for active connection */}
             {isActive && (
-                <div className="absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-primary/60" />
+                <div className="bg-primary/60 absolute top-2 bottom-2 left-0 w-0.5 rounded-full" />
             )}
 
             {/* Star button - always visible at 40% opacity, full on hover for a11y */}
@@ -360,27 +360,27 @@ function ConnectionRow({
             <button
                 onClick={() => onSelect(conn.id, conn.slug)}
                 disabled={isNavigating}
-                className="interactive-focus relative flex flex-1 items-center gap-3 rounded-md text-left transition-all disabled:opacity-70 group-hover:translate-x-0.5"
+                className="interactive-focus relative flex flex-1 items-center gap-3 rounded-md text-left transition-all group-hover:translate-x-0.5 disabled:opacity-70"
             >
                 <span
                     className={cn(
                         "min-w-0 flex-1 truncate text-sm font-medium transition-colors",
                         isActive
-                            ? "font-semibold text-foreground"
+                            ? "text-foreground font-semibold"
                             : "text-foreground/75 group-hover:text-foreground"
                     )}
                 >
                     {conn.title || "New connection"}
                 </span>
                 {isFresh && !isNavigating && (
-                    <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    <span className="bg-primary/20 text-primary shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                         new
                     </span>
                 )}
                 {isNavigating ? (
-                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+                    <Loader2 className="text-primary h-3.5 w-3.5 shrink-0 animate-spin" />
                 ) : (
-                    <span className="shrink-0 text-xs text-foreground/40 transition-colors group-hover:text-foreground/60">
+                    <span className="text-foreground/40 group-hover:text-foreground/60 shrink-0 text-xs transition-colors">
                         {isFresh ? "Just now" : getRelativeTime(conn.lastActivityAt)}
                     </span>
                 )}
@@ -389,10 +389,10 @@ function ConnectionRow({
             {/* Delete button - always visible, red on hover */}
             <button
                 onClick={(e) => onDeleteClick(e, conn.id)}
-                className="relative z-content rounded-md p-1.5 transition-all hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
+                className="z-content relative rounded-md p-1.5 transition-all hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
                 aria-label={`Delete ${conn.title || "connection"}`}
             >
-                <Trash2 className="h-3.5 w-3.5 text-foreground/30 transition-colors hover:text-red-500" />
+                <Trash2 className="text-foreground/30 h-3.5 w-3.5 transition-colors hover:text-red-500" />
             </button>
         </motion.div>
     );
@@ -577,7 +577,7 @@ function ConnectionDropdown({
                 <>
                     {/* Backdrop */}
                     <motion.div
-                        className="fixed inset-0 z-backdrop bg-black/20 backdrop-blur-sm"
+                        className="z-backdrop fixed inset-0 bg-black/20 backdrop-blur-sm"
                         onClick={handleClose}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -587,7 +587,7 @@ function ConnectionDropdown({
 
                     {/* Dropdown panel - full-screen on mobile, centered modal on desktop */}
                     <motion.div
-                        className="fixed inset-0 z-modal sm:inset-x-0 sm:bottom-auto sm:top-24 sm:mx-auto sm:h-auto sm:w-[420px]"
+                        className="z-modal fixed inset-0 sm:inset-x-0 sm:top-24 sm:bottom-auto sm:mx-auto sm:h-auto sm:w-[420px]"
                         initial={
                             isMobile
                                 ? { opacity: 0, y: "100%" }
@@ -610,22 +610,22 @@ function ConnectionDropdown({
                     >
                         <div className="glass-container-mobile flex h-full flex-col overflow-hidden rounded-none shadow-2xl sm:rounded-2xl">
                             {/* Search header */}
-                            <div className="flex items-center gap-3 border-b border-foreground/10 px-4 py-3">
-                                <Search className="h-5 w-5 text-foreground/40" />
+                            <div className="border-foreground/10 flex items-center gap-3 border-b px-4 py-3">
+                                <Search className="text-foreground/40 h-5 w-5" />
                                 <input
                                     ref={inputRef}
                                     type="text"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Search..."
-                                    className="flex-1 bg-transparent text-base text-foreground/90 outline-none placeholder:text-foreground/40"
+                                    className="text-foreground/90 placeholder:text-foreground/40 flex-1 bg-transparent text-base outline-none"
                                 />
                                 <button
                                     onClick={handleClose}
                                     className="btn-glass-interactive h-8 w-8"
                                     aria-label="Close"
                                 >
-                                    <X className="h-4 w-4 text-foreground/60" />
+                                    <X className="text-foreground/60 h-4 w-4" />
                                 </button>
                             </div>
 
@@ -634,7 +634,7 @@ function ConnectionDropdown({
                                 {/* Empty state */}
                                 {filteredStarred.length === 0 &&
                                     filteredUnstarred.length === 0 && (
-                                        <div className="py-8 text-center text-sm text-foreground/50">
+                                        <div className="text-foreground/50 py-8 text-center text-sm">
                                             {connections.length === 0
                                                 ? "We haven't started any connections yet"
                                                 : "No matching connections found"}
@@ -657,7 +657,7 @@ function ConnectionDropdown({
                                                 <ChevronRight className="h-3.5 w-3.5 text-amber-500/70" />
                                             </motion.div>
                                             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                            <span className="text-xs font-medium uppercase tracking-wider text-amber-600/70 dark:text-amber-400/70">
+                                            <span className="text-xs font-medium tracking-wider text-amber-600/70 uppercase dark:text-amber-400/70">
                                                 Starred
                                             </span>
                                             <span className="ml-auto text-xs text-amber-500/50">
@@ -736,12 +736,12 @@ function ConnectionDropdown({
                                 {/* Recent section */}
                                 {filteredUnstarred.length > 0 && (
                                     <div>
-                                        <div className="flex items-center gap-2 bg-foreground/[0.03] px-4 py-2">
-                                            <Clock className="h-3.5 w-3.5 text-foreground/40" />
-                                            <span className="text-xs font-medium uppercase tracking-wider text-foreground/50">
+                                        <div className="bg-foreground/[0.03] flex items-center gap-2 px-4 py-2">
+                                            <Clock className="text-foreground/40 h-3.5 w-3.5" />
+                                            <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
                                                 {isSearching ? "Results" : "Recent"}
                                             </span>
-                                            <span className="ml-auto text-xs text-foreground/30">
+                                            <span className="text-foreground/30 ml-auto text-xs">
                                                 {isSearching
                                                     ? filteredUnstarred.length
                                                     : unstarredConnections.length}
@@ -807,7 +807,7 @@ function ConnectionDropdown({
                                                     onClick={() =>
                                                         setShowAllRecent(!showAllRecent)
                                                     }
-                                                    className="flex w-full items-center justify-center gap-2 border-t border-foreground/5 px-4 py-2.5 text-sm text-primary/80 transition-colors hover:bg-foreground/[0.03] hover:text-primary"
+                                                    className="border-foreground/5 text-primary/80 hover:bg-foreground/[0.03] hover:text-primary flex w-full items-center justify-center gap-2 border-t px-4 py-2.5 text-sm transition-colors"
                                                 >
                                                     {showAllRecent ? (
                                                         <>Show less</>
@@ -916,7 +916,7 @@ export function ConnectionChooser({
             <div className="relative min-w-0 flex-1">
                 <motion.div
                     layout
-                    className="flex h-10 w-full items-center rounded-full bg-foreground/[0.04] ring-1 ring-foreground/10 backdrop-blur-xl transition-all hover:bg-foreground/[0.06] hover:ring-foreground/15"
+                    className="bg-foreground/[0.04] ring-foreground/10 hover:bg-foreground/[0.06] hover:ring-foreground/15 flex h-10 w-full items-center rounded-full ring-1 backdrop-blur-xl transition-all"
                     transition={{
                         layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                     }}
@@ -938,7 +938,7 @@ export function ConnectionChooser({
                                 {/* Search button */}
                                 <button
                                     onClick={openDropdown}
-                                    className="btn-subtle-icon shrink-0 text-foreground/40 hover:text-foreground/60"
+                                    className="btn-subtle-icon text-foreground/40 hover:text-foreground/60 shrink-0"
                                     aria-label="Search connections"
                                     data-tooltip-id="tip"
                                     data-tooltip-content="Find connections"
@@ -947,7 +947,7 @@ export function ConnectionChooser({
                                 </button>
 
                                 {/* Divider */}
-                                <div className="hidden h-4 w-px bg-foreground/10 sm:block" />
+                                <div className="bg-foreground/10 hidden h-4 w-px sm:block" />
 
                                 {/* Title area - fills available space */}
                                 <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -986,7 +986,7 @@ export function ConnectionChooser({
                             >
                                 <button
                                     onClick={openDropdown}
-                                    className="flex min-w-0 flex-1 items-center gap-2 text-sm text-foreground/50 transition-colors hover:text-foreground/70"
+                                    className="text-foreground/50 hover:text-foreground/70 flex min-w-0 flex-1 items-center gap-2 text-sm transition-colors"
                                     aria-label="Search connections"
                                 >
                                     <Search className="h-4 w-4 shrink-0" />
@@ -1024,7 +1024,7 @@ export function ConnectionChooser({
                 <button
                     onClick={createNewConnection}
                     disabled={isPending}
-                    className="interactive-focus flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-medium text-primary ring-1 ring-primary/20 transition-all duration-200 hover:bg-primary/15 hover:ring-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="interactive-focus bg-primary/10 text-primary ring-primary/20 hover:bg-primary/15 hover:ring-primary/30 flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium ring-1 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="New connection"
                 >
                     {isPending ? (

@@ -63,7 +63,7 @@ export default function GlobalError({
     if (isAutoRefreshing) {
         return (
             <html lang="en">
-                <body className="min-h-screen bg-background font-mono antialiased">
+                <body className="bg-background min-h-screen font-mono antialiased">
                     <div className="flex min-h-screen flex-col items-center justify-center px-4">
                         <div className="max-w-md text-center">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -76,11 +76,11 @@ export default function GlobalError({
                                         "none";
                                 }}
                             />
-                            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-primary border-r-transparent" />
-                            <h1 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">
+                            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-r-transparent" />
+                            <h1 className="text-foreground mb-4 text-2xl font-semibold tracking-tight">
                                 Updating...
                             </h1>
-                            <p className="leading-relaxed text-muted-foreground">
+                            <p className="text-muted-foreground leading-relaxed">
                                 We just shipped something new. Refreshing to get you the
                                 latest.
                             </p>
@@ -93,7 +93,7 @@ export default function GlobalError({
 
     return (
         <html lang="en">
-            <body className="min-h-screen bg-background font-mono antialiased">
+            <body className="bg-background min-h-screen font-mono antialiased">
                 <div className="flex min-h-screen flex-col items-center justify-center px-4">
                     <div className="max-w-md text-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,15 +105,15 @@ export default function GlobalError({
                                 (e.target as HTMLImageElement).style.display = "none";
                             }}
                         />
-                        <h1 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">
+                        <h1 className="text-foreground mb-4 text-2xl font-semibold tracking-tight">
                             Something went sideways
                         </h1>
-                        <p className="mb-6 leading-relaxed text-muted-foreground">
+                        <p className="text-muted-foreground mb-6 leading-relaxed">
                             We hit a bump. The robots have been notified.
                         </p>
                         <button
                             onClick={reset}
-                            className="rounded-lg bg-primary px-5 py-2.5 text-primary-foreground transition-colors hover:bg-primary/90"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 transition-colors"
                         >
                             Refresh
                         </button>

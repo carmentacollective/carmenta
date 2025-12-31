@@ -85,7 +85,7 @@ export function AskUserInputResult({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
         >
-            <p className="mb-3 text-sm font-medium text-foreground">
+            <p className="text-foreground mb-3 text-sm font-medium">
                 {output.question}
             </p>
 
@@ -119,7 +119,7 @@ export function AskUserInputResult({
                         >
                             <div className="font-medium">{option.label}</div>
                             {option.description && (
-                                <div className="mt-0.5 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground mt-0.5 text-xs">
                                     {option.description}
                                 </div>
                             )}
@@ -139,8 +139,8 @@ export function AskUserInputResult({
                             "min-h-[60px] flex-1 resize-none rounded-lg p-3",
                             glass.subtle,
                             "border border-white/20 dark:border-white/10",
-                            "text-sm placeholder:text-muted-foreground",
-                            "focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            "placeholder:text-muted-foreground text-sm",
+                            "focus:ring-primary/30 focus:ring-2 focus:outline-none"
                         )}
                         rows={2}
                     />

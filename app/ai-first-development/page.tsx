@@ -17,18 +17,18 @@ export default function AIFirstDevelopmentPage() {
                 <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
                     AI-First Development
                 </h1>
-                <p className="text-xl leading-relaxed text-muted-foreground md:text-2xl">
+                <p className="text-muted-foreground text-xl leading-relaxed md:text-2xl">
                     How products get built in the age of AI.
                 </p>
             </section>
 
             {/* The Core Insight */}
             <section className="glass-card space-y-4 text-left">
-                <h2 className="text-lg font-semibold text-foreground/90">
+                <h2 className="text-foreground/90 text-lg font-semibold">
                     The Core Insight
                 </h2>
-                <div className="space-y-4 leading-relaxed text-foreground/80">
-                    <p className="text-lg font-medium text-foreground">
+                <div className="text-foreground/80 space-y-4 leading-relaxed">
+                    <p className="text-foreground text-lg font-medium">
                         Products are conversations, not artifacts.
                     </p>
                     <p>
@@ -46,15 +46,15 @@ export default function AIFirstDevelopmentPage() {
 
             {/* The Self-Improving Loop */}
             <section className="glass-card space-y-4 text-left">
-                <h2 className="text-lg font-semibold text-foreground/90">
+                <h2 className="text-foreground/90 text-lg font-semibold">
                     The Self-Improving Loop
                 </h2>
-                <div className="space-y-4 leading-relaxed text-foreground/80">
-                    <div className="rounded border border-border bg-muted/30 p-4 font-mono text-sm">
+                <div className="text-foreground/80 space-y-4 leading-relaxed">
+                    <div className="border-border bg-muted/30 rounded border p-4 font-mono text-sm">
                         <div className="text-muted-foreground">
                             Vision → Specification → Implementation → Usage → Signals
                         </div>
-                        <div className="mt-2 text-primary">
+                        <div className="text-primary mt-2">
                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓
                         </div>
                         <div className="text-primary">
@@ -89,25 +89,25 @@ export default function AIFirstDevelopmentPage() {
 
             {/* What Remains Human */}
             <section className="glass-card space-y-4 text-left">
-                <h2 className="text-lg font-semibold text-foreground/90">
+                <h2 className="text-foreground/90 text-lg font-semibold">
                     What Remains Human
                 </h2>
-                <div className="space-y-4 leading-relaxed text-foreground/80">
+                <div className="text-foreground/80 space-y-4 leading-relaxed">
                     <p>
-                        <span className="font-medium text-foreground">Taste.</span>{" "}
+                        <span className="text-foreground font-medium">Taste.</span>{" "}
                         Knowing what is worth building. The difference between a product
                         that technically works and one people love. AI generates
                         variations. Someone chooses.
                     </p>
                     <p>
-                        <span className="font-medium text-foreground">
+                        <span className="text-foreground font-medium">
                             Accountability.
                         </span>{" "}
                         When the system fails and there are consequences, someone owns
                         the decision to ship. AI optimizes. It cannot be responsible.
                     </p>
                     <p>
-                        <span className="font-medium text-foreground">
+                        <span className="text-foreground font-medium">
                             Novel insight.
                         </span>{" "}
                         AI works from patterns in training data. When doing something
@@ -115,7 +115,7 @@ export default function AIFirstDevelopmentPage() {
                         execution of human insight.
                     </p>
                     <p>
-                        <span className="font-medium text-foreground">
+                        <span className="text-foreground font-medium">
                             Trust and relationships.
                         </span>{" "}
                         People hire people. Your network, reputation, ability to
@@ -126,11 +126,11 @@ export default function AIFirstDevelopmentPage() {
 
             {/* The 2027 View */}
             <section className="glass-card space-y-4 text-left">
-                <h2 className="text-lg font-semibold text-foreground/90">
+                <h2 className="text-foreground/90 text-lg font-semibold">
                     The 2027 View
                 </h2>
-                <div className="space-y-4 leading-relaxed text-foreground/80">
-                    <p className="text-lg font-medium text-foreground">
+                <div className="text-foreground/80 space-y-4 leading-relaxed">
+                    <p className="text-foreground text-lg font-medium">
                         Products become organisms, not artifacts.
                     </p>
                     <p>The team is:</p>
@@ -156,10 +156,10 @@ export default function AIFirstDevelopmentPage() {
 
             {/* Carmenta Is Built This Way */}
             <section className="glass-card space-y-4 text-left">
-                <h2 className="text-lg font-semibold text-foreground/90">
+                <h2 className="text-foreground/90 text-lg font-semibold">
                     Carmenta Is Built This Way
                 </h2>
-                <div className="space-y-4 leading-relaxed text-foreground/80">
+                <div className="text-foreground/80 space-y-4 leading-relaxed">
                     <p>
                         This isn&apos;t theory—we practice what we teach. Carmenta is
                         built using AI-First Development. The specification lives in
@@ -183,13 +183,13 @@ export default function AIFirstDevelopmentPage() {
                         href="https://github.com/carmentacollective/carmenta"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-3 text-sm font-medium text-primary transition-all hover:scale-105 hover:bg-primary/20"
+                        className="border-primary bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition-all hover:scale-105"
                     >
                         View the Source
                     </Link>
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-white/50 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/80"
+                        className="border-border text-foreground inline-flex items-center gap-2 rounded-full border bg-white/50 px-6 py-3 text-sm font-medium backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/80"
                     >
                         Back to Carmenta
                     </Link>

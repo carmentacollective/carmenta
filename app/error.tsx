@@ -75,11 +75,11 @@ export default function Error({
                             (e.target as HTMLImageElement).style.display = "none";
                         }}
                     />
-                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-primary border-r-transparent" />
-                    <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
+                    <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-r-transparent" />
+                    <h2 className="text-foreground mb-4 text-xl font-semibold tracking-tight">
                         Updating...
                     </h2>
-                    <p className="leading-relaxed text-muted-foreground">
+                    <p className="text-muted-foreground leading-relaxed">
                         We just shipped something new. Refreshing to get you the latest.
                     </p>
                 </div>
@@ -99,22 +99,22 @@ export default function Error({
                         (e.target as HTMLImageElement).style.display = "none";
                     }}
                 />
-                <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
+                <h2 className="text-foreground mb-4 text-xl font-semibold tracking-tight">
                     Something went sideways
                 </h2>
-                <p className="mb-6 leading-relaxed text-muted-foreground">
+                <p className="text-muted-foreground mb-6 leading-relaxed">
                     We hit a bump. The robots have been notified.
                 </p>
                 <div className="flex justify-center gap-4">
                     <button
                         onClick={reset}
-                        className="rounded-lg bg-primary px-5 py-2.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 text-sm transition-colors"
                     >
                         Refresh
                     </button>
                     <Link
                         href="/"
-                        className="rounded-lg border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:bg-muted"
+                        className="border-border text-foreground hover:bg-muted rounded-lg border px-5 py-2.5 text-sm transition-colors"
                     >
                         Go home
                     </Link>

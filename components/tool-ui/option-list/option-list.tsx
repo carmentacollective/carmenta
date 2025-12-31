@@ -112,14 +112,14 @@ function OptionItem({
             disabled={isDisabled}
             className={cn(
                 "group peer relative h-auto min-h-[50px] w-full justify-start text-left text-sm font-medium",
-                "hover:bg-transparent! @md/option-list:text-sm rounded-none border-0 bg-transparent px-0 py-2 text-base shadow-none transition-none",
+                "rounded-none border-0 bg-transparent px-0 py-2 text-base shadow-none transition-none hover:bg-transparent! @md/option-list:text-sm",
                 isFirst && "pb-2.5",
                 hasAdjacentOptions && "py-2.5"
             )}
         >
             <span
                 className={cn(
-                    "absolute inset-0 -mx-3 -my-0.5 rounded-xl bg-primary/5 opacity-0 transition-opacity group-hover:opacity-100"
+                    "bg-primary/5 absolute inset-0 -mx-3 -my-0.5 rounded-xl opacity-0 transition-opacity group-hover:opacity-100"
                 )}
             />
             <div className="relative flex items-start gap-3">
@@ -134,9 +134,9 @@ function OptionItem({
                     <span className="flex h-6 items-center">{option.icon}</span>
                 )}
                 <div className="flex flex-col text-left">
-                    <span className="text-pretty leading-6">{option.label}</span>
+                    <span className="leading-6 text-pretty">{option.label}</span>
                     {option.description && (
-                        <span className="text-pretty text-sm font-normal text-muted-foreground">
+                        <span className="text-muted-foreground text-sm font-normal text-pretty">
                             {option.description}
                         </span>
                     )}
@@ -164,7 +164,7 @@ function OptionListConfirmation({
     return (
         <div
             className={cn(
-                "@container/option-list flex w-full min-w-80 max-w-md flex-col",
+                "@container/option-list flex w-full max-w-md min-w-80 flex-col",
                 "text-foreground",
                 className
             )}
@@ -186,7 +186,7 @@ function OptionListConfirmation({
                         {index > 0 && <Separator orientation="horizontal" />}
                         <div className="flex items-start gap-3 py-1">
                             <span className="flex h-6 items-center">
-                                <Check className="size-4 shrink-0 text-primary" />
+                                <Check className="text-primary size-4 shrink-0" />
                             </span>
                             {option.icon && (
                                 <span className="flex h-6 items-center">
@@ -194,11 +194,11 @@ function OptionListConfirmation({
                                 </span>
                             )}
                             <div className="flex flex-col text-left">
-                                <span className="@md/option-list:text-sm text-pretty text-base font-medium leading-6">
+                                <span className="text-base leading-6 font-medium text-pretty @md/option-list:text-sm">
                                     {option.label}
                                 </span>
                                 {option.description && (
-                                    <span className="text-pretty text-sm font-normal text-muted-foreground">
+                                    <span className="text-muted-foreground text-sm font-normal text-pretty">
                                         {option.description}
                                     </span>
                                 )}
@@ -523,7 +523,7 @@ export function OptionList({
     return (
         <div
             className={cn(
-                "@container/option-list flex w-full min-w-80 max-w-md flex-col gap-3",
+                "@container/option-list flex w-full max-w-md min-w-80 flex-col gap-3",
                 "text-foreground",
                 className
             )}

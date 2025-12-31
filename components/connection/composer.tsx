@@ -577,14 +577,14 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
-                        className="flex items-center justify-center gap-1.5 text-xs text-foreground/50"
+                        className="text-foreground/50 flex items-center justify-center gap-1.5 text-xs"
                     >
                         <span>Tip:</span>
-                        <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
                             Shift
                         </kbd>
                         <span>+</span>
-                        <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
                             Enter
                         </kbd>
                         <span>for new line</span>
@@ -604,7 +604,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 onSubmit={handleSubmit}
                 className={cn(
                     "relative flex w-full flex-col transition-all sm:flex-row sm:items-center",
-                    shouldFlash && "ring-2 ring-primary/40"
+                    shouldFlash && "ring-primary/40 ring-2"
                 )}
             >
                 <textarea
@@ -620,7 +620,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     }}
                     placeholder="Message Carmenta..."
                     className={cn(
-                        "max-h-48 min-h-[2.75rem] w-full flex-none resize-none bg-transparent px-4 py-3 text-base leading-5 text-foreground/95 outline-none placeholder:text-foreground/40 sm:flex-1 sm:px-6 sm:py-4 md:max-h-60 md:min-h-[3.5rem]",
+                        "text-foreground/95 placeholder:text-foreground/40 max-h-48 min-h-[2.75rem] w-full flex-none resize-none bg-transparent px-4 py-3 text-base leading-5 outline-none sm:flex-1 sm:px-6 sm:py-4 md:max-h-60 md:min-h-[3.5rem]",
                         "rounded-2xl border transition-colors",
                         /\n/.test(input)
                             ? "border-foreground/10 bg-background/30"
@@ -631,7 +631,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 />
 
                 {/* Action bar: responsive layout via CSS */}
-                <div className="flex items-center justify-between gap-2 px-3 pb-2.5 pt-1 sm:justify-end sm:gap-1.5 sm:pb-0 sm:pr-4 sm:pt-0">
+                <div className="flex items-center justify-between gap-2 px-3 pt-1 pb-2.5 sm:justify-end sm:gap-1.5 sm:pt-0 sm:pr-4 sm:pb-0">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
                     <div className="flex items-center gap-1 sm:order-last sm:gap-1.5">
                         <ModelSelectorTrigger
@@ -806,10 +806,10 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     className={cn(
                         "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-all",
-                        "hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                        "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
-                        "focus:scale-105 focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
-                        "bg-background/50 text-foreground/60 opacity-70 ring-border/40 hover:bg-background/80 hover:opacity-100",
+                        "focus:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
+                        "bg-background/50 text-foreground/60 ring-border/40 hover:bg-background/80 opacity-70 hover:opacity-100",
                         disabled && "btn-disabled",
                         className
                     )}
@@ -875,9 +875,9 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     className={cn(
                         "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-[box-shadow,ring-color]",
-                        "hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40",
+                        "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
-                        "focus:shadow-2xl focus:outline-none focus:ring-[3px] focus:ring-primary/40",
+                        "focus:ring-primary/40 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
                         // Send variant
                         variant === "send" && "btn-cta ring-transparent",
                         // Stop variant - base styles
@@ -886,7 +886,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                         // Stop + concierge: rainbow ring animation
                         variant === "stop" &&
                             pipelineState === "concierge" &&
-                            "oracle-working-ring ring-2 ring-primary/50",
+                            "oracle-working-ring ring-primary/50 ring-2",
                         // Stop + streaming: subtle glow
                         variant === "stop" &&
                             pipelineState === "streaming" &&

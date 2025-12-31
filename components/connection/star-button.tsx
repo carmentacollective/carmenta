@@ -75,13 +75,13 @@ export function StarButton({
                 onToggle();
             }}
             className={cn(
-                "interactive-press-icon relative z-content rounded-md transition-all",
+                "interactive-press-icon z-content relative rounded-md transition-all",
                 padding,
                 // Visibility: always show if starred, otherwise follow showOnHover
                 isStarred
                     ? "opacity-100"
                     : showOnHover
-                      ? "opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                      ? "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                       : "opacity-100",
                 // Background on hover
                 isStarred ? "hover:bg-amber-50" : "hover:bg-foreground/5",
@@ -118,7 +118,7 @@ export function StarButton({
                     "transition-all duration-150",
                     isStarred
                         ? "fill-amber-400 text-amber-400"
-                        : "fill-transparent text-foreground/30 hover:text-foreground/50",
+                        : "text-foreground/30 hover:text-foreground/50 fill-transparent",
                     // Pop animation on starring
                     showSparkle && "animate-star-pop"
                 )}

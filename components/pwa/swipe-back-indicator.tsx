@@ -40,7 +40,7 @@ export function SwipeBackIndicator({
                     }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="pointer-events-none fixed left-0 top-1/2 z-modal -translate-y-1/2"
+                    className="z-modal pointer-events-none fixed top-1/2 left-0 -translate-y-1/2"
                 >
                     <div
                         className={cn(

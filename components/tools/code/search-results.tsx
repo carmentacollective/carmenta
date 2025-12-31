@@ -138,23 +138,23 @@ export function SearchResults({
 
     return (
         <div
-            className="mb-3 w-full overflow-hidden rounded-lg border border-border bg-card"
+            className="border-border bg-card mb-3 w-full overflow-hidden rounded-lg border"
             data-tool-call-id={toolCallId}
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+            <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <code className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">
+                    <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                    <code className="bg-muted text-foreground truncate rounded px-1.5 py-0.5 font-mono text-sm">
                         {pattern}
                     </code>
                 </div>
                 <div className="flex items-center gap-2">
                     {isRunning && (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
                     {isCompleted && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
                             <span>
                                 {fileCount} file{fileCount !== 1 ? "s" : ""}
                             </span>
@@ -173,13 +173,13 @@ export function SearchResults({
 
             {/* Search scope */}
             {(path || glob || type) && (
-                <div className="flex flex-wrap gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+                <div className="border-border bg-muted/30 text-muted-foreground flex flex-wrap gap-2 border-b px-3 py-1.5 text-xs">
                     {path && <span>in {path}</span>}
                     {glob && (
-                        <span className="rounded bg-muted px-1">glob: {glob}</span>
+                        <span className="bg-muted rounded px-1">glob: {glob}</span>
                     )}
                     {type && (
-                        <span className="rounded bg-muted px-1">type: {type}</span>
+                        <span className="bg-muted rounded px-1">type: {type}</span>
                     )}
                 </div>
             )}
@@ -188,7 +188,7 @@ export function SearchResults({
             <div className="max-h-96 overflow-auto">
                 {/* Loading state */}
                 {isRunning && (
-                    <div className="flex items-center gap-2 p-4 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-2 p-4">
                         <Search className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Searching...</span>
                     </div>
@@ -196,17 +196,17 @@ export function SearchResults({
 
                 {/* Files only mode */}
                 {isCompleted && outputMode === "files_with_matches" && files && (
-                    <ul className="divide-y divide-border">
+                    <ul className="divide-border divide-y">
                         {(needsExpansion && !isExpanded
                             ? files.slice(0, MAX_FILES_COLLAPSED)
                             : files
                         ).map((file, idx) => (
                             <li
                                 key={`${file}-${idx}`}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50"
+                                className="hover:bg-muted/50 flex items-center gap-2 px-3 py-2"
                             >
-                                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="truncate font-mono text-sm text-foreground">
+                                <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
+                                <span className="text-foreground truncate font-mono text-sm">
                                     {file}
                                 </span>
                             </li>
@@ -216,22 +216,22 @@ export function SearchResults({
 
                 {/* Count mode */}
                 {isCompleted && outputMode === "count" && counts && (
-                    <ul className="divide-y divide-border">
+                    <ul className="divide-border divide-y">
                         {(needsExpansion && !isExpanded
                             ? counts.slice(0, MAX_FILES_COLLAPSED)
                             : counts
                         ).map((item, idx) => (
                             <li
                                 key={`${item.file}-${idx}`}
-                                className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50"
+                                className="hover:bg-muted/50 flex items-center justify-between gap-2 px-3 py-2"
                             >
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    <span className="truncate font-mono text-sm text-foreground">
+                                    <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
+                                    <span className="text-foreground truncate font-mono text-sm">
                                         {item.file}
                                     </span>
                                 </div>
-                                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">
                                     {item.count}
                                 </span>
                             </li>
@@ -241,7 +241,7 @@ export function SearchResults({
 
                 {/* Content mode with line matches */}
                 {isCompleted && outputMode === "content" && matchesByFile.size > 0 && (
-                    <div className="divide-y divide-border">
+                    <div className="divide-border divide-y">
                         {Array.from(matchesByFile.entries())
                             .slice(
                                 0,
@@ -258,19 +258,19 @@ export function SearchResults({
                                         {/* File header */}
                                         <button
                                             onClick={() => toggleFileExpanded(file)}
-                                            className="flex w-full items-center gap-2 bg-muted/30 px-3 py-2 text-left hover:bg-muted/50"
+                                            className="bg-muted/30 hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-2 text-left"
                                         >
                                             <ChevronRight
                                                 className={cn(
-                                                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                                                    "text-muted-foreground h-4 w-4 shrink-0 transition-transform",
                                                     isFileExpanded && "rotate-90"
                                                 )}
                                             />
-                                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                            <span className="truncate font-mono text-sm text-foreground">
+                                            <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
+                                            <span className="text-foreground truncate font-mono text-sm">
                                                 {fileName}
                                             </span>
-                                            <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                            <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs">
                                                 {fileMatches.length}
                                             </span>
                                         </button>
@@ -281,13 +281,13 @@ export function SearchResults({
                                                 {fileMatches.map((match, idx) => (
                                                     <li
                                                         key={`${match.line}-${idx}`}
-                                                        className="flex items-start gap-2 border-t border-border/50 bg-background px-3 py-1.5 font-mono text-sm"
+                                                        className="border-border/50 bg-background flex items-start gap-2 border-t px-3 py-1.5 font-mono text-sm"
                                                     >
-                                                        <span className="flex w-12 shrink-0 items-center justify-end gap-1 text-xs text-muted-foreground">
+                                                        <span className="text-muted-foreground flex w-12 shrink-0 items-center justify-end gap-1 text-xs">
                                                             <Hash className="h-3 w-3" />
                                                             {match.line}
                                                         </span>
-                                                        <code className="flex-1 overflow-hidden text-ellipsis whitespace-pre text-foreground">
+                                                        <code className="text-foreground flex-1 overflow-hidden text-ellipsis whitespace-pre">
                                                             {highlightMatches(
                                                                 match.content,
                                                                 pattern ?? ""
@@ -309,7 +309,7 @@ export function SearchResults({
                     !matchesByFile.size &&
                     !counts?.length &&
                     !error && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="text-muted-foreground p-4 text-center text-sm">
                             No matches found
                         </div>
                     )}
@@ -324,8 +324,8 @@ export function SearchResults({
                     type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={cn(
-                        "flex w-full items-center justify-center gap-1.5 border-t border-border py-2",
-                        "text-sm text-muted-foreground transition-colors",
+                        "border-border flex w-full items-center justify-center gap-1.5 border-t py-2",
+                        "text-muted-foreground text-sm transition-colors",
                         "hover:bg-muted/50 hover:text-foreground"
                     )}
                 >

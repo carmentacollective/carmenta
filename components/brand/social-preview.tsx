@@ -6,7 +6,7 @@ export function PreviewVariation1() {
     return (
         <div className="absolute inset-0 bg-[#F8F4F8]">
             <div className="flex h-full">
-                <div className="flex w-[40%] flex-col items-center justify-center space-y-8 border-r border-foreground/10 px-16">
+                <div className="border-foreground/10 flex w-[40%] flex-col items-center justify-center space-y-8 border-r px-16">
                     <Image
                         src="/logos/icon-transparent.png"
                         alt="Carmenta"
@@ -21,7 +21,7 @@ export function PreviewVariation1() {
                         Carmenta
                     </h1>
                     <p
-                        className="text-lg font-medium uppercase tracking-wider"
+                        className="text-lg font-medium tracking-wider uppercase"
                         style={{ color: "#C4A3D4" }}
                     >
                         Heart-Centered AI
@@ -30,7 +30,7 @@ export function PreviewVariation1() {
                 <div className="flex w-[60%] flex-col justify-center space-y-10 px-20">
                     <div className="space-y-6">
                         <p
-                            className="text-5xl font-light leading-tight"
+                            className="text-5xl leading-tight font-light"
                             style={{ color: "#5A3C64" }}
                         >
                             Create at the speed of thought.

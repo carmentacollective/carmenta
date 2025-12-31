@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@config "../tailwind.config.ts";
 
 /*
  * Holographic Dream Theme
@@ -769,7 +769,7 @@
 
     /* Legacy class for backwards compatibility */
     .greeting-gradient {
-        @apply text-[44px] font-semibold leading-tight tracking-tight md:text-5xl;
+        @apply text-[44px] leading-tight font-semibold tracking-tight md:text-5xl;
         letter-spacing: -1.5px;
         background: linear-gradient(
             135deg,
@@ -791,7 +791,7 @@
      * Uses serif for warmth, gradient for theme consistency
      */
     .greeting-display {
-        @apply text-[2.75rem] font-light leading-[1.1] md:text-[3.5rem];
+        @apply text-[2.75rem] leading-[1.1] font-light md:text-[3.5rem];
         font-family: var(--font-outfit), system-ui, sans-serif;
         letter-spacing: -0.03em;
         color: var(--greeting-gradient-mid);
@@ -825,7 +825,7 @@
 
     /* Name-only greeting: clean, confident */
     .greeting-name-only {
-        @apply text-[2.8rem] font-normal leading-none md:text-[3.6rem];
+        @apply text-[2.8rem] leading-none font-normal md:text-[3.6rem];
         letter-spacing: -0.03em;
         background: linear-gradient(
             135deg,
@@ -984,27 +984,27 @@
 
     /* Headings - stronger visual hierarchy */
     .holo-markdown h1 {
-        @apply mb-4 mt-6 text-xl font-bold first:mt-0;
+        @apply mt-6 mb-4 text-xl font-bold first:mt-0;
     }
 
     .holo-markdown h2 {
-        @apply mb-3 mt-5 text-lg font-bold first:mt-0;
+        @apply mt-5 mb-3 text-lg font-bold first:mt-0;
     }
 
     .holo-markdown h3 {
-        @apply mb-3 mt-4 text-base font-semibold first:mt-0;
+        @apply mt-4 mb-3 text-base font-semibold first:mt-0;
     }
 
     .holo-markdown h4 {
-        @apply mb-2 mt-4 text-sm font-semibold first:mt-0;
+        @apply mt-4 mb-2 text-sm font-semibold first:mt-0;
     }
 
     .holo-markdown h5 {
-        @apply mb-2 mt-3 text-sm font-medium first:mt-0;
+        @apply mt-3 mb-2 text-sm font-medium first:mt-0;
     }
 
     .holo-markdown h6 {
-        @apply mb-2 mt-3 text-xs font-medium uppercase tracking-wide first:mt-0;
+        @apply mt-3 mb-2 text-xs font-medium tracking-wide uppercase first:mt-0;
     }
 
     /* Lists - more breathing room */
@@ -1029,12 +1029,12 @@
 
     /* Inline code */
     .holo-markdown code:not(pre code) {
-        @apply rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-sm;
+        @apply bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-sm;
     }
 
     /* Code blocks */
     .holo-markdown pre {
-        @apply my-3 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm text-foreground;
+        @apply bg-muted text-foreground my-3 overflow-x-auto rounded-lg p-4 font-mono text-sm;
         backdrop-filter: blur(8px);
     }
 
@@ -1044,17 +1044,17 @@
 
     /* Blockquotes */
     .holo-markdown blockquote {
-        @apply my-3 border-l-2 border-foreground/20 pl-4 italic text-foreground/70;
+        @apply border-foreground/20 text-foreground/70 my-3 border-l-2 pl-4 italic;
     }
 
     /* Links */
     .holo-markdown a {
-        @apply text-primary underline decoration-primary/30 transition-colors hover:decoration-primary;
+        @apply text-primary decoration-primary/30 hover:decoration-primary underline transition-colors;
     }
 
     /* Horizontal rule - stronger visual break */
     .holo-markdown hr {
-        @apply my-6 border-foreground/20;
+        @apply border-foreground/20 my-6;
     }
 
     /* Tables - Enhanced with rounded borders and hover effects */
@@ -1069,7 +1069,7 @@
     }
 
     .holo-markdown th {
-        @apply border-b border-foreground/15 px-4 py-3 text-left font-semibold;
+        @apply border-foreground/15 border-b px-4 py-3 text-left font-semibold;
     }
 
     .holo-markdown th:first-child {
@@ -1081,11 +1081,11 @@
     }
 
     .holo-markdown tbody tr {
-        @apply transition-colors hover:bg-foreground/[0.02];
+        @apply hover:bg-foreground/[0.02] transition-colors;
     }
 
     .holo-markdown td {
-        @apply border-b border-foreground/10 px-4 py-3;
+        @apply border-foreground/10 border-b px-4 py-3;
     }
 
     .holo-markdown tbody tr:last-child td {
@@ -1122,7 +1122,7 @@
 
     /* Tool container base */
     .tool-inline {
-        @apply my-1 overflow-hidden rounded-md border border-foreground/10 bg-muted/50;
+        @apply border-foreground/10 bg-muted/50 my-1 overflow-hidden rounded-md border;
     }
 
     .tool-inline-running {
@@ -1142,7 +1142,7 @@
 
     /* Tool output panel */
     .tool-inline-output {
-        @apply border-t border-foreground/10 bg-foreground/[0.02];
+        @apply border-foreground/10 bg-foreground/[0.02] border-t;
     }
 
     /* Tool error panel */
@@ -1191,7 +1191,7 @@
 
     /* Tool text styles - theme-aware for readability */
     .tool-name {
-        @apply shrink-0 font-mono text-xs font-semibold text-foreground;
+        @apply text-foreground shrink-0 font-mono text-xs font-semibold;
     }
 
     .tool-name-running {
@@ -1228,7 +1228,7 @@
     }
 
     .tool-output-text {
-        @apply whitespace-pre-wrap break-words font-mono text-xs;
+        @apply font-mono text-xs break-words whitespace-pre-wrap;
         color: rgb(55 65 81); /* gray-700 - readable in light mode */
     }
 
@@ -1909,13 +1909,13 @@
     .glass-pill {
         background: var(--glass-bg);
         box-shadow: var(--glass-shadow);
-        @apply rounded-xl ring-1 ring-foreground/15 backdrop-blur-xl;
+        @apply ring-foreground/15 rounded-xl ring-1 backdrop-blur-xl;
         @apply transition-all duration-200;
     }
 
     .glass-pill:hover {
         background: var(--glass-bg-hover);
-        @apply shadow-2xl ring-foreground/20;
+        @apply ring-foreground/20 shadow-2xl;
     }
 
     .dark .glass-pill {
@@ -1934,7 +1934,7 @@
             var(--glass-shadow),
             0 2px 8px rgba(0, 0, 0, 0.12),
             0 1px 2px rgba(0, 0, 0, 0.06);
-        @apply ring-1 ring-foreground/20 backdrop-blur-xl;
+        @apply ring-foreground/20 ring-1 backdrop-blur-xl;
         @apply transition-all duration-300;
     }
 
@@ -1953,27 +1953,27 @@
 
     /* Focus ring - primary (default) */
     .interactive-focus {
-        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/40;
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
     }
 
     /* Focus ring - with offset for solid background buttons */
     .interactive-focus-offset {
-        @apply interactive-focus focus-visible:ring-offset-2;
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:outline-none;
     }
 
     /* Focus ring - amber for starred/warning elements */
     .interactive-focus-amber {
-        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-300/50;
+        @apply focus-visible:ring-[3px] focus-visible:ring-amber-300/50 focus-visible:outline-none;
     }
 
     /* Focus ring - red for destructive actions */
     .interactive-focus-destructive {
-        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-red-300/50;
+        @apply focus-visible:ring-[3px] focus-visible:ring-red-300/50 focus-visible:outline-none;
     }
 
     /* Focus ring - muted for secondary/subtle elements */
     .interactive-focus-muted {
-        @apply focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-foreground/20;
+        @apply focus-visible:ring-foreground/20 focus-visible:ring-[3px] focus-visible:outline-none;
     }
 
     /* Press state - subtle scale for most buttons */
@@ -1998,12 +1998,12 @@
 
     /* Click state - Ripple + depth shift */
     .btn-clickable {
-        @apply interactive-press-depth;
+        @apply active:translate-y-0.5 active:shadow-sm;
     }
 
     /* Hover state - Scale + shadow + ring */
     .btn-hoverable {
-        @apply hover:scale-105 hover:shadow-2xl hover:ring-[3px] hover:ring-primary/40;
+        @apply hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px];
     }
 
     .btn-hoverable:hover {
@@ -2012,7 +2012,7 @@
 
     /* Focus state - Scale + shadow + ring (keyboard navigation) */
     .btn-focusable {
-        @apply interactive-focus;
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
         @apply focus-visible:scale-105 focus-visible:shadow-2xl;
     }
 
@@ -2023,12 +2023,63 @@
 
     /* Complete glass button with all states */
     .btn-glass-interactive {
-        @apply btn-glass btn-clickable btn-hoverable btn-focusable;
+        /* btn-glass */
+        @apply flex items-center justify-center rounded-full;
+        background: var(--glass-bg);
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.12),
+            0 1px 2px rgba(0, 0, 0, 0.06);
+        @apply ring-foreground/20 ring-1 backdrop-blur-xl;
+        @apply transition-all duration-300;
+        /* btn-clickable */
+        @apply active:translate-y-0.5 active:shadow-sm;
+        /* btn-hoverable */
+        @apply hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px];
+        /* btn-focusable */
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
+        @apply focus-visible:scale-105 focus-visible:shadow-2xl;
+    }
+
+    .dark .btn-glass-interactive {
+        @apply ring-white/20;
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-glass-interactive:hover {
+        background: var(--glass-bg-hover);
     }
 
     /* Icon button variant */
     .btn-icon-glass {
-        @apply btn-glass-interactive h-11 w-11 sm:h-12 sm:w-12;
+        /* btn-glass-interactive (inlined) */
+        @apply flex items-center justify-center rounded-full;
+        background: var(--glass-bg);
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.12),
+            0 1px 2px rgba(0, 0, 0, 0.06);
+        @apply ring-foreground/20 ring-1 backdrop-blur-xl;
+        @apply transition-all duration-300;
+        @apply active:translate-y-0.5 active:shadow-sm;
+        @apply hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px];
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
+        @apply focus-visible:scale-105 focus-visible:shadow-2xl;
+        /* size */
+        @apply h-11 w-11 sm:h-12 sm:w-12;
+    }
+
+    .dark .btn-icon-glass {
+        @apply ring-white/20;
+        box-shadow:
+            var(--glass-shadow),
+            0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-icon-glass:hover {
+        background: var(--glass-bg-hover);
     }
 
     /* ==========================================================================
@@ -2040,9 +2091,11 @@
     /* Base subtle button */
     .btn-subtle {
         @apply rounded-md transition-all;
-        @apply hover:ring-[3px] hover:ring-primary/30;
-        @apply interactive-focus;
-        @apply interactive-press;
+        @apply hover:ring-primary/30 hover:ring-[3px];
+        /* interactive-focus */
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
+        /* interactive-press */
+        @apply active:scale-[0.98];
     }
 
     .btn-subtle:hover,
@@ -2052,15 +2105,33 @@
 
     /* Subtle icon button - small icons with deeper press */
     .btn-subtle-icon {
-        @apply btn-subtle p-1;
+        /* btn-subtle (inlined) */
+        @apply rounded-md p-1 transition-all;
+        @apply hover:ring-primary/30 hover:ring-[3px];
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
         @apply hover:scale-110 focus-visible:scale-110;
-        @apply interactive-press-icon;
+        /* interactive-press-icon */
+        @apply active:scale-[0.92];
+    }
+
+    .btn-subtle-icon:hover,
+    .btn-subtle-icon:focus-visible {
+        background: var(--glass-bg-hover);
     }
 
     /* Subtle text button - for text/label buttons */
     .btn-subtle-text {
-        @apply btn-subtle px-2 py-1;
+        /* btn-subtle (inlined) */
+        @apply rounded-md px-2 py-1 transition-all;
+        @apply hover:ring-primary/30 hover:ring-[3px];
+        @apply focus-visible:ring-primary/40 focus-visible:ring-[3px] focus-visible:outline-none;
+        @apply active:scale-[0.98];
         @apply hover:scale-105 focus-visible:scale-105;
+    }
+
+    .btn-subtle-text:hover,
+    .btn-subtle-text:focus-visible {
+        background: var(--glass-bg-hover);
     }
 
     /*

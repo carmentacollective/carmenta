@@ -14,29 +14,29 @@ export const metadata: Metadata = {
 
 export default function PhilosophyPage() {
     return (
-        <div className="relative min-h-screen bg-background">
+        <div className="bg-background relative min-h-screen">
             <HolographicBackground />
-            <div className="relative z-content">
+            <div className="z-content relative">
                 <SiteHeader bordered />
 
                 <article className="mx-auto max-w-4xl px-6 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
                     {/* Header */}
                     <div className="flex items-center gap-4">
-                        <div className="rounded-xl bg-primary/20 p-3">
-                            <Heart className="h-8 w-8 text-primary" />
+                        <div className="bg-primary/20 rounded-xl p-3">
+                            <Heart className="text-primary h-8 w-8" />
                         </div>
                         <div>
                             <h1 className="text-4xl font-bold tracking-tight">
                                 Heart-Centered AI
                             </h1>
-                            <p className="mt-1 text-lg text-foreground/70">
+                            <p className="text-foreground/70 mt-1 text-lg">
                                 The philosophy that guides how we work together
                             </p>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="mt-12 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-8">
+                    <div className="border-foreground/10 bg-foreground/[0.02] mt-12 rounded-2xl border p-8">
                         <MarkdownRenderer
                             content={VALUES_CONTENT}
                             className="prose prose-lg dark:prose-invert max-w-none"
@@ -44,7 +44,7 @@ export default function PhilosophyPage() {
                     </div>
 
                     {/* Footer note */}
-                    <p className="mt-8 text-center text-sm text-foreground/50">
+                    <p className="text-foreground/50 mt-8 text-center text-sm">
                         These values are woven into every interaction. They're not rules
                         we follow—they're how we see the world together.
                     </p>

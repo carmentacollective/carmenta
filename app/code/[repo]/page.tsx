@@ -60,12 +60,12 @@ export default function CodeProjectPage() {
         <div className="fixed inset-0 overflow-hidden">
             <HolographicBackground hideWatermark />
 
-            <div className="relative z-content flex h-full flex-col">
+            <div className="z-content relative flex h-full flex-col">
                 {/* Header */}
-                <header className="flex items-center gap-4 border-b border-white/10 bg-white/50 px-6 py-4 backdrop-blur-xl dark:bg-card/50">
+                <header className="dark:bg-card/50 flex items-center gap-4 border-b border-white/10 bg-white/50 px-6 py-4 backdrop-blur-xl">
                     <button
                         onClick={() => router.push("/code")}
-                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-2 transition-colors"
                         aria-label="Back to projects"
                     >
                         <ArrowLeft className="h-5 w-5" />
@@ -75,10 +75,10 @@ export default function CodeProjectPage() {
                             <FolderGit2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                            <h1 className="font-semibold text-foreground">
+                            <h1 className="text-foreground font-semibold">
                                 {repoName}
                             </h1>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                                 Code sessions
                             </p>
                         </div>
@@ -126,8 +126,8 @@ export default function CodeProjectPage() {
                 </div>
 
                 {/* Footer */}
-                <footer className="border-t border-white/10 bg-white/30 px-6 py-3 backdrop-blur-xl dark:bg-card/30">
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <footer className="dark:bg-card/30 border-t border-white/10 bg-white/30 px-6 py-3 backdrop-blur-xl">
+                    <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs">
                         <Image
                             src="/logos/icon-transparent.png"
                             alt="Carmenta"

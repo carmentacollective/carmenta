@@ -27,36 +27,36 @@ export function ColorSwatch({
     return (
         <div className="glass-card space-y-3">
             <div
-                className="h-24 rounded-lg border border-foreground/10"
+                className="border-foreground/10 h-24 rounded-lg border"
                 style={{ backgroundColor: hex }}
             />
             <div className="space-y-2">
-                <h3 className="font-medium text-foreground/90">{name}</h3>
+                <h3 className="text-foreground/90 font-medium">{name}</h3>
                 <div className="space-y-1 text-sm">
                     <button
                         onClick={() => handleCopy(hex)}
-                        className="block w-full text-left font-mono text-foreground/60 transition-colors hover:text-primary"
+                        className="text-foreground/60 hover:text-primary block w-full text-left font-mono transition-colors"
                         data-tooltip-id="tip"
                         data-tooltip-content="Copy hex"
                     >
                         {hex}
                         {copied === hex && (
-                            <span className="ml-2 text-xs text-primary">✓ Copied</span>
+                            <span className="text-primary ml-2 text-xs">✓ Copied</span>
                         )}
                     </button>
                     <button
                         onClick={() => handleCopy(hsl)}
-                        className="block w-full text-left font-mono text-xs text-foreground/50 transition-colors hover:text-primary"
+                        className="text-foreground/50 hover:text-primary block w-full text-left font-mono text-xs transition-colors"
                         data-tooltip-id="tip"
                         data-tooltip-content="Copy HSL"
                     >
                         {hsl}
                         {copied === hsl && (
-                            <span className="ml-2 text-xs text-primary">✓ Copied</span>
+                            <span className="text-primary ml-2 text-xs">✓ Copied</span>
                         )}
                     </button>
                 </div>
-                <p className="text-xs text-foreground/60">{usage}</p>
+                <p className="text-foreground/60 text-xs">{usage}</p>
             </div>
         </div>
     );

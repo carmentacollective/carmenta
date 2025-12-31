@@ -46,17 +46,17 @@ export function TransientOracle({ className }: TransientOracleProps) {
                 className={cn(
                     // Glass morphism bubble
                     "rounded-xl px-3 py-2",
-                    "border border-primary/20 bg-primary/5 backdrop-blur-md",
-                    "shadow-lg shadow-primary/5",
+                    "border-primary/20 bg-primary/5 border backdrop-blur-md",
+                    "shadow-primary/5 shadow-lg",
                     className
                 )}
             >
                 {/* Speech bubble tail - pointing left toward Oracle */}
                 <div
                     className={cn(
-                        "absolute left-0 top-1/2 -translate-x-full -translate-y-1/2",
+                        "absolute top-1/2 left-0 -translate-x-full -translate-y-1/2",
                         "h-0 w-0",
-                        "border-r-6 border-y-4 border-y-transparent border-r-primary/20"
+                        "border-r-primary/20 border-y-4 border-r-6 border-y-transparent"
                     )}
                 />
 
@@ -67,7 +67,7 @@ export function TransientOracle({ className }: TransientOracleProps) {
                             {latestMessage.icon}
                         </span>
                     )}
-                    <span className="text-sm text-foreground/80">
+                    <span className="text-foreground/80 text-sm">
                         {latestMessage.text}
                     </span>
                 </div>

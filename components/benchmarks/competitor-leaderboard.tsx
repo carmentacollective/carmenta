@@ -46,20 +46,20 @@ export function CompetitorLeaderboard({
 
     return (
         <>
-            <div className="overflow-hidden rounded-xl border border-foreground/10">
+            <div className="border-foreground/10 overflow-hidden rounded-xl border">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-foreground/10 bg-foreground/5">
-                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground/70">
+                        <tr className="border-foreground/10 bg-foreground/5 border-b">
+                            <th className="text-foreground/70 px-4 py-3 text-left text-sm font-medium">
                                 Competitor
                             </th>
-                            <th className="hidden px-4 py-3 text-center text-sm font-medium text-foreground/70 sm:table-cell">
+                            <th className="text-foreground/70 hidden px-4 py-3 text-center text-sm font-medium sm:table-cell">
                                 Win Rate
                             </th>
-                            <th className="px-4 py-3 text-center text-sm font-medium text-foreground/70">
+                            <th className="text-foreground/70 px-4 py-3 text-center text-sm font-medium">
                                 Record
                             </th>
-                            <th className="hidden px-4 py-3 text-right text-sm font-medium text-foreground/70 md:table-cell">
+                            <th className="text-foreground/70 hidden px-4 py-3 text-right text-sm font-medium md:table-cell">
                                 Performance
                             </th>
                         </tr>
@@ -75,7 +75,7 @@ export function CompetitorLeaderboard({
                             return (
                                 <Fragment key={competitor.competitor}>
                                     <tr
-                                        className="cursor-pointer border-b border-foreground/5 transition-colors hover:bg-foreground/5"
+                                        className="border-foreground/5 hover:bg-foreground/5 cursor-pointer border-b transition-colors"
                                         onClick={() =>
                                             setExpandedCompetitor(
                                                 isExpanded
@@ -87,11 +87,11 @@ export function CompetitorLeaderboard({
                                         <td className="px-4 py-4">
                                             <div className="flex items-center gap-2">
                                                 {isExpanded ? (
-                                                    <ChevronUp className="h-4 w-4 text-foreground/40" />
+                                                    <ChevronUp className="text-foreground/40 h-4 w-4" />
                                                 ) : (
-                                                    <ChevronDown className="h-4 w-4 text-foreground/40" />
+                                                    <ChevronDown className="text-foreground/40 h-4 w-4" />
                                                 )}
-                                                <span className="font-medium text-foreground">
+                                                <span className="text-foreground font-medium">
                                                     {competitor.competitor}
                                                 </span>
                                             </div>
@@ -104,7 +104,7 @@ export function CompetitorLeaderboard({
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 text-center">
-                                            <span className="text-sm text-foreground/70">
+                                            <span className="text-foreground/70 text-sm">
                                                 <span className="text-green-500">
                                                     {competitor.wins}W
                                                 </span>{" "}
@@ -137,7 +137,7 @@ export function CompetitorLeaderboard({
                                                         ({ query, pairwise }) => (
                                                             <button
                                                                 key={query.query.id}
-                                                                className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-foreground/5"
+                                                                className="hover:bg-foreground/5 flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setSelectedComparison(
@@ -149,14 +149,14 @@ export function CompetitorLeaderboard({
                                                                 }}
                                                             >
                                                                 <div className="flex-1">
-                                                                    <p className="text-sm text-foreground">
+                                                                    <p className="text-foreground text-sm">
                                                                         {truncate(
                                                                             query.query
                                                                                 .query,
                                                                             80
                                                                         )}
                                                                     </p>
-                                                                    <p className="mt-1 text-xs text-foreground/50">
+                                                                    <p className="text-foreground/50 mt-1 text-xs">
                                                                         {
                                                                             query.query
                                                                                 .category
@@ -174,7 +174,7 @@ export function CompetitorLeaderboard({
                                                                             pairwise.winner
                                                                         }
                                                                     />
-                                                                    <span className="text-xs text-foreground/40">
+                                                                    <span className="text-foreground/40 text-xs">
                                                                         {Math.round(
                                                                             pairwise.confidence *
                                                                                 100
@@ -215,7 +215,7 @@ function WinRateBar({ winRate }: { winRate: number }) {
     };
 
     return (
-        <div className="h-2 w-24 overflow-hidden rounded-full bg-foreground/10">
+        <div className="bg-foreground/10 h-2 w-24 overflow-hidden rounded-full">
             <div
                 className={`h-full transition-all duration-300 ${getBarColor(winRate)}`}
                 style={{ width: `${winRate * 100}%` }}

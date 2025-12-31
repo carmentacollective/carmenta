@@ -40,7 +40,7 @@ export default function ExitPage() {
         <div className="relative flex min-h-screen flex-col">
             <HolographicBackground />
 
-            <div className="relative z-content flex min-h-screen flex-col items-center justify-center px-6">
+            <div className="z-content relative flex min-h-screen flex-col items-center justify-center px-6">
                 <div className="flex flex-col items-center text-center">
                     <Image
                         src="/logos/icon-transparent.png"
@@ -52,14 +52,14 @@ export default function ExitPage() {
                         }`}
                         priority
                     />
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground/90">
+                    <h1 className="text-foreground/90 text-2xl font-semibold tracking-tight">
                         {error
                             ? "Something went wrong"
                             : isExiting
                               ? "Until next time"
                               : "Exiting..."}
                     </h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-2 text-sm">
                         {error
                             ? "Couldn't sign you out. The bots are on it. 🤖"
                             : "We'll remember where we left off"}
@@ -67,7 +67,7 @@ export default function ExitPage() {
                     {error && (
                         <button
                             onClick={() => router.push("/")}
-                            className="mt-4 text-sm font-medium text-primary hover:text-primary/80"
+                            className="text-primary hover:text-primary/80 mt-4 text-sm font-medium"
                         >
                             Return home
                         </button>

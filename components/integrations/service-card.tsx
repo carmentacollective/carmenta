@@ -45,7 +45,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
 
     if (status === "disconnected") {
         return (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium text-foreground/60">
+            <span className="bg-foreground/10 text-foreground/60 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
                 Disconnected
             </span>
         );
@@ -53,7 +53,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
 
     if (status === "beta") {
         return (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
+            <span className="bg-primary/15 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
                 Beta
             </span>
         );
@@ -108,7 +108,7 @@ export function ServiceCard({
             <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                     {/* Logo */}
-                    <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-foreground/5 p-2">
+                    <div className="bg-foreground/5 relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl p-2">
                         <Image
                             src={service.logo}
                             alt={service.name}
@@ -119,11 +119,11 @@ export function ServiceCard({
 
                     {/* Name & Status */}
                     <div>
-                        <h3 className="font-medium text-foreground/90">
+                        <h3 className="text-foreground/90 font-medium">
                             {service.name}
                         </h3>
                         {accountDisplayName && status && (
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-foreground/60 text-sm">
                                 {accountDisplayName}
                             </p>
                         )}
@@ -135,7 +135,7 @@ export function ServiceCard({
             </div>
 
             {/* Description */}
-            <p className="text-sm leading-relaxed text-foreground/70">
+            <p className="text-foreground/70 text-sm leading-relaxed">
                 {service.description}
             </p>
 

@@ -241,8 +241,8 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
         >
             <CollapsibleTrigger
                 className={cn(
-                    "flex w-full items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
-                    isNested ? "px-4 py-2.5 text-left hover:bg-foreground/5" : "gap-1.5"
+                    "text-muted-foreground hover:text-foreground flex w-full items-center gap-2 text-sm transition-colors",
+                    isNested ? "hover:bg-foreground/5 px-4 py-2.5 text-left" : "gap-1.5"
                 )}
                 data-testid="reasoning-trigger"
             >
@@ -256,7 +256,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                 <span
                     className={cn(
                         "truncate",
-                        isNested ? "flex-1 text-foreground/60" : "max-w-[400px]"
+                        isNested ? "text-foreground/60 flex-1" : "max-w-[400px]"
                     )}
                     data-testid="reasoning-status"
                 >
@@ -273,7 +273,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
 
             <CollapsibleContent
                 className={cn(
-                    "overflow-hidden text-sm text-muted-foreground",
+                    "text-muted-foreground overflow-hidden text-sm",
                     !isNested && "mt-2",
                     "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2",
                     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
@@ -284,14 +284,14 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                     className={cn(
                         "group relative max-h-[200px] overflow-y-auto",
                         isNested
-                            ? "border-t border-foreground/5 bg-blue-500/[0.02] px-4 py-3"
+                            ? "border-foreground/5 border-t bg-blue-500/[0.02] px-4 py-3"
                             : "rounded-lg border border-white/10 bg-white/20 px-3 py-2 backdrop-blur-sm"
                     )}
                 >
-                    <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                    <pre className="font-sans leading-relaxed whitespace-pre-wrap">
                         {content}
                     </pre>
-                    <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                         <CopyButton
                             text={content}
                             ariaLabel="Copy reasoning"

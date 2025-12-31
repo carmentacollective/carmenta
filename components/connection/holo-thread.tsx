@@ -209,7 +209,7 @@ function HoloThreadInner() {
             <div
                 ref={scrollRef}
                 className={cn(
-                    "chat-viewport-fade landscape-compact-viewport relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pb-4 pt-2 sm:px-14 sm:pb-10 sm:pt-8",
+                    "chat-viewport-fade landscape-compact-viewport relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pt-2 pb-4 sm:px-14 sm:pt-8 sm:pb-10",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -274,7 +274,7 @@ function HoloThreadInner() {
             </div>
 
             {/* Input container with safe area for notched devices - glass treatment matches header */}
-            <div className="landscape-compact-input flex flex-none items-center justify-center border-t border-foreground/5 bg-white/60 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl dark:bg-card/60 sm:px-4 sm:pb-4 sm:pt-3">
+            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl sm:px-4 sm:pt-3 sm:pb-4">
                 <motion.div
                     className="relative flex w-full flex-col items-center"
                     initial={{ opacity: 0, y: 40 }}
@@ -315,10 +315,10 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton({
     return (
         <button
             onClick={onScrollToBottom}
-            className="btn-glass-interactive absolute -top-14 z-sticky flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
+            className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
             aria-label="Scroll to bottom"
         >
-            <ArrowDown className="h-5 w-5 text-foreground/70" />
+            <ArrowDown className="text-foreground/70 h-5 w-5" />
         </button>
     );
 });
@@ -618,7 +618,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                             <div className="text-muted-foreground">
                                 {weatherOutput.location}
                             </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
+                            <div className="text-muted-foreground mt-2 text-xs">
                                 Humidity: {weatherOutput.humidity}% · Wind:{" "}
                                 {weatherOutput.windSpeed} mph
                             </div>
@@ -895,7 +895,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                                 </div>
                             )}
                             {description && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-muted-foreground text-xs">
                                     {description}
                                 </div>
                             )}
@@ -971,7 +971,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     {(operation || hasOutput) && (
                         <div className="space-y-2">
                             {operation && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-muted-foreground text-xs">
                                     Operation: {operation}
                                 </div>
                             )}
@@ -1002,7 +1002,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     error={notebookError}
                 >
                     {status === "completed" && (
-                        <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground space-y-1 text-xs">
                             {notebookPath && (
                                 <div className="font-mono">{notebookPath}</div>
                             )}
@@ -1039,7 +1039,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     {status === "completed" && (
                         <div className="space-y-2">
                             {fetchUrl && (
-                                <div className="truncate font-mono text-xs text-muted-foreground">
+                                <div className="text-muted-foreground truncate font-mono text-xs">
                                     {fetchUrl}
                                 </div>
                             )}
@@ -1080,7 +1080,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     {status === "completed" && (
                         <div className="space-y-2">
                             {searchQuery && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-muted-foreground text-xs">
                                     Query: {searchQuery}
                                 </div>
                             )}
@@ -1291,7 +1291,7 @@ function MessageActions({
         >
             {/* Stopped indicator - subtle badge showing response was interrupted */}
             {wasStopped && (
-                <span className="mr-1 text-xs text-foreground/40">
+                <span className="text-foreground/40 mr-1 text-xs">
                     Response stopped
                 </span>
             )}
@@ -1304,7 +1304,7 @@ function MessageActions({
                     data-tooltip-content="Let's try that differently"
                     className={cn(
                         "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                         "hover:bg-foreground/10 active:bg-foreground/15",
                         "text-foreground/60 hover:text-foreground/90"
                     )}
@@ -1349,7 +1349,7 @@ function ModelAvatar({ modelId }: { modelId?: string }) {
 
     return (
         <div
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5"
+            className="bg-foreground/5 flex h-6 w-6 items-center justify-center rounded-full"
             data-tooltip-id="tip"
             data-tooltip-content={model.displayName}
         >
@@ -1394,7 +1394,7 @@ function UserAvatarInner({
     }
 
     return (
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
+        <div className="bg-primary/20 text-primary flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium">
             {initials}
         </div>
     );
@@ -1487,11 +1487,11 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         <div className="my-3 flex w-full justify-end sm:my-5">
             <div className="group relative max-w-full sm:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
-                <div className="absolute -right-10 top-2 hidden sm:block">
+                <div className="absolute top-2 -right-10 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble rounded-2xl rounded-br-md border-r-[3px] border-r-primary px-4 py-3 sm:px-5 sm:py-4">
+                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 sm:px-5 sm:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1517,8 +1517,8 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                 onKeyDown={handleKeyDown}
                                 disabled={isSubmitting}
                                 className={cn(
-                                    "w-full resize-none rounded-lg border border-foreground/10 bg-background/50 px-3 py-2 text-sm",
-                                    "focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50",
+                                    "border-foreground/10 bg-background/50 w-full resize-none rounded-lg border px-3 py-2 text-sm",
+                                    "focus:border-primary/50 focus:ring-primary/50 focus:ring-1 focus:outline-none",
                                     "placeholder:text-foreground/40",
                                     isSubmitting && "opacity-50"
                                 )}
@@ -1526,7 +1526,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                 placeholder="Edit your message..."
                             />
                             <div className="flex items-center justify-end gap-2">
-                                <span className="mr-auto text-xs text-foreground/40">
+                                <span className="text-foreground/40 mr-auto text-xs">
                                     ⌘↵ to save
                                 </span>
                                 <button
@@ -1548,7 +1548,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                         isSubmitting || isLoading || !editContent.trim()
                                     }
                                     className={cn(
-                                        "inline-flex h-7 items-center justify-center gap-1.5 rounded-md bg-primary/10 px-2.5 text-xs font-medium transition-all",
+                                        "bg-primary/10 inline-flex h-7 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
                                         "hover:bg-primary/20 active:bg-primary/25",
                                         "text-primary",
                                         (isSubmitting ||
@@ -1689,7 +1689,7 @@ function AssistantMessage({
                 {showConcierge && hasSelected && hasLlmOutput && (
                     <div className="relative mt-2">
                         {/* Model avatar - positioned outside bubble, hidden on mobile */}
-                        <div className="absolute -left-10 top-2 hidden sm:block">
+                        <div className="absolute top-2 -left-10 hidden sm:block">
                             <ModelAvatar modelId={concierge?.modelId} />
                         </div>
 
@@ -1700,11 +1700,11 @@ function AssistantMessage({
                                 duration: 0.35,
                                 ease: [0.16, 1, 0.3, 1], // expo-out for snappy entrance
                             }}
-                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
+                            className="border-foreground/10 max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
                         >
                             {/* Reasoning - nested inside LLM zone */}
                             {reasoning && (
-                                <div className="border-b border-foreground/10">
+                                <div className="border-foreground/10 border-b">
                                     <ReasoningDisplay
                                         content={reasoning}
                                         isStreaming={isStreaming}
@@ -1717,7 +1717,7 @@ function AssistantMessage({
                             {/* Code mode: Use inline activity display */}
                             {/* Normal mode: Use detailed card renderers */}
                             {toolParts.length > 0 && (
-                                <div className="border-b border-foreground/10">
+                                <div className="border-foreground/10 border-b">
                                     {isCodeMode ? (
                                         <InlineToolActivity
                                             parts={toolParts}
@@ -1731,7 +1731,7 @@ function AssistantMessage({
                                                     className={cn(
                                                         "max-w-full",
                                                         idx > 0 &&
-                                                            "border-t border-foreground/5"
+                                                            "border-foreground/5 border-t"
                                                     )}
                                                 >
                                                     <ToolPartRenderer part={part} />
@@ -1744,7 +1744,7 @@ function AssistantMessage({
 
                             {/* File previews */}
                             {fileParts.length > 0 && (
-                                <div className="border-b border-foreground/10 p-3 sm:p-4">
+                                <div className="border-foreground/10 border-b p-3 sm:p-4">
                                     <div className="flex flex-col gap-2">
                                         {fileParts.map((file, idx) => (
                                             <FilePreview
@@ -1768,7 +1768,7 @@ function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
+                                    <div className="px-4 pt-4 pb-2 sm:px-5 sm:pt-5 sm:pb-3">
                                         <CollapsibleStreamingContent
                                             content={content}
                                             isStreaming={isStreaming}
@@ -1801,7 +1801,7 @@ function AssistantMessage({
             {!showConcierge && hasContent && (
                 <div className="group relative max-w-full sm:max-w-[85%]">
                     {/* Carmenta avatar - positioned outside bubble, hidden on mobile */}
-                    <div className="absolute -left-10 top-2 hidden sm:block">
+                    <div className="absolute top-2 -left-10 hidden sm:block">
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
@@ -1881,7 +1881,7 @@ function PendingCodeModeMessage() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />
                 </span>
-                <span className="text-sm text-muted-foreground">Working...</span>
+                <span className="text-muted-foreground text-sm">Working...</span>
             </motion.div>
         </div>
     );
@@ -1940,7 +1940,7 @@ function PendingAssistantMessage({
                 {hasSelected && (
                     <div className="relative mt-2">
                         {/* Model avatar positioned outside bubble */}
-                        <div className="absolute -left-10 top-2 hidden sm:block">
+                        <div className="absolute top-2 -left-10 hidden sm:block">
                             <ModelAvatar modelId={concierge?.modelId} />
                         </div>
                         <motion.div
@@ -1950,7 +1950,7 @@ function PendingAssistantMessage({
                                 duration: 0.35,
                                 ease: [0.16, 1, 0.3, 1],
                             }}
-                            className="max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-foreground/10 border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
+                            className="border-foreground/10 max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
                         >
                             <div className="px-4 py-3 sm:px-5 sm:py-4">
                                 <ThinkingIndicator />

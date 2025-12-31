@@ -147,7 +147,7 @@ export function ToolRenderer({
                     className={cn(
                         "border-t border-white/10",
                         spacing.toolContent,
-                        "duration-200 animate-in fade-in-0 slide-in-from-top-2"
+                        "animate-in fade-in-0 slide-in-from-top-2 duration-200"
                     )}
                 >
                     {/* Tool-specific content */}

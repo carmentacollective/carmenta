@@ -50,7 +50,7 @@ export function ThemeSwitcher({
                 className="relative"
                 aria-label="Toggle theme"
             >
-                <Sun className="size-4 text-foreground/70" />
+                <Sun className="text-foreground/70 size-4" />
             </Button>
         );
     }
@@ -66,7 +66,7 @@ export function ThemeSwitcher({
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
         >
-            <Icon className="size-4 text-foreground/70" />
+            <Icon className="text-foreground/70 size-4" />
         </Button>
     );
 }

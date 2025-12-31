@@ -33,17 +33,17 @@ function CompareTableContent({
 
     return (
         <div className="overflow-x-auto">
-            <h3 className="mb-4 font-bold text-foreground">{title}</h3>
+            <h3 className="text-foreground mb-4 font-bold">{title}</h3>
             <table className="w-full text-sm">
                 <thead>
-                    <tr className="border-b border-border">
-                        <th className="px-4 py-2 text-left font-medium text-muted-foreground">
+                    <tr className="border-border border-b">
+                        <th className="text-muted-foreground px-4 py-2 text-left font-medium">
                             Option
                         </th>
                         {attributeKeys.map((key) => (
                             <th
                                 key={key}
-                                className="px-4 py-2 text-left font-medium capitalize text-muted-foreground"
+                                className="text-muted-foreground px-4 py-2 text-left font-medium capitalize"
                             >
                                 {key}
                             </th>
@@ -54,13 +54,13 @@ function CompareTableContent({
                     {options.map((option) => (
                         <tr
                             key={option.name}
-                            className="border-b border-border/50 last:border-0"
+                            className="border-border/50 border-b last:border-0"
                         >
-                            <td className="px-4 py-2 font-medium text-foreground">
+                            <td className="text-foreground px-4 py-2 font-medium">
                                 {option.name}
                             </td>
                             {attributeKeys.map((key) => (
-                                <td key={key} className="px-4 py-2 text-foreground/80">
+                                <td key={key} className="text-foreground/80 px-4 py-2">
                                     {option.attributes[key] ?? "—"}
                                 </td>
                             ))}
