@@ -169,9 +169,10 @@ export async function POST(req: Request) {
 
     // Validate the project exists (do this before creating connection)
     // In workspace mode, use user-scoped validation
-    const isValid = isWorkspaceMode()
-        ? await validateUserProjectPath(userEmail, body.projectPath)
-        : await validateProject(body.projectPath);
+    const isValid =
+        isWorkspaceMode() && userEmail
+            ? await validateUserProjectPath(userEmail, body.projectPath)
+            : await validateProject(body.projectPath);
     timing("Project validated");
     if (!isValid) {
         logger.warn(

@@ -17,6 +17,7 @@ import {
     getProject,
     getUserProject,
     isWorkspaceMode,
+    validateUserProjectPath,
 } from "@/lib/code";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
@@ -57,6 +58,17 @@ export async function GET(req: Request) {
 
         // If a specific path is requested, get that project
         if (projectPath) {
+            // In workspace mode, validate the path is within user's workspace
+            if (isWorkspaceMode() && userEmail) {
+                const isValid = await validateUserProjectPath(userEmail, projectPath);
+                if (!isValid) {
+                    return NextResponse.json(
+                        { error: "Project not found" },
+                        { status: 404 }
+                    );
+                }
+            }
+
             const project = await getProject(projectPath);
             if (!project) {
                 return NextResponse.json(
