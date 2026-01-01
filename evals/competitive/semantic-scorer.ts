@@ -267,7 +267,28 @@ export async function SemanticCorrectnessScorer({
         ];
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        // Return all dimension scores for consistency with empty response handling
         return [
+            {
+                name: "Answers Question",
+                score: 0,
+                metadata: { error: errorMessage },
+            },
+            {
+                name: "Factual Accuracy",
+                score: 0,
+                metadata: { error: errorMessage },
+            },
+            {
+                name: "Completeness",
+                score: 0,
+                metadata: { error: errorMessage },
+            },
+            {
+                name: "Relevance",
+                score: 0,
+                metadata: { error: errorMessage },
+            },
             {
                 name: "Semantic Correctness",
                 score: 0,
