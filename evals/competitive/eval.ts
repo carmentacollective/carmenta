@@ -20,6 +20,7 @@ import {
     type CompetitiveQuery,
     type QueryCategory,
 } from "./queries";
+import { SemanticCorrectnessScorer } from "./semantic-scorer";
 import { runToolQualityScorers } from "./tool-quality-scorers";
 
 // Configuration
@@ -35,7 +36,7 @@ if (!JWT_TOKEN) {
 }
 
 /** Detected error event from the SSE stream */
-interface StreamError {
+export interface StreamError {
     type: "error" | "tool-error";
     message?: string;
     code?: string;
@@ -43,7 +44,7 @@ interface StreamError {
 }
 
 /** Failure classification to distinguish infra issues from quality issues */
-type FailureType =
+export type FailureType =
     | "none"
     | "http_error" // Non-2xx status code
     | "stream_error" // Error event in SSE stream
@@ -51,7 +52,7 @@ type FailureType =
     | "truncated" // Response ends mid-sentence or with "I'll search for..."
     | "body_error"; // 200 status but error message in body
 
-interface CompetitiveOutput {
+export interface CompetitiveOutput {
     /** Full response text */
     text: string;
     /** Model used (from header) */
@@ -492,10 +493,10 @@ async function CompetitiveScorer({
         });
     }
 
-    // Latency - 30s threshold allows for web search + reasoning; mild penalty beyond
+    // Latency - 45s threshold allows for web search + reasoning + tool calls; mild penalty beyond
     scores.push({
         name: "Latency (ms)",
-        score: output.latencyMs < 30000 ? 1 : 0.5,
+        score: output.latencyMs < 45000 ? 1 : 0.5,
         metadata: { latencyMs: output.latencyMs },
     });
 
@@ -544,8 +545,9 @@ function sampleQueries(
     return sampled;
 }
 
-// Configuration for sampling
+// Configuration for sampling and semantic scoring
 const SAMPLE_RATE = parseFloat(process.env.SAMPLE_RATE ?? "1.0");
+const ENABLE_SEMANTIC_SCORING = process.env.ENABLE_SEMANTIC_SCORING === "true";
 
 /**
  * Run the competitive benchmark eval
@@ -570,7 +572,9 @@ Eval("Carmenta Competitive Benchmark", {
         return executeQuery(input);
     },
 
-    scores: [CompetitiveScorer],
+    scores: ENABLE_SEMANTIC_SCORING
+        ? [CompetitiveScorer, SemanticCorrectnessScorer]
+        : [CompetitiveScorer],
 
     metadata: {
         baseUrl: BASE_URL,
