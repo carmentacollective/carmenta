@@ -52,7 +52,8 @@ test.describe("Navigation to Protected Routes", () => {
     }) => {
         await page.goto("/");
 
-        const connectLink = page.getByRole("link", { name: /connect/i }).first();
+        // Primary CTA on homepage links to /connection
+        const connectLink = page.getByRole("link", { name: "Connect to AI" });
         await connectLink.click();
 
         // Should redirect to sign-in when unauthenticated

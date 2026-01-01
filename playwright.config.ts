@@ -24,18 +24,19 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: "html",
 
-    // Aggressive timeouts - fail fast, don't wait around
-    timeout: 10_000, // 10s max per test (default is 30s)
+    // Timeouts optimized for CI (cold start) and local (warm cache)
+    // Cold start can be slow, but once warm, pages should be fast
+    timeout: 30_000, // 30s per test - headroom for cold start + assertions
     expect: {
-        timeout: 3_000, // 3s for assertions (default is 5s)
+        timeout: 5_000, // 5s for assertions - should be instant
     },
 
     use: {
         baseURL: process.env.BASE_URL || "http://localhost:3000",
-        trace: "retain-on-failure", // Changed from on-first-retry since retries=0
+        trace: "retain-on-failure", // Captures traces for debugging failed tests
         // Navigation/action timeouts
-        actionTimeout: 10_000, // 10s for clicks, fills, etc.
-        navigationTimeout: 30_000, // 30s for page.goto - pages can be slow on CI
+        actionTimeout: 5_000, // 5s for clicks, fills - should be instant
+        navigationTimeout: 20_000, // 20s for page.goto - accounts for cold start
     },
 
     projects: [
