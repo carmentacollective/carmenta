@@ -41,10 +41,11 @@ export async function createJobSchedule(params: {
     scheduleId: string;
     jobId: string;
     userId: string;
+    userEmail: string;
     cronExpression: string;
     timezone: string;
 }): Promise<void> {
-    const { scheduleId, jobId, userId, cronExpression, timezone } = params;
+    const { scheduleId, jobId, userId, userEmail, cronExpression, timezone } = params;
     const temporalClient = await getTemporalClient();
 
     try {
@@ -58,7 +59,7 @@ export async function createJobSchedule(params: {
                 type: "startWorkflow",
                 workflowType: "agentJobWorkflow",
                 taskQueue: TASK_QUEUE,
-                args: [{ jobId, userId }],
+                args: [{ jobId, userId, userEmail }],
             },
         });
 
@@ -170,14 +171,15 @@ export async function getJobScheduleInfo(scheduleId: string): Promise<{
 export async function startAgentWorkflow(params: {
     jobId: string;
     userId: string;
+    userEmail: string;
 }): Promise<string> {
-    const { jobId, userId } = params;
+    const { jobId, userId, userEmail } = params;
     const temporalClient = await getTemporalClient();
 
     const handle = await temporalClient.workflow.start("agentJobWorkflow", {
         taskQueue: TASK_QUEUE,
         workflowId: `job-${jobId}-${Date.now()}`,
-        args: [{ jobId, userId }],
+        args: [{ jobId, userId, userEmail }],
     });
 
     logger.info({ jobId, workflowId: handle.workflowId }, "Started agent workflow");

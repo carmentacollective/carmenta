@@ -34,6 +34,8 @@ services:
           name: carmenta-redis
           type: redis
           property: connectionString
+      - key: TEMPORAL_ADDRESS
+        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
 
   # Redis for resumable streams and caching
   - type: redis
@@ -86,12 +88,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        fromService:
-          name: temporal-server
-          type: web
-          property: host
-      - key: TEMPORAL_PORT
-        value: "7233"
+        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db

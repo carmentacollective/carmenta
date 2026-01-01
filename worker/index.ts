@@ -9,13 +9,12 @@ import { NativeConnection, Worker } from "@temporalio/worker";
 import * as activities from "./activities";
 
 async function run() {
-    const temporalAddress = process.env.TEMPORAL_ADDRESS || "localhost";
-    const temporalPort = process.env.TEMPORAL_PORT || "7233";
+    const temporalAddress = process.env.TEMPORAL_ADDRESS || "localhost:7233";
 
-    console.log(`Connecting to Temporal at ${temporalAddress}:${temporalPort}`);
+    console.log(`Connecting to Temporal at ${temporalAddress}`);
 
     const connection = await NativeConnection.connect({
-        address: `${temporalAddress}:${temporalPort}`,
+        address: temporalAddress,
     });
 
     const worker = await Worker.create({

@@ -96,21 +96,24 @@ export async function POST(request: NextRequest) {
             scheduleId,
             jobId: job.id,
             userId: user.id,
+            userEmail: user.email,
             cronExpression: scheduleCron,
             timezone,
         });
 
         // Update job with schedule ID
-        await db
+        const [updatedJob] = await db
             .update(scheduledJobs)
             .set({ temporalScheduleId: scheduleId })
-            .where(eq(scheduledJobs.id, job.id));
+            .where(eq(scheduledJobs.id, job.id))
+            .returning();
 
         logger.info({ jobId: job.id, scheduleId }, "Created scheduled job");
+
+        return NextResponse.json({ job: updatedJob }, { status: 201 });
     } catch (error) {
         // If Temporal fails, still return the job but log the error
         logger.error({ error, jobId: job.id }, "Failed to create Temporal schedule");
+        return NextResponse.json({ job }, { status: 201 });
     }
-
-    return NextResponse.json({ job }, { status: 201 });
 }

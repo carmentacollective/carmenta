@@ -26,6 +26,7 @@ const {
 export interface AgentJobInput {
     jobId: string;
     userId: string;
+    userEmail: string;
 }
 
 export interface AgentJobResult {
@@ -39,118 +40,145 @@ export interface AgentJobResult {
  * Main agent workflow - loops until the LLM decides to complete
  */
 export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobResult> {
-    const { jobId, userId } = input;
-
-    // Load job configuration and memory from database
-    const context = await loadJobContext(jobId);
-    const { prompt, integrations, memory } = context;
+    const { jobId, userId, userEmail } = input;
 
     // Track execution stats
     let toolCallsExecuted = 0;
     let notificationsSent = 0;
     const messages: Array<{ role: string; content: string }> = [];
 
-    // Initialize conversation with system prompt and user's job prompt
-    const systemPrompt = buildSystemPrompt(integrations);
-    messages.push({ role: "user", content: prompt });
+    try {
+        // Load job configuration and memory from database
+        const context = await loadJobContext(jobId);
+        const { prompt, integrations } = context;
+        let memory = context.memory;
 
-    // Agent loop - LLM decides when to stop
-    const MAX_STEPS = 20;
-    let step = 0;
+        // Initialize conversation with system prompt and user's job prompt
+        const systemPrompt = buildSystemPrompt(integrations);
+        messages.push({ role: "user", content: prompt });
 
-    while (step < MAX_STEPS) {
-        step++;
+        // Agent loop - LLM decides when to stop
+        const MAX_STEPS = 20;
+        let step = 0;
 
-        // Call LLM with current context
-        const response = await callLLM({
-            systemPrompt,
+        while (step < MAX_STEPS) {
+            step++;
+
+            // Call LLM with current context
+            const response = await callLLM({
+                systemPrompt,
+                messages,
+                memory,
+                availableTools: integrations,
+            });
+
+            // Process the response
+            if (response.type === "text") {
+                messages.push({ role: "assistant", content: response.content ?? "" });
+
+                // Check if the agent is done
+                if (response.isComplete) {
+                    break;
+                }
+            }
+
+            if (
+                response.type === "tool_call" &&
+                response.toolName &&
+                response.toolArgs
+            ) {
+                const { toolName, toolArgs } = response;
+                toolCallsExecuted++;
+
+                // Handle special tools
+                if (toolName === "notify_user") {
+                    await createNotification({
+                        userId,
+                        jobId,
+                        title: String(toolArgs.title || ""),
+                        body: String(toolArgs.body || ""),
+                        priority: String(toolArgs.priority || "normal"),
+                    });
+                    notificationsSent++;
+                    messages.push({
+                        role: "tool",
+                        content: JSON.stringify({
+                            success: true,
+                            message: "Notification sent",
+                        }),
+                    });
+                } else if (toolName === "update_memory") {
+                    const updates = (toolArgs.updates || {}) as Record<string, unknown>;
+                    await updateJobMemory(jobId, updates);
+
+                    // Update local memory so subsequent LLM calls see the changes
+                    memory = { ...memory, ...updates };
+
+                    messages.push({
+                        role: "tool",
+                        content: JSON.stringify({
+                            success: true,
+                            message: "Memory updated",
+                        }),
+                    });
+                } else {
+                    // Execute integration tool via MCP-Hubby
+                    const result = await executeIntegration({
+                        userEmail,
+                        service: toolName,
+                        action: String(toolArgs.action || "describe"),
+                        params: (toolArgs.params || {}) as Record<string, unknown>,
+                    });
+                    messages.push({
+                        role: "tool",
+                        content: JSON.stringify(result),
+                    });
+                }
+            }
+
+            // Brief pause between steps to avoid rate limits
+            await sleep(100);
+        }
+
+        // Generate summary from final message
+        const lastAssistantMessage = messages
+            .filter((m) => m.role === "assistant")
+            .pop();
+        const summary = lastAssistantMessage?.content ?? "Job completed";
+
+        // Record the run in our database
+        await recordJobRun({
+            jobId,
+            status: "completed",
+            summary,
             messages,
-            memory,
-            availableTools: integrations,
+            toolCallsExecuted,
+            notificationsSent,
         });
 
-        // Process the response
-        if (response.type === "text") {
-            messages.push({ role: "assistant", content: response.content ?? "" });
+        return {
+            success: true,
+            summary,
+            notificationsSent,
+            toolCallsExecuted,
+        };
+    } catch (error) {
+        // Record failed run for observability
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const summary = `Failed: ${errorMessage}`;
 
-            // Check if the agent is done
-            if (response.isComplete) {
-                break;
-            }
-        }
+        await recordJobRun({
+            jobId,
+            status: "failed",
+            summary,
+            messages,
+            toolCallsExecuted,
+            notificationsSent,
+        });
 
-        if (response.type === "tool_call" && response.toolName && response.toolArgs) {
-            const { toolName, toolArgs } = response;
-            toolCallsExecuted++;
-
-            // Handle special tools
-            if (toolName === "notify_user") {
-                await createNotification({
-                    userId,
-                    jobId,
-                    title: String(toolArgs.title || ""),
-                    body: String(toolArgs.body || ""),
-                    priority: String(toolArgs.priority || "normal"),
-                });
-                notificationsSent++;
-                messages.push({
-                    role: "tool",
-                    content: JSON.stringify({
-                        success: true,
-                        message: "Notification sent",
-                    }),
-                });
-            } else if (toolName === "update_memory") {
-                await updateJobMemory(
-                    jobId,
-                    (toolArgs.updates || {}) as Record<string, unknown>
-                );
-                messages.push({
-                    role: "tool",
-                    content: JSON.stringify({
-                        success: true,
-                        message: "Memory updated",
-                    }),
-                });
-            } else {
-                // Execute integration tool via MCP-Hubby
-                const result = await executeIntegration({
-                    userId,
-                    service: toolName,
-                    action: String(toolArgs.action || "describe"),
-                    params: (toolArgs.params || {}) as Record<string, unknown>,
-                });
-                messages.push({
-                    role: "tool",
-                    content: JSON.stringify(result),
-                });
-            }
-        }
-
-        // Brief pause between steps to avoid rate limits
-        await sleep(100);
+        // Re-throw to let Temporal handle retries
+        throw error;
     }
-
-    // Generate summary from final message
-    const lastAssistantMessage = messages.filter((m) => m.role === "assistant").pop();
-    const summary = lastAssistantMessage?.content ?? "Job completed";
-
-    // Record the run in our database
-    await recordJobRun({
-        jobId,
-        status: "completed",
-        summary,
-        messages,
-        toolCallsExecuted,
-        notificationsSent,
-    });
-
-    return {
-        success: true,
-        summary,
-        notificationsSent,
-        toolCallsExecuted,
-    };
 }
 
 function buildSystemPrompt(integrations: string[]): string {

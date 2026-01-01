@@ -40,7 +40,7 @@ export interface LLMResponse {
 }
 
 export interface IntegrationRequest {
-    userId: string;
+    userEmail: string;
     service: string;
     action: string;
     params: Record<string, unknown>;
@@ -217,13 +217,13 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
 export async function executeIntegration(
     request: IntegrationRequest
 ): Promise<unknown> {
-    const { userId, service, action, params } = request;
+    const { userEmail, service, action, params } = request;
 
     const response = await fetch(`${MCP_HUBBY_URL}/api/execute`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-User-Email": userId, // MCP-Hubby uses email for auth
+            "X-User-Email": userEmail, // MCP-Hubby uses email for auth
         },
         body: JSON.stringify({
             service,
