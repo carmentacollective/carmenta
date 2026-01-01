@@ -62,8 +62,8 @@ interface UserProfileData {
  * This is a defensive pattern for cases where the Clerk webhook
  * hasn't fired yet or was missed.
  *
- * Uses a pure upsert pattern to eliminate race conditions - a single
- * atomic operation handles both create and update cases.
+ * Clerk ID is the stable identity - upsert on that.
+ * Email updates are synced from Clerk on each sign-in.
  *
  * @param clerkId - Clerk's internal user ID
  * @param email - User's email address
@@ -74,10 +74,6 @@ export async function getOrCreateUser(
     email: string,
     profile?: UserProfileData
 ): Promise<User> {
-    // Pure upsert: single atomic operation eliminates race conditions
-    // Email is the canonical identity - if a user re-registers with a new
-    // Clerk ID (switched OAuth providers, deleted account, etc.), we update
-    // the Clerk ID to match.
     const [user] = await db
         .insert(schema.users)
         .values({
@@ -90,14 +86,14 @@ export async function getOrCreateUser(
             lastSignedInAt: new Date(),
         })
         .onConflictDoUpdate({
-            target: schema.users.email,
+            target: schema.users.clerkId,
             set: {
-                clerkId,
+                email,
                 firstName: profile?.firstName,
                 lastName: profile?.lastName,
                 imageUrl: profile?.imageUrl,
                 lastSignedInAt: new Date(),
-                updatedAt: new Date(), // $onUpdate() doesn't trigger for upserts
+                updatedAt: new Date(),
             },
         })
         .returning();
