@@ -93,8 +93,6 @@ services:
         fromDatabase:
           name: carmenta-db
           property: connectionString
-      - key: MCP_HUBBY_URL
-        sync: false
       - key: OPENROUTER_API_KEY
         sync: false
 

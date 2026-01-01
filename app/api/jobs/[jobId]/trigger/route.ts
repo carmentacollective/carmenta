@@ -53,7 +53,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
             workflowId = await startAgentWorkflow({
                 jobId: job.id,
                 userId: user.id,
-                userEmail: user.email,
             });
             logger.info(
                 { jobId, workflowId },
@@ -64,7 +63,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         workflowId = await startAgentWorkflow({
             jobId: job.id,
             userId: user.id,
-            userEmail: user.email,
         });
         logger.info({ jobId, workflowId }, "Started manual workflow");
     }

@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
             scheduleId,
             jobId: job.id,
             userId: user.id,
-            userEmail: user.email,
             cronExpression: scheduleCron,
             timezone,
         });

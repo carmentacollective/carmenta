@@ -2,9 +2,8 @@
  * Temporal Activities - External operations with retry logic
  *
  * Activities are where non-deterministic work happens:
- * - API calls (LLM, integrations)
+ * - API calls (LLM)
  * - Database operations
- * - External service communication
  *
  * Each activity can fail and be automatically retried by Temporal.
  */
@@ -13,14 +12,11 @@ import { db } from "../../lib/db";
 import { scheduledJobs, jobRuns, jobNotifications } from "../../lib/db/schema";
 import { eq } from "drizzle-orm";
 
-// Environment configuration
-const MCP_HUBBY_URL = process.env.MCP_HUBBY_URL || "http://localhost:8787";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Types
 export interface JobContext {
     prompt: string;
-    integrations: string[];
     memory: Record<string, unknown>;
 }
 
@@ -28,22 +24,10 @@ export interface LLMRequest {
     systemPrompt: string;
     messages: Array<{ role: string; content: string }>;
     memory: Record<string, unknown>;
-    availableTools: string[];
 }
 
 export interface LLMResponse {
-    type: "text" | "tool_call";
-    content?: string;
-    isComplete?: boolean;
-    toolName?: string;
-    toolArgs?: Record<string, unknown>;
-}
-
-export interface IntegrationRequest {
-    userEmail: string;
-    service: string;
-    action: string;
-    params: Record<string, unknown>;
+    content: string;
 }
 
 export interface NotificationRequest {
@@ -59,8 +43,6 @@ export interface JobRunRecord {
     status: string;
     summary: string;
     messages: Array<{ role: string; content: string }>;
-    toolCallsExecuted: number;
-    notificationsSent: number;
 }
 
 /**
@@ -77,83 +59,22 @@ export async function loadJobContext(jobId: string): Promise<JobContext> {
 
     return {
         prompt: job.prompt,
-        integrations: job.integrations || [],
         memory: (job.memory as Record<string, unknown>) || {},
     };
 }
 
 /**
  * Call LLM via OpenRouter
+ *
+ * Simple completion - no tools. Tool support will be added
+ * when we wire up internal integrations.
  */
 export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
     if (!OPENROUTER_API_KEY) {
         throw new Error("OPENROUTER_API_KEY not configured");
     }
 
-    const { systemPrompt, messages, memory, availableTools } = request;
-
-    // Build tools array for function calling
-    const tools = [
-        {
-            type: "function",
-            function: {
-                name: "notify_user",
-                description: "Send a notification to the user",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        title: { type: "string", description: "Notification title" },
-                        body: { type: "string", description: "Notification body" },
-                        priority: {
-                            type: "string",
-                            enum: ["low", "normal", "high", "urgent"],
-                            description: "Notification priority",
-                        },
-                    },
-                    required: ["title", "body"],
-                },
-            },
-        },
-        {
-            type: "function",
-            function: {
-                name: "update_memory",
-                description: "Store information for future runs",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        updates: {
-                            type: "object",
-                            description: "Key-value pairs to store in memory",
-                        },
-                    },
-                    required: ["updates"],
-                },
-            },
-        },
-        // Add integration tools dynamically
-        ...availableTools.map((service) => ({
-            type: "function",
-            function: {
-                name: service,
-                description: `Execute an action on ${service}. Use action="describe" to see available operations.`,
-                parameters: {
-                    type: "object",
-                    properties: {
-                        action: {
-                            type: "string",
-                            description: "The action to perform",
-                        },
-                        params: {
-                            type: "object",
-                            description: "Parameters for the action",
-                        },
-                    },
-                    required: ["action"],
-                },
-            },
-        })),
-    ];
+    const { systemPrompt, messages, memory } = request;
 
     // Include memory context in system prompt
     const memoryContext =
@@ -175,8 +96,6 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
                 { role: "system", content: systemPrompt + memoryContext },
                 ...messages,
             ],
-            tools,
-            tool_choice: "auto",
             max_tokens: 4096,
         }),
     });
@@ -187,57 +106,9 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
     }
 
     const data = await response.json();
-    const choice = data.choices[0];
-    const message = choice.message;
+    const content = data.choices[0]?.message?.content || "";
 
-    // Check for tool calls
-    if (message.tool_calls && message.tool_calls.length > 0) {
-        const toolCall = message.tool_calls[0];
-        return {
-            type: "tool_call",
-            toolName: toolCall.function.name,
-            toolArgs: JSON.parse(toolCall.function.arguments),
-        };
-    }
-
-    // Text response
-    const content = message.content || "";
-    const isComplete = content.includes("TASK_COMPLETE");
-
-    return {
-        type: "text",
-        content: content.replace("TASK_COMPLETE", "").trim(),
-        isComplete,
-    };
-}
-
-/**
- * Execute integration via MCP-Hubby gateway
- */
-export async function executeIntegration(
-    request: IntegrationRequest
-): Promise<unknown> {
-    const { userEmail, service, action, params } = request;
-
-    const response = await fetch(`${MCP_HUBBY_URL}/api/execute`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-User-Email": userEmail, // MCP-Hubby uses email for auth
-        },
-        body: JSON.stringify({
-            service,
-            action,
-            params,
-        }),
-    });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Integration call failed: ${response.status} ${error}`);
-    }
-
-    return response.json();
+    return { content };
 }
 
 /**
@@ -270,7 +141,6 @@ export async function updateJobMemory(
 export async function createNotification(request: NotificationRequest): Promise<void> {
     const { userId, jobId, title, body, priority } = request;
 
-    // Map priority string to enum value
     const priorityEnum = priority as "low" | "normal" | "high" | "urgent";
 
     await db.insert(jobNotifications).values({
@@ -286,10 +156,8 @@ export async function createNotification(request: NotificationRequest): Promise<
  * Record job run in database for visibility
  */
 export async function recordJobRun(record: JobRunRecord): Promise<void> {
-    const { jobId, status, summary, messages, toolCallsExecuted, notificationsSent } =
-        record;
+    const { jobId, status, summary, messages } = record;
 
-    // Map status string to enum value
     const statusEnum = status as "pending" | "running" | "completed" | "failed";
 
     await db.insert(jobRuns).values({
@@ -297,8 +165,8 @@ export async function recordJobRun(record: JobRunRecord): Promise<void> {
         status: statusEnum,
         summary,
         messages,
-        toolCallsExecuted,
-        notificationsSent,
+        toolCallsExecuted: 0,
+        notificationsSent: 0,
         completedAt: new Date(),
     });
 
