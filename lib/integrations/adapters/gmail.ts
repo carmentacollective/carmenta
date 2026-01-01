@@ -511,6 +511,20 @@ export class GmailAdapter extends ServiceAdapter {
             );
         }
 
+        // list_accounts only queries our database - no Gmail API access needed
+        if (action === "list_accounts") {
+            try {
+                return await this.handleListAccounts(userId);
+            } catch (error) {
+                return this.handleOperationError(
+                    error,
+                    action,
+                    params as Record<string, unknown>,
+                    userId
+                );
+            }
+        }
+
         const tokenResult = await this.getOAuthAccessToken(userId, accountId);
         if ("content" in tokenResult) {
             return tokenResult;
@@ -519,8 +533,6 @@ export class GmailAdapter extends ServiceAdapter {
 
         try {
             switch (action) {
-                case "list_accounts":
-                    return await this.handleListAccounts(userId);
                 case "send_message":
                     return await this.handleSendMessage(params, accessToken);
                 case "search_messages":
@@ -984,23 +996,30 @@ export class GmailAdapter extends ServiceAdapter {
                 labels_removed: removeLabelIds,
             });
         } catch (error) {
-            // Provide helpful error context for batch operations
+            // Provide helpful error context
+            const isBatch = message_ids.length > 1;
             const messagePreview = message_ids.slice(0, 3).join(", ");
             const suffix =
                 message_ids.length > 3 ? ` (+${message_ids.length - 3} more)` : "";
 
             if (error instanceof Error) {
                 if (error.message.includes("400")) {
+                    const prefix = isBatch
+                        ? `Batch modify failed for messages [${messagePreview}${suffix}]`
+                        : `Failed to modify message ${messagePreview}`;
                     return this.createErrorResponse(
-                        `Batch modify failed for messages [${messagePreview}${suffix}]: ` +
-                            "One or more message IDs may be incorrect, messages may have been deleted, " +
+                        `${prefix}: ` +
+                            "Message ID may be incorrect, message may have been deleted, " +
                             "or the specified labels don't exist."
                     );
                 }
                 if (error.message.includes("404")) {
+                    const prefix = isBatch
+                        ? `Messages not found [${messagePreview}${suffix}]`
+                        : `Message not found: ${messagePreview}`;
                     return this.createErrorResponse(
-                        `Messages not found [${messagePreview}${suffix}]: ` +
-                            "Verify message IDs by searching again - messages may have been deleted."
+                        `${prefix}: ` +
+                            "Verify message ID by searching again - message may have been deleted."
                     );
                 }
             }
