@@ -363,6 +363,78 @@ function process(data) {
         primaryDimensions: ["actionability", "completeness", "accuracy"],
         tags: ["system-design", "notifications", "architecture"],
     },
+
+    // ============================================================
+    // TOOL QUALITY EVALUATION QUERIES
+    // Tests the new tool quality scorers: web search relevance,
+    // research depth, and comparison completeness
+    // ============================================================
+
+    // WEB SEARCH QUALITY - Tests search result synthesis and relevance
+    {
+        id: "tool-quality-01-current-pricing",
+        query: `What is the current pricing for Vercel Pro, Netlify Pro, and Cloudflare Pages paid tier? I need exact monthly costs for a project with 100GB bandwidth/month.`,
+        category: "web-search",
+        difficulty: "standard",
+        rationale:
+            "Tests web search quality by requiring current, specific pricing data. Good synthesis should compare all three with sources.",
+        primaryDimensions: ["recency", "accuracy", "tool_usage"],
+        tags: ["pricing", "web-search-quality", "synthesis"],
+    },
+    {
+        id: "tool-quality-02-recent-release",
+        query: `What are the most significant new features in React 19? Focus on changes that affect how developers build applications.`,
+        category: "web-search",
+        difficulty: "standard",
+        rationale:
+            "Tests ability to find and synthesize recent technical announcements. Quality requires distinguishing major from minor features.",
+        primaryDimensions: ["recency", "completeness", "tool_usage"],
+        tags: ["react", "web-search-quality", "technical"],
+    },
+
+    // RESEARCH DEPTH - Tests thoroughness of investigation
+    {
+        id: "tool-quality-03-research-tradeoffs",
+        query: `Research the tradeoffs between server components and client components in Next.js. When should I use each, and what are the performance implications?`,
+        category: "tools",
+        difficulty: "hard",
+        rationale:
+            "Tests research depth by requiring multiple perspectives on a nuanced topic. Should explore use cases, limitations, and real-world considerations.",
+        primaryDimensions: ["completeness", "accuracy", "tool_usage"],
+        tags: ["research-depth", "nextjs", "architecture"],
+    },
+    {
+        id: "tool-quality-04-investigate-options",
+        query: `Investigate my options for adding authentication to a Next.js app. Consider both managed services and self-hosted solutions. What are the pros and cons of each approach?`,
+        category: "tools",
+        difficulty: "standard",
+        rationale:
+            "Tests research depth with explicit request for multiple options and tradeoffs. Quality requires balanced coverage and actionable recommendations.",
+        primaryDimensions: ["completeness", "actionability", "tool_usage"],
+        tags: ["research-depth", "authentication", "options"],
+    },
+
+    // COMPARISON COMPLETENESS - Tests thorough, balanced comparisons
+    {
+        id: "tool-quality-05-db-comparison",
+        query: `Compare Supabase vs Firebase vs PlanetScale for a new startup. Consider: ease of use, pricing at scale, real-time capabilities, and vendor lock-in.`,
+        category: "tools",
+        difficulty: "standard",
+        rationale:
+            "Tests comparison completeness with explicit criteria. All three should be covered on all four dimensions.",
+        primaryDimensions: ["completeness", "accuracy", "tool_usage"],
+        tags: ["comparison", "databases", "startup"],
+    },
+    {
+        id: "tool-quality-06-framework-comparison",
+        query: `Tailwind CSS vs styled-components vs CSS Modules - which should I use for a large team building a component library?`,
+        category: "tools",
+        difficulty: "standard",
+        rationale:
+            "Tests comparison completeness with team context. Should address collaboration, maintainability, and performance for each option.",
+        primaryDimensions: ["completeness", "actionability", "tool_usage"],
+        tags: ["comparison", "css", "team-context"],
+    },
 ];
 
 // Convenience exports for filtering
