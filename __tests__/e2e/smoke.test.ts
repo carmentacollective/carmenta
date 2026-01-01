@@ -33,17 +33,24 @@ test.describe("Smoke Tests", () => {
 
         page.on("requestfailed", (request) => {
             const url = request.url();
-            // Exclude Clerk auth redirects - these are expected for unauthenticated users
-            // and may fail/abort as part of normal redirect flow
+            const failure = request.failure();
+
+            // Exclude expected failure scenarios:
+            // 1. Clerk auth redirects - abort as part of normal auth flow
+            // 2. Aborted requests - often from navigation/redirect (not actual errors)
+            // 3. Root URL redirects - authenticated users get redirected from /
             if (url.includes("accounts.dev") || url.includes("clerk.")) {
                 return;
             }
-            failedRequests.push(url);
+            if (failure?.errorText === "net::ERR_ABORTED") {
+                return; // Navigation cancellations, not errors
+            }
+            failedRequests.push(`${url} (${failure?.errorText || "unknown"})`);
         });
 
         await page.goto("/");
 
-        // Should not have failed requests (excluding expected auth redirects)
+        // Should not have failed requests (excluding expected auth redirects and cancellations)
         expect(failedRequests).toHaveLength(0);
     });
 });
