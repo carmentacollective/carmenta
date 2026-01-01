@@ -16,7 +16,7 @@ test.describe("Protected Route Guards", () => {
         await page.goto("/connection");
 
         // Should redirect to sign-in (Clerk handles this)
-        // Uses global navigationTimeout (5s) - redirects should be fast
+        // Uses global navigationTimeout (20s) - redirects should be fast
         await page.waitForURL(/sign-in/);
         expect(page.url()).toContain("sign-in");
     });
