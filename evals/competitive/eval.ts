@@ -36,7 +36,7 @@ if (!JWT_TOKEN) {
 }
 
 /** Detected error event from the SSE stream */
-interface StreamError {
+export interface StreamError {
     type: "error" | "tool-error";
     message?: string;
     code?: string;
@@ -44,7 +44,7 @@ interface StreamError {
 }
 
 /** Failure classification to distinguish infra issues from quality issues */
-type FailureType =
+export type FailureType =
     | "none"
     | "http_error" // Non-2xx status code
     | "stream_error" // Error event in SSE stream
@@ -52,7 +52,7 @@ type FailureType =
     | "truncated" // Response ends mid-sentence or with "I'll search for..."
     | "body_error"; // 200 status but error message in body
 
-interface CompetitiveOutput {
+export interface CompetitiveOutput {
     /** Full response text */
     text: string;
     /** Model used (from header) */

@@ -15,43 +15,10 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
+import type { CompetitiveOutput } from "./eval";
 import type { CompetitiveQuery } from "./queries";
 
 const JUDGE_MODEL = "anthropic/claude-opus-4.5";
-
-/** Failure classification to distinguish infra issues from quality issues */
-type FailureType =
-    | "none"
-    | "http_error"
-    | "stream_error"
-    | "stream_crash"
-    | "truncated"
-    | "body_error";
-
-/** Detected error event from the SSE stream */
-interface StreamError {
-    type: "error" | "tool-error";
-    message?: string;
-    code?: string;
-    raw: unknown;
-}
-
-interface CompetitiveOutput {
-    text: string;
-    model?: string;
-    reasoningEnabled: boolean;
-    toolsCalled: string[];
-    latencyMs: number;
-    status: number;
-    streamErrors: StreamError[];
-    failureType: FailureType;
-    failureReason?: string;
-    wasTruncated: boolean;
-    tokens?: {
-        input?: number;
-        output?: number;
-    };
-}
 
 // Note: Anthropic's structured output doesn't support min/max on numbers,
 // so we rely on the prompt to constrain scores to 0-1 range
@@ -206,9 +173,29 @@ export async function SemanticCorrectnessScorer({
     if (!apiKey) {
         return [
             {
+                name: "Answers Question",
+                score: 0,
+                metadata: { error: "missing OPENROUTER_API_KEY" },
+            },
+            {
+                name: "Factual Accuracy",
+                score: 0,
+                metadata: { error: "missing OPENROUTER_API_KEY" },
+            },
+            {
+                name: "Completeness",
+                score: 0,
+                metadata: { error: "missing OPENROUTER_API_KEY" },
+            },
+            {
+                name: "Relevance",
+                score: 0,
+                metadata: { error: "missing OPENROUTER_API_KEY" },
+            },
+            {
                 name: "Semantic Correctness",
                 score: 0,
-                metadata: { reason: "missing OPENROUTER_API_KEY" },
+                metadata: { error: "missing OPENROUTER_API_KEY" },
             },
         ];
     }
@@ -223,24 +210,31 @@ export async function SemanticCorrectnessScorer({
             temperature: 0.1,
         });
 
+        if (!scores) {
+            throw new Error("Failed to parse semantic scores from model output");
+        }
+
+        // Clamp scores to 0-1 range (model occasionally returns slightly out of bounds)
+        const clamp = (score: number) => Math.min(1, Math.max(0, score));
+
         return [
             {
                 name: "Answers Question",
-                score: scores.answersQuestion,
+                score: clamp(scores.answersQuestion),
                 metadata: {
                     queryId: input.id,
                     category: input.category,
-                    responsePreview: output.text.slice(0, 200),
+                    responsePreview: output.text.slice(0, 300),
                 },
             },
             {
                 name: "Factual Accuracy",
-                score: scores.factualAccuracy,
+                score: clamp(scores.factualAccuracy),
                 metadata: { queryId: input.id, category: input.category },
             },
             {
                 name: "Completeness",
-                score: scores.completeness,
+                score: clamp(scores.completeness),
                 metadata: {
                     queryId: input.id,
                     difficulty: input.difficulty,
@@ -249,12 +243,12 @@ export async function SemanticCorrectnessScorer({
             },
             {
                 name: "Relevance",
-                score: scores.relevance,
+                score: clamp(scores.relevance),
                 metadata: { queryId: input.id, responseLength: output.text.length },
             },
             {
                 name: "Semantic Correctness",
-                score: scores.overallQuality,
+                score: clamp(scores.overallQuality),
                 metadata: {
                     queryId: input.id,
                     category: input.category,
@@ -295,7 +289,7 @@ export async function SemanticCorrectnessScorer({
                 metadata: {
                     error: errorMessage,
                     queryId: input.id,
-                    responsePreview: output.text.slice(0, 200),
+                    responsePreview: output.text.slice(0, 300),
                 },
             },
         ];
