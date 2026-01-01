@@ -221,8 +221,11 @@ export async function getWorkspace(
             return null;
         }
 
-        // Must have .git
-        await fs.stat(path.join(workspacePath, ".git"));
+        // Must have .git directory
+        const gitStat = await fs.stat(path.join(workspacePath, ".git"));
+        if (!gitStat.isDirectory()) {
+            return null;
+        }
     } catch {
         return null;
     }
