@@ -492,10 +492,10 @@ function CompetitiveScorer({
         });
     }
 
-    // Latency - 30s threshold allows for web search + reasoning; mild penalty beyond
+    // Latency - 45s threshold allows for web search + reasoning + tool calls; mild penalty beyond
     scores.push({
         name: "Latency (ms)",
-        score: output.latencyMs < 30000 ? 1 : 0.5,
+        score: output.latencyMs < 45000 ? 1 : 0.5,
         metadata: { latencyMs: output.latencyMs },
     });
 

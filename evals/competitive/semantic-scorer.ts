@@ -135,7 +135,7 @@ Score each dimension 0.0-1.0:
 
 **answersQuestion**: Does the response directly address what was asked? Consider whether the core question is answered, not just adjacent topics discussed.
 
-**factualAccuracy**: Are factual claims correct? Score 0 for demonstrably wrong claims, 0.5 for uncertain/unverifiable but plausible claims, 1.0 for verifiably correct information. If no factual claims are made, score based on whether the reasoning is sound.
+**factualAccuracy**: Are factual claims correct? Score 0 for demonstrably wrong claims, 1.0 for verifiably correct OR well-sourced current information. For queries requiring current information (web search, recent events, pricing), evaluate whether the response cites specific sources, dates, or details rather than making vague claims. Well-sourced current information should score high even if you cannot personally verify it—the presence of specificity and source attribution indicates quality. If no factual claims are made, score based on whether the reasoning is sound.
 
 **completeness**: Given the query's complexity, are all relevant aspects covered? A simple question needs a simple answer. A complex question needs appropriate depth. Missing major aspects scores low.
 
