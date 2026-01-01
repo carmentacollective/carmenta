@@ -17,7 +17,7 @@ import { z } from "zod";
 
 import type { CompetitiveQuery } from "./queries";
 
-const JUDGE_MODEL = "anthropic/claude-opus-4-5-20251101";
+const JUDGE_MODEL = "anthropic/claude-opus-4.5";
 
 /** Failure classification to distinguish infra issues from quality issues */
 type FailureType =
@@ -53,40 +53,34 @@ interface CompetitiveOutput {
     };
 }
 
+// Note: Anthropic's structured output doesn't support min/max on numbers,
+// so we rely on the prompt to constrain scores to 0-1 range
 const semanticCorrectnessSchema = z.object({
     answersQuestion: z
         .number()
-        .min(0)
-        .max(1)
         .describe(
-            "Does the response directly address the user's query? 0 = completely misses the point, 1 = directly and fully answers what was asked"
+            "Score 0.0-1.0: Does the response directly address the user's query? 0 = completely misses the point, 1 = directly and fully answers what was asked"
         ),
     factualAccuracy: z
         .number()
-        .min(0)
-        .max(1)
         .describe(
-            "Are factual claims correct? 0 = demonstrably wrong, 0.5 = uncertain/unverifiable but plausible, 1 = verifiably correct"
+            "Score 0.0-1.0: Are factual claims correct? 0 = demonstrably wrong, 0.5 = uncertain/unverifiable but plausible, 1 = verifiably correct"
         ),
     completeness: z
         .number()
-        .min(0)
-        .max(1)
         .describe(
-            "Are all relevant aspects covered given query complexity? 0 = major gaps, 1 = appropriately thorough"
+            "Score 0.0-1.0: Are all relevant aspects covered given query complexity? 0 = major gaps, 1 = appropriately thorough"
         ),
     relevance: z
         .number()
-        .min(0)
-        .max(1)
         .describe(
-            "Is content on-topic without unnecessary padding? 0 = mostly filler, 1 = every part serves the answer"
+            "Score 0.0-1.0: Is content on-topic without unnecessary padding? 0 = mostly filler, 1 = every part serves the answer"
         ),
     overallQuality: z
         .number()
-        .min(0)
-        .max(1)
-        .describe("Holistic assessment of response quality. 0 = poor, 1 = excellent"),
+        .describe(
+            "Score 0.0-1.0: Holistic assessment of response quality. 0 = poor, 1 = excellent"
+        ),
     reasoning: z
         .string()
         .describe(
