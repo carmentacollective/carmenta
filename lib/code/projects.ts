@@ -1,14 +1,24 @@
 /**
  * Project Discovery for Code Mode
  *
- * Scans the configured source directory for git repositories that can be worked on.
- * In dev mode, this looks at local directories. Future: GitHub integration.
+ * Two modes of operation:
+ * 1. Workspace mode (DATA_DIR set): Multi-user workspaces on persistent disk
+ *    Each user has isolated workspaces at /data/workspaces/{userId}/
+ * 2. Local mode (no DATA_DIR): Scans local filesystem for git repos
+ *    Used for local development on developer machines
  */
 
 import { promises as fs } from "fs";
 import path from "path";
 
 import { logger } from "@/lib/logger";
+
+import {
+    type Workspace,
+    getWorkspace,
+    listUserWorkspaces,
+    validateWorkspacePath,
+} from "./workspaces";
 
 /**
  * Project metadata for code mode
@@ -349,3 +359,170 @@ export async function findProjectBySlug(slug: string): Promise<Project | null> {
     const projects = await discoverProjects();
     return projects.find((p) => path.basename(p.path) === slug) ?? null;
 }
+
+// ============================================================================
+// Workspace Mode (Multi-User on Render)
+// ============================================================================
+
+/**
+ * Check if we're running in workspace mode (DATA_DIR is set)
+ */
+export function isWorkspaceMode(): boolean {
+    return Boolean(process.env.DATA_DIR);
+}
+
+/**
+ * Convert a Workspace to a Project for API compatibility
+ */
+function workspaceToProject(workspace: Workspace): Project {
+    return {
+        id: `${workspace.owner}/${workspace.repo}`,
+        name: workspace.repo,
+        path: workspace.path,
+        description: workspace.fullName,
+        lastModified: undefined,
+        hasClaudeMd: false, // Will be checked on demand
+        gitBranch: undefined, // Fetched on demand if needed
+    };
+}
+
+/**
+ * Discover projects for a user in workspace mode
+ * Returns workspaces as Projects for API compatibility
+ */
+export async function discoverUserProjects(userEmail: string): Promise<Project[]> {
+    if (!isWorkspaceMode()) {
+        // Fall back to local mode
+        return discoverProjects();
+    }
+
+    const workspaces = await listUserWorkspaces(userEmail);
+    const projects: Project[] = [];
+
+    for (const workspace of workspaces) {
+        // Check for CLAUDE.md
+        let hasClaudeMdFile = false;
+        try {
+            await fs.access(path.join(workspace.path, "CLAUDE.md"));
+            hasClaudeMdFile = true;
+        } catch {
+            // No CLAUDE.md
+        }
+
+        projects.push({
+            ...workspaceToProject(workspace),
+            hasClaudeMd: hasClaudeMdFile,
+        });
+    }
+
+    return projects;
+}
+
+/**
+ * Validate a workspace path for a specific user
+ * Returns the full path if valid, null otherwise
+ */
+export async function validateUserProject(
+    userEmail: string,
+    owner: string,
+    repo: string
+): Promise<string | null> {
+    if (!isWorkspaceMode()) {
+        // Local mode doesn't use user-scoped paths, just check if repo exists
+        const localPath = path.join(
+            process.env.CODE_SOURCE_DIR ?? path.join(process.env.HOME ?? "", "src"),
+            repo
+        );
+        if (await validateProject(localPath)) {
+            return localPath;
+        }
+        return null;
+    }
+
+    const workspace = await getWorkspace(userEmail, owner, repo);
+    if (!workspace) {
+        return null;
+    }
+
+    return workspace.path;
+}
+
+/**
+ * Validate a workspace by its full path for a specific user
+ * Ensures the path is within the user's workspace directory
+ */
+export async function validateUserProjectPath(
+    userEmail: string,
+    projectPath: string
+): Promise<boolean> {
+    if (!isWorkspaceMode()) {
+        // In local mode, use standard validation
+        return validateProject(projectPath);
+    }
+
+    // In workspace mode, validate path is within user's directory
+    if (!validateWorkspacePath(userEmail, projectPath)) {
+        return false;
+    }
+
+    // Check it's a git repo
+    try {
+        const gitStat = await fs.stat(path.join(projectPath, ".git"));
+        if (!gitStat.isDirectory()) {
+            return false;
+        }
+    } catch {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Get project details for a user's workspace
+ */
+export async function getUserProject(
+    userEmail: string,
+    owner: string,
+    repo: string
+): Promise<Project | null> {
+    if (!isWorkspaceMode()) {
+        // Fall back to finding by slug in local mode
+        return findProjectBySlug(repo);
+    }
+
+    const workspace = await getWorkspace(userEmail, owner, repo);
+    if (!workspace) {
+        return null;
+    }
+
+    // Check for CLAUDE.md
+    let hasClaudeMdFile = false;
+    try {
+        await fs.access(path.join(workspace.path, "CLAUDE.md"));
+        hasClaudeMdFile = true;
+    } catch {
+        // No CLAUDE.md
+    }
+
+    return {
+        ...workspaceToProject(workspace),
+        hasClaudeMd: hasClaudeMdFile,
+    };
+}
+
+// Re-export workspace utilities for convenience
+export {
+    type Workspace,
+    buildWorkspacePath,
+    deleteWorkspace,
+    ensureUserWorkspaceDir,
+    getCurrentBranch,
+    getCurrentCommitSha,
+    getWorkspace,
+    getWorkspacesDir,
+    hasUncommittedChanges,
+    listUserWorkspaces,
+    sanitizeEmail,
+    validateWorkspacePath,
+} from "./workspaces";
