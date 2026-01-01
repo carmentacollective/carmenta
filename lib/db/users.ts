@@ -63,7 +63,8 @@ interface UserProfileData {
  * hasn't fired yet or was missed.
  *
  * Clerk ID is the stable identity - upsert on that.
- * Email updates are synced from Clerk on each sign-in.
+ * Email is NOT updated on conflict because integrations tables have FKs on email.
+ * Email changes should go through Clerk webhooks (user.updated event).
  *
  * @param clerkId - Clerk's internal user ID
  * @param email - User's email address
@@ -88,7 +89,8 @@ export async function getOrCreateUser(
         .onConflictDoUpdate({
             target: schema.users.clerkId,
             set: {
-                email,
+                // Don't update email - FKs in integrations/integration_history
+                // Email changes should go through Clerk webhooks
                 firstName: profile?.firstName,
                 lastName: profile?.lastName,
                 imageUrl: profile?.imageUrl,
