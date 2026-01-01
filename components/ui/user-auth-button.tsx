@@ -15,6 +15,7 @@ import {
     Heart,
     Compass,
     Code2,
+    MessageCircle,
 } from "lucide-react";
 
 import { useMarker } from "@/components/feedback/marker-provider";
@@ -244,6 +245,19 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
+                                      {/* Primary action: Back to Chat */}
+                                      <Link
+                                          href="/connection"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
+                                      >
+                                          <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <MessageCircle className="text-primary relative h-4 w-4" />
+                                          <span className="relative">Connect</span>
+                                      </Link>
+
+                                      <div className="border-foreground/10 my-1 border-t" />
+
                                       {/* Settings & Core Features */}
                                       <button
                                           onClick={() => {
