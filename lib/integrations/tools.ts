@@ -114,7 +114,15 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
 
             // Execute the actual operation
             try {
-                const response = await adapter.execute(action, params ?? {}, userEmail);
+                // Extract accountId from params if present (for multi-account support)
+                const { accountId, ...operationParams } =
+                    (params as { accountId?: string }) ?? {};
+                const response = await adapter.execute(
+                    action,
+                    operationParams,
+                    userEmail,
+                    accountId
+                );
 
                 // Return the response content
                 // The adapter returns MCPToolResponse format, extract relevant parts
