@@ -138,3 +138,45 @@ overhead but full control.
 
 This is research, not a decision. Infrastructure choice depends on actual user needs and
 scale.
+
+---
+
+## Decision: Migrated to Render (December 2024)
+
+Migrated from Vercel to Render to support code mode:
+
+- **Persistent disk**: 10GB at `/data` for user workspaces
+- **No timeout limits**: Render web services don't have serverless timeouts
+- **PostgreSQL**: Migrated from Neon to Render PostgreSQL
+
+See [workspaces.md](./workspaces.md) for workspace architecture details.
+
+### Render Configuration
+
+```yaml
+# render.yaml
+services:
+  - name: carmenta-web
+    type: web
+    env: node
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 10
+```
+
+### Environment
+
+- `DATA_DIR=/data` - enables workspace mode
+
+### What's Working
+
+- Persistent disk survives deploys
+- Claude Code streaming works through Render's infrastructure
+
+### What's Next
+
+GitHub integration for cloning user repos to workspaces. Options:
+
+- GitHub OAuth (simpler, use existing infra)
+- GitHub App (more features, transparent authorship)

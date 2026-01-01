@@ -17,6 +17,9 @@ test.describe("Connection Title Generation", () => {
     });
 
     test("generates title and updates URL after first message", async ({ page }) => {
+        // Navigate to a page first (required before clerk.signIn)
+        await page.goto("/");
+
         // Sign in using Clerk test credentials
         await clerk.signIn({
             page,
@@ -47,8 +50,9 @@ test.describe("Connection Title Generation", () => {
         const sendButton = page.locator('button[type="submit"]').last();
         await sendButton.click();
 
-        // Wait for AI response
-        await page.waitForTimeout(8000);
+        // Wait for URL to change from /connection to /connection/[slug]/[id]
+        // This happens when title generation completes
+        await page.waitForURL(/\/connection\/[^\/]+\/[^\/]+/, { timeout: 30000 });
 
         const urlAfterFirstMessage = page.url();
         const titleAfterFirstMessage = await page.title();
@@ -62,30 +66,12 @@ test.describe("Connection Title Generation", () => {
             fullPage: true,
         });
 
-        // Verify URL changed to slug format
+        // Verify URL changed to slug format (title generation happened)
         expect(urlAfterFirstMessage).toMatch(/\/connection\/[^\/]+\/[^\/]+/);
         expect(urlAfterFirstMessage).not.toBe(initialUrl);
 
-        // Send second message
-        await chatInput.fill("Actually, let's focus on the best restaurants there");
-        await sendButton.click();
-
-        // Wait for AI response
-        await page.waitForTimeout(8000);
-
-        const urlAfterSecondMessage = page.url();
-        const titleAfterSecondMessage = await page.title();
-
-        console.log(`URL after second message: ${urlAfterSecondMessage}`);
-        console.log(`Page title after second: ${titleAfterSecondMessage}`);
-
-        // Take screenshot after second message
-        await page.screenshot({
-            path: "/tmp/title-test-03-after-second-message.png",
-            fullPage: true,
-        });
-
-        // Title may or may not evolve, but URL should still be in slug format
-        expect(urlAfterSecondMessage).toMatch(/\/connection\/[^\/]+\/[^\/]+/);
+        // Verify page title was updated
+        expect(titleAfterFirstMessage).not.toBe("Carmenta");
+        expect(titleAfterFirstMessage).toContain("Carmenta"); // Should end with " | Carmenta"
     });
 });

@@ -1,5 +1,14 @@
-import { marked } from "marked";
 import { logger } from "@/lib/client-logger";
+
+/**
+ * Lazy-loaded marked parser for markdown conversion.
+ * Only imported when copyMarkdownWithFormats or copyPlainText is called,
+ * saving ~30KB from the initial bundle.
+ */
+async function getMarked() {
+    const { marked } = await import("marked");
+    return marked;
+}
 
 /**
  * Copy text to clipboard with error handling and structured logging
@@ -36,7 +45,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  */
 export async function copyMarkdownWithFormats(markdown: string): Promise<boolean> {
     try {
-        // Convert markdown to HTML
+        // Lazy load marked only when needed
+        const marked = await getMarked();
         const html = await marked(markdown);
 
         // Create clipboard item with multiple formats
@@ -90,7 +100,8 @@ export async function copyMarkdown(markdown: string): Promise<boolean> {
  */
 export async function copyPlainText(markdown: string): Promise<boolean> {
     try {
-        // Convert markdown to HTML first
+        // Lazy load marked only when needed
+        const marked = await getMarked();
         const html = await marked(markdown);
 
         // Create temporary DOM element to extract text

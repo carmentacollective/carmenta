@@ -21,6 +21,7 @@ import {
     type QueryCategory,
 } from "./queries";
 import { SemanticCorrectnessScorer } from "./semantic-scorer";
+import { runToolQualityScorers } from "./tool-quality-scorers";
 
 // Configuration
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
@@ -399,7 +400,7 @@ async function executeQuery(query: CompetitiveQuery): Promise<CompetitiveOutput>
  * IMPORTANT: Separates Infrastructure Health (binary) from Response Quality.
  * Infrastructure failures are LOUD - they're bugs, not quality issues.
  */
-function CompetitiveScorer({
+async function CompetitiveScorer({
     input,
     output,
 }: {
@@ -408,7 +409,7 @@ function CompetitiveScorer({
 }) {
     const scores: Array<{
         name: string;
-        score: number;
+        score: number | null;
         metadata?: Record<string, unknown>;
     }> = [];
 
@@ -498,6 +499,17 @@ function CompetitiveScorer({
         score: output.latencyMs < 45000 ? 1 : 0.5,
         metadata: { latencyMs: output.latencyMs },
     });
+
+    // TOOL QUALITY METRICS - LLM-based evaluation of tool usage quality
+    // Only run when infrastructure passed (quality metrics are meaningless on failures)
+    if (infraPassed) {
+        const toolQualityScores = await runToolQualityScorers({
+            query: input,
+            responseText: output.text,
+            toolsCalled: output.toolsCalled,
+        });
+        scores.push(...toolQualityScores);
+    }
 
     return scores;
 }
