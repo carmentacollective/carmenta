@@ -2,11 +2,11 @@
  * Workspace Management for Multi-User Code Mode
  *
  * Handles user-isolated workspaces on persistent disk storage.
- * Each user gets their own directory: /data/workspaces/{userId}/{owner}__{repo}/
+ * Each user gets their own directory: /data/workspaces/{userEmail}/{owner}__{repo}/
  *
  * Security model:
  * - Paths are always built from database-controlled values
- * - Every operation validates userId ownership
+ * - Every operation validates userEmail ownership
  * - Path traversal is prevented via sanitization and validation
  * - Symlinks are rejected
  */
@@ -53,6 +53,14 @@ export function sanitizeRepoName(name: string): string {
 }
 
 /**
+ * Sanitize email for use as directory name
+ * nick@example.com → nick_example_com
+ */
+export function sanitizeEmail(email: string): string {
+    return email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+}
+
+/**
  * Build the directory name for a workspace
  * Format: {owner}__{repo} with sanitized names
  * Uses double underscore to prevent collisions (e.g., "a/b_c" vs "a_b/c")
@@ -78,38 +86,37 @@ export function parseWorkspaceDirName(dirName: string): {
 
 /**
  * Build the full filesystem path for a workspace
- * Validates userId is a UUID to prevent path traversal
+ * Email is sanitized to create a safe directory name
  */
 export function buildWorkspacePath(
-    userId: string,
+    userEmail: string,
     owner: string,
     repo: string
 ): string {
-    // Validate userId is a valid UUID (defense in depth)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-        throw new Error(`Invalid userId format: ${userId}`);
+    if (!userEmail || !userEmail.includes("@")) {
+        throw new Error(`Invalid email format: ${userEmail}`);
     }
 
     const workspacesDir = getWorkspacesDir();
+    const userDir = sanitizeEmail(userEmail);
     const dirName = buildWorkspaceDirName(owner, repo);
-    return path.join(workspacesDir, userId, dirName);
+    return path.join(workspacesDir, userDir, dirName);
 }
 
 /**
  * Validate that a path is within the user's workspace directory
  * Prevents path traversal attacks
  */
-export function validateWorkspacePath(userId: string, targetPath: string): boolean {
+export function validateWorkspacePath(userEmail: string, targetPath: string): boolean {
     const workspacesDir = getWorkspacesDir();
-    const userDir = path.join(workspacesDir, userId);
+    const userDir = path.join(workspacesDir, sanitizeEmail(userEmail));
 
     const resolvedTarget = path.resolve(targetPath);
     const resolvedUserDir = path.resolve(userDir);
 
     if (!resolvedTarget.startsWith(resolvedUserDir + path.sep)) {
         logger.warn(
-            { targetPath: resolvedTarget, allowedBase: resolvedUserDir, userId },
+            { targetPath: resolvedTarget, allowedBase: resolvedUserDir, userEmail },
             "Path validation failed: outside user workspace"
         );
         return false;
@@ -133,8 +140,8 @@ async function isSymlink(targetPath: string): Promise<boolean> {
 /**
  * Ensure the user's workspace directory exists
  */
-export async function ensureUserWorkspaceDir(userId: string): Promise<string> {
-    const userDir = path.join(getWorkspacesDir(), userId);
+export async function ensureUserWorkspaceDir(userEmail: string): Promise<string> {
+    const userDir = path.join(getWorkspacesDir(), sanitizeEmail(userEmail));
     await fs.mkdir(userDir, { recursive: true });
     return userDir;
 }
@@ -142,8 +149,8 @@ export async function ensureUserWorkspaceDir(userId: string): Promise<string> {
 /**
  * List all workspaces for a user
  */
-export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
-    const userDir = path.join(getWorkspacesDir(), userId);
+export async function listUserWorkspaces(userEmail: string): Promise<Workspace[]> {
+    const userDir = path.join(getWorkspacesDir(), sanitizeEmail(userEmail));
     const workspaces: Workspace[] = [];
 
     try {
@@ -182,7 +189,7 @@ export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
         }
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-            logger.warn({ error, userId }, "Failed to list user workspaces");
+            logger.warn({ error, userEmail }, "Failed to list user workspaces");
         }
     }
 
@@ -193,13 +200,13 @@ export async function listUserWorkspaces(userId: string): Promise<Workspace[]> {
  * Get a specific workspace by owner/repo
  */
 export async function getWorkspace(
-    userId: string,
+    userEmail: string,
     owner: string,
     repo: string
 ): Promise<Workspace | null> {
-    const workspacePath = buildWorkspacePath(userId, owner, repo);
+    const workspacePath = buildWorkspacePath(userEmail, owner, repo);
 
-    if (!validateWorkspacePath(userId, workspacePath)) {
+    if (!validateWorkspacePath(userEmail, workspacePath)) {
         return null;
     }
 
@@ -232,15 +239,15 @@ export async function getWorkspace(
  * Delete a workspace
  */
 export async function deleteWorkspace(
-    userId: string,
+    userEmail: string,
     owner: string,
     repo: string
 ): Promise<boolean> {
-    const workspacePath = buildWorkspacePath(userId, owner, repo);
+    const workspacePath = buildWorkspacePath(userEmail, owner, repo);
 
-    if (!validateWorkspacePath(userId, workspacePath)) {
+    if (!validateWorkspacePath(userEmail, workspacePath)) {
         logger.error(
-            { userId, owner, repo },
+            { userEmail, owner, repo },
             "Attempted to delete workspace outside user dir"
         );
         return false;
@@ -253,10 +260,10 @@ export async function deleteWorkspace(
 
     try {
         await fs.rm(workspacePath, { recursive: true, force: true });
-        logger.info({ userId, owner, repo, workspacePath }, "Deleted workspace");
+        logger.info({ userEmail, owner, repo, workspacePath }, "Deleted workspace");
         return true;
     } catch (error) {
-        logger.error({ error, userId, owner, repo }, "Failed to delete workspace");
+        logger.error({ error, userEmail, owner, repo }, "Failed to delete workspace");
         return false;
     }
 }

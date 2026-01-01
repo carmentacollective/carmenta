@@ -390,13 +390,13 @@ function workspaceToProject(workspace: Workspace): Project {
  * Discover projects for a user in workspace mode
  * Returns workspaces as Projects for API compatibility
  */
-export async function discoverUserProjects(userId: string): Promise<Project[]> {
+export async function discoverUserProjects(userEmail: string): Promise<Project[]> {
     if (!isWorkspaceMode()) {
         // Fall back to local mode
         return discoverProjects();
     }
 
-    const workspaces = await listUserWorkspaces(userId);
+    const workspaces = await listUserWorkspaces(userEmail);
     const projects: Project[] = [];
 
     for (const workspace of workspaces) {
@@ -423,7 +423,7 @@ export async function discoverUserProjects(userId: string): Promise<Project[]> {
  * Returns the full path if valid, null otherwise
  */
 export async function validateUserProject(
-    userId: string,
+    userEmail: string,
     owner: string,
     repo: string
 ): Promise<string | null> {
@@ -439,7 +439,7 @@ export async function validateUserProject(
         return null;
     }
 
-    const workspace = await getWorkspace(userId, owner, repo);
+    const workspace = await getWorkspace(userEmail, owner, repo);
     if (!workspace) {
         return null;
     }
@@ -452,7 +452,7 @@ export async function validateUserProject(
  * Ensures the path is within the user's workspace directory
  */
 export async function validateUserProjectPath(
-    userId: string,
+    userEmail: string,
     projectPath: string
 ): Promise<boolean> {
     if (!isWorkspaceMode()) {
@@ -461,7 +461,7 @@ export async function validateUserProjectPath(
     }
 
     // In workspace mode, validate path is within user's directory
-    if (!validateWorkspacePath(userId, projectPath)) {
+    if (!validateWorkspacePath(userEmail, projectPath)) {
         return false;
     }
 
@@ -482,7 +482,7 @@ export async function validateUserProjectPath(
  * Get project details for a user's workspace
  */
 export async function getUserProject(
-    userId: string,
+    userEmail: string,
     owner: string,
     repo: string
 ): Promise<Project | null> {
@@ -491,7 +491,7 @@ export async function getUserProject(
         return findProjectBySlug(repo);
     }
 
-    const workspace = await getWorkspace(userId, owner, repo);
+    const workspace = await getWorkspace(userEmail, owner, repo);
     if (!workspace) {
         return null;
     }
@@ -523,5 +523,6 @@ export {
     getWorkspacesDir,
     hasUncommittedChanges,
     listUserWorkspaces,
+    sanitizeEmail,
     validateWorkspacePath,
 } from "./workspaces";
