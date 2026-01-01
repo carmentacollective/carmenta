@@ -44,6 +44,8 @@ export function ProjectSelector({
     const [searchQuery, setSearchQuery] = useState("");
     const [isOpen, setIsOpen] = useState(false);
 
+    const [workspaceMode, setWorkspaceMode] = useState(false);
+
     const fetchProjects = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -55,6 +57,7 @@ export function ProjectSelector({
             }
             const data = await response.json();
             setProjects(data.projects || []);
+            setWorkspaceMode(data.workspaceMode ?? false);
         } catch (err) {
             const message = err instanceof Error ? err.message : "Unknown error";
             setError(message);
@@ -157,7 +160,9 @@ export function ProjectSelector({
                         <div className="text-muted-foreground p-4 text-center text-sm">
                             {searchQuery
                                 ? "No projects match your search"
-                                : "No projects found. Set CODE_SOURCE_DIR in your environment."}
+                                : workspaceMode
+                                  ? "No workspaces yet. Connect your GitHub account to add repositories."
+                                  : "No projects found. Set CODE_SOURCE_DIR in your environment."}
                         </div>
                     )}
 
