@@ -502,14 +502,6 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
     );
 
-    // Auto-resize textarea
-    useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.style.height = "auto";
-            inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-        }
-    }, [input]);
-
     const showStop = isLoading;
     const hasPendingFiles = pendingFiles.length > 0;
 
@@ -626,7 +618,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                             ? "border-foreground/10 bg-background/30"
                             : "border-transparent"
                     )}
-                    rows={1}
+                    rows={3}
                     data-testid="composer-input"
                 />
 

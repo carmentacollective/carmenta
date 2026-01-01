@@ -10,16 +10,18 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { logger } from "@/lib/client-logger";
+import { env } from "@/lib/env";
 
 // Initialize PostHog analytics (production only)
+// Note: NODE_ENV uses process.env directly as it's inlined by Next.js at build time
 if (
     process.env.NODE_ENV === "production" &&
-    process.env.NEXT_PUBLIC_POSTHOG_KEY &&
-    process.env.NEXT_PUBLIC_POSTHOG_HOST
+    env.NEXT_PUBLIC_POSTHOG_KEY &&
+    env.NEXT_PUBLIC_POSTHOG_HOST
 ) {
     try {
-        posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-            api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+        posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
+            api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
             // Latest 2025 defaults enable history_change tracking
             defaults: "2025-11-30",
             // Explicitly disable automatic pageview/pageleave capture

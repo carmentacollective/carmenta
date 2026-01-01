@@ -123,7 +123,10 @@ export async function GET(request: NextRequest) {
     const stateParam = searchParams.get("state");
 
     if (!code || !stateParam) {
-        logger.warn("⚠️ OAuth callback missing required params");
+        logger.warn(
+            { hasCode: !!code, hasState: !!stateParam },
+            "OAuth callback missing required params"
+        );
         const errorUrl = new URL("/integrations", appUrl);
         errorUrl.searchParams.set("error", "invalid_callback");
         return clientRedirect(errorUrl.toString(), appUrl);

@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { all, create } from "mathjs";
 import { z } from "zod";
 
+import { env } from "@/lib/env";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
@@ -252,9 +253,12 @@ export const builtInTools = {
                 .describe("Maximum number of GIFs to return (default: 10, max: 50)"),
         }),
         execute: async ({ action, query, tag, limit = 10 }) => {
-            const apiKey = process.env.GIPHY_API_KEY;
+            const apiKey = env.GIPHY_API_KEY;
             if (!apiKey) {
-                logger.error("GIPHY_API_KEY environment variable not configured");
+                logger.error(
+                    { tool: "giphy" },
+                    "GIPHY_API_KEY environment variable not configured"
+                );
                 return {
                     error: true,
                     message: "Giphy is not configured. Missing API key.",
@@ -383,7 +387,7 @@ export const builtInTools = {
             try {
                 switch (action) {
                     case "list_templates": {
-                        logger.info("Fetching Imgflip meme templates");
+                        logger.info({ tool: "imgflip" }, "Fetching meme templates");
 
                         const response = await httpClient
                             .get(`${IMGFLIP_API_BASE}/get_memes`)
@@ -409,11 +413,12 @@ export const builtInTools = {
                     }
 
                     case "create_meme": {
-                        const username = process.env.IMGFLIP_USERNAME;
-                        const password = process.env.IMGFLIP_PASSWORD;
+                        const username = env.IMGFLIP_USERNAME;
+                        const password = env.IMGFLIP_PASSWORD;
 
                         if (!username || !password) {
                             logger.error(
+                                { tool: "imgflip" },
                                 "IMGFLIP_USERNAME or IMGFLIP_PASSWORD not configured"
                             );
                             return {
