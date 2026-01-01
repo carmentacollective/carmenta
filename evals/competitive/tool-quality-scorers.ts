@@ -18,7 +18,7 @@ import type { CompetitiveQuery } from "./queries";
 
 // Configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const EVAL_MODEL = (process.env.EVAL_MODEL ?? "openai/gpt-4o-mini") as string;
+const EVAL_MODEL = process.env.EVAL_MODEL ?? "openai/gpt-4o-mini";
 const RESPONSE_TEXT_LIMIT = 5000; // chars - balance context vs token cost
 
 // Initialize OpenRouter provider (null if key missing)
@@ -291,12 +291,17 @@ Rate as Excellent, Good, Acceptable, or Poor.`,
 export async function runToolQualityScorers(
     input: ToolQualityScorerInput
 ): Promise<Score[]> {
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
         webSearchRelevanceScorer(input),
         researchDepthScorer(input),
         comparisonCompletenessScorer(input),
     ]);
 
-    // Filter out null results (non-applicable scorers)
-    return results.filter((score): score is Score => score !== null);
+    // Extract fulfilled results and filter out null scores
+    return results
+        .filter(
+            (r): r is PromiseFulfilledResult<Score | null> => r.status === "fulfilled"
+        )
+        .map((r) => r.value)
+        .filter((score): score is Score => score !== null);
 }
