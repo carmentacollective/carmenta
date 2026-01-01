@@ -16,10 +16,22 @@ import { z } from "zod";
 
 import type { CompetitiveQuery } from "./queries";
 
-// Initialize OpenRouter provider
-const openrouter = createOpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY,
-});
+// Configuration
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const EVAL_MODEL = (process.env.EVAL_MODEL ?? "openai/gpt-4o-mini") as string;
+const RESPONSE_TEXT_LIMIT = 5000; // chars - balance context vs token cost
+
+// Initialize OpenRouter provider (null if key missing)
+const openrouter = OPENROUTER_API_KEY
+    ? createOpenRouter({ apiKey: OPENROUTER_API_KEY })
+    : null;
+
+// Warn if API key is missing
+if (!OPENROUTER_API_KEY) {
+    console.warn(
+        "⚠️  OPENROUTER_API_KEY not set - tool quality scorers will be skipped"
+    );
+}
 
 /** Input for tool quality scorers */
 export interface ToolQualityScorerInput {
@@ -35,6 +47,9 @@ export interface Score {
     metadata?: Record<string, unknown>;
 }
 
+// Quality rating levels
+type QualityRating = "Excellent" | "Good" | "Acceptable" | "Poor";
+
 // Schema for LLM quality judgment
 const QualityJudgmentSchema = z.object({
     rating: z.enum(["Excellent", "Good", "Acceptable", "Poor"]),
@@ -42,7 +57,7 @@ const QualityJudgmentSchema = z.object({
 });
 
 // Map ratings to numeric scores
-const RATING_SCORES: Record<string, number> = {
+const RATING_SCORES: Record<QualityRating, number> = {
     Excellent: 1.0,
     Good: 0.75,
     Acceptable: 0.5,
@@ -88,9 +103,14 @@ export async function webSearchRelevanceScorer(
         return null;
     }
 
+    // Skip if OpenRouter not configured
+    if (!openrouter) {
+        return null;
+    }
+
     try {
         const { object } = await generateObject({
-            model: openrouter("openai/gpt-4o-mini"),
+            model: openrouter(EVAL_MODEL),
             schema: QualityJudgmentSchema,
             prompt: `You are evaluating how well web search was used to answer a user query.
 
@@ -98,7 +118,7 @@ User Query:
 ${input.query.query}
 
 Response (which used web search):
-${input.responseText.slice(0, 3000)}
+${input.responseText.slice(0, RESPONSE_TEXT_LIMIT)}
 
 Evaluate the web search quality on these criteria:
 1. QUERY FORMULATION: Did the search appear to capture the user's actual intent?
@@ -151,9 +171,14 @@ export async function researchDepthScorer(
         return null;
     }
 
+    // Skip if OpenRouter not configured
+    if (!openrouter) {
+        return null;
+    }
+
     try {
         const { object } = await generateObject({
-            model: openrouter("openai/gpt-4o-mini"),
+            model: openrouter(EVAL_MODEL),
             schema: QualityJudgmentSchema,
             prompt: `You are evaluating the depth and quality of research in a response.
 
@@ -161,7 +186,7 @@ User Query (requesting research/analysis):
 ${input.query.query}
 
 Response:
-${input.responseText.slice(0, 3000)}
+${input.responseText.slice(0, RESPONSE_TEXT_LIMIT)}
 
 Evaluate research depth on these criteria:
 1. MULTIPLE PERSPECTIVES: Were different viewpoints or approaches explored?
@@ -212,9 +237,14 @@ export async function comparisonCompletenessScorer(
         return null;
     }
 
+    // Skip if OpenRouter not configured
+    if (!openrouter) {
+        return null;
+    }
+
     try {
         const { object } = await generateObject({
-            model: openrouter("openai/gpt-4o-mini"),
+            model: openrouter(EVAL_MODEL),
             schema: QualityJudgmentSchema,
             prompt: `You are evaluating the quality of a comparison response.
 
@@ -222,7 +252,7 @@ User Query (requesting comparison):
 ${input.query.query}
 
 Response:
-${input.responseText.slice(0, 3000)}
+${input.responseText.slice(0, RESPONSE_TEXT_LIMIT)}
 
 Evaluate comparison quality on these criteria:
 1. COVERAGE: Were ALL items mentioned in the query actually compared?
