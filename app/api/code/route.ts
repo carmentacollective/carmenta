@@ -168,11 +168,19 @@ export async function POST(req: Request) {
     }
 
     // Validate the project exists (do this before creating connection)
+    // In workspace mode, require user email for validation
+    if (isWorkspaceMode() && !userEmail) {
+        logger.warn(
+            { projectPath: body.projectPath },
+            "Code API: workspace mode active but no user email available"
+        );
+        return unauthorizedResponse();
+    }
+
     // In workspace mode, use user-scoped validation
-    const isValid =
-        isWorkspaceMode() && userEmail
-            ? await validateUserProjectPath(userEmail, body.projectPath)
-            : await validateProject(body.projectPath);
+    const isValid = isWorkspaceMode()
+        ? await validateUserProjectPath(userEmail!, body.projectPath)
+        : await validateProject(body.projectPath);
     timing("Project validated");
     if (!isValid) {
         logger.warn(

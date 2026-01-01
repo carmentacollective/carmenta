@@ -58,8 +58,12 @@ export async function GET(req: Request) {
 
         // If a specific path is requested, get that project
         if (projectPath) {
-            // In workspace mode, validate the path is within user's workspace
-            if (isWorkspaceMode() && userEmail) {
+            // In workspace mode, require user email for validation
+            if (isWorkspaceMode()) {
+                if (!userEmail) {
+                    logger.warn("Workspace mode active but no user email available");
+                    return unauthorizedResponse();
+                }
                 const isValid = await validateUserProjectPath(userEmail, projectPath);
                 if (!isValid) {
                     return NextResponse.json(
