@@ -315,15 +315,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                     const isFinal = data.is_final ?? false;
 
                     if (isFinal) {
-                        // Commit finalized text
+                        // Commit finalized text and clear interim
+                        // Note: We always clear interim here because smart_format and punctuate
+                        // mean final text differs from interim (e.g., "hello" vs "Hello."),
+                        // so string matching won't work. Clearing is safe because is_final
+                        // only fires once per utterance.
                         finalTranscriptRef.current +=
                             (finalTranscriptRef.current ? " " : "") + text;
-
-                        // Only clear interim if it matches what we just committed
-                        // (prevents wiping new utterance's interim if events arrive out of order)
-                        if (interimTranscriptRef.current === text) {
-                            interimTranscriptRef.current = "";
-                        }
+                        interimTranscriptRef.current = "";
                     } else {
                         // Interim result - update display but don't commit yet
                         interimTranscriptRef.current = text;
