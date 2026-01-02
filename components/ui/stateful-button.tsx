@@ -330,7 +330,8 @@ export function useButtonState(initialState: ButtonState = "idle") {
 
     const reset = useCallback(() => {
         setState("idle");
-        isExecutingRef.current = false;
+        // Don't clear isExecutingRef - let execute's finally block handle it
+        // to avoid breaking the guard if reset is called mid-execution
     }, []);
 
     const execute = useCallback(
@@ -362,5 +363,5 @@ export function useButtonState(initialState: ButtonState = "idle") {
         []
     );
 
-    return { state, setState, reset, execute, isExecuting: isExecutingRef.current };
+    return { state, setState, reset, execute };
 }
