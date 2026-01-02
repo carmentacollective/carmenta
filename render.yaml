@@ -15,7 +15,8 @@ services:
     startCommand: node .next/standalone/server.js
     healthCheckPath: /healthz # Verifies DB connectivity before routing traffic
     autoDeploy: true
-    # Note: scaling not available for disk-backed services
+    previews:
+      generation: manual # Trigger previews manually, not on every PR
     buildFilter:
       ignoredPaths:
         - knowledge/** # Don't rebuild for docs-only changes
@@ -27,7 +28,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "3000"
+        value: "9999"
       - key: DATA_DIR
         value: /data
       - key: DATABASE_URL
