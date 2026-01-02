@@ -1769,6 +1769,31 @@
         animation: success-pulse 400ms ease-out;
     }
 
+    /* Button shake animation for error state */
+    @keyframes button-shake {
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+        10%,
+        30%,
+        50%,
+        70%,
+        90% {
+            transform: translateX(-2px);
+        }
+        20%,
+        40%,
+        60%,
+        80% {
+            transform: translateX(2px);
+        }
+    }
+
+    .animate-button-shake {
+        animation: button-shake 400ms ease-out;
+    }
+
     /* Concierge selecting shimmer - horizontal sweep */
     @keyframes selecting-shimmer {
         0% {
@@ -1794,7 +1819,8 @@
     @media (prefers-reduced-motion: reduce) {
         .animate-sparkle-pulse,
         .animate-success-pulse,
-        .animate-selecting-shimmer {
+        .animate-selecting-shimmer,
+        .animate-button-shake {
             animation: none;
         }
         .animate-sparkle-pulse {
