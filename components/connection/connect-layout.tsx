@@ -35,6 +35,7 @@ import { ConnectionChooser } from "./connection-chooser";
 import { FolderGit2 } from "lucide-react";
 import { OracleWhisper } from "@/components/ui/oracle-whisper";
 import { UserAuthButton } from "@/components/ui";
+import { FileExplorer } from "@/components/code-mode";
 import type {
     PublicConnection,
     PersistedConciergeData,
@@ -245,6 +246,14 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                             </motion.div>
                         )}
                     </header>
+
+                    {/* ═══════════════════════════════════════════════════════════
+                        FILE EXPLORER (Code Mode Only)
+
+                        Collapsible panel for browsing project files.
+                        Only renders when in code mode with an active project.
+                    ═══════════════════════════════════════════════════════════ */}
+                    <FileExplorer />
 
                     {/* ═══════════════════════════════════════════════════════════
                         MAIN CONTENT AREA
