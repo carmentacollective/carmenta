@@ -12,12 +12,24 @@
 
 import { useCallback, useRef } from "react";
 
-function detectIOSSafari(): boolean {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
-    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
-    return isIOS && isSafari;
+/**
+ * Cache iOS Safari detection to avoid repeated UA parsing.
+ * This is a module-level cache since device doesn't change during session.
+ */
+let cachedIsIOSSafari: boolean | null = null;
+
+function isIOSSafari(): boolean {
+    if (cachedIsIOSSafari === null) {
+        if (typeof navigator === "undefined") {
+            cachedIsIOSSafari = false;
+        } else {
+            const ua = navigator.userAgent;
+            const isIOS = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
+            const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
+            cachedIsIOSSafari = isIOS && isSafari;
+        }
+    }
+    return cachedIsIOSSafari;
 }
 
 /**
@@ -54,22 +66,13 @@ export interface UseHapticFeedbackReturn {
 }
 
 export function useHapticFeedback(): UseHapticFeedbackReturn {
-    const isIOSRef = useRef<boolean | null>(null);
-
-    const getIsIOS = useCallback(() => {
-        if (isIOSRef.current === null) {
-            isIOSRef.current = detectIOSSafari();
-        }
-        return isIOSRef.current;
-    }, []);
-
     const trigger = useCallback(() => {
-        if (getIsIOS()) {
+        if (isIOSSafari()) {
             triggerIOSHaptic();
         }
-    }, [getIsIOS]);
+    }, []);
 
-    const isSupported = typeof window !== "undefined" && detectIOSSafari();
+    const isSupported = typeof window !== "undefined" && isIOSSafari();
 
     return { trigger, isSupported };
 }
@@ -78,7 +81,7 @@ export function useHapticFeedback(): UseHapticFeedbackReturn {
  * Standalone trigger function for use outside React components.
  */
 export function triggerHaptic(): void {
-    if (detectIOSSafari()) {
+    if (isIOSSafari()) {
         triggerIOSHaptic();
     }
 }

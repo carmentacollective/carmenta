@@ -31,6 +31,10 @@ import { triggerHaptic } from "./use-haptic-feedback";
 /**
  * Cache reduced motion preference to avoid querying on every tap.
  * This is a module-level cache that updates if user changes preference.
+ *
+ * Note: The event listener is intentionally never cleaned up. This preference
+ * must stay synced for the app lifetime, and the single listener has negligible
+ * memory impact compared to per-tap matchMedia() calls.
  */
 let cachedPrefersReducedMotion: boolean | null = null;
 
@@ -41,7 +45,7 @@ function getPrefersReducedMotion(): boolean {
         const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
         cachedPrefersReducedMotion = mq.matches;
 
-        // Update cache if user changes preference
+        // Update cache if user changes preference (listener persists app lifetime)
         mq.addEventListener("change", (e) => {
             cachedPrefersReducedMotion = e.matches;
         });

@@ -83,6 +83,8 @@ interface SuggestionChipProps {
  */
 function SuggestionChip({ suggestion, index, onClick }: SuggestionChipProps) {
     const buttonRef = useRef<HTMLButtonElement>(null);
+    // Prevent double feedback from touch + mouse events on touch devices
+    const touchedRef = useRef(false);
 
     const handleTapStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const element = buttonRef.current;
@@ -96,12 +98,32 @@ function SuggestionChip({ suggestion, index, onClick }: SuggestionChipProps) {
         createRipple(element, x, y);
     }, []);
 
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent<HTMLButtonElement>) => {
+            touchedRef.current = true;
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
+
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent<HTMLButtonElement>) => {
+            // Skip if this is a synthesized mousedown from touch
+            if (touchedRef.current) {
+                touchedRef.current = false;
+                return;
+            }
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
+
     return (
         <motion.button
             ref={buttonRef}
             onClick={onClick}
-            onMouseDown={handleTapStart}
-            onTouchStart={handleTapStart}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             className={cn(
                 // Base styles
                 "tap-pill rounded-full px-4 py-2",

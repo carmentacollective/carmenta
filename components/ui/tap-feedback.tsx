@@ -79,14 +79,14 @@ export const TapFeedback = forwardRef<HTMLDivElement, TapFeedbackProps>(
         ref
     ) => {
         const internalRef = useRef<HTMLDivElement>(null);
-        // Use internal ref for our logic, forward external ref to element
-        const elementRef = internalRef;
+        // Prevent double feedback from touch + mouse events on touch devices
+        const touchedRef = useRef(false);
 
         const handleTapStart = useCallback(
             (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
                 if (disabled) return;
 
-                const element = elementRef.current;
+                const element = internalRef.current;
                 if (!element) return;
 
                 // Trigger haptic feedback
@@ -106,6 +106,26 @@ export const TapFeedback = forwardRef<HTMLDivElement, TapFeedbackProps>(
             [disabled, haptic, ripple, rippleColor, rippleDuration]
         );
 
+        const handleTouchStart = useCallback(
+            (e: TouchEvent<HTMLDivElement>) => {
+                touchedRef.current = true;
+                handleTapStart(e);
+            },
+            [handleTapStart]
+        );
+
+        const handleMouseDown = useCallback(
+            (e: MouseEvent<HTMLDivElement>) => {
+                // Skip if this is a synthesized mousedown from touch
+                if (touchedRef.current) {
+                    touchedRef.current = false;
+                    return;
+                }
+                handleTapStart(e);
+            },
+            [handleTapStart]
+        );
+
         return (
             <div
                 ref={(node) => {
@@ -122,8 +142,8 @@ export const TapFeedback = forwardRef<HTMLDivElement, TapFeedbackProps>(
                     }
                 }}
                 className={cn(variantClasses[variant], className)}
-                onMouseDown={handleTapStart}
-                onTouchStart={handleTapStart}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 {...props}
             >
                 {children}
@@ -173,6 +193,8 @@ export const TapFeedbackMotion = forwardRef<HTMLDivElement, TapFeedbackMotionPro
         ref
     ) => {
         const internalRef = useRef<HTMLDivElement>(null);
+        // Prevent double feedback from touch + mouse events on touch devices
+        const touchedRef = useRef(false);
 
         const handleTapStart = useCallback(
             (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
@@ -197,6 +219,26 @@ export const TapFeedbackMotion = forwardRef<HTMLDivElement, TapFeedbackMotionPro
             [disabled, haptic, ripple, rippleColor, rippleDuration]
         );
 
+        const handleTouchStart = useCallback(
+            (e: TouchEvent<HTMLDivElement>) => {
+                touchedRef.current = true;
+                handleTapStart(e);
+            },
+            [handleTapStart]
+        );
+
+        const handleMouseDown = useCallback(
+            (e: MouseEvent<HTMLDivElement>) => {
+                // Skip if this is a synthesized mousedown from touch
+                if (touchedRef.current) {
+                    touchedRef.current = false;
+                    return;
+                }
+                handleTapStart(e);
+            },
+            [handleTapStart]
+        );
+
         return (
             <motion.div
                 ref={(node) => {
@@ -211,8 +253,8 @@ export const TapFeedbackMotion = forwardRef<HTMLDivElement, TapFeedbackMotionPro
                     }
                 }}
                 className={cn(variantClasses[variant], className)}
-                onMouseDown={handleTapStart}
-                onTouchStart={handleTapStart}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 {...motionProps}
             >
                 {children}

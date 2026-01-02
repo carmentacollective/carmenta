@@ -67,6 +67,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref
     ) => {
         const internalRef = React.useRef<HTMLButtonElement>(null);
+        // Prevent double feedback from touch + mouse events on touch devices
+        const touchedRef = React.useRef(false);
 
         const handleTapStart = React.useCallback(
             (
@@ -90,20 +92,27 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             [haptic, ripple]
         );
 
-        const handleMouseDown = React.useCallback(
-            (e: React.MouseEvent<HTMLButtonElement>) => {
-                handleTapStart(e);
-                onMouseDown?.(e);
-            },
-            [handleTapStart, onMouseDown]
-        );
-
         const handleTouchStart = React.useCallback(
             (e: React.TouchEvent<HTMLButtonElement>) => {
+                touchedRef.current = true;
                 handleTapStart(e);
                 onTouchStart?.(e);
             },
             [handleTapStart, onTouchStart]
+        );
+
+        const handleMouseDown = React.useCallback(
+            (e: React.MouseEvent<HTMLButtonElement>) => {
+                // Skip if this is a synthesized mousedown from touch
+                if (touchedRef.current) {
+                    touchedRef.current = false;
+                    onMouseDown?.(e);
+                    return;
+                }
+                handleTapStart(e);
+                onMouseDown?.(e);
+            },
+            [handleTapStart, onMouseDown]
         );
 
         const Comp = asChild ? Slot : "button";
