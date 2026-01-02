@@ -369,7 +369,7 @@ export function AskUserQuestion({
                 {/* Other option */}
                 <OtherInput
                     onSubmit={handleOtherSubmit}
-                    isSubmitted={answeredQuestions.size > 0}
+                    isSubmitted={answeredQuestions.size === input.questions.length}
                 />
             </div>
         </motion.div>
