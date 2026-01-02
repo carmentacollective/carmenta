@@ -20,17 +20,11 @@ services:
     buildFilter:
       ignoredPaths:
         - knowledge/** # Don't rebuild for docs-only changes
-    disk:
-      name: carmenta-data
-      mountPath: /data
-      sizeGB: 10 # Persistent storage for user workspaces (/data/workspaces/)
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "9999"
-      - key: DATA_DIR
-        value: /data
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
