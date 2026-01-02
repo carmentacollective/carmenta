@@ -38,9 +38,9 @@ export function WcoTitlebar({ className }: WcoTitlebarProps) {
     return (
         <header
             className={cn(
-                // Fixed to top, spans full width
-                "fixed top-0 right-0 left-0",
-                // Use titlebar height from CSS env vars with fallback
+                // Fixed to top, constrained to safe titlebar area
+                "fixed top-0",
+                // Use titlebar height and position from CSS env vars
                 "h-[env(titlebar-area-height,40px)]",
                 // Background and styling
                 "bg-background/80 backdrop-blur-lg",
@@ -49,13 +49,17 @@ export function WcoTitlebar({ className }: WcoTitlebarProps) {
                 "z-sticky",
                 // Layout
                 "flex items-center justify-between",
-                // Padding to respect window controls area
-                // Left padding accounts for macOS traffic lights
-                "pr-4 pl-[env(titlebar-area-x,16px)]",
+                // Padding within safe area
+                "px-4",
                 className
             )}
             style={
                 {
+                    // Position and width from WCO env vars
+                    // macOS: titlebar-area-x accounts for traffic lights on left
+                    // Windows: titlebar-area-width accounts for controls on right
+                    left: "env(titlebar-area-x, 0)",
+                    width: "env(titlebar-area-width, 100vw)",
                     // Make the entire header draggable for window movement
                     // Interactive elements will override this with no-drag
                     WebkitAppRegion: "drag",
