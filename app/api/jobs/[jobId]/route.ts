@@ -21,10 +21,40 @@ import {
 import { logger } from "@/lib/logger";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 
+/**
+ * Validate cron expression format and frequency
+ *
+ * Accepts standard cron format: "minute hour day month weekday"
+ * Rejects expressions that would run more than once per minute.
+ */
+function validateCronExpression(cron: string): boolean {
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length !== 5) {
+        return false;
+    }
+
+    // Reject expressions that run every minute (* * * * *)
+    const [minute] = parts;
+    if (minute === "*") {
+        return false;
+    }
+
+    // Basic validation: each part should be *, number, range, or list
+    const cronPartRegex = /^(\*|[0-9,-/]+)$/;
+    return parts.every((part) => cronPartRegex.test(part));
+}
+
 const updateJobSchema = z.object({
     name: z.string().min(1).max(100).optional(),
     prompt: z.string().min(1).max(10000).optional(),
-    scheduleCron: z.string().min(1).optional(),
+    scheduleCron: z
+        .string()
+        .min(1)
+        .refine(validateCronExpression, {
+            message:
+                "Invalid cron expression. Format: 'minute hour day month weekday'. Minimum frequency: once per minute.",
+        })
+        .optional(),
     timezone: z.string().optional(),
     integrations: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
@@ -176,12 +206,17 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
         throw new NotFoundError("Job");
     }
 
-    // Delete Temporal schedule
+    // Delete Temporal schedule first - fail if this fails to prevent orphaned schedules
     if (job.temporalScheduleId) {
         try {
             await deleteJobSchedule(job.temporalScheduleId);
         } catch (error) {
             logger.error({ error, jobId }, "Failed to delete Temporal schedule");
+            // Don't proceed with DB deletion - would leave orphaned schedule
+            return NextResponse.json(
+                { error: "Failed to delete schedule. Please try again." },
+                { status: 500 }
+            );
         }
     }
 

@@ -9,7 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { triggerJobSchedule, startAgentWorkflow } from "@/lib/temporal/client";
+import { startAgentWorkflow } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { NotFoundError } from "@/lib/errors";
 
@@ -40,30 +40,12 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         throw new NotFoundError("Job");
     }
 
-    let workflowId: string;
-
-    // If job has a schedule, trigger it. Otherwise, start a one-off workflow.
-    if (job.temporalScheduleId) {
-        try {
-            await triggerJobSchedule(job.temporalScheduleId);
-            workflowId = `triggered-${job.temporalScheduleId}`;
-            logger.info({ jobId }, "Triggered scheduled job");
-        } catch (error) {
-            // Schedule might not exist yet, start manually
-            workflowId = await startAgentWorkflow({
-                jobId: job.id,
-            });
-            logger.info(
-                { jobId, workflowId },
-                "Started manual workflow (schedule trigger failed)"
-            );
-        }
-    } else {
-        workflowId = await startAgentWorkflow({
-            jobId: job.id,
-        });
-        logger.info({ jobId, workflowId }, "Started manual workflow");
-    }
+    // Always start a manual workflow for trigger requests
+    // This ensures we get a real workflow ID for status tracking
+    const workflowId = await startAgentWorkflow({
+        jobId: job.id,
+    });
+    logger.info({ jobId, workflowId }, "Started manual workflow");
 
     return NextResponse.json({ success: true, workflowId });
 }

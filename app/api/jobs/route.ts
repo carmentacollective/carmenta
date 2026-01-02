@@ -11,7 +11,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { createJobSchedule } from "@/lib/temporal/client";
+import { createJobSchedule, deleteJobSchedule } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
 
@@ -126,8 +126,21 @@ export async function POST(request: NextRequest) {
             cronExpression: scheduleCron,
             timezone,
         });
+    } catch (error) {
+        // Temporal schedule creation failed - clean up the database entry
+        logger.error({ error, jobId: job.id }, "Failed to create Temporal schedule");
 
-        // Update job with schedule ID
+        await db.delete(scheduledJobs).where(eq(scheduledJobs.id, job.id));
+
+        return NextResponse.json(
+            { error: "Failed to create schedule. Please try again." },
+            { status: 500 }
+        );
+    }
+
+    // Update job with schedule ID
+    // If this fails, we need to clean up both the schedule and job
+    try {
         const [updatedJob] = await db
             .update(scheduledJobs)
             .set({ temporalScheduleId: scheduleId })
@@ -138,13 +151,26 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ job: updatedJob }, { status: 201 });
     } catch (error) {
-        // Temporal schedule creation failed - clean up the database entry
-        logger.error({ error, jobId: job.id }, "Failed to create Temporal schedule");
+        // DB update failed after schedule creation - clean up both
+        logger.error(
+            { error, jobId: job.id, scheduleId },
+            "Failed to update job with schedule ID"
+        );
+
+        // Try to clean up the orphaned schedule
+        try {
+            await deleteJobSchedule(scheduleId);
+        } catch (deleteError) {
+            logger.error(
+                { error: deleteError, scheduleId },
+                "Failed to clean up orphaned schedule"
+            );
+        }
 
         await db.delete(scheduledJobs).where(eq(scheduledJobs.id, job.id));
 
         return NextResponse.json(
-            { error: "Failed to create schedule. Please try again." },
+            { error: "Failed to create job. Please try again." },
             { status: 500 }
         );
     }

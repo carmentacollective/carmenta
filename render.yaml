@@ -47,13 +47,13 @@ services:
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
+  # Note: No healthCheckPath - Temporal only exposes gRPC (port 7233), not HTTP
   - type: web
     name: temporal-server
     runtime: docker
     region: oregon
     plan: starter
     dockerfilePath: ./docker/temporal-server/Dockerfile
-    healthCheckPath: /health
     envVars:
       - key: DB
         value: postgres12

@@ -171,14 +171,25 @@ jobs:
           # Falls back to dummy key for fork PRs (which don't have access to secrets)
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || 'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
 
+      - name: ⚙️ Build Temporal worker
+        run: pnpm run build:worker
+
       - name: ✅ Verify build output
         run: |
           if [ ! -d ".next" ]; then
             echo "❌ Error: .next directory not found"
             exit 1
           fi
-          echo "✅ Build successful! Output directory size:"
+          echo "✅ Next.js build successful! Output directory size:"
           du -sh .next
+
+          # Verify worker build
+          if [ ! -f "dist/worker/index.js" ] || [ ! -f "dist/worker/workflows.js" ]; then
+            echo "❌ Error: Worker build files not found"
+            exit 1
+          fi
+          echo "✅ Worker build successful! Files:"
+          ls -la dist/worker/*.js
 
       - name: 📊 Analyze bundle size
         id: bundle
@@ -291,3 +302,27 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # Docker Build Verification
+  # Validates Dockerfile builds correctly without pushing
+  docker:
+    name: 🐳 Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: 🏗️ Build Temporal server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/temporal-server/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: carmenta/temporal-server:test
