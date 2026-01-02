@@ -1,18 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
+import { createRipple, getTapPosition } from "@/lib/hooks/use-tap-feedback";
 
 export function ButtonStateDemo({ variant }: { variant: string }) {
     const [isActive, setIsActive] = useState(false);
-    const [showRipple, setShowRipple] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    // Prevent double feedback from touch + mouse events
+    const touchedRef = useRef(false);
+
+    const handleTapStart = useCallback(
+        (e: React.MouseEvent | React.TouchEvent) => {
+            const element = buttonRef.current;
+            if (!element || variant !== "click") return;
+
+            // Trigger haptic feedback on iOS
+            triggerHaptic();
+
+            // Create visual ripple
+            const { x, y } = getTapPosition(e, element);
+            createRipple(element, x, y, {
+                color: "hsl(var(--primary) / 0.3)",
+                duration: 500,
+            });
+        },
+        [variant]
+    );
+
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent<HTMLButtonElement>) => {
+            touchedRef.current = true;
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
+
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (touchedRef.current) {
+                touchedRef.current = false;
+                return;
+            }
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
 
     const handleClick = () => {
-        if (variant === "click") {
-            setShowRipple(true);
-            setTimeout(() => setShowRipple(false), 600);
-        } else if (variant === "success" || variant === "error") {
+        if (variant === "success" || variant === "error") {
             setIsActive(true);
             setTimeout(() => setIsActive(false), 1000);
         }
@@ -23,26 +61,26 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
     return (
         <div className="bg-foreground/5 flex min-h-[80px] items-center justify-center rounded-lg p-4">
             <button
+                ref={buttonRef}
                 onClick={handleClick}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 disabled={variant === "disabled"}
                 className={cn(
                     "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all",
                     isGlass
                         ? "bg-white/50 shadow-xl ring-1 ring-white/40 backdrop-blur-xl dark:bg-white/10 dark:ring-white/20"
                         : "bg-white/50 ring-1 ring-white/40 backdrop-blur-xl dark:bg-white/10 dark:ring-white/20",
-                    variant === "click" && "active:translate-y-0.5 active:shadow-sm",
+                    // Click state uses tap-target for real tap feedback
+                    variant === "click" && "tap-target",
                     variant === "hover" && "hover:scale-105 hover:shadow-2xl",
                     variant === "focus" &&
                         "focus:ring-primary/40 focus:ring-[3px] focus:outline-none",
-                    variant === "disabled" && "cursor-not-allowed opacity-50 grayscale",
+                    variant === "disabled" &&
+                        "pointer-events-none cursor-not-allowed opacity-50 grayscale",
                     variant === "loading" && "cursor-default"
                 )}
             >
-                {/* Ripple effect for click */}
-                {variant === "click" && showRipple && (
-                    <span className="animate-ripple bg-primary/30 absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full" />
-                )}
-
                 {/* Loading spinner */}
                 {variant === "loading" && (
                     <div
@@ -64,7 +102,7 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
                 {/* Icon */}
                 <Sparkles
                     className={cn(
-                        "h-5 w-5 transition-colors",
+                        "relative z-10 h-5 w-5 transition-colors",
                         variant === "hover"
                             ? "text-foreground/60 group-hover:text-foreground/90"
                             : variant === "success" && isActive
