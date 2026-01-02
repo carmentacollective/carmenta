@@ -448,20 +448,19 @@ export default function BrandPage() {
                                     <div className="space-y-4">
                                         <div>
                                             <h3 className="text-foreground/90 font-medium">
-                                                Click
+                                                Click / Tap
                                             </h3>
                                             <p className="text-foreground/60 text-sm">
-                                                Ripple + depth shift
+                                                Ripple + scale + haptic (iOS)
                                             </p>
                                         </div>
                                         <ButtonStateDemo variant="click" />
                                         <div className="bg-foreground/5 rounded-lg p-3">
                                             <code className="text-foreground/70 block text-xs">
-                                                shadow-xl
+                                                .tap-target
                                                 <br />
-                                                active:shadow-sm
-                                                <br />
-                                                active:translate-y-0.5
+                                                active:scale-[0.97]
+                                                <br />+ JS ripple + haptic
                                             </code>
                                         </div>
                                     </div>
@@ -702,6 +701,163 @@ export default function BrandPage() {
                                         <p className="text-foreground/60 text-xs">
                                             Use for branded interactions like sign-in,
                                             connection actions, and secondary CTAs.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Tap Feedback System */}
+                        <section className="space-y-6">
+                            <h2 className="text-foreground/90 text-2xl font-semibold">
+                                Tap Feedback System
+                            </h2>
+                            <p className="text-foreground/70">
+                                Apple-quality tap feedback combining visual ripple,
+                                scale animation, and haptic feedback. Follows Apple HIG
+                                principles: immediate feedback (&lt;100ms), subtle
+                                restraint, and graceful degradation.
+                            </p>
+
+                            <div className="glass-card space-y-8">
+                                {/* Philosophy */}
+                                <div className="space-y-4">
+                                    <h3 className="text-foreground/90 text-lg font-medium">
+                                        Design Philosophy
+                                    </h3>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <p className="text-foreground/90 font-medium">
+                                                Immediate
+                                            </p>
+                                            <p className="text-foreground/60 text-sm">
+                                                Feedback appears within 100ms of touch.
+                                                Feels instant and responsive.
+                                            </p>
+                                        </div>
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <p className="text-foreground/90 font-medium">
+                                                Subtle
+                                            </p>
+                                            <p className="text-foreground/60 text-sm">
+                                                iOS restraint over Material exuberance.
+                                                The feedback supports the action, not
+                                                distracts from it.
+                                            </p>
+                                        </div>
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <p className="text-foreground/90 font-medium">
+                                                Accessible
+                                            </p>
+                                            <p className="text-foreground/60 text-sm">
+                                                Respects prefers-reduced-motion. Falls
+                                                back to opacity change instead of
+                                                animations.
+                                            </p>
+                                        </div>
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <p className="text-foreground/90 font-medium">
+                                                Native-feeling
+                                            </p>
+                                            <p className="text-foreground/60 text-sm">
+                                                Haptic feedback on iOS Safari via Taptic
+                                                Engine. No permissions required.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* CSS Classes */}
+                                <div className="space-y-4">
+                                    <h3 className="text-foreground/90 text-lg font-medium">
+                                        CSS Classes
+                                    </h3>
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <code className="text-foreground/90 font-mono text-sm">
+                                                .tap-target
+                                            </code>
+                                            <p className="text-foreground/60 text-sm">
+                                                Default tap target. Scale to 97% on
+                                                press, 102% on hover (mouse only).
+                                            </p>
+                                        </div>
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <code className="text-foreground/90 font-mono text-sm">
+                                                .tap-icon
+                                            </code>
+                                            <p className="text-foreground/60 text-sm">
+                                                Icon buttons. Deeper press (92%) for
+                                                smaller touch targets.
+                                            </p>
+                                        </div>
+                                        <div className="bg-foreground/5 space-y-2 rounded-lg p-4">
+                                            <code className="text-foreground/90 font-mono text-sm">
+                                                .tap-pill
+                                            </code>
+                                            <p className="text-foreground/60 text-sm">
+                                                Pill-shaped buttons. Subtle press (98%)
+                                                for larger touch areas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Components */}
+                                <div className="space-y-4">
+                                    <h3 className="text-foreground/90 text-lg font-medium">
+                                        React Components
+                                    </h3>
+                                    <div className="bg-foreground/5 rounded-lg p-4">
+                                        <code className="text-foreground/70 block text-xs whitespace-pre">
+                                            {`// Wrapper component with variants
+<TapFeedback variant="default">
+  <button>Click me</button>
+</TapFeedback>
+
+// With Framer Motion integration
+<TapFeedback.Motion whileHover={{ scale: 1.02 }}>
+  <button>With motion</button>
+</TapFeedback.Motion>
+
+// Hook for custom implementations
+const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
+                                        </code>
+                                    </div>
+                                </div>
+
+                                {/* Implementation Details */}
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Ripple Duration
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            400ms
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Scale Animation
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            150ms ease-out
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Haptic Support
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            iOS Safari only
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Reduced Motion
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            Opacity fallback
                                         </p>
                                     </div>
                                 </div>
