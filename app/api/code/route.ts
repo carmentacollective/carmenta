@@ -21,6 +21,7 @@ import { createClaudeCode } from "ai-sdk-provider-claude-code";
 import { z } from "zod";
 
 import { db, getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
+import { CODE_MODE_PROMPT } from "@/lib/prompts/code-mode";
 import { connections } from "@/lib/db/schema";
 import {
     getToolStatusMessage,
@@ -260,7 +261,11 @@ export async function POST(req: Request) {
             cwd: body.projectPath,
             permissionMode: "bypassPermissions",
             settingSources: ["project", "user", "local"],
-            systemPrompt: { type: "preset", preset: "claude_code" },
+            systemPrompt: {
+                type: "preset",
+                preset: "claude_code",
+                append: CODE_MODE_PROMPT,
+            },
         },
     });
     timing("Claude Code provider created");
