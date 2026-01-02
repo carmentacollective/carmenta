@@ -324,11 +324,25 @@ export async function POST(req: Request) {
                     temperature: concierge.temperature,
                     reasoning: concierge.reasoning,
                 });
-                temporalDispatchSucceeded = true;
 
                 // Save stream ID AFTER workflow starts successfully
-                // Keeps DB and Temporal in sync - if this fails, workflow is already running
-                await updateActiveStreamId(connectionId!, streamId);
+                // If this fails, the workflow is already running - log but continue
+                try {
+                    await updateActiveStreamId(connectionId!, streamId);
+                } catch (dbError) {
+                    // Workflow is running but DB write failed - log and continue
+                    // Client gets streamId in headers, workflow will write to Redis
+                    logger.error(
+                        { connectionId, streamId, error: dbError },
+                        "Failed to save stream ID after Temporal dispatch - workflow running"
+                    );
+                    Sentry.captureException(dbError, {
+                        tags: { component: "connection", action: "stream_id_write" },
+                        extra: { connectionId, streamId, workflowRunning: true },
+                    });
+                }
+
+                temporalDispatchSucceeded = true;
 
                 Sentry.addBreadcrumb({
                     category: "temporal.dispatch",
