@@ -25,7 +25,22 @@ Sentry.init({
 });
 
 async function run() {
-    const temporalAddress = process.env.TEMPORAL_ADDRESS || "localhost:7233";
+    const temporalAddress = process.env.TEMPORAL_ADDRESS;
+
+    if (!temporalAddress) {
+        const message =
+            "TEMPORAL_ADDRESS environment variable is not set. " +
+            "The worker cannot start without a Temporal server address.";
+        logger.error(message);
+
+        // Capture in Sentry so misconfiguration is visible in monitoring
+        Sentry.captureMessage(message, {
+            level: "fatal",
+            tags: { component: "temporal-worker", action: "startup" },
+        });
+        await Sentry.flush(2000);
+        process.exit(1);
+    }
 
     logger.info({ temporalAddress }, "Connecting to Temporal");
 
