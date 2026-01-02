@@ -6,3 +6,4 @@
  */
 
 export * from "./agent-job";
+export * from "./background-response";

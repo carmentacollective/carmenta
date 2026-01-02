@@ -176,3 +176,6 @@ export async function recordJobRun(record: JobRunRecord): Promise<void> {
         .set({ lastRunAt: new Date(), updatedAt: new Date() })
         .where(eq(scheduledJobs.id, jobId));
 }
+
+// Re-export background response activities
+export * from "./background-response";

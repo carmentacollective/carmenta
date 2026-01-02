@@ -201,3 +201,38 @@ export async function getWorkflowStatus(workflowId: string): Promise<{
         result: desc.status.name === "COMPLETED" ? await handle.result() : undefined,
     };
 }
+
+/**
+ * Start a background response workflow
+ *
+ * Used when the concierge determines a task needs durable background execution.
+ * The workflow streams to Redis for real-time client updates.
+ */
+export async function startBackgroundResponse(params: {
+    connectionId: number;
+    userId: string;
+    streamId: string;
+    modelId: string;
+    temperature: number;
+    reasoning: {
+        enabled: boolean;
+        effort?: "high" | "medium" | "low" | "none";
+        maxTokens?: number;
+    };
+}): Promise<string> {
+    const { connectionId, streamId } = params;
+    const temporalClient = await getTemporalClient();
+
+    const handle = await temporalClient.workflow.start("backgroundResponseWorkflow", {
+        taskQueue: TASK_QUEUE,
+        workflowId: `bg-${connectionId}-${streamId}`,
+        args: [params],
+    });
+
+    logger.info(
+        { connectionId, workflowId: handle.workflowId, streamId },
+        "Started background response workflow"
+    );
+
+    return handle.workflowId;
+}
