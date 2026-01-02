@@ -312,75 +312,143 @@ export async function POST(req: Request) {
         if (conciergeResult.backgroundMode?.enabled && temporalConfigured) {
             const streamId = nanoid();
 
-            // Save stream ID so client can resume
-            await updateActiveStreamId(connectionId!, streamId);
-
             // Dispatch to Temporal - payloads contain only IDs for security
-            await startBackgroundResponse({
-                connectionId: connectionId!,
-                userId: dbUser.id,
-                streamId,
-                modelId: concierge.modelId,
-                temperature: concierge.temperature,
-                reasoning: concierge.reasoning,
-            });
-
-            logger.info(
-                {
-                    connectionId,
-                    streamId,
+            // If Temporal is down, fall back to inline execution
+            let temporalDispatchSucceeded = false;
+            try {
+                await startBackgroundResponse({
+                    connectionId: connectionId!,
                     userId: dbUser.id,
-                    reason: conciergeResult.backgroundMode.reason,
-                },
-                "Dispatched to Temporal background mode"
-            );
+                    streamId,
+                    modelId: concierge.modelId,
+                    temperature: concierge.temperature,
+                    reasoning: concierge.reasoning,
+                });
 
-            // Build headers for background mode response
-            const headers = new Headers();
-            headers.set("X-Concierge-Model-Id", concierge.modelId);
-            headers.set("X-Concierge-Temperature", String(concierge.temperature));
-            headers.set(
-                "X-Concierge-Explanation",
-                encodeURIComponent(concierge.explanation)
-            );
-            headers.set(
-                "X-Concierge-Reasoning",
-                encodeURIComponent(JSON.stringify(concierge.reasoning))
-            );
-            headers.set("X-Connection-Id", connectionPublicId!);
-            headers.set("X-Background-Mode", "true");
-            headers.set("X-Stream-Id", streamId);
-
-            if (isNewConnection && connectionSlug) {
-                headers.set("X-Connection-Slug", connectionSlug);
-                headers.set("X-Connection-Is-New", "true");
-                if (conciergeResult.title) {
-                    headers.set(
-                        "X-Connection-Title",
-                        encodeURIComponent(conciergeResult.title)
+                // Save stream ID AFTER workflow starts successfully
+                // If this fails, the workflow is already running - log but continue
+                try {
+                    await updateActiveStreamId(connectionId!, streamId);
+                } catch (dbError) {
+                    // Workflow is running but DB write failed - log and continue
+                    // Client gets streamId in headers, workflow will write to Redis
+                    logger.error(
+                        { connectionId, streamId, error: dbError },
+                        "Failed to save stream ID after Temporal dispatch - workflow running"
                     );
+                    Sentry.captureException(dbError, {
+                        tags: { component: "connection", action: "stream_id_write" },
+                        extra: { connectionId, streamId, workflowRunning: true },
+                    });
                 }
+
+                temporalDispatchSucceeded = true;
+
+                Sentry.addBreadcrumb({
+                    category: "temporal.dispatch",
+                    message: "Background mode enabled via Temporal",
+                    level: "info",
+                    data: { connectionId, streamId },
+                });
+
+                logger.info(
+                    {
+                        connectionId,
+                        streamId,
+                        userId: dbUser.id,
+                        reason: conciergeResult.backgroundMode.reason,
+                    },
+                    "Dispatched to Temporal background mode"
+                );
+            } catch (temporalError) {
+                // Temporal is configured but unavailable - fall back to inline
+                const errorMessage =
+                    temporalError instanceof Error
+                        ? temporalError.message
+                        : String(temporalError);
+
+                Sentry.addBreadcrumb({
+                    category: "temporal.fallback",
+                    message: "Falling back to inline execution",
+                    level: "warning",
+                    data: {
+                        connectionId,
+                        reason: conciergeResult.backgroundMode?.reason,
+                    },
+                });
+
+                logger.error(
+                    { connectionId, error: errorMessage },
+                    "Temporal dispatch failed, falling back to inline execution"
+                );
+                Sentry.captureException(temporalError, {
+                    tags: { component: "connection", action: "temporal_dispatch" },
+                    extra: {
+                        connectionId,
+                        streamId,
+                        reason: conciergeResult.backgroundMode?.reason,
+                    },
+                });
             }
 
-            // Return immediately with background status message
-            // Client will connect to the resumable stream to follow progress
-            const stream = createUIMessageStream({
-                execute: ({ writer }) => {
-                    writeStatus(
-                        writer,
-                        "background-mode",
-                        STATUS_MESSAGES.background.starting,
-                        "🔄"
-                    );
-                },
-            });
+            // Only return early if Temporal dispatch succeeded
+            if (!temporalDispatchSucceeded) {
+                logger.info(
+                    { connectionId, reason: conciergeResult.backgroundMode.reason },
+                    "Temporal unavailable, continuing with inline execution"
+                );
+                // Fall through to inline execution below
+            } else {
+                // Build headers for background mode response
+                const headers = new Headers();
+                headers.set("X-Concierge-Model-Id", concierge.modelId);
+                headers.set("X-Concierge-Temperature", String(concierge.temperature));
+                headers.set(
+                    "X-Concierge-Explanation",
+                    encodeURIComponent(concierge.explanation)
+                );
+                headers.set(
+                    "X-Concierge-Reasoning",
+                    encodeURIComponent(JSON.stringify(concierge.reasoning))
+                );
+                headers.set("X-Connection-Id", connectionPublicId!);
+                headers.set("X-Background-Mode", "true");
+                headers.set("X-Stream-Id", streamId);
 
-            return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
-                headers: {
-                    ...Object.fromEntries(headers.entries()),
-                    ...UI_MESSAGE_STREAM_HEADERS,
-                },
-            });
+                if (isNewConnection && connectionSlug) {
+                    headers.set("X-Connection-Slug", connectionSlug);
+                    headers.set("X-Connection-Is-New", "true");
+                    if (conciergeResult.title) {
+                        headers.set(
+                            "X-Connection-Title",
+                            encodeURIComponent(conciergeResult.title)
+                        );
+                    }
+                }
+
+                // Return immediately with background status message
+                // Client will connect to the resumable stream to follow progress
+                const stream = createUIMessageStream({
+                    execute: ({ writer }) => {
+                        writeStatus(
+                            writer,
+                            "background-mode",
+                            STATUS_MESSAGES.background.starting,
+                            "🔄"
+                        );
+                    },
+                });
+
+                return new Response(
+                    stream.pipeThrough(new JsonToSseTransformStream()),
+                    {
+                        headers: {
+                            ...Object.fromEntries(headers.entries()),
+                            ...UI_MESSAGE_STREAM_HEADERS,
+                        },
+                    }
+                );
+            } // end else (temporalDispatchSucceeded)
         }
 
         // Check if the selected model supports tool calling
