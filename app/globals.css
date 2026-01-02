@@ -535,6 +535,12 @@
         @apply border-border;
     }
 
+    /* All interactive elements should show pointer cursor */
+    button,
+    [role="button"] {
+        cursor: pointer;
+    }
+
     html {
         /* Smooth scrolling for in-page navigation */
         scroll-behavior: smooth;
@@ -2247,7 +2253,7 @@
     /* Icon button variant */
     .btn-icon-glass {
         /* btn-glass-interactive (inlined) */
-        @apply flex items-center justify-center rounded-full;
+        @apply flex cursor-pointer items-center justify-center rounded-full;
         background: var(--glass-bg);
         box-shadow:
             var(--glass-shadow),

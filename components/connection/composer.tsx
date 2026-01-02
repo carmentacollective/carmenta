@@ -100,6 +100,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Shift+Enter hint: show once for new users, then never again
     const [showShiftEnterHint, setShowShiftEnterHint] = useState(false);
 
+    // Track focus state for underbar styling and tip display
+    const [isFocused, setIsFocused] = useState(false);
+
     const conciergeModel = concierge ? getModel(concierge.modelId) : null;
 
     // Track if initial autofocus has been applied (prevents re-focus on resize)
@@ -306,6 +309,18 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
         return () => clearTimeout(timer);
     }, []);
+
+    // Auto-resize textarea as content grows
+    // Pattern: reset to auto → measure scrollHeight → set explicit height
+    useEffect(() => {
+        const textarea = inputRef.current;
+        if (!textarea) return;
+
+        // Reset height to auto so scrollHeight reflects actual content
+        textarea.style.height = "auto";
+        // Set to scrollHeight (clamped by max-height in CSS)
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }, [input]);
 
     const handleSubmit = useCallback(
         async (e: FormEvent) => {
@@ -562,28 +577,6 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 <UploadProgressDisplay onInsertInline={handleInsertInline} />
             )}
 
-            {/* Shift+Enter hint - shows once for new users */}
-            <AnimatePresence>
-                {showShiftEnterHint && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="text-foreground/50 flex items-center justify-center gap-1.5 text-xs"
-                    >
-                        <span>Tip:</span>
-                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
-                            Shift
-                        </kbd>
-                        <span>+</span>
-                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
-                            Enter
-                        </kbd>
-                        <span>for new line</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Draft recovery banner - shows when we restored unsent text */}
             <DraftRecoveryBanner
                 show={hasRecoveredDraft}
@@ -605,6 +598,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     onChange={handleInputChangeWithEngagement}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => {
                         // IME composition ends before value updates, defer flag reset
@@ -612,18 +607,31 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     }}
                     placeholder="Message Carmenta..."
                     className={cn(
-                        "text-foreground/95 placeholder:text-foreground/40 max-h-48 min-h-[2.75rem] w-full flex-none resize-none bg-transparent px-4 py-3 text-base leading-5 outline-none sm:flex-1 sm:px-6 sm:py-4 md:max-h-60 md:min-h-[3.5rem]",
-                        "rounded-2xl border transition-colors",
-                        /\n/.test(input)
-                            ? "border-foreground/10 bg-background/30"
-                            : "border-transparent"
+                        // Layout
+                        "w-full flex-none resize-none sm:flex-1",
+                        // Height - 44px mobile, 56px desktop
+                        "max-h-48 min-h-11 md:max-h-60 md:min-h-14",
+                        // Spacing - symmetric for centered placeholder
+                        "px-4 py-2.5 sm:px-6 sm:py-4",
+                        // Typography
+                        "text-base leading-5 outline-none",
+                        "text-foreground/95 placeholder:text-foreground/40",
+                        // Shape + transition
+                        "rounded-2xl transition-all",
+                        // Sunken glass effect
+                        "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
+                        // Border - darker on focus
+                        "border",
+                        isFocused ? "border-foreground/35" : "border-foreground/8",
+                        // Multi-line gets slightly darker bg
+                        /\n/.test(input) && "bg-background/30"
                     )}
-                    rows={3}
+                    rows={1}
                     data-testid="composer-input"
                 />
 
                 {/* Action bar: responsive layout via CSS */}
-                <div className="flex items-center justify-between gap-2 px-3 pt-1 pb-2.5 sm:justify-end sm:gap-1.5 sm:pt-0 sm:pr-4 sm:pb-0">
+                <div className="flex items-center justify-between gap-2 px-4 py-3 sm:justify-end sm:gap-1.5 sm:py-0 sm:pr-4">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
                     <div className="flex items-center gap-1 sm:order-last sm:gap-1.5">
                         <ModelSelectorTrigger
@@ -674,6 +682,28 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
                 </div>
             </form>
+
+            {/* Tip zone - shows below input when focused (one-time hint for new users) */}
+            <AnimatePresence>
+                {showShiftEnterHint && isFocused && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="text-foreground/50 flex items-center justify-center gap-1.5 text-xs"
+                    >
+                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                            Shift
+                        </kbd>
+                        <span>+</span>
+                        <kbd className="bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                            Enter
+                        </kbd>
+                        <span>for new line</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -796,7 +826,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     ref={ref}
                     disabled={disabled}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-all",
                         "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
@@ -865,7 +895,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                               : { duration: 0.3 },
                     }}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-[box-shadow,ring-color]",
                         "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",

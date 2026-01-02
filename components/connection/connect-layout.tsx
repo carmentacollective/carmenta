@@ -201,7 +201,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                                     <button
                                         onClick={createNewConnection}
                                         disabled={isPending}
-                                        className="bg-primary/15 text-primary hover:bg-primary/25 flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="bg-primary/15 text-primary hover:bg-primary/25 flex h-8 items-center gap-1.5 rounded-2xl px-3 text-sm font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                         aria-label="New connection"
                                     >
                                         {isPending ? (

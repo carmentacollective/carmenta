@@ -127,6 +127,56 @@ export const animation = {
     slowSpin: "animate-spin",
 } as const;
 
+/**
+ * Glass orb styling for header anchors (Oracle, user avatar).
+ *
+ * Creates a refined glass sphere effect with:
+ * - Subtle outer shadow for depth
+ * - Inner highlight for dimensionality
+ * - Purple glow on hover for interactivity
+ *
+ * Usage: Apply to circular elements that anchor the header.
+ * Responsive sizes: h-10 (mobile) → h-12 (sm) → h-14 (md)
+ */
+export const glassOrb = {
+    /** Base container styles */
+    base: "relative flex items-center justify-center rounded-full backdrop-blur-xl transition-all duration-300 cursor-pointer",
+
+    /** Responsive sizing - matches Oracle/avatar dimensions */
+    size: "h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14",
+
+    /** Glass effect with depth */
+    surface: [
+        "border border-white/30 dark:border-white/15",
+        "bg-white/40 dark:bg-white/10",
+        "shadow-[0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.5)]",
+        "dark:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]",
+    ].join(" "),
+
+    /** Hover state with primary glow */
+    hover: [
+        "hover:border-primary/30",
+        "hover:shadow-[0_4px_16px_rgba(139,92,246,0.15),inset_0_1px_0_rgba(255,255,255,0.6)]",
+        "hover:scale-[1.02]",
+    ].join(" "),
+
+    /** Focus state for accessibility */
+    focus: [
+        "focus:border-primary/40",
+        "focus:shadow-[0_4px_16px_rgba(139,92,246,0.2),inset_0_1px_0_rgba(255,255,255,0.6)]",
+        "focus:outline-none",
+    ].join(" "),
+} as const;
+
+/** Combined glass orb preset - all styles in one */
+export const glassOrbPreset = [
+    glassOrb.base,
+    glassOrb.size,
+    glassOrb.surface,
+    glassOrb.hover,
+    glassOrb.focus,
+].join(" ");
+
 export type GlassLevel = keyof typeof glass;
 export type BorderType = keyof typeof border;
 export type SpacingToken = keyof typeof spacing;

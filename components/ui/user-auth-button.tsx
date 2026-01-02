@@ -27,6 +27,7 @@ import { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { glassOrbPreset } from "@/lib/design-tokens";
 import {
     useThemeVariant,
     getCurrentHoliday,
@@ -483,16 +484,16 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
     return (
         <div className={cn("vt-user-auth", className)}>
-            {/* Trigger button - UserCircle icon */}
+            {/* User avatar - glass orb anchoring the header */}
             <button
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className="btn-icon-glass group relative"
+                className={cn(glassOrbPreset, "group")}
                 aria-label="User menu"
                 data-tooltip-id="tip"
                 data-tooltip-content="Settings & integrations"
             >
-                <UserCircle2 className="text-foreground/50 group-hover:text-foreground/80 h-6 w-6 transition-colors sm:h-7 sm:w-7 md:h-8 md:w-8" />
+                <UserCircle2 className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7" />
             </button>
 
             {/* Dropdown rendered via portal to escape stacking contexts */}
