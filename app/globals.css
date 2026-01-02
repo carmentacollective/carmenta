@@ -1710,7 +1710,157 @@
         }
     }
 
-    /* Ripple effect for button clicks */
+    /* =============================================
+     * Apple-Quality Tap Feedback System
+     * =============================================
+     * iOS-native-feeling tap feedback that combines:
+     * - Subtle, fast ripple (Material-inspired but Apple-tuned)
+     * - Scale feedback on tap
+     * - Haptic integration (handled via JS)
+     *
+     * Philosophy:
+     * - < 100ms: Feels instant (Apple HIG)
+     * - Subtle over flashy (iOS restraint)
+     * - Graceful degradation
+     * - Respects prefers-reduced-motion
+     */
+
+    /* Ripple expansion animation - fast, subtle, Apple-quality */
+    @keyframes tap-ripple-expand {
+        0% {
+            transform: scale(0);
+            opacity: 0.4;
+        }
+        50% {
+            opacity: 0.2;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0;
+        }
+    }
+
+    /* Tap target base - ensures proper positioning for ripple */
+    .tap-target {
+        position: relative;
+        overflow: hidden;
+        /* iOS: Remove default tap highlight, we provide our own */
+        -webkit-tap-highlight-color: transparent;
+        /* Faster taps - no 300ms delay */
+        touch-action: manipulation;
+        /* GPU acceleration for smooth animations */
+        will-change: transform;
+        /* Smooth transitions */
+        transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    /* Active state scale - the "press" feel */
+    .tap-target:active {
+        transform: scale(0.97);
+    }
+
+    /* Hover only on devices that support hover (not touch) */
+    @media (hover: hover) and (pointer: fine) {
+        .tap-target:hover {
+            transform: scale(1.02);
+        }
+        .tap-target:active {
+            transform: scale(0.97);
+        }
+    }
+
+    /* Touch-only devices - no hover, just press */
+    @media (hover: none) {
+        .tap-target:hover {
+            transform: none;
+        }
+    }
+
+    /* Tap target variants */
+    .tap-target-subtle:active {
+        transform: scale(0.98);
+    }
+
+    .tap-target-deep:active {
+        transform: scale(0.95);
+    }
+
+    /* Icon tap target - deeper press for icon buttons */
+    .tap-icon {
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        will-change: transform;
+        transition: transform 0.12s cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    .tap-icon:active {
+        transform: scale(0.92);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .tap-icon:hover {
+            transform: scale(1.08);
+        }
+        .tap-icon:active {
+            transform: scale(0.92);
+        }
+    }
+
+    /* Pill/chip tap target - for suggestion chips, tags */
+    .tap-pill {
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        will-change: transform;
+        transition:
+            transform 0.15s cubic-bezier(0.2, 0, 0.2, 1),
+            background-color 0.15s ease;
+    }
+
+    .tap-pill:active {
+        transform: scale(0.96);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .tap-pill:hover {
+            transform: scale(1.03);
+        }
+        .tap-pill:active {
+            transform: scale(0.96);
+        }
+    }
+
+    /* Reduced motion: disable scale animations, keep feedback via opacity */
+    @media (prefers-reduced-motion: reduce) {
+        .tap-target,
+        .tap-target-subtle,
+        .tap-target-deep,
+        .tap-icon,
+        .tap-pill {
+            transition: opacity 0.1s ease;
+            will-change: opacity;
+        }
+
+        .tap-target:active,
+        .tap-target-subtle:active,
+        .tap-target-deep:active,
+        .tap-icon:active,
+        .tap-pill:active {
+            transform: none;
+            opacity: 0.7;
+        }
+
+        .tap-target:hover,
+        .tap-icon:hover,
+        .tap-pill:hover {
+            transform: none;
+        }
+    }
+
+    /* Legacy ripple effect for button clicks (centered) */
     @keyframes ripple {
         0% {
             transform: translate(-50%, -50%) scale(0);

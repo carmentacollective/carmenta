@@ -1,10 +1,15 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
+import { createRipple, getTapPosition } from "@/lib/hooks/use-tap-feedback";
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all interactive-focus interactive-press-depth disabled:pointer-events-none disabled:opacity-50",
+    // Base: tap-target provides iOS-native tap feedback (scale, touch-action, etc.)
+    "tap-target inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all interactive-focus disabled:pointer-events-none disabled:opacity-50",
     {
         variants: {
             variant: {
@@ -16,8 +21,8 @@ const buttonVariants = cva(
                 secondary:
                     "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                 ghost: "hover:bg-accent hover:text-accent-foreground",
-                // Link variant: no press depth (would look weird on text links)
-                link: "text-primary underline-offset-4 hover:underline active:translate-y-0 active:shadow-none",
+                // Link variant: override tap-target active state
+                link: "text-primary underline-offset-4 hover:underline active:scale-100",
             },
             size: {
                 default: "h-10 px-4 py-2",
@@ -40,15 +45,97 @@ export interface ButtonProps
         React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
     asChild?: boolean;
+    /** Enable haptic feedback on iOS (default: true) */
+    haptic?: boolean;
+    /** Enable ripple effect on tap (default: false for buttons, they have solid backgrounds) */
+    ripple?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant, size, asChild = false, ...props }, ref) => {
+    (
+        {
+            className,
+            variant,
+            size,
+            asChild = false,
+            haptic = true,
+            ripple = false,
+            onMouseDown,
+            onTouchStart,
+            ...props
+        },
+        ref
+    ) => {
+        const internalRef = React.useRef<HTMLButtonElement>(null);
+
+        const handleTapStart = React.useCallback(
+            (
+                e:
+                    | React.MouseEvent<HTMLButtonElement>
+                    | React.TouchEvent<HTMLButtonElement>
+            ) => {
+                // Trigger haptic feedback on iOS
+                if (haptic) {
+                    triggerHaptic();
+                }
+
+                // Optionally create ripple effect (handles reduced motion internally)
+                if (ripple && internalRef.current) {
+                    const { x, y } = getTapPosition(e, internalRef.current);
+                    createRipple(internalRef.current, x, y, {
+                        color: "hsl(var(--primary-foreground) / 0.2)",
+                    });
+                }
+            },
+            [haptic, ripple]
+        );
+
+        const handleMouseDown = React.useCallback(
+            (e: React.MouseEvent<HTMLButtonElement>) => {
+                handleTapStart(e);
+                onMouseDown?.(e);
+            },
+            [handleTapStart, onMouseDown]
+        );
+
+        const handleTouchStart = React.useCallback(
+            (e: React.TouchEvent<HTMLButtonElement>) => {
+                handleTapStart(e);
+                onTouchStart?.(e);
+            },
+            [handleTapStart, onTouchStart]
+        );
+
         const Comp = asChild ? Slot : "button";
+
+        // For asChild, we can't add event handlers easily, so just return the slot
+        if (asChild) {
+            return (
+                <Comp
+                    className={cn(buttonVariants({ variant, size, className }))}
+                    ref={ref}
+                    {...props}
+                />
+            );
+        }
+
         return (
-            <Comp
+            <button
                 className={cn(buttonVariants({ variant, size, className }))}
-                ref={ref}
+                ref={(node) => {
+                    (
+                        internalRef as React.MutableRefObject<HTMLButtonElement | null>
+                    ).current = node;
+                    if (typeof ref === "function") {
+                        ref(node);
+                    } else if (ref) {
+                        (
+                            ref as React.MutableRefObject<HTMLButtonElement | null>
+                        ).current = node;
+                    }
+                }}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 {...props}
             />
         );
