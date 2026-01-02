@@ -58,7 +58,7 @@ import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 import { type DiscoveryItem } from "@/lib/discovery";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 import { getStreamContext } from "@/lib/streaming/stream-context";
-import { inngest } from "@/lib/inngest/client";
+import { startBackgroundResponse } from "@/lib/temporal/client";
 
 /**
  * Route segment config for Vercel
@@ -295,37 +295,34 @@ export async function POST(req: Request) {
         await updateStreamingStatus(connectionId!, "streaming");
 
         // ================================================================
-        // BACKGROUND MODE: Dispatch to Inngest for durable execution
+        // BACKGROUND MODE: Dispatch to Temporal for durable execution
         // ================================================================
-        // When concierge detects a long-running task, dispatch to Inngest
+        // When concierge detects a long-running task, dispatch to Temporal
         // which writes to the same resumable stream. Work survives browser
         // close, deploys, and connection drops.
         //
-        // Gracefully disabled if Inngest isn't configured - runs inline instead.
-        const inngestConfigured = !!process.env.INNGEST_EVENT_KEY;
-        if (conciergeResult.backgroundMode?.enabled && !inngestConfigured) {
+        // Gracefully disabled if Temporal isn't configured - runs inline instead.
+        const temporalConfigured = !!process.env.TEMPORAL_ADDRESS;
+        if (conciergeResult.backgroundMode?.enabled && !temporalConfigured) {
             logger.info(
                 { connectionId, reason: conciergeResult.backgroundMode.reason },
-                "Background mode requested but Inngest not configured, running inline"
+                "Background mode requested but Temporal not configured, running inline"
             );
         }
-        if (conciergeResult.backgroundMode?.enabled && inngestConfigured) {
+        if (conciergeResult.backgroundMode?.enabled && temporalConfigured) {
             const streamId = nanoid();
 
             // Save stream ID so client can resume
             await updateActiveStreamId(connectionId!, streamId);
 
-            // Dispatch to Inngest - payloads contain only IDs for security
-            await inngest.send({
-                name: "connection/background",
-                data: {
-                    connectionId: connectionId!,
-                    userId: dbUser.id,
-                    streamId,
-                    modelId: concierge.modelId,
-                    temperature: concierge.temperature,
-                    reasoning: concierge.reasoning,
-                },
+            // Dispatch to Temporal - payloads contain only IDs for security
+            await startBackgroundResponse({
+                connectionId: connectionId!,
+                userId: dbUser.id,
+                streamId,
+                modelId: concierge.modelId,
+                temperature: concierge.temperature,
+                reasoning: concierge.reasoning,
             });
 
             logger.info(
@@ -335,7 +332,7 @@ export async function POST(req: Request) {
                     userId: dbUser.id,
                     reason: conciergeResult.backgroundMode.reason,
                 },
-                "Dispatched to background mode"
+                "Dispatched to Temporal background mode"
             );
 
             // Build headers for background mode response

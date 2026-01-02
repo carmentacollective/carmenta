@@ -1063,3 +1063,245 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+
+// ============================================================================
+// SCHEDULED JOBS (Temporal Agent Workflows)
+// ============================================================================
+
+/**
+ * Job priority levels for notification urgency
+ */
+export const jobPriorityEnum = pgEnum("job_priority", [
+    "low",
+    "normal",
+    "high",
+    "urgent",
+]);
+
+/**
+ * Job run status
+ */
+export const jobRunStatusEnum = pgEnum("job_run_status", [
+    "pending",
+    "running",
+    "completed",
+    "failed",
+]);
+
+/**
+ * Scheduled Jobs - user-defined automated agent tasks
+ *
+ * These are the job definitions that users configure. Each job has:
+ * - A prompt (what the agent should do)
+ * - A schedule (when to run)
+ * - Integrations (which services to use)
+ * - Memory (state persisted between runs)
+ *
+ * Temporal handles the actual scheduling and execution.
+ * This table stores the job configuration and links to run history.
+ */
+export const scheduledJobs = pgTable(
+    "scheduled_jobs",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** Owner of this job */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Human-readable name for the job */
+        name: text("name").notNull(),
+
+        /** The prompt/instructions for the agent */
+        prompt: text("prompt").notNull(),
+
+        /**
+         * Cron expression for scheduling (in user's timezone)
+         * Examples: "0 7 * * *" (7am daily), "0 9 * * 1" (9am Monday)
+         */
+        scheduleCron: text("schedule_cron").notNull(),
+
+        /** User's timezone for schedule interpretation (e.g., "America/Los_Angeles") */
+        timezone: text("timezone").notNull().default("UTC"),
+
+        /** Which integrations the agent can use */
+        integrations: text("integrations")
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+
+        /**
+         * Persistent memory between runs
+         * Agents can store state here that persists across executions
+         */
+        memory: jsonb("memory").notNull().default({}),
+
+        /** Whether the job is active (Temporal schedule is running) */
+        isActive: boolean("is_active").notNull().default(true),
+
+        /** Temporal schedule ID for managing the schedule */
+        temporalScheduleId: text("temporal_schedule_id"),
+
+        /** Last successful run */
+        lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+
+        /** Next scheduled run (computed from cron) */
+        nextRunAt: timestamp("next_run_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** List jobs for a user */
+        index("scheduled_jobs_user_idx").on(table.userId),
+        /** Find active jobs for scheduling */
+        index("scheduled_jobs_active_idx").on(table.isActive, table.nextRunAt),
+    ]
+);
+
+/**
+ * Job Runs - execution history for scheduled jobs
+ *
+ * Each time a scheduled job executes, we record the run here.
+ * This provides visibility into what the agent did and any issues.
+ */
+export const jobRuns = pgTable(
+    "job_runs",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** The job that was executed */
+        jobId: uuid("job_id")
+            .references(() => scheduledJobs.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Run status */
+        status: jobRunStatusEnum("status").notNull().default("pending"),
+
+        /** Human-readable summary of what happened */
+        summary: text("summary"),
+
+        /** Full conversation history for debugging */
+        messages: jsonb("messages").notNull().default([]),
+
+        /** Error message if failed */
+        error: text("error"),
+
+        /** How many tool calls were made */
+        toolCallsExecuted: integer("tool_calls_executed").notNull().default(0),
+
+        /** How many notifications were sent */
+        notificationsSent: integer("notifications_sent").notNull().default(0),
+
+        /** Temporal workflow ID for debugging */
+        temporalWorkflowId: text("temporal_workflow_id"),
+
+        startedAt: timestamp("started_at", { withTimezone: true }),
+        completedAt: timestamp("completed_at", { withTimezone: true }),
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Run history for a job */
+        index("job_runs_job_idx").on(table.jobId, table.createdAt),
+        /** Find recent runs across all jobs for a user */
+        index("job_runs_created_idx").on(table.createdAt),
+    ]
+);
+
+/**
+ * Job Notifications - messages from agents to users
+ *
+ * When an agent finds something noteworthy during execution,
+ * it creates a notification here. These surface in the UI.
+ */
+export const jobNotifications = pgTable(
+    "job_notifications",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** User to notify */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Which job generated this notification */
+        jobId: uuid("job_id")
+            .references(() => scheduledJobs.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Which run generated this notification */
+        runId: uuid("run_id").references(() => jobRuns.id, { onDelete: "set null" }),
+
+        /** Notification title */
+        title: text("title").notNull(),
+
+        /** Notification body */
+        body: text("body").notNull(),
+
+        /** Priority level */
+        priority: jobPriorityEnum("priority").notNull().default("normal"),
+
+        /** Whether the user has seen this */
+        readAt: timestamp("read_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Unread notifications for a user */
+        index("job_notifications_user_unread_idx").on(table.userId, table.readAt),
+        /** Notifications for a job */
+        index("job_notifications_job_idx").on(table.jobId),
+    ]
+);
+
+/**
+ * Relations for scheduled jobs
+ */
+export const scheduledJobsRelations = relations(scheduledJobs, ({ one, many }) => ({
+    user: one(users, {
+        fields: [scheduledJobs.userId],
+        references: [users.id],
+    }),
+    runs: many(jobRuns),
+    notifications: many(jobNotifications),
+}));
+
+export const jobRunsRelations = relations(jobRuns, ({ one }) => ({
+    job: one(scheduledJobs, {
+        fields: [jobRuns.jobId],
+        references: [scheduledJobs.id],
+    }),
+}));
+
+export const jobNotificationsRelations = relations(jobNotifications, ({ one }) => ({
+    user: one(users, {
+        fields: [jobNotifications.userId],
+        references: [users.id],
+    }),
+    job: one(scheduledJobs, {
+        fields: [jobNotifications.jobId],
+        references: [scheduledJobs.id],
+    }),
+    run: one(jobRuns, {
+        fields: [jobNotifications.runId],
+        references: [jobRuns.id],
+    }),
+}));
+
+export type ScheduledJob = typeof scheduledJobs.$inferSelect;
+export type NewScheduledJob = typeof scheduledJobs.$inferInsert;
+
+export type JobRun = typeof jobRuns.$inferSelect;
+export type NewJobRun = typeof jobRuns.$inferInsert;
+
+export type JobNotification = typeof jobNotifications.$inferSelect;
+export type NewJobNotification = typeof jobNotifications.$inferInsert;

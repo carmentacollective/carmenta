@@ -34,6 +34,8 @@ services:
           name: carmenta-redis
           type: redis
           property: connectionString
+      - key: TEMPORAL_ADDRESS
+        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
 
   # Redis for resumable streams and caching
   - type: redis
@@ -43,8 +45,66 @@ services:
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
+  # Temporal Server - workflow orchestration engine
+  # Uses temporalio/auto-setup for automatic schema creation
+  # Note: No healthCheckPath - Temporal only exposes gRPC (port 7233), not HTTP
+  - type: web
+    name: temporal-server
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./docker/temporal-server/Dockerfile
+    envVars:
+      - key: DB
+        value: postgres12
+      - key: DB_PORT
+        value: "5432"
+      - key: POSTGRES_SEEDS
+        fromDatabase:
+          name: temporal-db
+          property: host
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: temporal-db
+          property: user
+      - key: POSTGRES_PWD
+        fromDatabase:
+          name: temporal-db
+          property: password
+      - key: TEMPORAL_ADDRESS
+        value: "0.0.0.0:7233"
+      - key: TEMPORAL_CORS_ORIGINS
+        value: "http://localhost:3000,https://carmenta.ai"
+
+  # Temporal Worker - executes scheduled agent workflows
+  - type: worker
+    name: temporal-worker
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build:worker
+    startCommand: node dist/worker/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TEMPORAL_ADDRESS
+        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
+      - key: DATABASE_URL
+        fromDatabase:
+          name: carmenta-db
+          property: connectionString
+      - key: OPENROUTER_API_KEY
+        sync: false
+
 databases:
   - name: carmenta-db
+    plan: starter
+    region: oregon
+    postgresMajorVersion: 16
+
+  # Separate database for Temporal's internal state
+  # Keeps Temporal's execution history isolated from app data
+  - name: temporal-db
     plan: starter
     region: oregon
     postgresMajorVersion: 16

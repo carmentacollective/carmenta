@@ -1,0 +1,12 @@
+# Dynamic configuration for development
+# https://docs.temporal.io/references/dynamic-configuration
+
+# Allow longer workflow execution timeouts for development
+limit.maxIDLength:
+  - value: 1000
+    constraints: {}
+
+# Enable search attributes
+system.enableActivityEagerExecution:
+  - value: true
+    constraints: {}

@@ -1,0 +1,60 @@
+# Docker Compose for Local Temporal Development
+#
+# Usage: pnpm dev:temporal
+#
+# This starts:
+# - PostgreSQL for Temporal's internal state
+# - Temporal Server with auto-setup
+# - Temporal UI for visibility
+#
+# Your worker runs locally (not in Docker) for fast iteration.
+
+services:
+  # PostgreSQL for Temporal's internal state
+  temporal-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with app DB
+    volumes:
+      - temporal-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Temporal Server
+  temporal:
+    image: temporalio/auto-setup:1.25.2
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=temporal-db
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    ports:
+      - "7233:7233"  # gRPC for workers
+    volumes:
+      - ./temporal-config:/etc/temporal/config/dynamicconfig
+
+  # Temporal UI
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+
+volumes:
+  temporal-db-data:
