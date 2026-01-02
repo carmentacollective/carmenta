@@ -33,7 +33,13 @@ interface MockHeaders {
     "X-Concierge-Temperature": string;
     "X-Concierge-Explanation": string;
     "X-Concierge-Reasoning": string;
+    // Standard SSE headers
     "Content-Type": string;
+    "Cache-Control": string;
+    Connection: string;
+    // AI SDK stream protocol version identifier (required for proper parsing)
+    "x-vercel-ai-ui-message-stream": string;
+    "x-accel-buffering": string;
 }
 
 /**
@@ -244,7 +250,13 @@ export class MockResponseBuilder {
             "X-Concierge-Temperature": String(this.temperature),
             "X-Concierge-Explanation": encodeURIComponent(this.explanation),
             "X-Concierge-Reasoning": encodeURIComponent(JSON.stringify(this.reasoning)),
+            // Standard SSE headers (matching AI SDK's UI_MESSAGE_STREAM_HEADERS)
             "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+            // AI SDK stream protocol version - required for client to parse correctly
+            "x-vercel-ai-ui-message-stream": "v1",
+            "x-accel-buffering": "no",
         };
 
         if (this.isNewConnection) {

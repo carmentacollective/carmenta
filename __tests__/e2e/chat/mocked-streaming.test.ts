@@ -54,6 +54,11 @@ test.describe("Chat with Mocked Streaming", () => {
         });
     });
 
+    test.afterEach(async ({ page }) => {
+        // Clear any route mocks to ensure test isolation
+        await page.unroute("**/api/connection");
+    });
+
     test("sends message and receives mocked response", async ({ page }) => {
         // Set up mock to intercept chat API
         const mockResponse = createMockResponse()
@@ -250,6 +255,11 @@ test.describe("Chat Error Handling", () => {
                 password: testUserPassword!,
             },
         });
+    });
+
+    test.afterEach(async ({ page }) => {
+        // Clear any route mocks to ensure test isolation
+        await page.unroute("**/api/connection");
     });
 
     test("handles API error gracefully", async ({ page }) => {
