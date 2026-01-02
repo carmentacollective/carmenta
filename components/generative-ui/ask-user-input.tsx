@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
-import { border } from "@/lib/design-tokens";
+import { glass, border } from "@/lib/design-tokens";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import type { OptionItem, AskUserInputOutput } from "@/lib/tools/post-response";
 import { useChatContext } from "@/components/connection/connect-runtime-provider";
