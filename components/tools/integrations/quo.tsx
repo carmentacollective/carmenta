@@ -13,7 +13,6 @@ import { ToolRenderer } from "../shared";
 interface QuoToolResultProps {
     toolCallId: string;
     status: ToolStatus;
-    action: string;
     input: Record<string, unknown>;
     output?: Record<string, unknown>;
     error?: string;

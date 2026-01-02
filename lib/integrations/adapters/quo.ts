@@ -567,12 +567,9 @@ export class QuoAdapter extends ServiceAdapter {
         const searchParams: Record<string, string> = {
             phoneNumberId,
             maxResults: Math.min(limit, 100).toString(),
+            // Participants must be comma-separated in the query string
+            participants: participants.join(","),
         };
-
-        // Participants must be comma-separated in the query string
-        if (participants?.length) {
-            searchParams.participants = participants.join(",");
-        }
 
         if (createdAfter) searchParams.createdAfter = createdAfter;
         if (createdBefore) searchParams.createdBefore = createdBefore;
