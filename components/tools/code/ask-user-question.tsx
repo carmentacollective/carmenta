@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useChatContext } from "@/components/connection/connect-runtime-provider";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/client-logger";
 
 interface QuestionOption {
     label: string;
@@ -262,6 +263,10 @@ export function AskUserQuestion({
                 });
             } else {
                 // Single select - submit immediately
+                logger.info(
+                    { toolCallId, label, questionIndex },
+                    "Single-select option clicked"
+                );
                 setAnsweredQuestions((prev) => new Set(prev).add(questionIndex));
                 append({
                     role: "user",
@@ -269,7 +274,7 @@ export function AskUserQuestion({
                 });
             }
         },
-        [answeredQuestions, append]
+        [answeredQuestions, append, toolCallId]
     );
 
     const handleMultiSelectSubmit = useCallback(
@@ -277,18 +282,26 @@ export function AskUserQuestion({
             const questionSelections = selections.get(questionIndex);
             if (!questionSelections || questionSelections.size === 0) return;
 
+            const selected = Array.from(questionSelections);
+            logger.info(
+                { toolCallId, selected, questionIndex },
+                "Multi-select submitted"
+            );
             setAnsweredQuestions((prev) => new Set(prev).add(questionIndex));
-            const selected = Array.from(questionSelections).join(", ");
             append({
                 role: "user",
-                content: selected,
+                content: selected.join(", "),
             });
         },
-        [selections, append]
+        [selections, append, toolCallId]
     );
 
     const handleOtherSubmit = useCallback(
         (text: string) => {
+            logger.info(
+                { toolCallId, responseLength: text.length },
+                "Other response submitted"
+            );
             // "Other" answers all questions at once
             setAnsweredQuestions(new Set(input?.questions?.map((_, idx) => idx) || []));
             append({
@@ -296,7 +309,7 @@ export function AskUserQuestion({
                 content: text,
             });
         },
-        [append, input?.questions]
+        [append, input?.questions, toolCallId]
     );
 
     // Show loading state while running
