@@ -10,10 +10,11 @@ services:
     name: carmenta
     runtime: node
     region: oregon
-    plan: starter
+    plan: standard
     buildCommand: ./scripts/render-deploy.sh
     startCommand: node .next/standalone/server.js
     healthCheckPath: /api/health
+    autoDeploy: true
     disk:
       name: carmenta-data
       mountPath: /data
@@ -22,7 +23,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        value: "3000"
       - key: DATA_DIR
         value: /data
       - key: DATABASE_URL
@@ -35,7 +36,7 @@ services:
           type: redis
           property: connectionString
       - key: TEMPORAL_ADDRESS
-        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
+        sync: false # Set manually in dashboard: temporal-server.internal:7233
 
   # Redis for resumable streams and caching
   - type: redis
@@ -47,13 +48,13 @@ services:
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
-  # Note: No healthCheckPath - Temporal only exposes gRPC (port 7233), not HTTP
   - type: web
     name: temporal-server
     runtime: docker
     region: oregon
     plan: starter
     dockerfilePath: ./docker/temporal-server/Dockerfile
+    autoDeploy: true
     envVars:
       - key: DB
         value: postgres12
@@ -61,15 +62,15 @@ services:
         value: "5432"
       - key: POSTGRES_SEEDS
         fromDatabase:
-          name: temporal-db
+          name: carmenta-db
           property: host
       - key: POSTGRES_USER
         fromDatabase:
-          name: temporal-db
+          name: carmenta-db
           property: user
       - key: POSTGRES_PWD
         fromDatabase:
-          name: temporal-db
+          name: carmenta-db
           property: password
       - key: TEMPORAL_ADDRESS
         value: "0.0.0.0:7233"
@@ -84,11 +85,12 @@ services:
     plan: starter
     buildCommand: pnpm install --frozen-lockfile && pnpm run build:worker
     startCommand: node dist/worker/index.js
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        sync: false # Set manually: temporal-server:7233 on Render, localhost:7233 locally
+        sync: false # Set manually in dashboard: temporal-server.internal:7233
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
@@ -98,13 +100,7 @@ services:
 
 databases:
   - name: carmenta-db
-    plan: starter
+    plan: basic-1gb
     region: oregon
-    postgresMajorVersion: 16
-
-  # Separate database for Temporal's internal state
-  # Keeps Temporal's execution history isolated from app data
-  - name: temporal-db
-    plan: starter
-    region: oregon
-    postgresMajorVersion: 16
+    postgresMajorVersion: 18
+    # Temporal shares this database - auto-setup creates separate schemas
