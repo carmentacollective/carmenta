@@ -25,6 +25,7 @@ import {
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport, generateId } from "ai";
 import { AlertCircle, RefreshCw, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
@@ -310,6 +311,7 @@ function parseErrorMessage(message: string | undefined): string {
 
     // Connection/network errors - user can fix
     if (
+        lowerMessage.includes("failed to fetch") ||
         lowerMessage.includes("fetch failed") ||
         lowerMessage.includes("network error") ||
         lowerMessage.includes("econnrefused")
@@ -431,6 +433,101 @@ interface ConnectRuntimeProviderProps {
 }
 
 /**
+ * Retry configuration for network errors.
+ * Used to gracefully handle transient failures during deploys.
+ */
+const RETRY_CONFIG = {
+    maxRetries: 3,
+    baseDelayMs: 1000, // 1s, 2s, 4s with exponential backoff
+    retryableErrors: [
+        "Failed to fetch",
+        "NetworkError",
+        "ECONNREFUSED",
+        "fetch failed",
+    ],
+};
+
+/**
+ * Check if an error is a retryable network error.
+ * We only retry network failures, NOT HTTP errors (4xx, 5xx).
+ */
+function isRetryableNetworkError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const message = error.message.toLowerCase();
+    return RETRY_CONFIG.retryableErrors.some((pattern) =>
+        message.includes(pattern.toLowerCase())
+    );
+}
+
+/**
+ * Fetch with retry for transient network errors.
+ * Handles deploy windows where the server briefly restarts.
+ * Shows toast notifications so users know we're working on it.
+ */
+async function fetchWithRetry(
+    input: RequestInfo | URL,
+    init: RequestInit | undefined,
+    logContext: { url: string; method: string }
+): Promise<Response> {
+    let lastError: Error | null = null;
+    let toastId: string | number | undefined;
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+        try {
+            const response = await fetch(input, init);
+            // If we were retrying and succeeded, dismiss the toast
+            if (toastId !== undefined) {
+                toast.success("Reconnected", { id: toastId, duration: 2000 });
+            }
+            return response;
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+
+            // Only retry on network errors, not other failures
+            if (!isRetryableNetworkError(error)) {
+                throw error;
+            }
+
+            // Don't retry after max attempts
+            if (attempt >= RETRY_CONFIG.maxRetries) {
+                logger.warn(
+                    { ...logContext, attempt, error: lastError.message },
+                    "All retry attempts exhausted"
+                );
+                if (toastId !== undefined) {
+                    toast.dismiss(toastId);
+                }
+                throw error;
+            }
+
+            // Exponential backoff: 1s, 2s, 4s
+            const delay = RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt);
+            logger.info(
+                { ...logContext, attempt: attempt + 1, delayMs: delay },
+                "🔄 Retrying after network error..."
+            );
+
+            // Show/update toast to let user know we're retrying
+            const message =
+                attempt === 0
+                    ? "Connection interrupted, reconnecting..."
+                    : `Still reconnecting... (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1})`;
+
+            if (toastId === undefined) {
+                toastId = toast.loading(message);
+            } else {
+                toast.loading(message, { id: toastId });
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+    }
+
+    // Should never reach here, but TypeScript needs it
+    throw lastError ?? new Error("Fetch failed");
+}
+
+/**
  * Custom fetch wrapper that injects connectionId, model overrides,
  * and extracts concierge headers from responses.
  *
@@ -541,7 +638,8 @@ function createFetchWrapper(
         input = url;
 
         try {
-            const response = await fetch(input, modifiedInit);
+            // Use retry wrapper to handle transient network errors during deploys
+            const response = await fetchWithRetry(input, modifiedInit, { url, method });
 
             if (!response.ok) {
                 let errorDetails: unknown = null;

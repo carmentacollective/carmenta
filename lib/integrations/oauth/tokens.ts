@@ -511,10 +511,20 @@ export async function getAccessToken(
                     );
                     return newToken;
                 } catch (error) {
-                    // Capture refresh failure for monitoring
+                    // Mark as expired regardless of error type
+                    await markAsExpired(integration.id, providerId, userEmail);
+
+                    // Expected OAuth failures (user revoked access, token expired)
+                    // These are NOT bugs - don't Sentry, just log and re-throw
+                    if (error instanceof ExpectedOAuthError) {
+                        // Already logged at WARN in refreshAccessToken
+                        throw error;
+                    }
+
+                    // Unexpected failures - capture to Sentry for investigation
                     logger.error(
                         { error, provider: providerId, userEmail },
-                        "Token refresh failed"
+                        "Token refresh failed unexpectedly"
                     );
                     Sentry.captureException(error, {
                         tags: {
@@ -528,8 +538,6 @@ export async function getAccessToken(
                         },
                     });
 
-                    // Mark as expired if refresh fails
-                    await markAsExpired(integration.id, providerId, userEmail);
                     throw error;
                 }
             } else {
@@ -546,6 +554,35 @@ export async function getAccessToken(
 }
 
 /**
+ * Expected OAuth errors that indicate user action required (not bugs).
+ * These should NOT be sent to Sentry - they're expected when:
+ * - User revoked access to the app
+ * - Refresh token expired naturally (Google: 6 months inactive)
+ * - User changed password
+ * - Admin revoked organization-wide access
+ */
+const EXPECTED_OAUTH_ERRORS = new Set([
+    "invalid_grant", // Refresh token invalid/expired/revoked
+    "invalid_token", // Token invalid
+    "unauthorized_client", // App no longer authorized
+    "access_denied", // User explicitly denied access during re-auth
+]);
+
+/**
+ * Error class for expected OAuth failures that shouldn't trigger Sentry.
+ * Used when refresh fails due to user action (revoked access, expired token).
+ */
+export class ExpectedOAuthError extends Error {
+    constructor(
+        message: string,
+        public readonly oauthError: string
+    ) {
+        super(message);
+        this.name = "ExpectedOAuthError";
+    }
+}
+
+/**
  * Refresh an access token using the refresh token.
  *
  * @param userEmail - User's email
@@ -553,6 +590,8 @@ export async function getAccessToken(
  * @param accountId - Account identifier
  * @param refreshToken - Current refresh token
  * @returns New access token
+ * @throws ExpectedOAuthError for expected failures (revoked access, expired token)
+ * @throws Error for unexpected failures (should be captured to Sentry)
  */
 async function refreshAccessToken(
     userEmail: string,
@@ -584,15 +623,67 @@ async function refreshAccessToken(
         body.append("client_secret", provider.clientSecret);
     }
 
-    const response = await ky
-        .post(provider.tokenUrl, {
-            headers,
-            body: body.toString(),
-        })
-        .json<Record<string, unknown>>();
+    let response: Record<string, unknown>;
+    try {
+        response = await ky
+            .post(provider.tokenUrl, {
+                headers,
+                body: body.toString(),
+            })
+            .json<Record<string, unknown>>();
+    } catch (error) {
+        // Handle HTTP errors - check if it's an expected OAuth failure
+        if (error instanceof HTTPError) {
+            let errorBody: Record<string, unknown> | null = null;
+            try {
+                errorBody = await error.response.json<Record<string, unknown>>();
+            } catch {
+                // Can't parse body - treat as unexpected error
+            }
+
+            // Check for expected OAuth errors (user revoked access, token expired, etc.)
+            if (errorBody && isOAuthError(errorBody)) {
+                const oauthError = errorBody as OAuthError;
+                if (EXPECTED_OAUTH_ERRORS.has(oauthError.error)) {
+                    // Expected failure - log at WARN, don't Sentry
+                    logger.warn(
+                        {
+                            provider: providerId,
+                            userEmail,
+                            accountId,
+                            oauthError: oauthError.error,
+                            description: oauthError.error_description,
+                        },
+                        "⚠️ Token refresh failed - user needs to reconnect"
+                    );
+                    throw new ExpectedOAuthError(
+                        `Connection expired - please reconnect your ${providerId} account`,
+                        oauthError.error
+                    );
+                }
+            }
+
+            // Unexpected OAuth error - re-throw to be captured by Sentry
+            throw error;
+        }
+
+        // Network or other error - re-throw
+        throw error;
+    }
 
     if (isOAuthError(response)) {
         const error = response as OAuthError;
+        // Check if this is an expected error in a 200 response (rare but possible)
+        if (EXPECTED_OAUTH_ERRORS.has(error.error)) {
+            logger.warn(
+                { provider: providerId, userEmail, accountId, oauthError: error.error },
+                "⚠️ Token refresh returned expected error - user needs to reconnect"
+            );
+            throw new ExpectedOAuthError(
+                `Connection expired - please reconnect your ${providerId} account`,
+                error.error
+            );
+        }
         throw new Error(
             `Token refresh failed: ${error.error}${error.error_description ? ` - ${error.error_description}` : ""}`
         );
