@@ -339,19 +339,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                             },
                             "Final transcript segment"
                         );
-                    } else if (speechFinal && text) {
-                        // speech_final without is_final: commit this as final to prevent loss
-                        // This can happen when endpointing detects pause before full processing
-                        finalTranscriptRef.current +=
-                            (finalTranscriptRef.current ? " " : "") + text;
-                        interimTranscriptRef.current = "";
-
-                        logger.debug(
-                            { text, finalSoFar: finalTranscriptRef.current },
-                            "Committed speech_final as final"
-                        );
                     } else {
-                        // Update interim transcript (replaces previous interim for same utterance)
+                        // Interim result - update display but don't commit
+                        // speech_final just means user paused, is_final will follow shortly
                         interimTranscriptRef.current = text;
                     }
 
