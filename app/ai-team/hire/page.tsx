@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-    Sparkles,
-    Send,
-    ArrowLeft,
-    Clock,
-    CheckCircle2,
-    Bot,
-    User,
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Send, ArrowLeft, Clock, CheckCircle2, Square } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
+import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -77,7 +73,158 @@ function parsePlaybook(content: string): Playbook | null {
 }
 
 /**
+ * User message bubble - reuses styling from HoloThread
+ */
+function UserMessageBubble({ content }: { content: string }) {
+    return (
+        <div className="my-3 flex w-full justify-end sm:my-4">
+            <div className="max-w-[85%]">
+                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3">
+                    <p className="text-sm whitespace-pre-wrap">{content}</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Assistant message bubble - reuses styling and components from HoloThread
+ */
+function AssistantMessageBubble({
+    content,
+    isStreaming = false,
+}: {
+    content: string;
+    isStreaming?: boolean;
+}) {
+    return (
+        <div className="my-3 flex w-full sm:my-4">
+            <div className="relative max-w-[85%]">
+                {/* Carmenta avatar - positioned outside bubble */}
+                <div className="absolute top-2 -left-10 hidden sm:block">
+                    <CarmentaAvatar
+                        size="sm"
+                        state={isStreaming ? "speaking" : "idle"}
+                    />
+                </div>
+
+                <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3">
+                    <MarkdownRenderer content={content} isStreaming={isStreaming} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Thinking indicator - shown while waiting for response
+ */
+function ThinkingBubble() {
+    return (
+        <div className="my-3 flex w-full sm:my-4">
+            <div className="relative">
+                <div className="absolute top-2 -left-10 hidden sm:block">
+                    <CarmentaAvatar size="sm" state="thinking" />
+                </div>
+                <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3">
+                    <div className="text-foreground/60 flex items-center gap-2 text-sm">
+                        <Sparkles className="h-4 w-4 animate-pulse" />
+                        <span>Thinking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Simple composer for wizard chat - much simpler than main Composer
+ */
+function WizardComposer({
+    value,
+    onChange,
+    onSubmit,
+    isLoading,
+    placeholder = "Describe what you need...",
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    onSubmit: () => void;
+    isLoading: boolean;
+    placeholder?: string;
+}) {
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    // Focus input on mount
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        const textarea = inputRef.current;
+        if (!textarea) return;
+        textarea.style.height = "auto";
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }, [value]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (value.trim() && !isLoading) {
+                onSubmit();
+            }
+        }
+    };
+
+    return (
+        <div className="flex gap-2">
+            <textarea
+                ref={inputRef}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                className={cn(
+                    "w-full flex-1 resize-none",
+                    "max-h-48 min-h-11",
+                    "px-4 py-2.5",
+                    "text-base leading-5 outline-none",
+                    "text-foreground/95 placeholder:text-foreground/40",
+                    "rounded-xl transition-all",
+                    "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
+                    "border-foreground/8 focus:border-foreground/35 border"
+                )}
+                rows={1}
+                disabled={isLoading}
+            />
+            <button
+                type="button"
+                onClick={onSubmit}
+                disabled={isLoading || !value.trim()}
+                className={cn(
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all",
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
+                    "disabled:cursor-not-allowed disabled:opacity-50"
+                )}
+            >
+                {isLoading ? (
+                    <Square className="h-4 w-4" />
+                ) : (
+                    <Send className="h-4 w-4" />
+                )}
+            </button>
+        </div>
+    );
+}
+
+/**
  * Hiring wizard page - chat-style interface
+ *
+ * Uses shared components from the main chat:
+ * - MarkdownRenderer for message content
+ * - CarmentaAvatar for assistant identity
+ * - Message bubble styling patterns
  */
 export default function HirePage() {
     const router = useRouter();
@@ -100,20 +247,13 @@ What can we help you with?`,
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const [isHiring, setIsHiring] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, isLoading]);
 
-    // Focus input on mount
-    useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = useCallback(async () => {
         if (!input.trim() || isLoading) return;
 
         const userMessage: Message = {
@@ -179,7 +319,7 @@ What can we help you with?`,
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [input, isLoading, messages]);
 
     const handleHire = async () => {
         if (!playbook) return;
@@ -229,13 +369,6 @@ What can we help you with?`,
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-        }
-    };
-
     return (
         <StandardPageLayout maxWidth="standard" contentClassName="py-8">
             <div className="flex h-[calc(100vh-12rem)] flex-col">
@@ -263,84 +396,51 @@ What can we help you with?`,
                 <div className="flex flex-1 gap-6 overflow-hidden">
                     {/* Chat panel */}
                     <div className="border-foreground/10 bg-foreground/[0.01] flex flex-1 flex-col rounded-2xl border">
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4">
-                            <div className="space-y-4">
+                        {/* Messages - scrollable area with padding for avatar */}
+                        <div className="flex-1 overflow-y-auto px-4 py-4 sm:pl-14">
+                            <AnimatePresence mode="popLayout">
                                 {messages.map((message) => (
-                                    <div
+                                    <motion.div
                                         key={message.id}
-                                        className={`flex gap-3 ${message.role === "user" ? "justify-end" : ""}`}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.2 }}
                                     >
-                                        {message.role === "assistant" && (
-                                            <div className="bg-primary/20 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
-                                                <Bot className="text-primary h-4 w-4" />
-                                            </div>
+                                        {message.role === "user" ? (
+                                            <UserMessageBubble
+                                                content={message.content}
+                                            />
+                                        ) : (
+                                            <AssistantMessageBubble
+                                                content={message.content}
+                                            />
                                         )}
-                                        <div
-                                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                                                message.role === "user"
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "bg-foreground/5 text-foreground"
-                                            }`}
-                                        >
-                                            <p className="text-sm whitespace-pre-wrap">
-                                                {message.content}
-                                            </p>
-                                        </div>
-                                        {message.role === "user" && (
-                                            <div className="bg-foreground/10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
-                                                <User className="text-foreground/60 h-4 w-4" />
-                                            </div>
-                                        )}
-                                    </div>
+                                    </motion.div>
                                 ))}
+                            </AnimatePresence>
 
-                                {isLoading && (
-                                    <div className="flex gap-3">
-                                        <div className="bg-primary/20 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
-                                            <Sparkles className="text-primary h-4 w-4 animate-pulse" />
-                                        </div>
-                                        <div className="bg-foreground/5 rounded-2xl px-4 py-3">
-                                            <p className="text-foreground/60 text-sm">
-                                                Thinking...
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                <div ref={messagesEndRef} />
-                            </div>
+                            {isLoading && <ThinkingBubble />}
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input */}
-                        <form
-                            onSubmit={handleSubmit}
-                            className="border-foreground/10 border-t p-4"
-                        >
-                            <div className="flex gap-2">
-                                <textarea
-                                    ref={inputRef}
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Describe what you need..."
-                                    className="bg-foreground/5 text-foreground placeholder:text-foreground/40 focus:ring-primary flex-1 resize-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:outline-none"
-                                    rows={2}
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={isLoading || !input.trim()}
-                                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-4 transition-colors disabled:opacity-50"
-                                >
-                                    <Send className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </form>
+                        <div className="border-foreground/10 border-t p-4">
+                            <WizardComposer
+                                value={input}
+                                onChange={setInput}
+                                onSubmit={handleSubmit}
+                                isLoading={isLoading}
+                            />
+                        </div>
                     </div>
 
                     {/* Playbook card - shown when generated */}
                     {playbook && (
-                        <div className="border-foreground/10 bg-foreground/[0.01] w-80 flex-shrink-0 rounded-2xl border p-6">
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="border-foreground/10 bg-foreground/[0.01] w-80 flex-shrink-0 rounded-2xl border p-6"
+                        >
                             <div className="mb-6 flex items-center gap-2">
                                 <CheckCircle2 className="text-primary h-5 w-5" />
                                 <h2 className="text-foreground font-medium">
@@ -417,7 +517,7 @@ What can we help you with?`,
                                     </>
                                 )}
                             </button>
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </div>
