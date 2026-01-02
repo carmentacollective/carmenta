@@ -16,6 +16,9 @@ export default function manifest(): MetadataRoute.Manifest {
             "Partnership, not tool-use. Claude, GPT, Gemini, Perplexity, Grok—with memory that persists, service connectivity that works, and an AI team that anticipates your needs.",
         start_url: "/",
         display: "standalone",
+        // Window Controls Overlay for native desktop titlebar experience
+        // Falls back to standalone on unsupported browsers
+        display_override: ["window-controls-overlay"],
         background_color: "#0a0a0a",
         theme_color: "#6366f1",
         orientation: "portrait-primary",

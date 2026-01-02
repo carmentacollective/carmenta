@@ -559,6 +559,22 @@
         /* Prevent overscroll bounce on iOS - keeps chat contained */
         overscroll-behavior: none;
     }
+
+    /*
+     * Window Controls Overlay (WCO) Support
+     *
+     * When running as a desktop PWA with WCO enabled, we render a custom titlebar.
+     * This media query applies padding to body content to avoid the titlebar.
+     * The titlebar is fixed-position, so content needs to be pushed down.
+     *
+     * @see components/pwa/wco-titlebar.tsx
+     * @see https://web.dev/articles/window-controls-overlay
+     */
+    @media (display-mode: window-controls-overlay) {
+        body {
+            padding-top: env(titlebar-area-height, 40px);
+        }
+    }
 }
 
 @layer components {

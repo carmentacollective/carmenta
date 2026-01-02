@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import { ThemeSwitcher, UserAuthButton } from "@/components/ui";
 import { InteractiveLogo } from "@/components/delight/interactive-logo";
+import { useWindowControlsOverlay } from "@/lib/hooks/use-window-controls-overlay";
 
 interface SiteHeaderProps {
     /**
@@ -22,12 +25,22 @@ interface SiteHeaderProps {
  * Consistent site header across all pages.
  * Transparent header with glassmorphism effect.
  * Maintains pixel-perfect alignment and spacing.
+ *
+ * When WCO (Window Controls Overlay) is active, this header is hidden
+ * to avoid duplication with the WcoTitlebar component.
  */
 export function SiteHeader({
     rightContent,
     bordered: _bordered = false,
     showThemeSwitcher = false,
 }: SiteHeaderProps) {
+    const isWcoActive = useWindowControlsOverlay();
+
+    // Hide when WCO titlebar is shown to avoid duplicate controls
+    if (isWcoActive) {
+        return null;
+    }
+
     return (
         <header className="flex items-center justify-between px-6 py-4">
             <Link
