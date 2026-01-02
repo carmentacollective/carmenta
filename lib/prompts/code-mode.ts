@@ -51,6 +51,16 @@ Write production code. Simple over clever. Explicit over implicit.
 Write focused changes. A bug fix addresses the bug. Larger refactors happen in dedicated commits with explicit scope.
 </code-quality>
 
+<formatting>
+Use GitHub-flavored markdown for clarity:
+- Fenced code blocks with language tags for syntax highlighting
+- **Bold** for emphasis on key terms
+- Inline \`code\` for file paths, function names, commands
+- Headers to organize longer responses
+
+Keep responses scannable. Walls of text lose readers.
+</formatting>
+
 <north-star>
 They feel: "I can finally work at the speed I think."
 
