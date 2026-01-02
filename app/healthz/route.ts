@@ -55,12 +55,12 @@ async function getRedisClient(): Promise<RedisClientType | null> {
         return redisConnecting;
     }
 
-    redisConnecting = (async () => {
+    redisConnecting = (async (): Promise<RedisClientType | null> => {
         try {
             const client = createClient({ url: redisUrl });
             await client.connect();
-            redisClient = client;
-            return client;
+            redisClient = client as RedisClientType;
+            return client as RedisClientType;
         } finally {
             redisConnecting = null;
         }
@@ -89,12 +89,16 @@ async function checkRedis(): Promise<CheckResult> {
     }
 
     try {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Redis health check timeout")), 5000)
+        );
+
         const client = await getRedisClient();
         if (!client) {
             return "skipped";
         }
 
-        const pong = await client.ping();
+        const pong = await Promise.race([client.ping(), timeoutPromise]);
         if (pong !== "PONG") {
             throw new Error(`Unexpected PING response: ${pong}`);
         }
@@ -112,8 +116,18 @@ async function checkTemporal(): Promise<CheckResult> {
     }
 
     try {
-        const connection = await Connection.connect({ address });
-        await connection.close();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Temporal health check timeout")), 5000)
+        );
+
+        // Creates new connection per check - acceptable overhead since this is only
+        // called by Sentry Uptime (5min intervals), not Render's frequent liveness checks
+        const connectPromise = (async () => {
+            const connection = await Connection.connect({ address });
+            await connection.close();
+        })();
+
+        await Promise.race([connectPromise, timeoutPromise]);
         return "ok";
     } catch (error) {
         logger.error({ error }, "Temporal health check failed");

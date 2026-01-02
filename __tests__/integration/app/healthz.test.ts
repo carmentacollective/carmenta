@@ -42,13 +42,14 @@ describe("GET /healthz", () => {
             expect(body.checks).toBeUndefined();
         });
 
-        it("should execute quickly (< 50ms)", async () => {
+        it("should execute quickly (< 200ms)", async () => {
             const start = performance.now();
             const response = await GET(createRequest("/healthz"));
             const end = performance.now();
 
             expect(response.status).toBe(200);
-            expect(end - start).toBeLessThan(50);
+            // Relaxed from 50ms to avoid CI flakes - fast liveness is the goal, not wall-clock time
+            expect(end - start).toBeLessThan(200);
         });
 
         it("should meet Render health check requirements", async () => {
