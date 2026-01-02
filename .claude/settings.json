@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "Generated with Carmenta\n\nCo-Authored-By: Carmenta <code@carmenta.ai>",
+    "pr": "Generated with Carmenta"
+  },
   "hooks": {
     "PreToolUse": [
       {
