@@ -382,6 +382,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                     finalTranscriptRef.current +=
                         (finalTranscriptRef.current ? " " : "") +
                         interimTranscriptRef.current;
+                    lastCommittedTextRef.current = interimTranscriptRef.current;
                     const combined = finalTranscriptRef.current;
                     interimTranscriptRef.current = "";
 
@@ -448,6 +449,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         setTranscript("");
         finalTranscriptRef.current = "";
         interimTranscriptRef.current = "";
+        lastCommittedTextRef.current = "";
     }, []);
 
     // Cleanup on unmount
