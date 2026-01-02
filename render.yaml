@@ -36,7 +36,7 @@ services:
           type: redis
           property: connectionString
       - key: TEMPORAL_ADDRESS
-        sync: false # Set manually: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server.internal:7233
 
   # Redis for resumable streams and caching
   - type: redis
@@ -90,13 +90,16 @@ services:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        sync: false # Set manually: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server.internal:7233
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
           property: connectionString
       - key: OPENROUTER_API_KEY
-        sync: false
+        fromService:
+          name: carmenta-web
+          type: web
+          envVarKey: OPENROUTER_API_KEY
 
 databases:
   - name: carmenta-db
