@@ -13,7 +13,7 @@ services:
     plan: standard
     buildCommand: ./scripts/render-deploy.sh
     startCommand: node .next/standalone/server.js
-    healthCheckPath: /healthz # Verifies DB connectivity before routing traffic
+    healthCheckPath: /healthz # Liveness only - DB down shouldn't trigger restart
     autoDeploy: true
     previews:
       generation: manual # Trigger previews manually, not on every PR
