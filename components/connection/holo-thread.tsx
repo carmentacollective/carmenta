@@ -748,7 +748,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 <QuoToolResult
                     toolCallId={part.toolCallId}
                     status={status}
-                    action={(input?.action as string) ?? "unknown"}
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Quo request failed")}
