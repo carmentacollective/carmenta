@@ -13,20 +13,16 @@ services:
     plan: standard
     buildCommand: ./scripts/render-deploy.sh
     startCommand: node .next/standalone/server.js
-    healthCheckPath: /healthz
+    healthCheckPath: /healthz # Verifies DB connectivity before routing traffic
     autoDeploy: true
-    scaling:
-      minInstances: 1
-      maxInstances: 3
-      targetCPUPercent: 70
-      targetMemoryPercent: 80
+    # Note: scaling not available for disk-backed services
     buildFilter:
       ignoredPaths:
-        - knowledge/**
+        - knowledge/** # Don't rebuild for docs-only changes
     disk:
       name: carmenta-data
       mountPath: /data
-      sizeGB: 10
+      sizeGB: 10 # Persistent storage for user workspaces (/data/workspaces/)
     envVars:
       - key: NODE_ENV
         value: production
@@ -44,15 +40,15 @@ services:
           type: redis
           property: connectionString
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server.internal:7233 # .internal = Render private network
 
   # Redis for resumable streams and caching
   - type: redis
     name: carmenta-redis
     region: oregon
     plan: starter
-    maxmemoryPolicy: volatile-ttl
-    ipAllowList: []
+    maxmemoryPolicy: volatile-ttl # Evict keys with TTL first when memory full
+    ipAllowList: [] # Empty = internal only (blocks all external connections)
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
@@ -65,7 +61,7 @@ services:
     autoDeploy: true
     envVars:
       - key: DB
-        value: postgres12
+        value: postgres12 # Temporal's driver name for PostgreSQL 12+
       - key: DB_PORT
         value: "5432"
       - key: POSTGRES_SEEDS
@@ -81,7 +77,7 @@ services:
           name: carmenta-db
           property: password
       - key: TEMPORAL_ADDRESS
-        value: "0.0.0.0:7233"
+        value: "0.0.0.0:7233" # Listen on all interfaces for worker connections
       - key: TEMPORAL_CORS_ORIGINS
         value: "http://localhost:3000,https://carmenta.ai"
 
@@ -98,7 +94,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server.internal:7233 # Connect via Render private network
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
@@ -107,7 +103,7 @@ services:
         fromService:
           name: carmenta-web
           type: web
-          envVarKey: OPENROUTER_API_KEY
+          envVarKey: OPENROUTER_API_KEY # Shared from main service (single source of truth)
 
 databases:
   - name: carmenta-db
