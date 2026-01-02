@@ -327,6 +327,11 @@ function IntegrationsContent() {
                 tags: { component: "integrations-page", action: "test_integration" },
                 extra: { serviceId, accountId },
             });
+            analytics.integration.testFailed({
+                serviceId,
+                serviceName: service?.service.name ?? serviceId,
+                errorMessage: error instanceof Error ? error.message : "Test failed",
+            });
             setStatusMessages((prev) => {
                 const next = new Map(prev);
                 next.set(serviceId, {
@@ -401,6 +406,15 @@ function IntegrationsContent() {
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "set_default" },
                 extra: { serviceId, accountId },
+            });
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(serviceId, {
+                    type: "error",
+                    text: "Couldn't set default",
+                    accountId,
+                });
+                return next;
             });
         }
     };
