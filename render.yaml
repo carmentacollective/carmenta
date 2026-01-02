@@ -41,11 +41,10 @@ services:
           type: redis
           property: connectionString
       # TEMPORAL_ADDRESS controls background mode availability:
-      # - Remove this to disable background mode (requests run inline)
-      # - Set to your Temporal server to enable durable background execution
-      # Falls back to inline gracefully if Temporal is unavailable
+      # - Unset/remove to disable background mode (requests run inline)
+      # - Set to Temporal server address to enable durable background execution
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server:7233
 
   # Redis for resumable streams and caching
   - type: redis
@@ -57,7 +56,7 @@ services:
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
-  # Private service - accessible via carmenta-temporal-server.internal:7233
+  # Private service - accessible via carmenta-temporal-server:7233
   - type: pserv
     name: carmenta-temporal-server
     runtime: docker
@@ -66,6 +65,8 @@ services:
     dockerfilePath: ./docker/temporal-server/Dockerfile
     autoDeploy: true
     envVars:
+      - key: BIND_ON_IP
+        value: "0.0.0.0" # Listen on all interfaces (required for private network access)
       - key: DB
         value: postgres12 # Temporal's driver name for PostgreSQL 12+
       - key: DB_PORT
@@ -98,7 +99,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        value: carmenta-temporal-server:7233
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db

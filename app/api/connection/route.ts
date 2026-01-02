@@ -58,7 +58,10 @@ import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 import { type DiscoveryItem } from "@/lib/discovery";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 import { getStreamContext } from "@/lib/streaming/stream-context";
-import { startBackgroundResponse } from "@/lib/temporal/client";
+import {
+    isBackgroundModeEnabled,
+    startBackgroundResponse,
+} from "@/lib/temporal/client";
 
 /**
  * Route segment config for Vercel
@@ -302,7 +305,7 @@ export async function POST(req: Request) {
         // close, deploys, and connection drops.
         //
         // Gracefully disabled if Temporal isn't configured - runs inline instead.
-        const temporalConfigured = !!process.env.TEMPORAL_ADDRESS;
+        const temporalConfigured = isBackgroundModeEnabled();
         if (conciergeResult.backgroundMode?.enabled && !temporalConfigured) {
             logger.info(
                 { connectionId, reason: conciergeResult.backgroundMode.reason },
