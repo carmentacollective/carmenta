@@ -231,7 +231,7 @@ export function FilePreview({ file, repo, onClose }: FilePreviewProps) {
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="border-border bg-background relative mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border shadow-2xl"
+                    className="border-border bg-background relative mx-0 flex max-h-[85dvh] w-full max-w-4xl flex-col overflow-hidden rounded-none border shadow-2xl sm:mx-4 sm:max-h-[80vh] sm:rounded-xl"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -274,7 +274,7 @@ export function FilePreview({ file, repo, onClose }: FilePreviewProps) {
                                 variant="ghost"
                                 size="icon"
                                 onClick={onClose}
-                                className="h-8 w-8"
+                                className="h-11 w-11 sm:h-8 sm:w-8"
                             >
                                 <X className="h-4 w-4" />
                             </Button>

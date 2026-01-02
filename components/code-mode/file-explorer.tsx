@@ -36,10 +36,16 @@ export function FileExplorer() {
 
     // Tree state
     const [rootFiles, setRootFiles] = useState<FileEntry[]>([]);
-    const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+    // Dual expand state: preserve user's state during search
+    const [expandedDirs, setExpandedDirs] = useState<{
+        unfiltered: Set<string>; // User's actual expand state
+        filtered: Set<string>; // Temporary expansions for search
+    }>({ unfiltered: new Set(), filtered: new Set() });
     const [childrenCache, setChildrenCache] = useState<Map<string, FileEntry[]>>(
         new Map()
     );
+    // Track if we're in search mode
+    const isSearching = searchQuery.trim().length > 0;
 
     // Search debounce
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,18 +131,42 @@ export function FileExplorer() {
         [repoSlug]
     );
 
-    // Toggle directory expansion
-    const toggleDir = useCallback((path: string) => {
-        setExpandedDirs((prev) => {
-            const next = new Set(prev);
-            if (next.has(path)) {
-                next.delete(path);
-            } else {
-                next.add(path);
-            }
-            return next;
-        });
-    }, []);
+    // Toggle directory expansion (updates correct state based on search mode)
+    const toggleDir = useCallback(
+        (path: string) => {
+            setExpandedDirs((prev) => {
+                if (isSearching) {
+                    // During search, modify filtered state
+                    const next = new Set(prev.filtered);
+                    if (next.has(path)) {
+                        next.delete(path);
+                    } else {
+                        next.add(path);
+                    }
+                    return { ...prev, filtered: next };
+                } else {
+                    // Normal mode, modify unfiltered state
+                    const next = new Set(prev.unfiltered);
+                    if (next.has(path)) {
+                        next.delete(path);
+                    } else {
+                        next.add(path);
+                    }
+                    return { ...prev, unfiltered: next };
+                }
+            });
+        },
+        [isSearching]
+    );
+
+    // Get current expanded dirs based on search mode
+    const currentExpandedDirs = useMemo(() => {
+        if (isSearching) {
+            // Merge: show unfiltered + filtered during search
+            return new Set([...expandedDirs.unfiltered, ...expandedDirs.filtered]);
+        }
+        return expandedDirs.unfiltered;
+    }, [isSearching, expandedDirs]);
 
     // Handle file selection
     const handleSelectFile = useCallback((file: FileEntry) => {
@@ -164,18 +194,31 @@ export function FileExplorer() {
                         allFiles.push(...children);
                     });
 
-                    // Auto-expand matching directories
+                    // Auto-expand matching directories into filtered state
                     const pathsToExpand = getExpandedPathsForSearch(allFiles, value);
-                    setExpandedDirs((prev) => new Set([...prev, ...pathsToExpand]));
+                    setExpandedDirs((prev) => ({
+                        ...prev,
+                        filtered: new Set(pathsToExpand),
+                    }));
                 }, 300);
+            } else {
+                // Clear filtered state when search is empty
+                setExpandedDirs((prev) => ({
+                    ...prev,
+                    filtered: new Set(),
+                }));
             }
         },
         [rootFiles, childrenCache]
     );
 
-    // Clear search
+    // Clear search (restores original expand state)
     const clearSearch = useCallback(() => {
         setSearchQuery("");
+        setExpandedDirs((prev) => ({
+            ...prev,
+            filtered: new Set(),
+        }));
     }, []);
 
     // Load root when expanded
@@ -225,8 +268,8 @@ export function FileExplorer() {
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={cn(
-                        "flex w-full items-center justify-between px-4 py-2 transition-colors",
-                        "hover:bg-foreground/5 sm:px-5"
+                        "flex w-full items-center justify-between px-4 py-3 transition-colors",
+                        "hover:bg-foreground/5 sm:px-5 sm:py-2"
                     )}
                 >
                     <div className="text-foreground/70 flex items-center gap-2 text-sm font-medium">
@@ -275,9 +318,9 @@ export function FileExplorer() {
                                     {searchQuery && (
                                         <button
                                             onClick={clearSearch}
-                                            className="hover:bg-foreground/10 absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5"
+                                            className="hover:bg-foreground/10 absolute top-1/2 right-1 -translate-y-1/2 rounded p-2"
                                         >
-                                            <X className="text-muted-foreground h-3.5 w-3.5" />
+                                            <X className="text-muted-foreground h-4 w-4" />
                                         </button>
                                     )}
                                 </div>
@@ -286,7 +329,7 @@ export function FileExplorer() {
                                     size="icon"
                                     onClick={loadRootDirectory}
                                     disabled={isLoading}
-                                    className="h-8 w-8 shrink-0"
+                                    className="h-11 w-11 shrink-0 sm:h-8 sm:w-8"
                                     title="Refresh"
                                 >
                                     <RefreshCw
@@ -298,8 +341,8 @@ export function FileExplorer() {
                                 </Button>
                             </div>
 
-                            {/* File tree */}
-                            <div className="max-h-64 overflow-y-auto px-2 pb-2 sm:max-h-80">
+                            {/* File tree - use dvh for iOS Safari dynamic viewport */}
+                            <div className="max-h-[40dvh] overflow-y-auto px-2 pb-2 sm:max-h-80">
                                 {isLoading && rootFiles.length === 0 ? (
                                     <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
                                         Loading files...
@@ -315,7 +358,7 @@ export function FileExplorer() {
                                         files={filteredFiles}
                                         selectedPath={selectedFile?.path}
                                         onSelectFile={handleSelectFile}
-                                        expandedDirs={expandedDirs}
+                                        expandedDirs={currentExpandedDirs}
                                         onToggleDir={toggleDir}
                                         loadChildren={loadChildren}
                                         childrenCache={childrenCache}

@@ -7,7 +7,15 @@
  * Supports expand/collapse, file selection, and keyboard navigation.
  */
 
-import { useCallback, useState, useMemo, memo, type KeyboardEvent } from "react";
+import {
+    useCallback,
+    useState,
+    useMemo,
+    memo,
+    useRef,
+    useEffect,
+    type KeyboardEvent,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -46,6 +54,12 @@ interface FileTreeProps {
     searchQuery?: string;
     /** Current indentation level */
     level?: number;
+    /** Currently focused path (for keyboard navigation) */
+    focusedPath?: string | null;
+    /** Callback when focus changes */
+    onFocusChange?: (path: string | null) => void;
+    /** Whether this is the root level (handles keyboard events) */
+    isRoot?: boolean;
 }
 
 /**
@@ -178,21 +192,25 @@ const FileTreeItem = memo(function FileTreeItem({
     isSelected,
     isExpanded,
     isLoading,
+    isFocused,
     onSelect,
     onToggle,
     searchQuery,
     level = 0,
     children,
+    itemRef,
 }: {
     file: FileEntry;
     isSelected: boolean;
     isExpanded: boolean;
     isLoading: boolean;
+    isFocused: boolean;
     onSelect: () => void;
     onToggle: () => void;
     searchQuery?: string;
     level?: number;
     children?: React.ReactNode;
+    itemRef?: React.RefObject<HTMLButtonElement | null>;
 }) {
     const iconColor = getFileIconColor(file);
     const isDirectory = file.type === "directory";
@@ -223,20 +241,33 @@ const FileTreeItem = memo(function FileTreeItem({
         [handleClick, isDirectory, isExpanded, onToggle]
     );
 
+    // Scroll into view when focused
+    useEffect(() => {
+        if (isFocused && itemRef?.current) {
+            itemRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+    }, [isFocused, itemRef]);
+
     return (
         <div>
             <button
+                ref={itemRef}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
                 className={cn(
-                    "group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors",
+                    "group flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
                     "hover:bg-foreground/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50",
-                    isSelected && "bg-purple-100 dark:bg-purple-900/30"
+                    "min-h-[44px] sm:min-h-0 sm:py-1", // Mobile: 44px touch target
+                    isSelected && "bg-purple-100 dark:bg-purple-900/30",
+                    isFocused &&
+                        !isSelected &&
+                        "bg-foreground/5 ring-1 ring-purple-500/30"
                 )}
                 style={{ paddingLeft: `${level * 16 + 8}px` }}
                 role="treeitem"
                 aria-expanded={isDirectory ? isExpanded : undefined}
                 aria-selected={isSelected}
+                tabIndex={isFocused ? 0 : -1}
             >
                 {/* Chevron for directories */}
                 {isDirectory && (
@@ -268,9 +299,9 @@ const FileTreeItem = memo(function FileTreeItem({
                     <HighlightMatch text={file.name} query={searchQuery} />
                 </span>
 
-                {/* File size for files */}
+                {/* File size for files - always visible on mobile, hover on desktop */}
                 {!isDirectory && file.size !== undefined && (
-                    <span className="text-muted-foreground ml-auto flex-shrink-0 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-muted-foreground ml-auto flex-shrink-0 text-xs opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                         {formatFileSize(file.size)}
                     </span>
                 )}
@@ -295,6 +326,42 @@ const FileTreeItem = memo(function FileTreeItem({
 });
 
 /**
+ * Build flat list of visible files for keyboard navigation
+ */
+function buildVisibleList(
+    files: FileEntry[],
+    expandedDirs: Set<string>,
+    childrenCache: Map<string, FileEntry[]>,
+    level = 0
+): Array<{ file: FileEntry; level: number }> {
+    const result: Array<{ file: FileEntry; level: number }> = [];
+
+    // Sort: directories first, then alphabetically
+    const sorted = [...files].sort((a, b) => {
+        if (a.type !== b.type) return a.type === "directory" ? -1 : 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    for (const file of sorted) {
+        result.push({ file, level });
+        if (file.type === "directory" && expandedDirs.has(file.path)) {
+            const children = childrenCache.get(file.path);
+            if (children) {
+                result.push(
+                    ...buildVisibleList(
+                        children,
+                        expandedDirs,
+                        childrenCache,
+                        level + 1
+                    )
+                );
+            }
+        }
+    }
+    return result;
+}
+
+/**
  * Recursive file tree component
  */
 export function FileTree({
@@ -307,8 +374,147 @@ export function FileTree({
     childrenCache,
     searchQuery,
     level = 0,
+    focusedPath: externalFocusedPath,
+    onFocusChange,
+    isRoot = true,
 }: FileTreeProps) {
     const [loadingDirs, setLoadingDirs] = useState<Set<string>>(new Set());
+    // Internal focus state (used if no external control)
+    const [internalFocusedPath, setInternalFocusedPath] = useState<string | null>(null);
+    const focusedPath = externalFocusedPath ?? internalFocusedPath;
+    const setFocusedPath = onFocusChange ?? setInternalFocusedPath;
+
+    // Type-to-search state
+    const typeSearchRef = useRef("");
+    const typeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Ref for focused item
+    const focusedItemRef = useRef<HTMLButtonElement | null>(null);
+
+    // Container ref for keyboard events
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Build flat visible list and ID→Index map (only at root level)
+    const { visibleList, pathToIndex } = useMemo(() => {
+        if (!isRoot) return { visibleList: [], pathToIndex: new Map<string, number>() };
+        const list = buildVisibleList(files, expandedDirs, childrenCache);
+        const indexMap = new Map<string, number>();
+        list.forEach((item, idx) => indexMap.set(item.file.path, idx));
+        return { visibleList: list, pathToIndex: indexMap };
+    }, [files, expandedDirs, childrenCache, isRoot]);
+
+    // Handle keyboard navigation at root level
+    const handleContainerKeyDown = useCallback(
+        (e: KeyboardEvent<HTMLDivElement>) => {
+            if (!isRoot || visibleList.length === 0) return;
+
+            const currentIndex = focusedPath
+                ? (pathToIndex.get(focusedPath) ?? -1)
+                : -1;
+
+            // Arrow navigation
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const nextIndex = Math.min(currentIndex + 1, visibleList.length - 1);
+                if (nextIndex >= 0) {
+                    setFocusedPath(visibleList[nextIndex].file.path);
+                }
+                return;
+            }
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
+                setFocusedPath(visibleList[nextIndex].file.path);
+                return;
+            }
+
+            // Enter to select/toggle
+            if (e.key === "Enter" && focusedPath) {
+                e.preventDefault();
+                const item = visibleList[currentIndex];
+                if (item) {
+                    if (item.file.type === "directory") {
+                        onToggleDir(item.file.path);
+                    } else {
+                        onSelectFile(item.file);
+                    }
+                }
+                return;
+            }
+
+            // ArrowRight to expand, ArrowLeft to collapse
+            if (e.key === "ArrowRight" && focusedPath) {
+                const item = visibleList[currentIndex];
+                if (
+                    item?.file.type === "directory" &&
+                    !expandedDirs.has(item.file.path)
+                ) {
+                    e.preventDefault();
+                    onToggleDir(item.file.path);
+                }
+                return;
+            }
+
+            if (e.key === "ArrowLeft" && focusedPath) {
+                const item = visibleList[currentIndex];
+                if (
+                    item?.file.type === "directory" &&
+                    expandedDirs.has(item.file.path)
+                ) {
+                    e.preventDefault();
+                    onToggleDir(item.file.path);
+                }
+                return;
+            }
+
+            // Type-to-search: single printable character (not with modifiers)
+            if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                // Accumulate keystrokes
+                if (typeSearchTimeoutRef.current) {
+                    clearTimeout(typeSearchTimeoutRef.current);
+                }
+                typeSearchRef.current += e.key.toLowerCase();
+
+                // Reset after 600ms of no typing
+                typeSearchTimeoutRef.current = setTimeout(() => {
+                    typeSearchRef.current = "";
+                }, 600);
+
+                // Find matching file (prefix match on name)
+                const match = visibleList.find((item) =>
+                    item.file.name.toLowerCase().startsWith(typeSearchRef.current)
+                );
+                if (match) {
+                    setFocusedPath(match.file.path);
+                }
+            }
+        },
+        [
+            isRoot,
+            visibleList,
+            pathToIndex,
+            focusedPath,
+            setFocusedPath,
+            expandedDirs,
+            onToggleDir,
+            onSelectFile,
+        ]
+    );
+
+    // Cleanup type-search timeout
+    useEffect(() => {
+        return () => {
+            if (typeSearchTimeoutRef.current) {
+                clearTimeout(typeSearchTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Focus container on click to enable keyboard nav
+    const handleContainerClick = useCallback(() => {
+        containerRef.current?.focus();
+    }, []);
 
     const handleToggle = useCallback(
         async (file: FileEntry) => {
@@ -316,10 +522,8 @@ export function FileTree({
             const isCurrentlyExpanded = expandedDirs.has(path);
 
             if (isCurrentlyExpanded) {
-                // Collapse
                 onToggleDir(path);
             } else {
-                // Expand - load children if not cached
                 if (!childrenCache.has(path)) {
                     setLoadingDirs((prev) => new Set(prev).add(path));
                     try {
@@ -348,41 +552,70 @@ export function FileTree({
         });
     }, [files]);
 
-    return (
-        <div role="tree" className="select-none">
-            {sortedFiles.map((file) => {
-                const isExpanded = expandedDirs.has(file.path);
-                const isLoading = loadingDirs.has(file.path);
-                const children = childrenCache.get(file.path);
+    // Render tree items
+    const renderItems = () =>
+        sortedFiles.map((file) => {
+            const isExpanded = expandedDirs.has(file.path);
+            const isLoading = loadingDirs.has(file.path);
+            const children = childrenCache.get(file.path);
+            const isFocused = focusedPath === file.path;
 
-                return (
-                    <FileTreeItem
-                        key={file.path}
-                        file={file}
-                        isSelected={selectedPath === file.path}
-                        isExpanded={isExpanded}
-                        isLoading={isLoading}
-                        onSelect={() => onSelectFile(file)}
-                        onToggle={() => handleToggle(file)}
-                        searchQuery={searchQuery}
-                        level={level}
-                    >
-                        {isExpanded && children && (
-                            <FileTree
-                                files={children}
-                                selectedPath={selectedPath}
-                                onSelectFile={onSelectFile}
-                                expandedDirs={expandedDirs}
-                                onToggleDir={onToggleDir}
-                                loadChildren={loadChildren}
-                                childrenCache={childrenCache}
-                                searchQuery={searchQuery}
-                                level={level + 1}
-                            />
-                        )}
-                    </FileTreeItem>
-                );
-            })}
-        </div>
-    );
+            return (
+                <FileTreeItem
+                    key={file.path}
+                    file={file}
+                    isSelected={selectedPath === file.path}
+                    isExpanded={isExpanded}
+                    isLoading={isLoading}
+                    isFocused={isFocused}
+                    onSelect={() => {
+                        setFocusedPath(file.path);
+                        onSelectFile(file);
+                    }}
+                    onToggle={() => {
+                        setFocusedPath(file.path);
+                        handleToggle(file);
+                    }}
+                    searchQuery={searchQuery}
+                    level={level}
+                    itemRef={isFocused ? focusedItemRef : undefined}
+                >
+                    {isExpanded && children && (
+                        <FileTree
+                            files={children}
+                            selectedPath={selectedPath}
+                            onSelectFile={onSelectFile}
+                            expandedDirs={expandedDirs}
+                            onToggleDir={onToggleDir}
+                            loadChildren={loadChildren}
+                            childrenCache={childrenCache}
+                            searchQuery={searchQuery}
+                            level={level + 1}
+                            focusedPath={focusedPath}
+                            onFocusChange={setFocusedPath}
+                            isRoot={false}
+                        />
+                    )}
+                </FileTreeItem>
+            );
+        });
+
+    // Root level wraps with keyboard handler
+    if (isRoot) {
+        return (
+            <div
+                ref={containerRef}
+                role="tree"
+                className="outline-none select-none"
+                tabIndex={0}
+                onKeyDown={handleContainerKeyDown}
+                onClick={handleContainerClick}
+            >
+                {renderItems()}
+            </div>
+        );
+    }
+
+    // Nested levels just render items
+    return <div role="group">{renderItems()}</div>;
 }
