@@ -235,13 +235,13 @@ export function AskUserQuestion({
     const { append } = useChatContext();
 
     // Track selections per question (for multiSelect)
-    // For single-select, we auto-submit on click
+    // Track which questions have been answered (per-question, not global)
     const [selections, setSelections] = useState<Map<number, Set<string>>>(new Map());
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
 
     const handleToggleOption = useCallback(
         (questionIndex: number, label: string, multiSelect: boolean) => {
-            if (isSubmitted) return;
+            if (answeredQuestions.has(questionIndex)) return;
 
             if (multiSelect) {
                 // Toggle selection
@@ -262,14 +262,14 @@ export function AskUserQuestion({
                 });
             } else {
                 // Single select - submit immediately
-                setIsSubmitted(true);
+                setAnsweredQuestions((prev) => new Set(prev).add(questionIndex));
                 append({
                     role: "user",
                     content: label,
                 });
             }
         },
-        [isSubmitted, append]
+        [answeredQuestions, append]
     );
 
     const handleMultiSelectSubmit = useCallback(
@@ -277,7 +277,7 @@ export function AskUserQuestion({
             const questionSelections = selections.get(questionIndex);
             if (!questionSelections || questionSelections.size === 0) return;
 
-            setIsSubmitted(true);
+            setAnsweredQuestions((prev) => new Set(prev).add(questionIndex));
             const selected = Array.from(questionSelections).join(", ");
             append({
                 role: "user",
@@ -289,38 +289,40 @@ export function AskUserQuestion({
 
     const handleOtherSubmit = useCallback(
         (text: string) => {
-            setIsSubmitted(true);
+            // "Other" answers all questions at once
+            setAnsweredQuestions(new Set(input?.questions?.map((_, idx) => idx) || []));
             append({
                 role: "user",
                 content: text,
             });
         },
-        [append]
+        [append, input?.questions]
     );
 
-    // Only show when completed (input available)
-    if (status !== "completed" || !input?.questions?.length) {
-        // Show loading state
-        if (status === "running") {
-            return (
-                <div className="my-2 flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2">
-                    <MessageCircleQuestion className="h-4 w-4 animate-pulse text-purple-400" />
-                    <span className="text-muted-foreground text-sm">
-                        Preparing question...
-                    </span>
-                </div>
-            );
-        }
-        return null;
+    // Show loading state while running
+    if (status === "running") {
+        return (
+            <div className="my-2 flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2">
+                <MessageCircleQuestion className="h-4 w-4 animate-pulse text-purple-400" />
+                <span className="text-muted-foreground text-sm">
+                    Preparing question...
+                </span>
+            </div>
+        );
     }
 
-    // Error state
+    // Error state - check before checking questions (error might occur without questions)
     if (error) {
         return (
             <div className="my-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
                 <p className="text-sm text-red-400">{error}</p>
             </div>
         );
+    }
+
+    // If completed but no questions, nothing to render
+    if (status !== "completed" || !input?.questions?.length) {
+        return null;
     }
 
     return (
@@ -336,10 +338,10 @@ export function AskUserQuestion({
             <div className="flex items-center gap-2 border-b border-purple-500/10 bg-purple-500/10 px-3 py-2">
                 <MessageCircleQuestion className="h-4 w-4 text-purple-400" />
                 <span className="text-sm font-medium text-purple-200">Question</span>
-                {isSubmitted && (
+                {answeredQuestions.size > 0 && (
                     <span className="ml-auto flex items-center gap-1 text-xs text-green-400">
                         <Check className="h-3 w-3" />
-                        Answered
+                        {answeredQuestions.size} of {input.questions.length} answered
                     </span>
                 )}
             </div>
@@ -360,12 +362,15 @@ export function AskUserQuestion({
                             )
                         }
                         onSubmit={() => handleMultiSelectSubmit(idx)}
-                        isSubmitted={isSubmitted}
+                        isSubmitted={answeredQuestions.has(idx)}
                     />
                 ))}
 
                 {/* Other option */}
-                <OtherInput onSubmit={handleOtherSubmit} isSubmitted={isSubmitted} />
+                <OtherInput
+                    onSubmit={handleOtherSubmit}
+                    isSubmitted={answeredQuestions.size > 0}
+                />
             </div>
         </motion.div>
     );
