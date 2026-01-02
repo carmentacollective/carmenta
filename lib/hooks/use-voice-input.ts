@@ -242,6 +242,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                 smart_format: true,
                 punctuate: true,
                 interim_results: true,
+                // Endpointing detects end of speech and marks speech_final: true
+                // Without this, is_final only indicates "won't be revised" not "utterance complete"
+                endpointing: 300,
+                // UtteranceEnd fires as backup when endpointing can't detect silence (noisy env)
                 utterance_end_ms: 1000,
                 vad_events: true,
             });
@@ -316,6 +320,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                     if (!text) return;
 
                     const isFinal = data.is_final ?? false;
+                    // speech_final indicates end of utterance (requires endpointing enabled)
+                    const speechFinal =
+                        (data as { speech_final?: boolean }).speech_final ?? false;
 
                     if (isFinal) {
                         // Append to final transcript
@@ -326,12 +333,25 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                         logger.debug(
                             {
                                 text,
+                                speechFinal,
+                                finalSoFar: finalTranscriptRef.current,
                                 confidence: data.channel?.alternatives?.[0]?.confidence,
                             },
-                            "Final transcript"
+                            "Final transcript segment"
+                        );
+                    } else if (speechFinal && text) {
+                        // speech_final without is_final: commit this as final to prevent loss
+                        // This can happen when endpointing detects pause before full processing
+                        finalTranscriptRef.current +=
+                            (finalTranscriptRef.current ? " " : "") + text;
+                        interimTranscriptRef.current = "";
+
+                        logger.debug(
+                            { text, finalSoFar: finalTranscriptRef.current },
+                            "Committed speech_final as final"
                         );
                     } else {
-                        // Update interim transcript
+                        // Update interim transcript (replaces previous interim for same utterance)
                         interimTranscriptRef.current = text;
                     }
 
@@ -347,6 +367,19 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
                     onTranscriptUpdateRef.current?.(combined, isFinal);
                 }
             );
+
+            // Handle utterance end (backup for noisy environments where speech_final may not fire)
+            connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+                logger.debug(
+                    {
+                        finalTranscript: finalTranscriptRef.current,
+                        interimTranscript: interimTranscriptRef.current,
+                    },
+                    "Utterance end detected"
+                );
+                // No action needed - transcript accumulation handles this automatically
+                // This event is informational for apps that need to know when user stopped speaking
+            });
 
             // Handle connection close
             connection.on(LiveTranscriptionEvents.Close, () => {
