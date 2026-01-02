@@ -485,6 +485,10 @@ async function fetchWithRetry(
 
             // Only retry on network errors, not other failures
             if (!isRetryableNetworkError(error)) {
+                // Dismiss toast if we showed one during a previous retryable error
+                if (toastId !== undefined) {
+                    toast.dismiss(toastId);
+                }
                 throw error;
             }
 
