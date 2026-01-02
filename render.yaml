@@ -40,8 +40,12 @@ services:
           name: carmenta-redis
           type: redis
           property: connectionString
+      # TEMPORAL_ADDRESS controls background mode availability:
+      # - Remove this to disable background mode (requests run inline)
+      # - Set to your Temporal server to enable durable background execution
+      # Falls back to inline gracefully if Temporal is unavailable
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233 # .internal = Render private network
+        value: carmenta-temporal-server.internal:7233
 
   # Redis for resumable streams and caching
   - type: redis
@@ -53,6 +57,7 @@ services:
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
+  # The server binds to port 7233 by default - no TEMPORAL_ADDRESS needed here
   - type: web
     name: carmenta-temporal-server
     runtime: docker
@@ -77,8 +82,6 @@ services:
         fromDatabase:
           name: carmenta-db
           property: password
-      - key: TEMPORAL_ADDRESS
-        value: "0.0.0.0:7233" # Listen on all interfaces for worker connections
       - key: TEMPORAL_CORS_ORIGINS
         value: "http://localhost:3000,https://carmenta.ai"
 
@@ -95,7 +98,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233 # Connect via Render private network
+        value: carmenta-temporal-server.internal:7233
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
@@ -105,6 +108,11 @@ services:
           name: carmenta-web
           type: web
           envVarKey: OPENROUTER_API_KEY # Shared from main service (single source of truth)
+      - key: SENTRY_DSN
+        fromService:
+          name: carmenta-web
+          type: web
+          envVarKey: SENTRY_DSN # Shared from main service for error tracking
 
 databases:
   - name: carmenta-db
