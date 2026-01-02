@@ -58,6 +58,7 @@ export function KBContent({
     const [isPending, startTransition] = useTransition();
     const [saveState, setSaveState] = useState<SaveState>("idle");
     const [error, setError] = useState<string | null>(null);
+    const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const prevPathRef = useRef<string | undefined>(undefined);
@@ -323,33 +324,36 @@ export function KBContent({
             </AnimatePresence>
 
             {/* Content Area - scrollable within fixed height */}
-            <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div className="relative min-h-0 flex-1 overflow-hidden p-4">
                 {isEditable ? (
                     <textarea
                         ref={textareaRef}
                         value={editContent}
                         onChange={handleContentChange}
                         onPaste={handlePaste}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
                         placeholder="Start writing"
                         aria-label={`Edit ${kbDocument.name}`}
                         aria-describedby="character-count error-message"
                         aria-invalid={isOverLimit}
                         className={cn(
-                            "h-full w-full resize-none overflow-y-auto bg-transparent px-6 py-5",
+                            "h-full w-full resize-none overflow-y-auto rounded-xl px-5 py-4",
                             "text-foreground/80 font-sans text-[15px] leading-[1.7]",
                             "placeholder:text-foreground/30 placeholder:italic",
                             "focus:outline-none",
-                            "transition-colors duration-200",
-                            // Stronger focus indication
-                            "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-inset",
-                            "focus:bg-foreground/[0.04]"
+                            "transition-all duration-200",
+                            // Sunken glass effect matching chat composer
+                            "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
+                            "border",
+                            isFocused ? "border-foreground/35" : "border-foreground/8"
                         )}
                         style={{
                             letterSpacing: "0.01em",
                         }}
                     />
                 ) : (
-                    <div className="h-full overflow-y-auto px-6 py-5">
+                    <div className="h-full overflow-y-auto px-5 py-4">
                         <MarkdownRenderer
                             content={kbDocument.content}
                             className="text-foreground/80 text-[15px] leading-[1.7]"

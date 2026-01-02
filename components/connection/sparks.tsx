@@ -73,7 +73,7 @@ export function Sparks({ onPrefill, className }: SparksProps) {
 
     return (
         <motion.div
-            className={cn("flex flex-wrap justify-center gap-3", className)}
+            className={cn("flex flex-wrap justify-center gap-x-3 gap-y-4", className)}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}

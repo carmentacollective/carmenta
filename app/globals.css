@@ -535,6 +535,12 @@
         @apply border-border;
     }
 
+    /* All interactive elements should show pointer cursor */
+    button,
+    [role="button"] {
+        cursor: pointer;
+    }
+
     html {
         /* Smooth scrolling for in-page navigation */
         scroll-behavior: smooth;

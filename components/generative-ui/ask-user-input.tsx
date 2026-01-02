@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -10,7 +9,7 @@ import { glass, border } from "@/lib/design-tokens";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import type { OptionItem, AskUserInputOutput } from "@/lib/tools/post-response";
 import { useChatContext } from "@/components/connection/connect-runtime-provider";
-import { Button } from "@/components/ui/button";
+import { FreeformInput } from "@/components/ui/freeform-input";
 
 interface AskUserInputResultProps {
     toolCallId: string;
@@ -129,30 +128,12 @@ export function AskUserInputResult({
             )}
 
             {allowFreeform && selectedOption === null && (
-                <div className="flex gap-2">
-                    <textarea
-                        value={freeformText}
-                        onChange={(e) => setFreeformText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your response..."
-                        className={cn(
-                            "min-h-[60px] flex-1 resize-none rounded-lg p-3",
-                            glass.subtle,
-                            "border border-white/20 dark:border-white/10",
-                            "placeholder:text-muted-foreground text-sm",
-                            "focus:ring-primary/30 focus:ring-2 focus:outline-none"
-                        )}
-                        rows={2}
-                    />
-                    <Button
-                        onClick={handleFreeformSubmit}
-                        disabled={!freeformText.trim()}
-                        size="icon"
-                        className="h-[60px] w-[60px]"
-                    >
-                        <Send className="h-4 w-4" />
-                    </Button>
-                </div>
+                <FreeformInput
+                    value={freeformText}
+                    onChange={setFreeformText}
+                    onKeyDown={handleKeyDown}
+                    onSubmit={handleFreeformSubmit}
+                />
             )}
         </motion.div>
     );

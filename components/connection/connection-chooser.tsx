@@ -916,7 +916,7 @@ export function ConnectionChooser({
             <div className="relative min-w-0 flex-1">
                 <motion.div
                     layout
-                    className="bg-foreground/[0.04] ring-foreground/10 hover:bg-foreground/[0.06] hover:ring-foreground/15 flex h-10 w-full items-center rounded-full ring-1 backdrop-blur-xl transition-all"
+                    className="border-foreground/8 bg-foreground/[0.02] hover:border-foreground/12 hover:bg-foreground/[0.04] flex h-10 w-full items-center rounded-2xl border backdrop-blur-xl transition-all"
                     transition={{
                         layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                     }}
@@ -1024,7 +1024,7 @@ export function ConnectionChooser({
                 <button
                     onClick={createNewConnection}
                     disabled={isPending}
-                    className="interactive-focus bg-primary/10 text-primary ring-primary/20 hover:bg-primary/15 hover:ring-primary/30 flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium ring-1 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="interactive-focus border-primary/20 bg-primary/10 text-primary hover:border-primary/30 hover:bg-primary/15 flex h-10 shrink-0 items-center gap-1.5 rounded-2xl border px-4 text-sm font-medium transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="New connection"
                 >
                     {isPending ? (

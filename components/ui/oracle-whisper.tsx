@@ -29,6 +29,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
+import { glassOrbPreset } from "@/lib/design-tokens";
 import {
     getRandomTip,
     getConnectPageFeatures,
@@ -256,16 +257,10 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                     )}
                 </AnimatePresence>
 
-                {/* Oracle button */}
+                {/* Oracle - glass orb anchoring the header */}
                 <div
                     className={cn(
-                        "relative flex items-center justify-center rounded-full",
-                        "h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14",
-                        "glass-bg glass-shadow ring-foreground/20 ring-1 backdrop-blur-xl",
-                        "dark:ring-white/15",
-                        "transition-all duration-300",
-                        "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
-                        "focus:ring-primary/40 focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
+                        glassOrbPreset,
                         isStreaming && "oracle-working",
                         !isStreaming && "oracle-breathing"
                     )}
