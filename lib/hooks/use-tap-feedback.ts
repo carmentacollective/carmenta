@@ -160,23 +160,26 @@ export interface UseTapFeedbackOptions {
 export interface UseTapFeedbackReturn<T extends HTMLElement> {
     /** Ref to attach to the interactive element */
     ref: RefObject<T | null>;
-    /** Handler for mouse/touch events that triggers feedback */
-    onTapStart: (e: MouseEvent<T> | TouchEvent<T>) => void;
+    /** Handler for touchstart events */
+    onTouchStart: (e: TouchEvent<T>) => void;
+    /** Handler for mousedown events */
+    onMouseDown: (e: MouseEvent<T>) => void;
 }
 
 /**
  * Creates an Apple-quality tap feedback system for any interactive element.
+ * Returns separate handlers for touch and mouse to prevent double-firing on touch devices.
  *
  * @example
  * ```tsx
  * function MyButton() {
- *   const { ref, onTapStart } = useTapFeedback<HTMLButtonElement>();
+ *   const { ref, onTouchStart, onMouseDown } = useTapFeedback<HTMLButtonElement>();
  *
  *   return (
  *     <button
  *       ref={ref}
- *       onMouseDown={onTapStart}
- *       onTouchStart={onTapStart}
+ *       onMouseDown={onMouseDown}
+ *       onTouchStart={onTouchStart}
  *       className="tap-target relative overflow-hidden"
  *     >
  *       Click me
@@ -197,8 +200,10 @@ export function useTapFeedback<T extends HTMLElement>(
     } = options;
 
     const ref = useRef<T>(null);
+    // Prevent double feedback from touch + mouse events on touch devices
+    const touchedRef = useRef(false);
 
-    const onTapStart = useCallback(
+    const handleTapStart = useCallback(
         (e: MouseEvent<T> | TouchEvent<T>) => {
             const element = ref.current;
             if (!element) return;
@@ -221,7 +226,27 @@ export function useTapFeedback<T extends HTMLElement>(
         [ripple, haptic, rippleColor, rippleDuration, rippleScale]
     );
 
-    return { ref, onTapStart };
+    const onTouchStart = useCallback(
+        (e: TouchEvent<T>) => {
+            touchedRef.current = true;
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
+
+    const onMouseDown = useCallback(
+        (e: MouseEvent<T>) => {
+            // Skip if this is a synthesized mousedown from touch
+            if (touchedRef.current) {
+                touchedRef.current = false;
+                return;
+            }
+            handleTapStart(e);
+        },
+        [handleTapStart]
+    );
+
+    return { ref, onTouchStart, onMouseDown };
 }
 
 /**

@@ -117,12 +117,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const Comp = asChild ? Slot : "button";
 
-        // For asChild, we can't add event handlers easily, so just return the slot
+        // For asChild, pass through event handlers
         if (asChild) {
             return (
                 <Comp
                     className={cn(buttonVariants({ variant, size, className }))}
                     ref={ref}
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
                     {...props}
                 />
             );

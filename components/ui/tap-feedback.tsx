@@ -36,7 +36,10 @@ import { createRipple, getTapPosition } from "@/lib/hooks/use-tap-feedback";
 
 export type TapFeedbackVariant = "default" | "subtle" | "deep" | "icon" | "pill";
 
-export interface TapFeedbackProps extends HTMLAttributes<HTMLDivElement> {
+export interface TapFeedbackProps extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    "onMouseDown" | "onTouchStart"
+> {
     children: ReactNode;
     /** Visual feedback variant */
     variant?: TapFeedbackVariant;
@@ -141,7 +144,11 @@ export const TapFeedback = forwardRef<HTMLDivElement, TapFeedbackProps>(
                             node;
                     }
                 }}
-                className={cn(variantClasses[variant], className)}
+                className={cn(
+                    variantClasses[variant],
+                    disabled && "pointer-events-none opacity-60",
+                    className
+                )}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
                 {...props}
@@ -252,7 +259,11 @@ export const TapFeedbackMotion = forwardRef<HTMLDivElement, TapFeedbackMotionPro
                             node;
                     }
                 }}
-                className={cn(variantClasses[variant], className)}
+                className={cn(
+                    variantClasses[variant],
+                    disabled && "pointer-events-none opacity-60",
+                    className
+                )}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
                 {...motionProps}
