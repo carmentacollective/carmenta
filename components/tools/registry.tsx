@@ -26,6 +26,7 @@ import {
     SearchResults,
     FileList,
     AgentTask,
+    AskUserQuestion,
 } from "./code";
 
 /**
@@ -193,6 +194,27 @@ export function renderCodeTool(data: ToolPartData): ReactNode | null {
                     agentType={input.subagent_type as string | undefined}
                     description={input.description as string | undefined}
                     output={output as string | undefined}
+                    error={error}
+                />
+            );
+        }
+
+        case "AskUserQuestion": {
+            // Interactive question widget - lets user respond to agent questions
+            const askInput = input as {
+                questions?: Array<{
+                    question: string;
+                    header: string;
+                    options: Array<{ label: string; description?: string }>;
+                    multiSelect?: boolean;
+                }>;
+            };
+
+            return (
+                <AskUserQuestion
+                    toolCallId={toolCallId}
+                    status={status}
+                    input={askInput}
                     error={error}
                 />
             );

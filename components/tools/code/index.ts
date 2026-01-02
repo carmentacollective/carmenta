@@ -20,5 +20,6 @@ export { DiffViewer } from "./diff-viewer";
 export { SearchResults } from "./search-results";
 export { FileList } from "./file-list";
 export { AgentTask } from "./agent-task";
+export { AskUserQuestion } from "./ask-user-question";
 export { ToolActivityItem, ResultRow } from "./tool-activity-item";
 export { InlineToolActivity } from "./inline-tool-activity";
