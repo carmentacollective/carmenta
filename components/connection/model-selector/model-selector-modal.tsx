@@ -114,8 +114,6 @@ interface ModelSelectorModalProps {
     overrides: ModelOverrides;
     /** Callback when overrides change */
     onChange: (overrides: ModelOverrides) => void;
-    /** Current model selected by concierge (for display) */
-    conciergeModel?: ModelConfig | null;
 }
 
 export function ModelSelectorModal({
