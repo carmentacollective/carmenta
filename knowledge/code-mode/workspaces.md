@@ -78,11 +78,45 @@ This is implemented separately via GitHub OAuth or GitHub App:
 | ---------- | -------------------- | ------- |
 | `DATA_DIR` | Persistent disk path | `/data` |
 
-## What's Not Implemented Yet
+## Current Status (January 2025)
 
-The following require GitHub integration (separate PR):
+### What's Ready
+
+- [x] Workspace isolation via email-based directories
+- [x] Project discovery with user scoping (`discoverUserProjects`)
+- [x] Project validation with user scoping (`validateUserProjectPath`)
+- [x] Claude Code SDK integration with bypassPermissions
+- [x] Session management (connections with projectPath)
+- [x] Render persistent disk at `/data`
+- [x] `DATA_DIR=/data` configured in render.yaml
+
+### What's Missing for Production
+
+**GitHub Integration** (required for users to add repos):
 
 - [ ] Clone endpoint (`POST /api/workspaces`)
 - [ ] Sync endpoint (`POST /api/workspaces/[id]/sync`)
 - [ ] GitHub OAuth for repo access
 - [ ] Workspace creation flow in UI
+
+### Parity with Claude Code CLI
+
+To fully replicate Claude Code experience:
+
+| Feature              | Claude Code CLI | Carmenta Code Mode | Status          |
+| -------------------- | --------------- | ------------------ | --------------- |
+| File read/write      | ✅              | ✅                 | Done            |
+| Bash execution       | ✅              | ✅                 | Done            |
+| Git operations       | ✅              | ✅ (read-only)     | Partial         |
+| Session persistence  | ✅              | ✅                 | Done            |
+| CLAUDE.md support    | ✅              | ✅                 | Done            |
+| MCP servers          | ✅              | ❌                 | Not started     |
+| Hooks                | ✅              | ❌                 | Not started     |
+| Permission prompts   | ✅              | N/A (bypassed)     | Different model |
+| Multi-user isolation | N/A (local)     | ✅                 | Done            |
+
+### Priority for MVP
+
+1. **Verify Render deployment** - Confirm DATA_DIR and disk are active
+2. **Seed initial workspace** - Manually clone carmenta repo for testing
+3. **GitHub integration** - Enable users to add their own repos

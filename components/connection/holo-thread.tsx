@@ -274,23 +274,16 @@ function HoloThreadInner() {
             </div>
 
             {/* Input container with safe area for notched devices - glass treatment matches header */}
+            {/* NOTE: No motion.div wrapper here - CSS transforms on iOS Safari cause cursor
+                positioning bugs where the cursor appears displaced from the textarea */}
             <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl sm:px-4 sm:pt-3 sm:pb-4">
-                <motion.div
-                    className="relative flex w-full flex-col items-center"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                        duration: 0.7,
-                        delay: 0.35,
-                        ease: [0.16, 1, 0.3, 1],
-                    }}
-                >
+                <div className="relative flex w-full flex-col items-center">
                     <ScrollToBottomButton
                         isAtBottom={isAtBottom}
                         onScrollToBottom={() => scrollToBottom("smooth")}
                     />
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
-                </motion.div>
+                </div>
             </div>
         </div>
     );

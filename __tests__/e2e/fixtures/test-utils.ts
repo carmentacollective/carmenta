@@ -1,7 +1,13 @@
 /**
- * E2E Test Utilities and Shared Helpers
+ * E2E Test Utilities and Shared Constants
  *
- * Common constants and helper functions for E2E tests.
+ * Common constants for E2E tests. Keep this minimal - tests should use
+ * Playwright's built-in auto-waiting and assertions rather than custom helpers.
+ *
+ * Philosophy:
+ * - Playwright auto-waits for elements, so explicit waits are rarely needed
+ * - Use config-level timeouts, not per-test overrides
+ * - Prefer getByRole/getByTestId over CSS selectors
  */
 
 /**
@@ -15,17 +21,10 @@ export const VIEWPORTS = {
 
 /**
  * Domain patterns for URL validation
+ * Used to detect internal hostname leaks (e.g., Render's srv-xxx:10000)
  */
 export const URL_PATTERNS = {
     publicDomain: /^https?:\/\/(localhost|carmenta\.ai)/,
     internalHostname: /srv-[a-z0-9-]+:[0-9]+/,
     signIn: /sign-in/,
-} as const;
-
-/**
- * Common wait timeouts (in milliseconds)
- */
-export const TIMEOUTS = {
-    redirect: 10000,
-    networkIdle: 30000,
 } as const;

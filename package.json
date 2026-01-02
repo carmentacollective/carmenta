@@ -119,7 +119,7 @@
     "streamdown": "^1.6.10",
     "svix": "^1.82.0",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.2.1"
+    "zod": "^4.3.4"
   },
   "devDependencies": {
     "@clerk/testing": "^1.13.24",

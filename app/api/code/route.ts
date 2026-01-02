@@ -22,7 +22,13 @@ import { z } from "zod";
 
 import { db, getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
 import { connections } from "@/lib/db/schema";
-import { validateProject, getToolStatusMessage, MessageProcessor } from "@/lib/code";
+import {
+    getToolStatusMessage,
+    isWorkspaceMode,
+    MessageProcessor,
+    validateProject,
+    validateUserProjectPath,
+} from "@/lib/code";
 import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
@@ -162,9 +168,29 @@ export async function POST(req: Request) {
     }
 
     // Validate the project exists (do this before creating connection)
-    const isValid = await validateProject(body.projectPath);
+    // In workspace mode, require user email for validation
+    if (isWorkspaceMode() && !userEmail) {
+        logger.warn(
+            { projectPath: body.projectPath },
+            "Code API: workspace mode active but no user email available"
+        );
+        return unauthorizedResponse();
+    }
+
+    // In workspace mode, use user-scoped validation
+    const isValid = isWorkspaceMode()
+        ? await validateUserProjectPath(userEmail!, body.projectPath)
+        : await validateProject(body.projectPath);
     timing("Project validated");
     if (!isValid) {
+        logger.warn(
+            {
+                projectPath: body.projectPath,
+                userEmail,
+                workspaceMode: isWorkspaceMode(),
+            },
+            "Code API: project validation failed"
+        );
         return new Response(JSON.stringify({ error: "Invalid project path" }), {
             status: 400,
             headers: { "Content-Type": "application/json" },

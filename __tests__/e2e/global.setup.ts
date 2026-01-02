@@ -1,16 +1,21 @@
-import { clerkSetup } from "@clerk/testing/playwright";
-import { test as setup } from "@playwright/test";
+import { clerkSetup, setupClerkTestingToken, clerk } from "@clerk/testing/playwright";
+import { test as setup, expect } from "@playwright/test";
 
 /**
- * Global Setup for Clerk Testing
+ * Global Setup for E2E Tests
  *
- * Initializes Clerk testing token before the test suite runs.
- * This token allows tests to bypass Clerk's bot detection and
- * enables authenticated test flows.
+ * Two-phase initialization:
+ * 1. Initialize Clerk testing token for authenticated test flows
+ * 2. Warm up pages with authenticated user to trigger Next.js compilation
+ *
+ * The warm-up phase is critical for CI where the dev server starts fresh.
+ * Without it, the first authenticated request to /connection triggers
+ * compilation that can exceed the 20s navigation timeout.
  *
  * Required environment variables:
  * - CLERK_PUBLISHABLE_KEY (or NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
  * - CLERK_SECRET_KEY
+ * - TEST_USER_EMAIL, TEST_USER_PASSWORD (for authenticated warm-up)
  *
  * Graceful degradation: Setup is skipped if Clerk keys are not configured.
  * This allows fork PRs and contributors without secrets to run other E2E tests.
@@ -20,6 +25,10 @@ const hasClerkKeys =
     (process.env.CLERK_PUBLISHABLE_KEY ||
         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
     process.env.CLERK_SECRET_KEY;
+
+const testUserEmail = process.env.TEST_USER_EMAIL;
+const testUserPassword = process.env.TEST_USER_PASSWORD;
+const hasTestCredentials = testUserEmail && testUserPassword && hasClerkKeys;
 
 setup.describe.configure({ mode: "serial" });
 
@@ -34,4 +43,49 @@ setup("initialize Clerk testing", async () => {
     }
 
     await clerkSetup();
+});
+
+/**
+ * Warm up pages as authenticated user to trigger Next.js compilation.
+ *
+ * In CI, the dev server starts fresh with no compiled pages. The first
+ * authenticated request to /connection can take 30+ seconds to compile.
+ * This warm-up step triggers that compilation during setup, not during tests.
+ *
+ * Timeout is generous (60s) because this is a one-time setup cost.
+ */
+setup("warm up authenticated pages", async ({ page }) => {
+    setup.setTimeout(60_000); // 60s for warm-up
+
+    if (!hasTestCredentials) {
+        console.log("⚠️  Skipping page warm-up: TEST_USER credentials not set");
+        return;
+    }
+
+    console.log("🔥 Warming up pages with authenticated user...");
+
+    // Set up Clerk testing token
+    await setupClerkTestingToken({ page });
+
+    // Navigate to a page first (required before clerk.signIn)
+    await page.goto("/");
+
+    // Sign in with test user
+    await clerk.signIn({
+        page,
+        signInParams: {
+            strategy: "password",
+            identifier: testUserEmail!,
+            password: testUserPassword!,
+        },
+    });
+
+    // Navigate to /connection as authenticated user to trigger compilation
+    // This is the slow operation that was timing out in tests
+    await page.goto("/connection", { timeout: 45_000 });
+
+    // Verify page loaded
+    await expect(page.locator("body")).toBeVisible();
+
+    console.log("✅ Page warm-up complete");
 });
