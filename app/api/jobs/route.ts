@@ -72,6 +72,10 @@ export async function GET() {
                 limit: 5,
                 orderBy: (runs, { desc }) => [desc(runs.createdAt)],
             },
+            notifications: {
+                limit: 10,
+                orderBy: (notifications, { desc }) => [desc(notifications.createdAt)],
+            },
         },
     });
 
