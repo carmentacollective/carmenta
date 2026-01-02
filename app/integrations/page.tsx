@@ -278,6 +278,8 @@ function IntegrationsContent() {
         });
 
         const service = services.find((s) => s.service.id === serviceId);
+        const startTime = Date.now();
+
         analytics.integration.testExecuted({
             serviceId,
             serviceName: service?.service.name ?? serviceId,
@@ -285,12 +287,13 @@ function IntegrationsContent() {
 
         try {
             const result = await testIntegration(serviceId, accountId);
+            const durationMs = Date.now() - startTime;
 
             if (result.success) {
                 analytics.integration.testPassed({
                     serviceId,
                     serviceName: service?.service.name ?? serviceId,
-                    durationMs: 0,
+                    durationMs,
                 });
                 setStatusMessages((prev) => {
                     const next = new Map(prev);

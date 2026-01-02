@@ -675,6 +675,23 @@ export async function setDefaultAccount(
 
     try {
         await db.transaction(async (tx) => {
+            // Verify target account exists before modifying defaults
+            const [targetAccount] = await tx
+                .select()
+                .from(schema.integrations)
+                .where(
+                    and(
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId),
+                        eq(schema.integrations.accountId, accountId)
+                    )
+                )
+                .limit(1);
+
+            if (!targetAccount) {
+                throw new Error("Account not found");
+            }
+
             // Clear default from all accounts for this service
             await tx
                 .update(schema.integrations)
