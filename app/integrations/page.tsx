@@ -377,9 +377,16 @@ function IntegrationsContent() {
     };
 
     const handleSetDefault = async (serviceId: string, accountId: string) => {
+        const service = services.find((s) => s.service.id === serviceId);
+
         try {
             const result = await setDefaultAccount(serviceId, accountId);
             if (result.success) {
+                analytics.integration.defaultChanged({
+                    serviceId,
+                    serviceName: service?.service.name ?? serviceId,
+                    accountId,
+                });
                 setStatusMessages((prev) => {
                     const next = new Map(prev);
                     next.set(serviceId, {

@@ -15,7 +15,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { db, schema } from "@/lib/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { encryptCredentials } from "@/lib/integrations/encryption";
 import {
     getServiceById,
@@ -447,15 +447,73 @@ export async function deleteIntegration(
     }
 
     try {
-        await db
-            .delete(schema.integrations)
-            .where(
-                and(
-                    eq(schema.integrations.userEmail, userEmail),
-                    eq(schema.integrations.service, serviceId),
-                    eq(schema.integrations.accountId, accountId)
+        await db.transaction(async (tx) => {
+            // Check if the account being deleted is the default
+            const [accountToDelete] = await tx
+                .select()
+                .from(schema.integrations)
+                .where(
+                    and(
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId),
+                        eq(schema.integrations.accountId, accountId)
+                    )
                 )
-            );
+                .limit(1);
+
+            if (!accountToDelete) {
+                throw new Error("Account not found");
+            }
+
+            // Delete the account
+            await tx
+                .delete(schema.integrations)
+                .where(
+                    and(
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId),
+                        eq(schema.integrations.accountId, accountId)
+                    )
+                );
+
+            // If we just deleted the default, promote another account
+            if (accountToDelete.isDefault) {
+                const [nextAccount] = await tx
+                    .select()
+                    .from(schema.integrations)
+                    .where(
+                        and(
+                            eq(schema.integrations.userEmail, userEmail),
+                            eq(schema.integrations.service, serviceId)
+                        )
+                    )
+                    .orderBy(desc(schema.integrations.connectedAt))
+                    .limit(1);
+
+                if (nextAccount) {
+                    await tx
+                        .update(schema.integrations)
+                        .set({ isDefault: true })
+                        .where(
+                            and(
+                                eq(schema.integrations.userEmail, userEmail),
+                                eq(schema.integrations.service, serviceId),
+                                eq(schema.integrations.accountId, nextAccount.accountId)
+                            )
+                        );
+
+                    logger.info(
+                        {
+                            userEmail,
+                            service: serviceId,
+                            deletedAccount: accountId,
+                            promotedAccount: nextAccount.accountId,
+                        },
+                        "Promoted next account to default after deleting default"
+                    );
+                }
+            }
+        });
 
         logger.info(
             { userEmail, service: serviceId, accountId },

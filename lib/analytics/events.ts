@@ -91,6 +91,10 @@ const integration = {
     /** Abandoned OAuth flow detected */
     abandonedFlowDetected: (props: IntegrationBaseProps) =>
         capture("integration_abandoned_flow_detected", props),
+
+    /** User changed default account for a service */
+    defaultChanged: (props: IntegrationBaseProps & { accountId: string }) =>
+        capture("integration_default_changed", props),
 };
 
 // ============================================================================
