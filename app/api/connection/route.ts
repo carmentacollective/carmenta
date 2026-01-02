@@ -324,11 +324,18 @@ export async function POST(req: Request) {
                     temperature: concierge.temperature,
                     reasoning: concierge.reasoning,
                 });
-
-                // Only save stream ID AFTER Temporal dispatch succeeds
-                // Avoids orphaned streamIds if dispatch fails
-                await updateActiveStreamId(connectionId!, streamId);
                 temporalDispatchSucceeded = true;
+
+                // Save stream ID AFTER workflow starts successfully
+                // Keeps DB and Temporal in sync - if this fails, workflow is already running
+                await updateActiveStreamId(connectionId!, streamId);
+
+                Sentry.addBreadcrumb({
+                    category: "temporal.dispatch",
+                    message: "Background mode enabled via Temporal",
+                    level: "info",
+                    data: { connectionId, streamId },
+                });
 
                 logger.info(
                     {
@@ -345,6 +352,17 @@ export async function POST(req: Request) {
                     temporalError instanceof Error
                         ? temporalError.message
                         : String(temporalError);
+
+                Sentry.addBreadcrumb({
+                    category: "temporal.fallback",
+                    message: "Falling back to inline execution",
+                    level: "warning",
+                    data: {
+                        connectionId,
+                        reason: conciergeResult.backgroundMode?.reason,
+                    },
+                });
+
                 logger.error(
                     { connectionId, error: errorMessage },
                     "Temporal dispatch failed, falling back to inline execution"
