@@ -122,7 +122,6 @@ export function ModelSelectorTrigger({
                 onClose={() => setSettingsOpen(false)}
                 overrides={overrides}
                 onChange={onChange}
-                conciergeModel={conciergeModel}
             />
         </div>
     );
