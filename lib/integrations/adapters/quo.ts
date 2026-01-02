@@ -1192,7 +1192,7 @@ export class QuoAdapter extends ServiceAdapter {
             );
         }
 
-        if (["POST", "PATCH"].includes(method.toUpperCase()) && body) {
+        if (["POST", "PATCH", "PUT"].includes(method.toUpperCase()) && body) {
             requestOptions.json = body;
         }
 
