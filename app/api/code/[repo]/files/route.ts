@@ -4,7 +4,7 @@
  * GET /api/code/[repo]/files?path=/ - List directory contents
  *
  * Returns files and directories at the specified path within a project.
- * Respects .gitignore patterns and hides sensitive files.
+ * Hides hard-coded sensitive directories and files.
  */
 
 import { currentUser } from "@clerk/nextjs/server";
@@ -98,7 +98,12 @@ function shouldHide(name: string): boolean {
 function isPathWithinProject(projectPath: string, targetPath: string): boolean {
     const normalizedProject = path.resolve(projectPath);
     const normalizedTarget = path.resolve(projectPath, targetPath);
-    return normalizedTarget.startsWith(normalizedProject);
+    // Ensure target starts with project + path separator to prevent sibling directory bypass
+    // e.g., /home/user/project should not match /home/user/project-secret
+    return (
+        normalizedTarget === normalizedProject ||
+        normalizedTarget.startsWith(normalizedProject + path.sep)
+    );
 }
 
 export async function GET(

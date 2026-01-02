@@ -56,17 +56,20 @@ export function FileExplorer() {
         return projectPath.split("/").pop() ?? null;
     }, [projectPath]);
 
+    // Use full project path as cache key to prevent collisions
+    const cacheKey = useMemo(() => projectPath ?? "", [projectPath]);
+
     // Load root directory
     const loadRootDirectory = useCallback(async () => {
-        if (!repoSlug) return;
+        if (!repoSlug || !cacheKey) return;
 
         setIsLoading(true);
 
         try {
-            // Check global cache first
-            const cacheKey = `${repoSlug}:/`;
-            if (globalDirectoryCache.has(cacheKey)) {
-                setRootFiles(globalDirectoryCache.get(cacheKey) ?? []);
+            // Check global cache first (keyed by full project path)
+            const rootCacheKey = `${cacheKey}:/`;
+            if (globalDirectoryCache.has(rootCacheKey)) {
+                setRootFiles(globalDirectoryCache.get(rootCacheKey) ?? []);
             }
 
             // Fetch fresh data
@@ -79,8 +82,8 @@ export function FileExplorer() {
             const data = await response.json();
             const files = data.files as FileEntry[];
 
-            // Update cache and state
-            globalDirectoryCache.set(cacheKey, files);
+            // Update cache and state (keyed by full project path)
+            globalDirectoryCache.set(rootCacheKey, files);
             setRootFiles(files);
         } catch (err) {
             logger.error(
@@ -90,18 +93,18 @@ export function FileExplorer() {
         } finally {
             setIsLoading(false);
         }
-    }, [repoSlug]);
+    }, [repoSlug, cacheKey]);
 
     // Load children for a directory
     const loadChildren = useCallback(
         async (dirPath: string): Promise<FileEntry[]> => {
-            if (!repoSlug) return [];
+            if (!repoSlug || !cacheKey) return [];
 
-            const cacheKey = `${repoSlug}:${dirPath}`;
+            const dirCacheKey = `${cacheKey}:${dirPath}`;
 
-            // Check global cache
-            if (globalDirectoryCache.has(cacheKey)) {
-                const cached = globalDirectoryCache.get(cacheKey) ?? [];
+            // Check global cache (keyed by full project path)
+            if (globalDirectoryCache.has(dirCacheKey)) {
+                const cached = globalDirectoryCache.get(dirCacheKey) ?? [];
                 setChildrenCache((prev) => new Map(prev).set(dirPath, cached));
                 return cached;
             }
@@ -118,8 +121,8 @@ export function FileExplorer() {
                 const data = await response.json();
                 const files = data.files as FileEntry[];
 
-                // Update caches
-                globalDirectoryCache.set(cacheKey, files);
+                // Update caches (keyed by full project path)
+                globalDirectoryCache.set(dirCacheKey, files);
                 setChildrenCache((prev) => new Map(prev).set(dirPath, files));
 
                 return files;
@@ -128,7 +131,7 @@ export function FileExplorer() {
                 return [];
             }
         },
-        [repoSlug]
+        [repoSlug, cacheKey]
     );
 
     // Toggle directory expansion (updates correct state based on search mode)
@@ -237,17 +240,38 @@ export function FileExplorer() {
         };
     }, []);
 
-    // Filter files based on search
+    // Filter files based on search - include directories that contain matches
     const filteredFiles = useMemo(() => {
         if (!searchQuery.trim()) return rootFiles;
 
         const lowerQuery = searchQuery.toLowerCase();
-        return rootFiles.filter(
-            (file) =>
+
+        // Build set of all files that match (including nested children)
+        const matchingPaths = new Set<string>();
+        const allFiles = [...rootFiles];
+        childrenCache.forEach((children) => {
+            allFiles.push(...children);
+        });
+
+        // Mark all matching files and their ancestors
+        allFiles.forEach((file) => {
+            if (
                 file.name.toLowerCase().includes(lowerQuery) ||
                 file.path.toLowerCase().includes(lowerQuery)
-        );
-    }, [rootFiles, searchQuery]);
+            ) {
+                matchingPaths.add(file.path);
+                // Add all parent directories
+                let parentPath = file.path.substring(0, file.path.lastIndexOf("/"));
+                while (parentPath && parentPath !== "/") {
+                    matchingPaths.add(parentPath);
+                    parentPath = parentPath.substring(0, parentPath.lastIndexOf("/"));
+                }
+            }
+        });
+
+        // Filter root files - include if matches or contains matches
+        return rootFiles.filter((file) => matchingPaths.has(file.path));
+    }, [rootFiles, searchQuery, childrenCache]);
 
     // Don't render if not in code mode
     if (!isCodeMode || !projectPath) return null;
