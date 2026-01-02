@@ -13,8 +13,16 @@ services:
     plan: standard
     buildCommand: ./scripts/render-deploy.sh
     startCommand: node .next/standalone/server.js
-    healthCheckPath: /api/health
+    healthCheckPath: /healthz
     autoDeploy: true
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetCPUPercent: 70
+      targetMemoryPercent: 80
+    buildFilter:
+      ignoredPaths:
+        - knowledge/**
     disk:
       name: carmenta-data
       mountPath: /data
