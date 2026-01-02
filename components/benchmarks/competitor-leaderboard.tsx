@@ -196,13 +196,12 @@ export function CompetitorLeaderboard({
                 </table>
             </div>
 
-            {selectedComparison && (
-                <QueryDetailModal
-                    query={selectedComparison.query}
-                    pairwise={selectedComparison.pairwise}
-                    onClose={() => setSelectedComparison(null)}
-                />
-            )}
+            <QueryDetailModal
+                query={selectedComparison?.query ?? null}
+                pairwise={selectedComparison?.pairwise ?? null}
+                open={!!selectedComparison}
+                onOpenChange={(open) => !open && setSelectedComparison(null)}
+            />
         </>
     );
 }

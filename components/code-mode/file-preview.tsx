@@ -3,14 +3,12 @@
 /**
  * File Preview Component
  *
- * Modal/panel for viewing file contents with syntax highlighting.
- * Uses Shiki for code highlighting when available.
+ * Modal for viewing file contents with syntax highlighting.
+ * Uses shadcn Dialog (Radix) for proper modal behavior.
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-    X,
     Copy,
     Check,
     FileWarning,
@@ -23,6 +21,7 @@ import {
     Folder,
 } from "lucide-react";
 
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -198,147 +197,119 @@ export function FilePreview({ file, repo, onClose }: FilePreviewProps) {
         }
     }, [content]);
 
-    // Handle escape key
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                onClose();
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [onClose]);
-
-    if (!file) return null;
-
-    const iconColor = getFileIconColor(file);
-    const language = file.extension
+    const iconColor = file ? getFileIconColor(file) : "";
+    const language = file?.extension
         ? getLanguageFromExtension(file.extension)
         : "plaintext";
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="z-modal fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
-            >
-                <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-border bg-background relative mx-0 flex max-h-[85dvh] w-full max-w-4xl flex-col overflow-hidden rounded-none border shadow-2xl sm:mx-4 sm:max-h-[80vh] sm:rounded-xl"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div className="border-border flex items-center justify-between border-b px-4 py-3">
-                        <div className="flex items-center gap-2">
-                            <PreviewFileIcon
-                                file={file}
-                                className={cn("h-5 w-5", iconColor)}
-                            />
-                            <span className="font-medium">{file.name}</span>
-                            {file.size !== undefined && (
-                                <span className="text-muted-foreground text-sm">
-                                    ({formatFileSize(file.size)})
-                                </span>
-                            )}
-                        </div>
+        <Dialog open={!!file} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="flex max-h-[85dvh] w-full max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[80vh]">
+                {/* Hidden title for accessibility */}
+                <DialogTitle className="sr-only">
+                    {file?.name ?? "File Preview"}
+                </DialogTitle>
 
-                        <div className="flex items-center gap-2">
-                            {content?.content && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleCopy}
-                                    className="h-8 gap-1.5"
-                                >
-                                    {copied ? (
-                                        <>
-                                            <Check className="h-4 w-4 text-green-500" />
-                                            <span>Copied</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className="h-4 w-4" />
-                                            <span>Copy</span>
-                                        </>
-                                    )}
-                                </Button>
-                            )}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={onClose}
-                                className="h-11 w-11 sm:h-8 sm:w-8"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-auto">
-                        {isLoading && (
-                            <div className="flex items-center justify-center py-12">
-                                <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-                            </div>
-                        )}
-
-                        {error && (
-                            <div className="text-destructive flex flex-col items-center justify-center gap-2 py-12">
-                                <FileWarning className="h-8 w-8" />
-                                <p>{error}</p>
-                            </div>
-                        )}
-
-                        {content && !isLoading && !error && (
-                            <>
-                                {content.isBinary || !content.content ? (
-                                    <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-12">
-                                        <FileWarning className="h-8 w-8" />
-                                        <p>
-                                            {content.message ||
-                                                "Cannot preview this file"}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="relative">
-                                        {content.truncated && (
-                                            <div className="border-border sticky top-0 z-10 border-b bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                                                {content.message}
-                                            </div>
-                                        )}
-                                        <pre className="overflow-x-auto p-4 text-sm">
-                                            <code
-                                                className={`language-${language}`}
-                                                style={{
-                                                    fontFamily:
-                                                        'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
-                                                }}
-                                            >
-                                                {content.content}
-                                            </code>
-                                        </pre>
-                                    </div>
+                {file && (
+                    <>
+                        {/* Header */}
+                        <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <PreviewFileIcon
+                                    file={file}
+                                    className={cn("h-5 w-5", iconColor)}
+                                />
+                                <span className="font-medium">{file.name}</span>
+                                {file.size !== undefined && (
+                                    <span className="text-muted-foreground text-sm">
+                                        ({formatFileSize(file.size)})
+                                    </span>
                                 )}
-                            </>
-                        )}
-                    </div>
+                            </div>
 
-                    {/* Footer */}
-                    {content && !isLoading && !error && content.content && (
-                        <div className="border-border text-muted-foreground flex items-center justify-between border-t px-4 py-2 text-sm">
-                            <span>{content.lineCount.toLocaleString()} lines</span>
-                            <span>{language}</span>
+                            <div className="flex items-center gap-2">
+                                {content?.content && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleCopy}
+                                        className="h-8 gap-1.5"
+                                    >
+                                        {copied ? (
+                                            <>
+                                                <Check className="h-4 w-4 text-green-500" />
+                                                <span>Copied</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="h-4 w-4" />
+                                                <span>Copy</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+
+                        {/* Content */}
+                        <div className="min-h-0 flex-1 overflow-auto">
+                            {isLoading && (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="text-destructive flex flex-col items-center justify-center gap-2 py-12">
+                                    <FileWarning className="h-8 w-8" />
+                                    <p>{error}</p>
+                                </div>
+                            )}
+
+                            {content && !isLoading && !error && (
+                                <>
+                                    {content.isBinary || !content.content ? (
+                                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-12">
+                                            <FileWarning className="h-8 w-8" />
+                                            <p>
+                                                {content.message ||
+                                                    "Cannot preview this file"}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            {content.truncated && (
+                                                <div className="border-border sticky top-0 z-10 border-b bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                                                    {content.message}
+                                                </div>
+                                            )}
+                                            <pre className="overflow-x-auto p-4 text-sm">
+                                                <code
+                                                    className={`language-${language}`}
+                                                    style={{
+                                                        fontFamily:
+                                                            'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+                                                    }}
+                                                >
+                                                    {content.content}
+                                                </code>
+                                            </pre>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        {content && !isLoading && !error && content.content && (
+                            <div className="border-border text-muted-foreground flex shrink-0 items-center justify-between border-t px-4 py-2 text-sm">
+                                <span>{content.lineCount.toLocaleString()} lines</span>
+                                <span>{language}</span>
+                            </div>
+                        )}
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 }
