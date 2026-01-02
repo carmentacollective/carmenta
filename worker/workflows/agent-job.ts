@@ -19,7 +19,6 @@ const { loadJobContext, callLLM, recordJobRun } = proxyActivities<typeof activit
 
 export interface AgentJobInput {
     jobId: string;
-    userId: string;
 }
 
 export interface AgentJobResult {

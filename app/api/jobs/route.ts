@@ -15,10 +15,37 @@ import { createJobSchedule } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
 
+/**
+ * Validate cron expression format and frequency
+ *
+ * Accepts standard cron format: "minute hour day month weekday"
+ * Rejects expressions that would run more than once per minute.
+ */
+function validateCronExpression(cron: string): boolean {
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length !== 5) {
+        return false;
+    }
+
+    // Reject expressions that run every minute (* * * * *)
+    // Minimum frequency is once per minute
+    const [minute] = parts;
+    if (minute === "*") {
+        return false;
+    }
+
+    // Basic validation: each part should be *, number, range, or list
+    const cronPartRegex = /^(\*|[0-9,-/]+)$/;
+    return parts.every((part) => cronPartRegex.test(part));
+}
+
 const createJobSchema = z.object({
     name: z.string().min(1).max(100),
     prompt: z.string().min(1).max(10000),
-    scheduleCron: z.string().min(1), // TODO: Validate cron expression
+    scheduleCron: z.string().min(1).refine(validateCronExpression, {
+        message:
+            "Invalid cron expression. Format: 'minute hour day month weekday'. Minimum frequency: once per minute.",
+    }),
     timezone: z.string().default("UTC"),
     integrations: z.array(z.string()).default([]),
 });
@@ -111,8 +138,14 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ job: updatedJob }, { status: 201 });
     } catch (error) {
-        // If Temporal fails, still return the job but log the error
+        // Temporal schedule creation failed - clean up the database entry
         logger.error({ error, jobId: job.id }, "Failed to create Temporal schedule");
-        return NextResponse.json({ job }, { status: 201 });
+
+        await db.delete(scheduledJobs).where(eq(scheduledJobs.id, job.id));
+
+        return NextResponse.json(
+            { error: "Failed to create schedule. Please try again." },
+            { status: 500 }
+        );
     }
 }

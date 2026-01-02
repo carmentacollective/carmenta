@@ -149,21 +149,11 @@ export async function generateBackgroundResponse(
         userId,
     });
 
-    // Check if model supports tools
-    const modelConfig = getModel(modelId);
-    const modelSupportsTools = modelConfig?.supportsTools ?? false;
-
-    // Background worker runs without tools to keep dependencies simple
-    // The main benefit of background mode is thorough reasoning, not tool use
-    // Tools can be added back when we solve the ESM bundling issues
-    const allTools = {};
-
     activityLogger.info(
         {
             modelId,
             temperature,
             reasoningEnabled: reasoning.enabled,
-            toolsEnabled: modelSupportsTools && Object.keys(allTools).length > 0,
         },
         "Running LLM streaming generation"
     );
@@ -172,6 +162,8 @@ export async function generateBackgroundResponse(
     let finalResponseParts: UIMessageLike["parts"] = [];
 
     // Run streaming LLM call
+    // Background worker runs without tools to keep dependencies simple
+    // The main benefit of background mode is thorough reasoning, not tool use
     const streamResult = streamText({
         model: gateway(translateModelId(modelId)),
         messages: [
@@ -179,8 +171,6 @@ export async function generateBackgroundResponse(
             ...(await convertToModelMessages(context.messages as any)),
         ],
         temperature,
-        ...(modelSupportsTools && { tools: allTools }),
-        ...(modelSupportsTools && { stopWhen: stepCountIs(10) }),
         providerOptions: translateOptions(modelId, {
             reasoning: reasoning.enabled
                 ? {

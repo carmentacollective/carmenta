@@ -52,7 +52,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
             // Schedule might not exist yet, start manually
             workflowId = await startAgentWorkflow({
                 jobId: job.id,
-                userId: user.id,
             });
             logger.info(
                 { jobId, workflowId },
@@ -62,7 +61,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     } else {
         workflowId = await startAgentWorkflow({
             jobId: job.id,
-            userId: user.id,
         });
         logger.info({ jobId, workflowId }, "Started manual workflow");
     }

@@ -14,6 +14,9 @@ import { eq } from "drizzle-orm";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+// Default model for scheduled jobs (see lib/model-config.ts for full list)
+const SCHEDULED_JOB_MODEL = "anthropic/claude-sonnet-4.5";
+
 // Types
 export interface JobContext {
     prompt: string;
@@ -91,7 +94,7 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
             "X-Title": "Carmenta Scheduled Agent",
         },
         body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4",
+            model: SCHEDULED_JOB_MODEL,
             messages: [
                 { role: "system", content: systemPrompt + memoryContext },
                 ...messages,

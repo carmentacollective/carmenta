@@ -58,7 +58,7 @@ export async function createJobSchedule(params: {
                 type: "startWorkflow",
                 workflowType: "agentJobWorkflow",
                 taskQueue: TASK_QUEUE,
-                args: [{ jobId, userId }],
+                args: [{ jobId }],
             },
         });
 
@@ -167,17 +167,14 @@ export async function getJobScheduleInfo(scheduleId: string): Promise<{
 /**
  * Start a workflow manually (for testing or one-off runs)
  */
-export async function startAgentWorkflow(params: {
-    jobId: string;
-    userId: string;
-}): Promise<string> {
-    const { jobId, userId } = params;
+export async function startAgentWorkflow(params: { jobId: string }): Promise<string> {
+    const { jobId } = params;
     const temporalClient = await getTemporalClient();
 
     const handle = await temporalClient.workflow.start("agentJobWorkflow", {
         taskQueue: TASK_QUEUE,
         workflowId: `job-${jobId}-${Date.now()}`,
-        args: [{ jobId, userId }],
+        args: [{ jobId }],
     });
 
     logger.info({ jobId, workflowId: handle.workflowId }, "Started agent workflow");

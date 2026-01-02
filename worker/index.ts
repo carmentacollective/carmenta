@@ -6,12 +6,13 @@
  */
 
 import { NativeConnection, Worker } from "@temporalio/worker";
+import { logger } from "../lib/logger";
 import * as activities from "./activities";
 
 async function run() {
     const temporalAddress = process.env.TEMPORAL_ADDRESS || "localhost:7233";
 
-    console.log(`Connecting to Temporal at ${temporalAddress}`);
+    logger.info({ temporalAddress }, "Connecting to Temporal");
 
     const connection = await NativeConnection.connect({
         address: temporalAddress,
@@ -25,11 +26,11 @@ async function run() {
         activities,
     });
 
-    console.log("Worker started, polling for tasks...");
+    logger.info("Worker started, polling for tasks");
     await worker.run();
 }
 
 run().catch((err) => {
-    console.error("Worker failed:", err);
+    logger.error({ error: err }, "Worker failed");
     process.exit(1);
 });
