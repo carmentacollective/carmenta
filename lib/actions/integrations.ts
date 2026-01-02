@@ -112,7 +112,7 @@ export async function getServicesWithStatus(): Promise<{
     }
 
     const permissions = await getUserPermissions();
-    const allServices = getAvailableServices();
+    const allServices = getAvailableServices(true);
 
     // Filter services based on user permissions
     const visibleServices = allServices.filter((service) => {
