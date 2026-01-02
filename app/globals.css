@@ -2253,7 +2253,7 @@
     /* Icon button variant */
     .btn-icon-glass {
         /* btn-glass-interactive (inlined) */
-        @apply flex cursor-pointer items-center justify-center rounded-full;
+        @apply flex items-center justify-center rounded-full;
         background: var(--glass-bg);
         box-shadow:
             var(--glass-shadow),

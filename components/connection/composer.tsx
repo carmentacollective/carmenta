@@ -298,17 +298,23 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         const alreadyShown = localStorage.getItem(SHIFT_ENTER_HINT_KEY) === "true";
         if (alreadyShown) return;
 
-        // Show the hint
+        // Show the hint (will render when user focuses)
         setShowShiftEnterHint(true);
 
-        // Mark as shown and auto-dismiss after 5 seconds
-        localStorage.setItem(SHIFT_ENTER_HINT_KEY, "true");
+        // Auto-dismiss after 5 seconds
         const timer = setTimeout(() => {
             setShowShiftEnterHint(false);
         }, 5000);
 
         return () => clearTimeout(timer);
     }, []);
+
+    // Mark hint as shown only when user actually sees it (focused + visible)
+    useEffect(() => {
+        if (showShiftEnterHint && isFocused) {
+            localStorage.setItem(SHIFT_ENTER_HINT_KEY, "true");
+        }
+    }, [showShiftEnterHint, isFocused]);
 
     // Auto-resize textarea as content grows
     // Pattern: reset to auto → measure scrollHeight → set explicit height
@@ -826,7 +832,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     ref={ref}
                     disabled={disabled}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-all",
                         "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
@@ -895,7 +901,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                               : { duration: 0.3 },
                     }}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-[box-shadow,ring-color]",
                         "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
