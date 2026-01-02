@@ -3,15 +3,23 @@
  *
  * GET /api/jobs - List all jobs for the current user
  * POST /api/jobs - Create a new job
+ *
+ * Job creation requires Temporal for scheduling. If Temporal is unavailable,
+ * we return 503 rather than creating orphaned database entries.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { createJobSchedule, deleteJobSchedule } from "@/lib/temporal/client";
+import {
+    isBackgroundModeEnabled,
+    createJobSchedule,
+    deleteJobSchedule,
+} from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
 
@@ -92,6 +100,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Check if background mode is available BEFORE any database writes
+    // This prevents creating orphaned job entries when Temporal is unavailable
+    if (!isBackgroundModeEnabled()) {
+        logger.warn(
+            { userId: user.id },
+            "Job creation attempted but background mode is not configured"
+        );
+        return NextResponse.json(
+            {
+                error: "Scheduled jobs are not available",
+                message:
+                    "Background processing is not configured for this environment.",
+            },
+            { status: 503 }
+        );
+    }
+
     const body = await request.json();
     const parsed = createJobSchema.safeParse(body);
 
@@ -127,14 +152,28 @@ export async function POST(request: NextRequest) {
             timezone,
         });
     } catch (error) {
-        // Temporal schedule creation failed - clean up the database entry
-        logger.error({ error, jobId: job.id }, "Failed to create Temporal schedule");
+        // Temporal is configured but unavailable (DNS, network, service down)
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(
+            { error: errorMessage, jobId: job.id },
+            "Failed to create Temporal schedule"
+        );
 
+        Sentry.captureException(error, {
+            tags: { component: "jobs", action: "create_schedule" },
+            extra: { jobId: job.id, userId: user.id },
+        });
+
+        // Clean up the database entry since the schedule couldn't be created
         await db.delete(scheduledJobs).where(eq(scheduledJobs.id, job.id));
 
         return NextResponse.json(
-            { error: "Failed to create schedule. Please try again." },
-            { status: 500 }
+            {
+                error: "Unable to create scheduled job",
+                message:
+                    "Background processing is temporarily unavailable. Please try again in a few minutes.",
+            },
+            { status: 503 }
         );
     }
 
