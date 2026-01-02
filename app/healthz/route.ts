@@ -38,6 +38,7 @@ const AVAILABLE_CHECKS = ["db", "redis", "temporal"] as const;
 type CheckName = (typeof AVAILABLE_CHECKS)[number];
 
 let redisClient: RedisClientType | null = null;
+let redisConnecting: Promise<RedisClientType | null> | null = null;
 
 async function getRedisClient(): Promise<RedisClientType | null> {
     const redisUrl = process.env.REDIS_URL;
@@ -49,9 +50,23 @@ async function getRedisClient(): Promise<RedisClientType | null> {
         return redisClient;
     }
 
-    redisClient = createClient({ url: redisUrl });
-    await redisClient.connect();
-    return redisClient;
+    // Prevent race condition: if already connecting, wait for that connection
+    if (redisConnecting) {
+        return redisConnecting;
+    }
+
+    redisConnecting = (async () => {
+        try {
+            const client = createClient({ url: redisUrl });
+            await client.connect();
+            redisClient = client;
+            return client;
+        } finally {
+            redisConnecting = null;
+        }
+    })();
+
+    return redisConnecting;
 }
 
 async function checkDb(): Promise<CheckResult> {
@@ -111,7 +126,7 @@ function parseChecks(checksParam: string | null): CheckName[] {
         return [];
     }
 
-    if (checksParam === "all") {
+    if (checksParam.toLowerCase() === "all") {
         return [...AVAILABLE_CHECKS];
     }
 
