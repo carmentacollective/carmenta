@@ -33,6 +33,78 @@ export interface ConnectedService {
 }
 
 /**
+ * Account within a grouped service
+ */
+export interface GroupedAccount {
+    accountId: string;
+    accountDisplayName: string | null;
+    isDefault: boolean;
+    status: IntegrationStatus;
+    connectedAt: Date;
+}
+
+/**
+ * Service with all its accounts grouped together.
+ * Used for the multi-account card UI where one card shows all accounts for a service.
+ */
+export interface GroupedService {
+    service: ServiceDefinition;
+    accounts: GroupedAccount[];
+    /** Aggregate status: ERROR if any account has error, EXPIRED if any expired, else CONNECTED */
+    aggregateStatus: IntegrationStatus | null;
+}
+
+/**
+ * Get aggregate status for a service based on all its accounts.
+ * Priority: ERROR > EXPIRED > CONNECTED
+ */
+export function getAggregateStatus(
+    accounts: GroupedAccount[]
+): IntegrationStatus | null {
+    if (accounts.length === 0) return null;
+
+    const hasError = accounts.some((a) => a.status === "error");
+    if (hasError) return "error";
+
+    const hasExpired = accounts.some((a) => a.status === "expired");
+    if (hasExpired) return "expired";
+
+    const hasConnected = accounts.some((a) => a.status === "connected");
+    if (hasConnected) return "connected";
+
+    return "disconnected";
+}
+
+/**
+ * Group accounts by service for the multi-account card UI.
+ */
+export function groupServiceAccounts(
+    service: ServiceDefinition,
+    accounts: ServiceAccount[]
+): GroupedService {
+    const groupedAccounts: GroupedAccount[] = accounts.map((account) => ({
+        accountId: account.accountId,
+        accountDisplayName: account.accountDisplayName ?? null,
+        isDefault: account.isDefault,
+        status: account.status,
+        connectedAt: account.connectedAt,
+    }));
+
+    // Sort: default first, then by most recently connected
+    groupedAccounts.sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return b.connectedAt.getTime() - a.connectedAt.getTime();
+    });
+
+    return {
+        service,
+        accounts: groupedAccounts,
+        aggregateStatus: getAggregateStatus(groupedAccounts),
+    };
+}
+
+/**
  * Categorize a service into connected or available based on its accounts.
  *
  * A service goes in "connected" if it has ANY accounts (regardless of status).

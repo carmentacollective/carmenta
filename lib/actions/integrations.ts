@@ -32,8 +32,10 @@ import { logger } from "@/lib/logger";
 import type { IntegrationStatus } from "@/lib/integrations/types";
 import {
     categorizeService,
+    groupServiceAccounts,
     type ServiceAccount,
     type ConnectedService,
+    type GroupedService,
 } from "./integration-utils";
 
 /**
@@ -139,6 +141,62 @@ export async function getServicesWithStatus(): Promise<{
     connected.sort((a, b) => b.connectedAt.getTime() - a.connectedAt.getTime());
 
     return { connected, available };
+}
+
+/**
+ * Get all services grouped by service ID with their accounts.
+ * Used for the multi-account card UI.
+ */
+export async function getGroupedServices(): Promise<GroupedService[]> {
+    const userEmail = await getUserEmail();
+
+    if (!userEmail) {
+        return [];
+    }
+
+    const permissions = await getUserPermissions();
+    const allServices = getAvailableServices(true);
+
+    // Filter services based on user permissions
+    const visibleServices = allServices.filter((service) => {
+        if (service.status === "available") return true;
+        if (service.status === "beta") return permissions.showBetaIntegrations;
+        if (service.status === "internal") return permissions.showInternalIntegrations;
+        return false;
+    });
+
+    const groupedServices: GroupedService[] = [];
+
+    for (const service of visibleServices) {
+        const accounts = await listServiceAccounts(userEmail, service.id);
+        const grouped = groupServiceAccounts(service, accounts);
+        groupedServices.push(grouped);
+    }
+
+    // Sort: services with accounts first (by most recent), then services without accounts alphabetically
+    groupedServices.sort((a, b) => {
+        const aHasAccounts = a.accounts.length > 0;
+        const bHasAccounts = b.accounts.length > 0;
+
+        if (aHasAccounts && !bHasAccounts) return -1;
+        if (!aHasAccounts && bHasAccounts) return 1;
+
+        if (aHasAccounts && bHasAccounts) {
+            // Both have accounts - sort by most recent connection
+            const aLatest = Math.max(
+                ...a.accounts.map((acc) => acc.connectedAt.getTime())
+            );
+            const bLatest = Math.max(
+                ...b.accounts.map((acc) => acc.connectedAt.getTime())
+            );
+            return bLatest - aLatest;
+        }
+
+        // Neither has accounts - alphabetical
+        return a.service.name.localeCompare(b.service.name);
+    });
+
+    return groupedServices;
 }
 
 /**
@@ -597,6 +655,77 @@ export async function testIntegration(
                 error instanceof Error
                     ? error.message
                     : "We couldn't test that connection. The robots have been notified. 🤖",
+        };
+    }
+}
+
+/**
+ * Set an account as the default for a service.
+ * Only one account per service can be the default.
+ */
+export async function setDefaultAccount(
+    serviceId: string,
+    accountId: string
+): Promise<ConnectResult> {
+    const userEmail = await getUserEmail();
+
+    if (!userEmail) {
+        return { success: false, error: "Sign in to continue" };
+    }
+
+    try {
+        await db.transaction(async (tx) => {
+            // Clear default from all accounts for this service
+            await tx
+                .update(schema.integrations)
+                .set({ isDefault: false })
+                .where(
+                    and(
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId)
+                    )
+                );
+
+            // Set the specified account as default
+            await tx
+                .update(schema.integrations)
+                .set({ isDefault: true })
+                .where(
+                    and(
+                        eq(schema.integrations.userEmail, userEmail),
+                        eq(schema.integrations.service, serviceId),
+                        eq(schema.integrations.accountId, accountId)
+                    )
+                );
+        });
+
+        logger.info(
+            { userEmail, service: serviceId, accountId },
+            "Default account updated"
+        );
+
+        return { success: true };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        logger.error(
+            { err: error, errorMessage, userEmail, service: serviceId },
+            "Failed to set default account"
+        );
+
+        Sentry.captureException(error, {
+            tags: {
+                component: "action",
+                action: "set_default_account",
+            },
+            extra: { userEmail, serviceId, accountId },
+        });
+
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "We had an error updating the default. The robots have been notified. 🤖",
         };
     }
 }
