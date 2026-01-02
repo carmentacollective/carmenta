@@ -397,6 +397,27 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick find!", "Got it"],
         },
     },
+    quo: {
+        displayName: "Quo",
+        icon: "/logos/quo.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "send_message") return "sending message";
+            if (action === "list_messages") return "checking messages";
+            if (action === "list_calls") return "checking calls";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Accessing Quo...",
+            completed: "Quo operation complete",
+            error: "Couldn't complete Quo operation",
+        },
+        delightMessages: {
+            completed: ["Message sent", "Inbox checked", "All set"],
+            fast: ["Quick!", "Done"],
+        },
+    },
     slack: {
         displayName: "Slack",
         icon: "/logos/slack.svg",

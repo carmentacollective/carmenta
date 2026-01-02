@@ -28,5 +28,6 @@ export { GmailAdapter } from "./gmail";
 export { GoogleCalendarContactsAdapter } from "./google-calendar-contacts";
 export { LimitlessAdapter } from "./limitless";
 export { NotionAdapter } from "./notion";
+export { QuoAdapter } from "./quo";
 export { SlackAdapter } from "./slack";
 export { TwitterAdapter } from "./twitter";

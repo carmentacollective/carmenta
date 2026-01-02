@@ -23,6 +23,7 @@ import {
     GoogleCalendarContactsAdapter,
     LimitlessAdapter,
     NotionAdapter,
+    QuoAdapter,
     SlackAdapter,
     TwitterAdapter,
 } from "./adapters";
@@ -45,6 +46,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     "google-calendar-contacts": new GoogleCalendarContactsAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
+    quo: new QuoAdapter(),
     slack: new SlackAdapter(),
     twitter: new TwitterAdapter(),
 };

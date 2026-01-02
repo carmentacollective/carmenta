@@ -205,6 +205,27 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["search_pages", "get_page", "create_page", "update_page"],
     },
 
+    // Quo (formerly OpenPhone) - API Key
+    {
+        id: "quo",
+        name: "Quo",
+        description: "Business phone system for SMS messaging and calls",
+        logo: "/logos/quo.svg",
+        authMethod: "api_key",
+        status: "beta",
+        getApiKeyUrl: "https://www.quo.com/docs/mdx/api-reference/introduction",
+        apiKeyPlaceholder: "Enter your Quo API key",
+        supportsMultipleAccounts: false,
+        docsUrl: "https://www.quo.com/docs/mdx/api-reference/introduction",
+        capabilities: [
+            "list_messages",
+            "send_message",
+            "list_calls",
+            "list_contacts",
+            "list_phone_numbers",
+        ],
+    },
+
     // Slack - OAuth (in-house)
     {
         id: "slack",

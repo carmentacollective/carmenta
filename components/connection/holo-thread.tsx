@@ -70,6 +70,7 @@ import {
     GoogleCalendarContactsToolResult,
     LimitlessToolResult,
     NotionToolResult,
+    QuoToolResult,
     SlackToolResult,
     TwitterToolResult,
 } from "@/components/tools/integrations";
@@ -739,6 +740,17 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Notion request failed")}
+                />
+            );
+
+        case "quo":
+            return (
+                <QuoToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Quo request failed")}
                 />
             );
 
