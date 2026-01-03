@@ -6,6 +6,7 @@
  * - Database operations
  *
  * Each activity can fail and be automatically retried by Temporal.
+ * Errors are captured in Sentry BEFORE Temporal wraps them in ActivityFailure.
  */
 
 import { createUIMessageStream, JsonToSseTransformStream } from "ai";
@@ -21,6 +22,7 @@ import {
 } from "../../lib/agents/employee";
 import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
 import { logger } from "../../lib/logger";
+import { captureActivityError } from "../lib/activity-sentry";
 
 /**
  * Extended job context including user information for employee agent
@@ -37,30 +39,38 @@ export interface FullJobContext {
  * Load full job context including user email for employee execution
  */
 export async function loadFullJobContext(jobId: string): Promise<FullJobContext> {
-    const job = await db.query.scheduledJobs.findFirst({
-        where: eq(scheduledJobs.id, jobId),
-    });
+    try {
+        const job = await db.query.scheduledJobs.findFirst({
+            where: eq(scheduledJobs.id, jobId),
+        });
 
-    if (!job) {
-        throw new Error(`Job not found: ${jobId}`);
+        if (!job) {
+            throw new Error(`Job not found: ${jobId}`);
+        }
+
+        // Get user email for integration access
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, job.userId),
+        });
+
+        if (!user) {
+            throw new Error(`User not found for job: ${jobId}`);
+        }
+
+        return {
+            jobId: job.id,
+            userId: job.userId,
+            userEmail: user.email,
+            prompt: job.prompt,
+            memory: (job.memory as Record<string, unknown>) || {},
+        };
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "loadFullJobContext",
+            jobId,
+        });
+        throw error;
     }
-
-    // Get user email for integration access
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, job.userId),
-    });
-
-    if (!user) {
-        throw new Error(`User not found for job: ${jobId}`);
-    }
-
-    return {
-        jobId: job.id,
-        userId: job.userId,
-        userEmail: user.email,
-        prompt: job.prompt,
-        memory: (job.memory as Record<string, unknown>) || {},
-    };
 }
 
 /**
@@ -108,66 +118,77 @@ export async function executeStreamingEmployee(
         activity: "executeStreamingEmployee",
     });
 
-    // Infrastructure setup - let Temporal retry these if they fail
-    const streamContext = getBackgroundStreamContext();
+    try {
+        // Infrastructure setup - let Temporal retry these if they fail
+        const streamContext = getBackgroundStreamContext();
 
-    if (!streamContext) {
-        throw new Error("Redis not configured - cannot run streaming job");
+        if (!streamContext) {
+            throw new Error("Redis not configured - cannot run streaming job");
+        }
+
+        activityLogger.info({}, "🚀 Starting streaming employee execution");
+
+        let employeeResult: EmployeeResult | null = null;
+
+        // Create UI message stream that wraps employee execution
+        const stream = createUIMessageStream({
+            execute: async ({ writer }) => {
+                employeeResult = await runEmployeeStreaming(
+                    {
+                        jobId: context.jobId,
+                        userId: context.userId,
+                        userEmail: context.userEmail,
+                        prompt: context.prompt,
+                        memory: context.memory,
+                    },
+                    writer
+                );
+            },
+        });
+
+        // Pipe through resumable stream to Redis - let Temporal retry if this fails
+        const resumableStream = await streamContext.createNewResumableStream(
+            streamId,
+            () => stream.pipeThrough(new JsonToSseTransformStream())
+        );
+
+        if (!resumableStream) {
+            throw new Error("Failed to create resumable stream");
+        }
+
+        // Consume the stream to completion
+        const reader = resumableStream.getReader();
+        while (true) {
+            const { done } = await reader.read();
+            if (done) break;
+        }
+
+        // Verify we got a result
+        if (!employeeResult) {
+            throw new Error("Failed to capture employee result from stream");
+        }
+
+        // TypeScript narrowing doesn't work after async callbacks - use explicit type
+        const result = employeeResult as EmployeeResult;
+
+        activityLogger.info(
+            { success: result.success, toolCalls: result.toolCallsExecuted },
+            "✅ Streaming employee execution complete"
+        );
+
+        // Return the result (may be success or failure from employee execution)
+        // Employee failures are permanent and should not be retried
+        // Infrastructure failures above this point will throw and trigger Temporal retry
+        return result;
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "executeStreamingEmployee",
+            jobId: context.jobId,
+            userId: context.userId,
+            streamId,
+        });
+        throw error;
     }
-
-    activityLogger.info({}, "🚀 Starting streaming employee execution");
-
-    let employeeResult: EmployeeResult | null = null;
-
-    // Create UI message stream that wraps employee execution
-    const stream = createUIMessageStream({
-        execute: async ({ writer }) => {
-            employeeResult = await runEmployeeStreaming(
-                {
-                    jobId: context.jobId,
-                    userId: context.userId,
-                    userEmail: context.userEmail,
-                    prompt: context.prompt,
-                    memory: context.memory,
-                },
-                writer
-            );
-        },
-    });
-
-    // Pipe through resumable stream to Redis - let Temporal retry if this fails
-    const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
-        stream.pipeThrough(new JsonToSseTransformStream())
-    );
-
-    if (!resumableStream) {
-        throw new Error("Failed to create resumable stream");
-    }
-
-    // Consume the stream to completion
-    const reader = resumableStream.getReader();
-    while (true) {
-        const { done } = await reader.read();
-        if (done) break;
-    }
-
-    // Verify we got a result
-    if (!employeeResult) {
-        throw new Error("Failed to capture employee result from stream");
-    }
-
-    // TypeScript narrowing doesn't work after async callbacks - use explicit type
-    const result = employeeResult as EmployeeResult;
-
-    activityLogger.info(
-        { success: result.success, toolCalls: result.toolCallsExecuted },
-        "✅ Streaming employee execution complete"
-    );
-
-    // Return the result (may be success or failure from employee execution)
-    // Employee failures are permanent and should not be retried
-    // Infrastructure failures above this point will throw and trigger Temporal retry
-    return result;
 }
 
 /**
@@ -220,16 +241,24 @@ export async function recordEmployeeRun(
  * This allows the UI to show "running" state immediately.
  */
 export async function createJobRun(jobId: string): Promise<string> {
-    const [run] = await db
-        .insert(jobRuns)
-        .values({
-            jobId,
-            status: "running",
-            startedAt: new Date(),
-        })
-        .returning();
+    try {
+        const [run] = await db
+            .insert(jobRuns)
+            .values({
+                jobId,
+                status: "running",
+                startedAt: new Date(),
+            })
+            .returning();
 
-    return run.id;
+        return run.id;
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "createJobRun",
+            jobId,
+        });
+        throw error;
+    }
 }
 
 /**
@@ -261,47 +290,58 @@ export async function finalizeJobRun(
     userId: string,
     result: EmployeeResult
 ): Promise<void> {
-    // Update the run record with results and observability data
-    await db
-        .update(jobRuns)
-        .set({
-            status: result.success ? "completed" : "failed",
-            summary: result.summary,
-            toolCallsExecuted: result.toolCallsExecuted,
-            notificationsSent: result.notifications.length,
-            completedAt: new Date(),
-            activeStreamId: null,
-            // Observability fields
-            executionTrace: result.executionTrace,
-            errorDetails: result.errorDetails,
-            tokenUsage: result.tokenUsage,
-            modelId: result.modelId,
-            durationMs: result.durationMs,
-            sentryTraceId: result.sentryTraceId,
-        })
-        .where(eq(jobRuns.id, runId));
+    try {
+        // Update the run record with results and observability data
+        await db
+            .update(jobRuns)
+            .set({
+                status: result.success ? "completed" : "failed",
+                summary: result.summary,
+                toolCallsExecuted: result.toolCallsExecuted,
+                notificationsSent: result.notifications.length,
+                completedAt: new Date(),
+                activeStreamId: null,
+                // Observability fields
+                executionTrace: result.executionTrace,
+                errorDetails: result.errorDetails,
+                tokenUsage: result.tokenUsage,
+                modelId: result.modelId,
+                durationMs: result.durationMs,
+                sentryTraceId: result.sentryTraceId,
+            })
+            .where(eq(jobRuns.id, runId));
 
-    // Create notifications linked to this run
-    for (const notification of result.notifications) {
-        await db.insert(jobNotifications).values({
-            userId,
-            jobId,
+        // Create notifications linked to this run
+        for (const notification of result.notifications) {
+            await db.insert(jobNotifications).values({
+                userId,
+                jobId,
+                runId,
+                title: notification.title,
+                body: notification.body,
+                priority: notification.priority,
+            });
+        }
+
+        // Update job with new memory and last run time
+        await db
+            .update(scheduledJobs)
+            .set({
+                memory: result.updatedMemory,
+                lastRunAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .where(eq(scheduledJobs.id, jobId));
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "finalizeJobRun",
             runId,
-            title: notification.title,
-            body: notification.body,
-            priority: notification.priority,
+            jobId,
+            userId,
+            resultSuccess: result.success,
         });
+        throw error;
     }
-
-    // Update job with new memory and last run time
-    await db
-        .update(scheduledJobs)
-        .set({
-            memory: result.updatedMemory,
-            lastRunAt: new Date(),
-            updatedAt: new Date(),
-        })
-        .where(eq(scheduledJobs.id, jobId));
 }
 
 // Re-export background response activities
