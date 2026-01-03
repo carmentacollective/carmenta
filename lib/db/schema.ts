@@ -350,10 +350,6 @@ export const connections = pgTable(
             table.isStarred,
             table.lastActivityAt
         ),
-        /** Prevent duplicate code mode connections for the same project */
-        uniqueIndex("connections_user_project_path_unique_idx")
-            .on(table.userId, table.projectPath)
-            .where(sql`${table.projectPath} IS NOT NULL`),
     ]
 );
 

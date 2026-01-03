@@ -1,0 +1,1 @@
+DROP INDEX "connections_user_project_path_unique_idx";
