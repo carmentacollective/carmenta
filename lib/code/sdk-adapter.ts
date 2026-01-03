@@ -305,9 +305,24 @@ function* processSDKMessage(
                 const parentId = userMsg.parent_tool_use_id;
                 if (parentId) {
                     const toolName = toolNames.get(parentId) ?? "unknown";
-                    const isError =
-                        typeof userMsg.tool_use_result === "string" &&
-                        userMsg.tool_use_result.startsWith("Error:");
+
+                    // Detect errors from multiple formats:
+                    // 1. String output starting with "Error:"
+                    // 2. Object with non-zero exitCode (Bash tool)
+                    // 3. Object with error field
+                    let isError = false;
+                    const result = userMsg.tool_use_result;
+
+                    if (typeof result === "string") {
+                        isError = result.startsWith("Error:");
+                    } else if (typeof result === "object" && result !== null) {
+                        const obj = result as Record<string, unknown>;
+                        if (typeof obj.exitCode === "number" && obj.exitCode !== 0) {
+                            isError = true;
+                        } else if (obj.error !== undefined) {
+                            isError = true;
+                        }
+                    }
 
                     yield {
                         type: "tool-result",
