@@ -43,6 +43,7 @@ import {
     useContentOrder,
     useTextSegments,
     useCodeMessages,
+    useStreamHealth,
 } from "@/lib/code/tool-state-context";
 import type { ContentOrderEntry, RenderableToolPart } from "@/lib/code/transform";
 import type { CodeMessage, ToolMessage, TextMessage } from "@/lib/code/messages";
@@ -154,7 +155,15 @@ function getToolSummary(
             return pattern ? truncate(pattern, 35) : "";
         }
         case "Task": {
+            const agentType = input.subagent_type as string | undefined;
             const desc = input.description as string | undefined;
+            // Show agent type prominently, then description
+            if (agentType && desc) {
+                return `${agentType}: ${truncate(desc, 30)}`;
+            }
+            if (agentType) {
+                return agentType;
+            }
             return desc ? truncate(desc, 40) : "";
         }
         case "WebFetch": {
@@ -448,6 +457,47 @@ function TransientActivity({ messages }: { messages: TransientMessage[] }) {
 }
 
 /**
+ * Stream health indicator - reassures user that work is still happening
+ * Shows when we have running tools but haven't received updates recently
+ */
+function StreamHealthIndicator({ isStreaming }: { isStreaming: boolean }) {
+    const streamHealth = useStreamHealth();
+
+    // Only show when streaming, have running tools, and it's been a few seconds
+    if (
+        !isStreaming ||
+        !streamHealth.hasRunningTools ||
+        streamHealth.secondsSinceActivity < 3
+    ) {
+        return null;
+    }
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-muted-foreground/60 mt-2 flex items-center gap-2 text-xs"
+        >
+            {/* Pulsing heartbeat dot */}
+            <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+
+            <span className="italic">
+                Still working...
+                {streamHealth.secondsSinceActivity >= 5 && (
+                    <span className="ml-1 font-mono">
+                        ({streamHealth.secondsSinceActivity}s since last update)
+                    </span>
+                )}
+            </span>
+        </motion.div>
+    );
+}
+
+/**
  * Text segment - renders markdown content
  */
 function TextSegment({ text }: { text: string }) {
@@ -579,6 +629,11 @@ export function CodeModeMessage({
 
             {/* Transient activity (fallback when no accumulated tools) */}
             {showTransient && <TransientActivity messages={transientMessages} />}
+
+            {/* Stream health indicator - shows when we're waiting for updates */}
+            <AnimatePresence>
+                <StreamHealthIndicator isStreaming={isActivelyStreaming} />
+            </AnimatePresence>
         </motion.div>
     );
 }

@@ -12,6 +12,10 @@
  * - Components re-render with each state update
  *
  * Also maintains backwards compatibility with `data-tool-state` format.
+ *
+ * Client-side elapsed time tracking:
+ * Since ai-sdk-provider-claude-code doesn't emit tool_progress events,
+ * we track elapsed time client-side using timestamps and intervals.
  */
 
 import {
@@ -19,6 +23,8 @@ import {
     useContext,
     useCallback,
     useState,
+    useEffect,
+    useRef,
     type ReactNode,
 } from "react";
 import type { ContentOrderEntry, RenderableToolPart, TextSegment } from "./transform";
@@ -86,10 +92,22 @@ export function isToolStateDataPart(part: unknown): part is ToolStateDataPart {
 }
 
 /**
+ * Stream health metrics for UI feedback
+ */
+interface StreamHealth {
+    /** When we last received any data */
+    lastActivityAt: number | null;
+    /** Whether any tools are currently running */
+    hasRunningTools: boolean;
+    /** Seconds since last activity (updated every second) */
+    secondsSinceActivity: number;
+}
+
+/**
  * Context value shape
  */
 interface ToolStateContextValue {
-    /** Flat message array (new format) */
+    /** Flat message array (new format) with client-computed elapsed times */
     messages: CodeMessage[];
     /** Current tool states keyed by toolCallId (legacy, derived from messages) */
     tools: Map<string, RenderableToolPart>;
@@ -101,6 +119,8 @@ interface ToolStateContextValue {
     handleDataPart: (dataPart: unknown) => void;
     /** Clear all state (call when streaming ends or new message) */
     clear: () => void;
+    /** Stream health for activity indicators */
+    streamHealth: StreamHealth;
 }
 
 const ToolStateContext = createContext<ToolStateContextValue | null>(null);
@@ -141,7 +161,96 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
     const [contentOrder, setContentOrder] = useState<ContentOrderEntry[]>([]);
     const [textSegments, setTextSegments] = useState<Map<string, string>>(new Map());
 
+    // Client-side elapsed time tracking
+    // Maps toolCallId → timestamp when tool entered "running" state
+    const toolStartTimesRef = useRef<Map<string, number>>(new Map());
+
+    // Track last activity for stream health indicator
+    const lastActivityRef = useRef<number | null>(null);
+    const [streamHealth, setStreamHealth] = useState<StreamHealth>({
+        lastActivityAt: null,
+        hasRunningTools: false,
+        secondsSinceActivity: 0,
+    });
+
+    // Messages with client-computed elapsed times
+    const [messagesWithElapsed, setMessagesWithElapsed] = useState<CodeMessage[]>([]);
+
+    // Update elapsed times every second for running tools
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const startTimes = toolStartTimesRef.current;
+
+            // Check if any tools are running
+            const runningToolIds = new Set<string>();
+            for (const msg of messages) {
+                if (msg.type === "tool" && msg.state === "running") {
+                    runningToolIds.add(msg.id);
+                }
+            }
+
+            // Only update if we have running tools
+            if (runningToolIds.size === 0) {
+                // Clear start times for non-running tools
+                for (const id of startTimes.keys()) {
+                    if (!runningToolIds.has(id)) {
+                        startTimes.delete(id);
+                    }
+                }
+                // Just copy messages without modification
+                setMessagesWithElapsed(messages);
+
+                // Update stream health
+                setStreamHealth({
+                    lastActivityAt: lastActivityRef.current,
+                    hasRunningTools: false,
+                    secondsSinceActivity: lastActivityRef.current
+                        ? Math.floor((now - lastActivityRef.current) / 1000)
+                        : 0,
+                });
+                return;
+            }
+
+            // Update messages with elapsed times
+            const updated = messages.map((msg) => {
+                if (msg.type !== "tool" || msg.state !== "running") {
+                    return msg;
+                }
+
+                // Track start time if not already tracked
+                if (!startTimes.has(msg.id)) {
+                    startTimes.set(msg.id, now);
+                }
+
+                const startTime = startTimes.get(msg.id) ?? now;
+                const elapsedSeconds = (now - startTime) / 1000;
+
+                return {
+                    ...msg,
+                    elapsedSeconds,
+                } as ToolMessage;
+            });
+
+            setMessagesWithElapsed(updated);
+
+            // Update stream health
+            setStreamHealth({
+                lastActivityAt: lastActivityRef.current,
+                hasRunningTools: true,
+                secondsSinceActivity: lastActivityRef.current
+                    ? Math.floor((now - lastActivityRef.current) / 1000)
+                    : 0,
+            });
+        }, 100); // Update frequently for smooth elapsed display
+
+        return () => clearInterval(interval);
+    }, [messages]);
+
     const handleDataPart = useCallback((dataPart: unknown) => {
+        // Record activity
+        lastActivityRef.current = Date.now();
+
         // Handle new flat message format
         if (isCodeMessagesDataPart(dataPart)) {
             const newMessages = dataPart.data;
@@ -201,20 +310,29 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
 
     const clear = useCallback(() => {
         setMessages([]);
+        setMessagesWithElapsed([]);
         setTools(new Map());
         setContentOrder([]);
         setTextSegments(new Map());
+        toolStartTimesRef.current.clear();
+        lastActivityRef.current = null;
+        setStreamHealth({
+            lastActivityAt: null,
+            hasRunningTools: false,
+            secondsSinceActivity: 0,
+        });
     }, []);
 
     return (
         <ToolStateContext.Provider
             value={{
-                messages,
+                messages: messagesWithElapsed,
                 tools,
                 contentOrder,
                 textSegments,
                 handleDataPart,
                 clear,
+                streamHealth,
             }}
         >
             {children}
@@ -236,9 +354,22 @@ export function useToolState(): ToolStateContextValue {
             textSegments: new Map(),
             handleDataPart: () => {},
             clear: () => {},
+            streamHealth: {
+                lastActivityAt: null,
+                hasRunningTools: false,
+                secondsSinceActivity: 0,
+            },
         };
     }
     return context;
+}
+
+/**
+ * Hook to access stream health for activity indicators
+ */
+export function useStreamHealth(): StreamHealth {
+    const { streamHealth } = useToolState();
+    return streamHealth;
 }
 
 /**
