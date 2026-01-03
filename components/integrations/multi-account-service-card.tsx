@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
     Check,
@@ -50,14 +50,15 @@ export interface MultiAccountServiceCardProps {
 
 /**
  * Get display label for an account.
- * Priority: accountDisplayName > accountId (if it looks like an email) > "Account"
+ * Priority: email (accountId with @) > accountDisplayName > accountId > "Account"
+ * Email is prioritized because it distinguishes between multiple accounts with the same name.
  */
 function getAccountLabel(account: GroupedAccount): string {
-    if (account.accountDisplayName) {
-        return account.accountDisplayName;
-    }
     if (account.accountId.includes("@")) {
         return account.accountId;
+    }
+    if (account.accountDisplayName) {
+        return account.accountDisplayName;
     }
     if (account.accountId === "default") {
         return "Default Account";
@@ -105,6 +106,9 @@ export function MultiAccountServiceCard({
 }: MultiAccountServiceCardProps) {
     const hasAccounts = accounts.length > 0;
     const supportsMultiple = service.supportsMultipleAccounts ?? false;
+    const [confirmingDisconnect, setConfirmingDisconnect] = useState<string | null>(
+        null
+    );
 
     // Auto-dismiss success messages after 3 seconds
     useEffect(() => {
@@ -184,7 +188,7 @@ export function MultiAccountServiceCard({
                                     needsAttention && "bg-amber-500/5"
                                 )}
                             >
-                                <div className="flex items-center gap-3">
+                                <div className="flex min-w-0 flex-1 items-center gap-3">
                                     {/* Status indicator */}
                                     {statusIndicator && (
                                         <div
@@ -202,7 +206,7 @@ export function MultiAccountServiceCard({
                                         </div>
                                     )}
                                     {/* Account label */}
-                                    <span className="text-foreground text-sm font-medium">
+                                    <span className="text-foreground truncate text-sm font-medium">
                                         {getAccountLabel(account)}
                                     </span>
                                     {/* Default badge */}
@@ -215,7 +219,7 @@ export function MultiAccountServiceCard({
                                 </div>
 
                                 {/* Account actions */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex shrink-0 items-center gap-2">
                                     {/* Status message for this account */}
                                     {statusMessage?.accountId === account.accountId && (
                                         <div
@@ -277,15 +281,39 @@ export function MultiAccountServiceCard({
                                             </button>
                                         </>
                                     )}
-                                    <button
-                                        onClick={() =>
-                                            onDisconnect?.(account.accountId)
-                                        }
-                                        disabled={isLoading}
-                                        className="text-muted-foreground rounded-lg px-2 py-1 text-xs transition-colors hover:text-red-600 disabled:opacity-50"
-                                    >
-                                        Disconnect
-                                    </button>
+                                    {confirmingDisconnect === account.accountId ? (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() =>
+                                                    setConfirmingDisconnect(null)
+                                                }
+                                                className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    onDisconnect?.(account.accountId);
+                                                    setConfirmingDisconnect(null);
+                                                }}
+                                                className="rounded-lg bg-red-500/15 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 dark:text-red-400"
+                                            >
+                                                Confirm
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() =>
+                                                setConfirmingDisconnect(
+                                                    account.accountId
+                                                )
+                                            }
+                                            disabled={isLoading}
+                                            className="text-muted-foreground rounded-lg px-2 py-1 text-xs transition-colors hover:text-red-600 disabled:opacity-50"
+                                        >
+                                            Disconnect
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );
