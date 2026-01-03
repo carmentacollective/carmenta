@@ -38,19 +38,31 @@ const MIN_MEANINGFUL_CONTENT_LENGTH = 100;
 /**
  * Maps our depth options to Parallel processor tiers.
  *
- * Using -fast variants for lower latency (10-100s typical).
- * Fast processors sacrifice data freshness optimization, not accuracy -
- * they use cached results more aggressively.
+ * Fast variants (-fast suffix) prioritize speed over data freshness:
+ * - Use cached results more aggressively
+ * - 2-5x faster than standard variants
+ * - Same accuracy, just potentially less fresh data
  *
- * Non-fast alternatives (lite, base, core) prioritize fresher data but
- * can take significantly longer (up to 45 min for complex queries).
- * Consider switching to non-fast if users need real-time data freshness
- * (stock prices, breaking news) and are willing to wait longer.
+ * Higher tiers (pro, ultra) don't have -fast variants and are designed
+ * for background execution where latency is acceptable.
+ *
+ * @see https://docs.parallel.ai/task-api/guides/choose-a-processor
  */
 const DEPTH_TO_PROCESSOR: Record<ResearchDepth, string> = {
-    quick: "lite-fast", // 10-20s typical
-    standard: "base-fast", // 15-50s typical
-    deep: "core-fast", // 15-100s typical
+    // "From what we know" - no external research, handled before this mapping
+    instant: "", // Not used - signals no research needed
+
+    // Deprecated - alias for "light"
+    quick: "lite-fast",
+
+    // Fast variants for interactive use (user-facing: warm Carmenta labels)
+    light: "lite-fast", // "Quick look" (~15s, $5/1K)
+    standard: "base-fast", // "Proper search" (~30s, $10/1K)
+    deep: "core-fast", // "Deep dive" (~2min, $25/1K)
+
+    // Higher tiers for background research
+    comprehensive: "pro", // "Taking our time" (~5min, $100/1K)
+    full: "ultra", // "The full picture" (~15min, $300/1K)
 };
 
 /**
@@ -328,6 +340,17 @@ export class ParallelProvider implements WebIntelligenceProvider {
         const startTime = Date.now();
         const depth = options.depth ?? "standard";
         const focusAreas = options.focusAreas;
+
+        // Handle "instant" depth - no external research, return null
+        // The caller should answer from existing knowledge instead
+        if (depth === "instant") {
+            logger.info(
+                { objective, depth, provider: this.name },
+                "Skipping research for instant depth - answering from memory"
+            );
+            return null;
+        }
+
         const processor = DEPTH_TO_PROCESSOR[depth];
 
         logger.info(
