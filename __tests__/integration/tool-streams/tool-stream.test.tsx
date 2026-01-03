@@ -19,7 +19,6 @@ import { describe, it, expect } from "vitest";
 import { render, within } from "@testing-library/react";
 
 import type { ToolScenario, ToolRenderProps } from "./helpers/types";
-import { loadScenarios } from "./helpers/mock-stream";
 import { renderCodeTool } from "@/components/tools/registry";
 
 // Import all scenario files
@@ -46,7 +45,7 @@ function TestToolRenderer({ scenario }: { scenario: ToolScenario }) {
     const toolCallChunk = scenario.chunks.find((c) => c.type === "tool-call");
     const toolResultChunk = scenario.chunks.find((c) => c.type === "tool-result");
 
-    if (!toolCallChunk || toolCallChunk.type !== "tool-call") {
+    if (!toolCallChunk) {
         throw new Error(`Scenario ${scenario.name} missing tool-call chunk`);
     }
 
@@ -218,13 +217,6 @@ describe("Tool Stream Integration", () => {
 });
 
 describe("Tool Stream Helpers", () => {
-    it("loads scenarios from files", async () => {
-        const scenarios = await loadScenarios();
-
-        expect(scenarios.length).toBeGreaterThan(0);
-        expect(scenarios.every((s) => s.name && s.toolName)).toBe(true);
-    });
-
     it("all scenarios have required fields", () => {
         for (const scenario of allScenarios) {
             expect(scenario.name).toBeTruthy();

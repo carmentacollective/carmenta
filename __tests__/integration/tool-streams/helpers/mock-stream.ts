@@ -9,58 +9,7 @@
  * use MockLanguageModelV3 from "ai/test" with simulateReadableStream.
  */
 
-import type { MockStreamChunk, ToolScenario } from "./types";
-
-/**
- * Convert our simplified chunk types to AI SDK format.
- * The SDK has specific field names we need to match.
- * Exported for future use with MockLanguageModelV3.
- */
-export function convertChunk(chunk: MockStreamChunk): unknown {
-    switch (chunk.type) {
-        case "text-start":
-            return { type: "text-start", id: chunk.id };
-
-        case "text-delta":
-            return { type: "text-delta", id: chunk.id, delta: chunk.delta };
-
-        case "text-end":
-            return { type: "text-end", id: chunk.id };
-
-        case "reasoning":
-            return { type: "reasoning", text: chunk.text };
-
-        case "tool-call":
-            return {
-                type: "tool-call",
-                toolCallId: chunk.toolCallId,
-                toolName: chunk.toolName,
-                input: chunk.input,
-            };
-
-        case "tool-result":
-            return {
-                type: "tool-result",
-                toolCallId: chunk.toolCallId,
-                toolName: chunk.toolName,
-                output: chunk.output,
-            };
-
-        case "finish":
-            return {
-                type: "finish",
-                finishReason: chunk.finishReason,
-                usage: {
-                    inputTokens: chunk.usage.inputTokens,
-                    outputTokens: chunk.usage.outputTokens,
-                    totalTokens: chunk.usage.inputTokens + chunk.usage.outputTokens,
-                },
-            };
-
-        default:
-            return chunk;
-    }
-}
+import type { MockStreamChunk } from "./types";
 
 /**
  * Build chunks for a simple tool call scenario.
@@ -195,23 +144,5 @@ export function buildReasoningWithToolChunks(params: {
             finishReason: params.output ? "stop" : ("tool-calls" as const),
             usage: { inputTokens: 15, outputTokens: 30 },
         },
-    ];
-}
-
-/**
- * Load all scenarios from the scenarios directory.
- */
-export async function loadScenarios(): Promise<ToolScenario[]> {
-    // Import scenario modules - they export named `scenarios` arrays
-    const [calculateMod, webSearchMod, giphyMod] = await Promise.all([
-        import("../scenarios/calculate"),
-        import("../scenarios/web-search"),
-        import("../scenarios/giphy"),
-    ]);
-
-    return [
-        ...calculateMod.scenarios,
-        ...webSearchMod.scenarios,
-        ...giphyMod.scenarios,
     ];
 }
