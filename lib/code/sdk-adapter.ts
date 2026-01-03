@@ -160,6 +160,9 @@ export async function* streamSDK(
     }
 
     // Track tool states for input accumulation
+    // These maps persist for the duration of this single request and are
+    // automatically garbage collected when the generator completes.
+    // No cleanup needed - they don't leak across requests.
     const toolInputBuffers = new Map<string, string>();
     const toolNames = new Map<string, string>();
     // Map block index → tool ID for proper input_json_delta routing
