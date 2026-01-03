@@ -37,7 +37,8 @@ function parseSSEEvent(data: string): unknown | null {
     if (!jsonStr || jsonStr === "[DONE]") return null;
     try {
         return JSON.parse(jsonStr);
-    } catch {
+    } catch (error) {
+        logger.debug({ jsonStr, error }, "Failed to parse SSE event");
         return null;
     }
 }
@@ -142,15 +143,6 @@ export function JobProgressViewer({
             eventSource.close();
         };
     }, [jobId, runId, handleDataPart]);
-
-    // Clean up on unmount
-    useEffect(() => {
-        return () => {
-            if (eventSourceRef.current) {
-                eventSourceRef.current.close();
-            }
-        };
-    }, []);
 
     const activeTransients = Array.from(transientMessages.values());
 
