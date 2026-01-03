@@ -159,11 +159,9 @@ export async function* streamSDK(
         abortController.abort(options.abortSignal.reason);
     }
 
-    // Track tool states for input accumulation
+    // Track tool metadata for proper delta routing
     // These maps persist for the duration of this single request and are
     // automatically garbage collected when the generator completes.
-    // No cleanup needed - they don't leak across requests.
-    const toolInputBuffers = new Map<string, string>();
     const toolNames = new Map<string, string>();
     // Map block index → tool ID for proper input_json_delta routing
     const blockIndexToToolId = new Map<number, string>();
@@ -199,7 +197,6 @@ export async function* streamSDK(
             try {
                 for (const chunk of processSDKMessage(
                     message,
-                    toolInputBuffers,
                     toolNames,
                     blockIndexToToolId
                 )) {
@@ -247,7 +244,6 @@ export async function* streamSDK(
  */
 function* processSDKMessage(
     message: SDKMessage,
-    toolInputBuffers: Map<string, string>,
     toolNames: Map<string, string>,
     blockIndexToToolId: Map<number, string>
 ): Generator<SDKChunk> {
@@ -259,12 +255,7 @@ function* processSDKMessage(
                 logger.warn({ message }, "SDK stream_event missing event property");
                 break;
             }
-            yield* processStreamEvent(
-                event,
-                toolInputBuffers,
-                toolNames,
-                blockIndexToToolId
-            );
+            yield* processStreamEvent(event, toolNames, blockIndexToToolId);
             break;
         }
 
@@ -388,7 +379,6 @@ function* processSDKMessage(
  */
 function* processStreamEvent(
     event: StreamEvent,
-    toolInputBuffers: Map<string, string>,
     toolNames: Map<string, string>,
     blockIndexToToolId: Map<number, string>
 ): Generator<SDKChunk> {
@@ -397,7 +387,6 @@ function* processStreamEvent(
         if (block?.type === "tool_use") {
             const toolUse = block as { id: string; name: string };
             toolNames.set(toolUse.id, toolUse.name);
-            toolInputBuffers.set(toolUse.id, "");
 
             // Track block index → tool ID for proper delta routing
             if (event.index !== undefined) {
@@ -431,27 +420,19 @@ function* processStreamEvent(
                     : undefined;
 
             if (toolId) {
-                // Accumulate the delta for the correct tool
-                const buffer = toolInputBuffers.get(toolId) ?? "";
-                toolInputBuffers.set(toolId, buffer + delta.partial_json);
-
                 yield {
                     type: "tool-input-delta",
                     id: toolId,
                     delta: delta.partial_json,
                 };
             } else {
-                // Fallback: Log warning and use first tool (legacy behavior)
+                // Fallback: Log warning and use first known tool
                 logger.warn(
-                    { index: event.index, toolCount: toolInputBuffers.size },
+                    { index: event.index, toolCount: toolNames.size },
                     "Could not route input_json_delta to tool - using fallback"
                 );
-                const firstToolId = toolInputBuffers.keys().next().value as
-                    | string
-                    | undefined;
+                const firstToolId = toolNames.keys().next().value as string | undefined;
                 if (firstToolId) {
-                    const buffer = toolInputBuffers.get(firstToolId) ?? "";
-                    toolInputBuffers.set(firstToolId, buffer + delta.partial_json);
                     yield {
                         type: "tool-input-delta",
                         id: firstToolId,
