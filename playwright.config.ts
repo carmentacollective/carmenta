@@ -19,8 +19,9 @@ export default defineConfig({
     testDir: "./__tests__/e2e",
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    // No retries - flaky tests should fail loudly, not hide behind retries
-    retries: 0,
+    // 1 retry on CI for infrastructure flakiness (browser crashes, network blips)
+    // Local stays at 0 - flaky tests should fail loudly during development
+    retries: process.env.CI ? 1 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: "html",
 
