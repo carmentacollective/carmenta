@@ -168,6 +168,13 @@ function assertScenario(container: HTMLElement, scenario: ToolScenario): void {
         assertions.statusCompleted !== undefined ||
         assertions.statusError !== undefined
     ) {
+        // Prevent conflicting status assertions
+        if (assertions.statusCompleted && assertions.statusError) {
+            throw new Error(
+                `Scenario "${scenario.name}" cannot have both statusCompleted and statusError`
+            );
+        }
+
         const statusElement = scope.queryByTestId("tool-status");
         expect(statusElement).toBeInTheDocument();
 

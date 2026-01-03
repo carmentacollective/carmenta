@@ -113,13 +113,3 @@ export interface ToolRenderProps {
     output?: Record<string, unknown>;
     error?: string;
 }
-
-/**
- * Result of running a scenario.
- */
-export interface ScenarioResult {
-    name: string;
-    passed: boolean;
-    error?: Error;
-    duration: number;
-}
