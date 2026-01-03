@@ -285,6 +285,30 @@ const conciergeSchema = z.object({
         .describe(
             "Background mode for long-running work that should survive browser close"
         ),
+    clarifyingQuestions: z
+        .array(
+            z.object({
+                question: z.string().describe("The question to ask the user"),
+                options: z
+                    .array(
+                        z.object({
+                            label: z.string().describe("Display text for the option"),
+                            value: z.string().describe("Value sent when selected"),
+                        })
+                    )
+                    .min(2)
+                    .max(5)
+                    .describe("Quick selection options (2-5)"),
+                allowFreeform: z
+                    .boolean()
+                    .optional()
+                    .describe("Whether to allow custom text input"),
+            })
+        )
+        .optional()
+        .describe(
+            "Questions to ask before deep research - helps scope the work and ensure alignment"
+        ),
 });
 
 /**
@@ -302,6 +326,7 @@ function processConciergeResponse(
         title,
         kbSearch: rawKbSearch,
         backgroundMode: rawBackgroundMode,
+        clarifyingQuestions: rawClarifyingQuestions,
     } = raw;
 
     // Validate model against whitelist
@@ -357,6 +382,12 @@ function processConciergeResponse(
           }
         : undefined;
 
+    // Process clarifying questions - pass through if present and non-empty
+    const clarifyingQuestions =
+        rawClarifyingQuestions && rawClarifyingQuestions.length > 0
+            ? rawClarifyingQuestions
+            : undefined;
+
     return {
         modelId,
         temperature,
@@ -365,6 +396,7 @@ function processConciergeResponse(
         title: cleanTitle,
         kbSearch,
         backgroundMode,
+        clarifyingQuestions,
     };
 }
 
@@ -550,6 +582,7 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                         explanation: conciergeResult.explanation,
                         reasoning: conciergeResult.reasoning,
                         title: conciergeResult.title,
+                        backgroundMode: conciergeResult.backgroundMode,
                     },
                     "Concierge selection complete"
                 );

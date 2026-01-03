@@ -298,6 +298,75 @@ export async function POST(req: Request) {
         await updateStreamingStatus(connectionId!, "streaming");
 
         // ================================================================
+        // CLARIFYING QUESTIONS: Ask before deep research
+        // ================================================================
+        // When concierge detects a research task, it may ask scoping questions
+        // before starting. This helps ensure we deliver what the user needs.
+        if (
+            conciergeResult.clarifyingQuestions &&
+            conciergeResult.clarifyingQuestions.length > 0
+        ) {
+            logger.info(
+                {
+                    connectionId,
+                    questionCount: conciergeResult.clarifyingQuestions.length,
+                },
+                "Returning clarifying questions before research"
+            );
+
+            // Build headers for the response
+            const headers = new Headers();
+            headers.set("X-Concierge-Model-Id", concierge.modelId);
+            headers.set("X-Concierge-Temperature", String(concierge.temperature));
+            headers.set(
+                "X-Concierge-Explanation",
+                encodeURIComponent(concierge.explanation)
+            );
+            headers.set("X-Connection-Id", connectionPublicId!);
+
+            if (isNewConnection && connectionSlug) {
+                headers.set("X-Connection-Slug", connectionSlug);
+                headers.set("X-Connection-Is-New", "true");
+                if (conciergeResult.title) {
+                    headers.set(
+                        "X-Connection-Title",
+                        encodeURIComponent(conciergeResult.title)
+                    );
+                }
+            }
+
+            // Create a stream with the clarifying questions
+            // Use data-* pattern which the AI SDK allows for custom data
+            const stream = createUIMessageStream({
+                execute: ({ writer }) => {
+                    // Write each clarifying question as a data part
+                    // Client will render these using the AskUserInputResult component
+                    for (const question of conciergeResult.clarifyingQuestions!) {
+                        writer.write({
+                            type: "data-clarifying-question",
+                            data: {
+                                id: `clarify-${nanoid(8)}`,
+                                question: question.question,
+                                options: question.options,
+                                allowFreeform: question.allowFreeform ?? true,
+                            },
+                        });
+                    }
+                },
+            });
+
+            // Mark as completed since we're just asking a question
+            await updateStreamingStatus(connectionId!, "completed");
+
+            return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
+                headers: {
+                    ...Object.fromEntries(headers.entries()),
+                    ...UI_MESSAGE_STREAM_HEADERS,
+                },
+            });
+        }
+
+        // ================================================================
         // BACKGROUND MODE: Dispatch to Temporal for durable execution
         // ================================================================
         // When concierge detects a long-running task, dispatch to Temporal
