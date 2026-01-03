@@ -385,8 +385,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
             "Research task created, polling for completion"
         );
 
-        // Poll for completion (max 120 seconds for deep research)
-        const maxWaitMs = depth === "deep" ? 120000 : 60000;
+        // Poll for completion (max 120 seconds for all research depths)
+        const maxWaitMs = 120000;
         const pollIntervalMs = 2000;
         let elapsed = 0;
         let consecutiveFailures = 0;
