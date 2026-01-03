@@ -86,9 +86,6 @@ importers:
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@4.3.4)
-      ai-sdk-provider-claude-code:
-        specifier: ^3.0.1
-        version: 3.0.1(zod@4.3.4)
       braintrust:
         specifier: ^1.1.1
         version: 1.1.1(chokidar@3.6.0)(zod@4.3.4)
@@ -3370,12 +3367,6 @@ packages:
   agentkeepalive@4.6.0:
     resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
     engines: {node: '>= 8.0.0'}
-
-  ai-sdk-provider-claude-code@3.0.1:
-    resolution: {integrity: sha512-VlEJVp0JZdB4g6r17rKKj/eTcSy8tyrCnlgkTxnsqhP33rCaQDAbw+BpD38dn15lgojXnic3aLka87k/fz7+vw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.24.1 || ^4.0.0
 
   ai@6.0.3:
     resolution: {integrity: sha512-OOo+/C+sEyscoLnbY3w42vjQDICioVNyS+F+ogwq6O5RJL/vgWGuiLzFwuP7oHTeni/MkmX8tIge48GTdaV7QQ==}
@@ -10394,13 +10385,6 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
-
-  ai-sdk-provider-claude-code@3.0.1(zod@4.3.4):
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.4)
-      '@anthropic-ai/claude-agent-sdk': 0.1.76(zod@4.3.4)
-      zod: 4.3.4
 
   ai@6.0.3(zod@4.3.4):
     dependencies:

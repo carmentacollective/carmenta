@@ -84,7 +84,6 @@
     "@temporalio/worker": "^1.14.0",
     "@temporalio/workflow": "^1.14.0",
     "ai": "^6.0.0",
-    "ai-sdk-provider-claude-code": "^3.0.1",
     "braintrust": "^1.1.1",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
