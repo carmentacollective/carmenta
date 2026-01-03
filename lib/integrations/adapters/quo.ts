@@ -208,7 +208,9 @@ export class QuoAdapter extends ServiceAdapter {
                 },
                 {
                     name: "list_calls",
-                    description: "List calls for a specific phone number",
+                    description:
+                        "List calls for a specific phone number. " +
+                        "IMPORTANT: Requires both phoneNumberId AND participant phone number.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -216,6 +218,14 @@ export class QuoAdapter extends ServiceAdapter {
                             type: "string",
                             required: true,
                             description: "Your Quo phone number ID",
+                        },
+                        {
+                            name: "participants",
+                            type: "array",
+                            required: true,
+                            description:
+                                "Phone number of the other party in E.164 format (API only supports one participant)",
+                            example: "['+14155551234']",
                         },
                         {
                             name: "limit",
@@ -812,11 +822,13 @@ export class QuoAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const {
             phoneNumberId,
+            participants,
             limit = 10,
             createdAfter,
             pageToken,
         } = params as {
             phoneNumberId: string;
+            participants: string[];
             limit?: number;
             createdAfter?: string;
             pageToken?: string;
@@ -824,6 +836,7 @@ export class QuoAdapter extends ServiceAdapter {
 
         const searchParams: Record<string, string> = {
             phoneNumberId,
+            participants: participants.join(","),
             maxResults: Math.min(limit, 100).toString(),
         };
         if (createdAfter) searchParams.createdAfter = createdAfter;
@@ -1031,17 +1044,18 @@ export class QuoAdapter extends ServiceAdapter {
             emails?: Array<{ name: string; value: string }>;
         };
 
-        const body: Record<string, unknown> = {};
-        if (firstName) body.firstName = firstName;
-        if (lastName) body.lastName = lastName;
-        if (company) body.company = company;
-        if (phoneNumbers) body.phoneNumbers = phoneNumbers;
-        if (emails) body.emails = emails;
+        // Quo API requires fields wrapped in defaultFields object
+        const defaultFields: Record<string, unknown> = {};
+        if (firstName) defaultFields.firstName = firstName;
+        if (lastName) defaultFields.lastName = lastName;
+        if (company) defaultFields.company = company;
+        if (phoneNumbers) defaultFields.phoneNumbers = phoneNumbers;
+        if (emails) defaultFields.emails = emails;
 
         const response = await httpClient
             .post(`${QUO_API_BASE}/contacts`, {
                 headers: this.buildHeaders(apiKey),
-                json: body,
+                json: { defaultFields },
             })
             .json<{
                 id: string;
@@ -1069,15 +1083,16 @@ export class QuoAdapter extends ServiceAdapter {
             company?: string;
         };
 
-        const body: Record<string, unknown> = {};
-        if (firstName !== undefined) body.firstName = firstName;
-        if (lastName !== undefined) body.lastName = lastName;
-        if (company !== undefined) body.company = company;
+        // Quo API requires fields wrapped in defaultFields object
+        const defaultFields: Record<string, unknown> = {};
+        if (firstName !== undefined) defaultFields.firstName = firstName;
+        if (lastName !== undefined) defaultFields.lastName = lastName;
+        if (company !== undefined) defaultFields.company = company;
 
         const response = await httpClient
             .patch(`${QUO_API_BASE}/contacts/${contactId}`, {
                 headers: this.buildHeaders(apiKey),
-                json: body,
+                json: { defaultFields },
             })
             .json<Record<string, unknown>>();
 

@@ -455,8 +455,10 @@ describe("QuoAdapter", () => {
                 expect.stringContaining("api.openphone.com/v1/contacts"),
                 expect.objectContaining({
                     json: expect.objectContaining({
-                        firstName: "Jane",
-                        lastName: "Smith",
+                        defaultFields: expect.objectContaining({
+                            firstName: "Jane",
+                            lastName: "Smith",
+                        }),
                     }),
                 })
             );
@@ -508,12 +510,30 @@ describe("QuoAdapter", () => {
 
     describe("list_calls operation", () => {
         it("requires phoneNumberId parameter", async () => {
-            const result = await adapter.execute("list_calls", {}, testUserEmail);
+            const result = await adapter.execute(
+                "list_calls",
+                { participants: ["+14155551234"] },
+                testUserEmail
+            );
 
             expect(result.isError).toBe(true);
             expect(result.content[0]).toMatchObject({
                 type: "text",
                 text: expect.stringContaining("phoneNumberId"),
+            });
+        });
+
+        it("requires participants parameter", async () => {
+            const result = await adapter.execute(
+                "list_calls",
+                { phoneNumberId: "PN123" },
+                testUserEmail
+            );
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0]).toMatchObject({
+                type: "text",
+                text: expect.stringContaining("participants"),
             });
         });
 
@@ -545,7 +565,7 @@ describe("QuoAdapter", () => {
 
             const result = await adapter.execute(
                 "list_calls",
-                { phoneNumberId: "PN123" },
+                { phoneNumberId: "PN123", participants: ["+14155551234"] },
                 testUserEmail
             );
 
@@ -555,6 +575,7 @@ describe("QuoAdapter", () => {
                 expect.objectContaining({
                     searchParams: expect.objectContaining({
                         phoneNumberId: "PN123",
+                        participants: "+14155551234",
                     }),
                 })
             );
