@@ -78,6 +78,78 @@ function RunningIndicator() {
 }
 
 /**
+ * Marquee-on-overflow wrapper.
+ *
+ * Shows truncated text with ellipsis normally. On hover, if the text
+ * overflows its container, smoothly scrolls left to reveal the full text.
+ * This is the standard pattern used by Spotify, iTunes, and media players.
+ *
+ * The animation speed is constant (60px/s) regardless of text length,
+ * so it always feels natural. Includes a brief pause before scrolling.
+ */
+function MarqueeOnOverflow({
+    children,
+    className,
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLSpanElement>(null);
+    const [overflowAmount, setOverflowAmount] = useState(0);
+    const [isHovering, setIsHovering] = useState(false);
+
+    // Measure overflow on mount, children change, or when text/container resizes
+    // Observing text element catches typewriter animation completing
+    useEffect(() => {
+        const container = containerRef.current;
+        const text = textRef.current;
+        if (!container || !text) return;
+
+        const measure = () => {
+            const overflow = text.scrollWidth - container.clientWidth;
+            setOverflowAmount(Math.max(0, overflow));
+        };
+
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(container);
+        observer.observe(text); // Catch text width changes from typewriter animation
+        return () => observer.disconnect();
+    }, [children]);
+
+    const hasOverflow = overflowAmount > 0;
+    // Constant scroll speed: 60px per second for natural feel
+    const scrollDuration = hasOverflow ? overflowAmount / 60 : 0;
+
+    return (
+        <div
+            ref={containerRef}
+            className={cn("overflow-hidden", className)}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+        >
+            <span
+                ref={textRef}
+                className="inline-block whitespace-nowrap"
+                style={{
+                    transform:
+                        isHovering && hasOverflow
+                            ? `translateX(-${overflowAmount}px)`
+                            : "translateX(0)",
+                    transition:
+                        isHovering && hasOverflow
+                            ? `transform ${scrollDuration}s linear 0.3s`
+                            : "transform 0.3s ease-out",
+                }}
+            >
+                {children}
+            </span>
+        </div>
+    );
+}
+
+/**
  * Typewriter title animation.
  *
  * When a new title arrives, it types out character by character with a
@@ -228,18 +300,21 @@ function EditableTitle({
     }
 
     return (
-        <div className="group/title flex items-center gap-1.5">
+        <div className="group/title flex min-w-0 items-center gap-1.5">
             {/* Entire title area is clickable to edit - click anywhere to enter edit mode */}
             <button
                 onClick={handleStartEdit}
-                className="btn-subtle-text hover:border-foreground/10 hover:bg-foreground/[0.03] flex min-h-[44px] items-center gap-2 border border-transparent px-3 py-2"
+                className="btn-subtle-text hover:border-foreground/10 hover:bg-foreground/[0.03] flex min-h-[44px] min-w-0 flex-1 items-center gap-2 border border-transparent px-3 py-2"
                 aria-label="Click to edit title"
                 data-tooltip-id="tip"
                 data-tooltip-content="Click to rename"
             >
-                <TypewriterTitle title={title} />
+                {/* Marquee scrolls on hover when title overflows */}
+                <MarqueeOnOverflow className="min-w-0 flex-1">
+                    <TypewriterTitle title={title} />
+                </MarqueeOnOverflow>
                 {/* Pencil icon - more visible on hover */}
-                <Pencil className="text-foreground/20 group-hover/title:text-foreground/50 h-4 w-4 transition-all" />
+                <Pencil className="text-foreground/20 group-hover/title:text-foreground/50 h-4 w-4 shrink-0 transition-all" />
             </button>
         </div>
     );
@@ -911,7 +986,7 @@ export function ConnectionChooser({
     // Split layout: Glass pill (search/title) + standalone New button
     // max-w keeps it from stretching too wide on large screens
     return (
-        <div className="flex max-w-lg items-center gap-3">
+        <div className="flex max-w-xl items-center gap-3">
             {/* Glass pill with search/title */}
             <div className="relative min-w-0 flex-1">
                 <motion.div
