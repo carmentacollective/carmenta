@@ -533,12 +533,14 @@ Do some deep research on healthy restaurants in Austin
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
   "clarifyingQuestions": [
     {
-      "question": "How thorough should the research be?",
+      "question": "How thorough should we go?",
       "options": [
-        { "label": "Quick answer from what I know", "value": "no_research" },
-        { "label": "Quick research (~20 seconds)", "value": "research_quick" },
-        { "label": "Standard research (~1 minute)", "value": "research_standard" },
-        { "label": "Deep research (~2 minutes, runs in background)", "value": "research_deep" }
+        { "label": "From what we know (instant)", "value": "instant" },
+        { "label": "Quick look (~15 seconds)", "value": "light" },
+        { "label": "Proper search (~30 seconds)", "value": "standard" },
+        { "label": "Deep dive (~2 minutes)", "value": "deep" },
+        { "label": "Taking our time (~5 minutes)", "value": "comprehensive" },
+        { "label": "The full picture (~15 minutes)", "value": "full" }
       ],
       "allowFreeform": true
     },
@@ -568,12 +570,14 @@ Research the AI agent framework landscape for me
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
   "clarifyingQuestions": [
     {
-      "question": "How deep should we go?",
+      "question": "How thorough should we go?",
       "options": [
-        { "label": "Quick answer from what I know", "value": "no_research" },
-        { "label": "Quick research (~20 seconds)", "value": "research_quick" },
-        { "label": "Standard research (~1 minute)", "value": "research_standard" },
-        { "label": "Deep research (~2 minutes, runs in background)", "value": "research_deep" }
+        { "label": "From what we know (instant)", "value": "instant" },
+        { "label": "Quick look (~15 seconds)", "value": "light" },
+        { "label": "Proper search (~30 seconds)", "value": "standard" },
+        { "label": "Deep dive (~2 minutes)", "value": "deep" },
+        { "label": "Taking our time (~5 minutes)", "value": "comprehensive" },
+        { "label": "The full picture (~15 minutes)", "value": "full" }
       ],
       "allowFreeform": true
     },

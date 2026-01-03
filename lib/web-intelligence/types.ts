@@ -46,7 +46,29 @@ export interface ExtractResponse {
 }
 
 // Research types
-export type ResearchDepth = "quick" | "standard" | "deep";
+/**
+ * Research depth levels mapped to Parallel.ai processors.
+ *
+ * User-facing labels (Carmenta voice):
+ * | Internal     | User Label          | Processor | Latency   | Cost/1K |
+ * |--------------|---------------------|-----------|-----------|---------|
+ * | instant      | From what we know   | (none)    | instant   | $0      |
+ * | light        | Quick look          | lite-fast | ~15s      | $5      |
+ * | standard     | Proper search       | base-fast | ~30s      | $10     |
+ * | deep         | Deep dive           | core-fast | ~2min     | $25     |
+ * | comprehensive| Taking our time     | pro       | ~5min     | $100    |
+ * | full         | The full picture    | ultra     | ~15min    | $300    |
+ *
+ * Note: "quick" is deprecated, alias for "light".
+ */
+export type ResearchDepth =
+    | "instant" // No external research - answer from what we know
+    | "quick" // deprecated, alias for "light"
+    | "light" // Quick look (~15s)
+    | "standard" // Proper search (~30s)
+    | "deep" // Deep dive (~2min)
+    | "comprehensive" // Taking our time (~5min)
+    | "full"; // The full picture (~15min)
 
 export interface ResearchOptions {
     depth?: ResearchDepth;
