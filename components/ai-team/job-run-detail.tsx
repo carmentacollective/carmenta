@@ -175,7 +175,7 @@ export function JobRunDetail({
             {/* Header */}
             <div className="space-y-4">
                 <Link
-                    href="/ai-team"
+                    href={`/ai-team/${jobSlug}/${jobEncodedId}`}
                     className="text-foreground/60 hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
                 >
                     <ArrowLeft className="h-4 w-4" />

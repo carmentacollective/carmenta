@@ -9,7 +9,6 @@ import { auth } from "@clerk/nextjs/server";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs, jobRuns, jobNotifications } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { NotFoundError } from "@/lib/errors";
 import { buildExternalLinks } from "@/lib/observability/external-links";
 
 type RouteContext = {
@@ -38,7 +37,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     });
 
     if (!job) {
-        throw new NotFoundError("Job");
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     // Get the run with all observability data
@@ -47,7 +46,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     });
 
     if (!run) {
-        throw new NotFoundError("Run");
+        return NextResponse.json({ error: "Run not found" }, { status: 404 });
     }
 
     // Get notifications generated during this run

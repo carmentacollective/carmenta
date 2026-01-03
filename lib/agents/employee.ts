@@ -260,6 +260,8 @@ function extractTokenUsage(
  * });
  * ```
  */
+// TODO: This non-streaming path doesn't capture execution trace, token usage, or Sentry trace ID.
+// Consider migrating callers to use runEmployeeStreaming for full observability.
 export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult> {
     const { jobId, userEmail, prompt, memory, messages = [] } = input;
 
@@ -415,6 +417,7 @@ export async function runEmployeeStreaming(
         },
         async (span) => {
             const sentryTraceId = span?.spanContext()?.traceId;
+            let toolCallsExecuted = 0;
 
             try {
                 // Load tools available to this user
@@ -449,8 +452,6 @@ export async function runEmployeeStreaming(
 
                 const gateway = getGatewayClient();
                 const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
-
-                let toolCallsExecuted = 0;
                 let completeCallData: {
                     summary: string;
                     notifications?: Array<{
@@ -608,7 +609,7 @@ export async function runEmployeeStreaming(
                     summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     notifications: [],
                     updatedMemory: memory,
-                    toolCallsExecuted: 0,
+                    toolCallsExecuted,
                     errorDetails,
                     modelId: EMPLOYEE_FALLBACK_CHAIN[0],
                     durationMs,
