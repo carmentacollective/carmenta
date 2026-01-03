@@ -390,9 +390,9 @@ vi.mock("./lib/db/index", async () => {
             .where(eq(schema.users.email, email));
     };
 
-    // NOTE: DO NOT import from "./lib/db/connections" here!
-    // It creates a circular dependency: connections → index → connections
-    // Tests should import connection functions directly from "@/lib/db/connections"
+    // Import connection functions - these use the mocked db from ./client.ts
+    // so they work correctly with PGlite in tests
+    const connectionsModule = await import("./lib/db/connections");
 
     // Import notification functions from the mocked module
     const notificationsModule = await import("./lib/db/notifications");
@@ -408,6 +408,27 @@ vi.mock("./lib/db/index", async () => {
         getOrCreateUser,
         updateUserPreferences,
         updateLastSignedIn,
+        // Re-export connection functions (they use the mocked db internally)
+        createConnection: connectionsModule.createConnection,
+        getConnection: connectionsModule.getConnection,
+        getConnectionWithMessages: connectionsModule.getConnectionWithMessages,
+        getRecentConnections: connectionsModule.getRecentConnections,
+        updateConnection: connectionsModule.updateConnection,
+        archiveConnection: connectionsModule.archiveConnection,
+        deleteConnection: connectionsModule.deleteConnection,
+        toggleStar: connectionsModule.toggleStar,
+        getStarredConnections: connectionsModule.getStarredConnections,
+        getRecentUnstarredConnections: connectionsModule.getRecentUnstarredConnections,
+        saveMessage: connectionsModule.saveMessage,
+        updateMessage: connectionsModule.updateMessage,
+        upsertMessage: connectionsModule.upsertMessage,
+        loadMessages: connectionsModule.loadMessages,
+        updateStreamingStatus: connectionsModule.updateStreamingStatus,
+        updateActiveStreamId: connectionsModule.updateActiveStreamId,
+        getActiveStreamId: connectionsModule.getActiveStreamId,
+        markAsBackground: connectionsModule.markAsBackground,
+        findInterruptedConnections: connectionsModule.findInterruptedConnections,
+        mapConnectionMessagesToUI: connectionsModule.mapConnectionMessagesToUI,
         // Re-export notification functions
         createNotification: notificationsModule.createNotification,
         getUnreadNotifications: notificationsModule.getUnreadNotifications,
@@ -544,10 +565,8 @@ vi.mock("./lib/db/notifications", async () => {
     };
 });
 
-// NOTE: DO NOT mock "./lib/db/connections" here!
-// It creates a circular dependency: connections → index → connections
-// Tests that need connection functions should import them directly from "@/lib/db/connections"
-// which will use the real PGlite database through the mocked "@/lib/db" module.
+// Connection functions are now exported from the "./lib/db/index" mock above.
+// They use the mocked db from ./client.ts internally, so they work with PGlite.
 
 /**
  * Silence console output during tests unless debugging
