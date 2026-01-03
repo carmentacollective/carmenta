@@ -218,7 +218,13 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
                     return msg;
                 }
 
-                // Track start time if not already tracked
+                // If server already provided elapsedSeconds, use that value
+                // Client timing is only a fallback for when SDK doesn't emit tool_progress
+                if (msg.elapsedSeconds !== undefined) {
+                    return msg;
+                }
+
+                // Client-side fallback: track elapsed time from when we saw the tool start
                 if (!startTimes.has(msg.id)) {
                     startTimes.set(msg.id, now);
                 }
