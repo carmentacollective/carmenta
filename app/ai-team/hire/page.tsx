@@ -39,43 +39,6 @@ interface Playbook {
 }
 
 /**
- * Parse playbook from assistant message
- */
-function parsePlaybook(content: string): Playbook | null {
-    try {
-        // Look for JSON block in the message
-        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[1]) as Playbook;
-        }
-
-        // Try to find structured data markers
-        const nameMatch = content.match(/\*\*Name:\*\*\s*(.+)/);
-        const scheduleMatch = content.match(/\*\*Schedule:\*\*\s*(.+)/);
-        const promptMatch = content.match(
-            /\*\*Instructions:\*\*\s*([\s\S]+?)(?=\*\*|$)/
-        );
-
-        if (nameMatch && scheduleMatch) {
-            return {
-                name: nameMatch[1].trim(),
-                description: "",
-                schedule: {
-                    cron: "0 9 * * *", // Default to 9am daily
-                    displayText: scheduleMatch[1].trim(),
-                },
-                prompt: promptMatch ? promptMatch[1].trim() : "",
-                requiredIntegrations: [],
-            };
-        }
-
-        return null;
-    } catch {
-        return null;
-    }
-}
-
-/**
  * Hiring wizard page - chat-style interface
  *
  * Uses shared chat components:
@@ -88,9 +51,9 @@ export default function HirePage() {
         {
             id: "welcome",
             role: "assistant",
-            content: `Hi there! I'm here to help you hire a new AI team member.
+            content: `Hi there! We're here to help you hire a new AI team member.
 
-Tell me what you'd like automated. For example:
+Tell us what you'd like automated. For example:
 - "Check my email every morning and flag important messages"
 - "Monitor competitor news and summarize weekly"
 - "Triage my Slack DMs and highlight urgent ones"
@@ -148,14 +111,9 @@ What can we help you with?`,
 
             setMessages((prev) => [...prev, assistantMessage]);
 
-            // Check if response contains a playbook
+            // API returns playbook when ready (via generateObject extraction)
             if (data.playbook) {
                 setPlaybook(data.playbook);
-            } else {
-                const parsed = parsePlaybook(data.content);
-                if (parsed) {
-                    setPlaybook(parsed);
-                }
             }
         } catch (error) {
             logger.error({ error }, "Failed to get hiring response");

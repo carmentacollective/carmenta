@@ -13,26 +13,32 @@ import { NextResponse } from "next/server";
 import { generateText, generateObject } from "ai";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
-
 import { auth, currentUser } from "@clerk/nextjs/server";
+
 import { logger } from "@/lib/logger";
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { getConnectedServices } from "@/lib/integrations/connection-manager";
 
 const requestSchema = z.object({
-    messages: z.array(
-        z.object({
-            role: z.enum(["user", "assistant"]),
-            content: z.string(),
-        })
-    ),
+    messages: z
+        .array(
+            z.object({
+                role: z.enum(["user", "assistant"]),
+                content: z.string(),
+            })
+        )
+        .min(1, "At least one message is required"),
 });
 
 /**
  * Playbook schema for structured extraction
  */
 const playbookSchema = z.object({
-    name: z.string().describe("Short descriptive name for the automation"),
+    name: z
+        .string()
+        .describe(
+            "Human-friendly display name (2-4 words, title case). Examples: 'Morning Email Digest', 'Team Update Monitor', 'Priority DM Alert'"
+        ),
     description: z.string().describe("1-2 sentence description of what it does"),
     schedule: z.object({
         cron: z.string().describe("Cron expression, e.g., '0 9 * * *' for 9am daily"),
@@ -160,9 +166,9 @@ export async function POST(request: Request) {
         let playbook = null;
 
         if (isReady) {
-            // Phase 2: Structured extraction
+            // Phase 2: Structured extraction - include all messages with proper labels
             const conversationContext = messages
-                .map((m) => `${m.role}: ${m.content}`)
+                .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
                 .join("\n\n");
 
             const extraction = await generateObject({
@@ -199,9 +205,10 @@ export async function POST(request: Request) {
             playbook,
         });
     } catch (error) {
-        logger.error({ error }, "Hiring wizard error");
+        logger.error({ error, userId }, "Hiring wizard error");
         Sentry.captureException(error, {
             tags: { route: "/api/ai-team/hire", action: "generate" },
+            extra: { userId },
         });
 
         return NextResponse.json(

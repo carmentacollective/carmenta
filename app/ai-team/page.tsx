@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
     Users,
     Sparkles,
@@ -153,24 +154,32 @@ function AITeamContent() {
     }, [loadData]);
 
     const handleToggleAutomation = async (automation: Automation) => {
+        const newActiveState = !automation.isActive;
         setTogglingJobs((prev) => new Set(prev).add(automation.id));
+
+        // Optimistic update
+        setAutomations((prev) =>
+            prev.map((a) =>
+                a.id === automation.id ? { ...a, isActive: newActiveState } : a
+            )
+        );
 
         try {
             const response = await fetch(`/api/jobs/${automation.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ isActive: !automation.isActive }),
+                body: JSON.stringify({ isActive: newActiveState }),
             });
 
             if (!response.ok) throw new Error("Failed to toggle automation");
-
-            // Update local state
+        } catch (error) {
+            // Revert optimistic update on failure
             setAutomations((prev) =>
                 prev.map((a) =>
-                    a.id === automation.id ? { ...a, isActive: !a.isActive } : a
+                    a.id === automation.id ? { ...a, isActive: automation.isActive } : a
                 )
             );
-        } catch (error) {
+
             logger.error(
                 { error, automationId: automation.id },
                 "Failed to toggle automation"
@@ -237,13 +246,13 @@ function AITeamContent() {
                             </p>
                         </div>
                     </div>
-                    <a
+                    <Link
                         href="/ai-team/hire"
                         className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-colors"
                     >
                         <Plus className="h-4 w-4" />
                         Hire New
-                    </a>
+                    </Link>
                 </div>
             </section>
 
@@ -342,24 +351,27 @@ function AITeamContent() {
                                 <p className="text-foreground/60 mt-1 text-sm">
                                     Hire your first team member to get started.
                                 </p>
-                                <a
+                                <Link
                                     href="/ai-team/hire"
                                     className="text-primary mt-4 flex items-center gap-1 text-sm font-medium hover:underline"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Hire Now
-                                </a>
+                                </Link>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {automations.map((automation) => (
                                     <div
                                         key={automation.id}
-                                        className="border-foreground/5 bg-foreground/[0.02] rounded-xl border p-4"
+                                        className="border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] group rounded-xl border p-4 transition-colors"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-foreground truncate font-medium">
+                                            <a
+                                                href={`/ai-team/${automation.id}`}
+                                                className="min-w-0 flex-1"
+                                            >
+                                                <p className="text-foreground group-hover:text-primary truncate font-medium transition-colors">
                                                     {automation.name}
                                                 </p>
                                                 <p className="text-foreground/50 text-xs">
@@ -367,11 +379,12 @@ function AITeamContent() {
                                                         ? `Next: ${formatNextRun(automation.nextRunAt)}`
                                                         : "Paused"}
                                                 </p>
-                                            </div>
+                                            </a>
                                             <button
-                                                onClick={() =>
-                                                    handleToggleAutomation(automation)
-                                                }
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleToggleAutomation(automation);
+                                                }}
                                                 disabled={togglingJobs.has(
                                                     automation.id
                                                 )}
