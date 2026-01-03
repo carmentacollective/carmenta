@@ -147,10 +147,21 @@ describe("External Links", () => {
 
             const url = getTemporalWorkflowUrl("wf123");
 
-            // Note: Current implementation doesn't strip trailing slash
-            // This is the actual behavior we're documenting
+            // Implementation strips trailing slashes to avoid double slashes
             expect(url).toBe(
-                "https://temporal.example.com//namespaces/dev/workflows/wf123"
+                "https://temporal.example.com/namespaces/dev/workflows/wf123"
+            );
+        });
+
+        it("handles base URL with multiple trailing slashes", () => {
+            process.env.TEMPORAL_UI_URL = "https://temporal.example.com///";
+            process.env.TEMPORAL_NAMESPACE = "dev";
+
+            const url = getTemporalWorkflowUrl("wf123");
+
+            // Implementation strips all trailing slashes
+            expect(url).toBe(
+                "https://temporal.example.com/namespaces/dev/workflows/wf123"
             );
         });
 

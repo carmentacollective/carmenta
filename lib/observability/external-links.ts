@@ -27,8 +27,11 @@ export function getTemporalWorkflowUrl(workflowId: string): string | null {
 
     if (!baseUrl) return null;
 
+    // Strip trailing slashes to avoid double slashes in the URL
+    const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+
     const namespace = process.env.TEMPORAL_NAMESPACE || "default";
-    return `${baseUrl}/namespaces/${encodeURIComponent(namespace)}/workflows/${encodeURIComponent(workflowId)}`;
+    return `${normalizedBaseUrl}/namespaces/${encodeURIComponent(namespace)}/workflows/${encodeURIComponent(workflowId)}`;
 }
 
 /**
