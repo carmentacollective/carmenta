@@ -99,7 +99,8 @@ function MarqueeOnOverflow({
     const [overflowAmount, setOverflowAmount] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
 
-    // Measure overflow on mount, children change, or container resize
+    // Measure overflow on mount, children change, or when text/container resizes
+    // Observing text element catches typewriter animation completing
     useEffect(() => {
         const container = containerRef.current;
         const text = textRef.current;
@@ -113,6 +114,7 @@ function MarqueeOnOverflow({
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(container);
+        observer.observe(text); // Catch text width changes from typewriter animation
         return () => observer.disconnect();
     }, [children]);
 
