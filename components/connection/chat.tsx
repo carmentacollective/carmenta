@@ -22,8 +22,9 @@ class ChatErrorBoundary extends Component<
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+        // Pass the actual Error object so Sentry.captureException gets the full stack trace
         logger.error(
-            { error: error.message, componentStack: errorInfo.componentStack },
+            { error, componentStack: errorInfo.componentStack },
             "Chat component error"
         );
     }
