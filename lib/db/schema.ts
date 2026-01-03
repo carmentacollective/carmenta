@@ -1105,6 +1105,12 @@ export const scheduledJobs = pgTable(
     {
         id: uuid("id").primaryKey().defaultRandom(),
 
+        /**
+         * Sequential ID for URL encoding via Sqids.
+         * Public URLs use this: seqId 1 → "2ot9ib"
+         */
+        seqId: serial("seq_id").notNull().unique(),
+
         /** Owner of this job */
         userId: uuid("user_id")
             .references(() => users.id, { onDelete: "cascade" })
@@ -1200,6 +1206,9 @@ export const jobRuns = pgTable(
 
         /** Temporal workflow ID for debugging */
         temporalWorkflowId: text("temporal_workflow_id"),
+
+        /** Active resumable stream ID for live progress viewing */
+        activeStreamId: text("active_stream_id"),
 
         startedAt: timestamp("started_at", { withTimezone: true }),
         completedAt: timestamp("completed_at", { withTimezone: true }),

@@ -15,10 +15,12 @@ import {
     Clock,
     AlertCircle,
     CheckCircle2,
+    Radio,
 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
+import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -32,13 +34,16 @@ interface ActivityItem {
     status: "completed" | "failed" | "running";
     completedAt: Date | null;
     notificationCount: number;
+    activeStreamId: string | null;
 }
 
 /**
  * Automation (scheduled job) with status
  */
 interface Automation {
-    id: string;
+    id: string; // UUID for API calls
+    encodedId: string; // Sqid for URLs
+    slug: string; // Name slug for URLs
     name: string;
     prompt: string;
     scheduleCron: string;
@@ -72,6 +77,7 @@ function AITeamContent() {
     const [loading, setLoading] = useState(true);
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
 
     // Handle success states from redirects
     useEffect(() => {
@@ -145,6 +151,7 @@ function AITeamContent() {
                         status: run.status,
                         completedAt: run.completedAt ? new Date(run.completedAt) : null,
                         notificationCount: run.notificationsSent ?? 0,
+                        activeStreamId: run.activeStreamId ?? null,
                     });
                 }
                 for (const notification of job.notifications ?? []) {
@@ -360,11 +367,29 @@ function AITeamContent() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <span className="text-foreground/50 text-xs whitespace-nowrap">
-                                                    {formatRelativeTime(
-                                                        activity.completedAt
-                                                    )}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {activity.status === "running" &&
+                                                        activity.activeStreamId && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    setViewingActivity(
+                                                                        activity
+                                                                    )
+                                                                }
+                                                                className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+                                                            >
+                                                                <Radio className="h-3 w-3" />
+                                                                Tap In
+                                                            </button>
+                                                        )}
+                                                    <span className="text-foreground/50 text-xs whitespace-nowrap">
+                                                        {activity.status === "running"
+                                                            ? "Running"
+                                                            : formatRelativeTime(
+                                                                  activity.completedAt
+                                                              )}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -406,7 +431,7 @@ function AITeamContent() {
                                     >
                                         <div className="flex items-center justify-between">
                                             <a
-                                                href={`/ai-team/${automation.id}`}
+                                                href={`/ai-team/${automation.slug}/${automation.encodedId}`}
                                                 className="min-w-0 flex-1"
                                             >
                                                 <p className="text-foreground group-hover:text-primary truncate font-medium transition-colors">
@@ -446,6 +471,16 @@ function AITeamContent() {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Job Progress Viewer Modal */}
+            {viewingActivity && (
+                <JobProgressViewer
+                    jobId={viewingActivity.jobId}
+                    runId={viewingActivity.id}
+                    jobName={viewingActivity.jobName}
+                    onClose={() => setViewingActivity(null)}
+                />
             )}
         </StandardPageLayout>
     );

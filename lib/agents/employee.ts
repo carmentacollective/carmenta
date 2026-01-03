@@ -11,7 +11,14 @@
  * - No streaming (runs in background worker)
  */
 
-import { generateText, tool, stepCountIs, hasToolCall } from "ai";
+import {
+    generateText,
+    streamText,
+    tool,
+    stepCountIs,
+    hasToolCall,
+    type UIMessageStreamWriter,
+} from "ai";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -19,6 +26,7 @@ import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { builtInTools } from "@/lib/tools/built-in";
 import { pruneModelMessages } from "@/lib/ai/message-pruning";
+import { writeStatus } from "@/lib/streaming";
 import type { ModelMessage } from "ai";
 
 /**
@@ -273,6 +281,176 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
         };
     } catch (error) {
         employeeLogger.error({ error }, "❌ Employee execution failed");
+
+        return {
+            success: false,
+            summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            notifications: [],
+            updatedMemory: memory,
+            toolCallsExecuted: 0,
+        };
+    }
+}
+
+/**
+ * Run an AI employee with streaming output for live progress viewing.
+ *
+ * Same logic as runEmployee but streams progress to a UIMessageStreamWriter,
+ * allowing users to "tap in" and watch the agent work in real-time.
+ *
+ * @param input - Job context and user information
+ * @param writer - Stream writer for emitting progress
+ * @returns Execution result with summary, notifications, and updated memory
+ */
+export async function runEmployeeStreaming(
+    input: EmployeeInput,
+    writer: UIMessageStreamWriter
+): Promise<EmployeeResult> {
+    const { jobId, userEmail, prompt, memory, messages = [] } = input;
+
+    const employeeLogger = logger.child({ jobId, userEmail });
+    employeeLogger.info(
+        { prompt: prompt.slice(0, 100) },
+        "🤖 Starting streaming employee execution"
+    );
+
+    // Emit starting status
+    writeStatus(writer, `job-${jobId}-start`, "Starting task...", "🚀");
+
+    try {
+        // Load tools available to this user
+        const integrationTools = await getIntegrationTools(userEmail);
+        const completeTool = createCompleteTool();
+
+        const allTools = {
+            ...builtInTools,
+            ...integrationTools,
+            complete: completeTool,
+        };
+
+        writeStatus(writer, `job-${jobId}-tools`, "Tools ready", "🔧");
+
+        // Build system prompt and prepare messages
+        const systemPrompt = buildEmployeePrompt(prompt, memory);
+        const prunedMessages = pruneModelMessages(messages, { mode: "employee" });
+        const allMessages: ModelMessage[] = [
+            { role: "system", content: systemPrompt },
+            ...prunedMessages,
+            ...(prunedMessages.length === 0
+                ? [{ role: "user" as const, content: "Please execute the task." }]
+                : []),
+        ];
+
+        const gateway = getGatewayClient();
+        const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+
+        let toolCallsExecuted = 0;
+        let completeCallData: {
+            summary: string;
+            notifications?: Array<{
+                title: string;
+                body: string;
+                priority: "low" | "normal" | "high" | "urgent";
+            }>;
+            memoryUpdates?: Record<string, unknown>;
+        } | null = null;
+        let finalText = "";
+
+        // Stream execution
+        const result = streamText({
+            model: gateway(translateModelId(primaryModel)),
+            messages: allMessages,
+            tools: allTools,
+            stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
+            providerOptions: {
+                gateway: {
+                    models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
+                },
+            },
+            onChunk: ({ chunk }) => {
+                // Emit tool call status
+                if (chunk.type === "tool-call") {
+                    toolCallsExecuted++;
+                    const toolName =
+                        chunk.toolName === "complete" ? "Finishing up" : chunk.toolName;
+                    writeStatus(
+                        writer,
+                        `tool-${chunk.toolCallId}`,
+                        `Using ${toolName}...`,
+                        "🔧"
+                    );
+                }
+                if (chunk.type === "tool-result") {
+                    // Clear tool status when result received
+                    writeStatus(writer, `tool-${chunk.toolCallId}`, "");
+                }
+            },
+            onFinish: async ({ text, toolCalls }) => {
+                finalText = text ?? "";
+
+                // Extract complete tool data
+                const completeCall = toolCalls.find((tc) => tc.toolName === "complete");
+                if (completeCall) {
+                    completeCallData = (
+                        completeCall as unknown as { args: CompleteToolParams }
+                    ).args;
+                }
+            },
+        });
+
+        // Merge stream into writer (client sees progress)
+        writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+
+        // Wait for stream to complete
+        await result.response;
+
+        // Process completion
+        if (completeCallData !== null) {
+            const completion = completeCallData as CompleteToolParams;
+            writeStatus(writer, `job-${jobId}-complete`, "Task completed!", "✅");
+
+            employeeLogger.info(
+                {
+                    summary: completion.summary,
+                    notificationCount: completion.notifications?.length ?? 0,
+                    toolCallsExecuted,
+                },
+                "✅ Streaming employee completed task"
+            );
+
+            return {
+                success: true,
+                summary: completion.summary,
+                notifications: completion.notifications ?? [],
+                updatedMemory: { ...memory, ...completion.memoryUpdates },
+                toolCallsExecuted,
+            };
+        }
+
+        // No explicit completion
+        writeStatus(writer, `job-${jobId}-complete`, "Task finished", "✅");
+
+        employeeLogger.warn(
+            { text: finalText.slice(0, 200) },
+            "⚠️ Streaming employee finished without calling complete tool"
+        );
+
+        return {
+            success: true,
+            summary: finalText || "Task completed without explicit summary.",
+            notifications: [],
+            updatedMemory: memory,
+            toolCallsExecuted,
+        };
+    } catch (error) {
+        writeStatus(
+            writer,
+            `job-${jobId}-error`,
+            `Error: ${error instanceof Error ? error.message : "Unknown"}`,
+            "❌"
+        );
+
+        employeeLogger.error({ error }, "❌ Streaming employee execution failed");
 
         return {
             success: false,
