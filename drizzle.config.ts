@@ -6,18 +6,18 @@
  * Run `pnpm run db:migrate` to apply migrations.
  */
 
-import type { Config } from "drizzle-kit";
+import { config } from "dotenv";
+import { defineConfig } from "drizzle-kit";
 
-export default {
+config({ path: ".env.local" });
+
+export default defineConfig({
     schema: "./lib/db/schema.ts",
     out: "./drizzle/migrations",
     dialect: "postgresql",
     dbCredentials: {
-        // DATABASE_URL from Render, fall back to localhost for development
-        url: process.env.DATABASE_URL ?? "postgresql://localhost:5432/carmenta",
+        url: process.env.DATABASE_URL!,
     },
-    // Verbose output for debugging
     verbose: true,
-    // Strict mode for safer migrations
     strict: true,
-} satisfies Config;
+});
