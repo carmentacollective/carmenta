@@ -179,7 +179,7 @@ describe("toAIMessage", () => {
             expect((result.parts[0] as any).mediaType).toBe("application/pdf");
         });
 
-        it("handles completely missing file fields", () => {
+        it("provides default values for completely empty file parts", () => {
             const dbMessage: UIMessageLike = {
                 id: "msg-file-minimal",
                 role: "user",

@@ -391,7 +391,12 @@ vi.mock("./lib/db/index", async () => {
     };
 
     // Import connection functions - these use the mocked db from ./client.ts
-    // so they work correctly with PGlite in tests
+    // so they work correctly with PGlite in tests.
+    //
+    // Safe to import here because:
+    // 1. This mock runs BEFORE any test code imports @/lib/db
+    // 2. connections.ts imports db client from ./client, not ./index
+    // 3. No circular dependency: connections → client (mocked separately)
     const connectionsModule = await import("./lib/db/connections");
 
     // Import notification functions from the mocked module

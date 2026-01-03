@@ -873,7 +873,8 @@ describe("Edge cases", () => {
             toggleStarConnection(publicId, true),
         ]);
 
-        // All operations should return valid results
+        // Test validates operations don't error, not deterministic outcome
+        // (final title could be either "Title 1" or "Title 2" - last write wins)
         expect(results.every((r) => r !== null)).toBe(true);
     });
 
