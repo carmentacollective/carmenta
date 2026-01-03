@@ -30,6 +30,8 @@ interface ActivityItem {
     id: string;
     jobId: string;
     jobName: string;
+    jobSlug: string;
+    jobEncodedId: string;
     summary: string;
     status: "completed" | "failed" | "running";
     completedAt: Date | null;
@@ -151,6 +153,8 @@ function AITeamContent() {
                         id: run.id,
                         jobId: job.id,
                         jobName: job.name,
+                        jobSlug: job.slug,
+                        jobEncodedId: job.encodedId,
                         summary: run.summary ?? "No summary available",
                         status: run.status,
                         completedAt: run.completedAt ? new Date(run.completedAt) : null,
@@ -348,11 +352,10 @@ function AITeamContent() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {activities.map((activity) => (
-                                        <div
-                                            key={activity.id}
-                                            className="border-foreground/5 bg-foreground/[0.02] rounded-xl border p-4"
-                                        >
+                                    {activities.map((activity) => {
+                                        const isClickable =
+                                            activity.status !== "running";
+                                        const content = (
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex items-start gap-3">
                                                     {activity.status === "completed" ? (
@@ -375,11 +378,12 @@ function AITeamContent() {
                                                     {activity.status === "running" &&
                                                         activity.activeStreamId && (
                                                             <button
-                                                                onClick={() =>
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
                                                                     setViewingActivity(
                                                                         activity
-                                                                    )
-                                                                }
+                                                                    );
+                                                                }}
                                                                 className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
                                                             >
                                                                 <Radio className="h-3 w-3" />
@@ -395,8 +399,25 @@ function AITeamContent() {
                                                     </span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+
+                                        return isClickable ? (
+                                            <Link
+                                                key={activity.id}
+                                                href={`/ai-team/${activity.jobSlug}/${activity.jobEncodedId}/runs/${activity.id}`}
+                                                className="border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] block rounded-xl border p-4 transition-colors"
+                                            >
+                                                {content}
+                                            </Link>
+                                        ) : (
+                                            <div
+                                                key={activity.id}
+                                                className="border-foreground/5 bg-foreground/[0.02] rounded-xl border p-4"
+                                            >
+                                                {content}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

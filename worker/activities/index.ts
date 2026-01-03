@@ -249,7 +249,7 @@ export async function clearJobRunStreamId(runId: string): Promise<void> {
 }
 
 /**
- * Update job run with final results.
+ * Update job run with final results including observability data.
  */
 export async function finalizeJobRun(
     runId: string,
@@ -257,7 +257,7 @@ export async function finalizeJobRun(
     userId: string,
     result: EmployeeResult
 ): Promise<void> {
-    // Update the run record with results
+    // Update the run record with results and observability data
     await db
         .update(jobRuns)
         .set({
@@ -266,7 +266,14 @@ export async function finalizeJobRun(
             toolCallsExecuted: result.toolCallsExecuted,
             notificationsSent: result.notifications.length,
             completedAt: new Date(),
-            activeStreamId: null, // Clear stream ID
+            activeStreamId: null,
+            // Observability fields
+            executionTrace: result.executionTrace,
+            errorDetails: result.errorDetails,
+            tokenUsage: result.tokenUsage,
+            modelId: result.modelId,
+            durationMs: result.durationMs,
+            sentryTraceId: result.sentryTraceId,
         })
         .where(eq(jobRuns.id, runId));
 

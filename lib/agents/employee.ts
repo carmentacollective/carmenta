@@ -19,6 +19,7 @@ import {
     hasToolCall,
     type UIMessageStreamWriter,
 } from "ai";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -27,6 +28,12 @@ import { getIntegrationTools } from "@/lib/integrations/tools";
 import { builtInTools } from "@/lib/tools/built-in";
 import { pruneModelMessages } from "@/lib/ai/message-pruning";
 import { writeStatus } from "@/lib/streaming";
+import type {
+    JobExecutionTrace,
+    JobExecutionStep,
+    JobErrorDetails,
+    JobTokenUsage,
+} from "@/lib/db/schema";
 import type { ModelMessage } from "ai";
 
 /**
@@ -70,6 +77,19 @@ export interface EmployeeResult {
     }>;
     updatedMemory: Record<string, unknown>;
     toolCallsExecuted: number;
+
+    /** Full execution trace with tool calls and outputs */
+    executionTrace?: JobExecutionTrace;
+    /** Structured error details for failed runs */
+    errorDetails?: JobErrorDetails;
+    /** Token usage metrics */
+    tokenUsage?: JobTokenUsage;
+    /** Model ID used for execution */
+    modelId?: string;
+    /** Total execution time in ms */
+    durationMs?: number;
+    /** Sentry trace ID for linking to dashboard */
+    sentryTraceId?: string;
 }
 
 /**
@@ -156,6 +176,74 @@ Available integrations will be provided as tools. Use them as needed to complete
 }
 
 /**
+ * Extract execution trace from Vercel AI SDK result.steps
+ * Converts SDK format into our JobExecutionTrace schema
+ */
+function extractExecutionTrace(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    steps: any[],
+    finalText?: string
+): JobExecutionTrace {
+    const traceSteps: JobExecutionStep[] = steps.map((step, index) => {
+        const stepStart = new Date().toISOString(); // Approximation - SDK doesn't provide timing
+
+        const executionStep: JobExecutionStep = {
+            stepIndex: index,
+            startedAt: stepStart,
+            completedAt: stepStart, // Will be overwritten with actual timing if available
+            text: step.text || undefined,
+            reasoningContent: step.reasoningText || undefined,
+        };
+
+        // Extract tool calls if present
+        if (step.toolCalls && step.toolCalls.length > 0) {
+            executionStep.toolCalls = step.toolCalls.map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (tc: any, tcIndex: number) => {
+                    // Find matching result
+                    const result = step.toolResults?.find(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (tr: any) => tr.toolCallId === tc.toolCallId
+                    );
+
+                    return {
+                        toolCallId: tc.toolCallId || `tool-${index}-${tcIndex}`,
+                        toolName: tc.toolName,
+                        input: tc.args || {},
+                        output: result?.result,
+                        error: result?.error?.message,
+                        durationMs: 0, // SDK doesn't track per-tool timing
+                    };
+                }
+            );
+        }
+
+        return executionStep;
+    });
+
+    return {
+        steps: traceSteps,
+        finalText: finalText || undefined,
+    };
+}
+
+/**
+ * Extract token usage from SDK response
+ */
+function extractTokenUsage(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    usage: any
+): JobTokenUsage | undefined {
+    if (!usage) return undefined;
+
+    return {
+        inputTokens: usage.promptTokens ?? 0,
+        outputTokens: usage.completionTokens ?? 0,
+        cachedInputTokens: usage.cachedPromptTokens,
+    };
+}
+
+/**
  * Run an AI employee to execute a scheduled job
  *
  * @param input - Job context and user information
@@ -172,6 +260,8 @@ Available integrations will be provided as tools. Use them as needed to complete
  * });
  * ```
  */
+// TODO: This non-streaming path doesn't capture execution trace, token usage, or Sentry trace ID.
+// Consider migrating callers to use runEmployeeStreaming for full observability.
 export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult> {
     const { jobId, userEmail, prompt, memory, messages = [] } = input;
 
@@ -307,6 +397,7 @@ export async function runEmployeeStreaming(
     writer: UIMessageStreamWriter
 ): Promise<EmployeeResult> {
     const { jobId, userEmail, prompt, memory, messages = [] } = input;
+    const startTime = Date.now();
 
     const employeeLogger = logger.child({ jobId, userEmail });
     employeeLogger.info(
@@ -317,149 +408,216 @@ export async function runEmployeeStreaming(
     // Emit starting status
     writeStatus(writer, `job-${jobId}-start`, "Starting task...", "🚀");
 
-    try {
-        // Load tools available to this user
-        const integrationTools = await getIntegrationTools(userEmail);
-        const completeTool = createCompleteTool();
+    // Wrap in Sentry span for trace linking
+    return Sentry.startSpan(
+        {
+            op: "job.execute",
+            name: `Job: ${jobId}`,
+            attributes: { jobId, userEmail },
+        },
+        async (span) => {
+            const sentryTraceId = span?.spanContext()?.traceId;
+            let toolCallsExecuted = 0;
 
-        const allTools = {
-            ...builtInTools,
-            ...integrationTools,
-            complete: completeTool,
-        };
+            try {
+                // Load tools available to this user
+                const integrationTools = await getIntegrationTools(userEmail);
+                const completeTool = createCompleteTool();
 
-        writeStatus(writer, `job-${jobId}-tools`, "Tools ready", "🔧");
+                const allTools = {
+                    ...builtInTools,
+                    ...integrationTools,
+                    complete: completeTool,
+                };
 
-        // Build system prompt and prepare messages
-        const systemPrompt = buildEmployeePrompt(prompt, memory);
-        const prunedMessages = pruneModelMessages(messages, { mode: "employee" });
-        const allMessages: ModelMessage[] = [
-            { role: "system", content: systemPrompt },
-            ...prunedMessages,
-            ...(prunedMessages.length === 0
-                ? [{ role: "user" as const, content: "Please execute the task." }]
-                : []),
-        ];
+                writeStatus(writer, `job-${jobId}-tools`, "Tools ready", "🔧");
 
-        const gateway = getGatewayClient();
-        const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+                // Build system prompt and prepare messages
+                const systemPrompt = buildEmployeePrompt(prompt, memory);
+                const prunedMessages = pruneModelMessages(messages, {
+                    mode: "employee",
+                });
+                const allMessages: ModelMessage[] = [
+                    { role: "system", content: systemPrompt },
+                    ...prunedMessages,
+                    ...(prunedMessages.length === 0
+                        ? [
+                              {
+                                  role: "user" as const,
+                                  content: "Please execute the task.",
+                              },
+                          ]
+                        : []),
+                ];
 
-        let toolCallsExecuted = 0;
-        let completeCallData: {
-            summary: string;
-            notifications?: Array<{
-                title: string;
-                body: string;
-                priority: "low" | "normal" | "high" | "urgent";
-            }>;
-            memoryUpdates?: Record<string, unknown>;
-        } | null = null;
-        let finalText = "";
+                const gateway = getGatewayClient();
+                const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+                let completeCallData: {
+                    summary: string;
+                    notifications?: Array<{
+                        title: string;
+                        body: string;
+                        priority: "low" | "normal" | "high" | "urgent";
+                    }>;
+                    memoryUpdates?: Record<string, unknown>;
+                } | null = null;
+                let finalText = "";
 
-        // Stream execution
-        const result = streamText({
-            model: gateway(translateModelId(primaryModel)),
-            messages: allMessages,
-            tools: allTools,
-            stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
-            providerOptions: {
-                gateway: {
-                    models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
-                },
-            },
-            onChunk: ({ chunk }) => {
-                // Emit tool call status
-                if (chunk.type === "tool-call") {
-                    toolCallsExecuted++;
-                    const toolName =
-                        chunk.toolName === "complete" ? "Finishing up" : chunk.toolName;
+                // Stream execution
+                const result = streamText({
+                    model: gateway(translateModelId(primaryModel)),
+                    messages: allMessages,
+                    tools: allTools,
+                    stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
+                    providerOptions: {
+                        gateway: {
+                            models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
+                        },
+                    },
+                    onChunk: ({ chunk }) => {
+                        // Emit tool call status
+                        if (chunk.type === "tool-call") {
+                            toolCallsExecuted++;
+                            const toolName =
+                                chunk.toolName === "complete"
+                                    ? "Finishing up"
+                                    : chunk.toolName;
+                            writeStatus(
+                                writer,
+                                `tool-${chunk.toolCallId}`,
+                                `Using ${toolName}...`,
+                                "🔧"
+                            );
+                        }
+                        if (chunk.type === "tool-result") {
+                            // Clear tool status when result received
+                            writeStatus(writer, `tool-${chunk.toolCallId}`, "");
+                        }
+                    },
+                    onFinish: async ({ text, toolCalls }) => {
+                        finalText = text ?? "";
+
+                        // Extract complete tool data
+                        const completeCall = toolCalls.find(
+                            (tc) => tc.toolName === "complete"
+                        );
+                        if (completeCall) {
+                            completeCallData = (
+                                completeCall as unknown as {
+                                    args: CompleteToolParams;
+                                }
+                            ).args;
+                        }
+                    },
+                });
+
+                // Merge stream into writer (client sees progress)
+                writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+
+                // Wait for stream to complete and get full result
+                await result.response;
+                const steps = await result.steps;
+                const usage = await result.usage;
+
+                // Extract observability data
+                const durationMs = Date.now() - startTime;
+                const executionTrace = extractExecutionTrace(steps, finalText);
+                const tokenUsage = extractTokenUsage(usage);
+
+                // Process completion
+                if (completeCallData !== null) {
+                    const completion = completeCallData as CompleteToolParams;
                     writeStatus(
                         writer,
-                        `tool-${chunk.toolCallId}`,
-                        `Using ${toolName}...`,
-                        "🔧"
+                        `job-${jobId}-complete`,
+                        "Task completed!",
+                        "✅"
                     );
+
+                    employeeLogger.info(
+                        {
+                            summary: completion.summary,
+                            notificationCount: completion.notifications?.length ?? 0,
+                            toolCallsExecuted,
+                            durationMs,
+                        },
+                        "✅ Streaming employee completed task"
+                    );
+
+                    return {
+                        success: true,
+                        summary: completion.summary,
+                        notifications: completion.notifications ?? [],
+                        updatedMemory: { ...memory, ...completion.memoryUpdates },
+                        toolCallsExecuted,
+                        executionTrace,
+                        tokenUsage,
+                        modelId: primaryModel,
+                        durationMs,
+                        sentryTraceId,
+                    };
                 }
-                if (chunk.type === "tool-result") {
-                    // Clear tool status when result received
-                    writeStatus(writer, `tool-${chunk.toolCallId}`, "");
-                }
-            },
-            onFinish: async ({ text, toolCalls }) => {
-                finalText = text ?? "";
 
-                // Extract complete tool data
-                const completeCall = toolCalls.find((tc) => tc.toolName === "complete");
-                if (completeCall) {
-                    completeCallData = (
-                        completeCall as unknown as { args: CompleteToolParams }
-                    ).args;
-                }
-            },
-        });
+                // No explicit completion
+                writeStatus(writer, `job-${jobId}-complete`, "Task finished", "✅");
 
-        // Merge stream into writer (client sees progress)
-        writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+                employeeLogger.warn(
+                    { text: finalText.slice(0, 200) },
+                    "⚠️ Streaming employee finished without calling complete tool"
+                );
 
-        // Wait for stream to complete
-        await result.response;
-
-        // Process completion
-        if (completeCallData !== null) {
-            const completion = completeCallData as CompleteToolParams;
-            writeStatus(writer, `job-${jobId}-complete`, "Task completed!", "✅");
-
-            employeeLogger.info(
-                {
-                    summary: completion.summary,
-                    notificationCount: completion.notifications?.length ?? 0,
+                return {
+                    success: true,
+                    summary: finalText || "Task completed without explicit summary.",
+                    notifications: [],
+                    updatedMemory: memory,
                     toolCallsExecuted,
-                },
-                "✅ Streaming employee completed task"
-            );
+                    executionTrace,
+                    tokenUsage,
+                    modelId: primaryModel,
+                    durationMs,
+                    sentryTraceId,
+                };
+            } catch (error) {
+                const durationMs = Date.now() - startTime;
 
-            return {
-                success: true,
-                summary: completion.summary,
-                notifications: completion.notifications ?? [],
-                updatedMemory: { ...memory, ...completion.memoryUpdates },
-                toolCallsExecuted,
-            };
+                writeStatus(
+                    writer,
+                    `job-${jobId}-error`,
+                    `Error: ${error instanceof Error ? error.message : "Unknown"}`,
+                    "❌"
+                );
+
+                employeeLogger.error(
+                    { error },
+                    "❌ Streaming employee execution failed"
+                );
+
+                // Build structured error details
+                const errorDetails: JobErrorDetails = {
+                    message: error instanceof Error ? error.message : "Unknown error",
+                    code: (error as { code?: string })?.code,
+                    stack:
+                        process.env.NODE_ENV === "development" && error instanceof Error
+                            ? error.stack
+                            : undefined,
+                    context: { jobId, userEmail },
+                };
+
+                return {
+                    success: false,
+                    summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    notifications: [],
+                    updatedMemory: memory,
+                    toolCallsExecuted,
+                    errorDetails,
+                    modelId: EMPLOYEE_FALLBACK_CHAIN[0],
+                    durationMs,
+                    sentryTraceId,
+                };
+            }
         }
-
-        // No explicit completion
-        writeStatus(writer, `job-${jobId}-complete`, "Task finished", "✅");
-
-        employeeLogger.warn(
-            { text: finalText.slice(0, 200) },
-            "⚠️ Streaming employee finished without calling complete tool"
-        );
-
-        return {
-            success: true,
-            summary: finalText || "Task completed without explicit summary.",
-            notifications: [],
-            updatedMemory: memory,
-            toolCallsExecuted,
-        };
-    } catch (error) {
-        writeStatus(
-            writer,
-            `job-${jobId}-error`,
-            `Error: ${error instanceof Error ? error.message : "Unknown"}`,
-            "❌"
-        );
-
-        employeeLogger.error({ error }, "❌ Streaming employee execution failed");
-
-        return {
-            success: false,
-            summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            notifications: [],
-            updatedMemory: memory,
-            toolCallsExecuted: 0,
-        };
-    }
+    );
 }
 
 /**
