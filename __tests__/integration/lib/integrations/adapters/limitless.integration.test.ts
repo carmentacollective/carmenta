@@ -482,8 +482,8 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             const result = await adapter.execute(
                 "download_audio",
                 {
-                    startTime: oneHourAgo.toISOString(),
-                    endTime: now.toISOString(),
+                    startMs: oneHourAgo.getTime(),
+                    endMs: now.getTime(),
                 },
                 testUserEmail
             );
@@ -502,16 +502,16 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             }
         });
 
-        it("validates ISO 8601 timestamp format requirement", async () => {
-            // Use proper ISO 8601 format
+        it("validates Unix timestamp requirement", async () => {
+            // Use Unix timestamps in milliseconds
             const now = new Date();
             const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
             const result = await adapter.execute(
                 "download_audio",
                 {
-                    startTime: oneHourAgo.toISOString(), // e.g., 2024-01-15T09:00:00.000Z
-                    endTime: now.toISOString(),
+                    startMs: oneHourAgo.getTime(), // e.g., 1705312800000
+                    endMs: now.getTime(),
                 },
                 testUserEmail
             );
@@ -522,32 +522,32 @@ describeIf("LimitlessAdapter - Real API Integration", () => {
             }
         });
 
-        it("validates required startTime parameter", async () => {
+        it("validates required startMs parameter", async () => {
             const result = await adapter.execute(
                 "download_audio",
                 {
-                    endTime: new Date().toISOString(),
-                    // Missing startTime
+                    endMs: new Date().getTime(),
+                    // Missing startMs
                 },
                 testUserEmail
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(/We need the startTime parameter/);
+            expect(result.content[0].text).toMatch(/We need the startMs parameter/);
         });
 
-        it("validates required endTime parameter", async () => {
+        it("validates required endMs parameter", async () => {
             const result = await adapter.execute(
                 "download_audio",
                 {
-                    startTime: new Date().toISOString(),
-                    // Missing endTime
+                    startMs: new Date().getTime(),
+                    // Missing endMs
                 },
                 testUserEmail
             );
 
             expect(result.isError).toBe(true);
-            expect(result.content[0].text).toMatch(/We need the endTime parameter/);
+            expect(result.content[0].text).toMatch(/We need the endMs parameter/);
         });
     });
 

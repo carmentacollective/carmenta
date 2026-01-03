@@ -245,14 +245,14 @@ export class LimitlessAdapter extends ServiceAdapter {
                             type: "number",
                             required: true,
                             description: "Start time as Unix timestamp in milliseconds",
-                            example: "1705312800000",
+                            example: 1705312800000,
                         },
                         {
                             name: "endMs",
                             type: "number",
                             required: true,
                             description: "End time as Unix timestamp in milliseconds",
-                            example: "1705316400000",
+                            example: 1705316400000,
                         },
                     ],
                     returns:
