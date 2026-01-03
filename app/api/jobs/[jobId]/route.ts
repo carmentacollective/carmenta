@@ -21,7 +21,6 @@ import {
     deleteJobSchedule,
 } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
-import { NotFoundError, ValidationError } from "@/lib/errors";
 
 /**
  * Validate cron expression format and frequency
@@ -96,7 +95,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     });
 
     if (!job) {
-        throw new NotFoundError("Job");
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     return NextResponse.json({ job });
@@ -122,14 +121,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     });
 
     if (!job) {
-        throw new NotFoundError("Job");
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     const body = await request.json();
     const parsed = updateJobSchema.safeParse(body);
 
     if (!parsed.success) {
-        throw new ValidationError(parsed.error.message);
+        return NextResponse.json(
+            { error: "Invalid request", details: parsed.error.message },
+            { status: 400 }
+        );
     }
 
     const updates = parsed.data;
@@ -147,7 +149,31 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                     timezone: newTimezone,
                 });
             } catch (error) {
-                logger.error({ error, jobId }, "Failed to update Temporal schedule");
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                logger.error(
+                    { error: errorMessage, jobId },
+                    "Failed to update Temporal schedule"
+                );
+
+                Sentry.captureException(error, {
+                    tags: { component: "jobs", action: "update_schedule" },
+                    extra: {
+                        jobId,
+                        scheduleId: job.temporalScheduleId,
+                        userId: user.id,
+                    },
+                });
+
+                // Don't proceed with DB update - would create inconsistency
+                return NextResponse.json(
+                    {
+                        error: "Unable to update job",
+                        message:
+                            "Background processing is temporarily unavailable. Please try again in a few minutes.",
+                    },
+                    { status: 503 }
+                );
             }
         }
     }
@@ -162,9 +188,31 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                     await pauseJobSchedule(job.temporalScheduleId);
                 }
             } catch (error) {
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
                 logger.error(
-                    { error, jobId },
+                    { error: errorMessage, jobId },
                     "Failed to pause/resume Temporal schedule"
+                );
+
+                Sentry.captureException(error, {
+                    tags: { component: "jobs", action: "pause_resume_schedule" },
+                    extra: {
+                        jobId,
+                        scheduleId: job.temporalScheduleId,
+                        userId: user.id,
+                        isActive: updates.isActive,
+                    },
+                });
+
+                // Don't proceed with DB update - would create inconsistency
+                return NextResponse.json(
+                    {
+                        error: "Unable to update job",
+                        message:
+                            "Background processing is temporarily unavailable. Please try again in a few minutes.",
+                    },
+                    { status: 503 }
                 );
             }
         }
@@ -205,7 +253,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     });
 
     if (!job) {
-        throw new NotFoundError("Job");
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     // Delete Temporal schedule first (if exists) to prevent orphaned schedules

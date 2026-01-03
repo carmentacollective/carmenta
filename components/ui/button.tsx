@@ -117,12 +117,25 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const Comp = asChild ? Slot : "button";
 
-        // For asChild, pass through event handlers
+        // For asChild, merge refs so ripple effect works
         if (asChild) {
             return (
                 <Comp
                     className={cn(buttonVariants({ variant, size, className }))}
-                    ref={ref}
+                    ref={(node: HTMLButtonElement | null) => {
+                        // Assign to internal ref for ripple
+                        (
+                            internalRef as React.MutableRefObject<HTMLButtonElement | null>
+                        ).current = node;
+                        // Forward to external ref
+                        if (typeof ref === "function") {
+                            ref(node);
+                        } else if (ref) {
+                            (
+                                ref as React.MutableRefObject<HTMLButtonElement | null>
+                            ).current = node;
+                        }
+                    }}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
                     {...props}

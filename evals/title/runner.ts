@@ -132,10 +132,6 @@ recognition anchor when scanning and a search target when looking for something 
 </task>
 
 ${buildTitleFormatPrompt(context)}
-
-<examples>
-${exampleList}
-</examples>
 ${contextHint}${projectContext}
 
 <user-message>

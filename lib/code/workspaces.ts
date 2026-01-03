@@ -108,6 +108,12 @@ export function buildWorkspacePath(
  * Prevents path traversal attacks
  */
 export function validateWorkspacePath(userEmail: string, targetPath: string): boolean {
+    // Validate email format before using it
+    if (!userEmail || !userEmail.includes("@")) {
+        logger.warn({ userEmail }, "Invalid email format in validateWorkspacePath");
+        return false;
+    }
+
     const workspacesDir = getWorkspacesDir();
     const userDir = path.join(workspacesDir, sanitizeEmail(userEmail));
 
@@ -230,10 +236,14 @@ export async function getWorkspace(
         return null;
     }
 
+    // Parse owner/repo from directory name to ensure consistency with listUserWorkspaces
+    const dirName = path.basename(workspacePath);
+    const parsed = parseWorkspaceDirName(dirName);
+
     return {
-        owner,
-        repo,
-        fullName: `${owner}/${repo}`,
+        owner: parsed.owner,
+        repo: parsed.repo,
+        fullName: `${parsed.owner}/${parsed.repo}`,
         path: workspacePath,
     };
 }

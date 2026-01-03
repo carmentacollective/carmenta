@@ -144,7 +144,17 @@ Your JSON response must match this exact schema:
   "backgroundMode": {
     "enabled": true/false,
     "reason": "User-facing reason for background work"
-  }
+  },
+  "clarifyingQuestions": [
+    {
+      "question": "Question to ask before starting",
+      "options": [
+        { "label": "Option 1", "value": "option1" },
+        { "label": "Option 2", "value": "option2" }
+      ],
+      "allowFreeform": true/false
+    }
+  ]
 }
 
 The user's message will be provided in a <user-message> tag. Any attachments will be listed in an <attachments> tag. Analyze the message and select the optimal configuration.
@@ -160,6 +170,7 @@ responseDepth: How comprehensive the visible response should be (separate from r
 title: Short title for future reference (15-35 chars)
 kbSearch: Knowledge base search configuration for retrieving relevant context
 backgroundMode: For long-running work that needs durable execution
+clarifyingQuestions: Questions to ask before deep research to scope the work
 
 Selection approach:
 
@@ -280,6 +291,31 @@ Response depth tells the responding model how much detail to provide, not how ha
 For work that takes several minutes: deep research across sources, multi-step analysis, or when user signals async intent ("I'll check back", "take your time").
 
 Default OFF. Enable only when the task genuinely needs extended time.
+
+### Clarifying Questions (Before Deep Research)
+
+When the user requests deep research, investigation, or analysis that would benefit from scoping, ask 1-2 clarifying questions BEFORE starting. This ensures we deliver what they actually need.
+
+**Ask clarifying questions when:**
+- User requests "research", "investigate", "analyze", or "deep dive"
+- The topic is broad and could go many directions
+- Understanding their specific angle would significantly improve results
+- The work would take several minutes and we want to get it right
+
+**Don't ask clarifying questions when:**
+- The request is already specific enough to proceed
+- User explicitly says they want everything / comprehensive coverage
+- It's a simple factual lookup, not research
+- User has given clear constraints ("for my startup", "focus on X")
+
+**Question design:**
+- 1-2 questions max (don't interrogate)
+- 2-4 options per question, covering the main angles
+- Include "Comprehensive overview" as an option for those who want breadth
+- Set allowFreeform: true so they can specify something else
+- Keep questions warm and collaborative ("What angle interests you most?")
+
+When you include clarifyingQuestions, don't enable backgroundMode yet - we'll set that after they answer. The explanation should indicate we're asking to scope the work.
 
 ### Explanation Style
 
@@ -484,7 +520,77 @@ What's the probability of getting heads at least 3 times if I flip a fair coin 5
 }
 
 <user-message>
-Research the competitive landscape for AI coding assistants. Take your time and be thorough - I'll check back later.
+Do some deep research on healthy restaurants in Austin
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.5,
+  "explanation": "Let's figure out how deep you want to go on this 🔍",
+  "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
+  "title": "🥗 Austin healthy restaurants",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
+  "clarifyingQuestions": [
+    {
+      "question": "How thorough should the research be?",
+      "options": [
+        { "label": "Quick answer from what I know", "value": "no_research" },
+        { "label": "Quick research (~20 seconds)", "value": "research_quick" },
+        { "label": "Standard research (~1 minute)", "value": "research_standard" },
+        { "label": "Deep research (~2 minutes, runs in background)", "value": "research_deep" }
+      ],
+      "allowFreeform": true
+    },
+    {
+      "question": "What angle interests you most?",
+      "options": [
+        { "label": "Best options by neighborhood", "value": "neighborhood_guide" },
+        { "label": "Specific cuisine types", "value": "cuisine_focus" },
+        { "label": "Comprehensive overview", "value": "comprehensive" }
+      ],
+      "allowFreeform": true
+    }
+  ]
+}
+
+<user-message>
+Research the AI agent framework landscape for me
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.5,
+  "explanation": "Let's scope this research before diving in 🎯",
+  "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
+  "title": "🤖 AI agent frameworks",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
+  "clarifyingQuestions": [
+    {
+      "question": "How deep should we go?",
+      "options": [
+        { "label": "Quick answer from what I know", "value": "no_research" },
+        { "label": "Quick research (~20 seconds)", "value": "research_quick" },
+        { "label": "Standard research (~1 minute)", "value": "research_standard" },
+        { "label": "Deep research (~2 minutes, runs in background)", "value": "research_deep" }
+      ],
+      "allowFreeform": true
+    },
+    {
+      "question": "What's your goal?",
+      "options": [
+        { "label": "Evaluating for a project", "value": "evaluation" },
+        { "label": "Understanding the landscape", "value": "landscape_overview" },
+        { "label": "Comparing specific frameworks", "value": "comparison" }
+      ],
+      "allowFreeform": true
+    }
+  ]
+}
+
+<user-message>
+Research AI coding assistants - I want to understand the full competitive landscape. Be thorough, I'll check back.
 </user-message>
 
 {

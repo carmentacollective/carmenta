@@ -469,6 +469,17 @@ export async function validateUserProjectPath(
         return false;
     }
 
+    // Reject symlinks (security)
+    try {
+        const stat = await fs.lstat(projectPath);
+        if (stat.isSymbolicLink()) {
+            logger.warn({ projectPath }, "Rejected symlink in validateUserProjectPath");
+            return false;
+        }
+    } catch {
+        return false;
+    }
+
     // Check it's a git repo
     try {
         const gitStat = await fs.stat(path.join(projectPath, ".git"));
