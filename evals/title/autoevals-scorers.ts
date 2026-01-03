@@ -136,7 +136,7 @@ Rate the title quality:`,
         // Poor: too generic, too long, question-formatted, or misses topic
         Poor: 0.25,
     },
-    model: "openai/gpt-4o-mini",
+    model: "gpt-4o-mini",
     useCoT: false,
     temperature: 0,
 });
