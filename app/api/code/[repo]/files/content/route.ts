@@ -70,7 +70,9 @@ const BINARY_EXTENSIONS = new Set([
  */
 function isPathWithinProject(projectPath: string, targetPath: string): boolean {
     const normalizedProject = path.resolve(projectPath);
-    const normalizedTarget = path.resolve(projectPath, targetPath);
+    // Strip leading slash to ensure path.resolve treats it as relative
+    const safeTarget = targetPath.replace(/^\/+/, "") || ".";
+    const normalizedTarget = path.resolve(projectPath, safeTarget);
     // Ensure target starts with project + path separator to prevent sibling directory bypass
     return (
         normalizedTarget === normalizedProject ||

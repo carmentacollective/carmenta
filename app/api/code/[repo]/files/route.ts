@@ -97,7 +97,9 @@ function shouldHide(name: string): boolean {
  */
 function isPathWithinProject(projectPath: string, targetPath: string): boolean {
     const normalizedProject = path.resolve(projectPath);
-    const normalizedTarget = path.resolve(projectPath, targetPath);
+    // Strip leading slash to ensure path.resolve treats it as relative
+    const safeTarget = targetPath.replace(/^\/+/, "") || ".";
+    const normalizedTarget = path.resolve(projectPath, safeTarget);
     // Ensure target starts with project + path separator to prevent sibling directory bypass
     // e.g., /home/user/project should not match /home/user/project-secret
     return (
