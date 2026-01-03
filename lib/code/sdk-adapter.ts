@@ -426,7 +426,11 @@ function* processStreamEvent(
                     delta: delta.partial_json,
                 };
             } else {
-                // Fallback: Log warning and use first known tool
+                // Fallback: Use first known tool when block index routing fails.
+                // This happens when SDK doesn't provide event.index or when the index
+                // hasn't been registered yet. With concurrent tools, this could misroute
+                // deltas, but it's better than dropping them. The UI shows partial JSON
+                // which degrades gracefully if misrouted (displays as incomplete string).
                 logger.warn(
                     { index: event.index, toolCount: toolNames.size },
                     "Could not route input_json_delta to tool - using fallback"

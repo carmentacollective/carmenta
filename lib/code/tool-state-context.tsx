@@ -6,7 +6,8 @@
  * Receives `data-code-messages` data parts from the streaming API and
  * provides flat message array to CodeModeMessage components.
  *
- * This solves the race condition where tools would disappear:
+ * Maintains tool state separately from message parts to prevent tools from
+ * disappearing when streaming updates arrive before the UI message is complete:
  * - Messages are a flat array, tools update in-place
  * - State transitions: streaming → running → complete/error
  * - Components re-render with each state update
@@ -14,8 +15,8 @@
  * Also maintains backwards compatibility with `data-tool-state` format.
  *
  * Client-side elapsed time tracking:
- * Since ai-sdk-provider-claude-code doesn't emit tool_progress events,
- * we track elapsed time client-side using timestamps and intervals.
+ * Direct SDK integration provides tool_progress events with elapsed times.
+ * Client-side timing serves as fallback when SDK doesn't emit progress events.
  */
 
 import {
@@ -202,15 +203,6 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // Update stream health (side effect, but consistent with tick)
-        setStreamHealth({
-            lastActivityAt: lastActivityRef.current,
-            hasRunningTools: hasRunning,
-            secondsSinceActivity: lastActivityRef.current
-                ? Math.floor((now - lastActivityRef.current) / 1000)
-                : 0,
-        });
-
         // Clean up start times for non-running tools
         const runningIds = new Set(
             messages
@@ -255,6 +247,22 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps -- tick triggers periodic updates
     }, [messages, tick]);
+
+    // Update stream health based on computed messages
+    // Separate effect to avoid side effects in useMemo
+    useEffect(() => {
+        const hasRunning = messagesWithElapsed.some(
+            (m) => m.type === "tool" && m.state === "running"
+        );
+
+        setStreamHealth({
+            lastActivityAt: lastActivityRef.current,
+            hasRunningTools: hasRunning,
+            secondsSinceActivity: lastActivityRef.current
+                ? Math.floor((Date.now() - lastActivityRef.current) / 1000)
+                : 0,
+        });
+    }, [messagesWithElapsed]);
 
     const handleDataPart = useCallback((dataPart: unknown) => {
         // Record activity

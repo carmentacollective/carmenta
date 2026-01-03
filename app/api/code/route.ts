@@ -25,7 +25,7 @@ import {
     validateProject,
     validateUserProjectPath,
 } from "@/lib/code";
-import { streamSDK, type SDKChunk } from "@/lib/code/sdk-adapter";
+import { streamSDK } from "@/lib/code/sdk-adapter";
 import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
@@ -627,7 +627,11 @@ function extractUserMessageText(msg: UIMessage | undefined): string {
 
 /**
  * Convert UI messages to a prompt string for the SDK.
- * The SDK expects a simple prompt string, we extract the latest user message.
+ *
+ * Only extracts the latest user message - conversation history is intentionally
+ * not included here. The Claude Agent SDK manages its own conversation state via
+ * settingSources (loads .clauderc and session history from cwd). Including UI
+ * messages would duplicate history and break the SDK's session management.
  */
 function convertUIMessagesToPrompt(messages: UIMessage[]): string {
     // Find the last user message
