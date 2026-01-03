@@ -22,7 +22,6 @@ import {
     getJobScheduleInfo,
 } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
-import { ValidationError } from "@/lib/errors";
 import { encodeJobId, generateJobSlug } from "@/lib/sqids";
 
 /**
@@ -162,7 +161,10 @@ export async function POST(request: NextRequest) {
     const parsed = createJobSchema.safeParse(body);
 
     if (!parsed.success) {
-        throw new ValidationError(parsed.error.message);
+        return NextResponse.json(
+            { error: "Invalid request", details: parsed.error.message },
+            { status: 400 }
+        );
     }
 
     const { name, prompt, scheduleCron, timezone, integrations } = parsed.data;

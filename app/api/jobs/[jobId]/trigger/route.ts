@@ -15,7 +15,6 @@ import { scheduledJobs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { isBackgroundModeEnabled, startAgentWorkflow } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
-import { NotFoundError } from "@/lib/errors";
 
 type RouteContext = {
     params: Promise<{ jobId: string }>;
@@ -41,7 +40,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     });
 
     if (!job) {
-        throw new NotFoundError("Job");
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     // Check if background mode is available before attempting to trigger
