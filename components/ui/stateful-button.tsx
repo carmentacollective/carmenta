@@ -257,7 +257,10 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 className="inline-flex"
                             >
                                 <Loader2
-                                    className={cn(iconSize, "animate-spin")}
+                                    className={cn(
+                                        iconSize,
+                                        !prefersReducedMotion && "animate-spin"
+                                    )}
                                     aria-hidden="true"
                                 />
                             </motion.span>

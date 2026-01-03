@@ -166,6 +166,10 @@ export class ToolStateAccumulator {
                 input,
             };
             this.tools.set(toolCallId, tool);
+
+            // Add to content order so late-arrival tools appear in correct position
+            this.contentOrder.push({ type: "tool", id: toolCallId });
+            this.lastChunkWasText = false;
         } else {
             tool.state = "input-available";
             tool.input = input;
