@@ -226,9 +226,9 @@ function extractExecutionTrace(
                     return {
                         toolCallId: tc.toolCallId || `tool-${index}-${tcIndex}`,
                         toolName: tc.toolName,
-                        input: tc.args || {},
-                        output: result?.result,
-                        error: result?.error?.message,
+                        input: tc.input || {},
+                        output: result?.output,
+                        // Tool errors appear in step.content as 'tool-error' parts, not on results
                         durationMs: 0, // SDK doesn't track per-tool timing
                     };
                 }
