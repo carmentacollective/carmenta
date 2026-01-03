@@ -82,7 +82,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     const [connectionState, setConnectionState] =
         useState<VoiceConnectionState>("disconnected");
     const [error, setError] = useState<Error | null>(null);
-    const [isSupported] = useState(() => checkVoiceSupport());
+    const [isSupported, setIsSupported] = useState(false);
 
     // Refs to manage connection and recording state
     const connectionRef = useRef<LiveClient | null>(null);
@@ -111,6 +111,13 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         onSessionStartRef.current = onSessionStart;
         onErrorRef.current = onError;
     }, [onTranscriptComplete, onTranscriptUpdate, onSessionStart, onError]);
+
+    // Check voice support on mount (client-side only to avoid hydration mismatch)
+    // This intentionally triggers a second render to match server (null) then show button
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsSupported(checkVoiceSupport());
+    }, []);
 
     const handleError = useCallback((err: Error) => {
         setError(err);
@@ -374,7 +381,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
             stopListening();
         }
-    }, [isSupported, language, handleError, stopListening, connectionState]);
+    }, [isSupported, language, handleError, stopListening]);
 
     const toggleListening = useCallback(async () => {
         if (connectionState === "connected" || connectionState === "connecting") {
