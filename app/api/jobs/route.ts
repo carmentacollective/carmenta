@@ -11,7 +11,11 @@ import { auth } from "@clerk/nextjs/server";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { createJobSchedule, deleteJobSchedule } from "@/lib/temporal/client";
+import {
+    createJobSchedule,
+    deleteJobSchedule,
+    getJobScheduleInfo,
+} from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
 
@@ -79,7 +83,31 @@ export async function GET() {
         },
     });
 
-    return NextResponse.json({ jobs });
+    // Enrich jobs with schedule info from Temporal
+    const enrichedJobs = await Promise.all(
+        jobs.map(async (job) => {
+            if (!job.temporalScheduleId) {
+                return { ...job, nextRunAt: null, lastRunAt: null };
+            }
+
+            try {
+                const scheduleInfo = await getJobScheduleInfo(job.temporalScheduleId);
+                return {
+                    ...job,
+                    nextRunAt: scheduleInfo.nextRunAt,
+                    lastRunAt: scheduleInfo.lastRunAt,
+                };
+            } catch (error) {
+                logger.warn(
+                    { error, jobId: job.id, scheduleId: job.temporalScheduleId },
+                    "Failed to fetch schedule info"
+                );
+                return { ...job, nextRunAt: null, lastRunAt: null };
+            }
+        })
+    );
+
+    return NextResponse.json({ jobs: enrichedJobs });
 }
 
 /**

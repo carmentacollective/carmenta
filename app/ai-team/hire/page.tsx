@@ -106,7 +106,9 @@ What can we help you with?`,
             const assistantMessage: Message = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                content: data.content,
+                content:
+                    data.content ??
+                    "We're having trouble responding. Please try again.",
             };
 
             setMessages((prev) => [...prev, assistantMessage]);

@@ -64,7 +64,7 @@ export async function createJobSchedule(params: {
                 // Skip if previous run is still in progress
                 overlap: "SKIP",
                 // Catch up missed runs within 1 hour (handles brief outages)
-                catchupWindow: "1 hour",
+                catchupWindow: "1h",
             },
         });
 
