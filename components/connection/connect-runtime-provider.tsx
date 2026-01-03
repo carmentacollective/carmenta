@@ -276,8 +276,10 @@ export function useCodeMode() {
  * All messages follow Carmenta voice: warm, direct, confident, helpful.
  * No technical jargon. Be honest about what's transient vs what's broken.
  * Don't say "try again" when retrying won't help.
+ *
+ * Exported for testing.
  */
-function parseErrorMessage(message: string | undefined): string {
+export function parseErrorMessage(message: string | undefined): string {
     if (!message) return "We couldn't complete that request.";
 
     const trimmed = message.trim();

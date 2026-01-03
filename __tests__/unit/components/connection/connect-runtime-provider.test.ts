@@ -1,12 +1,15 @@
 /**
- * Tests for ConnectRuntimeProvider message conversion
+ * Tests for ConnectRuntimeProvider pure functions
  *
- * These tests verify that messages loaded from the database are correctly
- * converted to the AI SDK UIMessage format, preserving all part types.
+ * Tests message conversion (toAIMessage) and error parsing (parseErrorMessage).
+ * These are pure functions that transform data without side effects.
  */
 
 import { describe, it, expect } from "vitest";
-import { toAIMessage } from "@/components/connection/connect-runtime-provider";
+import {
+    toAIMessage,
+    parseErrorMessage,
+} from "@/components/connection/connect-runtime-provider";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 
 describe("toAIMessage", () => {
@@ -25,6 +28,30 @@ describe("toAIMessage", () => {
                 role: "user",
                 parts: [{ type: "text", text: "Hello, world!" }],
             });
+        });
+
+        it("handles empty text content", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-empty-text",
+                role: "user",
+                parts: [{ type: "text", text: "" }],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts[0]).toEqual({ type: "text", text: "" });
+        });
+
+        it("handles missing text field by defaulting to empty string", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-missing-text",
+                role: "user",
+                parts: [{ type: "text" } as any],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts[0]).toEqual({ type: "text", text: "" });
         });
     });
 
@@ -67,6 +94,18 @@ describe("toAIMessage", () => {
             expect((result.parts[0] as any).providerMetadata).toEqual({
                 anthropic: { cacheControl: { type: "ephemeral" } },
             });
+        });
+
+        it("handles reasoning without providerMetadata", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-reasoning-no-meta",
+                role: "assistant",
+                parts: [{ type: "reasoning", text: "Simple thought" }],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect((result.parts[0] as any).providerMetadata).toBeUndefined();
         });
     });
 
@@ -117,7 +156,43 @@ describe("toAIMessage", () => {
                 type: "file",
                 url: "https://storage.example.com/user123/file.pdf",
                 mediaType: "application/pdf",
-                name: "file", // Empty name is converted to default "file"
+                name: "file",
+            });
+        });
+
+        it("falls back to mimeType when mediaType is missing", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-file-mimetype",
+                role: "user",
+                parts: [
+                    {
+                        type: "file",
+                        url: "https://storage.example.com/doc.pdf",
+                        mimeType: "application/pdf",
+                        name: "doc.pdf",
+                    } as any,
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect((result.parts[0] as any).mediaType).toBe("application/pdf");
+        });
+
+        it("provides default values for completely empty file parts", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-file-minimal",
+                role: "user",
+                parts: [{ type: "file" } as any],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts[0]).toEqual({
+                type: "file",
+                url: "",
+                mediaType: "",
+                name: "file",
             });
         });
     });
@@ -283,6 +358,42 @@ describe("toAIMessage", () => {
                 "Search service unavailable"
             );
         });
+
+        it("defaults to input-available when state is missing", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-tool-no-state",
+                role: "assistant",
+                parts: [
+                    {
+                        type: "tool-test",
+                        toolCallId: "call-no-state",
+                        input: { foo: "bar" },
+                    } as any,
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect((result.parts[0] as any).state).toBe("input-available");
+        });
+
+        it("handles missing toolCallId by defaulting to empty string", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-tool-no-id",
+                role: "assistant",
+                parts: [
+                    {
+                        type: "tool-test",
+                        state: "input-available",
+                        input: {},
+                    } as any,
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect((result.parts[0] as any).toolCallId).toBe("");
+        });
     });
 
     describe("data parts", () => {
@@ -311,6 +422,26 @@ describe("toAIMessage", () => {
                     title: "Product Comparison",
                     items: [{ name: "A" }, { name: "B" }],
                 },
+            });
+        });
+
+        it("handles data parts with missing fields", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-data-minimal",
+                role: "assistant",
+                parts: [
+                    {
+                        type: "data-research",
+                    } as any,
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts[0]).toEqual({
+                type: "data-research",
+                id: "",
+                data: {},
             });
         });
     });
@@ -391,12 +522,71 @@ describe("toAIMessage", () => {
         });
     });
 
+    describe("edge cases - null and invalid parts", () => {
+        it("filters out null parts from stream resume", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-with-nulls",
+                role: "assistant",
+                parts: [
+                    null as any,
+                    { type: "text", text: "Valid text" },
+                    undefined as any,
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts).toHaveLength(1);
+            expect(result.parts[0]).toEqual({ type: "text", text: "Valid text" });
+        });
+
+        it("filters out non-object parts", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-with-primitives",
+                role: "assistant",
+                parts: ["string" as any, 123 as any, { type: "text", text: "Valid" }],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts).toHaveLength(1);
+            expect(result.parts[0]).toEqual({ type: "text", text: "Valid" });
+        });
+
+        it("filters out objects without type field", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-no-type",
+                role: "assistant",
+                parts: [
+                    { text: "No type field" } as any,
+                    { type: "text", text: "Has type" },
+                ],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts).toHaveLength(1);
+            expect(result.parts[0]).toEqual({ type: "text", text: "Has type" });
+        });
+
+        it("handles empty parts array", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-empty-parts",
+                role: "assistant",
+                parts: [],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts).toHaveLength(0);
+        });
+    });
+
     describe("unknown types", () => {
         it("falls back to text for truly unknown types", () => {
             const dbMessage: UIMessageLike = {
                 id: "msg-unknown",
                 role: "assistant",
-
                 parts: [
                     { type: "unknown-future-type" as any, text: "fallback content" },
                 ],
@@ -408,6 +598,313 @@ describe("toAIMessage", () => {
                 type: "text",
                 text: "fallback content",
             });
+        });
+
+        it("handles unknown type with missing text", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-unknown-no-text",
+                role: "assistant",
+                parts: [{ type: "mystery-type" as any }],
+            };
+
+            const result = toAIMessage(dbMessage);
+
+            expect(result.parts[0]).toEqual({
+                type: "text",
+                text: "",
+            });
+        });
+    });
+
+    describe("role preservation", () => {
+        it("preserves user role", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-user",
+                role: "user",
+                parts: [{ type: "text", text: "Hello" }],
+            };
+
+            expect(toAIMessage(dbMessage).role).toBe("user");
+        });
+
+        it("preserves assistant role", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-assistant",
+                role: "assistant",
+                parts: [{ type: "text", text: "Hello" }],
+            };
+
+            expect(toAIMessage(dbMessage).role).toBe("assistant");
+        });
+
+        it("preserves system role", () => {
+            const dbMessage: UIMessageLike = {
+                id: "msg-system",
+                role: "system" as any,
+                parts: [{ type: "text", text: "System message" }],
+            };
+
+            expect(toAIMessage(dbMessage).role).toBe("system");
+        });
+    });
+});
+
+describe("parseErrorMessage", () => {
+    describe("undefined and empty input", () => {
+        it("returns default message for undefined input", () => {
+            expect(parseErrorMessage(undefined)).toBe(
+                "We couldn't complete that request."
+            );
+        });
+
+        it("returns default message for empty string", () => {
+            expect(parseErrorMessage("")).toBe("We couldn't complete that request.");
+        });
+
+        it("passes through whitespace-only string as-is", () => {
+            // Implementation only checks for falsy values, not whitespace-only
+            // The trimmed check happens after the falsy check
+            expect(parseErrorMessage("   ")).toBe("   ");
+        });
+    });
+
+    describe("provider and API errors", () => {
+        it("handles thinking block errors with retry suggestion", () => {
+            const msg =
+                "AI_APICallError: Provider returned error - thinking block issue";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "We hit a conversation glitch. Try sending your message again."
+            );
+        });
+
+        it("handles rate limit errors (429)", () => {
+            const msg = "Provider returned error: rate limit exceeded (429)";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "The model is busy right now. Give it a moment and try again."
+            );
+        });
+
+        it("handles overloaded errors (503)", () => {
+            const msg = "Provider returned error: service overloaded 503";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "High demand right now. Try a different model or wait a moment."
+            );
+        });
+
+        it("handles timeout errors", () => {
+            const msg = "Provider returned error: request timed out";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "The response took too long. Try a simpler question or a faster model."
+            );
+        });
+
+        it("handles generic provider errors", () => {
+            const msg = "AI_APICallError: Unknown provider error";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "We couldn't reach the model. Try again or switch models."
+            );
+        });
+    });
+
+    describe("connection and network errors", () => {
+        it("handles fetch failed errors", () => {
+            const msg = "Fetch failed: network error";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "Connection dropped. Check your network and try again."
+            );
+        });
+
+        it("handles connection refused errors", () => {
+            const msg = "ECONNREFUSED - could not connect to server";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "Connection dropped. Check your network and try again."
+            );
+        });
+
+        it("handles generic network errors", () => {
+            const msg = "Network error occurred";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "Connection dropped. Check your network and try again."
+            );
+        });
+    });
+
+    describe("JSON error responses", () => {
+        it("extracts error message from JSON response", () => {
+            const msg = JSON.stringify({ error: "Invalid API key" });
+
+            const result = parseErrorMessage(msg);
+
+            // Recursively parses - the inner message gets returned
+            expect(result).toBe("Invalid API key");
+        });
+
+        it("handles nested JSON errors with provider messages", () => {
+            const msg = JSON.stringify({
+                error: "Provider returned error: rate limit",
+            });
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "The model is busy right now. Give it a moment and try again."
+            );
+        });
+
+        it("handles invalid JSON gracefully", () => {
+            const msg = "{ invalid json";
+
+            const result = parseErrorMessage(msg);
+
+            // Falls through to general handling
+            expect(result).toBe("{ invalid json");
+        });
+
+        it("handles JSON without error field by passing through", () => {
+            const msg = JSON.stringify({ message: "Something happened" });
+
+            const result = parseErrorMessage(msg);
+
+            // Falls through - no `error` field in JSON, and "error" not in content
+            expect(result).toBe(msg);
+        });
+    });
+
+    describe("HTML error pages", () => {
+        it("handles 404 HTML errors", () => {
+            const msg = "<!DOCTYPE html><html><h1>404</h1></html>";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe("We lost the thread. Refresh to continue.");
+        });
+
+        it("handles 500 HTML errors", () => {
+            const msg = "<!DOCTYPE html><html><h1>500</h1></html>";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toContain("Something broke on our end");
+        });
+
+        it("handles other status codes in HTML", () => {
+            const msg = "<!DOCTYPE html><html><h1>502</h1></html>";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toContain("Something unexpected happened");
+        });
+
+        it("handles HTML without status code", () => {
+            const msg = "<!DOCTYPE html><html><body>Error</body></html>";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toContain("Something unexpected happened");
+        });
+
+        it("handles html tag without DOCTYPE", () => {
+            const msg = "<html><h1>500</h1></html>";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toContain("Something broke on our end");
+        });
+    });
+
+    describe("long messages (stack traces)", () => {
+        it("handles very long error messages with generic response", () => {
+            const longMessage = "Error: Something went wrong\n" + "a".repeat(250);
+
+            const result = parseErrorMessage(longMessage);
+
+            expect(result).toContain("Something went sideways");
+        });
+    });
+
+    describe("generic error patterns", () => {
+        it("appends retry suggestion to short error messages", () => {
+            const msg = "Model error";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe("Model error. Try again or switch models.");
+        });
+
+        it("preserves helpful error messages with please", () => {
+            const msg = "Please check your input and try again";
+
+            const result = parseErrorMessage(msg);
+
+            // Contains "please" so preserved as-is
+            expect(result).toBe("Please check your input and try again");
+        });
+
+        it("passes through plain messages without error pattern", () => {
+            const msg = "Something went wrong";
+
+            const result = parseErrorMessage(msg);
+
+            // No "error" in message, passed through
+            expect(result).toBe("Something went wrong");
+        });
+    });
+
+    describe("case insensitivity", () => {
+        it("handles uppercase PROVIDER RETURNED ERROR", () => {
+            const msg = "PROVIDER RETURNED ERROR: timeout";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "The response took too long. Try a simpler question or a faster model."
+            );
+        });
+
+        it("handles mixed case Network Error", () => {
+            const msg = "NETWORK ERROR occurred";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "Connection dropped. Check your network and try again."
+            );
+        });
+    });
+
+    describe("whitespace handling", () => {
+        it("trims leading and trailing whitespace", () => {
+            const msg = "   Provider returned error: overloaded   ";
+
+            const result = parseErrorMessage(msg);
+
+            expect(result).toBe(
+                "High demand right now. Try a different model or wait a moment."
+            );
         });
     });
 });
