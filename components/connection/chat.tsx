@@ -22,10 +22,16 @@ class ChatErrorBoundary extends Component<
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-        logger.error(
-            { error: error.message, componentStack: errorInfo.componentStack },
-            "Chat component error"
-        );
+        // Serialize error properties explicitly since JSON.stringify({error}) yields {}
+        const errorDetails = {
+            name: error?.name,
+            message: error?.message,
+            stack: error?.stack,
+            isError: error instanceof Error,
+            componentStack: errorInfo.componentStack,
+        };
+
+        logger.error(errorDetails, "Chat component error");
     }
 
     render(): ReactNode {

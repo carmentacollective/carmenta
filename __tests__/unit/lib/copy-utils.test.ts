@@ -152,82 +152,20 @@ describe("copyMarkdownWithFormats", () => {
         });
     });
 
-    it("successfully copies markdown with multiple formats", async () => {
+    it("delegates to copyMarkdown (uses writeText)", async () => {
         const markdown = "# Hello\n\nThis is **bold** text.";
         const result = await copyMarkdownWithFormats(markdown);
 
         expect(result).toBe(true);
-        expect(mockWrite).toHaveBeenCalledTimes(1);
-
-        // Verify ClipboardItem was created with both formats
-        const clipboardItem = mockWrite.mock.calls[0][0][0];
-        expect(clipboardItem).toBeInstanceOf(ClipboardItem);
-    });
-
-    it("converts markdown to HTML correctly", async () => {
-        const markdown = "**bold** and *italic*";
-        await copyMarkdownWithFormats(markdown);
-
-        const clipboardItem = mockWrite.mock.calls[0][0][0];
-        const htmlBlob = await clipboardItem.getType("text/html");
-        const htmlText = await htmlBlob.text();
-
-        // HTML should contain tags, not markdown syntax
-        expect(htmlText).toContain("<strong>");
-        expect(htmlText).toContain("<em>");
-        expect(htmlText).not.toContain("**");
-        expect(htmlText).not.toContain("*italic*");
-    });
-
-    it("includes plain text markdown in clipboard", async () => {
-        const markdown = "# Heading\n\nSome **text**";
-        await copyMarkdownWithFormats(markdown);
-
-        const clipboardItem = mockWrite.mock.calls[0][0][0];
-        const plainBlob = await clipboardItem.getType("text/plain");
-        const plainText = await plainBlob.text();
-
-        // Plain text should be the original markdown
-        expect(plainText).toBe(markdown);
-    });
-
-    it("handles code blocks in markdown", async () => {
-        const markdown = "```typescript\nconst x = 1;\n```";
-        const result = await copyMarkdownWithFormats(markdown);
-
-        expect(result).toBe(true);
-        expect(mockWrite).toHaveBeenCalled();
+        expect(mockWriteText).toHaveBeenCalledWith(markdown);
     });
 
     it("returns false when clipboard API fails", async () => {
-        mockWrite.mockRejectedValueOnce(new Error("Permission denied"));
+        mockWriteText.mockRejectedValueOnce(new Error("Permission denied"));
 
         const result = await copyMarkdownWithFormats("test");
 
         expect(result).toBe(false);
-        expect(mockWrite).toHaveBeenCalled();
-    });
-
-    it("handles empty markdown", async () => {
-        const result = await copyMarkdownWithFormats("");
-
-        expect(result).toBe(true);
-        expect(mockWrite).toHaveBeenCalled();
-    });
-
-    it("handles markdown with special characters", async () => {
-        const markdown = "Hello 世界 🌍\n\n**émoji** test";
-        const result = await copyMarkdownWithFormats(markdown);
-
-        expect(result).toBe(true);
-
-        const clipboardItem = mockWrite.mock.calls[0][0][0];
-        const plainBlob = await clipboardItem.getType("text/plain");
-        const plainText = await plainBlob.text();
-
-        expect(plainText).toContain("世界");
-        expect(plainText).toContain("🌍");
-        expect(plainText).toContain("émoji");
     });
 });
 

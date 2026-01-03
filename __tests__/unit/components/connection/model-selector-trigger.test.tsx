@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/react";
+import { render, fireEvent, cleanup, screen } from "@testing-library/react";
 import { type ReactNode, useState } from "react";
 
 import { ModelSelectorTrigger } from "@/components/connection/model-selector/model-selector-trigger";
@@ -102,59 +102,63 @@ describe("ModelSelectorTrigger", () => {
 
     describe("modal opening", () => {
         it("opens modal when trigger is clicked", () => {
-            const { container } = render(
+            render(
                 <TestWrapper>
                     <ModelSelectorTrigger {...defaultProps} />
                 </TestWrapper>
             );
 
-            const trigger = container.querySelector("button")!;
+            const trigger = screen.getByRole("button", { name: /model settings/i });
             fireEvent.click(trigger);
 
-            // Modal should appear with Automagically
-            expect(container).toHaveTextContent("Automagically");
-            expect(container).toHaveTextContent(
-                "Picks the best model for your message"
-            );
+            // Modal should appear (use role="dialog" for Radix)
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
+            // Automagically button should be present
+            const automagicallyButton = screen
+                .getByText("Automagically")
+                .closest("button");
+            expect(automagicallyButton).toBeInTheDocument();
         });
 
-        it("has backdrop that can be clicked", () => {
-            const { container } = render(
+        it("modal can be closed via close button", () => {
+            render(
                 <TestWrapper>
                     <ModelSelectorTrigger {...defaultProps} />
                 </TestWrapper>
             );
 
             // Open modal
-            const trigger = container.querySelector("button")!;
+            const trigger = screen.getByRole("button", { name: /model settings/i });
             fireEvent.click(trigger);
 
             // Modal should be open
-            expect(container).toHaveTextContent("Automagically");
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-            // Backdrop should exist and be clickable
-            const backdrop = container.querySelector(".fixed.inset-0.z-modal");
-            expect(backdrop).toBeInTheDocument();
-            // Note: Animation makes synchronous close testing unreliable
+            // Close button should exist (Radix handles backdrop/escape)
+            const closeButton = screen.getByRole("button", { name: /close/i });
+            expect(closeButton).toBeInTheDocument();
         });
     });
 
     describe("model selection", () => {
         it("calls onChange when model is selected", () => {
             const onChange = vi.fn();
-            const { container } = render(
+            render(
                 <TestWrapper>
                     <ModelSelectorTrigger {...defaultProps} onChange={onChange} />
                 </TestWrapper>
             );
 
             // Open modal
-            const trigger = container.querySelector("button")!;
+            const trigger = screen.getByRole("button", { name: /model settings/i });
             fireEvent.click(trigger);
 
-            // Find and click on first model in grid
-            const modelButtons = container.querySelectorAll(".grid button");
-            fireEvent.click(modelButtons[0]);
+            // Find and click on Claude Sonnet by name
+            const claudeSonnetButton = screen
+                .getByText("Claude Sonnet")
+                .closest("button");
+            expect(claudeSonnetButton).toBeInTheDocument();
+            fireEvent.click(claudeSonnetButton!);
 
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({

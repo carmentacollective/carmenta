@@ -20,17 +20,11 @@ services:
     buildFilter:
       ignoredPaths:
         - knowledge/** # Don't rebuild for docs-only changes
-    disk:
-      name: carmenta-data
-      mountPath: /data
-      sizeGB: 10 # Persistent storage for user workspaces (/data/workspaces/)
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "9999"
-      - key: DATA_DIR
-        value: /data
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db
@@ -41,11 +35,14 @@ services:
           type: redis
           property: connectionString
       # TEMPORAL_ADDRESS controls background mode availability:
-      # - Remove this to disable background mode (requests run inline)
-      # - Set to your Temporal server to enable durable background execution
-      # Falls back to inline gracefully if Temporal is unavailable
+      # - Unset/remove to disable background mode (requests run inline)
+      # - Set to Temporal server address to enable durable background execution
+      # Uses fromService to get the actual internal hostname (Render adds unique suffix)
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        fromService:
+          name: carmenta-temporal-server
+          type: pserv
+          property: hostport
 
   # Redis for resumable streams and caching
   - type: redis
@@ -57,7 +54,7 @@ services:
 
   # Temporal Server - workflow orchestration engine
   # Uses temporalio/auto-setup for automatic schema creation
-  # Private service - accessible via carmenta-temporal-server.internal:7233
+  # Private service - other services use fromService to get the internal hostname
   - type: pserv
     name: carmenta-temporal-server
     runtime: docker
@@ -66,6 +63,10 @@ services:
     dockerfilePath: ./docker/temporal-server/Dockerfile
     autoDeploy: true
     envVars:
+      - key: PORT
+        value: "7233" # Tell Render which port to expose (Temporal's gRPC port)
+      - key: BIND_ON_IP
+        value: "0.0.0.0" # Listen on all interfaces (required for private network access)
       - key: DB
         value: postgres12 # Temporal's driver name for PostgreSQL 12+
       - key: DB_PORT
@@ -97,8 +98,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Uses fromService to get the actual internal hostname (Render adds unique suffix)
       - key: TEMPORAL_ADDRESS
-        value: carmenta-temporal-server.internal:7233
+        fromService:
+          name: carmenta-temporal-server
+          type: pserv
+          property: hostport
       - key: DATABASE_URL
         fromDatabase:
           name: carmenta-db

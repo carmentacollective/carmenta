@@ -54,7 +54,9 @@ function ResearchInProgress({
     depth: ResearchDepth;
 }) {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const tips = researchTips[depth];
+    // Defensive: ensure depth is valid, fallback to 'standard' if not
+    const validDepth = researchTips[depth] ? depth : "standard";
+    const tips = researchTips[validDepth];
 
     useEffect(() => {
         const timer = setInterval(() => {

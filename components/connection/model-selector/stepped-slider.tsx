@@ -92,13 +92,13 @@ export function SteppedSlider({
                                         "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
                                         isSelected
                                             ? isPrimary
-                                                ? "border-primary bg-primary scale-110 shadow-md"
-                                                : "border-secondary bg-secondary scale-110 shadow-md"
+                                                ? "border-primary bg-primary/15 ring-primary/50 scale-110 shadow-md ring-2"
+                                                : "border-secondary bg-secondary/15 ring-secondary/50 scale-110 shadow-md ring-2"
                                             : isActive && progressMode
                                               ? isPrimary
                                                   ? "border-primary/40 bg-primary/10"
                                                   : "border-secondary/40 bg-secondary/10"
-                                              : "border-foreground/10 bg-background group-hover:border-foreground/20",
+                                              : "border-border bg-background group-hover:border-foreground/30 dark:border-foreground/10 dark:group-hover:border-foreground/20",
                                         disabled && "cursor-not-allowed opacity-50"
                                     )}
                                 >
@@ -118,7 +118,7 @@ export function SteppedSlider({
                                             ? isPrimary
                                                 ? "text-primary font-semibold"
                                                 : "text-secondary-foreground font-semibold"
-                                            : "text-foreground/30"
+                                            : "text-muted-foreground"
                                     )}
                                 >
                                     {preset.label}
@@ -127,7 +127,7 @@ export function SteppedSlider({
 
                             {/* Connecting segment between circles */}
                             {!isLast && (
-                                <div className="bg-foreground/10 mx-1 h-0.5 flex-1 rounded-full">
+                                <div className="bg-border dark:bg-foreground/10 mx-1 h-0.5 flex-1 rounded-full">
                                     {progressMode && (
                                         <div
                                             className={cn(

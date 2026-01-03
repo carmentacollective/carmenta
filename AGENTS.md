@@ -1,5 +1,11 @@
 # Project Context for AI Assistants
 
+## Anti-Patterns to Avoid
+
+**Never explain issues as "race conditions"** without concrete evidence. This is a lazy
+explanation that's almost never the actual cause. Investigate infrastructure,
+networking, configuration, and service connectivity first.
+
 ## Always Apply Rules
 
 @.cursor/rules/heart-centered-ai-philosophy.mdc

@@ -865,7 +865,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         // Enable stream resumption for existing connections (not new ones)
         resume: !!activeConnectionId,
         onError: (err) => {
-            logger.error({ error: err.message }, "Chat error");
+            // Pass actual Error object so Sentry gets full stack trace
+            logger.error({ error: err }, "Chat error");
             setDisplayError(err);
             clearTransientMessages();
         },

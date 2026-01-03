@@ -44,32 +44,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * This provides the best experience for all paste targets with a single click.
  */
 export async function copyMarkdownWithFormats(markdown: string): Promise<boolean> {
-    try {
-        // Lazy load marked only when needed
-        const marked = await getMarked();
-        const html = await marked(markdown);
-
-        // Create clipboard item with multiple formats
-        const item = new ClipboardItem({
-            "text/html": new Blob([html], { type: "text/html" }),
-            "text/plain": new Blob([markdown], { type: "text/plain" }),
-        });
-
-        // Write both formats to clipboard
-        await navigator.clipboard.write([item]);
-
-        logger.info(
-            { markdownLength: markdown.length, htmlLength: html.length },
-            "Markdown copied with multiple formats"
-        );
-        return true;
-    } catch (error) {
-        logger.error(
-            { error: error instanceof Error ? error.message : String(error) },
-            "Failed to copy markdown with formats"
-        );
-        return false;
-    }
+    // Just use writeText - the ClipboardItem API is unreliable
+    return copyMarkdown(markdown);
 }
 
 /**

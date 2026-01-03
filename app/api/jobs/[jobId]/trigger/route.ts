@@ -2,14 +2,18 @@
  * Trigger Job API - Run a job immediately
  *
  * POST /api/jobs/:jobId/trigger - Trigger immediate execution
+ *
+ * Gracefully handles Temporal unavailability - returns 503 with clear message
+ * rather than throwing a 500 that masks the real issue.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { startAgentWorkflow } from "@/lib/temporal/client";
+import { isBackgroundModeEnabled, startAgentWorkflow } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { NotFoundError } from "@/lib/errors";
 
@@ -40,12 +44,51 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         throw new NotFoundError("Job");
     }
 
-    // Always start a manual workflow for trigger requests
-    // This ensures we get a real workflow ID for status tracking
-    const workflowId = await startAgentWorkflow({
-        jobId: job.id,
-    });
-    logger.info({ jobId, workflowId }, "Started manual workflow");
+    // Check if background mode is available before attempting to trigger
+    if (!isBackgroundModeEnabled()) {
+        logger.warn(
+            { jobId },
+            "Job trigger attempted but background mode is not configured"
+        );
+        return NextResponse.json(
+            {
+                error: "Scheduled jobs are not available",
+                message:
+                    "Background processing is not configured for this environment.",
+            },
+            { status: 503 }
+        );
+    }
 
-    return NextResponse.json({ success: true, workflowId });
+    // Attempt to start the workflow with graceful error handling
+    try {
+        const workflowId = await startAgentWorkflow({
+            jobId: job.id,
+        });
+        logger.info({ jobId, workflowId }, "Started manual workflow");
+
+        return NextResponse.json({ success: true, workflowId });
+    } catch (error) {
+        // Temporal is configured but unavailable (DNS, network, service down)
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        logger.error(
+            { error: errorMessage, jobId },
+            "Failed to trigger job - Temporal unavailable"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "jobs", action: "trigger" },
+            extra: { jobId, userId: user.id },
+        });
+
+        return NextResponse.json(
+            {
+                error: "Unable to run job",
+                message:
+                    "Background processing is temporarily unavailable. Please try again in a few minutes.",
+            },
+            { status: 503 }
+        );
+    }
 }

@@ -5,6 +5,9 @@
  * - Creating/managing schedules for jobs
  * - Starting workflows manually
  * - Querying workflow status
+ *
+ * Background mode is DISABLED when TEMPORAL_ADDRESS env var is not set.
+ * This allows deployments without Temporal infrastructure.
  */
 
 import { Client, Connection, ScheduleAlreadyRunning } from "@temporalio/client";
@@ -17,14 +20,30 @@ let client: Client | null = null;
 const TASK_QUEUE = "scheduled-agents";
 
 /**
+ * Check if background mode (Temporal) is enabled
+ * Background mode requires TEMPORAL_ADDRESS to be explicitly set
+ */
+export function isBackgroundModeEnabled(): boolean {
+    return !!process.env.TEMPORAL_ADDRESS;
+}
+
+/**
  * Get or create the Temporal client
+ * Throws if TEMPORAL_ADDRESS is not configured
  */
 export async function getTemporalClient(): Promise<Client> {
+    const address = process.env.TEMPORAL_ADDRESS;
+
+    if (!address) {
+        throw new Error(
+            "Temporal not configured: TEMPORAL_ADDRESS environment variable is not set. " +
+                "Background mode is disabled."
+        );
+    }
+
     if (client) {
         return client;
     }
-
-    const address = process.env.TEMPORAL_ADDRESS || "localhost:7233";
 
     logger.info({ address }, "Connecting to Temporal");
 

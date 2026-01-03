@@ -9,10 +9,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs, jobRuns } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import {
+    isBackgroundModeEnabled,
     updateJobSchedule,
     pauseJobSchedule,
     resumeJobSchedule,
@@ -206,17 +208,46 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
         throw new NotFoundError("Job");
     }
 
-    // Delete Temporal schedule first - fail if this fails to prevent orphaned schedules
+    // Delete Temporal schedule first (if exists) to prevent orphaned schedules
     if (job.temporalScheduleId) {
-        try {
-            await deleteJobSchedule(job.temporalScheduleId);
-        } catch (error) {
-            logger.error({ error, jobId }, "Failed to delete Temporal schedule");
-            // Don't proceed with DB deletion - would leave orphaned schedule
-            return NextResponse.json(
-                { error: "Failed to delete schedule. Please try again." },
-                { status: 500 }
+        // If Temporal isn't configured, we can't delete the schedule
+        // This is a data inconsistency - log it and proceed with DB deletion
+        if (!isBackgroundModeEnabled()) {
+            logger.warn(
+                { jobId, scheduleId: job.temporalScheduleId },
+                "Job has schedule ID but Temporal not configured - deleting DB record only"
             );
+        } else {
+            try {
+                await deleteJobSchedule(job.temporalScheduleId);
+            } catch (error) {
+                // Temporal is configured but unavailable
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                logger.error(
+                    { error: errorMessage, jobId, scheduleId: job.temporalScheduleId },
+                    "Failed to delete Temporal schedule"
+                );
+
+                Sentry.captureException(error, {
+                    tags: { component: "jobs", action: "delete_schedule" },
+                    extra: {
+                        jobId,
+                        scheduleId: job.temporalScheduleId,
+                        userId: user.id,
+                    },
+                });
+
+                // Don't proceed with DB deletion - would leave orphaned schedule
+                return NextResponse.json(
+                    {
+                        error: "Unable to delete job",
+                        message:
+                            "Background processing is temporarily unavailable. Please try again in a few minutes.",
+                    },
+                    { status: 503 }
+                );
+            }
         }
     }
 

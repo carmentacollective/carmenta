@@ -6,18 +6,16 @@ import { Plug, Sparkles, CheckCircle2, XCircle, X, RotateCcw } from "lucide-reac
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
+import { MultiAccountServiceCard, ApiKeyModal } from "@/components/integrations";
+import type { StatusMessage } from "@/components/integrations/multi-account-service-card";
 import {
-    IntegrationCard,
-    ApiKeyModal,
-    type StatusMessage,
-} from "@/components/integrations";
-import {
-    getServicesWithStatus,
+    getGroupedServices,
     connectApiKeyService,
     deleteIntegration,
     testIntegration,
+    setDefaultAccount,
 } from "@/lib/actions/integrations";
-import type { ConnectedService } from "@/lib/actions/integration-utils";
+import type { GroupedService } from "@/lib/actions/integration-utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
@@ -25,24 +23,12 @@ import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
 
 /**
- * Unified integration item for the list.
- * Can be either a connected service or an available one.
- */
-interface IntegrationItem {
-    service: ServiceDefinition;
-    status?: "connected" | "error" | "expired" | "disconnected";
-    accountId?: string;
-    accountDisplayName?: string | null;
-}
-
-/**
  * IntegrationsContent - Component that uses useSearchParams()
  * Extracted to allow Suspense boundary wrapping
  */
 function IntegrationsContent() {
     const searchParams = useSearchParams();
-    const [connected, setConnected] = useState<ConnectedService[]>([]);
-    const [available, setAvailable] = useState<ServiceDefinition[]>([]);
+    const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
 
     // OAuth flow recovery - detects abandoned OAuth attempts
@@ -67,14 +53,16 @@ function IntegrationsContent() {
     );
     const [modalOpen, setModalOpen] = useState(false);
 
-    // Loading states per service
+    // Loading states per service/account
     const [connectingServices, setConnectingServices] = useState<Set<string>>(
         new Set()
     );
-    const [testingServices, setTestingServices] = useState<Set<string>>(new Set());
-    const [reconnectingServices, setReconnectingServices] = useState<Set<string>>(
-        new Set()
+    const [testingAccounts, setTestingAccounts] = useState<Map<string, Set<string>>>(
+        new Map()
     );
+    const [reconnectingAccounts, setReconnectingAccounts] = useState<
+        Map<string, Set<string>>
+    >(new Map());
 
     // Status messages per service (for inline feedback)
     const [statusMessages, setStatusMessages] = useState<Map<string, StatusMessage>>(
@@ -83,15 +71,13 @@ function IntegrationsContent() {
 
     const loadServices = useCallback(async () => {
         try {
-            const result = await getServicesWithStatus();
-            setConnected(result.connected);
-            setAvailable(result.available);
+            const result = await getGroupedServices();
+            setServices(result);
         } catch (error) {
             logger.error({ error }, "Failed to load services");
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "load_services" },
             });
-            // Error will be visible in empty state - no toast needed
         } finally {
             setLoading(false);
         }
@@ -114,11 +100,6 @@ function IntegrationsContent() {
             // OAuth completed successfully - clear tracking state
             markOAuthComplete();
             setConnectingServices((prev) => {
-                const next = new Set(prev);
-                next.delete(service);
-                return next;
-            });
-            setReconnectingServices((prev) => {
                 const next = new Set(prev);
                 next.delete(service);
                 return next;
@@ -153,11 +134,6 @@ function IntegrationsContent() {
                 });
 
                 setConnectingServices((prev) => {
-                    const next = new Set(prev);
-                    next.delete(service);
-                    return next;
-                });
-                setReconnectingServices((prev) => {
                     const next = new Set(prev);
                     next.delete(service);
                     return next;
@@ -199,37 +175,8 @@ function IntegrationsContent() {
                 next.delete(abandonedService);
                 return next;
             });
-            setReconnectingServices((prev) => {
-                const next = new Set(prev);
-                next.delete(abandonedService);
-                return next;
-            });
         }
     }, [abandonedService, abandonedServiceName]);
-
-    // Build unified list: connected services first, then available services
-    const unifiedList: IntegrationItem[] = [
-        // Add all connected services
-        ...connected.map(
-            (c): IntegrationItem => ({
-                service: c.service,
-                status: c.status,
-                accountId: c.accountId,
-                accountDisplayName: c.accountDisplayName,
-            })
-        ),
-        // Add available services (ones with no connection)
-        ...available.map(
-            (s): IntegrationItem => ({
-                service: s,
-            })
-        ),
-    ];
-
-    // Sort alphabetically - keeps cards in predictable positions
-    const sortedList = [...unifiedList].sort((a, b) =>
-        a.service.name.localeCompare(b.service.name)
-    );
 
     const handleConnectClick = (service: ServiceDefinition) => {
         analytics.integration.connectClicked({
@@ -275,23 +222,23 @@ function IntegrationsContent() {
         return result;
     };
 
-    const handleDisconnect = async (item: IntegrationItem) => {
-        if (!item.accountId) return;
-
+    const handleDisconnect = async (serviceId: string, accountId: string) => {
         try {
-            await deleteIntegration(item.service.id, item.accountId);
+            await deleteIntegration(serviceId, accountId);
 
+            const service = services.find((s) => s.service.id === serviceId);
             analytics.integration.disconnected({
-                serviceId: item.service.id,
-                serviceName: item.service.name,
+                serviceId,
+                serviceName: service?.service.name ?? serviceId,
             });
 
             // Show success message
             setStatusMessages((prev) => {
                 const next = new Map(prev);
-                next.set(item.service.id, {
+                next.set(serviceId, {
                     type: "success",
-                    text: `Disconnected from ${item.service.name}`,
+                    text: "Disconnected",
+                    accountId,
                 });
                 return next;
             });
@@ -299,123 +246,183 @@ function IntegrationsContent() {
             // Reload services to reflect the change
             await loadServices();
         } catch (error) {
-            logger.error(
-                { error, serviceId: item.service.id },
-                "Failed to disconnect integration"
-            );
+            logger.error({ error, serviceId }, "Failed to disconnect integration");
             Sentry.captureException(error, {
                 tags: {
                     component: "integrations-page",
                     action: "disconnect",
                 },
-                extra: { serviceId: item.service.id, accountId: item.accountId },
+                extra: { serviceId, accountId },
             });
 
-            // Show error message
             setStatusMessages((prev) => {
                 const next = new Map(prev);
-                next.set(item.service.id, {
+                next.set(serviceId, {
                     type: "error",
-                    text: "We couldn't disconnect that service. The bots are on it. 🤖",
+                    text: "Couldn't disconnect",
+                    accountId,
                 });
                 return next;
             });
         }
     };
 
-    const handleTest = async (item: IntegrationItem) => {
-        setTestingServices((prev) => new Set(prev).add(item.service.id));
+    const handleTest = async (serviceId: string, accountId: string) => {
+        // Add to testing set
+        setTestingAccounts((prev) => {
+            const next = new Map(prev);
+            const serviceSet = new Set(next.get(serviceId) ?? []);
+            serviceSet.add(accountId);
+            next.set(serviceId, serviceSet);
+            return next;
+        });
+
+        const service = services.find((s) => s.service.id === serviceId);
         const startTime = Date.now();
 
         analytics.integration.testExecuted({
-            serviceId: item.service.id,
-            serviceName: item.service.name,
+            serviceId,
+            serviceName: service?.service.name ?? serviceId,
         });
 
         try {
-            const result = await testIntegration(item.service.id, item.accountId);
+            const result = await testIntegration(serviceId, accountId);
             const durationMs = Date.now() - startTime;
 
             if (result.success) {
                 analytics.integration.testPassed({
-                    serviceId: item.service.id,
-                    serviceName: item.service.name,
+                    serviceId,
+                    serviceName: service?.service.name ?? serviceId,
                     durationMs,
                 });
-                // Show inline success message
                 setStatusMessages((prev) => {
                     const next = new Map(prev);
-                    next.set(item.service.id, {
+                    next.set(serviceId, {
                         type: "success",
-                        text: `Connection to ${item.service.name} verified`,
+                        text: "Verified",
+                        accountId,
                     });
                     return next;
                 });
             } else {
                 analytics.integration.testFailed({
-                    serviceId: item.service.id,
-                    serviceName: item.service.name,
+                    serviceId,
+                    serviceName: service?.service.name ?? serviceId,
                     errorMessage: result.error,
                 });
-                // Show inline error message
                 setStatusMessages((prev) => {
                     const next = new Map(prev);
-                    next.set(item.service.id, {
+                    next.set(serviceId, {
                         type: "error",
-                        text:
-                            result.error ||
-                            "We couldn't test that connection. The bots are on it. 🤖",
+                        text: result.error ?? "Verification failed",
+                        accountId,
                     });
                     return next;
                 });
-                // Reload to get updated status
                 await loadServices();
             }
         } catch (error) {
-            logger.error(
-                { error, service: item.service.id },
-                "Integration test failed"
-            );
-
-            analytics.integration.testFailed({
-                serviceId: item.service.id,
-                serviceName: item.service.name,
-                errorMessage: error instanceof Error ? error.message : "Unknown error",
-            });
-
+            logger.error({ error, serviceId }, "Integration test failed");
             Sentry.captureException(error, {
                 tags: { component: "integrations-page", action: "test_integration" },
-                extra: { serviceId: item.service.id, accountId: item.accountId },
+                extra: { serviceId, accountId },
+            });
+            analytics.integration.testFailed({
+                serviceId,
+                serviceName: service?.service.name ?? serviceId,
+                errorMessage: error instanceof Error ? error.message : "Test failed",
             });
             setStatusMessages((prev) => {
                 const next = new Map(prev);
-                next.set(item.service.id, {
+                next.set(serviceId, {
                     type: "error",
-                    text: "We couldn't reach that service. Our monitoring caught it. 🤖",
+                    text: "Couldn't verify",
+                    accountId,
                 });
                 return next;
             });
         } finally {
-            setTestingServices((prev) => {
-                const next = new Set(prev);
-                next.delete(item.service.id);
+            // Remove from testing set
+            setTestingAccounts((prev) => {
+                const next = new Map(prev);
+                const serviceSet = new Set(next.get(serviceId) ?? []);
+                serviceSet.delete(accountId);
+                if (serviceSet.size === 0) {
+                    next.delete(serviceId);
+                } else {
+                    next.set(serviceId, serviceSet);
+                }
                 return next;
             });
         }
     };
 
-    const handleReconnect = (item: IntegrationItem) => {
-        // Reconnect follows same flow as connect
-        if (item.service.authMethod === "api_key") {
-            setSelectedService(item.service);
-            setReconnectingServices((prev) => new Set(prev).add(item.service.id));
+    const handleReconnect = (service: ServiceDefinition, accountId: string) => {
+        // Add to reconnecting set
+        setReconnectingAccounts((prev) => {
+            const next = new Map(prev);
+            const serviceSet = new Set(next.get(service.id) ?? []);
+            serviceSet.add(accountId);
+            next.set(service.id, serviceSet);
+            return next;
+        });
+
+        if (service.authMethod === "api_key") {
+            setSelectedService(service);
             setModalOpen(true);
-        } else if (item.service.authMethod === "oauth") {
-            setReconnectingServices((prev) => new Set(prev).add(item.service.id));
-            // Track OAuth attempt for recovery detection
-            markOAuthStarted(item.service.id);
-            // OAuth flow - redirect to connect page
-            window.location.href = `/connect/${item.service.id}`;
+        } else if (service.authMethod === "oauth") {
+            markOAuthStarted(service.id);
+            window.location.href = `/connect/${service.id}`;
+        }
+    };
+
+    const handleSetDefault = async (serviceId: string, accountId: string) => {
+        const service = services.find((s) => s.service.id === serviceId);
+
+        try {
+            const result = await setDefaultAccount(serviceId, accountId);
+            if (result.success) {
+                analytics.integration.defaultChanged({
+                    serviceId,
+                    serviceName: service?.service.name ?? serviceId,
+                    accountId,
+                });
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(serviceId, {
+                        type: "success",
+                        text: "Set as default",
+                        accountId,
+                    });
+                    return next;
+                });
+                await loadServices();
+            } else {
+                setStatusMessages((prev) => {
+                    const next = new Map(prev);
+                    next.set(serviceId, {
+                        type: "error",
+                        text: result.error ?? "Couldn't set default",
+                        accountId,
+                    });
+                    return next;
+                });
+            }
+        } catch (error) {
+            logger.error({ error, serviceId }, "Failed to set default account");
+            Sentry.captureException(error, {
+                tags: { component: "integrations-page", action: "set_default" },
+                extra: { serviceId, accountId },
+            });
+            setStatusMessages((prev) => {
+                const next = new Map(prev);
+                next.set(serviceId, {
+                    type: "error",
+                    text: "Couldn't set default",
+                    accountId,
+                });
+                return next;
+            });
         }
     };
 
@@ -501,7 +508,7 @@ function IntegrationsContent() {
                         <p className="text-foreground/60">Loading integrations...</p>
                     </div>
                 </div>
-            ) : sortedList.length === 0 ? (
+            ) : services.length === 0 ? (
                 <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-16 text-center">
                     <Plug className="text-foreground/30 mb-4 h-12 w-12" />
                     <h3 className="text-foreground/80 text-lg font-medium">
@@ -514,25 +521,52 @@ function IntegrationsContent() {
             ) : (
                 <section>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {sortedList.map((item) => (
-                            <IntegrationCard
-                                key={`${item.service.id}-${item.accountId ?? "available"}`}
-                                service={item.service}
-                                status={item.status}
-                                onConnect={() => handleConnectClick(item.service)}
-                                onReconnect={() => handleReconnect(item)}
-                                onTest={() => handleTest(item)}
-                                onDisconnect={() => handleDisconnect(item)}
-                                isConnecting={connectingServices.has(item.service.id)}
-                                isReconnecting={reconnectingServices.has(
-                                    item.service.id
+                        {services.map((groupedService) => (
+                            <MultiAccountServiceCard
+                                key={groupedService.service.id}
+                                service={groupedService.service}
+                                accounts={groupedService.accounts}
+                                aggregateStatus={groupedService.aggregateStatus}
+                                onConnect={() =>
+                                    handleConnectClick(groupedService.service)
+                                }
+                                onReconnect={(accountId) =>
+                                    handleReconnect(groupedService.service, accountId)
+                                }
+                                onTest={(accountId) =>
+                                    handleTest(groupedService.service.id, accountId)
+                                }
+                                onDisconnect={(accountId) =>
+                                    handleDisconnect(
+                                        groupedService.service.id,
+                                        accountId
+                                    )
+                                }
+                                onSetDefault={(accountId) =>
+                                    handleSetDefault(
+                                        groupedService.service.id,
+                                        accountId
+                                    )
+                                }
+                                isConnecting={connectingServices.has(
+                                    groupedService.service.id
                                 )}
-                                isTesting={testingServices.has(item.service.id)}
-                                statusMessage={statusMessages.get(item.service.id)}
+                                testingAccounts={
+                                    testingAccounts.get(groupedService.service.id) ??
+                                    new Set()
+                                }
+                                reconnectingAccounts={
+                                    reconnectingAccounts.get(
+                                        groupedService.service.id
+                                    ) ?? new Set()
+                                }
+                                statusMessage={statusMessages.get(
+                                    groupedService.service.id
+                                )}
                                 onClearStatusMessage={() => {
                                     setStatusMessages((prev) => {
                                         const next = new Map(prev);
-                                        next.delete(item.service.id);
+                                        next.delete(groupedService.service.id);
                                         return next;
                                     });
                                 }}
@@ -556,15 +590,13 @@ function IntegrationsContent() {
                 open={modalOpen}
                 onOpenChange={(open) => {
                     setModalOpen(open);
-                    if (!open) {
+                    if (!open && selectedService) {
                         // Clear reconnecting state when modal closes
-                        if (selectedService) {
-                            setReconnectingServices((prev) => {
-                                const next = new Set(prev);
-                                next.delete(selectedService.id);
-                                return next;
-                            });
-                        }
+                        setReconnectingAccounts((prev) => {
+                            const next = new Map(prev);
+                            next.delete(selectedService.id);
+                            return next;
+                        });
                     }
                 }}
                 onSubmit={handleConnectSubmit}
