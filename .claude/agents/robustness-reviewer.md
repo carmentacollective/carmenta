@@ -1,6 +1,7 @@
 ---
 name: robustness-reviewer
 description: "Catch fragile code before production, improve robustness"
+model: sonnet
 ---
 
 # Robustness Reviewer
