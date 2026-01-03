@@ -3,13 +3,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, ArrowLeft, Clock, CheckCircle2, Square } from "lucide-react";
+import { Sparkles, ArrowLeft, Clock, CheckCircle2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
-import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
-import { cn } from "@/lib/utils";
+import {
+    UserBubble,
+    AssistantBubble,
+    ThinkingBubble,
+    SimpleComposer,
+} from "@/components/chat";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -73,158 +76,11 @@ function parsePlaybook(content: string): Playbook | null {
 }
 
 /**
- * User message bubble - reuses styling from HoloThread
- */
-function UserMessageBubble({ content }: { content: string }) {
-    return (
-        <div className="my-3 flex w-full justify-end sm:my-4">
-            <div className="max-w-[85%]">
-                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3">
-                    <p className="text-sm whitespace-pre-wrap">{content}</p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/**
- * Assistant message bubble - reuses styling and components from HoloThread
- */
-function AssistantMessageBubble({
-    content,
-    isStreaming = false,
-}: {
-    content: string;
-    isStreaming?: boolean;
-}) {
-    return (
-        <div className="my-3 flex w-full sm:my-4">
-            <div className="relative max-w-[85%]">
-                {/* Carmenta avatar - positioned outside bubble */}
-                <div className="absolute top-2 -left-10 hidden sm:block">
-                    <CarmentaAvatar
-                        size="sm"
-                        state={isStreaming ? "speaking" : "idle"}
-                    />
-                </div>
-
-                <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3">
-                    <MarkdownRenderer content={content} isStreaming={isStreaming} />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/**
- * Thinking indicator - shown while waiting for response
- */
-function ThinkingBubble() {
-    return (
-        <div className="my-3 flex w-full sm:my-4">
-            <div className="relative">
-                <div className="absolute top-2 -left-10 hidden sm:block">
-                    <CarmentaAvatar size="sm" state="thinking" />
-                </div>
-                <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3">
-                    <div className="text-foreground/60 flex items-center gap-2 text-sm">
-                        <Sparkles className="h-4 w-4 animate-pulse" />
-                        <span>Thinking...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/**
- * Simple composer for wizard chat - much simpler than main Composer
- */
-function WizardComposer({
-    value,
-    onChange,
-    onSubmit,
-    isLoading,
-    placeholder = "Describe what you need...",
-}: {
-    value: string;
-    onChange: (value: string) => void;
-    onSubmit: () => void;
-    isLoading: boolean;
-    placeholder?: string;
-}) {
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-
-    // Focus input on mount
-    useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
-
-    // Auto-resize textarea
-    useEffect(() => {
-        const textarea = inputRef.current;
-        if (!textarea) return;
-        textarea.style.height = "auto";
-        textarea.style.height = `${textarea.scrollHeight}px`;
-    }, [value]);
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            if (value.trim() && !isLoading) {
-                onSubmit();
-            }
-        }
-    };
-
-    return (
-        <div className="flex gap-2">
-            <textarea
-                ref={inputRef}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                className={cn(
-                    "w-full flex-1 resize-none",
-                    "max-h-48 min-h-11",
-                    "px-4 py-2.5",
-                    "text-base leading-5 outline-none",
-                    "text-foreground/95 placeholder:text-foreground/40",
-                    "rounded-xl transition-all",
-                    "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
-                    "border-foreground/8 focus:border-foreground/35 border"
-                )}
-                rows={1}
-                disabled={isLoading}
-            />
-            <button
-                type="button"
-                onClick={onSubmit}
-                disabled={isLoading || !value.trim()}
-                className={cn(
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all",
-                    "bg-primary text-primary-foreground hover:bg-primary/90",
-                    "disabled:cursor-not-allowed disabled:opacity-50"
-                )}
-            >
-                {isLoading ? (
-                    <Square className="h-4 w-4" />
-                ) : (
-                    <Send className="h-4 w-4" />
-                )}
-            </button>
-        </div>
-    );
-}
-
-/**
  * Hiring wizard page - chat-style interface
  *
- * Uses shared components from the main chat:
- * - MarkdownRenderer for message content
- * - CarmentaAvatar for assistant identity
- * - Message bubble styling patterns
+ * Uses shared chat components:
+ * - UserBubble, AssistantBubble, ThinkingBubble for messages
+ * - SimpleComposer for input
  */
 export default function HirePage() {
     const router = useRouter();
@@ -407,11 +263,9 @@ What can we help you with?`,
                                         transition={{ duration: 0.2 }}
                                     >
                                         {message.role === "user" ? (
-                                            <UserMessageBubble
-                                                content={message.content}
-                                            />
+                                            <UserBubble content={message.content} />
                                         ) : (
-                                            <AssistantMessageBubble
+                                            <AssistantBubble
                                                 content={message.content}
                                             />
                                         )}
@@ -425,11 +279,12 @@ What can we help you with?`,
 
                         {/* Input */}
                         <div className="border-foreground/10 border-t p-4">
-                            <WizardComposer
+                            <SimpleComposer
                                 value={input}
                                 onChange={setInput}
                                 onSubmit={handleSubmit}
                                 isLoading={isLoading}
+                                placeholder="Describe what you need..."
                             />
                         </div>
                     </div>

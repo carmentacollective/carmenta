@@ -1,12 +1,16 @@
 /**
  * AI Team Hiring Wizard API
  *
- * Conversational interface for creating new automations.
- * Uses AI to understand user needs and generate a structured playbook.
+ * Two-phase approach:
+ * 1. Conversational: Understand what the user needs (no structured output)
+ * 2. Extraction: When ready, use generateObject to extract the playbook
+ *
+ * The wizard signals readiness by including "READY_TO_HIRE" in its response.
+ * We then make a separate structured extraction call.
  */
 
 import { NextResponse } from "next/server";
-import { generateText } from "ai";
+import { generateText, generateObject } from "ai";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 
@@ -25,16 +29,34 @@ const requestSchema = z.object({
 });
 
 /**
- * System prompt for the hiring wizard
+ * Playbook schema for structured extraction
+ */
+const playbookSchema = z.object({
+    name: z.string().describe("Short descriptive name for the automation"),
+    description: z.string().describe("1-2 sentence description of what it does"),
+    schedule: z.object({
+        cron: z.string().describe("Cron expression, e.g., '0 9 * * *' for 9am daily"),
+        displayText: z
+            .string()
+            .describe("Human readable schedule, e.g., 'Every morning at 9am'"),
+    }),
+    prompt: z
+        .string()
+        .describe("The detailed instructions for what the automation should do"),
+    requiredIntegrations: z
+        .array(z.string())
+        .describe("List of integration names needed, e.g., ['gmail', 'slack']"),
+});
+
+/**
+ * System prompt for the hiring wizard - purely conversational, no JSON
  */
 const HIRING_WIZARD_PROMPT = `You are Carmenta's hiring wizard, helping users create AI automations.
 
 <your-role>
-You help users describe what they need automated, then generate a structured playbook they can "hire" as a team member.
-
-Guide users conversationally to understand:
+Guide users conversationally to understand what they need automated. Ask clarifying questions to gather:
 1. What task they want automated (email triage, news monitoring, etc.)
-2. How often it should run (daily, hourly, weekly)
+2. How often it should run (daily, hourly, weekly, specific times)
 3. What actions to take (summarize, flag important, notify, etc.)
 4. What integrations are needed
 </your-role>
@@ -43,40 +65,22 @@ Guide users conversationally to understand:
 The user has connected: {{INTEGRATIONS}}
 </connected-integrations>
 
-<response-format>
-When you have enough information to create an automation, respond with the playbook in this format:
+<when-ready>
+When you have enough information to create the automation, summarize what you understood and end your response with the exact phrase:
 
 **Ready to hire your new team member!**
 
-**Name:** [Short descriptive name]
-**Schedule:** [Human readable, e.g., "Every morning at 9am"]
-**What it does:** [1-2 sentence description]
+READY_TO_HIRE
 
-Here's the detailed playbook:
-
-\`\`\`json
-{
-  "name": "Email Triage Assistant",
-  "description": "Reviews your inbox and flags important messages",
-  "schedule": {
-    "cron": "0 9 * * *",
-    "displayText": "Every morning at 9am"
-  },
-  "prompt": "Check my email inbox and identify messages that need immediate attention. Look for: urgent requests, messages from important contacts, time-sensitive items. Create a summary of top 3-5 items I should address first.",
-  "requiredIntegrations": ["gmail"]
-}
-\`\`\`
-
-Does this look right? Click "Hire This Team Member" to get started, or tell me if you'd like to adjust anything.
-</response-format>
+This signals that you've gathered enough info. The system will then extract the details automatically.
+</when-ready>
 
 <cron-reference>
-Common cron patterns:
-- "0 9 * * *" = Every day at 9am
-- "0 9 * * 1-5" = Weekdays at 9am
-- "0 */2 * * *" = Every 2 hours
-- "0 9 * * 1" = Every Monday at 9am
-- "0 9,17 * * *" = Twice daily (9am and 5pm)
+Common schedules you might suggest:
+- Every morning at 9am (weekdays)
+- Every 2 hours during work hours
+- Every Monday morning
+- Twice daily (morning and evening)
 </cron-reference>
 
 <conversation-style>
@@ -85,7 +89,20 @@ Common cron patterns:
 - Suggest common patterns based on what they describe
 - Use "we" language (e.g., "We can set that up to...")
 - Keep responses concise (2-4 paragraphs max)
+- NEVER output JSON or code blocks - keep it purely conversational
 </conversation-style>`;
+
+/**
+ * System prompt for extracting playbook from conversation
+ */
+const EXTRACTION_PROMPT = `Extract the automation details from this conversation.
+The user wants to create an AI team member to help with their task.
+Based on the conversation, extract:
+- A short, descriptive name
+- What it does (description)
+- When it should run (cron schedule)
+- The detailed instructions (prompt) for the automation
+- Which integrations are needed`;
 
 export async function POST(request: Request) {
     const { userId } = await auth();
@@ -124,6 +141,7 @@ export async function POST(request: Request) {
 
         const gateway = getGatewayClient();
 
+        // Phase 1: Conversational response
         const result = await generateText({
             model: gateway(translateModelId("anthropic/claude-sonnet-4")),
             messages: [{ role: "system", content: systemPrompt }, ...messages],
@@ -137,16 +155,35 @@ export async function POST(request: Request) {
             },
         });
 
-        // Try to extract playbook from response
+        // Check if wizard signaled readiness
+        const isReady = result.text.includes("READY_TO_HIRE");
         let playbook = null;
-        const jsonMatch = result.text.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonMatch) {
-            try {
-                playbook = JSON.parse(jsonMatch[1]);
-            } catch {
-                // Parsing failed, that's okay - user can continue conversation
-            }
+
+        if (isReady) {
+            // Phase 2: Structured extraction
+            const conversationContext = messages
+                .map((m) => `${m.role}: ${m.content}`)
+                .join("\n\n");
+
+            const extraction = await generateObject({
+                model: gateway(translateModelId("anthropic/claude-sonnet-4")),
+                schema: playbookSchema,
+                prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${result.text}`,
+                providerOptions: {
+                    gateway: {
+                        models: [
+                            "anthropic/claude-sonnet-4",
+                            "anthropic/claude-3-5-sonnet-20241022",
+                        ].map(translateModelId),
+                    },
+                },
+            });
+
+            playbook = extraction.object;
         }
+
+        // Clean up the response - remove the READY_TO_HIRE marker
+        const cleanContent = result.text.replace(/\n*READY_TO_HIRE\n*/g, "").trim();
 
         logger.info(
             {
@@ -158,7 +195,7 @@ export async function POST(request: Request) {
         );
 
         return NextResponse.json({
-            content: result.text,
+            content: cleanContent,
             playbook,
         });
     } catch (error) {
