@@ -23,6 +23,7 @@ import {
 } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
+import { encodeJobId, generateJobSlug } from "@/lib/sqids";
 
 /**
  * Validate cron expression format and frequency
@@ -88,17 +89,28 @@ export async function GET() {
         },
     });
 
-    // Enrich jobs with schedule info from Temporal
+    // Enrich jobs with schedule info and encoded IDs for URLs
     const enrichedJobs = await Promise.all(
         jobs.map(async (job) => {
+            const encodedId = encodeJobId(job.seqId);
+            const slug = generateJobSlug(job.name);
+
             if (!job.temporalScheduleId) {
-                return { ...job, nextRunAt: null, lastRunAt: null };
+                return {
+                    ...job,
+                    encodedId,
+                    slug,
+                    nextRunAt: null,
+                    lastRunAt: null,
+                };
             }
 
             try {
                 const scheduleInfo = await getJobScheduleInfo(job.temporalScheduleId);
                 return {
                     ...job,
+                    encodedId,
+                    slug,
                     nextRunAt: scheduleInfo.nextRunAt,
                     lastRunAt: scheduleInfo.lastRunAt,
                 };
@@ -107,7 +119,7 @@ export async function GET() {
                     { error, jobId: job.id, scheduleId: job.temporalScheduleId },
                     "Failed to fetch schedule info"
                 );
-                return { ...job, nextRunAt: null, lastRunAt: null };
+                return { ...job, encodedId, slug, nextRunAt: null, lastRunAt: null };
             }
         })
     );

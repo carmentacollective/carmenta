@@ -144,6 +144,53 @@ export function isValidConnectionId(id: string): boolean {
 }
 
 /**
+ * Generate a URL-safe slug from a job name.
+ *
+ * @param name - The job name (can be null/undefined)
+ * @returns SEO-friendly slug from name, or "automation" as fallback
+ */
+export function generateJobSlug(name: string | null | undefined): string {
+    const baseSlug = slugify(name ?? "");
+    return baseSlug || "automation";
+}
+
+/**
+ * Encode a sequential job ID into a URL-safe Sqid.
+ * Uses the same encoder as connections for consistency.
+ *
+ * @param seqId - Sequential integer from database (seq_id column)
+ * @returns 6+ character lowercase alphanumeric ID
+ */
+export function encodeJobId(seqId: number): string {
+    return sqids.encode([seqId]);
+}
+
+/**
+ * Decode a job Sqid back to its sequential database ID.
+ *
+ * @param id - The Sqid to decode
+ * @returns The original sequential ID, or null if invalid
+ */
+export function decodeJobId(id: string): number | null {
+    try {
+        const decoded = sqids.decode(id);
+        if (decoded.length !== 1) {
+            return null;
+        }
+        return decoded[0];
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Validate a job ID format (same as connection - 6+ lowercase alphanumeric).
+ */
+export function isValidJobId(id: string): boolean {
+    return SQID_PATTERN.test(id);
+}
+
+/**
  * Slugify a string for URLs.
  *
  * - Converts to lowercase

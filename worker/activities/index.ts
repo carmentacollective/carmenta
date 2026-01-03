@@ -8,10 +8,19 @@
  * Each activity can fail and be automatically retried by Temporal.
  */
 
+import { createUIMessageStream, JsonToSseTransformStream } from "ai";
+import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
+
 import { db } from "../../lib/db";
 import { scheduledJobs, jobRuns, jobNotifications, users } from "../../lib/db/schema";
-import { eq } from "drizzle-orm";
-import { runEmployee, type EmployeeResult } from "../../lib/agents/employee";
+import {
+    runEmployee,
+    runEmployeeStreaming,
+    type EmployeeResult,
+} from "../../lib/agents/employee";
+import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
+import { logger } from "../../lib/logger";
 
 /**
  * Extended job context including user information for employee agent
@@ -73,6 +82,91 @@ export async function executeEmployee(
 }
 
 /**
+ * Generate a unique stream ID for a job run.
+ * Called in workflow before execution so we can save it to DB first.
+ */
+export async function generateJobStreamId(jobId: string): Promise<string> {
+    return `job-${jobId}-${nanoid(8)}`;
+}
+
+/**
+ * Execute job using the AI employee agent with streaming to Redis.
+ *
+ * This is the streaming execution path that allows users to "tap in"
+ * and watch the agent work in real-time.
+ *
+ * @param context - Job context with prompt, user info, memory
+ * @param streamId - Pre-generated stream ID (already saved to DB)
+ */
+export async function executeStreamingEmployee(
+    context: FullJobContext,
+    streamId: string
+): Promise<EmployeeResult> {
+    const streamContext = getBackgroundStreamContext();
+
+    if (!streamContext) {
+        throw new Error("Redis not configured - cannot run streaming job");
+    }
+
+    const activityLogger = logger.child({
+        jobId: context.jobId,
+        streamId,
+        activity: "executeStreamingEmployee",
+    });
+
+    activityLogger.info({}, "🚀 Starting streaming employee execution");
+
+    let employeeResult: EmployeeResult | null = null;
+
+    // Create UI message stream that wraps employee execution
+    const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+            employeeResult = await runEmployeeStreaming(
+                {
+                    jobId: context.jobId,
+                    userId: context.userId,
+                    userEmail: context.userEmail,
+                    prompt: context.prompt,
+                    memory: context.memory,
+                },
+                writer
+            );
+        },
+    });
+
+    // Pipe through resumable stream to Redis
+    const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
+        stream.pipeThrough(new JsonToSseTransformStream())
+    );
+
+    if (!resumableStream) {
+        throw new Error("Failed to create resumable stream");
+    }
+
+    // Consume the stream to completion
+    const reader = resumableStream.getReader();
+    while (true) {
+        const { done } = await reader.read();
+        if (done) break;
+    }
+
+    // Verify we got a result
+    if (!employeeResult) {
+        throw new Error("Failed to capture employee result from stream");
+    }
+
+    // TypeScript narrowing doesn't work after async callbacks - use explicit type
+    const result = employeeResult as EmployeeResult;
+
+    activityLogger.info(
+        { success: result.success, toolCalls: result.toolCallsExecuted },
+        "✅ Streaming employee execution complete"
+    );
+
+    return result;
+}
+
+/**
  * Record employee run results to database
  */
 export async function recordEmployeeRun(
@@ -100,6 +194,88 @@ export async function recordEmployeeRun(
             userId,
             jobId,
             runId: jobRun.id,
+            title: notification.title,
+            body: notification.body,
+            priority: notification.priority,
+        });
+    }
+
+    // Update job with new memory and last run time
+    await db
+        .update(scheduledJobs)
+        .set({
+            memory: result.updatedMemory,
+            lastRunAt: new Date(),
+            updatedAt: new Date(),
+        })
+        .where(eq(scheduledJobs.id, jobId));
+}
+
+/**
+ * Create a job run record before execution starts.
+ * This allows the UI to show "running" state immediately.
+ */
+export async function createJobRun(jobId: string): Promise<string> {
+    const [run] = await db
+        .insert(jobRuns)
+        .values({
+            jobId,
+            status: "running",
+            startedAt: new Date(),
+        })
+        .returning();
+
+    return run.id;
+}
+
+/**
+ * Update job run with stream ID for live progress viewing.
+ */
+export async function updateJobRunStreamId(
+    runId: string,
+    streamId: string
+): Promise<void> {
+    await db
+        .update(jobRuns)
+        .set({ activeStreamId: streamId })
+        .where(eq(jobRuns.id, runId));
+}
+
+/**
+ * Clear job run stream ID when execution completes.
+ */
+export async function clearJobRunStreamId(runId: string): Promise<void> {
+    await db.update(jobRuns).set({ activeStreamId: null }).where(eq(jobRuns.id, runId));
+}
+
+/**
+ * Update job run with final results.
+ */
+export async function finalizeJobRun(
+    runId: string,
+    jobId: string,
+    userId: string,
+    result: EmployeeResult
+): Promise<void> {
+    // Update the run record with results
+    await db
+        .update(jobRuns)
+        .set({
+            status: result.success ? "completed" : "failed",
+            summary: result.summary,
+            toolCallsExecuted: result.toolCallsExecuted,
+            notificationsSent: result.notifications.length,
+            completedAt: new Date(),
+            activeStreamId: null, // Clear stream ID
+        })
+        .where(eq(jobRuns.id, runId));
+
+    // Create notifications linked to this run
+    for (const notification of result.notifications) {
+        await db.insert(jobNotifications).values({
+            userId,
+            jobId,
+            runId,
             title: notification.title,
             body: notification.body,
             priority: notification.priority,
