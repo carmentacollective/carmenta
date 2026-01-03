@@ -79,11 +79,15 @@ function isSafeSourceDir(dir: string): boolean {
  * Default source directories to scan for projects
  */
 const DEFAULT_SOURCE_DIRS = [
-    process.env.CODE_SOURCE_DIR,
-    process.env.HOME ? path.join(process.env.HOME, "src") : null,
-]
-    .filter((dir): dir is string => Boolean(dir))
-    .filter(isSafeSourceDir);
+    ...new Set(
+        [
+            process.env.CODE_SOURCE_DIR,
+            process.env.HOME ? path.join(process.env.HOME, "src") : null,
+        ]
+            .filter((dir): dir is string => Boolean(dir))
+            .map((dir) => path.resolve(dir)) // Normalize paths for deduplication
+    ),
+].filter(isSafeSourceDir);
 
 /**
  * Maximum depth to recurse when looking for git repos
