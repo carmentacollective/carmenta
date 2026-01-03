@@ -150,7 +150,9 @@ export async function GET(
             });
         }
 
-        const absolutePath = path.resolve(project.path, filePath);
+        // Normalize path for actual file operations (same as security check)
+        const safePath = filePath.replace(/^\/+/, "") || ".";
+        const absolutePath = path.resolve(project.path, safePath);
 
         // Check file exists
         let stat;
