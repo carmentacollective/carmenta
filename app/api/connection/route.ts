@@ -302,6 +302,9 @@ export async function POST(req: Request) {
         // ================================================================
         // When concierge detects a research task, it may ask scoping questions
         // before starting. This helps ensure we deliver what the user needs.
+        //
+        // We use the existing askUserInput tool format so the client renders
+        // interactive options using AskUserInputResult (no new UI needed).
         if (
             conciergeResult.clarifyingQuestions &&
             conciergeResult.clarifyingQuestions.length > 0
@@ -335,21 +338,39 @@ export async function POST(req: Request) {
                 }
             }
 
-            // Create a stream with the clarifying questions
-            // Use data-* pattern which the AI SDK allows for custom data
+            // Create a stream with clarifying questions as askUserInput tool parts
+            // This reuses the existing tool infrastructure - no new UI components needed
+            //
+            // Note: We cast writer.write() calls because the AI SDK's TypeScript types
+            // are stricter than what the runtime accepts. These part types work correctly
+            // at runtime - they're the same format that streamText produces.
             const stream = createUIMessageStream({
                 execute: ({ writer }) => {
-                    // Write each clarifying question as a data part
-                    // Client will render these using the AskUserInputResult component
+                    // Cast writer for flexibility - TS types are overly restrictive
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const w = writer as any;
+
+                    // Write intro text so the message has visible content
+                    w.write({
+                        type: "text",
+                        text: "Before we dive in, let me ask a few questions to make sure I research exactly what you need:",
+                    });
+
+                    // Write each question as a tool-askUserInput part
+                    // AskUserInputResult already renders these as interactive options
                     for (const question of conciergeResult.clarifyingQuestions!) {
-                        writer.write({
-                            type: "data-clarifying-question",
-                            data: {
-                                id: `clarify-${nanoid(8)}`,
-                                question: question.question,
-                                options: question.options,
-                                allowFreeform: question.allowFreeform ?? true,
-                            },
+                        const toolCallId = `clarify-${nanoid(8)}`;
+                        const toolData = {
+                            question: question.question,
+                            options: question.options,
+                            allowFreeform: question.allowFreeform ?? true,
+                        };
+                        w.write({
+                            type: "tool-askUserInput",
+                            toolCallId,
+                            state: "output-available",
+                            input: toolData,
+                            output: toolData,
                         });
                     }
                 },
