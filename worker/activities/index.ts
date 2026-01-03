@@ -108,96 +108,66 @@ export async function executeStreamingEmployee(
         activity: "executeStreamingEmployee",
     });
 
-    const startTime = Date.now();
+    // Infrastructure setup - let Temporal retry these if they fail
+    const streamContext = getBackgroundStreamContext();
 
-    try {
-        const streamContext = getBackgroundStreamContext();
-
-        if (!streamContext) {
-            throw new Error("Redis not configured - cannot run streaming job");
-        }
-
-        activityLogger.info({}, "🚀 Starting streaming employee execution");
-
-        let employeeResult: EmployeeResult | null = null;
-
-        // Create UI message stream that wraps employee execution
-        const stream = createUIMessageStream({
-            execute: async ({ writer }) => {
-                employeeResult = await runEmployeeStreaming(
-                    {
-                        jobId: context.jobId,
-                        userId: context.userId,
-                        userEmail: context.userEmail,
-                        prompt: context.prompt,
-                        memory: context.memory,
-                    },
-                    writer
-                );
-            },
-        });
-
-        // Pipe through resumable stream to Redis
-        const resumableStream = await streamContext.createNewResumableStream(
-            streamId,
-            () => stream.pipeThrough(new JsonToSseTransformStream())
-        );
-
-        if (!resumableStream) {
-            throw new Error("Failed to create resumable stream");
-        }
-
-        // Consume the stream to completion
-        const reader = resumableStream.getReader();
-        while (true) {
-            const { done } = await reader.read();
-            if (done) break;
-        }
-
-        // Verify we got a result
-        if (!employeeResult) {
-            throw new Error("Failed to capture employee result from stream");
-        }
-
-        // TypeScript narrowing doesn't work after async callbacks - use explicit type
-        const result = employeeResult as EmployeeResult;
-
-        activityLogger.info(
-            { success: result.success, toolCalls: result.toolCallsExecuted },
-            "✅ Streaming employee execution complete"
-        );
-
-        return result;
-    } catch (error) {
-        const durationMs = Date.now() - startTime;
-
-        activityLogger.error(
-            { error, durationMs },
-            "❌ Activity failed during streaming employee execution"
-        );
-
-        // Return a failed result with error details instead of throwing
-        // This ensures the workflow can record proper error information
-        return {
-            success: false,
-            summary: `Activity failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            notifications: [],
-            updatedMemory: context.memory,
-            toolCallsExecuted: 0,
-            errorDetails: {
-                message: error instanceof Error ? error.message : "Unknown error",
-                code: "ACTIVITY_FAILED",
-                stack: error instanceof Error ? error.stack : undefined,
-                context: {
-                    jobId: context.jobId,
-                    streamId,
-                    userEmail: context.userEmail,
-                    failurePoint: "streaming_activity",
-                },
-            },
-            durationMs,
-        };
+    if (!streamContext) {
+        throw new Error("Redis not configured - cannot run streaming job");
     }
+
+    activityLogger.info({}, "🚀 Starting streaming employee execution");
+
+    let employeeResult: EmployeeResult | null = null;
+
+    // Create UI message stream that wraps employee execution
+    const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+            employeeResult = await runEmployeeStreaming(
+                {
+                    jobId: context.jobId,
+                    userId: context.userId,
+                    userEmail: context.userEmail,
+                    prompt: context.prompt,
+                    memory: context.memory,
+                },
+                writer
+            );
+        },
+    });
+
+    // Pipe through resumable stream to Redis - let Temporal retry if this fails
+    const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
+        stream.pipeThrough(new JsonToSseTransformStream())
+    );
+
+    if (!resumableStream) {
+        throw new Error("Failed to create resumable stream");
+    }
+
+    // Consume the stream to completion
+    const reader = resumableStream.getReader();
+    while (true) {
+        const { done } = await reader.read();
+        if (done) break;
+    }
+
+    // Verify we got a result
+    if (!employeeResult) {
+        throw new Error("Failed to capture employee result from stream");
+    }
+
+    // TypeScript narrowing doesn't work after async callbacks - use explicit type
+    const result = employeeResult as EmployeeResult;
+
+    activityLogger.info(
+        { success: result.success, toolCalls: result.toolCallsExecuted },
+        "✅ Streaming employee execution complete"
+    );
+
+    // Return the result (may be success or failure from employee execution)
+    // Employee failures are permanent and should not be retried
+    // Infrastructure failures above this point will throw and trigger Temporal retry
+    return result;
 }
 
 /**

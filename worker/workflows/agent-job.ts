@@ -66,7 +66,7 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         await finalizeJobRun(runId, jobId, context.userId, result);
 
         return {
-            success: true,
+            success: result.success,
             summary: result.summary,
             runId,
         };
@@ -75,11 +75,9 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
 
-        // Extract error code if available (e.g., from Temporal activity failures)
+        // Extract error code if available - preserve original code over generic fallback
         const errorCode =
-            error instanceof Error && "code" in error
-                ? String((error as { code?: unknown }).code)
-                : "ACTIVITY_FAILED";
+            (error as { code?: string })?.code ?? "WORKFLOW_CATCH_UNHANDLED";
 
         const failedResult = {
             success: false,
