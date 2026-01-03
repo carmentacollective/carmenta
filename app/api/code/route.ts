@@ -374,19 +374,19 @@ export async function POST(req: Request) {
                             const toolChunk = chunk as {
                                 type: "tool-input-start";
                                 id: string;
+                                toolCallId?: string;
                                 toolName: string;
                             };
+                            // Use toolCallId if available, otherwise fall back to id
+                            const callId = toolChunk.toolCallId ?? toolChunk.id;
                             logger.debug(
                                 {
                                     toolName: toolChunk.toolName,
-                                    toolCallId: toolChunk.id,
+                                    toolCallId: callId,
                                 },
                                 "Code mode: tool starting"
                             );
-                            processor.onToolInputStart(
-                                toolChunk.id,
-                                toolChunk.toolName
-                            );
+                            processor.onToolInputStart(callId, toolChunk.toolName);
                             emitMessages();
                         }
 
@@ -396,9 +396,11 @@ export async function POST(req: Request) {
                             const deltaChunk = chunk as {
                                 type: "tool-input-delta";
                                 id: string;
+                                toolCallId?: string;
                                 delta: string;
                             };
-                            processor.onToolInputDelta(deltaChunk.id, deltaChunk.delta);
+                            const callId = deltaChunk.toolCallId ?? deltaChunk.id;
+                            processor.onToolInputDelta(callId, deltaChunk.delta);
                             emitMessages();
                         }
 
@@ -423,8 +425,38 @@ export async function POST(req: Request) {
 
                         // Tool result - transition to complete/error
                         if (chunk.type === "tool-result") {
-                            const isError =
-                                chunk.output?.startsWith?.("Error:") ?? false;
+                            // Detect errors from multiple formats:
+                            // 1. String output starting with "Error:"
+                            // 2. Separate error field
+                            // 3. Bash tool output with non-zero exitCode
+                            let isError = false;
+                            let errorText: string | undefined;
+
+                            if (
+                                typeof chunk.output === "string" &&
+                                chunk.output.startsWith("Error:")
+                            ) {
+                                isError = true;
+                                errorText = chunk.output;
+                            } else if ((chunk as any).error) {
+                                isError = true;
+                                errorText = String((chunk as any).error);
+                            } else if (
+                                typeof chunk.output === "object" &&
+                                chunk.output !== null
+                            ) {
+                                const output = chunk.output as Record<string, unknown>;
+                                if (
+                                    typeof output.exitCode === "number" &&
+                                    output.exitCode !== 0
+                                ) {
+                                    isError = true;
+                                    errorText = output.stderr
+                                        ? String(output.stderr)
+                                        : `Exit code ${output.exitCode}`;
+                                }
+                            }
+
                             logger.debug(
                                 {
                                     toolCallId: chunk.toolCallId,
@@ -436,7 +468,7 @@ export async function POST(req: Request) {
                                 chunk.toolCallId,
                                 chunk.output,
                                 isError,
-                                isError ? String(chunk.output) : undefined
+                                errorText
                             );
                             emitMessages();
                         }
