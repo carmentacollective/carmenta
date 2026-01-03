@@ -340,6 +340,17 @@ export class ParallelProvider implements WebIntelligenceProvider {
         const startTime = Date.now();
         const depth = options.depth ?? "standard";
         const focusAreas = options.focusAreas;
+
+        // Handle "instant" depth - no external research, return null
+        // The caller should answer from existing knowledge instead
+        if (depth === "instant") {
+            logger.info(
+                { objective, depth, provider: this.name },
+                "Skipping research for instant depth - answering from memory"
+            );
+            return null;
+        }
+
         const processor = DEPTH_TO_PROCESSOR[depth];
 
         logger.info(

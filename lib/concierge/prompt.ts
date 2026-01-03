@@ -549,7 +549,7 @@ Do some deep research on healthy restaurants in Austin
       "options": [
         { "label": "Best options by neighborhood", "value": "neighborhood_guide" },
         { "label": "Specific cuisine types", "value": "cuisine_focus" },
-        { "label": "Comprehensive overview", "value": "comprehensive" }
+        { "label": "Comprehensive overview", "value": "comprehensive_overview" }
       ],
       "allowFreeform": true
     }
@@ -586,7 +586,7 @@ Research the AI agent framework landscape for me
       "options": [
         { "label": "Evaluating for a project", "value": "evaluation" },
         { "label": "Understanding the landscape", "value": "landscape_overview" },
-        { "label": "Comparing specific frameworks", "value": "comparison" }
+        { "label": "Comparing specific options", "value": "comparison" }
       ],
       "allowFreeform": true
     }
