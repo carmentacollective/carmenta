@@ -234,8 +234,9 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             .find((call) => call.toolName === "complete");
 
         if (completeCall) {
-            // Access tool call input (the parsed parameters)
-            const completion = (completeCall as { input: CompleteToolParams }).input;
+            // Access tool call args (Vercel AI SDK uses 'args', not 'input')
+            const completion = (completeCall as unknown as { args: CompleteToolParams })
+                .args;
 
             employeeLogger.info(
                 {

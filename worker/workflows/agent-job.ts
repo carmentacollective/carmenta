@@ -32,10 +32,10 @@ export interface AgentJobResult {
 export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobResult> {
     const { jobId } = input;
 
-    try {
-        // Load full job context (includes user email, integrations, memory)
-        const context = await loadFullJobContext(jobId);
+    // Load context first so we have userId for error recording if needed
+    const context = await loadFullJobContext(jobId);
 
+    try {
         // Execute employee agent with tool access
         const result = await executeEmployee(context);
 
@@ -47,13 +47,9 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             summary: result.summary,
         };
     } catch (error) {
-        // Record failed run
+        // Record failed run - we already have context from above
         const errorMessage = error instanceof Error ? error.message : String(error);
 
-        // Load context again for userId (needed for error recording)
-        const context = await loadFullJobContext(jobId);
-
-        // Create a failed result
         const failedResult = {
             success: false,
             summary: `Failed: ${errorMessage}`,
@@ -62,7 +58,13 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             updatedMemory: context.memory,
         };
 
-        await recordEmployeeRun(jobId, context.userId, failedResult);
+        // Try to record the failure, but don't mask the original error
+        try {
+            await recordEmployeeRun(jobId, context.userId, failedResult);
+        } catch (recordError) {
+            // Log but don't throw - original error is more important
+            // Temporal logging will capture this via the workflow error
+        }
 
         throw error;
     }

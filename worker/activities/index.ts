@@ -80,22 +80,26 @@ export async function recordEmployeeRun(
     userId: string,
     result: EmployeeResult
 ): Promise<void> {
-    // Insert job run record
-    await db.insert(jobRuns).values({
-        jobId,
-        status: result.success ? "completed" : "failed",
-        summary: result.summary,
-        messages: [],
-        toolCallsExecuted: result.toolCallsExecuted,
-        notificationsSent: result.notifications.length,
-        completedAt: new Date(),
-    });
+    // Insert job run record and capture the ID
+    const [jobRun] = await db
+        .insert(jobRuns)
+        .values({
+            jobId,
+            status: result.success ? "completed" : "failed",
+            summary: result.summary,
+            messages: [],
+            toolCallsExecuted: result.toolCallsExecuted,
+            notificationsSent: result.notifications.length,
+            completedAt: new Date(),
+        })
+        .returning();
 
-    // Create notifications
+    // Create notifications linked to this run
     for (const notification of result.notifications) {
         await db.insert(jobNotifications).values({
             userId,
             jobId,
+            runId: jobRun.id,
             title: notification.title,
             body: notification.body,
             priority: notification.priority,
