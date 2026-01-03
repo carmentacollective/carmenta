@@ -64,6 +64,13 @@
       "when": 1767464568622,
       "tag": "0020_bouncy_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1767466607856,
+      "tag": "0021_large_roxanne_simpson",
+      "breakpoints": true
     }
   ]
 }
