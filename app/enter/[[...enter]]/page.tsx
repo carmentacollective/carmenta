@@ -5,7 +5,7 @@ import { EnterAuthWrapper } from "./enter-auth-wrapper";
 
 export const metadata: Metadata = {
     title: "Enter · Carmenta",
-    description: "Enter Carmenta. We remember you.",
+    description: "Enter Carmenta. Your AI partner awaits.",
     robots: { index: false, follow: false },
 };
 

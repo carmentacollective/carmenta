@@ -83,7 +83,7 @@ export function EnterAuthWrapper() {
                     Enter Carmenta
                 </h1>
                 <p className="text-muted-foreground mt-2 text-sm">
-                    {rememberedEmail ? "Welcome back" : "We remember you"}
+                    {rememberedEmail ? "Ready to continue." : "Begin."}
                 </p>
             </div>
 
