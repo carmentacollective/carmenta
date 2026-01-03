@@ -561,6 +561,11 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         case "deepResearch": {
+            // Don't render until input is available (streaming may have incomplete data)
+            if (part.state === "input-streaming") {
+                return null;
+            }
+
             type Finding = {
                 insight: string;
                 sources: string[];
