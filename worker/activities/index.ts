@@ -102,17 +102,18 @@ export async function executeStreamingEmployee(
     context: FullJobContext,
     streamId: string
 ): Promise<EmployeeResult> {
-    const streamContext = getBackgroundStreamContext();
-
-    if (!streamContext) {
-        throw new Error("Redis not configured - cannot run streaming job");
-    }
-
     const activityLogger = logger.child({
         jobId: context.jobId,
         streamId,
         activity: "executeStreamingEmployee",
     });
+
+    // Infrastructure setup - let Temporal retry these if they fail
+    const streamContext = getBackgroundStreamContext();
+
+    if (!streamContext) {
+        throw new Error("Redis not configured - cannot run streaming job");
+    }
 
     activityLogger.info({}, "🚀 Starting streaming employee execution");
 
@@ -134,7 +135,7 @@ export async function executeStreamingEmployee(
         },
     });
 
-    // Pipe through resumable stream to Redis
+    // Pipe through resumable stream to Redis - let Temporal retry if this fails
     const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
         stream.pipeThrough(new JsonToSseTransformStream())
     );
@@ -163,6 +164,9 @@ export async function executeStreamingEmployee(
         "✅ Streaming employee execution complete"
     );
 
+    // Return the result (may be success or failure from employee execution)
+    // Employee failures are permanent and should not be retried
+    // Infrastructure failures above this point will throw and trigger Temporal retry
     return result;
 }
 

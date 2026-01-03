@@ -66,13 +66,18 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         await finalizeJobRun(runId, jobId, context.userId, result);
 
         return {
-            success: true,
+            success: result.success,
             summary: result.summary,
             runId,
         };
     } catch (error) {
-        // Record failed run
+        // Record failed run with full error details for observability
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
+        // Extract error code if available - preserve original code over generic fallback
+        const errorCode =
+            (error as { code?: string })?.code ?? "WORKFLOW_CATCH_UNHANDLED";
 
         const failedResult = {
             success: false,
@@ -80,6 +85,18 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             toolCallsExecuted: 0,
             notifications: [],
             updatedMemory: context.memory,
+            // Observability fields for debugging
+            errorDetails: {
+                message: errorMessage,
+                code: errorCode,
+                stack: errorStack,
+                context: {
+                    jobId,
+                    runId,
+                    failedAt: new Date().toISOString(),
+                    failurePoint: "workflow_catch",
+                },
+            },
         };
 
         // Try to finalize the failure, but don't mask the original error
