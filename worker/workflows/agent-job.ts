@@ -71,8 +71,15 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             runId,
         };
     } catch (error) {
-        // Record failed run
+        // Record failed run with full error details for observability
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
+        // Extract error code if available (e.g., from Temporal activity failures)
+        const errorCode =
+            error instanceof Error && "code" in error
+                ? String((error as { code?: unknown }).code)
+                : "ACTIVITY_FAILED";
 
         const failedResult = {
             success: false,
@@ -80,6 +87,18 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             toolCallsExecuted: 0,
             notifications: [],
             updatedMemory: context.memory,
+            // Observability fields for debugging
+            errorDetails: {
+                message: errorMessage,
+                code: errorCode,
+                stack: errorStack,
+                context: {
+                    jobId,
+                    runId,
+                    failedAt: new Date().toISOString(),
+                    failurePoint: "workflow_catch",
+                },
+            },
         };
 
         // Try to finalize the failure, but don't mask the original error

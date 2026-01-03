@@ -102,68 +102,102 @@ export async function executeStreamingEmployee(
     context: FullJobContext,
     streamId: string
 ): Promise<EmployeeResult> {
-    const streamContext = getBackgroundStreamContext();
-
-    if (!streamContext) {
-        throw new Error("Redis not configured - cannot run streaming job");
-    }
-
     const activityLogger = logger.child({
         jobId: context.jobId,
         streamId,
         activity: "executeStreamingEmployee",
     });
 
-    activityLogger.info({}, "🚀 Starting streaming employee execution");
+    const startTime = Date.now();
 
-    let employeeResult: EmployeeResult | null = null;
+    try {
+        const streamContext = getBackgroundStreamContext();
 
-    // Create UI message stream that wraps employee execution
-    const stream = createUIMessageStream({
-        execute: async ({ writer }) => {
-            employeeResult = await runEmployeeStreaming(
-                {
+        if (!streamContext) {
+            throw new Error("Redis not configured - cannot run streaming job");
+        }
+
+        activityLogger.info({}, "🚀 Starting streaming employee execution");
+
+        let employeeResult: EmployeeResult | null = null;
+
+        // Create UI message stream that wraps employee execution
+        const stream = createUIMessageStream({
+            execute: async ({ writer }) => {
+                employeeResult = await runEmployeeStreaming(
+                    {
+                        jobId: context.jobId,
+                        userId: context.userId,
+                        userEmail: context.userEmail,
+                        prompt: context.prompt,
+                        memory: context.memory,
+                    },
+                    writer
+                );
+            },
+        });
+
+        // Pipe through resumable stream to Redis
+        const resumableStream = await streamContext.createNewResumableStream(
+            streamId,
+            () => stream.pipeThrough(new JsonToSseTransformStream())
+        );
+
+        if (!resumableStream) {
+            throw new Error("Failed to create resumable stream");
+        }
+
+        // Consume the stream to completion
+        const reader = resumableStream.getReader();
+        while (true) {
+            const { done } = await reader.read();
+            if (done) break;
+        }
+
+        // Verify we got a result
+        if (!employeeResult) {
+            throw new Error("Failed to capture employee result from stream");
+        }
+
+        // TypeScript narrowing doesn't work after async callbacks - use explicit type
+        const result = employeeResult as EmployeeResult;
+
+        activityLogger.info(
+            { success: result.success, toolCalls: result.toolCallsExecuted },
+            "✅ Streaming employee execution complete"
+        );
+
+        return result;
+    } catch (error) {
+        const durationMs = Date.now() - startTime;
+
+        activityLogger.error(
+            { error, durationMs },
+            "❌ Activity failed during streaming employee execution"
+        );
+
+        // Return a failed result with error details instead of throwing
+        // This ensures the workflow can record proper error information
+        return {
+            success: false,
+            summary: `Activity failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            notifications: [],
+            updatedMemory: context.memory,
+            toolCallsExecuted: 0,
+            errorDetails: {
+                message: error instanceof Error ? error.message : "Unknown error",
+                code: "ACTIVITY_FAILED",
+                stack: error instanceof Error ? error.stack : undefined,
+                context: {
                     jobId: context.jobId,
-                    userId: context.userId,
+                    streamId,
                     userEmail: context.userEmail,
-                    prompt: context.prompt,
-                    memory: context.memory,
+                    failurePoint: "streaming_activity",
                 },
-                writer
-            );
-        },
-    });
-
-    // Pipe through resumable stream to Redis
-    const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
-        stream.pipeThrough(new JsonToSseTransformStream())
-    );
-
-    if (!resumableStream) {
-        throw new Error("Failed to create resumable stream");
+            },
+            durationMs,
+        };
     }
-
-    // Consume the stream to completion
-    const reader = resumableStream.getReader();
-    while (true) {
-        const { done } = await reader.read();
-        if (done) break;
-    }
-
-    // Verify we got a result
-    if (!employeeResult) {
-        throw new Error("Failed to capture employee result from stream");
-    }
-
-    // TypeScript narrowing doesn't work after async callbacks - use explicit type
-    const result = employeeResult as EmployeeResult;
-
-    activityLogger.info(
-        { success: result.success, toolCalls: result.toolCallsExecuted },
-        "✅ Streaming employee execution complete"
-    );
-
-    return result;
 }
 
 /**

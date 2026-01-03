@@ -593,14 +593,11 @@ export async function runEmployeeStreaming(
                     "❌ Streaming employee execution failed"
                 );
 
-                // Build structured error details
+                // Build structured error details - include stack in all environments for observability
                 const errorDetails: JobErrorDetails = {
                     message: error instanceof Error ? error.message : "Unknown error",
                     code: (error as { code?: string })?.code,
-                    stack:
-                        process.env.NODE_ENV === "development" && error instanceof Error
-                            ? error.stack
-                            : undefined,
+                    stack: error instanceof Error ? error.stack : undefined,
                     context: { jobId, userEmail },
                 };
 
