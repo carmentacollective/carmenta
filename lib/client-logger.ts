@@ -49,11 +49,21 @@ function log(level: LogLevel, context: LogContext, message: string) {
 
     // Report errors and warnings to Sentry for production monitoring
     if (level === "error" || level === "warn") {
-        const { error, ...extra } = context;
+        const { error, name, stack, ...extra } = context;
 
         if (error instanceof Error) {
             // Report actual Error objects to Sentry
             Sentry.captureException(error, {
+                level: level === "error" ? "error" : "warning",
+                extra: { message, ...extra },
+            });
+        } else if (name && stack) {
+            // Handle serialized error details (from error boundaries)
+            // Reconstruct an Error-like object for Sentry
+            const reconstructedError = new Error(context.message as string);
+            reconstructedError.name = name as string;
+            reconstructedError.stack = stack as string;
+            Sentry.captureException(reconstructedError, {
                 level: level === "error" ? "error" : "warning",
                 extra: { message, ...extra },
             });
