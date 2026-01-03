@@ -63,6 +63,8 @@ services:
     dockerfilePath: ./docker/temporal-server/Dockerfile
     autoDeploy: true
     envVars:
+      - key: PORT
+        value: "7233" # Tell Render which port to expose (Temporal's gRPC port)
       - key: BIND_ON_IP
         value: "0.0.0.0" # Listen on all interfaces (required for private network access)
       - key: DB
