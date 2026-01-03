@@ -172,7 +172,15 @@ export async function executeStreamingEmployee(
         const result = employeeResult as EmployeeResult;
 
         activityLogger.info(
-            { success: result.success, toolCalls: result.toolCallsExecuted },
+            {
+                success: result.success,
+                toolCalls: result.toolCallsExecuted,
+                hasExecutionTrace: !!result.executionTrace,
+                traceStepCount: result.executionTrace?.steps?.length ?? 0,
+                hasTokenUsage: !!result.tokenUsage,
+                modelId: result.modelId,
+                durationMs: result.durationMs,
+            },
             "✅ Streaming employee execution complete"
         );
 
@@ -290,6 +298,26 @@ export async function finalizeJobRun(
     userId: string,
     result: EmployeeResult
 ): Promise<void> {
+    const activityLogger = logger.child({
+        runId,
+        jobId,
+        activity: "finalizeJobRun",
+    });
+
+    activityLogger.info(
+        {
+            resultSuccess: result.success,
+            hasExecutionTrace: !!result.executionTrace,
+            executionTraceSteps: result.executionTrace?.steps?.length ?? 0,
+            hasFinalText: !!result.executionTrace?.finalText,
+            hasTokenUsage: !!result.tokenUsage,
+            hasErrorDetails: !!result.errorDetails,
+            modelId: result.modelId,
+            durationMs: result.durationMs,
+        },
+        "📝 Finalizing job run with results"
+    );
+
     try {
         // Update the run record with results and observability data
         await db
