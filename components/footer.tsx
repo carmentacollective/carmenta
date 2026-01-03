@@ -212,70 +212,71 @@ function ThemePopover() {
 export function Footer() {
     return (
         <footer className="px-6 py-8 sm:py-10">
-            <div className="mx-auto flex max-w-5xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-                {/* Links - grouped for visual hierarchy */}
-                <nav className="text-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-3 text-xs sm:gap-x-8 sm:gap-y-4 sm:text-sm">
-                    {/* Primary links with icons */}
-                    <Link
-                        href="/heart-centered-ai"
-                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
-                    >
-                        <Heart className="fill-primary text-primary h-4 w-4" />
-                        <span>Heart-Centered AI</span>
-                    </Link>
-                    <Link
-                        href="/ai-first-development"
-                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
-                    >
-                        <Code2 className="h-4 w-4" />
-                        <span>How We Build</span>
-                    </Link>
-                    <Link
-                        href="https://github.com/carmentacollective/carmenta"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-foreground/90 flex items-center gap-2 transition-all hover:scale-105"
-                    >
-                        <Github className="h-4 w-4" />
-                        <span>Source</span>
-                    </Link>
-
-                    {/* Secondary links - legal */}
-                    <Link
-                        href="/privacy"
-                        className="hover:text-foreground/90 transition-all hover:scale-105"
-                    >
-                        Privacy
-                    </Link>
-                    <Link
-                        href="/terms"
-                        className="hover:text-foreground/90 transition-all hover:scale-105"
-                    >
-                        Terms
-                    </Link>
-                    <Link
-                        href="/security"
-                        className="hover:text-foreground/90 transition-all hover:scale-105"
-                    >
-                        Security
-                    </Link>
-                </nav>
-
-                {/* Credits + Theme - grouped on right */}
-                <div className="flex items-center gap-4">
-                    <ThemePopover />
-                    <div className="text-foreground/60 text-xs sm:text-sm">
-                        <span>Built with </span>
-                        <Heart className="fill-primary text-primary inline h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        <span> by </span>
+            <div className="mx-auto max-w-5xl">
+                {/* Centered on mobile/tablet, spread on desktop */}
+                <div className="flex flex-col items-center gap-5 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
+                    {/* All navigation links - wrap between links, not within */}
+                    <nav className="text-foreground/60 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm lg:justify-start">
                         <Link
-                            href="https://technick.ai"
+                            href="/heart-centered-ai"
+                            className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
+                        >
+                            <Heart className="fill-primary text-primary h-4 w-4 shrink-0" />
+                            <span>Heart-Centered AI</span>
+                        </Link>
+                        <Link
+                            href="/ai-first-development"
+                            className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
+                        >
+                            <Code2 className="h-4 w-4 shrink-0" />
+                            <span>How We Build</span>
+                        </Link>
+                        <Link
+                            href="https://github.com/carmentacollective/carmenta"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground/90 transition-all hover:scale-105"
+                            className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
                         >
-                            technick.ai
+                            <Github className="h-4 w-4 shrink-0" />
+                            <span>Source</span>
                         </Link>
+                        <span className="text-foreground/20 hidden sm:inline">·</span>
+                        <Link
+                            href="/privacy"
+                            className="hover:text-foreground/90 whitespace-nowrap transition-all hover:scale-105"
+                        >
+                            Privacy
+                        </Link>
+                        <Link
+                            href="/terms"
+                            className="hover:text-foreground/90 whitespace-nowrap transition-all hover:scale-105"
+                        >
+                            Terms
+                        </Link>
+                        <Link
+                            href="/security"
+                            className="hover:text-foreground/90 whitespace-nowrap transition-all hover:scale-105"
+                        >
+                            Security
+                        </Link>
+                    </nav>
+
+                    {/* Credits + Theme - compact row */}
+                    <div className="text-foreground/60 flex items-center gap-3 text-sm">
+                        <ThemePopover />
+                        <div>
+                            <span>Built with </span>
+                            <Heart className="fill-primary text-primary inline h-3.5 w-3.5" />
+                            <span> by </span>
+                            <Link
+                                href="https://technick.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-foreground/90 transition-all hover:scale-105"
+                            >
+                                technick.ai
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
