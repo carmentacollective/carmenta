@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
     Users,
     Sparkles,
@@ -14,7 +15,6 @@ import {
     Clock,
     AlertCircle,
     CheckCircle2,
-    ChevronRight,
 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -64,11 +64,44 @@ interface Notification {
  * Content component with all the UI logic
  */
 function AITeamContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
     const [automations, setAutomations] = useState<Automation[]>([]);
     const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    // Handle success states from redirects
+    useEffect(() => {
+        if (!searchParams) return;
+
+        const hired = searchParams.get("hired");
+        const updated = searchParams.get("updated");
+        const deleted = searchParams.get("deleted");
+
+        if (hired === "true") {
+            setSuccessMessage("New team member hired successfully!");
+        } else if (updated === "true") {
+            setSuccessMessage("Automation updated successfully!");
+        } else if (deleted === "true") {
+            setSuccessMessage("Automation deleted.");
+        }
+
+        // Clear the query params without triggering a refresh
+        if (hired || updated || deleted) {
+            router.replace("/ai-team", { scroll: false });
+        }
+    }, [searchParams, router]);
+
+    // Auto-dismiss success message
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(null), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
 
     const loadData = useCallback(async () => {
         try {
@@ -242,7 +275,7 @@ function AITeamContent() {
                                 AI Team
                             </h1>
                             <p className="text-foreground/70">
-                                Your agents are working in the background.
+                                Working in the background for us.
                             </p>
                         </div>
                     </div>
@@ -251,10 +284,18 @@ function AITeamContent() {
                         className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-colors"
                     >
                         <Plus className="h-4 w-4" />
-                        Hire New
+                        Hire
                     </Link>
                 </div>
             </section>
+
+            {/* Success message banner */}
+            {successMessage && (
+                <div className="flex items-center gap-2 rounded-xl bg-green-500/10 p-4 text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="font-medium">{successMessage}</span>
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex items-center justify-center py-24">
@@ -269,16 +310,13 @@ function AITeamContent() {
                     <div className="space-y-6 lg:col-span-2">
                         {/* Notifications banner */}
                         {unreadNotificationCount > 0 && (
-                            <div className="bg-primary/10 text-primary flex items-center justify-between rounded-xl p-4">
-                                <div className="flex items-center gap-3">
-                                    <Bell className="h-5 w-5" />
-                                    <span className="font-medium">
-                                        {unreadNotificationCount} item
-                                        {unreadNotificationCount !== 1 ? "s" : ""} need
-                                        your attention
-                                    </span>
-                                </div>
-                                <ChevronRight className="h-5 w-5" />
+                            <div className="bg-primary/10 text-primary flex items-center gap-3 rounded-xl p-4">
+                                <Bell className="h-5 w-5" />
+                                <span className="font-medium">
+                                    {unreadNotificationCount} item
+                                    {unreadNotificationCount !== 1 ? "s" : ""} need
+                                    attention
+                                </span>
                             </div>
                         )}
 

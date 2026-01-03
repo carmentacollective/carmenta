@@ -127,7 +127,7 @@ What can we help you with?`,
                     id: `error-${Date.now()}`,
                     role: "assistant",
                     content:
-                        "I'm having trouble processing that. Could you try rephrasing?",
+                        "We're having trouble processing that. Could you try rephrasing?",
                 },
             ]);
         } finally {

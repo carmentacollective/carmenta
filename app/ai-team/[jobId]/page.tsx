@@ -7,6 +7,14 @@ import { ArrowLeft, Clock, Save, Trash2, Sparkles, AlertCircle } from "lucide-re
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -33,6 +41,7 @@ export default function EditAutomationPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Form state
@@ -117,14 +126,7 @@ export default function EditAutomationPage() {
     const handleDelete = async () => {
         if (!automation) return;
 
-        if (
-            !confirm(
-                `Are you sure you want to delete "${automation.name}"? This cannot be undone.`
-            )
-        ) {
-            return;
-        }
-
+        setShowDeleteConfirm(false);
         setDeleting(true);
         setError(null);
 
@@ -304,7 +306,7 @@ export default function EditAutomationPage() {
                         {/* Actions */}
                         <div className="border-foreground/10 flex items-center justify-between border-t pt-6">
                             <button
-                                onClick={handleDelete}
+                                onClick={() => setShowDeleteConfirm(true)}
                                 disabled={deleting}
                                 className="flex items-center gap-2 rounded-xl px-4 py-2 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                             >
@@ -332,6 +334,34 @@ export default function EditAutomationPage() {
                     </motion.div>
                 )}
             </div>
+
+            {/* Delete confirmation dialog */}
+            <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <DialogContent className="p-6">
+                    <DialogHeader>
+                        <DialogTitle>Delete Automation</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete &quot;{automation?.name}
+                            &quot;? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4 gap-2">
+                        <button
+                            onClick={() => setShowDeleteConfirm(false)}
+                            className="text-foreground/60 hover:text-foreground px-4 py-2 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 font-medium text-white transition-colors hover:bg-red-600"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </StandardPageLayout>
     );
 }
