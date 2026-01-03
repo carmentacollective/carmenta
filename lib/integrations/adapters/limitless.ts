@@ -6,7 +6,7 @@
  * ## Code-Relevant Details
  * - Some responses nest data in { data: { lifelogs: [...] } } structure
  * - search uses 'search' query param on /lifelogs, not a separate endpoint
- * - download_audio requires ISO 8601 timestamps with timezone
+ * - download_audio requires Unix timestamps in milliseconds (startMs, endMs)
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
@@ -235,26 +235,24 @@ export class LimitlessAdapter extends ServiceAdapter {
                 {
                     name: "download_audio",
                     description:
-                        "Download audio from your Pendant for a specific time range",
+                        "Download audio from your Pendant for a specific time range (max 2 hours)",
                     annotations: {
                         readOnlyHint: true,
                     },
                     parameters: [
                         {
-                            name: "startTime",
-                            type: "string",
+                            name: "startMs",
+                            type: "number",
                             required: true,
-                            description:
-                                "Start time in ISO 8601 format (e.g., 2024-01-15T09:00:00Z)",
-                            example: "2024-01-15T09:00:00Z",
+                            description: "Start time as Unix timestamp in milliseconds",
+                            example: "1705312800000",
                         },
                         {
-                            name: "endTime",
-                            type: "string",
+                            name: "endMs",
+                            type: "number",
                             required: true,
-                            description:
-                                "End time in ISO 8601 format (e.g., 2024-01-15T10:00:00Z)",
-                            example: "2024-01-15T10:00:00Z",
+                            description: "End time as Unix timestamp in milliseconds",
+                            example: "1705316400000",
                         },
                     ],
                     returns:
@@ -762,12 +760,12 @@ export class LimitlessAdapter extends ServiceAdapter {
         params: unknown,
         apiKey: string
     ): Promise<MCPToolResponse> {
-        const { startTime, endTime } = params as {
-            startTime: string;
-            endTime: string;
+        const { startMs, endMs } = params as {
+            startMs: number;
+            endMs: number;
         };
 
-        // The download-audio endpoint uses query parameters for the time range
+        // The download-audio endpoint uses Unix timestamps in milliseconds
         const response = await httpClient
             .get(`${LIMITLESS_API_BASE}/download-audio`, {
                 headers: {
@@ -775,8 +773,8 @@ export class LimitlessAdapter extends ServiceAdapter {
                     "Content-Type": "application/json",
                 },
                 searchParams: {
-                    startTime,
-                    endTime,
+                    startMs: startMs.toString(),
+                    endMs: endMs.toString(),
                 },
             })
             .json<{
