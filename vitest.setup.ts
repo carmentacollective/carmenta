@@ -79,6 +79,14 @@ global.IntersectionObserver = class IntersectionObserver {
     unobserve() {}
 } as unknown as typeof IntersectionObserver;
 
+// Mock ResizeObserver for components that measure element sizes
+global.ResizeObserver = class ResizeObserver {
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+} as unknown as typeof ResizeObserver;
+
 /**
  * Mock the env module to avoid client/server separation issues in jsdom
  *
