@@ -89,10 +89,15 @@ export async function pruneForAPI(
         const systemMessages = pruned.filter((m) => m.role === "system");
         const nonSystemMessages = pruned.filter((m) => m.role !== "system");
 
-        const maxNonSystem = maxMessages - systemMessages.length;
-        const recentMessages = nonSystemMessages.slice(-maxNonSystem);
-
-        pruned = [...systemMessages, ...recentMessages];
+        // Handle case where system messages alone exceed maxMessages
+        if (systemMessages.length >= maxMessages) {
+            // Keep only the most recent system messages
+            pruned = systemMessages.slice(-maxMessages);
+        } else {
+            const maxNonSystem = maxMessages - systemMessages.length;
+            const recentMessages = nonSystemMessages.slice(-maxNonSystem);
+            pruned = [...systemMessages, ...recentMessages];
+        }
     }
 
     return pruned;
