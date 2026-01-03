@@ -6,12 +6,17 @@
  * Receives `data-code-messages` data parts from the streaming API and
  * provides flat message array to CodeModeMessage components.
  *
- * This solves the race condition where tools would disappear:
+ * Maintains tool state separately from message parts to prevent tools from
+ * disappearing when streaming updates arrive before the UI message is complete:
  * - Messages are a flat array, tools update in-place
  * - State transitions: streaming → running → complete/error
  * - Components re-render with each state update
  *
  * Also maintains backwards compatibility with `data-tool-state` format.
+ *
+ * Client-side elapsed time tracking:
+ * Direct SDK integration provides tool_progress events with elapsed times.
+ * Client-side timing serves as fallback when SDK doesn't emit progress events.
  */
 
 import {
@@ -19,6 +24,9 @@ import {
     useContext,
     useCallback,
     useState,
+    useEffect,
+    useRef,
+    useMemo,
     type ReactNode,
 } from "react";
 import type { ContentOrderEntry, RenderableToolPart, TextSegment } from "./transform";
@@ -86,10 +94,22 @@ export function isToolStateDataPart(part: unknown): part is ToolStateDataPart {
 }
 
 /**
+ * Stream health metrics for UI feedback
+ */
+interface StreamHealth {
+    /** When we last received any data */
+    lastActivityAt: number | null;
+    /** Whether any tools are currently running */
+    hasRunningTools: boolean;
+    /** Seconds since last activity (updated every second) */
+    secondsSinceActivity: number;
+}
+
+/**
  * Context value shape
  */
 interface ToolStateContextValue {
-    /** Flat message array (new format) */
+    /** Flat message array (new format) with client-computed elapsed times */
     messages: CodeMessage[];
     /** Current tool states keyed by toolCallId (legacy, derived from messages) */
     tools: Map<string, RenderableToolPart>;
@@ -101,6 +121,8 @@ interface ToolStateContextValue {
     handleDataPart: (dataPart: unknown) => void;
     /** Clear all state (call when streaming ends or new message) */
     clear: () => void;
+    /** Stream health for activity indicators */
+    streamHealth: StreamHealth;
 }
 
 const ToolStateContext = createContext<ToolStateContextValue | null>(null);
@@ -141,7 +163,111 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
     const [contentOrder, setContentOrder] = useState<ContentOrderEntry[]>([]);
     const [textSegments, setTextSegments] = useState<Map<string, string>>(new Map());
 
+    // Client-side elapsed time tracking
+    // Maps toolCallId → timestamp when tool entered "running" state
+    const toolStartTimesRef = useRef<Map<string, number>>(new Map());
+
+    // Track last activity for stream health indicator
+    const lastActivityRef = useRef<number | null>(null);
+    const [streamHealth, setStreamHealth] = useState<StreamHealth>({
+        lastActivityAt: null,
+        hasRunningTools: false,
+        secondsSinceActivity: 0,
+    });
+
+    // Tick counter for periodic elapsed time updates
+    // useMemo recomputes immediately when messages change (sync)
+    // and every 500ms when tick increments (elapsed time updates)
+    const [tick, setTick] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick((t) => t + 1);
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Compute messages with elapsed times - derived state via useMemo
+    // Recomputes immediately when messages change (no sync delay)
+    // Recomputes every 500ms via tick for elapsed time updates
+    const messagesWithElapsed = useMemo(() => {
+        const now = Date.now();
+        const startTimes = toolStartTimesRef.current;
+
+        // Check if any tools are running
+        let hasRunning = false;
+        for (const msg of messages) {
+            if (msg.type === "tool" && msg.state === "running") {
+                hasRunning = true;
+                break;
+            }
+        }
+
+        // Clean up start times for non-running tools
+        const runningIds = new Set(
+            messages
+                .filter((m) => m.type === "tool" && m.state === "running")
+                .map((m) => m.id)
+        );
+        for (const id of startTimes.keys()) {
+            if (!runningIds.has(id)) {
+                startTimes.delete(id);
+            }
+        }
+
+        // If no running tools, return messages as-is
+        if (!hasRunning) {
+            return messages;
+        }
+
+        // Add elapsed times to running tools
+        return messages.map((msg) => {
+            if (msg.type !== "tool" || msg.state !== "running") {
+                return msg;
+            }
+
+            // If server already provided elapsedSeconds, use that value
+            // Client timing is only a fallback for when SDK doesn't emit tool_progress
+            if (msg.elapsedSeconds !== undefined) {
+                return msg;
+            }
+
+            // Client-side fallback: track elapsed time from when we saw the tool start
+            if (!startTimes.has(msg.id)) {
+                startTimes.set(msg.id, now);
+            }
+
+            const startTime = startTimes.get(msg.id) ?? now;
+            const elapsedSeconds = (now - startTime) / 1000;
+
+            return {
+                ...msg,
+                elapsedSeconds,
+            } as ToolMessage;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- tick triggers periodic updates
+    }, [messages, tick]);
+
+    // Update stream health based on computed messages
+    // Separate effect to avoid side effects in useMemo
+    useEffect(() => {
+        const hasRunning = messagesWithElapsed.some(
+            (m) => m.type === "tool" && m.state === "running"
+        );
+
+        setStreamHealth({
+            lastActivityAt: lastActivityRef.current,
+            hasRunningTools: hasRunning,
+            secondsSinceActivity: lastActivityRef.current
+                ? Math.floor((Date.now() - lastActivityRef.current) / 1000)
+                : 0,
+        });
+    }, [messagesWithElapsed]);
+
     const handleDataPart = useCallback((dataPart: unknown) => {
+        // Record activity
+        lastActivityRef.current = Date.now();
+
         // Handle new flat message format
         if (isCodeMessagesDataPart(dataPart)) {
             const newMessages = dataPart.data;
@@ -201,20 +327,29 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
 
     const clear = useCallback(() => {
         setMessages([]);
+        setTick(0);
         setTools(new Map());
         setContentOrder([]);
         setTextSegments(new Map());
+        toolStartTimesRef.current.clear();
+        lastActivityRef.current = null;
+        setStreamHealth({
+            lastActivityAt: null,
+            hasRunningTools: false,
+            secondsSinceActivity: 0,
+        });
     }, []);
 
     return (
         <ToolStateContext.Provider
             value={{
-                messages,
+                messages: messagesWithElapsed,
                 tools,
                 contentOrder,
                 textSegments,
                 handleDataPart,
                 clear,
+                streamHealth,
             }}
         >
             {children}
@@ -236,9 +371,22 @@ export function useToolState(): ToolStateContextValue {
             textSegments: new Map(),
             handleDataPart: () => {},
             clear: () => {},
+            streamHealth: {
+                lastActivityAt: null,
+                hasRunningTools: false,
+                secondsSinceActivity: 0,
+            },
         };
     }
     return context;
+}
+
+/**
+ * Hook to access stream health for activity indicators
+ */
+export function useStreamHealth(): StreamHealth {
+    const { streamHealth } = useToolState();
+    return streamHealth;
 }
 
 /**

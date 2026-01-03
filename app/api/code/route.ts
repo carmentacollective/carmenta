@@ -1,8 +1,9 @@
 /**
  * API Route: Code Agent
  *
- * Streams code agent responses using ai-sdk-provider-claude-code.
- * Compatible with useChat hook and standard AI SDK patterns.
+ * Streams code agent responses using direct Claude Agent SDK integration.
+ * Bypasses ai-sdk-provider-claude-code to get full streaming data including
+ * tool_progress events with elapsed times.
  *
  * This endpoint is called when a connection has projectPath set.
  * The transport replaces /api/connection with /api/code and
@@ -10,15 +11,9 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
-import {
-    convertToModelMessages,
-    createUIMessageStream,
-    createUIMessageStreamResponse,
-    streamText,
-    UIMessage,
-} from "ai";
-import { createClaudeCode } from "ai-sdk-provider-claude-code";
+import { createUIMessageStream, createUIMessageStreamResponse, UIMessage } from "ai";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 
 import { db, getConnection, getOrCreateUser, updateConnection } from "@/lib/db";
 import { CODE_MODE_PROMPT } from "@/lib/prompts/code-mode";
@@ -30,6 +25,7 @@ import {
     validateProject,
     validateUserProjectPath,
 } from "@/lib/code";
+import { streamSDK } from "@/lib/code/sdk-adapter";
 import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
 import { unauthorizedResponse } from "@/lib/api/responses";
@@ -249,30 +245,10 @@ export async function POST(req: Request) {
         "Code API: starting query"
     );
 
-    // Create Claude Code provider with project-specific settings
-    // Security note: bypassPermissions allows the agent to execute code, read/write files,
-    // and make network requests within the project directory. This is safe because:
-    // 1. Connection ownership is validated (user can only access their own connections)
-    // 2. Project path is validated to be within allowed source directories
-    // 3. Code mode is intended for local development - it's the user's own projects
-    timing("Creating Claude Code provider...");
-    const claudeCode = createClaudeCode({
-        defaultSettings: {
-            cwd: body.projectPath,
-            permissionMode: "bypassPermissions",
-            settingSources: ["project", "user", "local"],
-            systemPrompt: {
-                type: "preset",
-                preset: "claude_code",
-                append: CODE_MODE_PROMPT,
-            },
-        },
-    });
-    timing("Claude Code provider created");
-
-    // Convert messages before streaming (async operation)
-    const modelMessages = await convertToModelMessages(body.messages as UIMessage[]);
-    timing("Messages converted");
+    // Convert UI messages to prompt string for SDK
+    // The SDK expects a prompt string, not the AI SDK model message format
+    const prompt = convertUIMessagesToPrompt(body.messages as UIMessage[]);
+    timing("Messages converted to prompt");
 
     // Extract first user message content for title generation
     const firstUserMessage = (body.messages as UIMessage[]).find(
@@ -280,10 +256,9 @@ export async function POST(req: Request) {
     );
     const userMessageContent = extractUserMessageText(firstUserMessage);
 
-    // Stream response using AI SDK patterns with tool state accumulation
-    // Key insight: we accumulate tool state and emit as data parts instead of
-    // clearing transient messages. This prevents the race condition where tools
-    // would disappear before parts were populated on the client.
+    // Stream response using direct SDK integration
+    // Key insight: we use the SDK directly to get tool_progress events with
+    // elapsed times - something ai-sdk-provider-claude-code doesn't expose.
     try {
         timing("Creating stream...");
         const stream = createUIMessageStream({
@@ -348,6 +323,7 @@ export async function POST(req: Request) {
                 const processor = new MessageProcessor();
                 let firstChunkReceived = false;
                 let lastTextEmit = 0;
+                let currentTextId: string | null = null;
 
                 // Helper to emit flat message array
                 // AI SDK requires data parts to use `data-${name}` format
@@ -359,54 +335,91 @@ export async function POST(req: Request) {
                     lastTextEmit = Date.now();
                 };
 
-                timing("Starting streamText...");
-                const result = streamText({
-                    model: claudeCode(modelName),
-                    messages: modelMessages,
-                    onChunk: ({ chunk }) => {
-                        if (!firstChunkReceived) {
-                            firstChunkReceived = true;
-                            timing(`First chunk received: ${chunk.type}`);
+                timing("Starting SDK streaming...");
+
+                // Stream using direct SDK integration
+                // Security note: bypassPermissions is safe because:
+                // 1. Connection ownership is validated (user can only access their own connections)
+                // 2. Project path is validated to be within allowed source directories
+                // 3. Code mode is intended for local development - it's the user's own projects
+                for await (const chunk of streamSDK(prompt, {
+                    cwd: body.projectPath,
+                    model: modelName,
+                    settingSources: ["project", "user", "local"],
+                    systemPrompt: {
+                        type: "preset",
+                        preset: "claude_code",
+                        append: CODE_MODE_PROMPT,
+                    },
+                    abortSignal: req.signal,
+                })) {
+                    if (!firstChunkReceived) {
+                        firstChunkReceived = true;
+                        timing(`First chunk received: ${chunk.type}`);
+                    }
+
+                    // Process each chunk type
+                    switch (chunk.type) {
+                        case "text-delta": {
+                            // Start text block if needed
+                            if (!currentTextId) {
+                                currentTextId = nanoid();
+                                writer.write({
+                                    type: "text-start",
+                                    id: currentTextId,
+                                });
+                            }
+                            // Write text delta (currentTextId is guaranteed non-null here)
+                            const textId = currentTextId;
+                            writer.write({
+                                type: "text-delta",
+                                id: textId,
+                                delta: chunk.text,
+                            });
+                            // Also update processor for our code-messages
+                            processor.onTextDelta(chunk.text);
+                            const now = Date.now();
+                            if (now - lastTextEmit >= 200) {
+                                emitMessages();
+                            }
+                            break;
                         }
 
-                        // Tool input starts - create tool in streaming state
-                        if (chunk.type === "tool-input-start") {
-                            const toolChunk = chunk as {
-                                type: "tool-input-start";
-                                id: string;
-                                toolCallId?: string;
-                                toolName: string;
-                            };
-                            // Use toolCallId if available, otherwise fall back to id
-                            const callId = toolChunk.toolCallId ?? toolChunk.id;
+                        case "tool-input-start": {
+                            // End any current text block
+                            if (currentTextId) {
+                                writer.write({ type: "text-end", id: currentTextId });
+                                currentTextId = null;
+                            }
                             logger.debug(
-                                {
-                                    toolName: toolChunk.toolName,
-                                    toolCallId: callId,
-                                },
+                                { toolName: chunk.toolName, toolCallId: chunk.id },
                                 "Code mode: tool starting"
                             );
-                            processor.onToolInputStart(callId, toolChunk.toolName);
+                            processor.onToolInputStart(chunk.id, chunk.toolName);
+                            // Write AI SDK chunk
+                            writer.write({
+                                type: "tool-input-start",
+                                toolCallId: chunk.id,
+                                toolName: chunk.toolName,
+                                providerExecuted: true,
+                            });
                             emitMessages();
+                            break;
                         }
 
-                        // Tool input delta - parse input as it streams
-                        // This makes filename/pattern available immediately
-                        if (chunk.type === "tool-input-delta") {
-                            const deltaChunk = chunk as {
-                                type: "tool-input-delta";
-                                id: string;
-                                toolCallId?: string;
-                                delta: string;
-                            };
-                            const callId = deltaChunk.toolCallId ?? deltaChunk.id;
-                            processor.onToolInputDelta(callId, deltaChunk.delta);
+                        case "tool-input-delta": {
+                            processor.onToolInputDelta(chunk.id, chunk.delta);
+                            writer.write({
+                                type: "tool-input-delta",
+                                toolCallId: chunk.id,
+                                inputTextDelta: chunk.delta,
+                            });
                             emitMessages();
+                            break;
                         }
 
-                        // Tool call with complete args - transition to running
-                        if (chunk.type === "tool-call") {
-                            const args = (chunk.input as Record<string, unknown>) ?? {};
+                        case "tool-call": {
+                            const args = chunk.input ?? {};
                             logger.debug(
                                 {
                                     toolName: chunk.toolName,
@@ -420,79 +433,123 @@ export async function POST(req: Request) {
                                 chunk.toolName,
                                 args
                             );
+                            // Write tool-input-available (complete args)
+                            writer.write({
+                                type: "tool-input-available",
+                                toolCallId: chunk.toolCallId,
+                                toolName: chunk.toolName,
+                                input: args,
+                                providerExecuted: true,
+                            });
                             emitMessages();
+                            break;
                         }
 
-                        // Tool result - transition to complete/error
-                        if (chunk.type === "tool-result") {
-                            // Detect errors from multiple formats:
-                            // 1. String output starting with "Error:"
-                            // 2. Separate error field
-                            // 3. Bash tool output with non-zero exitCode
-                            let isError = false;
-                            let errorText: string | undefined;
+                        case "tool-progress": {
+                            // THE KEY FEATURE: Real elapsed time from the SDK!
+                            logger.debug(
+                                {
+                                    toolName: chunk.toolName,
+                                    toolCallId: chunk.toolCallId,
+                                    elapsedSeconds: chunk.elapsedSeconds,
+                                },
+                                "Code mode: tool progress"
+                            );
+                            processor.onToolProgress(
+                                chunk.toolCallId,
+                                chunk.elapsedSeconds
+                            );
+                            emitMessages();
+                            break;
+                        }
 
-                            if (
-                                typeof chunk.output === "string" &&
-                                chunk.output.startsWith("Error:")
-                            ) {
-                                isError = true;
-                                errorText = chunk.output;
-                            } else if ((chunk as any).error) {
-                                isError = true;
-                                errorText = String((chunk as any).error);
-                            } else if (
-                                typeof chunk.output === "object" &&
-                                chunk.output !== null
-                            ) {
-                                const output = chunk.output as Record<string, unknown>;
-                                if (
-                                    typeof output.exitCode === "number" &&
-                                    output.exitCode !== 0
-                                ) {
-                                    isError = true;
-                                    errorText = output.stderr
-                                        ? String(output.stderr)
-                                        : `Exit code ${output.exitCode}`;
-                                }
-                            }
-
+                        case "tool-result": {
                             logger.debug(
                                 {
                                     toolCallId: chunk.toolCallId,
-                                    isError,
+                                    isError: chunk.isError,
                                 },
                                 "Code mode: tool result"
                             );
                             processor.onToolResult(
                                 chunk.toolCallId,
                                 chunk.output,
-                                isError,
-                                errorText
+                                chunk.isError,
+                                chunk.isError ? String(chunk.output) : undefined
                             );
-                            emitMessages();
-                        }
-
-                        // Text delta - accumulate into current text message
-                        // Throttle to ~200ms to balance responsiveness vs network overhead
-                        if (chunk.type === "text-delta") {
-                            processor.onTextDelta(chunk.text);
-                            const now = Date.now();
-                            if (now - lastTextEmit >= 200) {
-                                emitMessages();
+                            // Write AI SDK chunk
+                            if (chunk.isError) {
+                                writer.write({
+                                    type: "tool-output-error",
+                                    toolCallId: chunk.toolCallId,
+                                    errorText: String(chunk.output),
+                                    providerExecuted: true,
+                                });
+                            } else {
+                                writer.write({
+                                    type: "tool-output-available",
+                                    toolCallId: chunk.toolCallId,
+                                    output: chunk.output,
+                                    providerExecuted: true,
+                                });
                             }
+                            emitMessages();
+                            break;
                         }
-                    },
-                    onFinish: () => {
-                        // Emit final messages after all chunks processed
-                        processor.finalizeText();
-                        emitMessages();
-                    },
-                });
 
-                // Merge the streamText result into our stream
-                timing("Merging stream...");
-                writer.merge(result.toUIMessageStream());
+                        case "result": {
+                            // Final result with metrics
+                            logger.info(
+                                {
+                                    success: chunk.success,
+                                    durationMs: chunk.durationMs,
+                                    totalCostUsd: chunk.totalCostUsd,
+                                    usage: chunk.usage,
+                                },
+                                "Code mode: query complete"
+                            );
+                            break;
+                        }
+
+                        case "error": {
+                            logger.error(
+                                { error: chunk.error },
+                                "Code mode: SDK error"
+                            );
+                            writer.write({
+                                type: "error",
+                                errorText:
+                                    chunk.error instanceof Error
+                                        ? chunk.error.message
+                                        : String(chunk.error),
+                            });
+                            break;
+                        }
+
+                        case "status": {
+                            // Status messages (e.g., "Session initialized")
+                            logger.debug(
+                                { message: chunk.message },
+                                "Code mode: status message"
+                            );
+                            // Could write to stream if we want status messages in UI
+                            // For now, just log them
+                            break;
+                        }
+                    }
+                }
+
+                // End any remaining text block
+                if (currentTextId) {
+                    writer.write({ type: "text-end", id: currentTextId });
+                }
+
+                // Emit final messages
+                processor.finalizeText();
+                emitMessages();
+
+                // Write finish event
+                writer.write({ type: "finish", finishReason: "stop" });
 
                 // Ensure title update is written before stream closes
                 if (titlePromise) {
@@ -566,4 +623,21 @@ function extractUserMessageText(msg: UIMessage | undefined): string {
         .filter((part): part is { type: "text"; text: string } => part.type === "text")
         .map((part) => part.text)
         .join(" ");
+}
+
+/**
+ * Convert UI messages to a prompt string for the SDK.
+ *
+ * Only extracts the latest user message - conversation history is intentionally
+ * not included here. The Claude Agent SDK manages its own conversation state via
+ * settingSources (loads .clauderc and session history from cwd). Including UI
+ * messages would duplicate history and break the SDK's session management.
+ */
+function convertUIMessagesToPrompt(messages: UIMessage[]): string {
+    // Find the last user message
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastUserMessage) {
+        return "";
+    }
+    return extractUserMessageText(lastUserMessage);
 }
