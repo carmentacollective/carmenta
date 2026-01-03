@@ -129,6 +129,10 @@ export interface SDKAdapterOptions {
  * - Final result with usage/cost metrics
  * - Status messages
  *
+ * **SECURITY NOTE:** This function uses `permissionMode: "bypassPermissions"`.
+ * Callers MUST validate project ownership and paths before calling this function.
+ * See app/api/code/route.ts for proper validation patterns.
+ *
  * @example
  * ```typescript
  * for await (const chunk of streamSDK(prompt, options)) {
@@ -150,11 +154,9 @@ export async function* streamSDK(
     const abortController = new AbortController();
 
     // Link external abort signal if provided
-    if (options.abortSignal) {
-        if (options.abortSignal.aborted) {
-            abortController.abort(options.abortSignal.reason);
-        }
-        // Listener added after Maps are initialized, cleaned up in finally
+    if (options.abortSignal?.aborted) {
+        // Already aborted, no need to add listener
+        abortController.abort(options.abortSignal.reason);
     }
 
     // Track tool states for input accumulation
@@ -168,8 +170,8 @@ export async function* streamSDK(
         ? () => abortController.abort(options.abortSignal?.reason)
         : null;
 
-    // Add abort listener if signal provided
-    if (options.abortSignal && abortHandler && !options.abortSignal.aborted) {
+    // Add abort listener if signal provided and not already aborted
+    if (options.abortSignal && !options.abortSignal.aborted && abortHandler) {
         options.abortSignal.addEventListener("abort", abortHandler, { once: true });
     }
 

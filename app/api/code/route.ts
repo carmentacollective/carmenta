@@ -525,6 +525,17 @@ export async function POST(req: Request) {
                             });
                             break;
                         }
+
+                        case "status": {
+                            // Status messages (e.g., "Session initialized")
+                            logger.debug(
+                                { message: chunk.message },
+                                "Code mode: status message"
+                            );
+                            // Could write to stream if we want status messages in UI
+                            // For now, just log them
+                            break;
+                        }
                     }
                 }
 

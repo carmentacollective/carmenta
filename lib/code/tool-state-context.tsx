@@ -242,7 +242,7 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
                     ? Math.floor((now - lastActivityRef.current) / 1000)
                     : 0,
             });
-        }, 100); // Update frequently for smooth elapsed display
+        }, 500); // Update twice per second - adequate for second-granularity display
 
         return () => clearInterval(interval);
     }, [messages]);
