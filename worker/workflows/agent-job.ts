@@ -1,16 +1,16 @@
 /**
  * Agent Job Workflow
  *
- * Executes a scheduled job by calling an LLM with the job's prompt.
- * This is the infrastructure skeleton - tool support will be added
- * when we wire up internal integrations.
+ * Executes a scheduled job using the employee agent with full tool access.
  */
 
 import { proxyActivities } from "@temporalio/workflow";
 import type * as activities from "../activities";
 
-const { loadJobContext, callLLM, recordJobRun } = proxyActivities<typeof activities>({
-    startToCloseTimeout: "5 minutes",
+const { loadFullJobContext, executeEmployee, recordEmployeeRun } = proxyActivities<
+    typeof activities
+>({
+    startToCloseTimeout: "10 minutes", // Longer timeout for tool-using agents
     retry: {
         maximumAttempts: 3,
         backoffCoefficient: 2,
@@ -26,55 +26,45 @@ export interface AgentJobResult {
     summary: string;
 }
 
-const SYSTEM_PROMPT = `You are an autonomous agent executing a scheduled task.
-Complete the user's task based on the prompt provided.
-Be concise and actionable in your response.`;
-
 /**
- * Main workflow - loads job, calls LLM, records result
+ * Main workflow - loads job context, executes employee agent with tools, records result
  */
 export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobResult> {
     const { jobId } = input;
 
-    const messages: Array<{ role: string; content: string }> = [];
+    // Load context first so we have userId for error recording if needed
+    const context = await loadFullJobContext(jobId);
 
     try {
-        // Load job configuration
-        const context = await loadJobContext(jobId);
-        messages.push({ role: "user", content: context.prompt });
-
-        // Call LLM
-        const response = await callLLM({
-            systemPrompt: SYSTEM_PROMPT,
-            messages,
-            memory: context.memory,
-        });
-
-        messages.push({ role: "assistant", content: response.content });
+        // Execute employee agent with tool access
+        const result = await executeEmployee(context);
 
         // Record successful run
-        await recordJobRun({
-            jobId,
-            status: "completed",
-            summary: response.content,
-            messages,
-        });
+        await recordEmployeeRun(jobId, context.userId, result);
 
         return {
             success: true,
-            summary: response.content,
+            summary: result.summary,
         };
     } catch (error) {
-        // Record failed run
+        // Record failed run - we already have context from above
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const summary = `Failed: ${errorMessage}`;
 
-        await recordJobRun({
-            jobId,
-            status: "failed",
-            summary,
-            messages,
-        });
+        const failedResult = {
+            success: false,
+            summary: `Failed: ${errorMessage}`,
+            toolCallsExecuted: 0,
+            notifications: [],
+            updatedMemory: context.memory,
+        };
+
+        // Try to record the failure, but don't mask the original error
+        try {
+            await recordEmployeeRun(jobId, context.userId, failedResult);
+        } catch (recordError) {
+            // Log but don't throw - original error is more important
+            // Temporal logging will capture this via the workflow error
+        }
 
         throw error;
     }

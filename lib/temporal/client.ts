@@ -79,6 +79,12 @@ export async function createJobSchedule(params: {
                 taskQueue: TASK_QUEUE,
                 args: [{ jobId }],
             },
+            policies: {
+                // Skip if previous run is still in progress
+                overlap: "SKIP",
+                // Catch up missed runs within 1 hour (handles brief outages)
+                catchupWindow: "1h",
+            },
         });
 
         logger.info({ scheduleId, jobId, cronExpression }, "Created job schedule");

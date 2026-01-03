@@ -19,6 +19,7 @@ import {
     isBackgroundModeEnabled,
     createJobSchedule,
     deleteJobSchedule,
+    getJobScheduleInfo,
 } from "@/lib/temporal/client";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
@@ -80,10 +81,38 @@ export async function GET() {
                 limit: 5,
                 orderBy: (runs, { desc }) => [desc(runs.createdAt)],
             },
+            notifications: {
+                limit: 10,
+                orderBy: (notifications, { desc }) => [desc(notifications.createdAt)],
+            },
         },
     });
 
-    return NextResponse.json({ jobs });
+    // Enrich jobs with schedule info from Temporal
+    const enrichedJobs = await Promise.all(
+        jobs.map(async (job) => {
+            if (!job.temporalScheduleId) {
+                return { ...job, nextRunAt: null, lastRunAt: null };
+            }
+
+            try {
+                const scheduleInfo = await getJobScheduleInfo(job.temporalScheduleId);
+                return {
+                    ...job,
+                    nextRunAt: scheduleInfo.nextRunAt,
+                    lastRunAt: scheduleInfo.lastRunAt,
+                };
+            } catch (error) {
+                logger.warn(
+                    { error, jobId: job.id, scheduleId: job.temporalScheduleId },
+                    "Failed to fetch schedule info"
+                );
+                return { ...job, nextRunAt: null, lastRunAt: null };
+            }
+        })
+    );
+
+    return NextResponse.json({ jobs: enrichedJobs });
 }
 
 /**
