@@ -204,6 +204,22 @@ export interface KBSearchConfig {
 }
 
 /**
+ * A clarifying question the concierge wants to ask before proceeding.
+ * Used to scope deep research or resolve ambiguity.
+ */
+export interface ClarifyingQuestion {
+    /** The question to ask the user */
+    question: string;
+    /** Predefined options for quick selection */
+    options: Array<{
+        label: string;
+        value: string;
+    }>;
+    /** Whether to allow free-form text input alongside options */
+    allowFreeform?: boolean;
+}
+
+/**
  * Result returned by the Concierge after analyzing a request.
  */
 export interface ConciergeResult {
@@ -271,7 +287,7 @@ export interface ConciergeResult {
     /**
      * Background mode configuration.
      *
-     * When enabled, the response runs via Inngest for durable execution.
+     * When enabled, the response runs via Temporal for durable execution.
      * This allows long-running work to survive browser close, deploys,
      * and connection drops. The user sees "still working" status.
      */
@@ -281,6 +297,19 @@ export interface ConciergeResult {
         /** Reason shown to user (e.g., "Deep research - this will take a few minutes") */
         reason?: string;
     };
+
+    /**
+     * Clarifying questions to ask before proceeding.
+     *
+     * When the concierge detects a deep research request or ambiguity,
+     * it can ask scoping questions before starting work. This helps
+     * ensure the response matches user intent.
+     *
+     * When set, the route should return these questions to the user
+     * instead of starting LLM generation. The user's answers get
+     * appended to the conversation, and a new request is made.
+     */
+    clarifyingQuestions?: ClarifyingQuestion[];
 }
 
 /**

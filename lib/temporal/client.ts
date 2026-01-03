@@ -20,11 +20,22 @@ let client: Client | null = null;
 const TASK_QUEUE = "scheduled-agents";
 
 /**
- * Check if background mode (Temporal) is enabled
- * Background mode requires TEMPORAL_ADDRESS to be explicitly set
+ * Check if background mode is enabled (Temporal OR eager mode)
+ *
+ * - TEMPORAL_ADDRESS: Full Temporal infrastructure (durable, survives restarts)
+ * - BACKGROUND_MODE_EAGER: Runs workflow logic inline (same process, no durability)
+ *
+ * Eager mode is like Celery's ALWAYS_EAGER - great for dev, but work is lost on restart.
  */
 export function isBackgroundModeEnabled(): boolean {
-    return !!process.env.TEMPORAL_ADDRESS;
+    return !!process.env.TEMPORAL_ADDRESS || !!process.env.BACKGROUND_MODE_EAGER;
+}
+
+/**
+ * Check if we're in eager mode (inline execution, no Temporal)
+ */
+export function isEagerMode(): boolean {
+    return !process.env.TEMPORAL_ADDRESS && !!process.env.BACKGROUND_MODE_EAGER;
 }
 
 /**
@@ -229,6 +240,9 @@ export async function getWorkflowStatus(workflowId: string): Promise<{
  *
  * Used when the concierge determines a task needs durable background execution.
  * The workflow streams to Redis for real-time client updates.
+ *
+ * In eager mode: runs activities inline (fire-and-forget, no durability)
+ * In Temporal mode: dispatches to Temporal worker (durable, survives restarts)
  */
 export async function startBackgroundResponse(params: {
     connectionId: number;
@@ -243,6 +257,32 @@ export async function startBackgroundResponse(params: {
     };
 }): Promise<string> {
     const { connectionId, streamId } = params;
+
+    // Eager mode: run activities inline without Temporal
+    if (isEagerMode()) {
+        const workflowId = `eager-${connectionId}-${streamId}`;
+
+        logger.info(
+            { connectionId, workflowId, streamId },
+            "Starting background response in eager mode (no durability)"
+        );
+
+        // Fire and forget - don't await, let it run in background
+        void runEagerBackgroundResponse(params).catch((error) => {
+            logger.error(
+                {
+                    connectionId,
+                    streamId,
+                    error: error instanceof Error ? error.message : error,
+                },
+                "Eager background response failed"
+            );
+        });
+
+        return workflowId;
+    }
+
+    // Temporal mode: dispatch to worker
     const temporalClient = await getTemporalClient();
 
     const handle = await temporalClient.workflow.start("backgroundResponseWorkflow", {
@@ -257,4 +297,57 @@ export async function startBackgroundResponse(params: {
     );
 
     return handle.workflowId;
+}
+
+/**
+ * Run background response activities inline (eager mode)
+ *
+ * Mirrors the Temporal workflow but runs in the same process.
+ * No durability - if the process crashes, work is lost.
+ */
+async function runEagerBackgroundResponse(params: {
+    connectionId: number;
+    userId: string;
+    streamId: string;
+    modelId: string;
+    temperature: number;
+    reasoning: {
+        enabled: boolean;
+        effort?: "high" | "medium" | "low" | "none";
+        maxTokens?: number;
+    };
+}): Promise<void> {
+    const { connectionId, streamId } = params;
+
+    // Dynamic import to avoid loading worker deps at startup
+    const activities = await import("../../worker/activities/background-response");
+
+    try {
+        // Step 1: Load connection context
+        const context = await activities.loadConnectionContext(params);
+
+        // Step 2: Generate response (streams to Redis)
+        const result = await activities.generateBackgroundResponse(params, context);
+
+        // Step 3: Save to database
+        await activities.saveBackgroundResponse(connectionId, streamId, result.parts);
+
+        // Step 4: Update status to completed
+        await activities.updateConnectionStatus(connectionId, "completed");
+
+        logger.info(
+            { connectionId, streamId, partCount: result.parts.length },
+            "Eager background response completed"
+        );
+    } catch (error) {
+        // Mark as failed
+        try {
+            const activities =
+                await import("../../worker/activities/background-response");
+            await activities.updateConnectionStatus(connectionId, "failed");
+        } catch {
+            // Best effort
+        }
+        throw error;
+    }
 }
