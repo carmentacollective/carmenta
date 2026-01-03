@@ -56,7 +56,7 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
     return (
         <StandardPageLayout maxWidth="standard" contentClassName="py-8">
             <JobRunDetail
-                jobId={job.id}
+                jobId={job.internalId}
                 runId={runId}
                 jobSlug={slug}
                 jobEncodedId={id}
