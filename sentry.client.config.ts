@@ -19,8 +19,8 @@ Sentry.init({
     // Only send errors in production
     enabled: process.env.NODE_ENV === "production",
 
-    // Set environment
-    environment: process.env.NODE_ENV,
+    // Set environment - use SENTRY_ENVIRONMENT for deployment distinction
+    environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV,
 
     // Don't log debug info in production
     debug: false,
