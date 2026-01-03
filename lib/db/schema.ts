@@ -173,6 +173,8 @@ export interface UserPreferences {
     recentSearches?: string[];
     /** Saved search filter preferences */
     searchFilters?: SearchFilters;
+    /** Developer mode - shows detailed execution info in job runs */
+    developerMode?: boolean;
 }
 
 export const users = pgTable(
@@ -1171,6 +1173,59 @@ export const scheduledJobs = pgTable(
 );
 
 /**
+ * Tool call captured during job execution
+ */
+export interface JobToolCall {
+    toolCallId: string;
+    toolName: string;
+    input: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    error?: string;
+    durationMs: number;
+}
+
+/**
+ * A single step in job execution (from Vercel AI SDK result.steps)
+ */
+export interface JobExecutionStep {
+    stepIndex: number;
+    startedAt: string;
+    completedAt: string;
+    text?: string;
+    toolCalls?: JobToolCall[];
+    reasoningContent?: string;
+}
+
+/**
+ * Full execution trace for a job run
+ * Captures the complete sequence of steps including tool calls and outputs
+ */
+export interface JobExecutionTrace {
+    steps: JobExecutionStep[];
+    finalText?: string;
+}
+
+/**
+ * Structured error details for failed runs
+ */
+export interface JobErrorDetails {
+    message: string;
+    code?: string;
+    stack?: string;
+    context: Record<string, unknown>;
+    failedStep?: number;
+}
+
+/**
+ * Token usage metrics for a job run
+ */
+export interface JobTokenUsage {
+    inputTokens: number;
+    outputTokens: number;
+    cachedInputTokens?: number;
+}
+
+/**
  * Job Runs - execution history for scheduled jobs
  *
  * Each time a scheduled job executes, we record the run here.
@@ -1209,6 +1264,24 @@ export const jobRuns = pgTable(
 
         /** Active resumable stream ID for live progress viewing */
         activeStreamId: text("active_stream_id"),
+
+        /** Full execution trace with tool calls and outputs */
+        executionTrace: jsonb("execution_trace").$type<JobExecutionTrace>(),
+
+        /** Structured error details for failed runs */
+        errorDetails: jsonb("error_details").$type<JobErrorDetails>(),
+
+        /** Token usage metrics */
+        tokenUsage: jsonb("token_usage").$type<JobTokenUsage>(),
+
+        /** Model ID used for this run */
+        modelId: text("model_id"),
+
+        /** Total execution time in milliseconds */
+        durationMs: integer("duration_ms"),
+
+        /** Sentry trace ID for linking to error dashboard */
+        sentryTraceId: text("sentry_trace_id"),
 
         startedAt: timestamp("started_at", { withTimezone: true }),
         completedAt: timestamp("completed_at", { withTimezone: true }),
