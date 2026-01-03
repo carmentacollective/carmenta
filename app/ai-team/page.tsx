@@ -120,6 +120,8 @@ function AITeamContent() {
             const automationList: Automation[] = data.jobs.map(
                 (job: {
                     id: string;
+                    encodedId: string;
+                    slug: string;
                     name: string;
                     prompt: string;
                     scheduleCron: string;
@@ -128,6 +130,8 @@ function AITeamContent() {
                     nextRunAt: string | null;
                 }) => ({
                     id: job.id,
+                    encodedId: job.encodedId,
+                    slug: job.slug,
                     name: job.name,
                     prompt: job.prompt,
                     scheduleCron: job.scheduleCron,

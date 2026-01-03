@@ -56,6 +56,7 @@ export function JobProgressViewer({
     const [error, setError] = useState<string | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+    const hasConnectedRef = useRef(false);
 
     // Auto-scroll to bottom when content updates
     useEffect(() => {
@@ -98,7 +99,7 @@ export function JobProgressViewer({
         }
     }, []);
 
-    // Connect to stream
+    // Connect to stream (only once - jobId and runId don't change)
     useEffect(() => {
         const url = `/api/jobs/${jobId}/runs/${runId}/stream`;
 
@@ -109,6 +110,7 @@ export function JobProgressViewer({
 
         eventSource.onopen = () => {
             logger.info({ jobId, runId }, "Stream connected");
+            hasConnectedRef.current = true;
             setStatus("streaming");
         };
 
@@ -122,8 +124,8 @@ export function JobProgressViewer({
         eventSource.onerror = (event) => {
             // Check if this is a normal close (204 No Content)
             if (eventSource.readyState === EventSource.CLOSED) {
-                // If we never got any content, there was no stream
-                if (status === "connecting") {
+                // If we never connected, there was no stream
+                if (!hasConnectedRef.current) {
                     setStatus("no-stream");
                 } else {
                     setStatus("completed");
@@ -139,7 +141,7 @@ export function JobProgressViewer({
         return () => {
             eventSource.close();
         };
-    }, [jobId, runId, handleDataPart, status]);
+    }, [jobId, runId, handleDataPart]);
 
     // Clean up on unmount
     useEffect(() => {
