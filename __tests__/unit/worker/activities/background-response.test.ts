@@ -42,7 +42,7 @@ vi.mock("@/lib/logger", () => ({
     },
 }));
 
-vi.mock("@sentry/nextjs", () => ({
+vi.mock("@sentry/node", () => ({
     addBreadcrumb: vi.fn(),
     captureException: vi.fn(),
 }));
@@ -182,7 +182,7 @@ describe("updateConnectionStatus", () => {
     });
 
     it("adds Sentry breadcrumb for completed", async () => {
-        const { addBreadcrumb } = await import("@sentry/nextjs");
+        const { addBreadcrumb } = await import("@sentry/node");
 
         await updateConnectionStatus(123, "completed");
 
@@ -195,7 +195,7 @@ describe("updateConnectionStatus", () => {
     });
 
     it("adds Sentry breadcrumb for failed", async () => {
-        const { addBreadcrumb } = await import("@sentry/nextjs");
+        const { addBreadcrumb } = await import("@sentry/node");
 
         await updateConnectionStatus(123, "failed");
 

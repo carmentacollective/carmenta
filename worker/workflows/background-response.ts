@@ -14,6 +14,39 @@
 import { proxyActivities, ApplicationFailure } from "@temporalio/workflow";
 import type * as backgroundActivities from "../activities/background-response";
 
+/**
+ * Extract the root cause message from Temporal failures.
+ * Same as agent-job.ts - duplicated because workflows can't share code.
+ */
+function extractRootCauseMessage(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return String(error);
+    }
+
+    let current: Error | undefined = error;
+    let deepestMessage = error.message;
+
+    while (current?.cause instanceof Error) {
+        current = current.cause;
+        if (current.message) {
+            deepestMessage = current.message;
+        }
+    }
+
+    if (
+        error instanceof ApplicationFailure &&
+        error.details &&
+        error.details.length > 0
+    ) {
+        const details = error.details[0];
+        if (typeof details === "string") {
+            return details;
+        }
+    }
+
+    return deepestMessage;
+}
+
 const {
     loadConnectionContext,
     generateBackgroundResponse,
@@ -71,16 +104,20 @@ export async function backgroundResponseWorkflow(
             partCount: result.parts.length,
         };
     } catch (error) {
+        // Extract the ACTUAL error from Temporal's ActivityFailure wrapper
+        const rootCauseMessage = extractRootCauseMessage(error);
+
         // Mark as failed on any error
         // The activity will have already been retried by Temporal
         try {
             await updateConnectionStatus(connectionId, "failed");
         } catch {
-            // Best effort - don't fail the workflow if status update fails
+            // Status update failed - activity captures error in Sentry, workflow proceeds
         }
 
+        // Throw with the REAL error message, not the generic wrapper
         throw ApplicationFailure.nonRetryable(
-            error instanceof Error ? error.message : String(error),
+            rootCauseMessage,
             "BackgroundResponseFailed"
         );
     }

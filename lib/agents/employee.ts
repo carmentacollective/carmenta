@@ -184,6 +184,23 @@ function extractExecutionTrace(
     steps: any[],
     finalText?: string
 ): JobExecutionTrace {
+    // Log what we received for debugging
+    logger.debug(
+        {
+            stepCount: steps?.length ?? 0,
+            hasSteps: Array.isArray(steps) && steps.length > 0,
+            finalTextLength: finalText?.length ?? 0,
+            stepSummary: steps?.map((s, i) => ({
+                index: i,
+                hasText: !!s.text,
+                hasReasoning: !!s.reasoningText,
+                toolCallCount: s.toolCalls?.length ?? 0,
+                toolResultCount: s.toolResults?.length ?? 0,
+            })),
+        },
+        "📊 Extracting execution trace from steps"
+    );
+
     const traceSteps: JobExecutionStep[] = steps.map((step, index) => {
         const stepStart = new Date().toISOString(); // Approximation - SDK doesn't provide timing
 
@@ -209,9 +226,9 @@ function extractExecutionTrace(
                     return {
                         toolCallId: tc.toolCallId || `tool-${index}-${tcIndex}`,
                         toolName: tc.toolName,
-                        input: tc.args || {},
-                        output: result?.result,
-                        error: result?.error?.message,
+                        input: tc.input || {},
+                        output: result?.output,
+                        // Tool errors appear in step.content as 'tool-error' parts, not on results
                         durationMs: 0, // SDK doesn't track per-tool timing
                     };
                 }
@@ -461,7 +478,6 @@ export async function runEmployeeStreaming(
                     }>;
                     memoryUpdates?: Record<string, unknown>;
                 } | null = null;
-                let finalText = "";
 
                 // Stream execution
                 const result = streamText({
@@ -494,9 +510,7 @@ export async function runEmployeeStreaming(
                             writeStatus(writer, `tool-${chunk.toolCallId}`, "");
                         }
                     },
-                    onFinish: async ({ text, toolCalls }) => {
-                        finalText = text ?? "";
-
+                    onFinish: async ({ toolCalls }) => {
                         // Extract complete tool data
                         const completeCall = toolCalls.find(
                             (tc) => tc.toolName === "complete"
@@ -515,14 +529,60 @@ export async function runEmployeeStreaming(
                 writer.merge(result.toUIMessageStream({ sendReasoning: false }));
 
                 // Wait for stream to complete and get full result
-                await result.response;
+                employeeLogger.debug(
+                    {},
+                    "⏳ Waiting for stream response to complete..."
+                );
+
+                // Wait for the full text to ensure stream is consumed
+                const fullText = await result.text;
+                employeeLogger.debug(
+                    { textLength: fullText?.length ?? 0 },
+                    "✅ Full text received from stream"
+                );
+
                 const steps = await result.steps;
+
+                // Log the raw structure for debugging
+                employeeLogger.info(
+                    {
+                        stepsCount: steps?.length ?? 0,
+                        stepsType: typeof steps,
+                        isArray: Array.isArray(steps),
+                        rawSteps: JSON.stringify(
+                            steps?.map((s, i) => ({
+                                index: i,
+                                text: s.text?.slice(0, 50),
+                                reasoningText: s.reasoningText?.slice(0, 50),
+                                toolCallsCount: s.toolCalls?.length ?? 0,
+                                toolResultsCount: s.toolResults?.length ?? 0,
+                                finishReason: s.finishReason,
+                            })) ?? []
+                        ),
+                    },
+                    "📋 Raw steps from Vercel AI SDK"
+                );
                 const usage = await result.usage;
 
                 // Extract observability data
                 const durationMs = Date.now() - startTime;
-                const executionTrace = extractExecutionTrace(steps, finalText);
+                // Use fullText from awaited result, not the onFinish callback
+                const executionTrace = extractExecutionTrace(steps, fullText);
                 const tokenUsage = extractTokenUsage(usage);
+
+                employeeLogger.info(
+                    {
+                        traceStepCount: executionTrace.steps.length,
+                        hasFinalText: !!executionTrace.finalText,
+                        tokenUsage: tokenUsage
+                            ? {
+                                  input: tokenUsage.inputTokens,
+                                  output: tokenUsage.outputTokens,
+                              }
+                            : null,
+                    },
+                    "📊 Execution trace extracted"
+                );
 
                 // Process completion
                 if (completeCallData !== null) {
@@ -562,13 +622,13 @@ export async function runEmployeeStreaming(
                 writeStatus(writer, `job-${jobId}-complete`, "Task finished", "✅");
 
                 employeeLogger.warn(
-                    { text: finalText.slice(0, 200) },
+                    { text: fullText.slice(0, 200) },
                     "⚠️ Streaming employee finished without calling complete tool"
                 );
 
                 return {
                     success: true,
-                    summary: finalText || "Task completed without explicit summary.",
+                    summary: fullText || "Task completed without explicit summary.",
                     notifications: [],
                     updatedMemory: memory,
                     toolCallsExecuted,

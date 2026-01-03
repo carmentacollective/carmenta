@@ -12,7 +12,7 @@
  * that don't work in the CJS Temporal worker environment.
  */
 
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from "@sentry/node";
 import {
     convertToModelMessages,
     createUIMessageStream,
@@ -40,6 +40,7 @@ import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
 
 // Worker-local imports (avoid ESM dependencies)
 import { buildWorkerSystemMessages } from "../lib/system-prompt";
+import { captureActivityError } from "../lib/activity-sentry";
 
 // Types for activity inputs/outputs
 export interface BackgroundResponseInput {
@@ -82,38 +83,48 @@ export async function loadConnectionContext(
         activity: "loadConnectionContext",
     });
 
-    activityLogger.info({}, "Loading connection context");
+    try {
+        activityLogger.info({}, "Loading connection context");
 
-    const connection = await getConnectionWithMessages(connectionId);
-    if (!connection) {
-        throw new Error(`Connection ${connectionId} not found`);
-    }
+        const connection = await getConnectionWithMessages(connectionId);
+        if (!connection) {
+            throw new Error(`Connection ${connectionId} not found`);
+        }
 
-    // Security: Verify the connection belongs to the claimed user
-    if (connection.userId !== userId) {
-        throw new Error(
-            `Authorization failed: connection ${connectionId} does not belong to user`
+        // Security: Verify the connection belongs to the claimed user
+        if (connection.userId !== userId) {
+            throw new Error(
+                `Authorization failed: connection ${connectionId} does not belong to user`
+            );
+        }
+
+        // Look up user to get email for integration tools
+        const user = await findUserById(userId);
+        if (!user) {
+            throw new Error(`User ${userId} not found`);
+        }
+
+        // Convert DB messages to UI format
+        const uiMessages = mapConnectionMessagesToUI(connection);
+
+        activityLogger.info(
+            { messageCount: uiMessages.length },
+            "Loaded context from database"
         );
+
+        return {
+            messages: uiMessages,
+            userEmail: user.email,
+        };
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "loadConnectionContext",
+            connectionId,
+            userId,
+            streamId,
+        });
+        throw error;
     }
-
-    // Look up user to get email for integration tools
-    const user = await findUserById(userId);
-    if (!user) {
-        throw new Error(`User ${userId} not found`);
-    }
-
-    // Convert DB messages to UI format
-    const uiMessages = mapConnectionMessagesToUI(connection);
-
-    activityLogger.info(
-        { messageCount: uiMessages.length },
-        "Loaded context from database"
-    );
-
-    return {
-        messages: uiMessages,
-        userEmail: user.email,
-    };
 }
 
 /**
@@ -135,139 +146,151 @@ export async function generateBackgroundResponse(
         activity: "generateBackgroundResponse",
     });
 
-    const gateway = getGatewayClient();
-    const streamContext = getBackgroundStreamContext();
+    try {
+        const gateway = getGatewayClient();
+        const streamContext = getBackgroundStreamContext();
 
-    if (!streamContext) {
-        throw new Error("Redis not configured - cannot run background tasks");
-    }
+        if (!streamContext) {
+            throw new Error("Redis not configured - cannot run background tasks");
+        }
 
-    // Build system messages for the worker
-    // Uses simplified worker-local prompt to avoid ESM dependency issues
-    const systemMessages = buildWorkerSystemMessages({
-        userEmail: context.userEmail,
-        userId,
-    });
+        // Build system messages for the worker
+        // Uses simplified worker-local prompt to avoid ESM dependency issues
+        const systemMessages = buildWorkerSystemMessages({
+            userEmail: context.userEmail,
+            userId,
+        });
 
-    activityLogger.info(
-        {
-            modelId,
-            temperature,
-            reasoningEnabled: reasoning.enabled,
-        },
-        "Running LLM streaming generation"
-    );
-
-    // Capture the final response parts for database persistence
-    let finalResponseParts: UIMessageLike["parts"] = [];
-
-    // Run streaming LLM call
-    // Background worker runs without tools to keep dependencies simple
-    // The main benefit of background mode is thorough reasoning, not tool use
-    const streamResult = streamText({
-        model: gateway(translateModelId(modelId)),
-        messages: [
-            ...systemMessages,
-            ...(await convertToModelMessages(context.messages as any)),
-        ],
-        temperature,
-        providerOptions: translateOptions(modelId, {
-            reasoning: reasoning.enabled
-                ? {
-                      enabled: true,
-                      effort: reasoning.effort,
-                      maxTokens: reasoning.maxTokens,
-                  }
-                : undefined,
-            fallbackModels: getFallbackChain(modelId),
-        }),
-        experimental_telemetry: {
-            isEnabled: true,
-            functionId: "background-response",
-            metadata: {
-                connectionId: String(connectionId),
-                userId,
+        activityLogger.info(
+            {
+                modelId,
+                temperature,
+                reasoningEnabled: reasoning.enabled,
             },
-        },
-        onFinish: async ({
-            text,
-            toolCalls,
-            toolResults,
-            reasoningText,
-            providerMetadata,
-        }) => {
-            const parts: UIMessageLike["parts"] = [];
+            "Running LLM streaming generation"
+        );
 
-            // Add reasoning part if present
-            if (reasoningText) {
-                parts.push({
-                    type: "reasoning",
-                    text: reasoningText,
-                    ...(providerMetadata && { providerMetadata }),
-                });
-            }
+        // Capture the final response parts for database persistence
+        let finalResponseParts: UIMessageLike["parts"] = [];
 
-            // Add text part if present
-            if (text) {
-                parts.push({ type: "text", text });
-            }
+        // Run streaming LLM call
+        // Background worker runs without tools to keep dependencies simple
+        // The main benefit of background mode is thorough reasoning, not tool use
+        const streamResult = streamText({
+            model: gateway(translateModelId(modelId)),
+            messages: [
+                ...systemMessages,
+                ...(await convertToModelMessages(context.messages as any)),
+            ],
+            temperature,
+            providerOptions: translateOptions(modelId, {
+                reasoning: reasoning.enabled
+                    ? {
+                          enabled: true,
+                          effort: reasoning.effort,
+                          maxTokens: reasoning.maxTokens,
+                      }
+                    : undefined,
+                fallbackModels: getFallbackChain(modelId),
+            }),
+            experimental_telemetry: {
+                isEnabled: true,
+                functionId: "background-response",
+                metadata: {
+                    connectionId: String(connectionId),
+                    userId,
+                },
+            },
+            onFinish: async ({
+                text,
+                toolCalls,
+                toolResults,
+                reasoningText,
+                providerMetadata,
+            }) => {
+                const parts: UIMessageLike["parts"] = [];
 
-            // Add tool calls with their results
-            for (const tc of toolCalls) {
-                const toolResult = toolResults.find(
-                    (tr) => tr.toolCallId === tc.toolCallId
+                // Add reasoning part if present
+                if (reasoningText) {
+                    parts.push({
+                        type: "reasoning",
+                        text: reasoningText,
+                        ...(providerMetadata && { providerMetadata }),
+                    });
+                }
+
+                // Add text part if present
+                if (text) {
+                    parts.push({ type: "text", text });
+                }
+
+                // Add tool calls with their results
+                for (const tc of toolCalls) {
+                    const toolResult = toolResults.find(
+                        (tr) => tr.toolCallId === tc.toolCallId
+                    );
+                    parts.push({
+                        type: `tool-${tc.toolName}`,
+                        toolCallId: tc.toolCallId,
+                        state: toolResult ? "output-available" : "input-available",
+                        input: tc.input,
+                        ...(toolResult && { output: toolResult.output }),
+                    });
+                }
+
+                finalResponseParts = parts;
+            },
+        });
+
+        // Create UI message stream
+        const stream = createUIMessageStream({
+            execute: ({ writer }) => {
+                writer.merge(
+                    streamResult.toUIMessageStream({
+                        sendReasoning: reasoning.enabled,
+                    })
                 );
-                parts.push({
-                    type: `tool-${tc.toolName}`,
-                    toolCallId: tc.toolCallId,
-                    state: toolResult ? "output-available" : "input-available",
-                    input: tc.input,
-                    ...(toolResult && { output: toolResult.output }),
-                });
-            }
+            },
+        });
 
-            finalResponseParts = parts;
-        },
-    });
+        // Pipe through resumable stream to Redis
+        const resumableStream = await streamContext.createNewResumableStream(
+            streamId,
+            () => stream.pipeThrough(new JsonToSseTransformStream())
+        );
 
-    // Create UI message stream
-    const stream = createUIMessageStream({
-        execute: ({ writer }) => {
-            writer.merge(
-                streamResult.toUIMessageStream({
-                    sendReasoning: reasoning.enabled,
-                })
-            );
-        },
-    });
+        if (!resumableStream) {
+            throw new Error("Failed to create resumable stream");
+        }
 
-    // Pipe through resumable stream to Redis
-    const resumableStream = await streamContext.createNewResumableStream(streamId, () =>
-        stream.pipeThrough(new JsonToSseTransformStream())
-    );
+        // Consume the stream to completion
+        const reader = resumableStream.getReader();
+        while (true) {
+            const { done } = await reader.read();
+            if (done) break;
+        }
 
-    if (!resumableStream) {
-        throw new Error("Failed to create resumable stream");
+        // Verify we captured the response parts
+        if (finalResponseParts.length === 0) {
+            throw new Error("Failed to capture response parts from stream");
+        }
+
+        activityLogger.info(
+            { partCount: finalResponseParts.length },
+            "LLM streaming complete"
+        );
+
+        return { parts: finalResponseParts };
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "generateBackgroundResponse",
+            connectionId,
+            userId,
+            streamId,
+            modelId,
+        });
+        throw error;
     }
-
-    // Consume the stream to completion
-    const reader = resumableStream.getReader();
-    while (true) {
-        const { done } = await reader.read();
-        if (done) break;
-    }
-
-    // Verify we captured the response parts
-    if (finalResponseParts.length === 0) {
-        throw new Error("Failed to capture response parts from stream");
-    }
-
-    activityLogger.info(
-        { partCount: finalResponseParts.length },
-        "LLM streaming complete"
-    );
-
-    return { parts: finalResponseParts };
 }
 
 /**
@@ -284,15 +307,25 @@ export async function saveBackgroundResponse(
         activity: "saveBackgroundResponse",
     });
 
-    const assistantMessage: UIMessageLike = {
-        id: `bg-${streamId}`,
-        role: "assistant",
-        parts,
-    };
+    try {
+        const assistantMessage: UIMessageLike = {
+            id: `bg-${streamId}`,
+            role: "assistant",
+            parts,
+        };
 
-    await upsertMessage(connectionId, assistantMessage);
+        await upsertMessage(connectionId, assistantMessage);
 
-    activityLogger.info({ partCount: parts.length }, "Saved response to database");
+        activityLogger.info({ partCount: parts.length }, "Saved response to database");
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "saveBackgroundResponse",
+            connectionId,
+            streamId,
+            partCount: parts.length,
+        });
+        throw error;
+    }
 }
 
 /**
@@ -307,14 +340,23 @@ export async function updateConnectionStatus(
         activity: "updateConnectionStatus",
     });
 
-    await updateStreamingStatus(connectionId, status);
+    try {
+        await updateStreamingStatus(connectionId, status);
 
-    activityLogger.info({ status }, "Updated connection status");
+        activityLogger.info({ status }, "Updated connection status");
 
-    Sentry.addBreadcrumb({
-        category: "temporal",
-        message: `Background response ${status}`,
-        level: status === "completed" ? "info" : "error",
-        data: { connectionId },
-    });
+        Sentry.addBreadcrumb({
+            category: "temporal",
+            message: `Background response ${status}`,
+            level: status === "completed" ? "info" : "error",
+            data: { connectionId },
+        });
+    } catch (error) {
+        captureActivityError(error, {
+            activityName: "updateConnectionStatus",
+            connectionId,
+            status,
+        });
+        throw error;
+    }
 }

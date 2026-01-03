@@ -12,8 +12,68 @@
  * 5. Finalize run with results
  */
 
-import { proxyActivities } from "@temporalio/workflow";
+import { proxyActivities, ApplicationFailure } from "@temporalio/workflow";
 import type * as activities from "../activities";
+
+/**
+ * Extract the root cause message from Temporal failures.
+ *
+ * Temporal wraps activity errors in ActivityFailure, which causes
+ * the message to become generic "Activity task failed". The actual
+ * error is buried in the cause chain. This function digs it out.
+ */
+function extractRootCauseMessage(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return String(error);
+    }
+
+    // Walk the cause chain to find the deepest error message
+    let current: Error | undefined = error;
+    let deepestMessage = error.message;
+
+    while (current?.cause instanceof Error) {
+        current = current.cause;
+        if (current.message) {
+            deepestMessage = current.message;
+        }
+    }
+
+    // ApplicationFailure has details array that may contain more info
+    if (
+        error instanceof ApplicationFailure &&
+        error.details &&
+        error.details.length > 0
+    ) {
+        const details = error.details[0];
+        if (typeof details === "string") {
+            return details;
+        }
+    }
+
+    return deepestMessage;
+}
+
+/**
+ * Extract the root cause stack from Temporal failures.
+ */
+function extractRootCauseStack(error: unknown): string | undefined {
+    if (!(error instanceof Error)) {
+        return undefined;
+    }
+
+    // Walk the cause chain to find the deepest stack
+    let current: Error | undefined = error;
+    let deepestStack = error.stack;
+
+    while (current?.cause instanceof Error) {
+        current = current.cause;
+        if (current.stack) {
+            deepestStack = current.stack;
+        }
+    }
+
+    return deepestStack;
+}
 
 const {
     loadFullJobContext,
@@ -71,13 +131,16 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             runId,
         };
     } catch (error) {
-        // Record failed run with full error details for observability
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorStack = error instanceof Error ? error.stack : undefined;
+        // Extract the ACTUAL error from Temporal's ActivityFailure wrapper
+        // Temporal wraps errors, hiding the real message. Dig it out.
+        const errorMessage = extractRootCauseMessage(error);
+        const errorStack = extractRootCauseStack(error);
 
-        // Extract error code if available - preserve original code over generic fallback
+        // Extract error code - check both wrapped and root cause
         const errorCode =
-            (error as { code?: string })?.code ?? "WORKFLOW_CATCH_UNHANDLED";
+            (error as { code?: string })?.code ??
+            ((error as Error)?.cause as { code?: string })?.code ??
+            "WORKFLOW_ACTIVITY_FAILED";
 
         const failedResult = {
             success: false,
@@ -95,6 +158,8 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
                     runId,
                     failedAt: new Date().toISOString(),
                     failurePoint: "workflow_catch",
+                    // Include original wrapper message for debugging
+                    temporalMessage: error instanceof Error ? error.message : undefined,
                 },
             },
         };
@@ -102,9 +167,12 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         // Try to finalize the failure, but don't mask the original error
         try {
             await finalizeJobRun(runId, jobId, context.userId, failedResult);
-        } catch {
-            // Clear stream ID at minimum
-            await clearJobRunStreamId(runId).catch(() => {});
+        } catch (finalizationError) {
+            // Finalization failed - activity will capture error in Sentry
+            // Clear stream ID to prevent UI showing stale "in progress" state
+            await clearJobRunStreamId(runId).catch(() => {
+                // Double failure - logged in activity, workflow continues with original error
+            });
         }
 
         throw error;

@@ -10,6 +10,7 @@
  * This allows deployments without Temporal infrastructure.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { Client, Connection, ScheduleAlreadyRunning } from "@temporalio/client";
 import { logger } from "@/lib/logger";
 
@@ -268,6 +269,7 @@ export async function startBackgroundResponse(params: {
         );
 
         // Fire and forget - don't await, let it run in background
+        // Errors are captured at activity level; this captures orchestration failures
         void runEagerBackgroundResponse(params).catch((error) => {
             logger.error(
                 {
@@ -277,6 +279,20 @@ export async function startBackgroundResponse(params: {
                 },
                 "Eager background response failed"
             );
+
+            // Capture orchestration-level errors with distinct fingerprint from activity errors
+            Sentry.captureException(error, {
+                fingerprint: ["eager-orchestration", "background-response"],
+                tags: {
+                    component: "eager-mode",
+                    action: "background-response",
+                },
+                extra: {
+                    connectionId,
+                    streamId,
+                    modelId: params.modelId,
+                },
+            });
         });
 
         return workflowId;
@@ -340,13 +356,25 @@ async function runEagerBackgroundResponse(params: {
             "Eager background response completed"
         );
     } catch (error) {
-        // Mark as failed
+        // Mark as failed - capture secondary error if status update fails
         try {
             const activities =
                 await import("../../worker/activities/background-response");
             await activities.updateConnectionStatus(connectionId, "failed");
-        } catch {
-            // Best effort
+        } catch (statusError) {
+            // Status update failed - log so we know, but don't mask primary error
+            logger.error(
+                {
+                    connectionId,
+                    streamId,
+                    statusError:
+                        statusError instanceof Error
+                            ? statusError.message
+                            : statusError,
+                    primaryError: error instanceof Error ? error.message : error,
+                },
+                "Failed to update connection status after error"
+            );
         }
         throw error;
     }
