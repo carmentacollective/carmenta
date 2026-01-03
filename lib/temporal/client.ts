@@ -269,7 +269,7 @@ export async function startBackgroundResponse(params: {
         );
 
         // Fire and forget - don't await, let it run in background
-        // Errors are captured in Sentry at the activity level AND here at the orchestration level
+        // Errors are captured at activity level; this captures orchestration failures
         void runEagerBackgroundResponse(params).catch((error) => {
             logger.error(
                 {
@@ -280,8 +280,9 @@ export async function startBackgroundResponse(params: {
                 "Eager background response failed"
             );
 
-            // Capture at orchestration level with full context
+            // Capture orchestration-level errors with distinct fingerprint from activity errors
             Sentry.captureException(error, {
+                fingerprint: ["eager-orchestration", "background-response"],
                 tags: {
                     component: "eager-mode",
                     action: "background-response",

@@ -111,9 +111,8 @@ export async function backgroundResponseWorkflow(
         // The activity will have already been retried by Temporal
         try {
             await updateConnectionStatus(connectionId, "failed");
-        } catch (statusError) {
-            // Log status update failure - don't silently swallow
-            // Can't use logger in workflow, but the error is captured in activities
+        } catch {
+            // Status update failed - activity captures error in Sentry, workflow proceeds
         }
 
         // Throw with the REAL error message, not the generic wrapper

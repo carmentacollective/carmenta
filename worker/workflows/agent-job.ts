@@ -167,9 +167,12 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         // Try to finalize the failure, but don't mask the original error
         try {
             await finalizeJobRun(runId, jobId, context.userId, failedResult);
-        } catch {
-            // Clear stream ID at minimum
-            await clearJobRunStreamId(runId).catch(() => {});
+        } catch (finalizationError) {
+            // Finalization failed - activity will capture error in Sentry
+            // Clear stream ID to prevent UI showing stale "in progress" state
+            await clearJobRunStreamId(runId).catch(() => {
+                // Double failure - logged in activity, workflow continues with original error
+            });
         }
 
         throw error;
