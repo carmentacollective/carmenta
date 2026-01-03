@@ -348,7 +348,7 @@ describe("ParallelProvider", () => {
 
             const createCall = mockFetch.mock.calls[0];
             const requestBody = JSON.parse(createCall[1].body);
-            expect(requestBody.processor).toBe("core");
+            expect(requestBody.processor).toBe("core-fast");
         });
 
         it("returns null when task creation fails", async () => {

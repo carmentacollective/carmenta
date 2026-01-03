@@ -39,6 +39,10 @@ export const MarkdownRenderer = memo(
         inline = false,
         isStreaming = false,
     }: MarkdownRendererProps) => {
+        // Defensive: Streamdown may throw if content is undefined/null
+        // Note: Intentionally using == null to allow empty strings (preserves wrapper)
+        if (content == null) return null;
+
         return (
             <div
                 className={cn(

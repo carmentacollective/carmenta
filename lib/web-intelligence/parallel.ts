@@ -36,12 +36,21 @@ const PARALLEL_BETA_HEADER = "search-extract-2025-10-10";
 const MIN_MEANINGFUL_CONTENT_LENGTH = 100;
 
 /**
- * Maps our depth options to Parallel processor tiers
+ * Maps our depth options to Parallel processor tiers.
+ *
+ * Using -fast variants for lower latency (10-100s typical).
+ * Fast processors sacrifice data freshness optimization, not accuracy -
+ * they use cached results more aggressively.
+ *
+ * Non-fast alternatives (lite, base, core) prioritize fresher data but
+ * can take significantly longer (up to 45 min for complex queries).
+ * Consider switching to non-fast if users need real-time data freshness
+ * (stock prices, breaking news) and are willing to wait longer.
  */
 const DEPTH_TO_PROCESSOR: Record<ResearchDepth, string> = {
-    quick: "lite",
-    standard: "base",
-    deep: "core",
+    quick: "lite-fast", // 10-20s typical
+    standard: "base-fast", // 15-50s typical
+    deep: "core-fast", // 15-100s typical
 };
 
 /**
@@ -385,8 +394,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
             "Research task created, polling for completion"
         );
 
-        // Poll for completion (max 120 seconds for deep research)
-        const maxWaitMs = depth === "deep" ? 120000 : 60000;
+        // Poll for completion (max 120 seconds for all research depths)
+        const maxWaitMs = 120000;
         const pollIntervalMs = 2000;
         let elapsed = 0;
         let consecutiveFailures = 0;

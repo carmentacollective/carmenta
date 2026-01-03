@@ -153,32 +153,17 @@ interface ThemeProviderProps {
 }
 
 /**
- * Get initial theme from localStorage (client-side only)
- * Migrates old "christmas" theme to "holiday" for backwards compatibility
- */
-function getInitialTheme(): ThemeVariant {
-    if (typeof window === "undefined") return DEFAULT_THEME;
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    // Migrate old "christmas" theme to "holiday"
-    if (saved === "christmas") {
-        localStorage.setItem(STORAGE_KEY, "holiday");
-        return "holiday";
-    }
-
-    return (saved as ThemeVariant) || DEFAULT_THEME;
-}
-
-/**
  * Theme Provider - Combines next-themes for light/dark with simple context for theme variants.
  *
  * - next-themes: Manages "class" attribute for Tailwind dark mode
  * - ThemeVariantContext: Manages "data-theme" attribute for color variants
+ *
+ * Hydration note: We initialize with DEFAULT_THEME to match SSR, then read
+ * from localStorage in useEffect to avoid React hydration mismatch errors.
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
-    // Use lazy initializer to read from localStorage without triggering effect setState
-    const [themeVariant, setThemeVariantState] =
-        useState<ThemeVariant>(getInitialTheme);
+    // Initialize with default to match SSR - we'll sync from localStorage in useEffect
+    const [themeVariant, setThemeVariantState] = useState<ThemeVariant>(DEFAULT_THEME);
 
     const setThemeVariant = useCallback((variant: ThemeVariant) => {
         setThemeVariantState(variant);
@@ -186,6 +171,25 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         // Apply the resolved CSS theme (holiday → christmas, etc.)
         document.documentElement.setAttribute("data-theme", resolveToCssTheme(variant));
     }, []);
+
+    // Hydrate from localStorage after mount (avoids SSR mismatch)
+    // Also migrates old "christmas" theme to "holiday"
+    // Note: setState in effect is intentional here - we need to sync external
+    // storage state after hydration completes to avoid React Error #418
+    /* eslint-disable react-hooks/set-state-in-effect -- Hydration sync from external storage */
+    useEffect(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            // Migrate old "christmas" theme to "holiday"
+            if (saved === "christmas") {
+                localStorage.setItem(STORAGE_KEY, "holiday");
+                setThemeVariantState("holiday");
+            } else if (saved !== DEFAULT_THEME) {
+                setThemeVariantState(saved as ThemeVariant);
+            }
+        }
+    }, []);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Sync data-theme attribute with state (external system sync)
     // Resolves "holiday" to the appropriate seasonal theme
