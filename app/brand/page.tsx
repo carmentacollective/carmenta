@@ -16,6 +16,7 @@ import { Footer } from "@/components/footer";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { OracleShowcase } from "@/components/brand/oracle-showcase";
 import { ButtonStateDemo } from "@/components/brand/button-state-demo";
+import { ToggleShowcase } from "@/components/brand/toggle-showcase";
 
 export const metadata: Metadata = {
     title: "Brand Guidelines · Carmenta",
@@ -701,6 +702,106 @@ export default function BrandPage() {
                                         <p className="text-foreground/60 text-xs">
                                             Use for branded interactions like sign-in,
                                             connection actions, and secondary CTAs.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Toggle Switches */}
+                        <section className="space-y-6">
+                            <h2 className="text-foreground/90 text-2xl font-semibold">
+                                Toggle Switches
+                            </h2>
+                            <p className="text-foreground/70">
+                                Label-based toggle for clear on/off state communication.
+                                Sliding text labels provide accessibility beyond color.
+                            </p>
+
+                            <div className="glass-card">
+                                <div className="grid gap-8 md:grid-cols-2">
+                                    {/* Default Size */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-foreground/90 font-medium">
+                                                Default (md)
+                                            </h3>
+                                            <p className="text-foreground/60 text-sm">
+                                                Standard toggle for settings and
+                                                controls
+                                            </p>
+                                        </div>
+                                        <ToggleShowcase size="md" />
+                                        <div className="bg-foreground/5 rounded-lg p-3">
+                                            <code className="text-foreground/70 block text-xs">
+                                                {`<LabelToggle`}
+                                                <br />
+                                                {`  checked={value}`}
+                                                <br />
+                                                {`  onChange={setValue}`}
+                                                <br />
+                                                {`/>`}
+                                            </code>
+                                        </div>
+                                    </div>
+
+                                    {/* Small Size */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-foreground/90 font-medium">
+                                                Small (sm)
+                                            </h3>
+                                            <p className="text-foreground/60 text-sm">
+                                                Compact toggle for inline use
+                                            </p>
+                                        </div>
+                                        <ToggleShowcase size="sm" />
+                                        <div className="bg-foreground/5 rounded-lg p-3">
+                                            <code className="text-foreground/70 block text-xs">
+                                                {`<LabelToggle`}
+                                                <br />
+                                                {`  size="sm"`}
+                                                <br />
+                                                {`  ...`}
+                                                <br />
+                                                {`/>`}
+                                            </code>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Characteristics */}
+                                <div className="border-foreground/10 mt-8 grid gap-4 border-t pt-6 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Animation
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            Spring physics
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Duration
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            ~200ms
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Accessibility
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            Text labels
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-foreground/50 text-xs font-medium tracking-wide uppercase">
+                                            Theme
+                                        </p>
+                                        <p className="text-foreground/80 font-mono text-sm">
+                                            Light + Dark
                                         </p>
                                     </div>
                                 </div>
