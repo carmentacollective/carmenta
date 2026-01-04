@@ -6,13 +6,12 @@ Protects against dangerous git operations by properly parsing git commands
 instead of fragile regex matching.
 
 Hard blocks (exit 2):
-- git add -A / git add . / git add --all (stage files explicitly)
 - git commit -a (stage files explicitly first)
+- git push --no-verify (investigate failures, don't bypass them)
+- git commit --no-verify (investigate failures, don't bypass them)
 
 Requires confirmation (permissionDecision: "ask"):
 - Direct pushes to main branch
-- git push --no-verify
-- git commit --no-verify
 - gh pr merge
 
 Exit codes:
@@ -20,6 +19,7 @@ Exit codes:
 - 2: Command blocked (hard violations)
 
 Allows:
+- git add -A / git add . / git add --all (AI should verify what's staged before committing)
 - git commit --amend (amend contains 'a' but is not the -a flag)
 - All other safe operations
 """
@@ -206,12 +206,17 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
     """
     violations = []
 
-    # Check for --no-verify
+    # Check for --no-verify - HARD BLOCK with investigation guidance
     if has_flag(flags, "--no-verify"):
         violations.append(Violation(
-            "git push --no-verify requires explicit approval",
-            "Confirm in the UI dialog, or remove --no-verify and fix hook failures",
-            ViolationType.ASK_USER
+            "git push --no-verify is forbidden - don't be lazy, investigate the failure",
+            (
+                "Pre-push hooks exist to protect quality. When they fail:\n"
+                "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
+                "    2. If it fails in main too → STOP, this isn't your problem\n"
+                "    3. If it only fails in your branch → FIX IT, don't bypass it"
+            ),
+            ViolationType.HARD_BLOCK
         ))
 
     # Check for push to main
@@ -257,37 +262,26 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
 
 def check_git_add(flags: list[str], positional: list[str]) -> list[Violation]:
     """Check git add for violations."""
-    violations = []
-
-    # Block -A or --all
-    if has_flag(flags, "-A", "--all"):
-        violations.append(Violation(
-            "git add -A/--all is forbidden",
-            "Stage only the specific files you modified: git add path/to/file.ts"
-        ))
-
-    # Block "git add ." or paths ending with "/."
-    for arg in positional:
-        if arg == "." or arg.endswith("/."):
-            violations.append(Violation(
-                "git add . is forbidden",
-                "Stage only the specific files you modified: git add path/to/file.ts"
-            ))
-            break
-
-    return violations
+    # No violations - git add -A/./--all are now allowed
+    # AI should verify what's staged via git status before committing
+    return []
 
 
 def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]:
     """Check git commit for violations."""
     violations = []
 
-    # Check --no-verify (note: -n is short for --dry-run, not --no-verify)
+    # Check --no-verify - HARD BLOCK with investigation guidance
     if has_flag(flags, "--no-verify"):
         violations.append(Violation(
-            "git commit --no-verify requires explicit approval",
-            "Confirm in the UI dialog, or remove --no-verify and fix hook failures",
-            ViolationType.ASK_USER
+            "git commit --no-verify is forbidden - don't be lazy, investigate the failure",
+            (
+                "Pre-commit hooks exist to protect quality. When they fail:\n"
+                "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
+                "    2. If it fails in main too → STOP, this isn't your problem\n"
+                "    3. If it only fails in your branch → FIX IT, don't bypass it"
+            ),
+            ViolationType.HARD_BLOCK
         ))
 
     # Block -a (but NOT --amend!)
@@ -358,8 +352,6 @@ def check_command(command: str, cwd: str) -> list[Violation]:
 
     if subcommand == "push":
         violations.extend(check_git_push(flags, positional, effective_cwd))
-    elif subcommand == "add":
-        violations.extend(check_git_add(flags, positional))
     elif subcommand == "commit":
         violations.extend(check_git_commit(flags, positional))
 
