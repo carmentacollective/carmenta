@@ -88,7 +88,9 @@ export default async function KnowledgeBasePage() {
     // Aggregate ALL folders under knowledge.* namespace (knowledge.people, knowledge.preferences, etc.)
     // The librarian creates 3-level paths like knowledge.category.name, which getParentPath
     // groups as knowledge.category folders - not a single knowledge folder
-    const knowledgeFolders = userFolders.filter((f) => f.path.startsWith("knowledge"));
+    const knowledgeFolders = userFolders.filter(
+        (f) => f.path === "knowledge" || f.path.startsWith("knowledge.")
+    );
     const knowledgeDocuments = knowledgeFolders.flatMap((f) => f.documents);
 
     if (knowledgeDocuments.length > 0) {
