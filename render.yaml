@@ -118,6 +118,11 @@ services:
           name: carmenta-web
           type: web
           envVarKey: SENTRY_DSN # Shared from main service for error tracking
+      - key: REDIS_URL
+        fromService:
+          name: carmenta-redis
+          type: redis
+          property: connectionString
 
 databases:
   - name: carmenta-db
