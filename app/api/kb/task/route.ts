@@ -114,11 +114,7 @@ export async function POST(req: Request) {
 
         return createUIMessageStreamResponse({ stream });
     } catch (error) {
-        logger.error({ error, userEmail }, "Librarian task failed");
-        Sentry.captureException(error, {
-            tags: { component: "librarian", mode: "conversational" },
-            extra: { userEmail },
-        });
+        // serverErrorResponse already logs and captures to Sentry
         return serverErrorResponse(error);
     }
 }

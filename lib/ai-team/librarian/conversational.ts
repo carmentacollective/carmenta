@@ -143,25 +143,43 @@ export function createConversationalTools(userId: string) {
                 content: z.string().describe("New content to replace existing content"),
             }),
             execute: async ({ path, content }) => {
-                const document = await kb.update(userId, path, { content });
+                try {
+                    const document = await kb.update(userId, path, { content });
 
-                if (!document) {
-                    logger.warn(
+                    if (!document) {
+                        logger.warn(
+                            { userId, path },
+                            "[Conversational] Document not found for update"
+                        );
+                        return {
+                            success: false,
+                            message: `Document not found at ${path}`,
+                        };
+                    }
+
+                    logger.info(
                         { userId, path },
-                        "[Conversational] Document not found for update"
+                        "📝 [Conversational] Updated document"
                     );
+
+                    return {
+                        success: true,
+                        message: `Updated ${path}`,
+                    };
+                } catch (error) {
+                    logger.error(
+                        { error, userId, path },
+                        "[Conversational] Failed to update document"
+                    );
+                    Sentry.captureException(error, {
+                        tags: { component: "librarian", mode: "conversational" },
+                        extra: { userId, path },
+                    });
                     return {
                         success: false,
-                        message: `Document not found at ${path}`,
+                        message: `Failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     };
                 }
-
-                logger.info({ userId, path }, "📝 [Conversational] Updated document");
-
-                return {
-                    success: true,
-                    message: `Updated ${path}`,
-                };
             },
         }),
 
@@ -299,7 +317,10 @@ export function createConversationalTools(userId: string) {
                                     userId,
                                     fromPath,
                                     toPath,
-                                    originalError: error,
+                                    originalError:
+                                        error instanceof Error
+                                            ? error.message
+                                            : String(error),
                                 },
                             });
                             return {
