@@ -71,6 +71,13 @@
       "when": 1767466607856,
       "tag": "0021_large_roxanne_simpson",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1767487194588,
+      "tag": "0022_petite_hex",
+      "breakpoints": true
     }
   ]
 }

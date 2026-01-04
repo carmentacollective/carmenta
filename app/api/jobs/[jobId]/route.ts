@@ -56,7 +56,7 @@ const updateJobSchema = z.object({
                 "Invalid cron expression. Format: 'minute hour day month weekday'. Minimum frequency: once per minute.",
         })
         .optional(),
-    scheduleDisplayText: z.string().optional(),
+    scheduleDisplayText: z.string().nullable().optional(),
     timezone: z.string().optional(),
     integrations: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
