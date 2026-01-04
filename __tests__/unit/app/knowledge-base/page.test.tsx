@@ -61,6 +61,14 @@ vi.mock("@/components/knowledge-viewer", () => ({
     ),
 }));
 
+vi.mock("@/components/knowledge-viewer/kb-page-content", () => ({
+    KBPageContent: ({ initialFolders }: { initialFolders: unknown[] }) => (
+        <div data-testid="knowledge-viewer" data-folder-count={initialFolders.length}>
+            KB Page Content
+        </div>
+    ),
+}));
+
 vi.mock("@/components/knowledge-viewer/activity-feed", () => ({
     ActivityFeed: ({ initialItems }: { initialItems: unknown[] }) => (
         <div data-testid="activity-feed" data-item-count={initialItems.length}>
