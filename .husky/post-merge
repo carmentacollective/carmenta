@@ -26,15 +26,29 @@ fi
 
 # Check if Drizzle schema changed
 if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "lib/db/schema.ts"; then
-  echo "🗄️  Drizzle schema changed - regenerating migrations..."
-  if ! pnpm run db:generate; then
+  echo "🗄️  Checking for schema changes..."
+
+  # Count migrations before generating
+  BEFORE=$(ls -1 drizzle/migrations/*.sql 2>/dev/null | wc -l | tr -d ' ')
+
+  # Generate migrations silently
+  if ! pnpm run db:generate > /dev/null 2>&1; then
     echo "❌ pnpm run db:generate failed. Please run manually: pnpm run db:generate" >&2
     exit 1
   fi
-  echo "✅ Drizzle migrations regenerated"
-  echo ""
-  echo "⚠️  IMPORTANT: Review the generated migration in drizzle/migrations/"
-  echo "   Then run: pnpm run db:push (or db:migrate)"
+
+  # Count migrations after generating
+  AFTER=$(ls -1 drizzle/migrations/*.sql 2>/dev/null | wc -l | tr -d ' ')
+
+  # Only notify if new migrations were created
+  if [ "$AFTER" -gt "$BEFORE" ]; then
+    echo "✅ New migrations generated"
+    echo ""
+    echo "⚠️  IMPORTANT: Review the generated migration in drizzle/migrations/"
+    echo "   Then run: pnpm run db:push (or db:migrate)"
+  else
+    echo "✅ Schema file updated but no new migrations needed"
+  fi
 fi
 
 echo "✅ Post-merge checks complete"
