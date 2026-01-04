@@ -70,13 +70,7 @@ const entranceVariants = {
     }),
 };
 
-// ============================================================
-// Oracle Menu - Carmenta's voice in the connection interface
-// ============================================================
-
-function CarmentaOracle() {
-    return <OracleMenu />;
-}
+// OracleMenu imported from @/components/ui - Carmenta's voice in the interface
 
 // ============================================================
 // Code Mode Indicator - Shows project name when in code mode
@@ -174,7 +168,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                                 animate="visible"
                                 custom={0}
                             >
-                                <CarmentaOracle />
+                                <OracleMenu />
                             </motion.div>
 
                             {/* Desktop: Connection chooser in center */}

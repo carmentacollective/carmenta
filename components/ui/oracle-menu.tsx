@@ -31,6 +31,7 @@ import {
     Lock,
     HelpCircle,
     ExternalLink,
+    Home,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -154,6 +155,17 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
+                                      {/* Home - standard logo navigation */}
+                                      <Link
+                                          href="/home"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Home className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Home</span>
+                                      </Link>
+
                                       {/* Primary action: New Connection */}
                                       <Link
                                           href="/connection?new"
@@ -294,31 +306,34 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
         : null;
 
     return (
-        <div className={cn("vt-oracle-menu flex items-center gap-3", className)}>
-            {/* Oracle orb - tap to open menu */}
+        <div className={cn("vt-oracle-menu flex items-center", className)}>
+            {/* Clickable area: orb + optional label */}
             <button
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className={cn(glassOrbPreset, "group")}
+                className="group flex cursor-pointer items-center gap-3"
                 aria-label="Carmenta menu"
                 data-tooltip-id="tip"
                 data-tooltip-content="Carmenta"
             >
-                <Image
-                    src="/logos/icon-transparent.png"
-                    alt="Carmenta"
-                    width={28}
-                    height={28}
-                    className="pointer-events-none transition-transform duration-300 group-hover:scale-110"
-                />
-            </button>
+                {/* Oracle orb */}
+                <div className={cn(glassOrbPreset)}>
+                    <Image
+                        src="/logos/icon-transparent.png"
+                        alt="Carmenta"
+                        width={28}
+                        height={28}
+                        className="pointer-events-none transition-transform duration-300 group-hover:scale-110"
+                    />
+                </div>
 
-            {/* Optional label */}
-            {showLabel && (
-                <span className="text-foreground/90 text-xl font-semibold tracking-tight">
-                    Carmenta
-                </span>
-            )}
+                {/* Optional label - now clickable */}
+                {showLabel && (
+                    <span className="text-foreground/90 group-hover:text-foreground text-xl font-semibold tracking-tight transition-colors">
+                        Carmenta
+                    </span>
+                )}
+            </button>
 
             {/* Dropdown rendered via portal */}
             {dropdownContent}
