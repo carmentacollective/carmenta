@@ -12,9 +12,6 @@ import {
     Sparkles,
     BookOpen,
     MessageSquare,
-    Heart,
-    Compass,
-    Code2,
     MessageCircle,
 } from "lucide-react";
 
@@ -257,32 +254,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           <span className="relative">Connect</span>
                                       </Link>
 
-                                      <div className="border-foreground/10 my-1 border-t" />
-
-                                      {/* Settings & Core Features */}
-                                      <button
-                                          onClick={() => {
-                                              openUserProfile();
-                                              setIsOpen(false);
-                                          }}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <User className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Account</span>
-                                      </button>
-
-                                      <Link
-                                          href="/integrations"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Plug className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Integrations</span>
-                                      </Link>
-
-                                      {/* Personal Settings */}
+                                      {/* Your Data - things Carmenta knows about you */}
                                       <div className="border-foreground/10 my-1 border-t" />
 
                                       <Link
@@ -298,6 +270,16 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       </Link>
 
                                       <Link
+                                          href="/integrations"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <Plug className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Integrations</span>
+                                      </Link>
+
+                                      <Link
                                           href="/communication"
                                           onClick={() => setIsOpen(false)}
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
@@ -309,37 +291,20 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           </span>
                                       </Link>
 
-                                      <Link
-                                          href="/guide"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Compass className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Guide</span>
-                                      </Link>
+                                      {/* Account & Appearance */}
+                                      <div className="border-foreground/10 my-1 border-t" />
 
-                                      <Link
-                                          href="/heart-centered-ai"
-                                          onClick={() => setIsOpen(false)}
+                                      <button
+                                          onClick={() => {
+                                              openUserProfile();
+                                              setIsOpen(false);
+                                          }}
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Heart className="fill-primary text-primary relative h-4 w-4" />
-                                          <span className="relative">
-                                              Heart-Centered AI
-                                          </span>
-                                      </Link>
-
-                                      <Link
-                                          href="/ai-first-development"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Code2 className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">How We Build</span>
-                                      </Link>
+                                          <User className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Account</span>
+                                      </button>
 
                                       {/* Appearance section - compact redesign */}
                                       {isClient && (

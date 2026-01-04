@@ -6,7 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
-import { UserAuthButton } from "@/components/ui";
+import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { getHomepageFeatures, type Feature } from "@/lib/features/feature-catalog";
 
@@ -172,10 +172,8 @@ export default function HomePage() {
 
             {/* Content layer */}
             <div className="z-content relative flex min-h-screen flex-col">
-                {/* User avatar - top right, doesn't push content */}
-                <div className="z-sticky absolute top-4 right-6">
-                    <UserAuthButton />
-                </div>
+                {/* Consistent header across all pages */}
+                <SiteHeader />
 
                 {/* Main content - centered hero */}
                 <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">

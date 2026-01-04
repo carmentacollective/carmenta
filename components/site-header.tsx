@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
-
-import { ThemeSwitcher, UserAuthButton } from "@/components/ui";
-import { InteractiveLogo } from "@/components/delight/interactive-logo";
+import { ThemeSwitcher, UserAuthButton, OracleMenu } from "@/components/ui";
 import { useWindowControlsOverlay } from "@/lib/hooks/use-window-controls-overlay";
 
 interface SiteHeaderProps {
@@ -26,6 +23,9 @@ interface SiteHeaderProps {
  * Transparent header with glassmorphism effect.
  * Maintains pixel-perfect alignment and spacing.
  *
+ * Left side: Oracle menu (Carmenta - product, help, philosophy)
+ * Right side: User menu (account, integrations, settings)
+ *
  * When WCO (Window Controls Overlay) is active, this header is hidden
  * to avoid duplication with the WcoTitlebar component.
  */
@@ -43,15 +43,10 @@ export function SiteHeader({
 
     return (
         <header className="flex items-center justify-between px-6 py-4">
-            <Link
-                href="/home"
-                className="vt-app-logo interactive-focus group flex items-center gap-3 rounded-lg transition-all duration-300"
-            >
-                <InteractiveLogo />
-                <span className="text-foreground/90 text-xl font-semibold tracking-tight">
-                    Carmenta
-                </span>
-            </Link>
+            {/* Left: Oracle menu with Carmenta label */}
+            <OracleMenu showLabel />
+
+            {/* Right: User controls */}
             <div className="flex items-center gap-4">
                 {showThemeSwitcher && <ThemeSwitcher enableViewTransition />}
                 <UserAuthButton />
