@@ -100,7 +100,8 @@ const config: NextConfig = {
     },
 
     // Prevent bundling of native Node packages (works with both Turbopack and Webpack)
-    serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
+    // braintrust: pulls in nunjucks → chokidar → fsevents (native module Turbopack can't bundle)
+    serverExternalPackages: ["pino", "pino-pretty", "thread-stream", "braintrust"],
 };
 
 // Sentry configuration options
