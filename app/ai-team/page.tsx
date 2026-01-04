@@ -21,6 +21,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -369,9 +370,14 @@ function AITeamContent() {
                                                         <p className="text-foreground font-medium">
                                                             {activity.jobName}
                                                         </p>
-                                                        <p className="text-foreground/70 text-sm">
-                                                            {activity.summary}
-                                                        </p>
+                                                        <div className="text-foreground/70 text-sm">
+                                                            <MarkdownRenderer
+                                                                content={
+                                                                    activity.summary
+                                                                }
+                                                                inline
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
