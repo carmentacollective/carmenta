@@ -149,13 +149,13 @@ export async function POST(request: Request) {
 
         // Phase 1: Conversational response
         const result = await generateText({
-            model: gateway(translateModelId("anthropic/claude-sonnet-4")),
+            model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
             messages: [{ role: "system", content: systemPrompt }, ...messages],
             providerOptions: {
                 gateway: {
                     models: [
-                        "anthropic/claude-sonnet-4",
-                        "anthropic/claude-3-5-sonnet-20241022",
+                        "anthropic/claude-sonnet-4.5",
+                        "google/gemini-3-pro-preview",
                     ].map(translateModelId),
                 },
             },
@@ -172,14 +172,14 @@ export async function POST(request: Request) {
                 .join("\n\n");
 
             const extraction = await generateObject({
-                model: gateway(translateModelId("anthropic/claude-sonnet-4")),
+                model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
                 schema: playbookSchema,
                 prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${result.text}`,
                 providerOptions: {
                     gateway: {
                         models: [
-                            "anthropic/claude-sonnet-4",
-                            "anthropic/claude-3-5-sonnet-20241022",
+                            "anthropic/claude-sonnet-4.5",
+                            "google/gemini-3-pro-preview",
                         ].map(translateModelId),
                     },
                 },

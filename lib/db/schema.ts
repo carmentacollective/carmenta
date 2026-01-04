@@ -274,7 +274,7 @@ export const connections = pgTable(
          */
         activeStreamId: text("active_stream_id"),
 
-        /** Model used for this connection (e.g., "anthropic/claude-sonnet-4") */
+        /** Model used for this connection (e.g., "anthropic/claude-sonnet-4.5") */
         modelId: varchar("model_id", { length: 255 }),
 
         // ---- Concierge Data (persisted for display on page refresh) ----

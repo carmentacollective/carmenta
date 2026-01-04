@@ -65,7 +65,7 @@ const mockInput: BackgroundResponseInput = {
     connectionId: 123,
     userId: "user-abc",
     streamId: "stream-xyz",
-    modelId: "anthropic/claude-sonnet-4",
+    modelId: "anthropic/claude-sonnet-4.5",
     temperature: 0.7,
     reasoning: { enabled: true, effort: "medium" },
 };

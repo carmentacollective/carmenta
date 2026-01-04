@@ -22,15 +22,6 @@ describe("translateModelId", () => {
         );
     });
 
-    it("returns mapped ID for Google Gemini models with version suffix", () => {
-        expect(translateModelId("google/gemini-3-pro-preview")).toBe(
-            "google/gemini-3.0-pro-preview"
-        );
-        expect(translateModelId("google/gemini-3-flash-preview")).toBe(
-            "google/gemini-3.0-flash-preview"
-        );
-    });
-
     it("passes through unmapped model IDs unchanged", () => {
         expect(translateModelId("anthropic/claude-sonnet-4.5")).toBe(
             "anthropic/claude-sonnet-4.5"
@@ -269,8 +260,8 @@ describe("translateFallbackOptions (via translateOptions)", () => {
         expect(result.gateway).toEqual({
             models: [
                 "anthropic/claude-sonnet-4.5", // No translation needed
-                "google/gemini-3.0-pro-preview", // Translated
-                "xai/grok-4.1-fast-non-reasoning", // Translated
+                "google/gemini-3-pro-preview", // No translation needed
+                "xai/grok-4.1-fast-non-reasoning", // Translated (x-ai → xai)
             ],
         });
     });
@@ -316,7 +307,7 @@ describe("translateOptions (integration of all options)", () => {
                 cacheControl: { type: "ephemeral" },
             },
             gateway: {
-                models: ["google/gemini-3.0-pro-preview"],
+                models: ["google/gemini-3-pro-preview"],
             },
         });
     });

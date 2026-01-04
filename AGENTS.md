@@ -6,6 +6,9 @@
 explanation that's almost never the actual cause. Investigate infrastructure,
 networking, configuration, and service connectivity first.
 
+**Never use model IDs from training data.** Model IDs change frequently. Always
+reference `lib/model-config.ts` or fetch from live endpoints. See `lib/ai/CLAUDE.md`.
+
 ## Always Apply Rules
 
 @.cursor/rules/heart-centered-ai-philosophy.mdc
