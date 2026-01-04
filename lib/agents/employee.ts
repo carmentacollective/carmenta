@@ -348,11 +348,13 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             .flatMap((step) => step.toolCalls ?? [])
             .find((call) => call.toolName === "complete");
 
-        if (completeCall) {
-            // Access tool call args (Vercel AI SDK uses 'args', not 'input')
-            const completion = (completeCall as unknown as { args: CompleteToolParams })
-                .args;
+        // Extract completion args (may be undefined if tool call exists but args missing)
+        const completion = completeCall
+            ? (completeCall as unknown as { args: CompleteToolParams }).args
+            : undefined;
 
+        // Require summary to be present - empty args object should fall back to text
+        if (completion?.summary) {
             employeeLogger.info(
                 {
                     summary: completion.summary,
@@ -371,8 +373,8 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             };
         }
 
-        // No explicit completion - use last text response
-        const lastText = result.text ?? "Task completed without explicit summary.";
+        // No explicit completion - use last text response (|| catches empty strings too)
+        const lastText = result.text || "Task completed without explicit summary.";
 
         employeeLogger.warn(
             { text: lastText.slice(0, 200), steps: result.steps.length },
@@ -469,15 +471,7 @@ export async function runEmployeeStreaming(
 
                 const gateway = getGatewayClient();
                 const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
-                let completeCallData: {
-                    summary: string;
-                    notifications?: Array<{
-                        title: string;
-                        body: string;
-                        priority: "low" | "normal" | "high" | "urgent";
-                    }>;
-                    memoryUpdates?: Record<string, unknown>;
-                } | null = null;
+                let completeCallData: Partial<CompleteToolParams> | null = null;
 
                 // Stream execution
                 const result = streamText({
@@ -584,9 +578,9 @@ export async function runEmployeeStreaming(
                     "📊 Execution trace extracted"
                 );
 
-                // Process completion
-                if (completeCallData !== null) {
-                    const completion = completeCallData as CompleteToolParams;
+                // Process completion - require summary to be present
+                const completion = completeCallData as CompleteToolParams | null;
+                if (completion?.summary) {
                     writeStatus(
                         writer,
                         `job-${jobId}-complete`,
