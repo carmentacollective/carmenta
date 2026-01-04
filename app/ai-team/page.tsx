@@ -5,18 +5,18 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
     Users,
-    Sparkles,
+    Sparkle,
     Bell,
-    Zap,
-    Settings,
+    Lightning,
+    Gear,
     Plus,
     ToggleLeft,
     ToggleRight,
     Clock,
-    AlertCircle,
-    CheckCircle2,
-    Radio,
-} from "lucide-react";
+    WarningCircle,
+    CheckCircle,
+    Broadcast,
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -307,7 +307,7 @@ function AITeamContent() {
             {/* Success message banner */}
             {successMessage && (
                 <div className="flex items-center gap-2 rounded-xl bg-green-500/10 p-4 text-green-600 dark:text-green-400">
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircle className="h-5 w-5" />
                     <span className="font-medium">{successMessage}</span>
                 </div>
             )}
@@ -315,7 +315,7 @@ function AITeamContent() {
             {loading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
-                        <Sparkles className="text-primary h-8 w-8 animate-pulse" />
+                        <Sparkle className="text-primary h-8 w-8 animate-pulse" />
                         <p className="text-foreground/60">Loading your AI team...</p>
                     </div>
                 </div>
@@ -338,7 +338,7 @@ function AITeamContent() {
                         {/* What's Happening */}
                         <div className="space-y-4">
                             <h2 className="text-foreground flex items-center gap-2 text-xl font-medium">
-                                <Zap className="text-primary h-5 w-5" />
+                                <Lightning className="text-primary h-5 w-5" />
                                 What's Happening
                             </h2>
 
@@ -359,11 +359,11 @@ function AITeamContent() {
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex items-start gap-3">
                                                     {activity.status === "completed" ? (
-                                                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-500" />
+                                                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
                                                     ) : activity.status === "failed" ? (
-                                                        <AlertCircle className="mt-0.5 h-5 w-5 text-red-500" />
+                                                        <WarningCircle className="mt-0.5 h-5 w-5 text-red-500" />
                                                     ) : (
-                                                        <Sparkles className="text-primary mt-0.5 h-5 w-5 animate-pulse" />
+                                                        <Sparkle className="text-primary mt-0.5 h-5 w-5 animate-pulse" />
                                                     )}
                                                     <div>
                                                         <p className="text-foreground font-medium">
@@ -386,7 +386,7 @@ function AITeamContent() {
                                                                 }}
                                                                 className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
                                                             >
-                                                                <Radio className="h-3 w-3" />
+                                                                <Broadcast className="h-3 w-3" />
                                                                 Tap In
                                                             </button>
                                                         )}
@@ -426,7 +426,7 @@ function AITeamContent() {
                     {/* Sidebar - Automations */}
                     <div className="space-y-4">
                         <h2 className="text-foreground flex items-center gap-2 text-xl font-medium">
-                            <Settings className="text-primary h-5 w-5" />
+                            <Gear className="text-primary h-5 w-5" />
                             Your Automations
                         </h2>
 
@@ -521,7 +521,7 @@ export default function AITeamPage() {
                 <StandardPageLayout maxWidth="standard" contentClassName="py-12">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
-                            <Sparkles className="text-primary h-8 w-8 animate-pulse" />
+                            <Sparkle className="text-primary h-8 w-8 animate-pulse" />
                             <p className="text-foreground/60">
                                 Loading your AI team...
                             </p>

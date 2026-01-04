@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowLeft, Clock, CheckCircle2 } from "lucide-react";
+import { Sparkle, ArrowLeft, Clock, CheckCircle } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -258,7 +258,7 @@ What can we help you with?`,
                             className="border-foreground/10 bg-foreground/[0.01] w-80 flex-shrink-0 rounded-2xl border p-6"
                         >
                             <div className="mb-6 flex items-center gap-2">
-                                <CheckCircle2 className="text-primary h-5 w-5" />
+                                <CheckCircle className="text-primary h-5 w-5" />
                                 <h2 className="text-foreground font-medium">
                                     Ready to Hire
                                 </h2>
@@ -323,12 +323,12 @@ What can we help you with?`,
                             >
                                 {isHiring ? (
                                     <>
-                                        <Sparkles className="h-4 w-4 animate-pulse" />
+                                        <Sparkle className="h-4 w-4 animate-pulse" />
                                         Setting up...
                                     </>
                                 ) : (
                                     <>
-                                        <CheckCircle2 className="h-4 w-4" />
+                                        <CheckCircle className="h-4 w-4" />
                                         Hire This Team Member
                                     </>
                                 )}

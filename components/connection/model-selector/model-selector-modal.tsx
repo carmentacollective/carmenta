@@ -10,7 +10,7 @@
  */
 
 import { useRef, useState, useEffect } from "react";
-import { Sparkles, Check, Info, Loader2 } from "lucide-react";
+import { Sparkle, Check, Info, CircleNotch } from "@phosphor-icons/react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -202,9 +202,9 @@ export function ModelSelectorModal({
                         </span>
                         <div className="from-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br to-purple-500 shadow-lg">
                             {switchingTo === "auto" ? (
-                                <Loader2 className="h-7 w-7 animate-spin text-white" />
+                                <CircleNotch className="h-7 w-7 animate-spin text-white" />
                             ) : (
-                                <Sparkles className="h-7 w-7 text-white" />
+                                <Sparkle className="h-7 w-7 text-white" />
                             )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -263,7 +263,7 @@ export function ModelSelectorModal({
                                     </div>
                                     <div className="relative mt-0.5 h-6 w-6 shrink-0">
                                         {isSwitching ? (
-                                            <Loader2 className="text-primary h-6 w-6 animate-spin" />
+                                            <CircleNotch className="text-primary h-6 w-6 animate-spin" />
                                         ) : (
                                             <ProviderIcon
                                                 provider={model.provider}
@@ -359,7 +359,7 @@ export function ModelSelectorModal({
                             }}
                             className="text-muted-foreground hover:text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-all"
                         >
-                            <Sparkles className="h-3 w-3" />
+                            <Sparkle className="h-3 w-3" />
                             Let Carmenta decide automagically
                         </button>
                     </div>

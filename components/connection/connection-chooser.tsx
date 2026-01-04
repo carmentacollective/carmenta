@@ -18,16 +18,16 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
     Plus,
-    Search,
+    MagnifyingGlass,
     X,
     Clock,
-    Trash2,
-    Loader2,
-    ChevronRight,
+    Trash,
+    CircleNotch,
+    CaretRight,
     Star,
     Pencil,
     Check,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -453,7 +453,7 @@ function ConnectionRow({
                     </span>
                 )}
                 {isNavigating ? (
-                    <Loader2 className="text-primary h-3.5 w-3.5 shrink-0 animate-spin" />
+                    <CircleNotch className="text-primary h-3.5 w-3.5 shrink-0 animate-spin" />
                 ) : (
                     <span className="text-foreground/40 group-hover:text-foreground/60 shrink-0 text-xs transition-colors">
                         {isFresh ? "Just now" : getRelativeTime(conn.lastActivityAt)}
@@ -467,7 +467,7 @@ function ConnectionRow({
                 className="z-content relative rounded-md p-1.5 transition-all hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
                 aria-label={`Delete ${conn.title || "connection"}`}
             >
-                <Trash2 className="text-foreground/30 h-3.5 w-3.5 transition-colors hover:text-red-500" />
+                <Trash className="text-foreground/30 h-3.5 w-3.5 transition-colors hover:text-red-500" />
             </button>
         </motion.div>
     );
@@ -686,7 +686,7 @@ function ConnectionDropdown({
                         <div className="glass-container-mobile flex h-full flex-col overflow-hidden rounded-none shadow-2xl sm:rounded-2xl">
                             {/* Search header */}
                             <div className="border-foreground/10 flex items-center gap-3 border-b px-4 py-3">
-                                <Search className="text-foreground/40 h-5 w-5" />
+                                <MagnifyingGlass className="text-foreground/40 h-5 w-5" />
                                 <input
                                     ref={inputRef}
                                     type="text"
@@ -729,9 +729,12 @@ function ConnectionDropdown({
                                                 }}
                                                 transition={{ duration: 0.15 }}
                                             >
-                                                <ChevronRight className="h-3.5 w-3.5 text-amber-500/70" />
+                                                <CaretRight className="h-3.5 w-3.5 text-amber-500/70" />
                                             </motion.div>
-                                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                            <Star
+                                                weight="fill"
+                                                className="h-3.5 w-3.5 text-amber-400"
+                                            />
                                             <span className="text-xs font-medium tracking-wider text-amber-600/70 uppercase dark:text-amber-400/70">
                                                 Starred
                                             </span>
@@ -1018,7 +1021,7 @@ export function ConnectionChooser({
                                     data-tooltip-id="tip"
                                     data-tooltip-content="Find connections"
                                 >
-                                    <Search className="h-4 w-4" />
+                                    <MagnifyingGlass className="h-4 w-4" />
                                 </button>
 
                                 {/* Divider */}
@@ -1064,7 +1067,7 @@ export function ConnectionChooser({
                                     className="text-foreground/50 hover:text-foreground/70 flex min-w-0 flex-1 items-center gap-2 text-sm transition-colors"
                                     aria-label="Search connections"
                                 >
-                                    <Search className="h-4 w-4 shrink-0" />
+                                    <MagnifyingGlass className="h-4 w-4 shrink-0" />
                                     {isStreaming && <RunningIndicator />}
                                     <span className="truncate">
                                         Search connections...
@@ -1103,7 +1106,7 @@ export function ConnectionChooser({
                     aria-label="New connection"
                 >
                     {isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <CircleNotch className="h-4 w-4 animate-spin" />
                     ) : (
                         <Plus className="h-4 w-4" />
                     )}

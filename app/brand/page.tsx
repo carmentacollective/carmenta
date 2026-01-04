@@ -1,14 +1,14 @@
 import { Metadata } from "next";
 import Image from "next/image";
 import {
-    Sparkles,
+    Sparkle,
     Check,
-    AlertCircle,
+    WarningCircle,
     Copy,
-    ExternalLink,
-    Settings,
-    Trash2,
-} from "lucide-react";
+    ArrowSquareOut,
+    Gear,
+    Trash,
+} from "@phosphor-icons/react/dist/ssr";
 
 import { ColorSwatch } from "@/components/brand/color-swatch";
 import { SiteHeader } from "@/components/site-header";
@@ -655,7 +655,7 @@ export default function BrandPage() {
                                         </div>
                                         <div className="bg-foreground/5 flex min-h-[80px] items-center justify-center rounded-lg p-4">
                                             <button className="btn-icon-glass rounded-full p-3">
-                                                <Sparkles className="text-foreground/60 h-5 w-5" />
+                                                <Sparkle className="text-foreground/60 h-5 w-5" />
                                             </button>
                                         </div>
                                         <div className="bg-foreground/5 rounded-lg p-3">
@@ -905,21 +905,21 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                                 data-tooltip-content="Open"
                                                 className="btn-icon-glass"
                                             >
-                                                <ExternalLink className="text-foreground/60 h-5 w-5" />
+                                                <ArrowSquareOut className="text-foreground/60 h-5 w-5" />
                                             </button>
                                             <button
                                                 data-tooltip-id="tip"
                                                 data-tooltip-content="Settings"
                                                 className="btn-icon-glass"
                                             >
-                                                <Settings className="text-foreground/60 h-5 w-5" />
+                                                <Gear className="text-foreground/60 h-5 w-5" />
                                             </button>
                                             <button
                                                 data-tooltip-id="tip"
                                                 data-tooltip-content="Delete"
                                                 className="btn-icon-glass"
                                             >
-                                                <Trash2 className="text-foreground/60 h-5 w-5" />
+                                                <Trash className="text-foreground/60 h-5 w-5" />
                                             </button>
                                         </div>
                                     </div>
@@ -999,7 +999,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                     </h3>
                                     <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
+                                            <Sparkle className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
@@ -1017,7 +1017,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                     </h3>
                                     <div className="bg-foreground/5 flex min-h-[120px] items-center justify-center gap-4 rounded-xl p-6">
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
+                                            <Sparkle className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
@@ -1035,7 +1035,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                     </h3>
                                     <div className="glass-card flex min-h-[120px] items-center justify-center gap-4 p-6">
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
+                                            <Sparkle className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
@@ -1053,7 +1053,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                     </h3>
                                     <div className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-slate-800 p-6">
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="h-5 w-5 text-white/60 sm:h-6 sm:w-6" />
+                                            <Sparkle className="h-5 w-5 text-white/60 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="h-5 w-5 text-white/60 sm:h-6 sm:w-6" />
@@ -1071,7 +1071,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                     </h3>
                                     <div className="from-primary/20 via-accent/20 to-primary/30 flex min-h-[120px] items-center justify-center gap-4 rounded-xl bg-gradient-to-br p-6">
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
+                                            <Sparkle className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
@@ -1095,7 +1095,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                                         }}
                                     >
                                         <button className="btn-icon-glass">
-                                            <Sparkles className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
+                                            <Sparkle className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
                                         </button>
                                         <button className="btn-icon-glass">
                                             <Check className="text-foreground/60 h-5 w-5 sm:h-6 sm:w-6" />
@@ -1110,7 +1110,7 @@ const { ref, onTouchStart, onMouseDown } = useTapFeedback();`}
                             {/* Issue callout */}
                             <div className="rounded-lg border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-950/20">
                                 <div className="flex items-start gap-3">
-                                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+                                    <WarningCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
                                     <div className="space-y-1">
                                         <p className="font-medium text-amber-800 dark:text-amber-200">
                                             Known Issue

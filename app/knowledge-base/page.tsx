@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { Book, Sparkles } from "lucide-react";
+import { Book, Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
@@ -147,7 +147,7 @@ export default async function KnowledgeBasePage() {
             <section className="min-h-[500px] flex-1">
                 {allFolders.length === 0 ? (
                     <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
-                        <Sparkles className="text-foreground/30 mb-4 h-12 w-12" />
+                        <Sparkle className="text-foreground/30 mb-4 h-12 w-12" />
                         <h3 className="text-foreground/80 text-lg font-medium">
                             We're setting up your knowledge base
                         </h3>

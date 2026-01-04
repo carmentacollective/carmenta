@@ -13,14 +13,14 @@
 
 import { useMemo, useState } from "react";
 import {
-    Search,
+    MagnifyingGlass,
     FileText,
-    ChevronDown,
-    ChevronUp,
-    ChevronRight,
+    CaretDown,
+    CaretUp,
+    CaretRight,
     Hash,
-    Loader2,
-} from "lucide-react";
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -144,14 +144,14 @@ export function SearchResults({
             {/* Header */}
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                    <MagnifyingGlass className="text-muted-foreground h-4 w-4 shrink-0" />
                     <code className="bg-muted text-foreground truncate rounded px-1.5 py-0.5 font-mono text-sm">
                         {pattern}
                     </code>
                 </div>
                 <div className="flex items-center gap-2">
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
                     {isCompleted && (
                         <div className="text-muted-foreground flex items-center gap-2 text-xs">
@@ -189,7 +189,7 @@ export function SearchResults({
                 {/* Loading state */}
                 {isRunning && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <Search className="h-4 w-4 animate-pulse" />
+                        <MagnifyingGlass className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Searching...</span>
                     </div>
                 )}
@@ -260,7 +260,7 @@ export function SearchResults({
                                             onClick={() => toggleFileExpanded(file)}
                                             className="bg-muted/30 hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-2 text-left"
                                         >
-                                            <ChevronRight
+                                            <CaretRight
                                                 className={cn(
                                                     "text-muted-foreground h-4 w-4 shrink-0 transition-transform",
                                                     isFileExpanded && "rotate-90"
@@ -331,12 +331,12 @@ export function SearchResults({
                 >
                     {isExpanded ? (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     ) : (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show all {fileCount} files
                         </>
                     )}

@@ -18,19 +18,19 @@
 import { useState, createElement } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ChevronRight,
+    CaretRight,
     Terminal,
     FileText,
-    FilePen,
-    FileEdit,
-    FolderSearch,
-    FileSearch,
-    Bot,
-    ListTodo,
+    NotePencil,
+    PencilSimple,
+    Folder,
+    FileMagnifyingGlass,
+    Robot,
+    ListChecks,
     Globe,
-    Search,
-    Loader2,
-} from "lucide-react";
+    MagnifyingGlass,
+    CircleNotch,
+} from "@phosphor-icons/react";
 import type { UIMessage } from "ai";
 
 import { cn } from "@/lib/utils";
@@ -93,15 +93,15 @@ interface CodeModeMessageProps {
 const TOOL_ICONS: Record<string, typeof Terminal> = {
     Bash: Terminal,
     Read: FileText,
-    Write: FilePen,
-    Edit: FileEdit,
-    Glob: FolderSearch,
-    Grep: FileSearch,
-    Task: Bot,
-    TodoWrite: ListTodo,
+    Write: NotePencil,
+    Edit: PencilSimple,
+    Glob: Folder,
+    Grep: FileMagnifyingGlass,
+    Task: Robot,
+    TodoWrite: ListChecks,
     WebFetch: Globe,
-    WebSearch: Search,
-    LSP: FileSearch,
+    WebSearch: MagnifyingGlass,
+    LSP: FileMagnifyingGlass,
 };
 
 /**
@@ -363,7 +363,7 @@ function InlineTool({
                                 {elapsedDisplay}
                             </span>
                         )}
-                        <Loader2 className="tool-status-running h-3 w-3 animate-spin opacity-60" />
+                        <CircleNotch className="tool-status-running h-3 w-3 animate-spin opacity-60" />
                     </span>
                 )}
 
@@ -371,7 +371,7 @@ function InlineTool({
                     animate={{ rotate: expanded ? 90 : 0 }}
                     transition={{ duration: 0.1 }}
                 >
-                    <ChevronRight className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 shrink-0" />
+                    <CaretRight className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 shrink-0" />
                 </motion.div>
             </button>
 
@@ -582,7 +582,7 @@ function ReasoningSegment({ text }: { text: string }) {
                     animate={{ rotate: expanded ? 90 : 0 }}
                     transition={{ duration: 0.15 }}
                 >
-                    <ChevronRight className="h-4 w-4 text-purple-400/60" />
+                    <CaretRight className="h-4 w-4 text-purple-400/60" />
                 </motion.div>
                 <span className="font-mono text-sm text-purple-300/80">reasoning</span>
                 <span className="flex-1" />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BookOpen } from "lucide-react";
+import { BookOpen } from "@phosphor-icons/react/dist/ssr";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";

@@ -2,7 +2,14 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plug, Sparkles, CheckCircle2, XCircle, X, RotateCcw } from "lucide-react";
+import {
+    Plug,
+    Sparkle,
+    CheckCircle,
+    XCircle,
+    X,
+    ArrowCounterClockwise,
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -456,7 +463,7 @@ function IntegrationsContent() {
                 >
                     <div className="flex items-center gap-3">
                         {globalMessage.type === "success" ? (
-                            <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                            <CheckCircle className="h-5 w-5 flex-shrink-0" />
                         ) : (
                             <XCircle className="h-5 w-5 flex-shrink-0" />
                         )}
@@ -478,7 +485,7 @@ function IntegrationsContent() {
             {abandonedService && !globalMessage && (
                 <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
                     <div className="flex items-center gap-3">
-                        <RotateCcw className="h-5 w-5 flex-shrink-0" />
+                        <ArrowCounterClockwise className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium">
                             Didn't finish connecting {abandonedServiceName}?
                         </span>
@@ -504,7 +511,7 @@ function IntegrationsContent() {
             {loading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
-                        <Sparkles className="text-primary h-8 w-8 animate-pulse" />
+                        <Sparkle className="text-primary h-8 w-8 animate-pulse" />
                         <p className="text-foreground/60">Loading integrations...</p>
                     </div>
                 </div>
@@ -616,7 +623,7 @@ export default function IntegrationsPage() {
                 <StandardPageLayout maxWidth="standard" contentClassName="py-12">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
-                            <Sparkles className="text-primary h-8 w-8 animate-pulse" />
+                            <Sparkle className="text-primary h-8 w-8 animate-pulse" />
                             <p className="text-foreground/60">
                                 Loading integrations...
                             </p>

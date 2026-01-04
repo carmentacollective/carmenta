@@ -1,7 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Code2, Github, Heart, Moon, Monitor, Palette, Sun } from "lucide-react";
+import {
+    Code,
+    GithubLogo,
+    Heart,
+    Moon,
+    Desktop,
+    Palette,
+    Sun,
+} from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -34,7 +42,7 @@ const THEME_SWATCHES: Array<{
 const THEME_OPTIONS = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: Monitor },
+    { value: "system", label: "System", icon: Desktop },
 ] as const;
 
 function ThemePopover() {
@@ -221,14 +229,17 @@ export function Footer() {
                             href="/heart-centered-ai"
                             className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
                         >
-                            <Heart className="fill-primary text-primary h-4 w-4 shrink-0" />
+                            <Heart
+                                className="text-primary h-4 w-4 shrink-0"
+                                weight="fill"
+                            />
                             <span>Heart-Centered AI</span>
                         </Link>
                         <Link
                             href="/ai-first-development"
                             className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
                         >
-                            <Code2 className="h-4 w-4 shrink-0" />
+                            <Code className="h-4 w-4 shrink-0" />
                             <span>How We Build</span>
                         </Link>
                         <Link
@@ -237,7 +248,7 @@ export function Footer() {
                             rel="noopener noreferrer"
                             className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"
                         >
-                            <Github className="h-4 w-4 shrink-0" />
+                            <GithubLogo className="h-4 w-4 shrink-0" />
                             <span>Source</span>
                         </Link>
                         <span className="text-foreground/20 hidden sm:inline">·</span>
@@ -266,7 +277,10 @@ export function Footer() {
                         <ThemePopover />
                         <div>
                             <span>Built with </span>
-                            <Heart className="fill-primary text-primary inline h-3.5 w-3.5" />
+                            <Heart
+                                className="text-primary inline h-3.5 w-3.5"
+                                weight="fill"
+                            />
                             <span> by </span>
                             <Link
                                 href="https://technick.ai"

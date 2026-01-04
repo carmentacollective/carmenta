@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowSquareOut, CaretDown, CaretUp } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { glass, border } from "@/lib/design-tokens";
@@ -115,12 +115,12 @@ function SearchResultsList({ results }: { results: SearchResultItem[] }) {
                                     className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
                                     aria-label={`Open ${item.title} in new tab`}
                                 >
-                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    <ArrowSquareOut className="h-3.5 w-3.5" />
                                 </a>
                                 {isResultExpanded ? (
-                                    <ChevronUp className="text-muted-foreground h-4 w-4" />
+                                    <CaretUp className="text-muted-foreground h-4 w-4" />
                                 ) : (
-                                    <ChevronDown className="text-muted-foreground h-4 w-4" />
+                                    <CaretDown className="text-muted-foreground h-4 w-4" />
                                 )}
                             </div>
                         </button>

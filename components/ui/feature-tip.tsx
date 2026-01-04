@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, ArrowRight } from "lucide-react";
+import { X, Sparkle, ArrowRight } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                             <div className="mb-2 flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-2">
                                     <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
-                                        <Sparkles className="text-primary h-3.5 w-3.5" />
+                                        <Sparkle className="text-primary h-3.5 w-3.5" />
                                     </div>
                                     <h3 className="text-foreground/90 text-sm font-semibold">
                                         {tip.tipTitle}

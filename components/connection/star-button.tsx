@@ -9,7 +9,7 @@
  * Uses consistent icon sizing with other connection actions.
  */
 
-import { Star } from "lucide-react";
+import { Star } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -113,12 +113,13 @@ export function StarButton({
                 </span>
             )}
             <Star
+                weight={isStarred ? "fill" : "regular"}
                 className={cn(
                     iconSize,
                     "transition-all duration-150",
                     isStarred
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-foreground/30 hover:text-foreground/50 fill-transparent",
+                        ? "text-amber-400"
+                        : "text-foreground/30 hover:text-foreground/50",
                     // Pop animation on starring
                     showSparkle && "animate-star-pop"
                 )}

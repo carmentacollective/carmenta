@@ -12,7 +12,14 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
-import { X, FileText, Music, File, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+    X,
+    FileText,
+    MusicNote,
+    File,
+    WarningCircle,
+    CheckCircle,
+} from "@phosphor-icons/react";
 import { useFileAttachments } from "./file-attachment-context";
 import { cn } from "@/lib/utils";
 import { getFileCategory } from "@/lib/storage/file-config";
@@ -89,7 +96,7 @@ function FilePreviewThumbnail({ file }: { file: File }) {
 
     // File type icon for non-images
     const Icon =
-        category === "document" ? FileText : category === "audio" ? Music : File;
+        category === "document" ? FileText : category === "audio" ? MusicNote : File;
 
     return (
         <div className="bg-foreground/5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md">
@@ -139,12 +146,12 @@ function UploadItem({
             <div className="relative shrink-0">
                 {isComplete && (
                     <div className="absolute -top-1 -right-1 z-10">
-                        <CheckCircle2 className="bg-background h-4 w-4 rounded-full text-green-500" />
+                        <CheckCircle className="bg-background h-4 w-4 rounded-full text-green-500" />
                     </div>
                 )}
                 {isError && (
                     <div className="absolute -top-1 -right-1 z-10">
-                        <AlertCircle className="bg-background text-destructive h-4 w-4 rounded-full" />
+                        <WarningCircle className="bg-background text-destructive h-4 w-4 rounded-full" />
                     </div>
                 )}
                 <FilePreviewThumbnail file={file} />

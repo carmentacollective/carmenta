@@ -3,7 +3,11 @@
 import * as React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Check, AlertCircle } from "lucide-react";
+import { CircleNotch, Check, WarningCircle, FloppyDisk } from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+
+// Re-export FloppyDisk for convenience when using StatefulButton as a save button
+export { FloppyDisk };
 import { Button, buttonVariants, type ButtonProps } from "./button";
 import { cn } from "@/lib/utils";
 import { transitions } from "@/lib/motion/presets";
@@ -91,6 +95,12 @@ export interface StatefulButtonProps
      * Override disabled state. Button is auto-disabled during loading.
      */
     disabled?: boolean;
+
+    /**
+     * Icon to show in idle state. Use FloppyDisk for save buttons.
+     * The icon transitions smoothly to spinner/check/error states.
+     */
+    icon?: PhosphorIcon;
 }
 
 /**
@@ -149,6 +159,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
             onErrorComplete,
             hapticFeedback = true,
             disabled,
+            icon: IdleIcon,
             className,
             variant,
             size,
@@ -205,6 +216,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
         }, [state, errorDuration]);
 
         const isDisabled = disabled || state === "loading";
+        const showIdle = state === "idle" && !!IdleIcon;
         const showSpinner = state === "loading";
         const showSuccess = state === "success";
         const showError = state === "error";
@@ -246,6 +258,19 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
             >
                 <span className="relative inline-flex items-center justify-center gap-2">
                     <AnimatePresence mode="wait">
+                        {showIdle && IdleIcon && (
+                            <motion.span
+                                key="idle"
+                                variants={iconVariants}
+                                initial="initial"
+                                animate="animate"
+                                exit="exit"
+                                transition={transitions.quick}
+                                className="inline-flex"
+                            >
+                                <IdleIcon className={iconSize} aria-hidden="true" />
+                            </motion.span>
+                        )}
                         {showSpinner && (
                             <motion.span
                                 key="spinner"
@@ -256,7 +281,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 transition={transitions.quick}
                                 className="inline-flex"
                             >
-                                <Loader2
+                                <CircleNotch
                                     className={cn(
                                         iconSize,
                                         !prefersReducedMotion && "animate-spin"
@@ -288,7 +313,10 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 transition={transitions.quick}
                                 className="inline-flex text-red-600"
                             >
-                                <AlertCircle className={iconSize} aria-hidden="true" />
+                                <WarningCircle
+                                    className={iconSize}
+                                    aria-hidden="true"
+                                />
                             </motion.span>
                         )}
                     </AnimatePresence>

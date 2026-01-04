@@ -14,7 +14,7 @@
  */
 
 import { useRef, useEffect, useCallback } from "react";
-import { CornerDownLeft, Square } from "lucide-react";
+import { ArrowElbowDownLeft, Square } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -130,7 +130,7 @@ export function SimpleComposer({
                 {isLoading ? (
                     <Square className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                    <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                 )}
             </button>
         </div>

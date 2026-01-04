@@ -12,15 +12,15 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ChevronLeft,
-    ChevronRight,
+    CaretLeft,
+    CaretRight,
     FileText,
-    Search,
+    MagnifyingGlass,
     X,
     User,
-    MessageSquare,
+    ChatCircle,
     Brain,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { KBSidebar } from "./kb-sidebar";
 import { KBContent } from "./kb-content";
 import { CommandPalette } from "./command-palette";
@@ -39,7 +39,7 @@ const FOLDER_DISPLAY_NAMES: Record<string, string> = {
 const FOLDER_ICONS: Record<string, typeof User> = {
     about: User,
     memories: Brain,
-    style: MessageSquare, // Used on /communication page
+    style: ChatCircle, // Used on /communication page
 };
 
 export interface KnowledgeViewerProps {
@@ -218,7 +218,7 @@ export function KnowledgeViewer({
                                     onClick={handleMobileBack}
                                     className="text-primary flex items-center gap-1 font-medium"
                                 >
-                                    <ChevronLeft className="h-5 w-5" />
+                                    <CaretLeft className="h-5 w-5" />
                                     <span>{folderDisplayName}</span>
                                 </motion.button>
                             ) : (
@@ -230,7 +230,7 @@ export function KnowledgeViewer({
                                     onClick={handleMobileBack}
                                     className="text-primary flex items-center gap-1 font-medium"
                                 >
-                                    <ChevronLeft className="h-5 w-5" />
+                                    <CaretLeft className="h-5 w-5" />
                                     <span>{folderDisplayName || "Back"}</span>
                                 </motion.button>
                             )}
@@ -253,7 +253,7 @@ export function KnowledgeViewer({
                                 {mobileSearchOpen ? (
                                     <X className="h-5 w-5" />
                                 ) : (
-                                    <Search className="h-5 w-5" />
+                                    <MagnifyingGlass className="h-5 w-5" />
                                 )}
                             </button>
                         )}
@@ -323,7 +323,7 @@ export function KnowledgeViewer({
                                                 <span className="text-foreground/40 text-sm">
                                                     {folder.documents.length}
                                                 </span>
-                                                <ChevronRight className="text-foreground/30 h-5 w-5" />
+                                                <CaretRight className="text-foreground/30 h-5 w-5" />
                                             </button>
                                         );
                                     })
@@ -371,7 +371,7 @@ export function KnowledgeViewer({
                                                     </p>
                                                 )}
                                             </div>
-                                            <ChevronRight className="text-foreground/30 h-5 w-5" />
+                                            <CaretRight className="text-foreground/30 h-5 w-5" />
                                         </button>
                                     ))
                                 )}

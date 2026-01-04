@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-    ExternalLink,
-    ChevronDown,
+    ArrowSquareOut,
+    CaretDown,
     BookOpen,
     FileText,
     Wrench,
     Brain,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ interface ShowReferencesResultProps {
 }
 
 const typeIcons: Record<ReferenceItem["type"], React.ReactNode> = {
-    web: <ExternalLink className="h-4 w-4" />,
+    web: <ArrowSquareOut className="h-4 w-4" />,
     document: <FileText className="h-4 w-4" />,
     tool: <Wrench className="h-4 w-4" />,
     memory: <Brain className="h-4 w-4" />,
@@ -93,7 +93,7 @@ export function ShowReferencesResult({
                     <BookOpen className="h-4 w-4" />
                     {referenceCount} source{referenceCount !== 1 ? "s" : ""} referenced
                 </span>
-                <ChevronDown
+                <CaretDown
                     className={cn(
                         "text-muted-foreground h-4 w-4 transition-transform duration-200",
                         expanded && "rotate-180"

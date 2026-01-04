@@ -10,13 +10,13 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ChevronRight,
+    CaretRight,
     FileText,
     User,
-    Sparkles,
-    MessageSquare,
+    Sparkle,
+    ChatCircle,
     Brain,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { KBFolder } from "@/lib/kb/actions";
 import { transitions, variants } from "@/lib/motion/presets";
@@ -25,7 +25,7 @@ import { transitions, variants } from "@/lib/motion/presets";
 const FOLDER_ICONS: Record<string, typeof User> = {
     about: User,
     memories: Brain,
-    style: MessageSquare, // Used on /communication page
+    style: ChatCircle, // Used on /communication page
 };
 
 // Display names for folders
@@ -37,9 +37,9 @@ const FOLDER_DISPLAY_NAMES: Partial<Record<string, string>> = {
 
 // Map document paths to icons
 const DOCUMENT_ICONS: Record<string, typeof FileText> = {
-    "profile.character": Sparkles,
+    "profile.character": Sparkle,
     "profile.identity": User,
-    "profile.preferences": MessageSquare,
+    "profile.preferences": ChatCircle,
 };
 
 export interface KBSidebarProps {
@@ -138,7 +138,7 @@ export function KBSidebar({
                                         animate={isExpanded ? "expanded" : "collapsed"}
                                         transition={transitions.quick}
                                     >
-                                        <ChevronRight
+                                        <CaretRight
                                             className={cn(
                                                 "text-foreground/30",
                                                 mobile ? "h-5 w-5" : "h-4 w-4"

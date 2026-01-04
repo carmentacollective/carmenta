@@ -2,7 +2,14 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Edit3, Check, X, ChevronDown, Loader2 } from "lucide-react";
+import {
+    Clock,
+    PencilSimple,
+    Check,
+    X,
+    CaretDown,
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -185,7 +192,7 @@ export function ScheduleEditor({
                             onClick={() => setIsEditing(true)}
                             className="text-foreground/60 hover:text-foreground flex items-center gap-1.5 text-sm transition-colors"
                         >
-                            <Edit3 className="h-3.5 w-3.5" />
+                            <PencilSimple className="h-3.5 w-3.5" />
                             Edit
                         </button>
                     </div>
@@ -199,7 +206,7 @@ export function ScheduleEditor({
                             className="text-foreground/50 hover:text-foreground/70 flex items-center gap-1 text-xs transition-colors"
                         >
                             Timezone: {tzAbbr}
-                            <ChevronDown className="h-3 w-3" />
+                            <CaretDown className="h-3 w-3" />
                         </button>
 
                         <AnimatePresence>
@@ -297,7 +304,7 @@ export function ScheduleEditor({
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-2 transition-colors disabled:opacity-50"
                             >
                                 {isParsingSchedule ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <CircleNotch className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <Check className="h-4 w-4" />
                                 )}

@@ -7,13 +7,13 @@
 import {
     File,
     FileCode,
-    FileJson,
+    FileJs,
     FileText,
     FileImage,
     Folder,
     FolderOpen,
-    type LucideIcon,
-} from "lucide-react";
+    type Icon,
+} from "@phosphor-icons/react";
 
 /**
  * File entry from the API
@@ -106,7 +106,7 @@ const IMAGE_EXTENSIONS = new Set([
 /**
  * Get the appropriate icon for a file or directory
  */
-export function getFileIcon(entry: FileEntry, isOpen?: boolean): LucideIcon {
+export function getFileIcon(entry: FileEntry, isOpen?: boolean): Icon {
     if (entry.type === "directory") {
         return isOpen ? FolderOpen : Folder;
     }
@@ -114,7 +114,7 @@ export function getFileIcon(entry: FileEntry, isOpen?: boolean): LucideIcon {
     const ext = entry.extension?.toLowerCase() ?? "";
 
     if (CODE_EXTENSIONS.has(ext)) return FileCode;
-    if (CONFIG_EXTENSIONS.has(ext)) return FileJson;
+    if (CONFIG_EXTENSIONS.has(ext)) return FileJs;
     if (TEXT_EXTENSIONS.has(ext)) return FileText;
     if (IMAGE_EXTENSIONS.has(ext)) return FileImage;
 

@@ -1,4 +1,4 @@
-import { Trophy, Target, Clock } from "lucide-react";
+import { Trophy, Target, Clock } from "@phosphor-icons/react/dist/ssr";
 import { getWinRateBarClass } from "@/lib/benchmarks/utils";
 
 interface BenchmarkSummaryProps {

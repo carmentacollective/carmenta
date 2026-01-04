@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Check, AlertTriangle, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import {
+    Check,
+    Warning,
+    CircleNotch,
+    CheckCircle,
+    XCircle,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -115,7 +121,7 @@ export function IntegrationCard({
                             )}
                             {state === "needs_attention" && (
                                 <div className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5">
-                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                    <Warning className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                 </div>
                             )}
                         </div>
@@ -140,7 +146,7 @@ export function IntegrationCard({
                                 )}
                             >
                                 {externalStatusMessage.type === "success" ? (
-                                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                                    <CheckCircle className="h-4 w-4 flex-shrink-0" />
                                 ) : (
                                     <XCircle className="h-4 w-4 flex-shrink-0" />
                                 )}
@@ -156,7 +162,7 @@ export function IntegrationCard({
                                     className="interactive-focus interactive-press border-border bg-background text-foreground hover:bg-accent rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all hover:shadow disabled:opacity-50"
                                 >
                                     {isTesting ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <CircleNotch className="h-4 w-4 animate-spin" />
                                     ) : (
                                         "Verify"
                                     )}
@@ -181,7 +187,7 @@ export function IntegrationCard({
                             className="interactive-focus-amber interactive-press rounded-xl border-2 border-amber-400/60 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 hover:shadow disabled:opacity-50 dark:text-amber-400"
                         >
                             {isReconnecting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <CircleNotch className="h-4 w-4 animate-spin" />
                             ) : (
                                 "Reconnect"
                             )}
@@ -203,7 +209,7 @@ export function IntegrationCard({
                         className="interactive-focus-offset interactive-press bg-primary text-primary-foreground rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
                     >
                         {isConnecting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <CircleNotch className="h-4 w-4 animate-spin" />
                         ) : (
                             "Connect"
                         )}

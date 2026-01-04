@@ -15,12 +15,12 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Plus,
-    MessageSquare,
+    ChatCircle,
     Clock,
-    ChevronRight,
-    Loader2,
-    Sparkles,
-} from "lucide-react";
+    CaretRight,
+    CircleNotch,
+    Sparkle,
+} from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 
 import { cn } from "@/lib/utils";
@@ -86,7 +86,7 @@ export function SessionPicker({
                     className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 font-medium text-white transition-all hover:bg-purple-700 disabled:opacity-50"
                 >
                     {isCreating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <CircleNotch className="h-4 w-4 animate-spin" />
                     ) : (
                         <Plus className="h-4 w-4" />
                     )}
@@ -103,7 +103,7 @@ export function SessionPicker({
                             animate={{ opacity: 1, y: 0 }}
                             className="border-border bg-muted/30 flex flex-col items-center justify-center rounded-2xl border border-dashed py-12"
                         >
-                            <Sparkles className="text-muted-foreground mb-3 h-8 w-8" />
+                            <Sparkle className="text-muted-foreground mb-3 h-8 w-8" />
                             <p className="text-muted-foreground text-center">
                                 No sessions yet.
                                 <br />
@@ -124,9 +124,9 @@ export function SessionPicker({
                                 {/* Icon */}
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
                                     {session.isStreaming ? (
-                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        <CircleNotch className="h-5 w-5 animate-spin" />
                                     ) : (
-                                        <MessageSquare className="h-5 w-5" />
+                                        <ChatCircle className="h-5 w-5" />
                                     )}
                                 </div>
 
@@ -144,7 +144,10 @@ export function SessionPicker({
                                     </div>
                                     <div className="text-muted-foreground mt-1 flex items-center gap-3 text-sm">
                                         <span className="flex items-center gap-1">
-                                            <Clock className="h-3.5 w-3.5" />
+                                            <Clock
+                                                className="h-3.5 w-3.5"
+                                                weight="regular"
+                                            />
                                             {formatTime(session.lastActivityAt)}
                                         </span>
                                         <span>·</span>
@@ -161,7 +164,7 @@ export function SessionPicker({
                                 </div>
 
                                 {/* Arrow */}
-                                <ChevronRight className="text-muted-foreground h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
+                                <CaretRight className="text-muted-foreground h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                             </motion.button>
                         ))
                     )}

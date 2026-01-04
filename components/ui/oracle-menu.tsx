@@ -24,15 +24,14 @@ import {
     Users,
     Compass,
     Heart,
-    Code2,
-    Github,
+    Code,
+    GithubLogo,
     Shield,
     FileText,
     Lock,
-    HelpCircle,
-    ExternalLink,
-    Home,
-} from "lucide-react";
+    ArrowSquareOut,
+    House,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { glassOrbPreset } from "@/lib/design-tokens";
@@ -162,7 +161,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Home className="text-foreground/60 relative h-4 w-4" />
+                                          <House className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Home</span>
                                       </Link>
 
@@ -211,7 +210,10 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Heart className="fill-primary text-primary relative h-4 w-4" />
+                                          <Heart
+                                              className="text-primary relative h-4 w-4"
+                                              weight="fill"
+                                          />
                                           <span className="relative">
                                               Heart-Centered AI
                                           </span>
@@ -223,7 +225,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Code2 className="text-foreground/60 relative h-4 w-4" />
+                                          <Code className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">How We Build</span>
                                       </Link>
 
@@ -235,28 +237,10 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Github className="text-foreground/60 relative h-4 w-4" />
+                                          <GithubLogo className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative flex items-center gap-1">
                                               Source Code
-                                              <ExternalLink className="h-3 w-3 opacity-50" />
-                                          </span>
-                                      </Link>
-
-                                      <div className="border-foreground/10 my-1 border-t" />
-
-                                      {/* Support */}
-                                      <Link
-                                          href="https://github.com/carmentacollective/carmenta/issues"
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <HelpCircle className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative flex items-center gap-1">
-                                              Help & Feedback
-                                              <ExternalLink className="h-3 w-3 opacity-50" />
+                                              <ArrowSquareOut className="h-3 w-3 opacity-50" />
                                           </span>
                                       </Link>
 

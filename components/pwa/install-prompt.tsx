@@ -26,7 +26,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Home } from "lucide-react";
+import { X, House } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
 const VISIT_COUNT_KEY = "carmenta-visit-count";
@@ -161,7 +161,7 @@ export function InstallPrompt() {
                         {/* Header with icon */}
                         <div className="mb-4 flex items-center gap-3">
                             <div className="from-primary/20 to-primary/10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br">
-                                <Home className="text-primary h-6 w-6" />
+                                <House className="text-primary h-6 w-6" />
                             </div>
                             <div>
                                 <h3 className="text-foreground font-semibold">

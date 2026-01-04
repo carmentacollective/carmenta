@@ -13,17 +13,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     GitBranch,
-    FileEdit,
+    PencilSimpleLine,
     FilePlus,
     FileX,
-    ChevronDown,
-    ChevronRight,
-    Loader2,
-    RefreshCw,
+    CaretDown,
+    CaretRight,
+    CircleNotch,
+    ArrowsClockwise,
     Plus,
     Minus,
-    FolderGit2,
-} from "lucide-react";
+    FolderOpen,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/components/connection/connection-context";
@@ -187,7 +187,7 @@ export function SessionChangesPanel({
             case "deleted":
                 return <FileX className="h-4 w-4 text-red-500" />;
             default:
-                return <FileEdit className="h-4 w-4 text-amber-500" />;
+                return <PencilSimpleLine className="h-4 w-4 text-amber-500" />;
         }
     };
 
@@ -218,7 +218,7 @@ export function SessionChangesPanel({
             {/* Header */}
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2">
-                    <FolderGit2 className="h-4 w-4 text-purple-500" />
+                    <FolderOpen className="h-4 w-4 text-purple-500" />
                     <span className="text-foreground text-sm font-medium">
                         Session Changes
                     </span>
@@ -256,7 +256,7 @@ export function SessionChangesPanel({
                         className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition-colors disabled:opacity-50"
                         aria-label="Refresh changes"
                     >
-                        <RefreshCw
+                        <ArrowsClockwise
                             className={cn("h-4 w-4", isLoading && "animate-spin")}
                         />
                     </button>
@@ -268,7 +268,7 @@ export function SessionChangesPanel({
                 {/* Loading state */}
                 {isLoading && !data && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <CircleNotch className="h-4 w-4 animate-spin" />
                         <span className="text-sm">Loading changes...</span>
                     </div>
                 )}
@@ -298,9 +298,9 @@ export function SessionChangesPanel({
                                     className="hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-2 text-left transition-colors"
                                 >
                                     {expandedFiles.has(file.path) ? (
-                                        <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0" />
+                                        <CaretDown className="text-muted-foreground h-4 w-4 shrink-0" />
                                     ) : (
-                                        <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
+                                        <CaretRight className="text-muted-foreground h-4 w-4 shrink-0" />
                                     )}
                                     {getFileIcon(file.status)}
                                     <span className="text-foreground flex-1 truncate font-mono text-sm">
@@ -331,7 +331,7 @@ export function SessionChangesPanel({
                                     <div className="border-border border-t bg-black/5 dark:bg-white/5">
                                         {loadingDiffs.has(file.path) ? (
                                             <div className="text-muted-foreground flex items-center gap-2 p-4">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <CircleNotch className="h-4 w-4 animate-spin" />
                                                 <span className="text-sm">
                                                     Loading diff...
                                                 </span>

@@ -16,18 +16,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Terminal,
     FileText,
-    FilePen,
-    FileEdit,
-    FolderSearch,
-    FileSearch,
-    Bot,
-    ListTodo,
+    NotePencil,
+    PencilSimple,
+    Folder,
+    FileMagnifyingGlass,
+    Robot,
+    ListChecks,
     Code,
     Globe,
-    Search,
-    Loader2,
-    type LucideIcon,
-} from "lucide-react";
+    MagnifyingGlass,
+    CircleNotch,
+    type Icon as PhosphorIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useTransientChat } from "@/lib/streaming";
@@ -37,19 +37,19 @@ import type { TransientMessage } from "@/lib/streaming";
  * Get icon for a tool based on the transient message icon or text
  */
 function getToolIcon(message: TransientMessage) {
-    // First check for icon emoji and map to Lucide
+    // First check for icon emoji and map to Phosphor
     const iconMap: Record<string, typeof Terminal> = {
         "💻": Terminal,
         "📖": FileText,
-        "✏️": FilePen,
-        "📝": FileEdit,
-        "📁": FolderSearch,
-        "🔍": FileSearch,
-        "🤖": Bot,
-        "📋": ListTodo,
+        "✏️": NotePencil,
+        "📝": PencilSimple,
+        "📁": Folder,
+        "🔍": FileMagnifyingGlass,
+        "🤖": Robot,
+        "📋": ListChecks,
         "🧠": Code,
         "🌐": Globe,
-        "🔎": Search,
+        "🔎": MagnifyingGlass,
     };
 
     if (message.icon && iconMap[message.icon]) {
@@ -65,29 +65,29 @@ function getToolIcon(message: TransientMessage) {
         return FileText;
     }
     if (text.includes("write") || text.includes("writing")) {
-        return FilePen;
+        return NotePencil;
     }
     if (text.includes("edit")) {
-        return FileEdit;
+        return PencilSimple;
     }
     if (text.includes("glob") || text.includes("find")) {
-        return FolderSearch;
+        return Folder;
     }
     if (text.includes("grep") || text.includes("search")) {
-        return FileSearch;
+        return FileMagnifyingGlass;
     }
     if (text.includes("agent") || text.includes("task") || text.includes("spawn")) {
-        return Bot;
+        return Robot;
     }
     if (text.includes("todo")) {
-        return ListTodo;
+        return ListChecks;
     }
     if (text.includes("fetch") || text.includes("web")) {
         return Globe;
     }
 
     // Default
-    return Loader2;
+    return CircleNotch;
 }
 
 /**

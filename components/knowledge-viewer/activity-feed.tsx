@@ -12,12 +12,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Bell,
     FileText,
-    PenSquare,
+    PencilSimple,
     ArrowRight,
-    Sparkles,
+    Sparkle,
     X,
     Check,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -37,9 +37,9 @@ interface ActivityFeedProps {
 
 const typeIcons = {
     knowledge_created: FileText,
-    knowledge_updated: PenSquare,
+    knowledge_updated: PencilSimple,
     knowledge_moved: ArrowRight,
-    insight: Sparkles,
+    insight: Sparkle,
 };
 
 const typeColors = {

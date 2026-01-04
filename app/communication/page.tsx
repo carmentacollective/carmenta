@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { MessageSquare } from "lucide-react";
+import { Chat } from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { KnowledgeViewer } from "@/components/knowledge-viewer";
@@ -80,7 +80,7 @@ export default async function CommunicationPage() {
             <section className="space-y-2">
                 <div className="flex items-center gap-3">
                     <div className="bg-primary/20 rounded-xl p-3">
-                        <MessageSquare className="text-primary h-6 w-6" />
+                        <Chat className="text-primary h-6 w-6" />
                     </div>
                     <div>
                         <h1 className="text-foreground text-3xl font-light tracking-tight">
@@ -95,7 +95,7 @@ export default async function CommunicationPage() {
             <section className="min-h-[400px] flex-1">
                 {allFolders.length === 0 || allFolders[0]?.documents.length === 0 ? (
                     <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
-                        <MessageSquare className="text-foreground/30 mb-4 h-12 w-12" />
+                        <Chat className="text-foreground/30 mb-4 h-12 w-12" />
                         <h3 className="text-foreground/80 text-lg font-medium">
                             Communication preferences
                         </h3>

@@ -2,19 +2,20 @@
 
 import { memo } from "react";
 import {
-    UtensilsCrossed,
+    ForkKnife,
     Coffee,
-    Landmark,
-    Trees,
+    Bank,
+    Tree,
     ShoppingBag,
     Ticket,
-    Mountain,
+    Mountains,
     Train,
     MapPin,
     Star,
     Heart,
     Info,
-} from "lucide-react";
+} from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { POI, POICategory } from "./schema";
 import { CATEGORY_LABELS } from "./schema";
 import {
@@ -29,14 +30,14 @@ import {
     AvatarImage,
 } from "./_adapter";
 
-const CATEGORY_ICONS: Record<POICategory, typeof MapPin> = {
-    restaurant: UtensilsCrossed,
+const CATEGORY_ICONS: Record<POICategory, PhosphorIcon> = {
+    restaurant: ForkKnife,
     cafe: Coffee,
-    museum: Landmark,
-    park: Trees,
+    museum: Bank,
+    park: Tree,
     shopping: ShoppingBag,
     entertainment: Ticket,
-    landmark: Mountain,
+    landmark: Mountains,
     transit: Train,
     other: MapPin,
 };
@@ -80,7 +81,10 @@ export const POICard = memo(function POICard({
                         {CATEGORY_LABELS[poi.category]}
                     </Badge>
                     {isFavorite && (
-                        <Heart className="size-3 shrink-0 fill-rose-500 text-rose-500" />
+                        <Heart
+                            className="size-3 shrink-0 text-rose-500"
+                            weight="fill"
+                        />
                     )}
                 </div>
                 <span className="mt-1 line-clamp-2 text-sm leading-tight font-medium">
@@ -88,7 +92,7 @@ export const POICard = memo(function POICard({
                 </span>
                 {poi.rating !== undefined && (
                     <div className="mt-auto flex items-center gap-0.5">
-                        <Star className="size-3 fill-amber-400 text-amber-400" />
+                        <Star className="size-3 text-amber-400" weight="fill" />
                         <span className="text-muted-foreground text-xs">
                             {poi.rating.toFixed(1)}
                         </span>
@@ -137,7 +141,10 @@ export const POICard = memo(function POICard({
                                     variant="secondary"
                                     className="h-5 gap-0.5 px-1.5 text-[10px]"
                                 >
-                                    <Star className="size-3 fill-amber-400 text-amber-400" />
+                                    <Star
+                                        className="size-3 text-amber-400"
+                                        weight="fill"
+                                    />
                                     {poi.rating.toFixed(1)}
                                 </Badge>
                             )}
@@ -158,9 +165,10 @@ export const POICard = memo(function POICard({
                                     className={cn(
                                         "size-4 transition-colors",
                                         isFavorite
-                                            ? "fill-rose-500 text-rose-500"
+                                            ? "text-rose-500"
                                             : "text-muted-foreground hover:text-rose-500"
                                     )}
+                                    weight={isFavorite ? "fill" : "regular"}
                                 />
                             </Button>
                         </TooltipTrigger>

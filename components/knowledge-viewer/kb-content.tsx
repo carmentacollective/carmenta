@@ -13,13 +13,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     FileText,
     User,
-    Sparkles,
-    MessageSquare,
-    AlertCircle,
+    Sparkle,
+    ChatCircle,
+    WarningCircle,
     Check,
-    RotateCcw,
-    Loader2,
-} from "lucide-react";
+    ArrowCounterClockwise,
+    CircleNotch,
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
@@ -29,9 +29,9 @@ import { analytics } from "@/lib/analytics/events";
 
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
-    "profile.character": Sparkles,
+    "profile.character": Sparkle,
     "profile.identity": User,
-    "profile.preferences": MessageSquare,
+    "profile.preferences": ChatCircle,
 };
 
 // Character limits (~2,000 tokens for LLM context efficiency)
@@ -314,7 +314,7 @@ export function KBContent({
                             id="error-message"
                             className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/10 px-6 py-3 text-sm text-red-600 dark:text-red-400"
                         >
-                            <AlertCircle
+                            <WarningCircle
                                 className="h-4 w-4 shrink-0"
                                 aria-hidden="true"
                             />
@@ -434,7 +434,10 @@ export function KBContent({
                                     : "text-foreground/30 cursor-not-allowed"
                             )}
                         >
-                            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                            <ArrowCounterClockwise
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                            />
                             <span>Reset</span>
                         </button>
 
@@ -463,7 +466,7 @@ export function KBContent({
                         >
                             {/* Icon only for loading/saved states */}
                             {displaySaveState === "saving" && (
-                                <Loader2
+                                <CircleNotch
                                     className="h-3.5 w-3.5 animate-spin"
                                     aria-hidden="true"
                                 />

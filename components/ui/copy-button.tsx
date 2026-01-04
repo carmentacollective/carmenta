@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Copy, Check, ChevronDown } from "lucide-react";
+import { Copy, Check, CaretDown } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { transitions } from "@/lib/motion/presets";
@@ -310,7 +310,7 @@ export function CopyButton({
                             "rounded-r-md border-l border-white/20 px-1"
                         )}
                     >
-                        <ChevronDown className={chevronSize} />
+                        <CaretDown className={chevronSize} />
                     </button>
                 </DropdownMenuTrigger>
             </div>

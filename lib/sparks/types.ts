@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
 
 /**
  * Spark - A contextual suggestion shown on the welcome screen
@@ -35,7 +35,7 @@ export interface SparkAction {
 export interface Spark {
     id: string;
     label: string;
-    icon: LucideIcon;
+    icon: Icon;
     category: SparkCategory;
     action: SparkAction;
     source: SparkSource;

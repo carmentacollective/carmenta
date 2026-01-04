@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import {
-    ChevronLeft,
-    ChevronRight,
+    CaretLeft,
+    CaretRight,
     Code,
     Eye,
     Copy,
     Check,
     Moon,
     Sun,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -155,7 +155,7 @@ export function DesignLabShell({
                                 onClick={goPrev}
                                 aria-label="Previous option"
                             >
-                                <ChevronLeft className="h-5 w-5" />
+                                <CaretLeft className="h-5 w-5" />
                             </Button>
 
                             <span className="text-foreground/80 min-w-[4rem] text-center font-medium">
@@ -168,7 +168,7 @@ export function DesignLabShell({
                                 onClick={goNext}
                                 aria-label="Next option"
                             >
-                                <ChevronRight className="h-5 w-5" />
+                                <CaretRight className="h-5 w-5" />
                             </Button>
 
                             <div className="bg-foreground/10 ml-4 h-6 w-px" />

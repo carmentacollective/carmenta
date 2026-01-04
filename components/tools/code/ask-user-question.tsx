@@ -14,7 +14,7 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, MessageCircleQuestion, Check } from "lucide-react";
+import { PaperPlaneTilt, ChatCircle, Check } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -156,7 +156,7 @@ function QuestionBlock({
                         size="sm"
                         className="bg-purple-600 hover:bg-purple-500"
                     >
-                        <Send className="mr-1.5 h-3.5 w-3.5" />
+                        <PaperPlaneTilt className="mr-1.5 h-3.5 w-3.5" />
                         Confirm selection
                     </Button>
                 </motion.div>
@@ -217,7 +217,7 @@ function OtherInput({
                     size="icon"
                     className="h-[60px] w-[60px] bg-purple-600 hover:bg-purple-500"
                 >
-                    <Send className="h-4 w-4" />
+                    <PaperPlaneTilt className="h-4 w-4" />
                 </Button>
             </div>
         </div>
@@ -316,7 +316,7 @@ export function AskUserQuestion({
     if (status === "running") {
         return (
             <div className="my-2 flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2">
-                <MessageCircleQuestion className="h-4 w-4 animate-pulse text-purple-400" />
+                <ChatCircle className="h-4 w-4 animate-pulse text-purple-400" />
                 <span className="text-muted-foreground text-sm">
                     Preparing question...
                 </span>
@@ -349,7 +349,7 @@ export function AskUserQuestion({
         >
             {/* Header bar */}
             <div className="flex items-center gap-2 border-b border-purple-500/10 bg-purple-500/10 px-3 py-2">
-                <MessageCircleQuestion className="h-4 w-4 text-purple-400" />
+                <ChatCircle className="h-4 w-4 text-purple-400" />
                 <span className="text-sm font-medium text-purple-200">Question</span>
                 {answeredQuestions.size > 0 && (
                     <span className="ml-auto flex items-center gap-1 text-xs text-green-400">

@@ -6,7 +6,7 @@ import type { OptionListProps, OptionListSelection, OptionListOption } from "./s
 import { ActionButtons, normalizeActionsConfig } from "../shared";
 import type { Action } from "../shared";
 import { cn, Button, Separator } from "./_adapter";
-import { Check } from "lucide-react";
+import { Check } from "@phosphor-icons/react";
 import { glass, border } from "@/lib/design-tokens";
 
 function parseSelectionToIdSet(

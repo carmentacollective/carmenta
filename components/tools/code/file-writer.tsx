@@ -15,14 +15,14 @@
 import { useState, useMemo, useCallback } from "react";
 import {
     FilePlus,
-    FileCheck,
+    CheckCircle,
     Copy,
     Check,
-    ChevronDown,
-    ChevronUp,
-    Loader2,
-    GitCompare,
-} from "lucide-react";
+    CaretDown,
+    CaretUp,
+    CircleNotch,
+    GitDiff,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
@@ -175,7 +175,7 @@ export function FileWriter({
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
                     {isCompleted && !error ? (
-                        <FileCheck className="h-4 w-4 shrink-0 text-green-500" />
+                        <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                     ) : (
                         <FilePlus className="text-muted-foreground h-4 w-4 shrink-0" />
                     )}
@@ -192,7 +192,7 @@ export function FileWriter({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Show diff button - on demand comparison to git HEAD */}
@@ -204,9 +204,9 @@ export function FileWriter({
                             aria-label="Show diff against previous version"
                         >
                             {isLoadingDiff ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <CircleNotch className="h-3 w-3 animate-spin" />
                             ) : (
-                                <GitCompare className="h-3 w-3" />
+                                <GitDiff className="h-3 w-3" />
                             )}
                             <span>Show diff</span>
                         </button>
@@ -321,12 +321,12 @@ export function FileWriter({
                 >
                     {isCollapsed ? (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show all {lineCount} lines
                         </>
                     ) : (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     )}

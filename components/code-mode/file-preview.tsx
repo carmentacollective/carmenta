@@ -11,15 +11,15 @@ import { useState, useEffect, useCallback } from "react";
 import {
     Copy,
     Check,
-    FileWarning,
-    Loader2,
+    FileX,
+    CircleNotch,
     File,
     FileCode,
-    FileJson,
+    FileJs,
     FileText,
-    FileImage,
+    Image as FileImage,
     Folder,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ function PreviewFileIcon({ file, className }: { file: FileEntry; className?: str
     const ext = file.extension?.toLowerCase() ?? "";
 
     if (CODE_EXTENSIONS.has(ext)) return <FileCode className={className} />;
-    if (CONFIG_EXTENSIONS.has(ext)) return <FileJson className={className} />;
+    if (CONFIG_EXTENSIONS.has(ext)) return <FileJs className={className} />;
     if (TEXT_EXTENSIONS.has(ext)) return <FileText className={className} />;
     if (IMAGE_EXTENSIONS.has(ext)) return <FileImage className={className} />;
 
@@ -255,13 +255,13 @@ export function FilePreview({ file, repo, onClose }: FilePreviewProps) {
                         <div className="min-h-0 flex-1 overflow-auto">
                             {isLoading && (
                                 <div className="flex items-center justify-center py-12">
-                                    <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+                                    <CircleNotch className="text-muted-foreground h-8 w-8 animate-spin" />
                                 </div>
                             )}
 
                             {error && (
                                 <div className="text-destructive flex flex-col items-center justify-center gap-2 py-12">
-                                    <FileWarning className="h-8 w-8" />
+                                    <FileX className="h-8 w-8" />
                                     <p>{error}</p>
                                 </div>
                             )}
@@ -270,7 +270,7 @@ export function FilePreview({ file, repo, onClose }: FilePreviewProps) {
                                 <>
                                     {content.isBinary || !content.content ? (
                                         <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-12">
-                                            <FileWarning className="h-8 w-8" />
+                                            <FileX className="h-8 w-8" />
                                             <p>
                                                 {content.message ||
                                                     "Cannot preview this file"}

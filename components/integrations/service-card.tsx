@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Check, AlertCircle, Clock } from "lucide-react";
+import { Check, WarningCircle, Clock } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition, RolloutStatus } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -28,7 +28,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
     if (status === "error") {
         return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400">
-                <AlertCircle className="h-3 w-3" />
+                <WarningCircle className="h-3 w-3" />
                 Error
             </span>
         );

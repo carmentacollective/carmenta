@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ArrowSquareOut, Copy, Check } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
@@ -194,7 +194,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         data-tooltip-content="Open in Giphy"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <ExternalLink className="h-4 w-4" />
+                        <ArrowSquareOut className="h-4 w-4" />
                     </a>
                 </div>
 

@@ -15,17 +15,17 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Search,
+    MagnifyingGlass,
     User,
-    Settings,
+    Gear,
     FileText,
     Clock,
-    Filter,
+    Funnel,
     Calendar,
     Star,
-    Bot,
-    ChevronDown,
-} from "lucide-react";
+    Robot,
+    CaretDown,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { KBDocument, KBFolder, KBSearchResult } from "@/lib/kb/actions";
 import {
@@ -40,7 +40,7 @@ import { logger } from "@/lib/client-logger";
 // Map paths to icons
 const PATH_ICONS: Record<string, typeof FileText> = {
     "profile.identity": User,
-    "profile.instructions": Settings,
+    "profile.instructions": Gear,
 };
 
 // Map folder paths to names
@@ -299,7 +299,7 @@ export function CommandPalette({
                     >
                         {/* Search input */}
                         <div className="border-foreground/10 flex items-center gap-3 border-b px-4 py-3">
-                            <Search
+                            <MagnifyingGlass
                                 className={cn(
                                     "text-foreground/40 h-5 w-5",
                                     isSearching && "animate-pulse"
@@ -323,7 +323,7 @@ export function CommandPalette({
                                 )}
                                 title="Toggle filters"
                             >
-                                <Filter className="h-4 w-4" />
+                                <Funnel className="h-4 w-4" />
                             </button>
                             {isSearching ? (
                                 <span className="text-foreground/40 text-xs">
@@ -402,11 +402,11 @@ export function CommandPalette({
 
                                         {/* Model Filter - placeholder for future */}
                                         <div className="bg-foreground/5 flex items-center gap-1.5 rounded-md px-2 py-1 opacity-50">
-                                            <Bot className="text-foreground/50 h-3.5 w-3.5" />
+                                            <Robot className="text-foreground/50 h-3.5 w-3.5" />
                                             <span className="text-foreground/50 text-xs">
                                                 Model
                                             </span>
-                                            <ChevronDown className="text-foreground/50 h-3 w-3" />
+                                            <CaretDown className="text-foreground/50 h-3 w-3" />
                                         </div>
                                     </div>
                                 </motion.div>
@@ -437,7 +437,7 @@ export function CommandPalette({
                                             }
                                             className="bg-foreground/5 text-foreground/70 hover:bg-foreground/10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors"
                                         >
-                                            <Search className="h-3 w-3" />
+                                            <MagnifyingGlass className="h-3 w-3" />
                                             {search}
                                         </button>
                                     ))}

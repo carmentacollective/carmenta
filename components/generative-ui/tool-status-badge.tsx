@@ -1,6 +1,6 @@
 "use client";
 
-import { Circle, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Circle, Clock, CheckCircle, XCircle } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";

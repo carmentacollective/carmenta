@@ -12,17 +12,17 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ChevronLeft,
-    ChevronRight,
+    CaretLeft,
+    CaretRight,
     FileText,
-    Search,
+    MagnifyingGlass,
     X,
     BookOpen,
     Info,
-    Sparkles,
+    Sparkle,
     Plug,
     Heart,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { DocsSidebar } from "./docs-sidebar";
 import { DocsContent } from "./docs-content";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
@@ -33,7 +33,7 @@ import type { DocSection } from "@/app/guide/page";
 const SECTION_ICONS: Record<string, typeof FileText> = {
     general: BookOpen,
     about: Info,
-    features: Sparkles,
+    features: Sparkle,
     integrations: Plug,
     philosophy: Heart,
 };
@@ -141,7 +141,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                     onClick={handleMobileBack}
                                     className="text-primary flex items-center gap-1 font-medium"
                                 >
-                                    <ChevronLeft className="h-5 w-5" />
+                                    <CaretLeft className="h-5 w-5" />
                                     <span>{currentSection?.name}</span>
                                 </motion.button>
                             ) : (
@@ -153,7 +153,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                     onClick={handleMobileBack}
                                     className="text-primary flex items-center gap-1 font-medium"
                                 >
-                                    <ChevronLeft className="h-5 w-5" />
+                                    <CaretLeft className="h-5 w-5" />
                                     <span>{currentSection?.name ?? "Back"}</span>
                                 </motion.button>
                             )}
@@ -176,7 +176,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                 {mobileSearchOpen ? (
                                     <X className="h-5 w-5" />
                                 ) : (
-                                    <Search className="h-5 w-5" />
+                                    <MagnifyingGlass className="h-5 w-5" />
                                 )}
                             </button>
                         )}
@@ -245,7 +245,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                                 <span className="text-foreground/40 text-sm">
                                                     {section.documents.length}
                                                 </span>
-                                                <ChevronRight className="text-foreground/30 h-5 w-5" />
+                                                <CaretRight className="text-foreground/30 h-5 w-5" />
                                             </button>
                                         );
                                     })
@@ -293,7 +293,7 @@ export function DocsViewer({ sections }: DocsViewerProps) {
                                                     </p>
                                                 )}
                                             </div>
-                                            <ChevronRight className="text-foreground/30 h-5 w-5" />
+                                            <CaretRight className="text-foreground/30 h-5 w-5" />
                                         </button>
                                     ))
                                 )}

@@ -2,7 +2,7 @@
 
 import { useState, useActionState } from "react";
 import Image from "next/image";
-import { ExternalLink, Loader2, Eye, EyeOff, Key } from "lucide-react";
+import { ArrowSquareOut, CircleNotch, Eye, EyeSlash, Key } from "@phosphor-icons/react";
 import {
     Dialog,
     DialogContent,
@@ -116,7 +116,7 @@ export function ApiKeyModal({
                             >
                                 <Key className="h-3.5 w-3.5" />
                                 Get your API key
-                                <ExternalLink className="h-3 w-3" />
+                                <ArrowSquareOut className="h-3 w-3" />
                             </a>
                         </div>
                     )}
@@ -154,7 +154,7 @@ export function ApiKeyModal({
                                 }
                             >
                                 {showKey ? (
-                                    <EyeOff className="h-4 w-4" />
+                                    <EyeSlash className="h-4 w-4" />
                                 ) : (
                                     <Eye className="h-4 w-4" />
                                 )}
@@ -186,7 +186,7 @@ export function ApiKeyModal({
                         >
                             {isPending ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <CircleNotch className="h-4 w-4 animate-spin" />
                                     Connecting...
                                 </>
                             ) : (

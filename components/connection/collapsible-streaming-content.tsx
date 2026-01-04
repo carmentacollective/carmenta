@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown } from "lucide-react";
+import { CaretDown } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -127,7 +127,7 @@ export function CollapsibleStreamingContent({
                 </div>
 
                 {/* Expand/collapse chevron */}
-                <ChevronDown
+                <CaretDown
                     className={cn(
                         "text-foreground/40 h-4 w-4 shrink-0 transition-transform duration-200",
                         !isCollapsed && "rotate-180",

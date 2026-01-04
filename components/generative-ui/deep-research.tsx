@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     BookOpen,
-    ExternalLink,
-    AlertCircle,
+    ArrowSquareOut,
+    WarningCircle,
     CheckCircle,
-    HelpCircle,
-} from "lucide-react";
+    Question,
+} from "@phosphor-icons/react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
@@ -170,9 +170,9 @@ const ConfidenceIcon = ({ confidence }: { confidence: string }) => {
         case "high":
             return <CheckCircle className="h-3 w-3 text-green-500" />;
         case "medium":
-            return <HelpCircle className="h-3 w-3 text-yellow-500" />;
+            return <Question className="h-3 w-3 text-yellow-500" />;
         default:
-            return <HelpCircle className="text-muted-foreground h-3 w-3" />;
+            return <Question className="text-muted-foreground h-3 w-3" />;
     }
 };
 
@@ -200,7 +200,7 @@ export function DeepResearchResult({
         return (
             <div className="glass-card border-destructive/50 bg-destructive/10 max-w-2xl">
                 <div className="flex items-center gap-2">
-                    <AlertCircle className="text-destructive h-4 w-4" />
+                    <WarningCircle className="text-destructive h-4 w-4" />
                     <p className="text-destructive text-sm">
                         {error || "Research didn't complete. Try again?"}
                     </p>
@@ -262,7 +262,7 @@ export function DeepResearchResult({
                                     className="group text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                                 >
                                     <span className="truncate">{source.title}</span>
-                                    <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 opacity-0 group-hover:opacity-100" />
+                                    <ArrowSquareOut className="h-2.5 w-2.5 flex-shrink-0 opacity-0 group-hover:opacity-100" />
                                 </a>
                             </li>
                         ))}

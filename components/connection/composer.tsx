@@ -22,7 +22,7 @@ import {
     type ComponentProps,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Square, CornerDownLeft } from "lucide-react";
+import { Square, ArrowElbowDownLeft } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -675,7 +675,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="send-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <CornerDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton

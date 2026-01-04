@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import {
     Circle,
-    CircleDotDashed,
-    CheckCircle2,
+    CircleDashed,
+    CheckCircle,
     XCircle,
-    MoreHorizontal,
-    ChevronRight,
-} from "lucide-react";
+    DotsThree,
+    CaretRight,
+} from "@phosphor-icons/react";
 import type { PlanProps, PlanTodo, PlanTodoStatus } from "./schema";
 import {
     cn,
@@ -33,7 +33,7 @@ import { glass, border } from "@/lib/design-tokens";
 const INITIAL_VISIBLE_TODO_COUNT = 4;
 
 interface TodoStatusStyle {
-    icon: LucideIcon;
+    icon: PhosphorIcon;
     iconClassName: string;
     labelClassName: string;
 }
@@ -45,12 +45,12 @@ const TODO_STATUS_STYLES: Record<PlanTodoStatus, TodoStatusStyle> = {
         labelClassName: "",
     },
     in_progress: {
-        icon: CircleDotDashed,
+        icon: CircleDashed,
         iconClassName: "text-muted-foreground",
         labelClassName: "text-primary/70",
     },
     completed: {
-        icon: CheckCircle2,
+        icon: CheckCircle,
         iconClassName: "text-emerald-500",
         labelClassName: "text-muted-foreground line-through",
     },
@@ -66,7 +66,7 @@ function TodoIcon({
     className,
     isAnimating,
 }: {
-    icon: LucideIcon;
+    icon: PhosphorIcon;
     className: string;
     isAnimating?: boolean;
 }) {
@@ -123,7 +123,7 @@ function PlanTodoItem({ todo }: PlanTodoItemProps) {
                     <span className={cn("flex-1 text-sm text-pretty", labelClassName)}>
                         {todo.label}
                     </span>
-                    <ChevronRight className="text-muted-foreground/50 mt-0.5 size-4 shrink-0 rotate-90 transition-transform duration-150 group-data-[state=open]/todo:[transform:rotateY(180deg)]" />
+                    <CaretRight className="text-muted-foreground/50 mt-0.5 size-4 shrink-0 rotate-90 transition-transform duration-150 group-data-[state=open]/todo:[transform:rotateY(180deg)]" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <p className="text-muted-foreground pr-2 pb-1.5 pl-8 text-sm text-pretty">
@@ -212,7 +212,7 @@ export function Plan({
                     {description && <CardDescription>{description}</CardDescription>}
                 </div>
                 {allComplete && (
-                    <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-500" />
+                    <CheckCircle className="mt-0.5 size-5 shrink-0 text-emerald-500" />
                 )}
             </CardHeader>
 
@@ -245,7 +245,7 @@ export function Plan({
                                 <Accordion type="single" collapsible>
                                     <AccordionItem value="more" className="border-0">
                                         <AccordionTrigger className="text-muted-foreground hover:text-primary flex cursor-default items-start justify-start gap-2 py-1 text-sm font-normal [&>svg:last-child]:hidden">
-                                            <MoreHorizontal className="text-muted-foreground/70 mt-0.5 size-4 shrink-0" />
+                                            <DotsThree className="text-muted-foreground/70 mt-0.5 size-4 shrink-0" />
                                             <span>{hiddenTodos.length} more</span>
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-2 pb-0">
