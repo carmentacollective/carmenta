@@ -11,7 +11,6 @@
 import { useState, useCallback, useTransition, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Save,
     FileText,
     User,
     Sparkles,
@@ -72,15 +71,17 @@ export function KBContent({
     const hasChanges = editContent !== originalContent;
 
     // Derive display save state from hasChanges and saveState
-    // Priority: saving (in flight) > unsaved (user made new changes) > saved > idle
+    // Priority: saving (in flight) > error > unsaved (user made new changes) > saved > idle
     const displaySaveState: SaveState =
         saveState === "saving"
             ? "saving"
-            : hasChanges
-              ? "unsaved"
-              : saveState === "saved"
-                ? "saved"
-                : "idle";
+            : saveState === "error"
+              ? "error"
+              : hasChanges
+                ? "unsaved"
+                : saveState === "saved"
+                  ? "saved"
+                  : "idle";
 
     // Sync state with document prop changes (external system sync pattern)
     const currentPath = kbDocument?.path;
@@ -418,93 +419,73 @@ export function KBContent({
                         )}
                     </AnimatePresence>
 
-                    {/* Save Actions */}
-                    <AnimatePresence mode="wait">
-                        {displaySaveState === "saved" ? (
-                            <motion.div
-                                key="saved"
-                                role="status"
-                                aria-live="polite"
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400"
-                            >
-                                <Check className="h-4 w-4" aria-hidden="true" />
-                                <span>Saved</span>
-                            </motion.div>
-                        ) : displaySaveState === "saving" ? (
-                            <motion.div
-                                key="saving"
-                                role="status"
-                                aria-live="polite"
-                                aria-busy="true"
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="bg-primary text-primary-foreground flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium opacity-50"
-                            >
+                    {/* Save Actions - Always visible with intelligent states */}
+                    <div className="flex items-center gap-2">
+                        {/* Reset Button - only active when there are unsaved changes */}
+                        <button
+                            onClick={handleRevert}
+                            disabled={!hasChanges || isPending}
+                            className={cn(
+                                "flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-2",
+                                "text-sm transition-colors duration-150",
+                                "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:outline-none",
+                                hasChanges && !isPending
+                                    ? "text-foreground/60 hover:bg-foreground/5 hover:text-foreground/80"
+                                    : "text-foreground/30 cursor-not-allowed"
+                            )}
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Reset</span>
+                        </button>
+
+                        {/* Save Button - intelligent states */}
+                        <button
+                            onClick={handleSave}
+                            disabled={
+                                (displaySaveState !== "unsaved" &&
+                                    displaySaveState !== "error") ||
+                                isOverLimit
+                            }
+                            className={cn(
+                                "flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2",
+                                "text-sm font-medium transition-all duration-150",
+                                "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                                // State-based styling
+                                (displaySaveState === "unsaved" ||
+                                    displaySaveState === "error") &&
+                                    !isOverLimit
+                                    ? displaySaveState === "error"
+                                        ? "bg-red-500 text-white hover:bg-red-600"
+                                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                    : "bg-primary/50 text-primary-foreground/70 cursor-not-allowed",
+                                isOverLimit && "bg-foreground/10 text-foreground/40"
+                            )}
+                        >
+                            {/* Icon only for loading/saved states */}
+                            {displaySaveState === "saving" && (
                                 <Loader2
                                     className="h-3.5 w-3.5 animate-spin"
                                     aria-hidden="true"
                                 />
-                                <span>Saving...</span>
-                            </motion.div>
-                        ) : displaySaveState === "unsaved" ? (
-                            <motion.div
-                                key="actions"
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex items-center gap-2"
-                            >
-                                {/* Revert Button */}
-                                <button
-                                    onClick={handleRevert}
-                                    disabled={isPending}
-                                    className={cn(
-                                        "flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-2",
-                                        "text-foreground/60 text-sm",
-                                        "transition-colors duration-150",
-                                        "hover:bg-foreground/5 hover:text-foreground/80",
-                                        "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:outline-none",
-                                        "disabled:opacity-50"
-                                    )}
-                                >
-                                    <RotateCcw
-                                        className="h-3.5 w-3.5"
-                                        aria-hidden="true"
-                                    />
-                                    <span>Revert</span>
-                                </button>
+                            )}
+                            {displaySaveState === "saved" && (
+                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
 
-                                {/* Save Button */}
-                                <button
-                                    onClick={handleSave}
-                                    disabled={isOverLimit}
-                                    className={cn(
-                                        "flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2",
-                                        "text-sm font-medium",
-                                        "transition-all duration-150",
-                                        isOverLimit
-                                            ? "bg-foreground/10 text-foreground/40 cursor-not-allowed"
-                                            : "bg-primary text-primary-foreground hover:bg-primary/90",
-                                        "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                                        "disabled:opacity-50"
-                                    )}
-                                >
-                                    <Save className="h-3.5 w-3.5" aria-hidden="true" />
-                                    <span>Save</span>
-                                    <kbd className="bg-primary-foreground/20 ml-1.5 hidden rounded px-1.5 py-0.5 text-[10px] font-normal sm:inline-block">
-                                        ⌘S
-                                    </kbd>
-                                </button>
-                            </motion.div>
-                        ) : null}
-                    </AnimatePresence>
+                            {/* Text based on state - with ARIA live for screen readers */}
+                            <span role="status" aria-live="polite">
+                                {displaySaveState === "saving"
+                                    ? "Saving..."
+                                    : displaySaveState === "unsaved"
+                                      ? "Save"
+                                      : displaySaveState === "saved"
+                                        ? "Saved"
+                                        : displaySaveState === "error"
+                                          ? "Retry"
+                                          : "Save"}
+                            </span>
+                        </button>
+                    </div>
                 </footer>
             )}
         </main>
