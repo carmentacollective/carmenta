@@ -8,6 +8,7 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { UI_MESSAGE_STREAM_HEADERS } from "ai";
 import { eq, and } from "drizzle-orm";
 
@@ -104,6 +105,10 @@ export async function GET(
             { error, jobId, runId, streamId: run.activeStreamId },
             "Failed to resume job stream"
         );
+        Sentry.captureException(error, {
+            tags: { component: "jobs", route: "/api/jobs/[jobId]/runs/[runId]/stream" },
+            extra: { jobId, runId, streamId: run.activeStreamId },
+        });
         return new Response(null, { status: 204 });
     }
 }

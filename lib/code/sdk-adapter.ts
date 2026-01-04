@@ -11,6 +11,7 @@
  */
 
 import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 
 /**
@@ -207,6 +208,11 @@ export async function* streamSDK(
                     { error: processingError, messageType: message?.type },
                     "SDK message processing error"
                 );
+                Sentry.captureException(processingError, {
+                    level: "warning",
+                    tags: { component: "code-mode", operation: "message_processing" },
+                    extra: { messageType: message?.type },
+                });
                 yield {
                     type: "error",
                     error:
@@ -227,6 +233,13 @@ export async function* streamSDK(
             },
             "SDK streaming error"
         );
+        // Don't report abort errors - those are user-initiated
+        if (!abortController.signal.aborted) {
+            Sentry.captureException(error, {
+                tags: { component: "code-mode", operation: "sdk_streaming" },
+                extra: { cwd: options.cwd, model: options.model },
+            });
+        }
         yield {
             type: "error",
             error: error instanceof Error ? error : String(error),

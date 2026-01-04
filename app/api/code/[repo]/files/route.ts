@@ -8,6 +8,7 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
@@ -241,6 +242,10 @@ export async function GET(
         });
     } catch (error) {
         logger.error({ error, repo }, "Failed to list files");
+        Sentry.captureException(error, {
+            tags: { component: "api", route: "/api/code/[repo]/files" },
+            extra: { repo },
+        });
         return NextResponse.json({ error: "Failed to list files" }, { status: 500 });
     }
 }

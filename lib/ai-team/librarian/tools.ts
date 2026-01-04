@@ -6,6 +6,7 @@
  */
 
 import { tool } from "ai";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { kb } from "@/lib/kb";
 import { logger } from "@/lib/logger";
@@ -128,6 +129,14 @@ export const createDocumentTool = tool({
             };
         } catch (error) {
             logger.error({ error, userId, path }, "Failed to create document");
+            Sentry.captureException(error, {
+                tags: {
+                    component: "ai-team",
+                    agent: "librarian",
+                    tool: "create_document",
+                },
+                extra: { userId, path },
+            });
             return {
                 success: false,
                 path,
@@ -350,6 +359,10 @@ export const notifyUserTool = tool({
             };
         } catch (error) {
             logger.error({ error, userId, message }, "Failed to queue notification");
+            Sentry.captureException(error, {
+                tags: { component: "ai-team", agent: "librarian", tool: "notify_user" },
+                extra: { userId },
+            });
             return {
                 success: false,
                 message: `Failed to queue notification: ${error instanceof Error ? error.message : "Unknown error"}`,

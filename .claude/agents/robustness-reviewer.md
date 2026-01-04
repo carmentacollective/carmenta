@@ -44,6 +44,11 @@ actionable messages.
 Why this matters: Sentry only auto-captures unhandled exceptions. Users report bugs
 while dashboards show green when errors are caught without proper handling.
 
+**Follow @.cursor/rules/typescript-error-handling.mdc** - "Fail Loud, Recover at
+Boundaries." Try/catch is only allowed for: retry logic, resource cleanup (finally),
+specific error type handling, background ops with Sentry, or UI graceful degradation
+with Sentry. Catch-log-return-null is banned.
+
 <robust-example>
 try {
   await operation();

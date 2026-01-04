@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 import { getRecentConnections, getStarredConnections } from "@/lib/actions/connections";
 import { getServicesWithStatus } from "@/lib/actions/integrations";
@@ -22,6 +23,10 @@ export async function getSparkData(): Promise<GenerateSparksInput | null> {
                         { error },
                         "Failed to fetch recent connections for sparks"
                     );
+                    Sentry.captureException(error, {
+                        level: "warning",
+                        tags: { component: "sparks", operation: "recent_connections" },
+                    });
                     return [];
                 }),
                 getStarredConnections(3).catch((error) => {
@@ -29,10 +34,18 @@ export async function getSparkData(): Promise<GenerateSparksInput | null> {
                         { error },
                         "Failed to fetch starred connections for sparks"
                     );
+                    Sentry.captureException(error, {
+                        level: "warning",
+                        tags: { component: "sparks", operation: "starred_connections" },
+                    });
                     return [];
                 }),
                 getServicesWithStatus().catch((error) => {
                     logger.error({ error }, "Failed to fetch services for sparks");
+                    Sentry.captureException(error, {
+                        level: "warning",
+                        tags: { component: "sparks", operation: "services" },
+                    });
                     return { connected: [], available: [] };
                 }),
             ]);
@@ -64,6 +77,10 @@ export async function getSparkData(): Promise<GenerateSparksInput | null> {
         };
     } catch (error) {
         logger.error({ error }, "Failed to get spark data");
+        Sentry.captureException(error, {
+            level: "warning",
+            tags: { component: "sparks", operation: "get_data" },
+        });
         return null;
     }
 }

@@ -11,6 +11,7 @@
  * - Symlinks are rejected
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { execFile } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";
@@ -277,6 +278,10 @@ export async function deleteWorkspace(
         return true;
     } catch (error) {
         logger.error({ error, userEmail, owner, repo }, "Failed to delete workspace");
+        Sentry.captureException(error, {
+            tags: { component: "code-mode", operation: "delete_workspace" },
+            extra: { userEmail, owner, repo },
+        });
         return false;
     }
 }

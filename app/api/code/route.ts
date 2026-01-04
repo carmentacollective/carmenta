@@ -11,6 +11,7 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import { createUIMessageStream, createUIMessageStreamResponse, UIMessage } from "ai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
@@ -314,6 +315,14 @@ export async function POST(req: Request) {
                                 { error, connectionId: effectiveConnectionId },
                                 "Code mode: title generation failed"
                             );
+                            Sentry.captureException(error, {
+                                level: "warning",
+                                tags: {
+                                    component: "code-mode",
+                                    operation: "title_generation",
+                                },
+                                extra: { connectionId: effectiveConnectionId },
+                            });
                             // Don't throw - title generation failure shouldn't affect streaming
                         }
                     })();
@@ -583,6 +592,9 @@ export async function POST(req: Request) {
             { error: error instanceof Error ? error.message : String(error) },
             "Code API: streaming failed"
         );
+        Sentry.captureException(error, {
+            tags: { component: "api", route: "/api/code" },
+        });
         return new Response(JSON.stringify({ error: "Failed to stream response" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

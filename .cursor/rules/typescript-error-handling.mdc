@@ -1,0 +1,131 @@
+---
+description: Error handling patterns for TypeScript with Sentry
+globs: ["**/*.ts", "**/*.tsx"]
+---
+
+# TypeScript Error Handling
+
+Let errors bubble to boundaries. Don't catch unless you have a specific recovery plan.
+
+## Default: No Try/Catch
+
+Most code should not catch errors. Our boundaries handle them:
+
+```typescript
+// ✅ Business logic throws, boundaries catch
+async function createUser(data: UserInput): Promise<User> {
+  if (!isValidEmail(data.email)) {
+    throw new ValidationError("Invalid email format");
+  }
+  return await db.user.create({ data });
+  // DB errors bubble to API handler → Sentry
+}
+```
+
+## When to Catch
+
+### Retry Logic
+
+```typescript
+async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetch(url);
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await sleep(Math.pow(2, attempt) * 100);
+    }
+  }
+  throw new Error("Unreachable");
+}
+```
+
+### Resource Cleanup
+
+```typescript
+async function withConnection<T>(fn: (conn: Connection) => Promise<T>): Promise<T> {
+  const conn = await pool.acquire();
+  try {
+    return await fn(conn);
+  } finally {
+    await conn.release(); // cleanup always runs
+  }
+  // errors still bubble up
+}
+```
+
+### Specific Error Types
+
+```typescript
+async function getOrCreateSchedule(params: ScheduleParams) {
+  try {
+    return await scheduleClient.create(params);
+  } catch (error) {
+    if (error instanceof ScheduleAlreadyRunning) {
+      return await scheduleClient.update(params);
+    }
+    throw error; // everything else bubbles
+  }
+}
+```
+
+### Background Operations
+
+Non-critical ops that shouldn't block the main flow. Still report to Sentry:
+
+```typescript
+void (async () => {
+  try {
+    await db.activityLog.create({ data: logEntry });
+  } catch (error) {
+    logger.error({ error }, "Failed to log activity");
+    Sentry.captureException(error, {
+      level: "warning",
+      tags: { category: "background" },
+    });
+  }
+})();
+```
+
+### UI Graceful Degradation
+
+When failure shouldn't crash UX. Still report to Sentry:
+
+```typescript
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (error) {
+    logger.error({ error }, "Clipboard failed");
+    Sentry.captureException(error, { level: "info" });
+    return false;
+  }
+}
+```
+
+## Patterns to Avoid
+
+**Catch-log-swallow:** Don't catch, log, and return null/fallback. Let it throw.
+
+**Defensive catches:** Don't wrap code in try/catch "just in case." Trust boundaries.
+
+**Empty catches:** Never `catch { }`. If you catch, report to Sentry.
+
+## Typed Errors
+
+Use errors from `@/lib/errors` for automatic HTTP status mapping:
+
+```typescript
+throw new ValidationError("Query required");      // 400
+throw new AuthenticationError();                  // 401
+throw new AuthorizationError();                   // 403
+throw new NotFoundError("User");                  // 404
+```
+
+## The Test
+
+Can you explain why this try/catch exists and what recovery it enables? If not, remove
+it.
+
+@knowledge/decisions/error-handling-strategy.md

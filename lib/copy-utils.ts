@@ -24,10 +24,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
         logger.info({ length: text.length }, "Text copied to clipboard");
         return true;
     } catch (error) {
-        logger.error(
-            { error: error instanceof Error ? error.message : String(error) },
-            "Failed to copy to clipboard"
-        );
+        logger.error({ error }, "Failed to copy to clipboard");
         return false;
     }
 }
@@ -60,10 +57,7 @@ export async function copyMarkdown(markdown: string): Promise<boolean> {
         logger.info({ length: markdown.length }, "Markdown syntax copied");
         return true;
     } catch (error) {
-        logger.error(
-            { error: error instanceof Error ? error.message : String(error) },
-            "Failed to copy markdown"
-        );
+        logger.error({ error }, "Failed to copy markdown");
         return false;
     }
 }
@@ -93,10 +87,7 @@ export async function copyPlainText(markdown: string): Promise<boolean> {
         );
         return true;
     } catch (error) {
-        logger.error(
-            { error: error instanceof Error ? error.message : String(error) },
-            "Failed to copy plain text"
-        );
+        logger.error({ error }, "Failed to copy plain text");
         return false;
     }
 }
