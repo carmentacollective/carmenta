@@ -152,22 +152,27 @@ function UploadItem({
 
             {/* Filename and status */}
             <div className="min-w-0 flex-1">
-                <span className="text-foreground/90 truncate text-sm font-medium">
+                <div className="text-foreground/90 truncate text-sm font-medium">
                     {file.name}
-                </span>
+                </div>
                 {/* Only show status row when there's actually something to say */}
-                {getStatusMessage() && (
-                    <div
-                        className={cn(
-                            "text-xs",
-                            isError && "text-destructive",
-                            isComplete && placeholder && "text-foreground/70 font-mono",
-                            isProcessing && "text-foreground/60"
-                        )}
-                    >
-                        {getStatusMessage()}
-                    </div>
-                )}
+                {(() => {
+                    const statusMessage = getStatusMessage();
+                    return statusMessage ? (
+                        <div
+                            className={cn(
+                                "text-xs",
+                                isError && "text-destructive",
+                                isComplete &&
+                                    placeholder &&
+                                    "text-foreground/70 font-mono",
+                                isProcessing && "text-foreground/60"
+                            )}
+                        >
+                            {statusMessage}
+                        </div>
+                    ) : null;
+                })()}
                 {/* Insert inline for pasted text files */}
                 {isTextFile && hasTextContent && onInsertInline && (
                     <button

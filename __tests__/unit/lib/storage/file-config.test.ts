@@ -13,6 +13,7 @@ import {
     getFileCategory,
     getSizeLimit,
     formatFileSize,
+    formatFileSizeDetailed,
     getSupportedFormatsMessage,
 } from "@/lib/storage/file-config";
 
@@ -148,6 +149,31 @@ describe("formatFileSize", () => {
     it("rounds to whole numbers", () => {
         expect(formatFileSize(1536)).toBe("2 KB");
         expect(formatFileSize(1.5 * 1024 * 1024)).toBe("2 MB");
+    });
+});
+
+describe("formatFileSizeDetailed", () => {
+    it("formats with one decimal place", () => {
+        expect(formatFileSizeDetailed(1024)).toBe("1.0 KB");
+        expect(formatFileSizeDetailed(1536)).toBe("1.5 KB");
+        expect(formatFileSizeDetailed(10.4 * 1024 * 1024)).toBe("10.4 MB");
+    });
+
+    it("shows whole number for bytes", () => {
+        expect(formatFileSizeDetailed(500)).toBe("500 Bytes");
+    });
+
+    it("prevents same-value ambiguity in error messages", () => {
+        const limit = 10 * 1024 * 1024; // 10 MB
+        const overLimit = 10.4 * 1024 * 1024; // 10.4 MB
+
+        // Round display would show both as "10 MB"
+        expect(formatFileSize(limit)).toBe("10 MB");
+        expect(formatFileSize(overLimit)).toBe("10 MB");
+
+        // Detailed display distinguishes them
+        expect(formatFileSizeDetailed(limit)).toBe("10.0 MB");
+        expect(formatFileSizeDetailed(overLimit)).toBe("10.4 MB");
     });
 });
 
