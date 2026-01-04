@@ -216,6 +216,10 @@ export class NotionAdapter extends ServiceAdapter {
             return { success: true };
         } catch (error) {
             logger.error({ error, userId }, "Failed to verify Notion connection");
+            this.captureError(error, {
+                action: "testConnection",
+                userId,
+            });
             return {
                 success: false,
                 error:

@@ -922,6 +922,14 @@ export async function POST(req: Request) {
                                     { error, connectionId: currentConnectionId },
                                     "Title evolution failed (non-blocking)"
                                 );
+                                Sentry.captureException(error, {
+                                    level: "warning",
+                                    tags: {
+                                        component: "connection",
+                                        operation: "title_evolution",
+                                    },
+                                    extra: { connectionId: currentConnectionId },
+                                });
                             }
                         })();
                     }
@@ -978,6 +986,14 @@ export async function POST(req: Request) {
                                     { error, connectionId: currentConnectionId },
                                     "Knowledge Librarian failed (non-blocking)"
                                 );
+                                Sentry.captureException(error, {
+                                    level: "warning",
+                                    tags: {
+                                        component: "connection",
+                                        operation: "librarian",
+                                    },
+                                    extra: { connectionId: currentConnectionId },
+                                });
                             }
                         })();
                     }

@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { all, create } from "mathjs";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
@@ -348,6 +349,9 @@ export const builtInTools = {
                 }
             } catch (error) {
                 logger.error({ error, action }, "Giphy API request failed");
+                Sentry.captureException(error, {
+                    tags: { component: "tool", tool: "giphy", action },
+                });
                 return {
                     error: true,
                     message:
@@ -474,6 +478,9 @@ export const builtInTools = {
                 }
             } catch (error) {
                 logger.error({ error, action }, "Imgflip API request failed");
+                Sentry.captureException(error, {
+                    tags: { component: "tool", tool: "imgflip", action },
+                });
                 return {
                     error: true,
                     message:

@@ -390,6 +390,10 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
         };
     } catch (error) {
         employeeLogger.error({ error }, "❌ Employee execution failed");
+        Sentry.captureException(error, {
+            tags: { component: "ai-team", agent: "employee" },
+            extra: { jobId, userEmail },
+        });
 
         return {
             success: false,
@@ -646,6 +650,10 @@ export async function runEmployeeStreaming(
                     { error },
                     "❌ Streaming employee execution failed"
                 );
+                Sentry.captureException(error, {
+                    tags: { component: "ai-team", agent: "employee-stream" },
+                    extra: { jobId, userEmail, toolCallsExecuted },
+                });
 
                 // Build structured error details - include stack in all environments for observability
                 const errorDetails: JobErrorDetails = {

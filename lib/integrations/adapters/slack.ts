@@ -90,6 +90,10 @@ export class SlackAdapter extends ServiceAdapter {
             return { success: true };
         } catch (error) {
             logger.error({ error, userId }, "Failed to verify Slack connection");
+            this.captureError(error, {
+                action: "testConnection",
+                userId,
+            });
             return {
                 success: false,
                 error:

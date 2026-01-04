@@ -129,6 +129,7 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
             // Convert raw HTTP errors to user-friendly messages
             const errorMessage = error instanceof Error ? error.message : String(error);
 
+            // Expected OAuth/network failures - don't capture to Sentry
             if (errorMessage.includes("401") || errorMessage.includes("403")) {
                 return {
                     success: false,
@@ -152,6 +153,12 @@ export class GoogleCalendarContactsAdapter extends ServiceAdapter {
                     error: "Google Calendar is temporarily unavailable. Try again in a moment.",
                 };
             }
+
+            // Unexpected error - capture to Sentry
+            this.captureError(error, {
+                action: "testConnection",
+                userId,
+            });
 
             return {
                 success: false,

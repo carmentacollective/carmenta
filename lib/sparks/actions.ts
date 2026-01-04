@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 import { getRecentConnections, getStarredConnections } from "@/lib/actions/connections";
 import { getServicesWithStatus } from "@/lib/actions/integrations";
@@ -64,6 +65,10 @@ export async function getSparkData(): Promise<GenerateSparksInput | null> {
         };
     } catch (error) {
         logger.error({ error }, "Failed to get spark data");
+        Sentry.captureException(error, {
+            level: "warning",
+            tags: { component: "sparks", operation: "get_data" },
+        });
         return null;
     }
 }

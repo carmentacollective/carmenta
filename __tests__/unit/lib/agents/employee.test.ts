@@ -19,6 +19,7 @@ vi.mock("ai", () => ({
 vi.mock("@sentry/nextjs", () => ({
     startSpan: vi.fn((_, fn) => fn({ setAttribute: vi.fn() })),
     getActiveSpan: vi.fn(() => ({ spanContext: () => ({ traceId: "test-trace-id" }) })),
+    captureException: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({

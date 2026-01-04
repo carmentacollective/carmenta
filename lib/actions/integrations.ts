@@ -254,6 +254,11 @@ export async function connectApiKeyService(
             { error, serviceId },
             "Failed to test API key - continuing with connection"
         );
+        Sentry.captureException(error, {
+            level: "warning",
+            tags: { component: "integrations", operation: "api_key_test" },
+            extra: { serviceId },
+        });
         // Don't block connection if test fails for unexpected reasons
     }
 
