@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Edit3, Check, X, ChevronDown, Loader2 } from "lucide-react";
 
@@ -50,11 +50,31 @@ export function ScheduleEditor({
     const [naturalInput, setNaturalInput] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
+    const timezoneDropdownRef = useRef<HTMLDivElement>(null);
 
     // Get display text - use stored value or generate from cron
     const displayText =
         scheduleDisplayText || generateDisplayTextFromCron(scheduleCron, timezone);
     const tzAbbr = getTimezoneAbbreviation(timezone);
+
+    // Click-outside handler for timezone dropdown
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                timezoneDropdownRef.current &&
+                !timezoneDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowTimezoneDropdown(false);
+            }
+        }
+
+        if (showTimezoneDropdown) {
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => {
+                document.removeEventListener("mousedown", handleClickOutside);
+            };
+        }
+    }, [showTimezoneDropdown]);
 
     const handlePresetSelect = useCallback(
         (preset: SchedulePreset) => {
@@ -171,7 +191,7 @@ export function ScheduleEditor({
                     </div>
 
                     {/* Compact timezone - inline with option to change */}
-                    <div className="relative">
+                    <div className="relative" ref={timezoneDropdownRef}>
                         <button
                             onClick={() =>
                                 setShowTimezoneDropdown(!showTimezoneDropdown)

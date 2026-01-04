@@ -12,6 +12,7 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
+import parser from "cron-parser";
 
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
@@ -110,6 +111,15 @@ export async function POST(request: NextRequest) {
         // Reject expressions that run every minute
         if (parts[0] === "*") {
             throw new Error("Schedule would run too frequently");
+        }
+
+        // Validate with cron-parser
+        try {
+            parser.parse(cron);
+        } catch (error) {
+            throw new Error(
+                `Invalid cron expression: ${error instanceof Error ? error.message : "parsing failed"}`
+            );
         }
 
         logger.info(
