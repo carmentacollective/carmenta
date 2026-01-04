@@ -215,7 +215,8 @@ const requestLogger = logger.child({ requestId, userEmail });
 requestLogger.info("Processing request");
 ```
 
-For non-critical background operations, use void-immediately-invoked async pattern:
+For non-critical background operations, use void-immediately-invoked async pattern with
+Sentry reporting:
 
 ```typescript
 void (async () => {
@@ -223,9 +224,13 @@ void (async () => {
     await db.activityLog.create({ data });
   } catch (error) {
     logger.error({ error }, "Failed to log activity");
+    Sentry.captureException(error, {
+      level: "warning",
+      tags: { category: "background" },
+    });
   }
 })();
 ```
 
-This ensures the operation doesn't block the request and errors are caught without
-failing the main flow.
+This ensures the operation doesn't block the request. Errors are caught without failing
+the main flow, but still reported to Sentry for visibility.

@@ -1,7 +1,8 @@
 # Error Handling Strategy
 
-**Decision:** Fail Loud, Recover at Boundaries **Status:** ✅ Adopted **Date:**
-2026-01-03
+**Decision:** Fail Loud, Recover at Boundaries  
+**Status:** ✅ Adopted  
+**Date:** 2026-01-03
 
 ## The Problem
 
@@ -91,18 +92,18 @@ async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
 
 ### 2. Resource Cleanup
 
-When you need to release resources before letting the error propagate:
+When you need to release resources regardless of success or failure:
 
 ```typescript
-// ✅ Good - cleanup then rethrow
-async function processWithConnection(connectionId: string) {
-  const connection = await acquireConnection(connectionId);
+// ✅ Good - finally ensures cleanup on both paths
+async function withConnection<T>(fn: (conn: Connection) => Promise<T>): Promise<T> {
+  const conn = await pool.acquire();
   try {
-    return await doWork(connection);
-  } catch (error) {
-    await connection.release(); // cleanup
-    throw error; // still throws - error reaches boundary
+    return await fn(conn);
+  } finally {
+    await conn.release(); // runs on success AND error
   }
+  // errors still bubble up to boundary
 }
 ```
 
