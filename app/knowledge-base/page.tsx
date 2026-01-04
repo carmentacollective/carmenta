@@ -85,13 +85,18 @@ export default async function KnowledgeBasePage() {
     }
 
     // 2. Memories - learned knowledge from conversations
-    const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
-    if (knowledgeFolder) {
+    // Aggregate ALL folders under knowledge.* namespace (knowledge.people, knowledge.preferences, etc.)
+    // The librarian creates 3-level paths like knowledge.category.name, which getParentPath
+    // groups as knowledge.category folders - not a single knowledge folder
+    const knowledgeFolders = userFolders.filter((f) => f.path.startsWith("knowledge"));
+    const knowledgeDocuments = knowledgeFolders.flatMap((f) => f.documents);
+
+    if (knowledgeDocuments.length > 0) {
         allFolders.push({
-            ...knowledgeFolder,
             id: "memories",
             name: "memories",
             path: "memories",
+            documents: knowledgeDocuments.sort((a, b) => a.name.localeCompare(b.name)),
         });
     } else {
         allFolders.push({
