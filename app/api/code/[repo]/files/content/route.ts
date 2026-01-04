@@ -11,6 +11,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 import { promises as fs } from "fs";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import path from "path";
 
 import { logger } from "@/lib/logger";
@@ -21,6 +23,8 @@ import {
     isWorkspaceMode,
     validateUserProjectPath,
 } from "@/lib/code/projects";
+
+const execFileAsync = promisify(execFile);
 
 /**
  * Maximum file size to read (1MB)
@@ -117,6 +121,7 @@ export async function GET(
         // Parse query params
         const { searchParams } = new URL(request.url);
         const filePath = searchParams.get("path");
+        const gitRef = searchParams.get("ref"); // Optional: "HEAD" to read from git
 
         if (!filePath) {
             return new Response(JSON.stringify({ error: "Path is required" }), {
@@ -154,6 +159,76 @@ export async function GET(
         // Normalize path for actual file operations (same as security check)
         const safePath = filePath.replace(/^\/+/, "") || ".";
         const absolutePath = path.resolve(project.path, safePath);
+
+        // If git ref is provided, read from git instead of filesystem
+        if (gitRef) {
+            try {
+                // Validate ref is safe (only alphanumeric, ^, ~, HEAD)
+                if (!/^[a-zA-Z0-9^~\-_.]+$/.test(gitRef)) {
+                    return new Response(JSON.stringify({ error: "Invalid git ref" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                // Use execFile to prevent command injection - arguments passed as array
+                const { stdout } = await execFileAsync(
+                    "git",
+                    ["show", `${gitRef}:${safePath}`],
+                    {
+                        cwd: project.path,
+                        maxBuffer: MAX_FILE_SIZE,
+                        encoding: "utf-8",
+                    }
+                );
+
+                const lines = stdout.split("\n");
+                const extension = path.extname(safePath).slice(1).toLowerCase();
+
+                logger.info(
+                    { repo, filePath: safePath, ref: gitRef, lineCount: lines.length },
+                    "Read git file content"
+                );
+
+                return NextResponse.json({
+                    content: stdout,
+                    isBinary: false,
+                    extension,
+                    size: stdout.length,
+                    lineCount: lines.length,
+                    truncated: false,
+                    gitRef,
+                    message: null,
+                });
+            } catch (error) {
+                // File doesn't exist in git at this ref
+                const errorMessage =
+                    error instanceof Error ? error.message : "Unknown error";
+
+                if (
+                    errorMessage.includes("does not exist") ||
+                    errorMessage.includes("fatal:")
+                ) {
+                    return NextResponse.json({
+                        content: null,
+                        isBinary: false,
+                        extension: path.extname(safePath).slice(1).toLowerCase(),
+                        size: 0,
+                        lineCount: 0,
+                        truncated: false,
+                        gitRef,
+                        message: "File not found in git history",
+                        isNewFile: true,
+                    });
+                }
+
+                logger.error(
+                    { error, repo, filePath: safePath, ref: gitRef },
+                    "Git read failed"
+                );
+                throw error;
+            }
+        }
 
         // Check file exists
         let stat;

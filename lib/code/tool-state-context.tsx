@@ -249,18 +249,32 @@ export function ToolStateProvider({ children }: { children: ReactNode }) {
     }, [messages, tick]);
 
     // Update stream health based on computed messages
-    // Separate effect to avoid side effects in useMemo
+    // Only update when hasRunning actually changes to avoid cascading re-renders
     useEffect(() => {
         const hasRunning = messagesWithElapsed.some(
             (m) => m.type === "tool" && m.state === "running"
         );
 
-        setStreamHealth({
-            lastActivityAt: lastActivityRef.current,
-            hasRunningTools: hasRunning,
-            secondsSinceActivity: lastActivityRef.current
-                ? Math.floor((Date.now() - lastActivityRef.current) / 1000)
-                : 0,
+        setStreamHealth((prev) => {
+            const lastActivity = lastActivityRef.current;
+            const secondsSince = lastActivity
+                ? Math.floor((Date.now() - lastActivity) / 1000)
+                : 0;
+
+            // Only update if values actually changed
+            if (
+                prev.hasRunningTools === hasRunning &&
+                prev.lastActivityAt === lastActivity &&
+                prev.secondsSinceActivity === secondsSince
+            ) {
+                return prev;
+            }
+
+            return {
+                lastActivityAt: lastActivity,
+                hasRunningTools: hasRunning,
+                secondsSinceActivity: secondsSince,
+            };
         });
     }, [messagesWithElapsed]);
 

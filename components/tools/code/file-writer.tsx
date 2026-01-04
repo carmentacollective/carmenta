@@ -9,6 +9,7 @@
  * - Character/line count
  * - Expand/collapse for long content
  * - Content visible immediately (not hidden)
+ * - "Show diff" button to compare against previous version (on-demand)
  */
 
 import { useState, useMemo, useCallback } from "react";
@@ -20,11 +21,14 @@ import {
     ChevronDown,
     ChevronUp,
     Loader2,
+    GitCompare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { useConnection } from "@/components/connection/connection-context";
+import { DiffViewer } from "./diff-viewer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 interface FileWriterProps {
@@ -80,8 +84,13 @@ export function FileWriter({
     error,
 }: FileWriterProps) {
     const { copy, copiedId } = useCopyToClipboard();
+    const { projectPath } = useConnection();
     const isCopied = copiedId === toolCallId;
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showDiff, setShowDiff] = useState(false);
+    const [previousContent, setPreviousContent] = useState<string | null>(null);
+    const [isLoadingDiff, setIsLoadingDiff] = useState(false);
+    const [isNewFile, setIsNewFile] = useState(false);
     const isCompleted = status === "completed";
     const isRunning = status === "running";
 
@@ -112,6 +121,51 @@ export function FileWriter({
         if (content) copy(content, toolCallId);
     }, [content, copy, toolCallId]);
 
+    /**
+     * Fetch previous content from git to show diff
+     */
+    const handleShowDiff = useCallback(async () => {
+        if (!filePath || !projectPath) return;
+
+        setIsLoadingDiff(true);
+        try {
+            // Derive repo slug and relative path
+            // Strip trailing slash before extracting repo name
+            const normalizedPath = projectPath.replace(/\/+$/, "");
+            const repoSlug = normalizedPath.split("/").pop() ?? "";
+            const relativePath = filePath.startsWith(projectPath)
+                ? filePath.slice(projectPath.length)
+                : filePath;
+
+            // Fetch previous content from git HEAD
+            const response = await fetch(
+                `/api/code/${repoSlug}/files/content?path=${encodeURIComponent(relativePath)}&ref=HEAD`
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch previous content");
+            }
+
+            const data = await response.json();
+
+            if (data.isNewFile || data.content === null) {
+                // File is new (doesn't exist in git)
+                setIsNewFile(true);
+                setPreviousContent("");
+            } else {
+                setPreviousContent(data.content);
+            }
+            setShowDiff(true);
+        } catch (err) {
+            // If we can't fetch, assume it's a new file
+            setIsNewFile(true);
+            setPreviousContent("");
+            setShowDiff(true);
+        } finally {
+            setIsLoadingDiff(false);
+        }
+    }, [filePath, projectPath]);
+
     return (
         <div
             className="border-border bg-card mb-3 w-full overflow-hidden rounded-lg border"
@@ -139,6 +193,33 @@ export function FileWriter({
                     {/* Loading indicator */}
                     {isRunning && (
                         <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                    )}
+
+                    {/* Show diff button - on demand comparison to git HEAD */}
+                    {isCompleted && content && projectPath && !showDiff && (
+                        <button
+                            onClick={handleShowDiff}
+                            disabled={isLoadingDiff}
+                            className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors disabled:opacity-50"
+                            aria-label="Show diff against previous version"
+                        >
+                            {isLoadingDiff ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                <GitCompare className="h-3 w-3" />
+                            )}
+                            <span>Show diff</span>
+                        </button>
+                    )}
+
+                    {/* Hide diff button */}
+                    {showDiff && (
+                        <button
+                            onClick={() => setShowDiff(false)}
+                            className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors"
+                        >
+                            <span>Hide diff</span>
+                        </button>
                     )}
 
                     {/* Copy button */}
@@ -186,8 +267,28 @@ export function FileWriter({
                     </div>
                 )}
 
+                {/* Diff view - on demand comparison to git HEAD */}
+                {isCompleted && content && showDiff && previousContent !== null && (
+                    <div className="p-2">
+                        {isNewFile ? (
+                            <div className="text-muted-foreground flex items-center gap-2 px-2 py-3 text-sm">
+                                <FilePlus className="h-4 w-4 text-green-500" />
+                                <span>New file - no previous version to compare</span>
+                            </div>
+                        ) : (
+                            <DiffViewer
+                                oldValue={previousContent}
+                                newValue={content}
+                                oldTitle="HEAD"
+                                newTitle="New"
+                                filePath={filePath}
+                            />
+                        )}
+                    </div>
+                )}
+
                 {/* Content preview with syntax highlighting */}
-                {isCompleted && content && (
+                {isCompleted && content && !showDiff && (
                     <div
                         className={cn(
                             "[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0",
