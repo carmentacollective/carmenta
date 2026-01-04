@@ -279,16 +279,14 @@ describe("Message-Level Tool Rendering", () => {
                 <WebSearchResults
                     toolCallId="tool-1"
                     status="completed"
-                    input={{ query: "TypeScript" }}
-                    output={{
-                        results: [
-                            {
-                                title: "TypeScript Handbook",
-                                url: "https://typescriptlang.org/docs",
-                                snippet: "Learn TypeScript",
-                            },
-                        ],
-                    }}
+                    query="TypeScript"
+                    results={[
+                        {
+                            title: "TypeScript Handbook",
+                            url: "https://typescriptlang.org/docs",
+                            snippet: "Learn TypeScript",
+                        },
+                    ]}
                 />
             );
 
@@ -301,9 +299,10 @@ describe("Message-Level Tool Rendering", () => {
             const { container } = render(
                 <CalculateResult
                     toolCallId="tool-1"
+                    toolName="calculate"
                     status="completed"
                     input={{ expression: "2 + 2" }}
-                    output={{ result: 4, expression: "2 + 2" }}
+                    output={{ result: 4 }}
                 />
             );
 
@@ -317,6 +316,7 @@ describe("Message-Level Tool Rendering", () => {
                 <GiphyToolResult
                     toolCallId="tool-1"
                     status="completed"
+                    action="search"
                     input={{ query: "celebration" }}
                     output={{
                         url: "https://media.giphy.com/media/abc123/giphy.gif",
@@ -421,6 +421,7 @@ describe("Message-Level Tool Rendering", () => {
             const { container } = render(
                 <CalculateResult
                     toolCallId="tool-1"
+                    toolName="calculate"
                     status="running"
                     input={{ expression: "complex calculation" }}
                 />
@@ -435,6 +436,7 @@ describe("Message-Level Tool Rendering", () => {
             const { container } = render(
                 <CalculateResult
                     toolCallId="tool-1"
+                    toolName="calculate"
                     status="error"
                     input={{ expression: "1/0" }}
                     error="Division by zero"
