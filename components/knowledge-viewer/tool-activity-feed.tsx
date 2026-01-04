@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 interface ToolPart {
     type: string;
     toolCallId?: string;
-    state?: "input-available" | "partial-call" | "call" | "result";
+    state?: "input-streaming" | "input-available" | "output-available" | "output-error";
     input?: Record<string, unknown>;
     output?: unknown;
     errorText?: string;
@@ -106,7 +106,7 @@ function getPathFromInput(input?: Record<string, unknown>): string | null {
 function ToolActivityItem({ part }: { part: ToolPart }) {
     const { icon: Icon, verb } = getToolDisplay(part.type);
     const path = getPathFromInput(part.input);
-    const isComplete = part.state === "result";
+    const isComplete = part.state === "output-available";
     const hasError = !!part.errorText;
 
     // Check if tool output indicates success
