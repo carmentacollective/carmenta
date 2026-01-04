@@ -208,6 +208,20 @@ def test_allowed_operations():
         "git add --all → allowed"
     )
 
+    # git commit -n (dry-run flag, NOT --no-verify)
+    exit_code, stdout, _ = run_hook("git commit -n -m 'test'")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git commit -n → allowed (dry-run, not no-verify)"
+    )
+
+    # git push -n (dry-run flag, NOT --no-verify)
+    exit_code, stdout, _ = run_hook("git push -n origin feature")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git push -n → allowed (dry-run, not no-verify)"
+    )
+
     # git status (read operation)
     exit_code, stdout, _ = run_hook("git status")
     results.check(

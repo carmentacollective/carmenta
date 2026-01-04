@@ -28,17 +28,33 @@ fi
 if git diff-tree -r --name-only --no-commit-id HEAD@{1} HEAD 2>/dev/null | grep -q "lib/db/schema.ts"; then
   echo "🗄️  Checking for schema changes..."
 
-  # Count migrations before generating
-  BEFORE=$(ls -1 drizzle/migrations/*.sql 2>/dev/null | wc -l | tr -d ' ')
+  # Count migrations before generating (use find to avoid glob injection)
+  BEFORE=$(find drizzle/migrations -maxdepth 1 -name '*.sql' -type f 2>/dev/null | wc -l | tr -d ' ')
 
-  # Generate migrations silently
-  if ! pnpm run db:generate > /dev/null 2>&1; then
-    echo "❌ pnpm run db:generate failed. Please run manually: pnpm run db:generate" >&2
+  # Generate migrations and capture output to show on failure
+  DB_OUTPUT=$(pnpm run db:generate 2>&1)
+  DB_EXIT=$?
+
+  if [ $DB_EXIT -ne 0 ]; then
+    echo "❌ pnpm run db:generate failed:" >&2
+    echo "$DB_OUTPUT" >&2
+    echo "" >&2
+    echo "Please fix the schema errors above and run manually: pnpm run db:generate" >&2
     exit 1
   fi
 
   # Count migrations after generating
-  AFTER=$(ls -1 drizzle/migrations/*.sql 2>/dev/null | wc -l | tr -d ' ')
+  AFTER=$(find drizzle/migrations -maxdepth 1 -name '*.sql' -type f 2>/dev/null | wc -l | tr -d ' ')
+
+  # Validate counts are numeric
+  BEFORE=${BEFORE:-0}
+  AFTER=${AFTER:-0}
+
+  if ! [ "$BEFORE" -eq "$BEFORE" ] 2>/dev/null || ! [ "$AFTER" -eq "$AFTER" ] 2>/dev/null; then
+    echo "⚠️  Warning: Could not count migrations reliably" >&2
+    echo "   Please check drizzle/migrations/ manually" >&2
+    exit 0
+  fi
 
   # Only notify if new migrations were created
   if [ "$AFTER" -gt "$BEFORE" ]; then

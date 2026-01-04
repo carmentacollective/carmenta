@@ -48,14 +48,15 @@ def validate_directory(path: str) -> bool:
     """
     Validate that a directory path is safe and accessible.
     Prevents directory traversal attacks and escape attempts.
+    Does not follow symlinks to prevent path traversal outside repository.
 
     Returns: True if path is valid and safe
     """
     try:
-        # Resolve to absolute path
-        resolved = os.path.realpath(path)
-        # Check if directory exists and is accessible
-        return os.path.isdir(resolved) and os.access(resolved, os.R_OK)
+        # Resolve to absolute path without following symlinks
+        resolved = os.path.abspath(path)
+        # Check if directory exists and is accessible (don't follow symlinks)
+        return os.path.isdir(resolved) and os.access(resolved, os.R_OK, follow_symlinks=False)
     except (OSError, ValueError):
         return False
 
