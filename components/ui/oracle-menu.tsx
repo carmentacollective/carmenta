@@ -29,6 +29,7 @@ import {
     Shield,
     FileText,
     Lock,
+    HelpCircle,
     ExternalLink,
     Home,
 } from "lucide-react";
@@ -237,6 +238,24 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           <Github className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative flex items-center gap-1">
                                               Source Code
+                                              <ExternalLink className="h-3 w-3 opacity-50" />
+                                          </span>
+                                      </Link>
+
+                                      <div className="border-foreground/10 my-1 border-t" />
+
+                                      {/* Support */}
+                                      <Link
+                                          href="https://github.com/carmentacollective/carmenta/issues"
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <HelpCircle className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative flex items-center gap-1">
+                                              Help & Feedback
                                               <ExternalLink className="h-3 w-3 opacity-50" />
                                           </span>
                                       </Link>
