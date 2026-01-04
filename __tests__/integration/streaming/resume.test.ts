@@ -269,9 +269,8 @@ describe("GET /api/connection/[id]/stream (Stream Resume)", () => {
 
     describe("Development Mode", () => {
         it("allows requests without Clerk user in development mode", async () => {
-            // Store original NODE_ENV
-            const originalNodeEnv = process.env.NODE_ENV;
-            process.env.NODE_ENV = "development";
+            // Use vi.stubEnv to mock NODE_ENV (restored automatically)
+            vi.stubEnv("NODE_ENV", "development");
 
             mockDecodeConnectionId.mockReturnValue(123);
             mockCurrentUser.mockResolvedValue(null); // No authenticated user
@@ -290,8 +289,8 @@ describe("GET /api/connection/[id]/stream (Stream Resume)", () => {
             // Should call findUserByClerkId with 'dev-user-id' fallback
             expect(mockFindUserByClerkId).toHaveBeenCalledWith("dev-user-id");
 
-            // Restore NODE_ENV
-            process.env.NODE_ENV = originalNodeEnv;
+            // Environment is restored automatically after test
+            vi.unstubAllEnvs();
         });
     });
 

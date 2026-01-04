@@ -456,6 +456,39 @@ function getFileParts(message: UIMessage): FilePart[] {
 }
 
 /**
+ * Data part type for generative UI data (e.g., data-askUserInput)
+ * These are streamed by the server using createUIMessageStream's data format.
+ */
+interface DataPart {
+    type: `data-${string}`;
+    id?: string;
+    data: Record<string, unknown>;
+}
+
+/**
+ * Type guard for data parts
+ */
+function isDataPart(part: unknown): part is DataPart {
+    return (
+        part !== null &&
+        typeof part === "object" &&
+        "type" in part &&
+        typeof (part as { type: unknown }).type === "string" &&
+        (part as { type: string }).type.startsWith("data-") &&
+        "data" in part
+    );
+}
+
+/**
+ * Extract data parts from UIMessage
+ * Data parts have type starting with "data-" (e.g., "data-askUserInput")
+ */
+function getDataParts(message: UIMessage): DataPart[] {
+    if (!message?.parts) return [];
+    return (message.parts as unknown[]).filter(isDataPart);
+}
+
+/**
  * Map tool part state to ToolStatus
  */
 function getToolStatus(state: ToolPart["state"]): ToolStatus {
@@ -1632,6 +1665,12 @@ function AssistantMessage({
     // Extract file parts
     const fileParts = getFileParts(message);
 
+    // Extract data parts (e.g., data-askUserInput for clarifying questions)
+    const dataParts = getDataParts(message);
+
+    // Filter for askUserInput data parts specifically
+    const askUserInputParts = dataParts.filter((p) => p.type === "data-askUserInput");
+
     // Code mode: Skip concierge display entirely - Claude Code handles its own routing
     // and doesn't produce concierge metadata. Content streams directly.
     // Normal mode: Show concierge IMMEDIATELY when streaming starts.
@@ -1658,11 +1697,12 @@ function AssistantMessage({
     // Current model ID for regenerate menu - prefer override, fallback to concierge selection
     const currentModelId = overrides.modelId ?? concierge?.modelId;
 
-    // Determine if we have LLM output to show (any of: reasoning, tools, files, content, or thinking)
+    // Determine if we have LLM output to show (any of: reasoning, tools, files, data parts, content, or thinking)
     const hasLlmOutput =
         reasoning ||
         toolParts.length > 0 ||
         fileParts.length > 0 ||
+        askUserInputParts.length > 0 ||
         hasContent ||
         showThinking;
 
@@ -1802,6 +1842,30 @@ function AssistantMessage({
                                     </div>
                                 </div>
                             )}
+
+                            {/* Clarifying questions - data-askUserInput parts */}
+                            {askUserInputParts.length > 0 && (
+                                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                                    {askUserInputParts.map((part, idx) => (
+                                        <AskUserInputResult
+                                            key={part.id || `ask-${idx}`}
+                                            toolCallId={part.id || `ask-${idx}`}
+                                            status="completed"
+                                            output={
+                                                part.data as {
+                                                    question: string;
+                                                    options?: Array<{
+                                                        label: string;
+                                                        value: string;
+                                                        description?: string;
+                                                    }>;
+                                                    allowFreeform?: boolean;
+                                                }
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 )}
@@ -1863,6 +1927,30 @@ function AssistantMessage({
                             url={file.url}
                             mediaType={file.mediaType}
                             filename={file.name || "file"}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {/* Fallback: Show askUserInput parts without LLM zone wrapper when no concierge */}
+            {!showConcierge && askUserInputParts.length > 0 && (
+                <div className="mt-2">
+                    {askUserInputParts.map((part, idx) => (
+                        <AskUserInputResult
+                            key={part.id || `ask-${idx}`}
+                            toolCallId={part.id || `ask-${idx}`}
+                            status="completed"
+                            output={
+                                part.data as {
+                                    question: string;
+                                    options?: Array<{
+                                        label: string;
+                                        value: string;
+                                        description?: string;
+                                    }>;
+                                    allowFreeform?: boolean;
+                                }
+                            }
                         />
                     ))}
                 </div>

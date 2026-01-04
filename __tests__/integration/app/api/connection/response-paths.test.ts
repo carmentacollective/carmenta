@@ -264,16 +264,14 @@ async function readStreamAsText(response: Response): Promise<string> {
 
 /**
  * Validate a chunk against the AI SDK schema.
+ * The validate method exists on the AI SDK schema.
  */
 async function validateChunk(
     chunk: unknown
 ): Promise<{ success: true } | { success: false; error: unknown }> {
     const schema = uiMessageChunkSchema();
-    return await (
-        schema as {
-            validate: (c: unknown) => Promise<{ success: boolean; error?: unknown }>;
-        }
-    ).validate(chunk);
+
+    return await (schema as any).validate(chunk);
 }
 
 /**
@@ -310,7 +308,7 @@ describe("Connection API Response Paths", () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Default authenticated user
+        // Default authenticated user - cast to unknown first for mock
         vi.mocked(currentUser).mockResolvedValue({
             id: "test-user-123",
             emailAddresses: [
@@ -325,7 +323,7 @@ describe("Connection API Response Paths", () => {
             lastName: "User",
             fullName: "Test User",
             imageUrl: "https://example.com/avatar.jpg",
-        } as ReturnType<typeof currentUser> extends Promise<infer T> ? T : never);
+        } as unknown as Awaited<ReturnType<typeof currentUser>>);
 
         // Default concierge response (normal path)
         vi.mocked(runConcierge).mockResolvedValue({
@@ -730,7 +728,7 @@ describe("Connection API Response Paths", () => {
         beforeEach(() => {
             // Enable background mode
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
-            vi.mocked(startBackgroundResponse).mockResolvedValue(undefined);
+            vi.mocked(startBackgroundResponse).mockResolvedValue("workflow-123");
 
             // Configure concierge to request background mode
             vi.mocked(runConcierge).mockResolvedValue({
