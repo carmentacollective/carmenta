@@ -1,13 +1,8 @@
 /**
  * Vercel AI Gateway provider.
  *
- * Drop-in alternative to OpenRouter with zero markup pricing.
- * Implements the same interface as openrouter.ts for easy swapping.
- *
- * Key differences from OpenRouter:
- * - Model IDs: Same format (e.g., "anthropic/claude-sonnet-4.5")
- * - Reasoning: Provider-specific options instead of unified format
- * - Fallbacks: Uses `gateway.models` instead of `openrouter.models`
+ * Model IDs use format: "provider/model-name" (e.g., "anthropic/claude-sonnet-4.5")
+ * Full model list: https://ai-gateway.vercel.sh/v1/models
  *
  * @see https://vercel.com/docs/ai-gateway
  * @see https://ai-sdk.dev/providers/ai-sdk-providers/ai-gateway
@@ -218,28 +213,22 @@ export const gatewayProvider: AIProvider = {
 };
 
 /**
- * Model ID mapping for cases where OpenRouter and Gateway use different IDs.
+ * Model ID mapping from internal format to Vercel AI Gateway format.
  *
- * Most models use the same ID format (provider/model-name), but some
- * may have slight variations. Add mappings here as needed.
+ * Gateway model IDs fetched from: https://ai-gateway.vercel.sh/v1/models
+ * Only add mappings where our internal ID differs from Gateway's ID.
  */
 export const MODEL_ID_MAPPINGS: Record<string, string> = {
-    // xAI uses different provider prefix
-    // OpenRouter: "x-ai/grok-4.1-fast"
-    // Gateway: "xai/grok-4.1-fast-non-reasoning" or "xai/grok-4.1-fast-reasoning"
+    // xAI uses different provider prefix in Gateway
+    // Internal: "x-ai/grok-4.1-fast"
+    // Gateway: "xai/grok-4.1-fast-non-reasoning" (reasoning mode explicit)
     "x-ai/grok-4.1-fast": "xai/grok-4.1-fast-non-reasoning",
-
-    // Google Gemini uses .0 suffix in gateway
-    // OpenRouter: "google/gemini-3-pro-preview"
-    // Gateway: "google/gemini-3.0-pro-preview"
-    "google/gemini-3-pro-preview": "google/gemini-3.0-pro-preview",
-    "google/gemini-3-flash-preview": "google/gemini-3.0-flash-preview",
 };
 
 /**
- * Translate an OpenRouter model ID to Gateway format.
+ * Translate internal model ID to Vercel AI Gateway format.
  * Returns the original ID if no mapping exists.
  */
-export function translateModelId(openRouterId: string): string {
-    return MODEL_ID_MAPPINGS[openRouterId] ?? openRouterId;
+export function translateModelId(internalId: string): string {
+    return MODEL_ID_MAPPINGS[internalId] ?? internalId;
 }

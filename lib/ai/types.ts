@@ -1,9 +1,7 @@
 /**
- * Shared types for AI providers (OpenRouter, Vercel AI Gateway).
+ * Shared types for AI providers.
  *
- * Provides a unified interface so consumers don't need to care which
- * provider is active. Both gateway.ts and openrouter.ts implement
- * the same patterns using these shared types.
+ * Provides a unified interface for model configuration and provider options.
  */
 
 import type { LanguageModel } from "ai";

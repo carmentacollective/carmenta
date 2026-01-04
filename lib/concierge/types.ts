@@ -343,7 +343,7 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
  * caching, giving sub-second latency after the first call.
  * Source: https://ai.google.dev/gemini-api/docs/gemini-3
  */
-export const CONCIERGE_MODEL = "google/gemini-3-flash-preview";
+export const CONCIERGE_MODEL = "google/gemini-3-flash";
 
 /**
  * Whitelist of allowed models the concierge can select.

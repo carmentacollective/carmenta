@@ -259,8 +259,8 @@ describeIf("Vercel AI Gateway Integration", () => {
             expect(options.gateway).toEqual({
                 models: [
                     "anthropic/claude-sonnet-4.5",
-                    "google/gemini-3.0-pro-preview", // Translated
-                    "xai/grok-4.1-fast-non-reasoning", // Translated
+                    "google/gemini-3-pro-preview", // No translation needed
+                    "xai/grok-4.1-fast-non-reasoning", // Translated (x-ai → xai)
                 ],
             });
         });
@@ -273,9 +273,9 @@ describeIf("Vercel AI Gateway Integration", () => {
             );
         });
 
-        it("translates Google Gemini model IDs", () => {
+        it("passes through Google Gemini model IDs unchanged", () => {
             expect(translateModelId("google/gemini-3-pro-preview")).toBe(
-                "google/gemini-3.0-pro-preview"
+                "google/gemini-3-pro-preview"
             );
         });
 
@@ -301,7 +301,7 @@ describeIf("Vercel AI Gateway Integration", () => {
                     cacheControl: { type: "ephemeral" },
                 },
                 gateway: {
-                    models: ["google/gemini-3.0-pro-preview"], // Translated
+                    models: ["google/gemini-3-pro-preview"], // No translation needed
                 },
             });
         });

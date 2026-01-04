@@ -41,9 +41,9 @@ import type { ModelMessage } from "ai";
  * Sonnet for balanced cost/capability, with fallbacks
  */
 const EMPLOYEE_FALLBACK_CHAIN = [
-    "anthropic/claude-sonnet-4",
-    "anthropic/claude-3-5-sonnet-20241022",
-    "google/gemini-2.0-flash-001",
+    "anthropic/claude-sonnet-4.5",
+    "google/gemini-3-pro-preview",
+    "openai/gpt-5.2",
 ];
 
 /**

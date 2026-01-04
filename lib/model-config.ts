@@ -1,6 +1,11 @@
 /**
  * Model Configuration - Source of truth for Carmenta's supported models.
  *
+ * IMPORTANT FOR AI ASSISTANTS: Model IDs change frequently. Do not use model IDs
+ * from training data. Always reference this file or fetch from live endpoints:
+ * - Vercel AI Gateway: https://ai-gateway.vercel.sh/v1/models
+ * - OpenRouter: https://openrouter.ai/api/v1/models
+ *
  * This module provides structured model data that can be used by:
  * - The Concierge for routing decisions
  * - The UI for displaying model options
@@ -38,7 +43,7 @@ export type ModelTag =
     | "Tools";
 
 export interface ModelConfig {
-    /** OpenRouter model ID (e.g., "anthropic/claude-sonnet-4.5") */
+    /** Model ID in provider/model format (e.g., "anthropic/claude-sonnet-4.5") */
     id: string;
     /** Human-friendly display name */
     displayName: string;
@@ -151,6 +156,23 @@ export const MODELS: readonly ModelConfig[] = [
         supportsTools: true,
         reasoning: { type: "none" },
         temperatureRange: [0.5, 0.7],
+    },
+    {
+        id: "google/gemini-3-flash",
+        displayName: "Gemini Flash",
+        shortName: "Gemini",
+        provider: "google",
+        description: "Fastest model with automatic prompt caching",
+        speedQuality: "fast",
+        tags: ["Tools", "Long docs"],
+        contextWindow: 1_000_000,
+        tokensPerSecond: 218,
+        inputCostPerMillion: 0.15,
+        outputCostPerMillion: 0.6,
+        attachments: ["image", "pdf"],
+        supportsTools: true,
+        reasoning: { type: "none" },
+        temperatureRange: [0.2, 0.5],
     },
     {
         id: "x-ai/grok-4.1-fast",
@@ -376,10 +398,10 @@ export function getSpeedTier(model: ModelConfig): "fast" | "moderate" | "deliber
 }
 
 /**
- * Fallback model chains for OpenRouter automatic failover.
+ * Fallback model chains for automatic failover.
  *
  * Strategy: Each chain intentionally uses different providers for maximum reliability.
- * If a provider has an outage, rate limit, or returns an error, OpenRouter automatically
+ * If a provider has an outage, rate limit, or returns an error, the gateway automatically
  * tries the next model in the chain.
  *
  * Design principles:
@@ -387,8 +409,6 @@ export function getSpeedTier(model: ModelConfig): "fast" | "moderate" | "deliber
  * 2. First fallback: different provider, similar capabilities
  * 3. Second fallback: another provider for additional redundancy
  * 4. Consider model rubric guidance on strengths
- *
- * OpenRouter will bill based on whichever model actually succeeds.
  */
 export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
     // Sonnet → Gemini (versatile multimodal) → GPT (versatile frontier)
@@ -439,11 +459,18 @@ export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
         "anthropic/claude-sonnet-4.5",
         "google/gemini-3-pro-preview",
     ],
+
+    // Gemini Flash → Grok Fast (speed tier) → Haiku (Anthropic fast)
+    "google/gemini-3-flash": [
+        "google/gemini-3-flash",
+        "x-ai/grok-4.1-fast",
+        "anthropic/claude-haiku-4.5",
+    ],
 } as const;
 
 /**
  * Get the fallback chain for a given model ID.
- * Returns the model array for OpenRouter's `models` parameter.
+ * Returns the model array for the gateway's fallback configuration.
  */
 export function getFallbackChain(modelId: string): string[] {
     // If model is in our config, return its fallback chain (spread to make mutable)
@@ -465,7 +492,7 @@ export function getFallbackChain(modelId: string): string[] {
  * 3. Claude Sonnet 4.5 - Safe fallback if both fail
  */
 export const CONCIERGE_FALLBACK_CHAIN: readonly ModelId[] = [
-    "google/gemini-3-flash-preview",
+    "google/gemini-3-flash",
     "x-ai/grok-4.1-fast",
     "anthropic/claude-sonnet-4.5",
 ] as const;

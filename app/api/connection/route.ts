@@ -776,29 +776,49 @@ export async function POST(req: Request) {
                         );
                     }
 
-                    // Detect and log model failover
+                    // Detect model failover (not just ID normalization)
+                    // Provider returns canonical ID (e.g., "claude-haiku-4-5-20251001")
+                    // while we request alias (e.g., "anthropic/claude-haiku-4.5")
                     const actualModelId = response.modelId;
                     if (actualModelId && actualModelId !== concierge.modelId) {
-                        logger.warn(
-                            {
-                                requestedModel: concierge.modelId,
-                                actualModel: actualModelId,
-                                userEmail,
-                                connectionId: currentConnectionId,
-                            },
-                            "🔄 Model failover occurred - OpenRouter used fallback"
-                        );
+                        // Check if this is just ID normalization vs true failover
+                        // True failover = different model family (e.g., sonnet → haiku)
+                        const requestedBase = concierge.modelId
+                            .replace(/^[^/]+\//, "") // Remove provider prefix
+                            .replace(/[-.][\d.]+$/, "") // Remove version suffix
+                            .toLowerCase();
+                        const actualBase = actualModelId
+                            .replace(/^[^/]+\//, "")
+                            .replace(/[-_][\d]+$/, "") // Remove date suffix like -20251001
+                            .replace(/[-.][\d.]+$/, "")
+                            .toLowerCase();
 
-                        Sentry.addBreadcrumb({
-                            category: "model.failover",
-                            message: `Failover: ${concierge.modelId} → ${actualModelId}`,
-                            level: "warning",
-                            data: {
-                                requestedModel: concierge.modelId,
-                                actualModel: actualModelId,
-                                connectionId: currentConnectionId,
-                            },
-                        });
+                        // Only warn on true failover (different model family)
+                        if (
+                            !actualBase.includes(requestedBase) &&
+                            !requestedBase.includes(actualBase)
+                        ) {
+                            logger.warn(
+                                {
+                                    requestedModel: concierge.modelId,
+                                    actualModel: actualModelId,
+                                    userEmail,
+                                    connectionId: currentConnectionId,
+                                },
+                                "🔄 Model failover occurred"
+                            );
+
+                            Sentry.addBreadcrumb({
+                                category: "model.failover",
+                                message: `Failover: ${concierge.modelId} → ${actualModelId}`,
+                                level: "warning",
+                                data: {
+                                    requestedModel: concierge.modelId,
+                                    actualModel: actualModelId,
+                                    connectionId: currentConnectionId,
+                                },
+                            });
+                        }
                     }
 
                     // Build UI message parts from the step result
