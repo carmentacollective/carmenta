@@ -91,13 +91,28 @@ export function getSizeLimit(mimeType: string): number | null {
 
 /**
  * Format file size for display
+ * Rounds to whole numbers - "107 KB" not "107.34 KB"
  */
 export function formatFileSize(bytes: number): string {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round(bytes / Math.pow(k, i))} ${sizes[i]}`;
+}
+
+/**
+ * Format file size with one decimal place for error messages
+ * Prevents "10 MB file exceeds 10 MB limit" ambiguity when sizes round to same value
+ */
+export function formatFileSizeDetailed(bytes: number): string {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const value = bytes / Math.pow(k, i);
+    // Show one decimal for KB/MB/GB, whole number for bytes
+    return i === 0 ? `${value} ${sizes[i]}` : `${value.toFixed(1)} ${sizes[i]}`;
 }
 
 /**

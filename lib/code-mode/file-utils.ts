@@ -141,6 +141,7 @@ export function getFileIconColor(entry: FileEntry): string {
 
 /**
  * Format file size in human-readable format
+ * Rounds to whole numbers - "107 KB" not "107.34 KB"
  */
 export function formatFileSize(bytes: number): string {
     if (bytes === 0) return "0 B";
@@ -149,7 +150,7 @@ export function formatFileSize(bytes: number): string {
     const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
     const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
 
-    return `${(bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
+    return `${Math.round(bytes / Math.pow(k, i))} ${sizes[i]}`;
 }
 
 /**

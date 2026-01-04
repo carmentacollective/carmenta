@@ -6,8 +6,7 @@
  * Shows pending uploads above the composer with rich previews:
  * - Image thumbnails using object URLs
  * - File type icons for documents and audio
- * - File size and status
- * - Total attachment size summary
+ * - Status during upload, silence on completion (checkmark is enough)
  * - Cancel button per file
  */
 
@@ -16,7 +15,7 @@ import { useEffect, useState } from "react";
 import { X, FileText, Music, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFileAttachments } from "./file-attachment-context";
 import { cn } from "@/lib/utils";
-import { formatFileSize, getFileCategory } from "@/lib/storage/file-config";
+import { getFileCategory } from "@/lib/storage/file-config";
 import type { UploadProgress as UploadProgressType } from "@/lib/storage/types";
 
 export function UploadProgressDisplay({
@@ -25,9 +24,6 @@ export function UploadProgressDisplay({
     onInsertInline?: (fileId: string) => void;
 }) {
     const { pendingFiles, removeFile, getTextContent } = useFileAttachments();
-
-    // Calculate total size across all pending files
-    const totalSize = pendingFiles.reduce((sum, upload) => sum + upload.file.size, 0);
 
     if (pendingFiles.length === 0) return null;
 
@@ -42,10 +38,10 @@ export function UploadProgressDisplay({
                     hasTextContent={!!getTextContent(upload.id)}
                 />
             ))}
-            {/* Total size summary for multiple files */}
+            {/* Simple count for multiple files */}
             {pendingFiles.length > 1 && (
-                <div className="border-foreground/10 text-foreground/50 border-t pt-1 text-right text-xs">
-                    {pendingFiles.length} files · {formatFileSize(totalSize)} total
+                <div className="text-foreground/50 text-right text-xs">
+                    {pendingFiles.length} files attached
                 </div>
             )}
         </div>
@@ -120,19 +116,20 @@ function UploadItem({
     const isProcessing =
         status === "validating" || status === "optimizing" || status === "uploading";
 
-    // Honest status messages - no fake progress bars
+    // Status messages only during transitions - silence on completion (checkmark is enough)
     const getStatusMessage = () => {
         switch (status) {
             case "validating":
-                return "Checking file...";
+                return "Checking...";
             case "optimizing":
                 return "Optimizing...";
             case "uploading":
                 return "Uploading...";
             case "complete":
-                return placeholder || "Ready";
+                // Placeholder for text files, otherwise nothing - checkmark badge is sufficient
+                return placeholder || null;
             case "error":
-                return error || "Upload failed";
+                return error || "That didn't work";
         }
     };
 
@@ -153,29 +150,29 @@ function UploadItem({
                 <FilePreviewThumbnail file={file} />
             </div>
 
-            {/* Filename, size, and status */}
+            {/* Filename and status */}
             <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                    <span className="text-foreground/90 truncate text-sm font-medium">
-                        {file.name}
-                    </span>
-                    <span className="text-foreground/40 shrink-0 text-xs">
-                        {formatFileSize(file.size)}
-                    </span>
+                <div className="text-foreground/90 truncate text-sm font-medium">
+                    {file.name}
                 </div>
-                <div
-                    className={cn(
-                        "text-xs",
-                        isError && "text-destructive",
-                        isComplete && placeholder && "text-foreground/70 font-mono",
-                        isComplete &&
-                            !placeholder &&
-                            "text-green-600 dark:text-green-400",
-                        isProcessing && "text-foreground/60"
-                    )}
-                >
-                    {getStatusMessage()}
-                </div>
+                {/* Only show status row when there's actually something to say */}
+                {(() => {
+                    const statusMessage = getStatusMessage();
+                    return statusMessage ? (
+                        <div
+                            className={cn(
+                                "text-xs",
+                                isError && "text-destructive",
+                                isComplete &&
+                                    placeholder &&
+                                    "text-foreground/70 font-mono",
+                                isProcessing && "text-foreground/60"
+                            )}
+                        >
+                            {statusMessage}
+                        </div>
+                    ) : null;
+                })()}
                 {/* Insert inline for pasted text files */}
                 {isTextFile && hasTextContent && onInsertInline && (
                     <button
@@ -188,11 +185,11 @@ function UploadItem({
                 )}
             </div>
 
-            {/* Remove button */}
+            {/* Remove button - 44px minimum touch target for mobile */}
             <button
                 type="button"
                 onClick={() => onRemove(id)}
-                className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/80 shrink-0 rounded-full p-1 transition-colors"
+                className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/80 active:bg-foreground/15 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full p-2 transition-colors active:scale-95 sm:min-h-0 sm:min-w-0 sm:p-1"
                 aria-label="Remove file"
                 data-tooltip-id="tip"
                 data-tooltip-content="Remove"

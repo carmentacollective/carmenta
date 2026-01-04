@@ -10,7 +10,7 @@ import {
     MIME_TYPE_WHITELIST,
     getFileCategory,
     getSizeLimit,
-    formatFileSize,
+    formatFileSizeDetailed,
     getSupportedFormatsMessage,
 } from "./file-config";
 
@@ -62,8 +62,9 @@ export function validateFile(file: File): ValidationResult {
 
     if (file.size > sizeLimit) {
         const category = getFileCategory(file.type);
-        const limitFormatted = formatFileSize(sizeLimit);
-        const actualFormatted = formatFileSize(file.size);
+        // Use detailed formatting (one decimal) for error messages to prevent ambiguity
+        const limitFormatted = formatFileSizeDetailed(sizeLimit);
+        const actualFormatted = formatFileSizeDetailed(file.size);
 
         logger.warn(
             {
