@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import { SiteHeader } from "@/components/site-header";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 
-// Wrapper to provide required context for InteractiveLogo
+// Wrapper to provide required context
 function renderWithProviders(ui: React.ReactNode) {
     return render(<FloatingEmojiProvider>{ui}</FloatingEmojiProvider>);
 }
@@ -16,10 +16,12 @@ describe("SiteHeader", () => {
         expect(screen.getByText("Carmenta")).toBeInTheDocument();
     });
 
-    it("logo links to home page", () => {
+    it("Oracle menu button is accessible", () => {
         const { container } = renderWithProviders(<SiteHeader />);
-        const link = container.querySelector("a");
-        expect(link).toHaveAttribute("href", "/home");
+        const menuButton = container.querySelector(
+            'button[aria-label="Carmenta menu"]'
+        );
+        expect(menuButton).toBeInTheDocument();
     });
 
     // Note: bordered prop exists but border styling was removed intentionally

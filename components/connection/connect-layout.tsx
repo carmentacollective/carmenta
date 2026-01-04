@@ -33,7 +33,7 @@ import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectRuntimeProvider, useCodeMode } from "./connect-runtime-provider";
 import { ConnectionChooser } from "./connection-chooser";
 import { FolderGit2 } from "lucide-react";
-import { OracleWhisper } from "@/components/ui/oracle-whisper";
+import { OracleMenu } from "@/components/ui/oracle-menu";
 import { UserAuthButton } from "@/components/ui";
 import { FileExplorer } from "@/components/code-mode";
 import type {
@@ -70,13 +70,7 @@ const entranceVariants = {
     }),
 };
 
-// ============================================================
-// Oracle with Whisper - Carmenta speaks to the user
-// ============================================================
-
-function CarmentaOracleWithWhisper() {
-    return <OracleWhisper />;
-}
+// OracleMenu imported from @/components/ui - Carmenta's voice in the interface
 
 // ============================================================
 // Code Mode Indicator - Shows project name when in code mode
@@ -167,14 +161,14 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     <header className="landscape-compact-header border-foreground/5 dark:bg-card/60 relative z-10 shrink-0 space-y-3 border-b bg-white/60 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-2xl sm:space-y-0 sm:px-5 sm:pt-4 sm:pb-4">
                         {/* Row 1: Oracle | (desktop: ConnectionChooser) | (mobile: New) | Avatar */}
                         <div className="flex items-center justify-between">
-                            {/* Oracle with whisper - Carmenta speaks */}
+                            {/* Oracle menu - Carmenta's voice */}
                             <motion.div
                                 variants={entranceVariants}
                                 initial="hidden"
                                 animate="visible"
                                 custom={0}
                             >
-                                <CarmentaOracleWithWhisper />
+                                <OracleMenu />
                             </motion.div>
 
                             {/* Desktop: Connection chooser in center */}

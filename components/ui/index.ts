@@ -17,3 +17,4 @@ export {
 } from "./tap-feedback";
 export { ThemeSwitcher } from "./theme-switcher";
 export { UserAuthButton } from "./user-auth-button";
+export { OracleMenu } from "./oracle-menu";
