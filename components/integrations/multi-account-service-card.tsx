@@ -227,7 +227,9 @@ export function MultiAccountServiceCard({
                                             </span>
                                         ) : needsAttention ? (
                                             <span className="text-xs text-amber-600 dark:text-amber-400">
-                                                Authorization expired
+                                                {account.status === "expired"
+                                                    ? "Authorization expired"
+                                                    : "Needs attention"}
                                             </span>
                                         ) : (
                                             <span className="text-muted-foreground text-xs">
@@ -271,7 +273,9 @@ export function MultiAccountServiceCard({
                                                 ) : (
                                                     <ArrowsClockwise className="h-3.5 w-3.5" />
                                                 )}
-                                                Reconnect
+                                                <span className="hidden sm:inline">
+                                                    Reconnect
+                                                </span>
                                             </button>
                                         ) : (
                                             <>
@@ -328,7 +332,8 @@ export function MultiAccountServiceCard({
                                                         );
                                                         setConfirmingDisconnect(null);
                                                     }}
-                                                    className="flex items-center gap-1 rounded-lg bg-red-500/15 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 dark:text-red-400"
+                                                    disabled={isLoading}
+                                                    className="flex items-center gap-1 rounded-lg bg-red-500/15 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 disabled:opacity-50 dark:text-red-400"
                                                 >
                                                     <LinkBreak className="h-3.5 w-3.5" />
                                                     Confirm
