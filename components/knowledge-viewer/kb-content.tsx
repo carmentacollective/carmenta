@@ -71,15 +71,17 @@ export function KBContent({
     const hasChanges = editContent !== originalContent;
 
     // Derive display save state from hasChanges and saveState
-    // Priority: saving (in flight) > unsaved (user made new changes) > saved > idle
+    // Priority: saving (in flight) > error > unsaved (user made new changes) > saved > idle
     const displaySaveState: SaveState =
         saveState === "saving"
             ? "saving"
-            : hasChanges
-              ? "unsaved"
-              : saveState === "saved"
-                ? "saved"
-                : "idle";
+            : saveState === "error"
+              ? "error"
+              : hasChanges
+                ? "unsaved"
+                : saveState === "saved"
+                  ? "saved"
+                  : "idle";
 
     // Sync state with document prop changes (external system sync pattern)
     const currentPath = kbDocument?.path;
@@ -470,7 +472,9 @@ export function KBContent({
                                       ? "Save"
                                       : displaySaveState === "saved"
                                         ? "Saved"
-                                        : "Save"}
+                                        : displaySaveState === "error"
+                                          ? "Retry"
+                                          : "Save"}
                             </span>
                         </button>
                     </div>
