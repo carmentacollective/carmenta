@@ -78,23 +78,35 @@ function computeDiffStats(
     const oldLines = oldStr.split("\n");
     const newLines = newStr.split("\n");
 
-    // Create sets for quick lookup
-    const oldSet = new Set(oldLines);
-    const newSet = new Set(newLines);
-
-    // Count lines unique to each version
-    let deletions = 0;
-    let additions = 0;
+    // Count occurrences of each line (handles duplicates correctly)
+    const oldCounts = new Map<string, number>();
+    const newCounts = new Map<string, number>();
 
     for (const line of oldLines) {
-        if (!newSet.has(line)) {
-            deletions++;
-        }
+        oldCounts.set(line, (oldCounts.get(line) || 0) + 1);
     }
 
     for (const line of newLines) {
-        if (!oldSet.has(line)) {
-            additions++;
+        newCounts.set(line, (newCounts.get(line) || 0) + 1);
+    }
+
+    // Calculate additions and deletions based on count differences
+    let additions = 0;
+    let deletions = 0;
+
+    // Count deletions: lines in old but not in new, or reduced count
+    for (const [line, oldCount] of oldCounts) {
+        const newCount = newCounts.get(line) || 0;
+        if (newCount < oldCount) {
+            deletions += oldCount - newCount;
+        }
+    }
+
+    // Count additions: lines in new but not in old, or increased count
+    for (const [line, newCount] of newCounts) {
+        const oldCount = oldCounts.get(line) || 0;
+        if (newCount > oldCount) {
+            additions += newCount - oldCount;
         }
     }
 

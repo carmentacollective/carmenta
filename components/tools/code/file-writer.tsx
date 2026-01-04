@@ -130,7 +130,9 @@ export function FileWriter({
         setIsLoadingDiff(true);
         try {
             // Derive repo slug and relative path
-            const repoSlug = projectPath.split("/").pop() ?? "";
+            // Strip trailing slash before extracting repo name
+            const normalizedPath = projectPath.replace(/\/+$/, "");
+            const repoSlug = normalizedPath.split("/").pop() ?? "";
             const relativePath = filePath.startsWith(projectPath)
                 ? filePath.slice(projectPath.length)
                 : filePath;

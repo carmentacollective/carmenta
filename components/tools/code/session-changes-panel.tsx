@@ -56,7 +56,9 @@ interface SessionChangesPanelProps {
  * Fetch git status and diff stats from the API
  */
 async function fetchSessionChanges(projectPath: string): Promise<SessionChangesData> {
-    const repoSlug = projectPath.split("/").pop() ?? "";
+    // Strip trailing slash before extracting repo name
+    const normalizedPath = projectPath.replace(/\/+$/, "");
+    const repoSlug = normalizedPath.split("/").pop() ?? "";
 
     const response = await fetch(`/api/code/${repoSlug}/git/status`);
 
@@ -74,7 +76,9 @@ async function fetchFileDiff(
     projectPath: string,
     filePath: string
 ): Promise<{ oldContent: string; newContent: string }> {
-    const repoSlug = projectPath.split("/").pop() ?? "";
+    // Strip trailing slash before extracting repo name
+    const normalizedPath = projectPath.replace(/\/+$/, "");
+    const repoSlug = normalizedPath.split("/").pop() ?? "";
 
     // Fetch both versions in parallel
     const [headResponse, currentResponse] = await Promise.all([

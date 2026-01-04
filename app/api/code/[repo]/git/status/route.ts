@@ -127,11 +127,15 @@ export async function GET(
             }
         }
 
-        // Get git status
-        const { stdout: statusOutput } = await execAsync("git status --porcelain", {
-            cwd: project.path,
-            encoding: "utf-8",
-        });
+        // Get git status - use execFile for consistency with security pattern
+        const { stdout: statusOutput } = await execFileAsync(
+            "git",
+            ["status", "--porcelain"],
+            {
+                cwd: project.path,
+                encoding: "utf-8",
+            }
+        );
 
         const files = parseGitStatus(statusOutput);
 
@@ -145,10 +149,14 @@ export async function GET(
         }
 
         // Get diff stats for all files (staged and unstaged)
-        const { stdout: diffOutput } = await execAsync("git diff HEAD --numstat", {
-            cwd: project.path,
-            encoding: "utf-8",
-        });
+        const { stdout: diffOutput } = await execFileAsync(
+            "git",
+            ["diff", "HEAD", "--numstat"],
+            {
+                cwd: project.path,
+                encoding: "utf-8",
+            }
+        );
 
         const diffStats = parseDiffStats(diffOutput);
 
