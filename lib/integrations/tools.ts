@@ -9,6 +9,7 @@
  * This pattern reduces token usage by ~95% vs exposing all operations as separate tools.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -154,6 +155,10 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
                     { error, service: service.id, action, userEmail },
                     "Integration tool execution failed"
                 );
+                Sentry.captureException(error, {
+                    tags: { component: "integrations", service: service.id, action },
+                    extra: { userEmail },
+                });
 
                 return {
                     error: true,
@@ -238,6 +243,10 @@ export async function getIntegrationTools(
         );
     } catch (error) {
         logger.error({ error, userEmail }, "Failed to load integration tools");
+        Sentry.captureException(error, {
+            tags: { component: "integrations", operation: "load_tools" },
+            extra: { userEmail },
+        });
     }
 
     return tools;

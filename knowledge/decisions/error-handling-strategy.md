@@ -1,8 +1,7 @@
 # Error Handling Strategy
 
-**Decision:** Fail Loud, Recover at Boundaries  
-**Status:** ✅ Adopted  
-**Date:** 2026-01-03
+**Decision:** Fail Loud, Recover at Boundaries **Status:** ✅ Adopted **Date:**
+2026-01-03
 
 ## The Problem
 

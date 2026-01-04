@@ -570,6 +570,15 @@ export class ParallelProvider implements WebIntelligenceProvider {
             return parsed.data;
         } catch (error) {
             logger.warn({ runId, error }, "Task status check failed");
+            Sentry.captureException(error, {
+                level: "warning",
+                tags: {
+                    component: "web-intelligence",
+                    provider: "parallel",
+                    operation: "task_status",
+                },
+                extra: { runId },
+            });
             return null;
         }
     }
@@ -606,12 +615,15 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
             return parsed.data;
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            const errorStack = error instanceof Error ? error.stack : undefined;
-            logger.error(
-                { runId, errorMessage, errorStack, errorType: typeof error },
-                "Task result fetch failed"
-            );
+            logger.error({ runId, error }, "Task result fetch failed");
+            Sentry.captureException(error, {
+                tags: {
+                    component: "web-intelligence",
+                    provider: "parallel",
+                    operation: "task_result",
+                },
+                extra: { runId },
+            });
             return null;
         }
     }
