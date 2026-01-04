@@ -214,6 +214,11 @@ export default function PrivacyPage() {
                             conversations are processed by AI model providers according
                             to their terms and privacy practices.
                         </p>
+                        <p className="mt-4">
+                            All the above categories exclude text messaging originator
+                            opt-in data and consent; this information will not be shared
+                            with any third parties.
+                        </p>
                     </section>
 
                     <section className="mt-8">
