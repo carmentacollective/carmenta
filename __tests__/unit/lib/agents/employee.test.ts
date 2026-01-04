@@ -446,8 +446,8 @@ describe("runEmployee", () => {
 
         const result = await runEmployee(baseInput);
 
-        // Should still succeed but summary will be undefined from args
+        // Empty args object should fall back to text (no summary present)
         expect(result.success).toBe(true);
-        expect(result.summary).toBeUndefined();
+        expect(result.summary).toBe("Fallback text");
     });
 });

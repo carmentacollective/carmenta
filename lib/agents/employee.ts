@@ -353,7 +353,8 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             ? (completeCall as unknown as { args: CompleteToolParams }).args
             : undefined;
 
-        if (completion) {
+        // Require summary to be present - empty args object should fall back to text
+        if (completion?.summary) {
             employeeLogger.info(
                 {
                     summary: completion.summary,
@@ -470,15 +471,7 @@ export async function runEmployeeStreaming(
 
                 const gateway = getGatewayClient();
                 const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
-                let completeCallData: {
-                    summary: string;
-                    notifications?: Array<{
-                        title: string;
-                        body: string;
-                        priority: "low" | "normal" | "high" | "urgent";
-                    }>;
-                    memoryUpdates?: Record<string, unknown>;
-                } | null = null;
+                let completeCallData: Partial<CompleteToolParams> | null = null;
 
                 // Stream execution
                 const result = streamText({
@@ -585,9 +578,9 @@ export async function runEmployeeStreaming(
                     "📊 Execution trace extracted"
                 );
 
-                // Process completion (use truthiness check - args can be undefined, not just null)
-                if (completeCallData) {
-                    const completion = completeCallData as CompleteToolParams;
+                // Process completion - require summary to be present
+                const completion = completeCallData as CompleteToolParams | null;
+                if (completion?.summary) {
                     writeStatus(
                         writer,
                         `job-${jobId}-complete`,
