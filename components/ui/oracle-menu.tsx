@@ -29,11 +29,12 @@ import {
     Shield,
     FileText,
     Lock,
-    HelpCircle,
+    Sparkles,
     ExternalLink,
     Home,
 } from "lucide-react";
 
+import { useMarker } from "@/components/feedback/marker-provider";
 import { cn } from "@/lib/utils";
 import { glassOrbPreset } from "@/lib/design-tokens";
 
@@ -60,6 +61,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const { capture: captureMarker, isReady: isMarkerReady } = useMarker();
 
     // Update dropdown position when opening
     useEffect(() => {
@@ -237,28 +239,28 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <Github className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative flex items-center gap-1">
-                                              Source
+                                              Source Code
                                               <ExternalLink className="h-3 w-3 opacity-50" />
                                           </span>
                                       </Link>
 
                                       <div className="border-foreground/10 my-1 border-t" />
 
-                                      {/* Support */}
-                                      <Link
-                                          href="https://github.com/carmentacollective/carmenta/issues"
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      {/* Meta actions */}
+                                      <button
+                                          onClick={() => {
+                                              captureMarker();
+                                              setIsOpen(false);
+                                          }}
+                                          disabled={!isMarkerReady}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all disabled:opacity-50"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <HelpCircle className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative flex items-center gap-1">
-                                              Help & Feedback
-                                              <ExternalLink className="h-3 w-3 opacity-50" />
+                                          <Sparkles className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">
+                                              Improve Carmenta
                                           </span>
-                                      </Link>
+                                      </button>
 
                                       {/* Legal links - compact row */}
                                       <div className="border-foreground/10 border-t px-4 py-3">
