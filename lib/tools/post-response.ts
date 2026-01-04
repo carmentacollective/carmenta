@@ -74,25 +74,22 @@ export const postResponseTools = {
     }),
 
     /**
-     * Ask the user for structured input or to choose from options.
-     * Renders as an interactive input component.
+     * Ask the user to choose from predefined options.
+     * Renders as clickable pill buttons. If you need free-form text input,
+     * ask conversationally instead - the user can respond in the composer.
      */
     askUserInput: tool({
         description:
-            "Ask the user to choose from options or provide input when you need clarification. More structured than asking in plain text.",
+            "Ask the user to choose from predefined options. Options are required - for free-form questions, ask conversationally instead.",
         inputSchema: z.object({
             question: z.string().describe("The question to ask"),
             options: z
                 .array(optionSchema)
-                .optional()
-                .describe("Predefined options (if applicable)"),
-            allowFreeform: z
-                .boolean()
-                .optional()
-                .describe("Whether to allow free-form text input alongside options"),
+                .min(2)
+                .describe("Clickable options for the user to choose from (required)"),
         }),
-        execute: async ({ question, options, allowFreeform }) => {
-            return { question, options, allowFreeform };
+        execute: async ({ question, options }) => {
+            return { question, options };
         },
     }),
 
@@ -133,7 +130,6 @@ export type ShowReferencesOutput = {
 export type AskUserInputOutput = {
     question: string;
     options?: OptionItem[];
-    allowFreeform?: boolean;
 };
 
 export type AcknowledgeOutput = {

@@ -346,7 +346,10 @@ describe("Message-Level Tool Rendering", () => {
                 />
             );
 
-            // Component now renders only buttons (no question text - follows competitor patterns)
+            // Component renders question text and buttons
+            expect(
+                screen.getByText("Which framework do you prefer?")
+            ).toBeInTheDocument();
             expect(screen.getByText("React")).toBeInTheDocument();
             expect(screen.getByText("Vue")).toBeInTheDocument();
             expect(screen.getByText("Angular")).toBeInTheDocument();
@@ -405,7 +408,8 @@ describe("Message-Level Tool Rendering", () => {
                 </>
             );
 
-            // Component now renders only buttons (no question text - follows competitor patterns)
+            // Component renders question text and buttons
+            expect(screen.getByText("What's your main concern?")).toBeInTheDocument();
             expect(screen.getByText("Pain")).toBeInTheDocument();
             expect(screen.getByText("Swelling")).toBeInTheDocument();
         });

@@ -56,23 +56,26 @@ export function AskUserInputResult({
     };
 
     return (
-        <div className="mt-3 flex flex-wrap gap-2">
-            {output.options!.map((option) => (
-                <Button
-                    key={option.value}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOptionClick(option)}
-                    disabled={selectedValue !== null}
-                    className={cn(
-                        "rounded-full px-4",
-                        selectedValue === option.value &&
-                            "border-primary/50 bg-primary/10 text-primary"
-                    )}
-                >
-                    {option.label}
-                </Button>
-            ))}
+        <div className="mt-3">
+            <p className="text-muted-foreground mb-2 text-sm">{output.question}</p>
+            <div className="flex flex-wrap gap-2">
+                {output.options!.map((option) => (
+                    <Button
+                        key={option.value}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOptionClick(option)}
+                        disabled={selectedValue !== null}
+                        className={cn(
+                            "rounded-full px-4",
+                            selectedValue === option.value &&
+                                "border-primary/50 bg-primary/10 text-primary"
+                        )}
+                    >
+                        {option.label}
+                    </Button>
+                ))}
+            </div>
         </div>
     );
 }
