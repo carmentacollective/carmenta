@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { Book, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { Book } from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
-import { KnowledgeViewer } from "@/components/knowledge-viewer";
+import { KBPageContent } from "@/components/knowledge-viewer/kb-page-content";
 import {
     getKBFolders,
     initializeKBWithClerkData,
     hasKBProfile,
     getRecentActivity,
     type KBFolder,
-    type ActivityItem,
 } from "@/lib/kb/actions";
 import { ActivityFeed } from "@/components/knowledge-viewer/activity-feed";
 
@@ -91,7 +90,15 @@ export default async function KnowledgeBasePage() {
     const knowledgeFolders = userFolders.filter(
         (f) => f.path === "knowledge" || f.path.startsWith("knowledge.")
     );
-    const knowledgeDocuments = knowledgeFolders.flatMap((f) => f.documents);
+    // Filter out documents that duplicate profile content (about-you, identity, etc.)
+    // These belong in profile.identity, not knowledge.*
+    const knowledgeDocuments = knowledgeFolders
+        .flatMap((f) => f.documents)
+        .filter(
+            (d) =>
+                !d.path.toLowerCase().includes("about") &&
+                !d.path.toLowerCase().includes("identity")
+        );
 
     if (knowledgeDocuments.length > 0) {
         allFolders.push({
@@ -150,22 +157,8 @@ export default async function KnowledgeBasePage() {
                 </div>
             </section>
 
-            {/* Knowledge Viewer */}
-            <section className="min-h-[500px] flex-1">
-                {allFolders.length === 0 ? (
-                    <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
-                        <Sparkle className="text-foreground/30 mb-4 h-12 w-12" />
-                        <h3 className="text-foreground/80 text-lg font-medium">
-                            We're setting up your knowledge base
-                        </h3>
-                        <p className="text-foreground/60 mt-2 text-sm">
-                            Refresh the page in a moment.
-                        </p>
-                    </div>
-                ) : (
-                    <KnowledgeViewer initialFolders={allFolders} />
-                )}
-            </section>
+            {/* Librarian Task Bar + Knowledge Viewer */}
+            <KBPageContent initialFolders={allFolders} />
         </StandardPageLayout>
     );
 }

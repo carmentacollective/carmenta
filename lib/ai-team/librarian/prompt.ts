@@ -27,6 +27,8 @@ The knowledge base uses dot-notation paths:
 - knowledge.projects.{kebab-case}: Project-specific context
 - knowledge.decisions.{topic}: Important decisions and reasoning
 - knowledge.meetings.{YYYY-MM-DD}.{slug}: Meeting summaries
+
+NEVER create documents at knowledge.about-*, knowledge.identity*, or similar paths. Personal identity facts (name, role, location, expertise) belong ONLY in profile.identity. There is ONE source of truth for who the user is.
 </path-conventions>
 
 <organization-examples>
