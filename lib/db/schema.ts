@@ -1126,6 +1126,13 @@ export const scheduledJobs = pgTable(
          */
         scheduleCron: text("schedule_cron").notNull(),
 
+        /**
+         * Human-readable schedule display text
+         * Examples: "Every weekday at 9am", "Every Monday at 7am CT"
+         * Generated from natural language input or cron parsing
+         */
+        scheduleDisplayText: text("schedule_display_text"),
+
         /** User's timezone for schedule interpretation (e.g., "America/Los_Angeles") */
         timezone: text("timezone").notNull().default("UTC"),
 

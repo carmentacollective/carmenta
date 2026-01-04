@@ -1,0 +1,1 @@
+ALTER TABLE "scheduled_jobs" ADD COLUMN "schedule_display_text" text;

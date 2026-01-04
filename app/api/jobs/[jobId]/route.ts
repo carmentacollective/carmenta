@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
+import parser from "cron-parser";
 import { db, findUserByClerkId } from "@/lib/db";
 import { scheduledJobs, jobRuns } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -40,9 +41,13 @@ function validateCronExpression(cron: string): boolean {
         return false;
     }
 
-    // Basic validation: each part should be *, number, range, or list
-    const cronPartRegex = /^(\*|[0-9,-/]+)$/;
-    return parts.every((part) => cronPartRegex.test(part));
+    // Use cron-parser to validate the expression
+    try {
+        parser.parse(cron);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 const updateJobSchema = z.object({
@@ -56,6 +61,7 @@ const updateJobSchema = z.object({
                 "Invalid cron expression. Format: 'minute hour day month weekday'. Minimum frequency: once per minute.",
         })
         .optional(),
+    scheduleDisplayText: z.string().nullable().optional(),
     timezone: z.string().optional(),
     integrations: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),

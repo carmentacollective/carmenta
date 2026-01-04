@@ -150,6 +150,7 @@ What can we help you with?`,
                     name: playbook.name,
                     prompt: playbook.prompt,
                     scheduleCron: playbook.schedule.cron,
+                    scheduleDisplayText: playbook.schedule.displayText,
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 }),
             });
