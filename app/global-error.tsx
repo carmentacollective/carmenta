@@ -35,8 +35,24 @@ export default function GlobalError({
 
         const lastRefresh = sessionStorage.getItem(REFRESH_KEY);
         const now = Date.now();
+        const isPersistentError =
+            lastRefresh && now - parseInt(lastRefresh) <= REFRESH_WINDOW_MS;
 
-        if (!lastRefresh || now - parseInt(lastRefresh) > REFRESH_WINDOW_MS) {
+        // ALWAYS capture to Sentry - we want visibility into all errors
+        // Use different levels: persistent errors are more severe
+        Sentry.captureException(error, {
+            level: isPersistentError ? "error" : "warning",
+            tags: {
+                errorBoundary: "global",
+                persistent: isPersistentError ? "true" : "false",
+            },
+            extra: {
+                digest: error.digest,
+                willAutoRefresh: !isPersistentError,
+            },
+        });
+
+        if (!isPersistentError) {
             sessionStorage.setItem(REFRESH_KEY, now.toString());
 
             // Use setTimeout to avoid lint rule about setState in useEffect
@@ -52,11 +68,6 @@ export default function GlobalError({
                 clearTimeout(stateTimer);
                 clearTimeout(refreshTimer);
             };
-        } else {
-            Sentry.captureException(error, {
-                tags: { errorBoundary: "global" },
-                extra: { digest: error.digest },
-            });
         }
     }, [error]);
 
