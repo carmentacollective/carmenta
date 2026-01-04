@@ -441,14 +441,22 @@ export function KBContent({
                         {/* Save Button - intelligent states */}
                         <button
                             onClick={handleSave}
-                            disabled={displaySaveState !== "unsaved" || isOverLimit}
+                            disabled={
+                                (displaySaveState !== "unsaved" &&
+                                    displaySaveState !== "error") ||
+                                isOverLimit
+                            }
                             className={cn(
                                 "flex min-h-[44px] items-center gap-1.5 rounded-lg px-4 py-2",
                                 "text-sm font-medium transition-all duration-150",
                                 "focus-visible:ring-primary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                                 // State-based styling
-                                displaySaveState === "unsaved" && !isOverLimit
-                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                (displaySaveState === "unsaved" ||
+                                    displaySaveState === "error") &&
+                                    !isOverLimit
+                                    ? displaySaveState === "error"
+                                        ? "bg-red-500 text-white hover:bg-red-600"
+                                        : "bg-primary text-primary-foreground hover:bg-primary/90"
                                     : "bg-primary/50 text-primary-foreground/70 cursor-not-allowed",
                                 isOverLimit && "bg-foreground/10 text-foreground/40"
                             )}
