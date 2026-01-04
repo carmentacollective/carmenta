@@ -237,7 +237,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <Github className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative flex items-center gap-1">
-                                              Source
+                                              Source Code
                                               <ExternalLink className="h-3 w-3 opacity-50" />
                                           </span>
                                       </Link>

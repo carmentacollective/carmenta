@@ -81,8 +81,6 @@ export const env = createEnv({
         NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
         // Supabase publishable key for client-side uploads (sb_publishable_...)
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-        // Marker.io project ID for visual feedback widget
-        NEXT_PUBLIC_MARKER_PROJECT_ID: z.string().min(1).optional(),
         // PostHog analytics (production-only, see instrumentation-client.ts)
         NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
         NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
@@ -122,7 +120,6 @@ export const env = createEnv({
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-        NEXT_PUBLIC_MARKER_PROJECT_ID: process.env.NEXT_PUBLIC_MARKER_PROJECT_ID,
         NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
         NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
         GIPHY_API_KEY: process.env.GIPHY_API_KEY,

@@ -26,9 +26,6 @@ importers:
       '@deepgram/sdk':
         specifier: ^4.11.3
         version: 4.11.3
-      '@marker.io/browser':
-        specifier: ^0.20.2
-        version: 0.20.2
       '@openrouter/ai-sdk-provider':
         specifier: ^1.5.4
         version: 1.5.4(ai@6.0.3(zod@4.3.4))(zod@4.3.4)
@@ -1453,9 +1450,6 @@ packages:
 
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
-
-  '@marker.io/browser@0.20.2':
-    resolution: {integrity: sha512-rayC9s9ERzKMyjMkfvqKBCSqSVKPQad9F4NvZraGK6yd+mJZfY3C3cPFe89s4Uu9TUvfNm1cR7YfSgdvc/dyvg==}
 
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
@@ -8314,8 +8308,6 @@ snapshots:
       - supports-color
 
   '@kwsites/promise-deferred@1.1.1': {}
-
-  '@marker.io/browser@0.20.2': {}
 
   '@mermaid-js/parser@0.6.3':
     dependencies:

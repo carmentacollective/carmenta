@@ -9,13 +9,11 @@ import {
     UserCircle2,
     Monitor,
     Plug,
-    Sparkles,
+    Plus,
     BookOpen,
     MessageSquare,
-    MessageCircle,
 } from "lucide-react";
 
-import { useMarker } from "@/components/feedback/marker-provider";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -58,7 +56,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const { theme, setTheme } = useTheme();
     const { themeVariant, setThemeVariant } = useThemeVariant();
-    const { capture: captureMarker, isReady: isMarkerReady } = useMarker();
     // Track the "committed" theme (what user has actually selected, not just hovering)
     const [committedTheme, setCommittedTheme] = useState<ThemeVariant>(themeVariant);
     // Ref for positioning the portal dropdown
@@ -243,15 +240,17 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
-                                      {/* Primary action: Back to Chat */}
+                                      {/* Primary action: New Connection */}
                                       <Link
-                                          href="/connection"
+                                          href="/connection?new"
                                           onClick={() => setIsOpen(false)}
                                           className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
                                       >
                                           <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <MessageCircle className="text-primary relative h-4 w-4" />
-                                          <span className="relative">Connect</span>
+                                          <Plus className="text-primary relative h-4 w-4" />
+                                          <span className="relative">
+                                              New Connection
+                                          </span>
                                       </Link>
 
                                       {/* Your Data - things Carmenta knows about you */}
@@ -409,24 +408,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                               </div>
                                           </div>
                                       )}
-
-                                      {/* Meta actions */}
-                                      <div className="border-foreground/10 border-t">
-                                          <button
-                                              onClick={() => {
-                                                  captureMarker();
-                                                  setIsOpen(false);
-                                              }}
-                                              disabled={!isMarkerReady}
-                                              className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all disabled:opacity-50"
-                                          >
-                                              <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                              <Sparkles className="text-foreground/60 relative h-4 w-4" />
-                                              <span className="relative">
-                                                  Improve Carmenta
-                                              </span>
-                                          </button>
-                                      </div>
 
                                       <Link
                                           href="/exit"
