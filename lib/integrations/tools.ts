@@ -223,13 +223,38 @@ export async function getIntegrationTools(
             try {
                 await getCredentials(userEmail, serviceId);
             } catch (error) {
-                logger.warn(
-                    {
-                        serviceId,
-                        error: error instanceof Error ? error.message : String(error),
-                    },
-                    "Skipping service due to credential error"
-                );
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+
+                // Distinguish config errors (missing env vars) from user connection issues.
+                // Config errors are serious - surface them loudly so they get fixed.
+                const isConfigError =
+                    errorMessage.includes("environment variable") ||
+                    errorMessage.includes("ENCRYPTION_KEY") ||
+                    errorMessage.includes("encryption key") || // Matches actual error from decryptCredentials
+                    errorMessage.includes("data is corrupted");
+
+                if (isConfigError) {
+                    logger.error(
+                        { serviceId, error: errorMessage, userEmail },
+                        "🚨 Configuration error loading integration - check environment variables"
+                    );
+                    Sentry.captureException(error, {
+                        level: "error",
+                        tags: {
+                            component: "integrations",
+                            service: serviceId,
+                            errorType: "config",
+                        },
+                        extra: { userEmail },
+                    });
+                } else {
+                    // User connection issues (expired token, disconnected, etc.) - warn level
+                    logger.warn(
+                        { serviceId, error: errorMessage, userEmail },
+                        "Skipping service due to credential error"
+                    );
+                }
                 continue;
             }
 
@@ -237,10 +262,26 @@ export async function getIntegrationTools(
             tools[serviceId] = createServiceTool(service, userEmail);
         }
 
-        logger.info(
-            { userEmail, tools: Object.keys(tools) },
-            "Integration tools loaded"
-        );
+        // Log success with both attempted and loaded counts for debugging
+        const loadedCount = Object.keys(tools).length;
+        const attemptedCount = connectedServiceIds.length;
+
+        if (loadedCount < attemptedCount) {
+            logger.warn(
+                {
+                    userEmail,
+                    loadedTools: Object.keys(tools),
+                    attemptedServices: connectedServiceIds,
+                    skippedCount: attemptedCount - loadedCount,
+                },
+                `⚠️ Integration tools partially loaded (${loadedCount}/${attemptedCount})`
+            );
+        } else {
+            logger.info(
+                { userEmail, tools: Object.keys(tools) },
+                `Integration tools loaded (${loadedCount})`
+            );
+        }
     } catch (error) {
         logger.error({ error, userEmail }, "Failed to load integration tools");
         Sentry.captureException(error, {
