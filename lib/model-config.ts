@@ -158,6 +158,23 @@ export const MODELS: readonly ModelConfig[] = [
         temperatureRange: [0.5, 0.7],
     },
     {
+        id: "google/gemini-3-flash",
+        displayName: "Gemini Flash",
+        shortName: "Gemini",
+        provider: "google",
+        description: "Fastest model with automatic prompt caching",
+        speedQuality: "fast",
+        tags: ["Tools", "Long docs"],
+        contextWindow: 1_000_000,
+        tokensPerSecond: 218,
+        inputCostPerMillion: 0.15,
+        outputCostPerMillion: 0.6,
+        attachments: ["image", "pdf"],
+        supportsTools: true,
+        reasoning: { type: "none" },
+        temperatureRange: [0.2, 0.5],
+    },
+    {
         id: "x-ai/grok-4.1-fast",
         displayName: "Grok",
         shortName: "Grok",
@@ -441,6 +458,13 @@ export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
         "perplexity/sonar-pro",
         "anthropic/claude-sonnet-4.5",
         "google/gemini-3-pro-preview",
+    ],
+
+    // Gemini Flash → Grok Fast (speed tier) → Haiku (Anthropic fast)
+    "google/gemini-3-flash": [
+        "google/gemini-3-flash",
+        "x-ai/grok-4.1-fast",
+        "anthropic/claude-haiku-4.5",
     ],
 } as const;
 
