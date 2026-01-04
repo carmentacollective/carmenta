@@ -1638,7 +1638,8 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
  * This design creates a clear visual hierarchy: Carmenta orchestrates,
  * the LLM delivers.
  */
-function AssistantMessage({
+/** Exported for testing - renders a single assistant message with all part types */
+export function AssistantMessage({
     message,
     isLast,
     isStreaming,
