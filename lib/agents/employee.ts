@@ -348,11 +348,12 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             .flatMap((step) => step.toolCalls ?? [])
             .find((call) => call.toolName === "complete");
 
-        if (completeCall) {
-            // Access tool call args (Vercel AI SDK uses 'args', not 'input')
-            const completion = (completeCall as unknown as { args: CompleteToolParams })
-                .args;
+        // Extract completion args (may be undefined if tool call exists but args missing)
+        const completion = completeCall
+            ? (completeCall as unknown as { args: CompleteToolParams }).args
+            : undefined;
 
+        if (completion) {
             employeeLogger.info(
                 {
                     summary: completion.summary,
@@ -371,8 +372,8 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             };
         }
 
-        // No explicit completion - use last text response
-        const lastText = result.text ?? "Task completed without explicit summary.";
+        // No explicit completion - use last text response (|| catches empty strings too)
+        const lastText = result.text || "Task completed without explicit summary.";
 
         employeeLogger.warn(
             { text: lastText.slice(0, 200), steps: result.steps.length },
@@ -584,8 +585,8 @@ export async function runEmployeeStreaming(
                     "📊 Execution trace extracted"
                 );
 
-                // Process completion
-                if (completeCallData !== null) {
+                // Process completion (use truthiness check - args can be undefined, not just null)
+                if (completeCallData) {
                     const completion = completeCallData as CompleteToolParams;
                     writeStatus(
                         writer,
