@@ -3,16 +3,16 @@
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
 import {
     User,
-    LogOut,
+    SignOut,
     Moon,
     Sun,
-    UserCircle2,
+    UserCircle,
     Monitor,
     Plug,
     Plus,
     BookOpen,
-    MessageSquare,
-} from "lucide-react";
+    ChatTeardrop,
+} from "@phosphor-icons/react";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
@@ -284,7 +284,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <MessageSquare className="text-foreground/60 relative h-4 w-4" />
+                                          <ChatTeardrop className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
                                               Communication
                                           </span>
@@ -415,7 +415,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <LogOut className="text-foreground/60 relative h-4 w-4" />
+                                          <SignOut className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Exit</span>
                                       </Link>
                                   </div>
@@ -439,7 +439,10 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                 data-tooltip-id="tip"
                 data-tooltip-content="Settings & integrations"
             >
-                <UserCircle2 className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7" />
+                <UserCircle
+                    className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7"
+                    weight="duotone"
+                />
             </button>
 
             {/* Dropdown rendered via portal to escape stacking contexts */}

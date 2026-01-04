@@ -19,7 +19,7 @@ import {
     type KeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDown, X, Pencil, Check } from "lucide-react";
+import { CaretDown, X, Pencil, Check } from "@phosphor-icons/react";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { toast } from "sonner";
 import type { UIMessage } from "@ai-sdk/react";
@@ -312,7 +312,7 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton({
             className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
             aria-label="Scroll to bottom"
         >
-            <ArrowDown className="text-foreground/70 h-5 w-5" />
+            <CaretDown className="text-foreground/70 h-5 w-5" />
         </button>
     );
 });

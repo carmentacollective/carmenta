@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Trash2, AlertCircle, Play, Sparkles } from "lucide-react";
+import {
+    ArrowLeft,
+    FloppyDisk,
+    Trash,
+    WarningCircle,
+    Play,
+    Sparkle,
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -273,7 +280,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 >
                     {error && (
                         <div className="flex items-center gap-2 rounded-xl bg-red-500/10 p-4 text-red-500">
-                            <AlertCircle className="h-5 w-5" />
+                            <WarningCircle className="h-5 w-5" />
                             <span>{error}</span>
                         </div>
                     )}
@@ -330,7 +337,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                             disabled={deleting}
                             className="flex items-center gap-2 rounded-xl px-4 py-2 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash className="h-4 w-4" />
                             {deleting ? "Deleting..." : "Delete"}
                         </button>
 
@@ -352,7 +359,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                                 className="border-foreground/10 text-foreground hover:bg-foreground/5 flex items-center gap-2 rounded-xl border px-4 py-2 font-medium transition-colors disabled:opacity-50"
                             >
                                 {triggering ? (
-                                    <Sparkles className="h-4 w-4 animate-pulse" />
+                                    <Sparkle className="h-4 w-4 animate-pulse" />
                                 ) : (
                                     <Play className="h-4 w-4" />
                                 )}
@@ -363,7 +370,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                                 disabled={saving || !hasChanges}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-6 py-2 font-medium transition-colors disabled:opacity-50"
                             >
-                                <Save className="h-4 w-4" />
+                                <FloppyDisk className="h-4 w-4" />
                                 {saving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>
@@ -392,7 +399,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                             onClick={handleDelete}
                             className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 font-medium text-white transition-colors hover:bg-red-600"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash className="h-4 w-4" />
                             Delete
                         </button>
                     </DialogFooter>

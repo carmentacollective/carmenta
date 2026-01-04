@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-    ChevronDown,
-    ChevronRight,
-    CheckCircle2,
-    AlertCircle,
+    CaretDown,
+    CaretRight,
+    CheckCircle,
+    WarningCircle,
     Clock,
     Wrench,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { JobExecutionTrace, JobExecutionStep, JobToolCall } from "@/lib/db/schema";
 
@@ -110,9 +110,9 @@ function StepItem({ step, isExpanded, onToggle, developerMode }: StepItemProps) 
                 <div className="text-foreground/40 w-4 flex-shrink-0">
                     {isExpandable ? (
                         isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                         ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            <CaretRight className="h-4 w-4" />
                         )
                     ) : null}
                 </div>
@@ -120,11 +120,11 @@ function StepItem({ step, isExpanded, onToggle, developerMode }: StepItemProps) 
                 {/* Step icon */}
                 <div className="flex-shrink-0">
                     {hasError ? (
-                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <WarningCircle className="h-4 w-4 text-red-500" />
                     ) : hasToolCalls ? (
                         <Wrench className="text-primary h-4 w-4" />
                     ) : (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                     )}
                 </div>
 
@@ -190,9 +190,9 @@ function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
                         className="text-foreground/60 hover:text-foreground flex items-center gap-1"
                     >
                         {showInput ? (
-                            <ChevronDown className="h-3 w-3" />
+                            <CaretDown className="h-3 w-3" />
                         ) : (
-                            <ChevronRight className="h-3 w-3" />
+                            <CaretRight className="h-3 w-3" />
                         )}
                         Input
                     </button>
@@ -212,9 +212,9 @@ function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
                         className="text-foreground/60 hover:text-foreground flex items-center gap-1"
                     >
                         {showOutput ? (
-                            <ChevronDown className="h-3 w-3" />
+                            <CaretDown className="h-3 w-3" />
                         ) : (
-                            <ChevronRight className="h-3 w-3" />
+                            <CaretRight className="h-3 w-3" />
                         )}
                         {toolCall.error ? "Error" : "Output"}
                     </button>

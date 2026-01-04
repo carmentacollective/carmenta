@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Palette } from "lucide-react";
+import { Check, Palette } from "@phosphor-icons/react";
 import {
     useThemeVariant,
     getCurrentHoliday,

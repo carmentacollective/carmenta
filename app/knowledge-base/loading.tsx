@@ -1,4 +1,4 @@
-import { Book, Sparkles } from "lucide-react";
+import { Book, Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 import { SiteHeader } from "@/components/site-header";
 import { HolographicBackground } from "@/components/ui/holographic-background";
@@ -39,7 +39,7 @@ export default function KnowledgeBaseLoading() {
                         {/* Loading state */}
                         <section className="flex min-h-[500px] flex-1 items-center justify-center">
                             <div className="flex flex-col items-center gap-4">
-                                <Sparkles className="text-primary h-8 w-8 animate-pulse" />
+                                <Sparkle className="text-primary h-8 w-8 animate-pulse" />
                                 <p className="text-foreground/60">
                                     Loading your knowledge base...
                                 </p>

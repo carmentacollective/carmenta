@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wrench, ChevronDown } from "lucide-react";
+import { Wrench, CaretDown } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -79,7 +79,7 @@ export function ToolDebugPanel({
                 )}
             >
                 <Wrench className="h-3 w-3" />
-                <ChevronDown
+                <CaretDown
                     className={cn(
                         "h-2.5 w-2.5 transition-transform duration-200",
                         isOpen ? "rotate-180" : "rotate-0"

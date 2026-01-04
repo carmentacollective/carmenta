@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Sparkles, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { Sparkle, WarningCircle, CheckCircle, X } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -153,13 +153,13 @@ export function JobProgressViewer({
                 <div className="flex items-center gap-3">
                     <div className="bg-primary/20 rounded-lg p-2">
                         {status === "streaming" ? (
-                            <Sparkles className="text-primary h-4 w-4 animate-pulse" />
+                            <Sparkle className="text-primary h-4 w-4 animate-pulse" />
                         ) : status === "completed" ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-green-500" />
                         ) : status === "error" ? (
-                            <AlertCircle className="h-4 w-4 text-red-500" />
+                            <WarningCircle className="h-4 w-4 text-red-500" />
                         ) : (
-                            <Sparkles className="text-foreground/50 h-4 w-4" />
+                            <Sparkle className="text-foreground/50 h-4 w-4" />
                         )}
                     </div>
                     <div>
@@ -186,7 +186,7 @@ export function JobProgressViewer({
                 {/* No stream state */}
                 {status === "no-stream" && (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Sparkles className="text-foreground/30 mb-4 h-10 w-10" />
+                        <Sparkle className="text-foreground/30 mb-4 h-10 w-10" />
                         <p className="text-foreground/70">
                             This job isn't currently running.
                         </p>
@@ -229,7 +229,7 @@ export function JobProgressViewer({
                             !textContent &&
                             activeTransients.length === 0 && (
                                 <div className="flex items-center gap-2 py-8">
-                                    <Sparkles className="text-primary h-4 w-4 animate-pulse" />
+                                    <Sparkle className="text-primary h-4 w-4 animate-pulse" />
                                     <span className="text-foreground/60 text-sm">
                                         Waiting for output...
                                     </span>
@@ -241,7 +241,7 @@ export function JobProgressViewer({
                 {/* Error state */}
                 {status === "error" && (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <AlertCircle className="mb-4 h-10 w-10 text-red-500" />
+                        <WarningCircle className="mb-4 h-10 w-10 text-red-500" />
                         <p className="text-foreground/70">{error}</p>
                         <p className="text-foreground/50 mt-1 text-sm">
                             The connection to the job stream was lost.

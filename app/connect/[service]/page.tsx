@@ -6,7 +6,7 @@ import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/client-logger";
 import { getServiceById } from "@/lib/integrations/services";
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "@phosphor-icons/react";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 
 export default function ConnectServicePage() {
@@ -97,7 +97,7 @@ export default function ConnectServicePage() {
             <div className="z-content relative flex min-h-screen items-center justify-center">
                 <div className="glass-card mx-auto max-w-md p-8 text-center">
                     <div className="mb-4 flex justify-center">
-                        <Sparkles className="text-primary h-12 w-12 animate-pulse" />
+                        <Sparkle className="text-primary h-12 w-12 animate-pulse" />
                     </div>
                     <h1 className="text-foreground mb-2 text-2xl font-semibold">
                         Connecting {serviceName}...

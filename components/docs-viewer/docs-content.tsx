@@ -6,7 +6,7 @@
  * Read-only display for documentation with markdown rendering.
  */
 
-import { FileText, BookOpen } from "lucide-react";
+import { FileText, BookOpen } from "@phosphor-icons/react";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import type { KBDocument } from "@/lib/kb/actions";
 

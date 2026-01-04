@@ -7,7 +7,7 @@
  * Uses shadcn Dialog (Radix) for proper modal behavior.
  */
 
-import { Clock, Trophy, AlertCircle, Handshake } from "lucide-react";
+import { Clock, Trophy, WarningCircle, Handshake } from "@phosphor-icons/react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { QueryResult, PairwiseResult } from "@/lib/benchmarks/types";
@@ -147,7 +147,7 @@ function WinnerIcon({ winner }: { winner: "carmenta" | "competitor" | "tie" }) {
         case "carmenta":
             return <Trophy className={`${iconClass} text-green-500`} />;
         case "competitor":
-            return <AlertCircle className={`${iconClass} text-red-500`} />;
+            return <WarningCircle className={`${iconClass} text-red-500`} />;
         case "tie":
             return <Handshake className={`${iconClass} text-yellow-500`} />;
     }

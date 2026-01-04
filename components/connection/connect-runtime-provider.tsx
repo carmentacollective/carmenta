@@ -24,7 +24,7 @@ import {
 } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport, generateId } from "ai";
-import { AlertCircle, RefreshCw, X } from "lucide-react";
+import { WarningCircle, ArrowsClockwise, X } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { logger } from "@/lib/client-logger";
@@ -397,7 +397,7 @@ function RuntimeErrorBanner({
             )}
             role="alert"
         >
-            <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
+            <WarningCircle className="h-5 w-5 shrink-0 text-red-500" />
             <div className="flex-1">
                 <p className="text-sm font-medium text-red-800">{displayMessage}</p>
             </div>
@@ -407,7 +407,7 @@ function RuntimeErrorBanner({
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
                     aria-label="Retry"
                 >
-                    <RefreshCw className="h-4 w-4" />
+                    <ArrowsClockwise className="h-4 w-4" />
                 </button>
                 <button
                     onClick={onDismiss}

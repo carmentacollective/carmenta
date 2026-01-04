@@ -4,18 +4,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft,
-    CheckCircle2,
-    AlertCircle,
-    Loader2,
+    CheckCircle,
+    WarningCircle,
+    CircleNotch,
     Clock,
     Wrench,
     Bell,
-    ExternalLink,
-    Code2,
+    ArrowSquareOut,
+    Code,
     Cpu,
     ToggleLeft,
     ToggleRight,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -143,7 +143,7 @@ export function JobRunDetail({
         return (
             <div className="flex items-center justify-center py-24">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                    <CircleNotch className="text-primary h-8 w-8 animate-spin" />
                     <p className="text-foreground/60">Loading run details...</p>
                 </div>
             </div>
@@ -154,7 +154,7 @@ export function JobRunDetail({
         return (
             <div className="flex items-center justify-center py-24">
                 <div className="flex flex-col items-center gap-4">
-                    <AlertCircle className="h-8 w-8 text-red-500" />
+                    <WarningCircle className="h-8 w-8 text-red-500" />
                     <p className="text-foreground/80">{error ?? "Run not found"}</p>
                     <Link
                         href={`/ai-team/${jobSlug}/${jobEncodedId}`}
@@ -185,11 +185,11 @@ export function JobRunDetail({
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                         {run.status === "completed" ? (
-                            <CheckCircle2 className="mt-1 h-6 w-6 text-green-500" />
+                            <CheckCircle className="mt-1 h-6 w-6 text-green-500" />
                         ) : run.status === "failed" ? (
-                            <AlertCircle className="mt-1 h-6 w-6 text-red-500" />
+                            <WarningCircle className="mt-1 h-6 w-6 text-red-500" />
                         ) : (
-                            <Loader2 className="text-primary mt-1 h-6 w-6 animate-spin" />
+                            <CircleNotch className="text-primary mt-1 h-6 w-6 animate-spin" />
                         )}
                         <div>
                             <h1 className="text-foreground text-2xl font-light">
@@ -234,7 +234,7 @@ export function JobRunDetail({
                         onClick={toggleDeveloperMode}
                         className="text-foreground/60 hover:text-foreground flex items-center gap-2 text-sm transition-colors"
                     >
-                        <Code2 className="h-4 w-4" />
+                        <Code className="h-4 w-4" />
                         Dev Mode
                         {developerMode ? (
                             <ToggleRight className="text-primary h-5 w-5" />
@@ -249,7 +249,7 @@ export function JobRunDetail({
             {run.status === "failed" && run.errorDetails && (
                 <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
                     <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                        <WarningCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
                         <div className="min-w-0">
                             <p className="font-medium text-red-600">Execution Failed</p>
                             <p className="text-foreground/80 mt-1 text-sm">
@@ -356,7 +356,7 @@ export function JobRunDetail({
                                         className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg border border-current px-3 py-1.5 text-sm transition-colors"
                                     >
                                         View in Sentry
-                                        <ExternalLink className="h-3 w-3" />
+                                        <ArrowSquareOut className="h-3 w-3" />
                                     </a>
                                 )}
                                 {run.externalLinks.temporal && (
@@ -367,7 +367,7 @@ export function JobRunDetail({
                                         className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg border border-current px-3 py-1.5 text-sm transition-colors"
                                     >
                                         View in Temporal
-                                        <ExternalLink className="h-3 w-3" />
+                                        <ArrowSquareOut className="h-3 w-3" />
                                     </a>
                                 )}
                             </div>

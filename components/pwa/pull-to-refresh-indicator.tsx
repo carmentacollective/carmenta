@@ -10,7 +10,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { ArrowClockwise, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface PullToRefreshIndicatorProps {
@@ -58,13 +58,13 @@ export function PullToRefreshIndicator({
                 )}
             >
                 {isRefreshing ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <CircleNotch className="h-5 w-5 animate-spin" />
                 ) : (
                     <motion.div
                         animate={{ rotate: progress * 180 }}
                         transition={{ type: "spring", damping: 20 }}
                     >
-                        <RefreshCw
+                        <ArrowClockwise
                             className={cn("h-5 w-5", isTriggered && "text-white")}
                             style={{ opacity: 0.4 + progress * 0.6 }}
                         />

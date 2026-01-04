@@ -17,7 +17,7 @@ import {
     type KeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -28,12 +28,12 @@ import {
 import {
     File,
     FileCode,
-    FileJson,
+    FileJs,
     FileText,
-    FileImage,
+    Image as FileImage,
     Folder,
     FolderOpen,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 interface FileTreeProps {
     /** Files at the current level */
@@ -154,7 +154,7 @@ function FileIcon({
     const ext = file.extension?.toLowerCase() ?? "";
 
     if (CODE_EXTENSIONS.has(ext)) return <FileCode className={className} />;
-    if (CONFIG_EXTENSIONS.has(ext)) return <FileJson className={className} />;
+    if (CONFIG_EXTENSIONS.has(ext)) return <FileJs className={className} />;
     if (TEXT_EXTENSIONS.has(ext)) return <FileText className={className} />;
     if (IMAGE_EXTENSIONS.has(ext)) return <FileImage className={className} />;
 
@@ -276,7 +276,7 @@ const FileTreeItem = memo(function FileTreeItem({
                         transition={{ duration: 0.15 }}
                         className="flex-shrink-0"
                     >
-                        <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
+                        <CaretRight className="text-muted-foreground h-3.5 w-3.5" />
                     </motion.div>
                 )}
 

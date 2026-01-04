@@ -6,14 +6,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-    FolderGit2,
+    FolderSimple,
     GitBranch,
     FileCode,
     Clock,
-    ChevronDown,
-    RefreshCw,
-    Search,
-} from "lucide-react";
+    CaretDown,
+    ArrowClockwise,
+    MagnifyingGlass,
+} from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -104,21 +104,21 @@ export function ProjectSelector({
                     )}
                 >
                     <div className="flex items-center gap-2">
-                        <FolderGit2 className="size-4" />
+                        <FolderSimple className="size-4" />
                         {selectedProject ? (
                             <span className="truncate">{selectedProject.name}</span>
                         ) : (
                             <span>Select project...</span>
                         )}
                     </div>
-                    <ChevronDown className="size-4 opacity-50" />
+                    <CaretDown className="size-4 opacity-50" />
                 </Button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="start" className="w-[400px]">
                 {/* Search input */}
                 <div className="flex items-center gap-2 border-b px-3 py-2">
-                    <Search className="text-muted-foreground size-4" />
+                    <MagnifyingGlass className="text-muted-foreground size-4" />
                     <input
                         type="text"
                         placeholder="Search projects..."
@@ -136,7 +136,7 @@ export function ProjectSelector({
                         }}
                         disabled={isLoading}
                     >
-                        <RefreshCw
+                        <ArrowClockwise
                             className={cn("size-4", isLoading && "animate-spin")}
                         />
                     </Button>
@@ -176,7 +176,7 @@ export function ProjectSelector({
                             className="flex cursor-pointer flex-col items-start gap-1 p-3"
                         >
                             <div className="flex w-full items-center gap-2">
-                                <FolderGit2
+                                <FolderSimple
                                     className={cn(
                                         "size-4",
                                         project.hasClaudeMd

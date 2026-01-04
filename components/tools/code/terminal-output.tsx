@@ -16,11 +16,11 @@ import {
     Terminal,
     Copy,
     Check,
-    AlertCircle,
-    ChevronDown,
-    ChevronUp,
+    WarningCircle,
+    CaretDown,
+    CaretUp,
     Clock,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
@@ -217,7 +217,7 @@ export function TerminalOutput({
                     {/* Error message */}
                     {error && (
                         <div className="mt-2 flex items-start gap-2 text-red-400">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <WarningCircle className="mt-0.5 h-4 w-4 shrink-0" />
                             <span className="whitespace-pre-wrap">{error}</span>
                         </div>
                     )}
@@ -236,7 +236,7 @@ export function TerminalOutput({
                     >
                         {isCollapsed ? (
                             <>
-                                <ChevronDown className="h-4 w-4" />
+                                <CaretDown className="h-4 w-4" />
                                 Show all {lineCount} lines
                                 <span className="text-zinc-500">
                                     (+{lineCount - MAX_COLLAPSED_LINES} more)
@@ -244,7 +244,7 @@ export function TerminalOutput({
                             </>
                         ) : (
                             <>
-                                <ChevronUp className="h-4 w-4" />
+                                <CaretUp className="h-4 w-4" />
                                 Collapse
                             </>
                         )}

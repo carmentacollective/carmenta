@@ -27,12 +27,11 @@
 
 import { type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, CircleNotch, FolderSimpleDashed } from "@phosphor-icons/react";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectRuntimeProvider, useCodeMode } from "./connect-runtime-provider";
 import { ConnectionChooser } from "./connection-chooser";
-import { FolderGit2 } from "lucide-react";
 import { OracleMenu } from "@/components/ui/oracle-menu";
 import { UserAuthButton } from "@/components/ui";
 import { FileExplorer } from "@/components/code-mode";
@@ -91,7 +90,7 @@ function CodeModeIndicator() {
             animate={{ opacity: 1, scale: 1 }}
             title={`Code mode: ${projectPath}`}
         >
-            <FolderGit2 className="h-4 w-4" />
+            <FolderSimpleDashed className="h-4 w-4" />
             <span className="max-w-[120px] truncate">{projectName}</span>
         </motion.div>
     );
@@ -199,7 +198,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                                         aria-label="New connection"
                                     >
                                         {isPending ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <CircleNotch className="h-4 w-4 animate-spin" />
                                         ) : (
                                             <Plus className="h-4 w-4" />
                                         )}

@@ -16,7 +16,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { ToolIcon } from "../shared";
@@ -127,7 +127,7 @@ export function ToolActivityItem({
                 )}
 
                 {/* Expand chevron */}
-                <ChevronRight
+                <CaretRight
                     className={cn(
                         "text-muted-foreground/40 h-4 w-4 shrink-0 transition-transform duration-200",
                         "group-hover:text-muted-foreground/60",

@@ -12,16 +12,16 @@
 
 import { useMemo, useState, useCallback } from "react";
 import {
-    FileEdit,
+    PencilSimpleLine,
     Minus,
     Plus,
     ArrowRight,
     Copy,
     Check,
-    ChevronDown,
-    ChevronUp,
-    Loader2,
-} from "lucide-react";
+    CaretDown,
+    CaretUp,
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
@@ -95,7 +95,7 @@ export function DiffViewer({
             {/* Header */}
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <FileEdit className="h-4 w-4 shrink-0 text-amber-500" />
+                    <PencilSimpleLine className="h-4 w-4 shrink-0 text-amber-500" />
                     <span className="text-foreground truncate font-mono text-sm">
                         {fileName}
                     </span>
@@ -114,7 +114,7 @@ export function DiffViewer({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Copy new content */}
@@ -174,7 +174,7 @@ export function DiffViewer({
                 {/* Loading state */}
                 {isRunning && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <FileEdit className="h-4 w-4 animate-pulse" />
+                        <PencilSimpleLine className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Editing file...</span>
                     </div>
                 )}
@@ -246,7 +246,7 @@ export function DiffViewer({
                 >
                     {isCollapsed ? (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show full diff
                             <span className="text-muted-foreground/60">
                                 ({totalLines} total lines)
@@ -254,7 +254,7 @@ export function DiffViewer({
                         </>
                     ) : (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     )}

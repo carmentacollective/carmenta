@@ -7,7 +7,7 @@
  * and last edited date. Links to the actual Notion page.
  */
 
-import { ExternalLink, FileText, Database, Calendar } from "lucide-react";
+import { ArrowSquareOut, FileText, Database, Calendar } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -64,7 +64,7 @@ export function NotionPageCard({ page, className }: NotionPageCardProps) {
                 </div>
             </div>
 
-            <ExternalLink className="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+            <ArrowSquareOut className="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </a>
     );
 }

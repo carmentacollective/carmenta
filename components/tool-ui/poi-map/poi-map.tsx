@@ -2,26 +2,27 @@
 
 import { useCallback, useMemo } from "react";
 import {
-    Maximize2,
-    Minimize2,
-    RefreshCw,
-    Filter,
+    ArrowsOut,
+    ArrowsIn,
+    ArrowsClockwise,
+    Funnel,
     Check,
     MapPin,
     Star,
     Heart,
-    ExternalLink,
-    MessageCircle,
-    UtensilsCrossed,
+    ArrowSquareOut,
+    ChatCircle,
+    ForkKnife,
     Coffee,
-    Landmark,
-    Trees,
+    Bank,
+    Tree,
     ShoppingBag,
     Ticket,
-    Mountain,
+    Mountains,
     Train,
     X,
-} from "lucide-react";
+} from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { POI, POIMapViewState, MapCenter, POICategory } from "./schema";
 import { CATEGORY_LABELS } from "./schema";
 import { usePOIMap } from "./use-poi-map";
@@ -49,14 +50,14 @@ interface View {
     params: Record<string, unknown> | null;
 }
 
-const CATEGORY_ICONS: Record<POICategory, typeof MapPin> = {
-    restaurant: UtensilsCrossed,
+const CATEGORY_ICONS: Record<POICategory, PhosphorIcon> = {
+    restaurant: ForkKnife,
     cafe: Coffee,
-    museum: Landmark,
-    park: Trees,
+    museum: Bank,
+    park: Tree,
     shopping: ShoppingBag,
     entertainment: Ticket,
-    landmark: Mountain,
+    landmark: Mountains,
     transit: Train,
     other: MapPin,
 };
@@ -214,7 +215,10 @@ export function POIMap({
                                     </Badge>
                                     {modalPoi.rating !== undefined && (
                                         <Badge variant="outline" className="gap-1">
-                                            <Star className="size-3 fill-amber-400 text-amber-400" />
+                                            <Star
+                                                className="size-3 text-amber-400"
+                                                weight="fill"
+                                            />
                                             {modalPoi.rating.toFixed(1)}
                                         </Badge>
                                     )}
@@ -230,9 +234,10 @@ export function POIMap({
                                     className={cn(
                                         "size-5 transition-colors",
                                         isFavorite
-                                            ? "fill-rose-500 text-rose-500"
+                                            ? "text-rose-500"
                                             : "text-muted-foreground hover:text-rose-500"
                                     )}
+                                    weight={isFavorite ? "fill" : "regular"}
                                 />
                             </Button>
                         </div>
@@ -277,7 +282,7 @@ export function POIMap({
                                     }
                                 }}
                             >
-                                <ExternalLink className="size-4" />
+                                <ArrowSquareOut className="size-4" />
                                 Open in Google Maps
                             </Button>
                             {onSendFollowUpMessage && (
@@ -290,7 +295,7 @@ export function POIMap({
                                         )
                                     }
                                 >
-                                    <MessageCircle className="size-4" />
+                                    <ChatCircle className="size-4" />
                                     Ask about this place
                                 </Button>
                             )}
@@ -326,7 +331,7 @@ export function POIMap({
                                             categoryFilter && "text-primary"
                                         )}
                                     >
-                                        <Filter className="size-4" />
+                                        <Funnel className="size-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-40">
@@ -397,7 +402,7 @@ export function POIMap({
                                         className="bg-background/80 size-8 backdrop-blur-md"
                                         onClick={onRefresh}
                                     >
-                                        <RefreshCw className="size-4" />
+                                        <ArrowsClockwise className="size-4" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="z-tooltip">
@@ -413,7 +418,7 @@ export function POIMap({
                                     className="bg-background/80 size-8 backdrop-blur-md"
                                     onClick={handleToggleFullscreen}
                                 >
-                                    <Minimize2 className="size-4" />
+                                    <ArrowsIn className="size-4" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent className="z-tooltip">
@@ -459,7 +464,7 @@ export function POIMap({
                                 className="bg-background/80 size-8 backdrop-blur-md"
                                 onClick={onRefresh}
                             >
-                                <RefreshCw className="size-4" />
+                                <ArrowsClockwise className="size-4" />
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent className="z-tooltip">
@@ -475,7 +480,7 @@ export function POIMap({
                             className="bg-background/80 size-8 backdrop-blur-md"
                             onClick={handleToggleFullscreen}
                         >
-                            <Maximize2 className="size-4" />
+                            <ArrowsOut className="size-4" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent className="z-tooltip">

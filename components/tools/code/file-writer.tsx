@@ -14,13 +14,13 @@
 import { useState, useMemo, useCallback } from "react";
 import {
     FilePlus,
-    FileCheck,
+    CheckCircle,
     Copy,
     Check,
-    ChevronDown,
-    ChevronUp,
-    Loader2,
-} from "lucide-react";
+    CaretDown,
+    CaretUp,
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
@@ -121,7 +121,7 @@ export function FileWriter({
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
                     {isCompleted && !error ? (
-                        <FileCheck className="h-4 w-4 shrink-0 text-green-500" />
+                        <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                     ) : (
                         <FilePlus className="text-muted-foreground h-4 w-4 shrink-0" />
                     )}
@@ -138,7 +138,7 @@ export function FileWriter({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Copy button */}
@@ -220,12 +220,12 @@ export function FileWriter({
                 >
                     {isCollapsed ? (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show all {lineCount} lines
                         </>
                     ) : (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     )}

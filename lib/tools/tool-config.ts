@@ -1,28 +1,28 @@
 import {
     Table,
-    Search,
+    MagnifyingGlass,
     Globe,
-    BrainCircuit,
+    Brain,
     CloudSun,
     BookOpen,
-    Sparkles,
+    Sparkle,
     Calculator,
     FileText,
-    FilePen,
-    FileEdit,
+    PencilSimple,
+    Pencil,
     Terminal,
-    FolderSearch,
-    FileSearch,
-    Bot,
-    ListTodo,
+    FolderOpen,
+    FileMagnifyingGlass,
+    Robot,
+    ListChecks,
     Code,
-    NotebookPen,
-    MessageCircleQuestion,
-    Link2,
-    CircleHelp,
+    Notebook,
+    ChatCircleDots,
+    Link,
+    Question,
     Heart,
-    type LucideIcon,
-} from "lucide-react";
+    type Icon,
+} from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
 // ============================================================================
@@ -45,8 +45,8 @@ export type ToolStatus = "pending" | "running" | "completed" | "error";
  */
 export interface ToolConfig {
     displayName: string;
-    /** Either a Lucide icon component or a path to a logo (e.g., "/logos/notion.svg") */
-    icon: LucideIcon | string;
+    /** Either a Phosphor icon component or a path to a logo (e.g., "/logos/notion.svg") */
+    icon: Icon | string;
     /** Extract a brief description from tool args for the collapsed view */
     getDescription?: (args: Record<string, unknown>) => string | undefined;
     messages: {
@@ -89,7 +89,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     webSearch: {
         displayName: "Web Search",
-        icon: Search,
+        icon: MagnifyingGlass,
         getDescription: (args) => {
             const query = args.query as string | undefined;
             return query ? truncate(query, 50) : undefined;
@@ -130,7 +130,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     deepResearch: {
         displayName: "Deep Research",
-        icon: BrainCircuit,
+        icon: Brain,
         getDescription: (args) => {
             const topic = args.topic as string | undefined;
             return topic ? truncate(topic, 50) : undefined;
@@ -185,7 +185,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // Discovery tools - progressive context building
     updateDiscovery: {
         displayName: "Discovery",
-        icon: Sparkles,
+        icon: Sparkle,
         getDescription: (args) => {
             const key = args.key as string | undefined;
             return key ? truncate(key, 30) : undefined;
@@ -203,7 +203,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     completeDiscovery: {
         displayName: "Discovery",
-        icon: Sparkles,
+        icon: Sparkle,
         messages: {
             pending: "Getting ready...",
             running: "Completing discovery...",
@@ -216,7 +216,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     skipDiscovery: {
         displayName: "Discovery",
-        icon: Sparkles,
+        icon: Sparkle,
         messages: {
             pending: "Getting ready...",
             running: "Skipping discovery...",
@@ -500,7 +500,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Write: {
         displayName: "Write File",
-        icon: FilePen,
+        icon: PencilSimple,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
             if (!filePath) return undefined;
@@ -521,7 +521,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Edit: {
         displayName: "Edit File",
-        icon: FileEdit,
+        icon: Pencil,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
             if (!filePath) return undefined;
@@ -566,7 +566,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Glob: {
         displayName: "Find Files",
-        icon: FolderSearch,
+        icon: FolderOpen,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
             return pattern ? truncate(pattern, 40) : undefined;
@@ -585,7 +585,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Grep: {
         displayName: "Search Code",
-        icon: FileSearch,
+        icon: FileMagnifyingGlass,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
             return pattern ? truncate(`"${pattern}"`, 40) : undefined;
@@ -604,7 +604,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Task: {
         displayName: "Sub-Agent",
-        icon: Bot,
+        icon: Robot,
         getDescription: (args) => {
             const agentType = args.subagent_type as string | undefined;
             const description = args.description as string | undefined;
@@ -623,7 +623,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     TodoWrite: {
         displayName: "Task List",
-        icon: ListTodo,
+        icon: ListChecks,
         messages: {
             pending: "Getting ready...",
             running: "Updating tasks...",
@@ -657,7 +657,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     NotebookEdit: {
         displayName: "Edit Notebook",
-        icon: NotebookPen,
+        icon: Notebook,
         messages: {
             pending: "Getting ready...",
             running: "Editing notebook...",
@@ -696,7 +696,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     WebSearch: {
         displayName: "Web Search",
-        icon: Search,
+        icon: MagnifyingGlass,
         getDescription: (args) => {
             const query = args.query as string | undefined;
             return query ? truncate(query, 50) : undefined;
@@ -715,7 +715,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // Post-response enhancement tools
     suggestQuestions: {
         displayName: "Follow-ups",
-        icon: MessageCircleQuestion,
+        icon: ChatCircleDots,
         getDescription: (args) => {
             const suggestions = args.suggestions as
                 | Array<{ prompt: string }>
@@ -735,7 +735,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     showReferences: {
         displayName: "Sources",
-        icon: Link2,
+        icon: Link,
         getDescription: (args) => {
             const refs = args.references as Array<{ title: string }> | undefined;
             if (!refs?.length) return undefined;
@@ -753,7 +753,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     askUserInput: {
         displayName: "Question",
-        icon: CircleHelp,
+        icon: Question,
         getDescription: (args) => {
             const question = args.question as string | undefined;
             return question ? truncate(question, 40) : undefined;
@@ -785,7 +785,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
  */
 export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     displayName: "Tool",
-    icon: Search,
+    icon: MagnifyingGlass,
     messages: {
         pending: "Getting ready...",
         running: "Working through this...",

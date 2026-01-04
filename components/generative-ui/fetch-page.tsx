@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText, ArrowSquareOut } from "@phosphor-icons/react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "./tool-renderer";
@@ -77,7 +77,7 @@ function FetchPageContent({
                     className="text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                 >
                     <span className="hidden sm:inline">Open</span>
-                    <ExternalLink className="h-3 w-3" />
+                    <ArrowSquareOut className="h-3 w-3" />
                 </a>
             </div>
 

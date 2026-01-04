@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { PaperPlaneTilt } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +49,7 @@ export function FreeformInput({
                 size="icon"
                 className="h-[60px] w-[60px]"
             >
-                <Send className="h-4 w-4" />
+                <PaperPlaneTilt className="h-4 w-4" />
             </Button>
         </div>
     );

@@ -9,7 +9,13 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, FolderTree, RefreshCw, X } from "lucide-react";
+import {
+    CaretDown,
+    MagnifyingGlass,
+    TreeStructure,
+    ArrowClockwise,
+    X,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -297,7 +303,7 @@ export function FileExplorer() {
                     )}
                 >
                     <div className="text-foreground/70 flex items-center gap-2 text-sm font-medium">
-                        <FolderTree className="h-4 w-4" />
+                        <TreeStructure className="h-4 w-4" />
                         <span>Files</span>
                         {rootFiles.length > 0 && (
                             <span className="bg-foreground/10 rounded-full px-1.5 py-0.5 text-xs">
@@ -309,7 +315,7 @@ export function FileExplorer() {
                         animate={{ rotate: isExpanded ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
                     >
-                        <ChevronDown className="text-muted-foreground h-4 w-4" />
+                        <CaretDown className="text-muted-foreground h-4 w-4" />
                     </motion.div>
                 </button>
 
@@ -326,7 +332,7 @@ export function FileExplorer() {
                             {/* Search bar */}
                             <div className="border-foreground/5 flex items-center gap-2 border-t px-4 py-2 sm:px-5">
                                 <div className="relative flex-1">
-                                    <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+                                    <MagnifyingGlass className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                                     <input
                                         type="text"
                                         placeholder="Search files..."
@@ -356,7 +362,7 @@ export function FileExplorer() {
                                     className="h-11 w-11 shrink-0 sm:h-8 sm:w-8"
                                     title="Refresh"
                                 >
-                                    <RefreshCw
+                                    <ArrowClockwise
                                         className={cn(
                                             "h-4 w-4",
                                             isLoading && "animate-spin"

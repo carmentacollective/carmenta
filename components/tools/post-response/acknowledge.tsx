@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Sparkles, PartyPopper } from "lucide-react";
+import { Heart, Sparkle, Confetti } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -22,13 +22,13 @@ const typeConfig = {
         iconColor: "text-emerald-500",
     },
     encouragement: {
-        icon: Sparkles,
+        icon: Sparkle,
         bg: "bg-holo-lavender/20",
         border: "border-l-violet-400/50",
         iconColor: "text-violet-500",
     },
     celebration: {
-        icon: PartyPopper,
+        icon: Confetti,
         bg: "bg-holo-gold/20",
         border: "border-l-amber-400/50",
         iconColor: "text-amber-500",

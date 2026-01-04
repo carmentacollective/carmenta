@@ -17,10 +17,10 @@ import {
     FileCode,
     Copy,
     Check,
-    ChevronDown,
-    ChevronUp,
-    Loader2,
-} from "lucide-react";
+    CaretDown,
+    CaretUp,
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
@@ -201,7 +201,7 @@ export function FileViewer({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Copy button */}
@@ -281,7 +281,7 @@ export function FileViewer({
                 >
                     {isCollapsed ? (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show all {lineCount} lines
                             <span className="text-muted-foreground/60">
                                 (+{lineCount - MAX_COLLAPSED_LINES} more)
@@ -289,7 +289,7 @@ export function FileViewer({
                         </>
                     ) : (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     )}

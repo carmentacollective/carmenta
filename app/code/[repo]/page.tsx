@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, FolderGit2 } from "lucide-react";
+import { ArrowLeft, CircleNotch, FolderSimple } from "@phosphor-icons/react";
 import Image from "next/image";
 
 import { SessionPicker, type CodeSession } from "@/components/code/session-picker";
@@ -68,11 +68,11 @@ export default function CodeProjectPage() {
                         className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-2 transition-colors"
                         aria-label="Back to projects"
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="h-5 w-5" weight="regular" />
                     </button>
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                            <FolderGit2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                            <FolderSimple className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
                             <h1 className="text-foreground font-semibold">
@@ -93,7 +93,7 @@ export default function CodeProjectPage() {
                             animate={{ opacity: 1 }}
                             className="flex flex-col items-center gap-3"
                         >
-                            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                            <CircleNotch className="h-8 w-8 animate-spin text-purple-600" />
                             <p className="text-muted-foreground">Loading sessions...</p>
                         </motion.div>
                     ) : error ? (

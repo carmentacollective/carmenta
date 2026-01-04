@@ -1,6 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Heart, Sparkles, Users, ArrowRight, ExternalLink, Quote } from "lucide-react";
+import {
+    Heart,
+    Sparkle,
+    Users,
+    ArrowRight,
+    ArrowSquareOut,
+    Quotes,
+} from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 
@@ -47,7 +54,7 @@ export default function HeartCenteredAIPage() {
             <section className="py-12">
                 <div className="border-primary/20 bg-primary/5 rounded-2xl border p-8 lg:p-12">
                     <div className="mb-8 flex items-center gap-3">
-                        <Sparkles className="text-primary h-6 w-6" />
+                        <Sparkle className="text-primary h-6 w-6" />
                         <h2 className="text-2xl font-semibold">
                             A Different Foundation
                         </h2>
@@ -94,7 +101,7 @@ export default function HeartCenteredAIPage() {
 
                     <div className="border-primary/30 bg-card/80 relative rounded-2xl border p-8 shadow-xl backdrop-blur-sm lg:p-10">
                         <div className="text-primary mb-6 flex items-center gap-2 text-sm font-medium">
-                            <Quote className="h-4 w-4" />
+                            <Quotes className="h-4 w-4" />
                             <span>heart-centered-prompts</span>
                             <a
                                 href="https://github.com/technickai/heart-centered-prompts"
@@ -103,7 +110,7 @@ export default function HeartCenteredAIPage() {
                                 className="text-muted-foreground hover:text-primary ml-auto flex items-center gap-1 transition-colors"
                             >
                                 View source
-                                <ExternalLink className="h-3 w-3" />
+                                <ArrowSquareOut className="h-3 w-3" />
                             </a>
                         </div>
 
@@ -321,7 +328,7 @@ export default function HeartCenteredAIPage() {
                         >
                             <Heart className="h-5 w-5" />
                             Explore Heart-Centered AI
-                            <ExternalLink className="h-4 w-4" />
+                            <ArrowSquareOut className="h-4 w-4" />
                         </a>
                         <Link
                             href="/connection?new"

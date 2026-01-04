@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { ToolIcon } from "./tool-icon";
@@ -101,7 +101,7 @@ export function ToolStatus({
             )}
 
             {/* Expand chevron */}
-            <ChevronRight
+            <CaretRight
                 className={cn(
                     "text-muted-foreground/50 h-4 w-4 shrink-0 transition-transform duration-200",
                     expanded && "rotate-90"

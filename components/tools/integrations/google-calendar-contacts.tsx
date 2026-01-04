@@ -10,15 +10,15 @@
 import {
     Calendar,
     Clock,
-    ExternalLink,
-    Mail,
+    ArrowSquareOut,
+    Envelope,
     MapPin,
     Phone,
     Plus,
-    Trash2,
+    Trash,
     User,
     Users,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "../shared";
@@ -164,7 +164,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
                             className="text-muted-foreground hover:text-foreground shrink-0 rounded transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                             aria-label={`Open "${event.summary || "event"}" in Google Calendar`}
                         >
-                            <ExternalLink className="h-4 w-4" />
+                            <ArrowSquareOut className="h-4 w-4" />
                         </a>
                     )}
                 </div>
@@ -246,7 +246,7 @@ function ContactCard({ contact }: { contact: Contact }) {
                             aria-label={`Email ${name} at ${email}`}
                             className="hover:text-foreground flex items-center gap-1 rounded transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
-                            <Mail className="h-3.5 w-3.5" />
+                            <Envelope className="h-3.5 w-3.5" />
                             <span className="truncate">{email}</span>
                         </a>
                     )}
@@ -326,7 +326,7 @@ function EventConfirmation({
               : "Event deleted";
 
     const actionIcon =
-        action === "created" ? Plus : action === "deleted" ? Trash2 : Calendar;
+        action === "created" ? Plus : action === "deleted" ? Trash : Calendar;
 
     const ActionIcon = actionIcon;
 
@@ -363,7 +363,7 @@ function EventConfirmation({
                         rel="noopener noreferrer"
                         className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ArrowSquareOut className="h-3.5 w-3.5" />
                         Open in Google Calendar
                     </a>
                 )}

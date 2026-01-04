@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
     Check,
-    AlertTriangle,
-    Loader2,
-    CheckCircle2,
+    Warning,
+    CircleNotch,
+    CheckCircle,
     XCircle,
     Plus,
     Star,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -80,7 +80,7 @@ function getAccountStatusIndicator(status: IntegrationStatus) {
         case "error":
         case "expired":
             return {
-                icon: AlertTriangle,
+                icon: Warning,
                 bgColor: "bg-amber-500/15",
                 textColor: "text-amber-600 dark:text-amber-400",
             };
@@ -231,7 +231,7 @@ export function MultiAccountServiceCard({
                                             )}
                                         >
                                             {statusMessage.type === "success" ? (
-                                                <CheckCircle2 className="h-3 w-3" />
+                                                <CheckCircle className="h-3 w-3" />
                                             ) : (
                                                 <XCircle className="h-3 w-3" />
                                             )}
@@ -248,7 +248,7 @@ export function MultiAccountServiceCard({
                                             className="rounded-lg border border-amber-400/60 bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
                                         >
                                             {isReconnecting ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                <CircleNotch className="h-3 w-3 animate-spin" />
                                             ) : (
                                                 "Reconnect"
                                             )}
@@ -274,7 +274,7 @@ export function MultiAccountServiceCard({
                                                 className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50"
                                             >
                                                 {isTesting ? (
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                                    <CircleNotch className="h-3 w-3 animate-spin" />
                                                 ) : (
                                                     "Verify"
                                                 )}
@@ -331,7 +331,7 @@ export function MultiAccountServiceCard({
                         className="interactive-focus-offset interactive-press bg-primary text-primary-foreground rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
                     >
                         {isConnecting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <CircleNotch className="h-4 w-4 animate-spin" />
                         ) : (
                             "Connect"
                         )}
@@ -344,7 +344,7 @@ export function MultiAccountServiceCard({
                         className="border-border text-muted-foreground hover:border-primary/50 hover:text-foreground flex items-center gap-2 rounded-xl border-2 border-dashed px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
                     >
                         {isConnecting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <CircleNotch className="h-4 w-4 animate-spin" />
                         ) : (
                             <>
                                 <Plus className="h-4 w-4" />

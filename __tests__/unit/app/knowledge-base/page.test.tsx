@@ -69,10 +69,10 @@ vi.mock("@/components/knowledge-viewer/activity-feed", () => ({
     ),
 }));
 
-// Mock lucide-react icons
-vi.mock("lucide-react", () => ({
+// Mock phosphor-icons (SSR variant used by server component)
+vi.mock("@phosphor-icons/react/dist/ssr", () => ({
     Book: () => <div data-testid="book-icon">Book</div>,
-    Sparkles: () => <div data-testid="sparkles-icon">Sparkles</div>,
+    Sparkle: () => <div data-testid="sparkles-icon">Sparkle</div>,
 }));
 
 describe("/knowledge-base page", () => {

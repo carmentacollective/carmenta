@@ -7,7 +7,7 @@
  * to handle complex work. Shows agent type, description, and result.
  */
 
-import { Bot, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Robot, CheckCircle, WarningCircle, CircleNotch } from "@phosphor-icons/react";
 import { useState } from "react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -83,11 +83,11 @@ export function AgentTask({
             >
                 {/* Status icon */}
                 {isRunning ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                    <CircleNotch className="h-4 w-4 animate-spin text-purple-400" />
                 ) : status === "error" ? (
-                    <AlertCircle className="h-4 w-4 text-red-400" />
+                    <WarningCircle className="h-4 w-4 text-red-400" />
                 ) : (
-                    <Bot className="h-4 w-4 text-purple-400" />
+                    <Robot className="h-4 w-4 text-purple-400" />
                 )}
 
                 {/* Agent info */}

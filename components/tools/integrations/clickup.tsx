@@ -10,14 +10,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-    ChevronDown,
-    ChevronRight,
+    CaretDown,
+    CaretRight,
     Clock,
-    ExternalLink,
+    ArrowSquareOut,
     Flag,
-    MessageSquare,
+    ChatTeardrop,
     Users,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -252,7 +252,7 @@ function SpacesDisplay({ output }: { output?: Record<string, unknown> }) {
                         key={space.id}
                         className="border-border/50 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-2"
                     >
-                        <ChevronRight className="text-primary h-4 w-4" />
+                        <CaretRight className="text-primary h-4 w-4" />
                         <span className="text-sm font-medium">{space.name}</span>
                         {space.private && (
                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -386,7 +386,7 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                                 className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                                 title="Open in ClickUp"
                             >
-                                <ExternalLink className="text-muted-foreground hover:text-primary h-4 w-4" />
+                                <ArrowSquareOut className="text-muted-foreground hover:text-primary h-4 w-4" />
                             </a>
                         )}
                     </div>
@@ -606,7 +606,7 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
     if (comments.length === 0) {
         return (
             <div className="text-muted-foreground flex items-center gap-2 px-4 py-3 text-sm">
-                <MessageSquare className="h-4 w-4" />
+                <ChatTeardrop className="h-4 w-4" />
                 <span>No comments</span>
             </div>
         );
@@ -617,7 +617,7 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
     return (
         <div className="px-4 py-3">
             <div className="text-muted-foreground mb-3 flex items-center gap-2 text-sm">
-                <MessageSquare className="h-4 w-4" />
+                <ChatTeardrop className="h-4 w-4" />
                 <span>
                     {comments.length} comment{comments.length !== 1 ? "s" : ""}
                 </span>
@@ -645,7 +645,7 @@ function CommentsDisplay({ output }: { output?: Record<string, unknown> }) {
                     onClick={() => setExpanded(!expanded)}
                     className="text-primary mt-2 flex items-center gap-1 text-sm hover:underline"
                 >
-                    <ChevronDown
+                    <CaretDown
                         className={cn(
                             "h-4 w-4 transition-transform",
                             expanded && "rotate-180"

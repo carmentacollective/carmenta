@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BarChart3 } from "lucide-react";
+import { ChartBar } from "@phosphor-icons/react/dist/ssr";
 
 import { SiteHeader } from "@/components/site-header";
 import { Footer } from "@/components/footer";
@@ -62,7 +62,7 @@ export default async function BenchmarksPage() {
                         <section className="space-y-2">
                             <div className="flex items-center gap-3">
                                 <div className="bg-primary/20 rounded-xl p-3">
-                                    <BarChart3 className="text-primary h-6 w-6" />
+                                    <ChartBar className="text-primary h-6 w-6" />
                                 </div>
                                 <div>
                                     <h1 className="text-foreground text-3xl font-light tracking-tight">

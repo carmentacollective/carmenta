@@ -11,7 +11,7 @@
  */
 
 import { memo } from "react";
-import { Upload, Image, FileText, Music } from "lucide-react";
+import { Upload, Image, FileText, MusicNote } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface DragDropOverlayProps {
@@ -138,7 +138,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
                     <div className="mt-6 flex items-center gap-4">
                         <FileTypeIndicator icon={Image} label="Images" />
                         <FileTypeIndicator icon={FileText} label="PDFs" />
-                        <FileTypeIndicator icon={Music} label="Audio" />
+                        <FileTypeIndicator icon={MusicNote} label="Audio" />
                     </div>
                 </div>
             </div>

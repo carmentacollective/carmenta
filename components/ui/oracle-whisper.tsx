@@ -24,7 +24,7 @@ const TIPS_DISABLED = true;
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight } from "lucide-react";
+import { X, ArrowRight } from "@phosphor-icons/react";
 import Link from "next/link";
 import Image from "next/image";
 

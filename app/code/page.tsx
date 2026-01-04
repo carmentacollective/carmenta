@@ -16,7 +16,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FolderGit2, ArrowRight, Loader2 } from "lucide-react";
+import { FolderSimple, ArrowRight, CircleNotch } from "@phosphor-icons/react";
 
 import Image from "next/image";
 
@@ -102,7 +102,7 @@ export default function CodePage() {
                                 animate={{ opacity: 1, height: "auto" }}
                             >
                                 <div className="flex items-start gap-3">
-                                    <FolderGit2 className="mt-0.5 h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                    <FolderSimple className="mt-0.5 h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     <div className="min-w-0 flex-1">
                                         <p className="font-medium text-purple-900 dark:text-purple-100">
                                             {selectedProject.name}
@@ -134,7 +134,7 @@ export default function CodePage() {
                     >
                         {isNavigating ? (
                             <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <CircleNotch className="h-5 w-5 animate-spin" />
                                 Starting session...
                             </>
                         ) : (

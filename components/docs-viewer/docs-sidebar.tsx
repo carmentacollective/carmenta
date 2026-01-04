@@ -10,14 +10,14 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ChevronRight,
+    CaretRight,
     FileText,
     BookOpen,
-    Sparkles,
+    Sparkle,
     Plug,
     Heart,
     Info,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { DocSection } from "@/app/guide/page";
 
@@ -25,7 +25,7 @@ import type { DocSection } from "@/app/guide/page";
 const SECTION_ICONS: Record<string, typeof FileText> = {
     general: BookOpen,
     about: Info,
-    features: Sparkles,
+    features: Sparkle,
     integrations: Plug,
     philosophy: Heart,
 };
@@ -120,7 +120,7 @@ export function DocsSidebar({
                                         animate={{ rotate: isExpanded ? 90 : 0 }}
                                         transition={{ duration: 0.15 }}
                                     >
-                                        <ChevronRight
+                                        <CaretRight
                                             className={cn(
                                                 "text-foreground/30",
                                                 mobile ? "h-5 w-5" : "h-4 w-4"

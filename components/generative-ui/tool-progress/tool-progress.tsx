@@ -12,7 +12,7 @@
  */
 
 import { useMemo } from "react";
-import { Circle, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Circle, CircleNotch, CheckCircle, XCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type {
     ToolProgressState,
@@ -78,9 +78,9 @@ function DeterminateBar({
 function StepIcon({ status }: { status: ToolProgressStepStatus }) {
     switch (status) {
         case "completed":
-            return <CheckCircle2 className="size-3.5 text-emerald-500" />;
+            return <CheckCircle className="size-3.5 text-emerald-500" />;
         case "active":
-            return <Loader2 className="text-primary size-3.5 animate-spin" />;
+            return <CircleNotch className="text-primary size-3.5 animate-spin" />;
         case "error":
             return <XCircle className="text-destructive size-3.5" />;
         case "pending":

@@ -8,7 +8,7 @@
  */
 
 import { useRef } from "react";
-import { Paperclip } from "lucide-react";
+import { Paperclip } from "@phosphor-icons/react";
 import { useFileAttachments } from "./file-attachment-context";
 import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 import { cn } from "@/lib/utils";

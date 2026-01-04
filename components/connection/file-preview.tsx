@@ -11,7 +11,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileIcon, FileText, Music, File, ImageOff } from "lucide-react";
+import { File, FileText, MusicNote, ImageBroken } from "@phosphor-icons/react";
 import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 import { getThumbnailUrl } from "@/lib/storage/upload";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function FilePreview({
         if (hasError) {
             return (
                 <div className="border-foreground/10 bg-background/80 text-foreground/50 flex items-center gap-2 rounded-lg border px-3 py-2">
-                    <ImageOff className="h-5 w-5 shrink-0" />
+                    <ImageBroken className="h-5 w-5 shrink-0" />
                     <span className="text-sm">Image unavailable</span>
                 </div>
             );
@@ -79,8 +79,8 @@ export function FilePreview({
     // Non-image files: Show icon + filename
     let Icon = File;
     if (isPDF) Icon = FileText;
-    else if (isAudio) Icon = Music;
-    else Icon = FileIcon;
+    else if (isAudio) Icon = MusicNote;
+    // else Icon = File (already set as default)
 
     return (
         <a

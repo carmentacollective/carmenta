@@ -16,16 +16,16 @@ import {
     Folder,
     FileText,
     FileCode,
-    FileJson,
-    FileType,
+    FileJs,
+    File,
     Image,
-    Video,
-    Music,
-    ChevronDown,
-    ChevronUp,
-    Search,
-    Loader2,
-} from "lucide-react";
+    VideoCamera,
+    MusicNotes,
+    CaretDown,
+    CaretUp,
+    MagnifyingGlass,
+    CircleNotch,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -71,11 +71,11 @@ function getFileIcon(fileName: string): LucideIcon {
         cs: FileCode,
         php: FileCode,
         // Config/data
-        json: FileJson,
-        yaml: FileJson,
-        yml: FileJson,
-        toml: FileJson,
-        xml: FileJson,
+        json: FileJs,
+        yaml: FileJs,
+        yml: FileJs,
+        toml: FileJs,
+        xml: FileJs,
         // Text
         md: FileText,
         txt: FileText,
@@ -86,15 +86,15 @@ function getFileIcon(fileName: string): LucideIcon {
         gif: Image,
         svg: Image,
         webp: Image,
-        mp4: Video,
-        webm: Video,
-        mov: Video,
-        mp3: Music,
-        wav: Music,
-        ogg: Music,
+        mp4: VideoCamera,
+        webm: VideoCamera,
+        mov: VideoCamera,
+        mp3: MusicNotes,
+        wav: MusicNotes,
+        ogg: MusicNotes,
     };
 
-    return iconMap[ext] ?? FileType;
+    return iconMap[ext] ?? File;
 }
 
 /**
@@ -142,14 +142,14 @@ export function FileList({
             {/* Header */}
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                    <MagnifyingGlass className="text-muted-foreground h-4 w-4 shrink-0" />
                     <code className="text-foreground truncate font-mono text-sm">
                         {pattern}
                     </code>
                 </div>
                 <div className="flex items-center gap-2">
                     {isRunning && (
-                        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
                     {isCompleted && (
                         <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">
@@ -173,7 +173,7 @@ export function FileList({
                 {/* Loading state */}
                 {isRunning && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <Search className="h-4 w-4 animate-pulse" />
+                        <MagnifyingGlass className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Searching for files...</span>
                     </div>
                 )}
@@ -239,12 +239,12 @@ export function FileList({
                 >
                     {isExpanded ? (
                         <>
-                            <ChevronUp className="h-4 w-4" />
+                            <CaretUp className="h-4 w-4" />
                             Collapse
                         </>
                     ) : (
                         <>
-                            <ChevronDown className="h-4 w-4" />
+                            <CaretDown className="h-4 w-4" />
                             Show all {fileCount} files
                         </>
                     )}

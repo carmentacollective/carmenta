@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
@@ -294,7 +294,7 @@ export default function HomePage() {
                                 className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Previous slide"
                             >
-                                <ChevronLeft className="h-4 w-4" />
+                                <CaretLeft className="h-4 w-4" />
                             </button>
                             <div className="flex items-center gap-2">
                                 {shuffledFeatures.map((_, i) => (
@@ -316,7 +316,7 @@ export default function HomePage() {
                                 className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Next slide"
                             >
-                                <ChevronRight className="h-4 w-4" />
+                                <CaretRight className="h-4 w-4" />
                             </button>
                         </div>
                     </motion.div>

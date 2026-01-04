@@ -1,18 +1,18 @@
 import {
     Calendar,
-    Mail,
-    MessageSquare,
+    Envelope,
+    Chat,
     Star,
     Clock,
-    Sparkles,
-    Search,
+    Sparkle,
+    MagnifyingGlass,
     Brain,
     Plug,
     FileText,
-    TrendingUp,
-    Mic,
-    type LucideIcon,
-} from "lucide-react";
+    TrendUp,
+    Microphone,
+    type Icon,
+} from "@phosphor-icons/react";
 
 import type { Spark, IntegrationSparkTemplate } from "./types";
 
@@ -131,7 +131,7 @@ const INTEGRATION_TEMPLATES: IntegrationSparkTemplate[] = [
 /**
  * Discovery sparks for users exploring capabilities
  */
-const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: LucideIcon }> = [
+const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: Icon }> = [
     {
         label: "Help me brainstorm ideas",
         prompt: "I want to brainstorm some ideas. Let's start with...",
@@ -140,7 +140,7 @@ const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: LucideIcon 
     {
         label: "Search the web for...",
         prompt: "Search the web for ",
-        icon: Search,
+        icon: MagnifyingGlass,
     },
     {
         label: "Draft something for me",
@@ -150,26 +150,26 @@ const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: LucideIcon 
     {
         label: "Analyze this data",
         prompt: "I have some data I'd like to analyze: ",
-        icon: TrendingUp,
+        icon: TrendUp,
     },
 ];
 
 /**
  * Map service IDs to appropriate icons
  */
-function getIconForService(serviceId: string): LucideIcon {
-    const iconMap: Record<string, LucideIcon> = {
-        gmail: Mail,
+function getIconForService(serviceId: string): Icon {
+    const iconMap: Record<string, Icon> = {
+        gmail: Envelope,
         "google-calendar-contacts": Calendar,
-        slack: MessageSquare,
+        slack: Chat,
         notion: FileText,
         clickup: Clock,
-        fireflies: Mic,
-        limitless: Mic,
-        coinmarketcap: TrendingUp,
-        twitter: MessageSquare,
+        fireflies: Microphone,
+        limitless: Microphone,
+        coinmarketcap: TrendUp,
+        twitter: Chat,
     };
-    return iconMap[serviceId] ?? Sparkles;
+    return iconMap[serviceId] ?? Sparkle;
 }
 
 /**

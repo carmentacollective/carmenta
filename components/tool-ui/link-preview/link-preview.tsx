@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Globe } from "lucide-react";
+import { Globe } from "@phosphor-icons/react";
 import { cn } from "./_adapter";
 import { glass, border } from "@/lib/design-tokens";
 import { ActionButtons, normalizeActionsConfig, type ActionsProp } from "../shared";

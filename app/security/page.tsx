@@ -2,14 +2,14 @@ import { Metadata } from "next";
 import {
     Shield,
     Lock,
-    CheckCircle2,
-    KeyRound,
+    CheckCircle,
+    Key,
     Eye,
-    Server,
-    Zap,
+    HardDrives,
+    Lightning,
     ShieldCheck,
-    ExternalLink,
-} from "lucide-react";
+    ArrowSquareOut,
+} from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 
@@ -67,19 +67,19 @@ const securityFeatures = [
             "Our conversations are private. No human reads our chats unless legally required or explicitly requested for support.",
     },
     {
-        icon: KeyRound,
+        icon: Key,
         title: "Secure Authentication",
         description:
             "Industry-standard authentication via Clerk. Multi-factor authentication available. Session tokens encrypted and short-lived.",
     },
     {
-        icon: Server,
+        icon: HardDrives,
         title: "Infrastructure Security",
         description:
             "Hosted on Vercel's SOC 2 Type II certified infrastructure with automatic SSL, DDoS protection, and security monitoring.",
     },
     {
-        icon: Zap,
+        icon: Lightning,
         title: "Data Isolation",
         description:
             "Strict data isolation ensures we can only access our own data. Database-level security prevents cross-user data access.",
@@ -89,7 +89,7 @@ const securityFeatures = [
 function SecurityBadge({ certification }: { certification: string }) {
     return (
         <div className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-sm dark:border-green-800 dark:bg-green-950">
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+            <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
             <span className="font-medium text-green-900 dark:text-green-100">
                 {certification}
             </span>
@@ -114,7 +114,7 @@ function PartnerCard({ partner }: { partner: SecurityPartner }) {
                         {partner.description}
                     </p>
                 </div>
-                <ExternalLink className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
+                <ArrowSquareOut className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
             </div>
 
             {partner.certifications && partner.certifications.length > 0 && (
@@ -174,7 +174,7 @@ export default function SecurityPage() {
                     <div className="grid gap-8 md:grid-cols-2">
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 What We Protect
                             </h3>
                             <ul className="text-muted-foreground space-y-2">
@@ -188,7 +188,7 @@ export default function SecurityPage() {
 
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 What We Never Do
                             </h3>
                             <ul className="text-muted-foreground space-y-2">
@@ -359,7 +359,7 @@ export default function SecurityPage() {
                                 "Transparent security practices",
                             ].map((item) => (
                                 <li key={item} className="flex items-start gap-2">
-                                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
+                                    <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                                     <span className="text-green-800 dark:text-green-200">
                                         {item}
                                     </span>

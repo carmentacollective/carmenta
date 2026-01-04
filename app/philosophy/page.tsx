@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Heart } from "lucide-react";
+import { Heart } from "@phosphor-icons/react/dist/ssr";
 
 import { Footer } from "@/components/footer";
 import { SiteHeader } from "@/components/site-header";

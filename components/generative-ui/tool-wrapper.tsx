@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, AlertCircle } from "lucide-react";
+import { CaretDown, WarningCircle } from "@phosphor-icons/react";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
@@ -251,7 +251,7 @@ export function ToolWrapper({
                         )}
                     >
                         {isError ? (
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            <WarningCircle className="h-3.5 w-3.5 shrink-0" />
                         ) : (
                             renderIcon("sm")
                         )}
@@ -260,7 +260,7 @@ export function ToolWrapper({
                             <span className="animate-pulse text-xs">...</span>
                         )}
                         {status === "completed" && children && (
-                            <ChevronDown
+                            <CaretDown
                                 className={cn(
                                     "h-3.5 w-3.5 transition-transform duration-200",
                                     isOpen ? "rotate-180" : "rotate-0"
@@ -312,7 +312,7 @@ export function ToolWrapper({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     <ToolStatusBadge status={status} label={statusLabel} />
-                    <ChevronDown
+                    <CaretDown
                         className={cn(
                             "text-muted-foreground h-4 w-4 transition-transform duration-200",
                             isOpen ? "rotate-180" : "rotate-0"
