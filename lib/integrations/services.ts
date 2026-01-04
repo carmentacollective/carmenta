@@ -247,6 +247,27 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
+    // Spotify - OAuth (in-house)
+    {
+        id: "spotify",
+        name: "Spotify",
+        description: "Music discovery, playback control, and listening insights",
+        logo: "/logos/spotify.svg",
+        authMethod: "oauth",
+        status: "available",
+        oauthProviderId: "spotify",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developer.spotify.com/documentation/web-api",
+        capabilities: [
+            "search",
+            "get_currently_playing",
+            "play",
+            "pause",
+            "get_top_items",
+            "list_playlists",
+        ],
+    },
+
     // Twitter/X - OAuth (in-house)
     {
         id: "twitter",

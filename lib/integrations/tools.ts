@@ -25,6 +25,7 @@ import {
     NotionAdapter,
     QuoAdapter,
     SlackAdapter,
+    SpotifyAdapter,
     TwitterAdapter,
 } from "./adapters";
 import type { ServiceAdapter } from "./adapters/base";
@@ -48,6 +49,7 @@ const adapterMap: Record<string, ServiceAdapter> = {
     notion: new NotionAdapter(),
     quo: new QuoAdapter(),
     slack: new SlackAdapter(),
+    spotify: new SpotifyAdapter(),
     twitter: new TwitterAdapter(),
 };
 

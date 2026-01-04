@@ -13,6 +13,7 @@ import { clickupProvider } from "./clickup";
 import { dropboxProvider } from "./dropbox";
 import { googleCalendarContactsProvider } from "./google-calendar-contacts";
 import { gmailProvider } from "./gmail";
+import { spotifyProvider } from "./spotify";
 import { twitterProvider } from "./twitter";
 
 /**
@@ -20,12 +21,13 @@ import { twitterProvider } from "./twitter";
  * Key is the provider ID that matches the service registry.
  */
 const providers: Record<string, OAuthProviderConfig> = {
-    notion: notionProvider,
-    slack: slackProvider,
     clickup: clickupProvider,
     dropbox: dropboxProvider,
-    "google-calendar-contacts": googleCalendarContactsProvider,
     gmail: gmailProvider,
+    "google-calendar-contacts": googleCalendarContactsProvider,
+    notion: notionProvider,
+    slack: slackProvider,
+    spotify: spotifyProvider,
     twitter: twitterProvider,
 };
 
@@ -111,21 +113,23 @@ export function buildAuthorizationUrl(
     return authUrl;
 }
 
-// Re-export for convenience
-export { notionProvider } from "./notion";
-export { NOTION_API_BASE, NOTION_API_VERSION } from "./notion";
-export { slackProvider } from "./slack";
-export { SLACK_API_BASE } from "./slack";
+// Re-export for convenience (alphabetical order)
 export { clickupProvider } from "./clickup";
 export { CLICKUP_API_BASE } from "./clickup";
 export { dropboxProvider } from "./dropbox";
 export { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "./dropbox";
+export { gmailProvider } from "./gmail";
+export { GMAIL_API_BASE } from "./gmail";
 export { googleCalendarContactsProvider } from "./google-calendar-contacts";
 export {
     GOOGLE_CALENDAR_API_BASE,
     GOOGLE_PEOPLE_API_BASE,
 } from "./google-calendar-contacts";
-export { gmailProvider } from "./gmail";
-export { GMAIL_API_BASE } from "./gmail";
+export { notionProvider } from "./notion";
+export { NOTION_API_BASE, NOTION_API_VERSION } from "./notion";
+export { slackProvider } from "./slack";
+export { SLACK_API_BASE } from "./slack";
+export { spotifyProvider } from "./spotify";
+export { SPOTIFY_API_BASE } from "./spotify";
 export { twitterProvider } from "./twitter";
 export { TWITTER_API_BASE } from "./twitter";

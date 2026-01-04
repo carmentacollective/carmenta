@@ -30,4 +30,5 @@ export { LimitlessAdapter } from "./limitless";
 export { NotionAdapter } from "./notion";
 export { QuoAdapter } from "./quo";
 export { SlackAdapter } from "./slack";
+export { SpotifyAdapter } from "./spotify";
 export { TwitterAdapter } from "./twitter";
