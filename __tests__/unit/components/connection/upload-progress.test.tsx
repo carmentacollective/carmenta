@@ -51,17 +51,20 @@ describe("UploadProgressDisplay", () => {
             expect(screen.queryByText("Complete")).not.toBeInTheDocument();
         });
 
-        it("shows 'Ready' when no placeholder exists", () => {
+        it("shows no status text when completed without placeholder (checkmark is sufficient)", () => {
             mockState.pendingFiles.push({
                 id: "upload-1",
                 file: new File([""], "regular-file.png", { type: "image/png" }),
                 status: "complete",
-                // No placeholder
+                // No placeholder - checkmark badge is sufficient
             });
 
             render(<UploadProgressDisplay />);
 
-            expect(screen.getByText("Ready")).toBeInTheDocument();
+            // No status text shown - the checkmark badge indicates completion
+            expect(screen.queryByText("Ready")).not.toBeInTheDocument();
+            // But filename is still shown
+            expect(screen.getByText("regular-file.png")).toBeInTheDocument();
         });
 
         it("shows placeholder for text files", () => {
@@ -103,7 +106,7 @@ describe("UploadProgressDisplay", () => {
     });
 
     describe("status messages during upload", () => {
-        it("shows 'Checking file...' during validation", () => {
+        it("shows 'Checking...' during validation", () => {
             mockState.pendingFiles.push({
                 id: "upload-1",
                 file: new File([""], "test.png", { type: "image/png" }),
@@ -113,7 +116,7 @@ describe("UploadProgressDisplay", () => {
 
             render(<UploadProgressDisplay />);
 
-            expect(screen.getByText("Checking file...")).toBeInTheDocument();
+            expect(screen.getByText("Checking...")).toBeInTheDocument();
         });
 
         it("shows 'Optimizing...' during optimization", () => {

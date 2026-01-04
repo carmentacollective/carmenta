@@ -145,9 +145,9 @@ describe("formatFileSize", () => {
         expect(formatFileSize(1024 * 1024 * 1024)).toBe("1 GB");
     });
 
-    it("rounds to 2 decimal places", () => {
-        expect(formatFileSize(1536)).toBe("1.5 KB");
-        expect(formatFileSize(1.5 * 1024 * 1024)).toBe("1.5 MB");
+    it("rounds to whole numbers", () => {
+        expect(formatFileSize(1536)).toBe("2 KB");
+        expect(formatFileSize(1.5 * 1024 * 1024)).toBe("2 MB");
     });
 });
 
