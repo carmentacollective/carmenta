@@ -573,15 +573,6 @@ describe("Connection API Response Paths", () => {
                             { label: "Python", value: "python" },
                             { label: "Go", value: "go" },
                         ],
-                        allowFreeform: true,
-                    },
-                    {
-                        question: "What framework?",
-                        options: [
-                            { label: "Next.js", value: "nextjs" },
-                            { label: "Express", value: "express" },
-                        ],
-                        allowFreeform: false,
                     },
                 ],
             });
@@ -635,10 +626,8 @@ describe("Connection API Response Paths", () => {
             expect(textDelta).toBeTruthy();
             expect(textEnd).toBeTruthy();
 
-            // Text delta should contain the intro message
-            expect((textDelta as { delta?: string }).delta).toContain(
-                "Before we dive in"
-            );
+            // Text delta is now empty (question renders inline, no intro needed)
+            expect((textDelta as { delta?: string }).delta).toBe("");
         });
 
         it("emits valid AI SDK v6 chunks for all parts", async () => {
@@ -667,34 +656,23 @@ describe("Connection API Response Paths", () => {
                 (c: unknown) => (c as { type?: string }).type === "data-askUserInput"
             );
 
-            expect(askUserInputChunks).toHaveLength(2);
+            // Now only ONE question (we simplified to single question)
+            expect(askUserInputChunks).toHaveLength(1);
 
-            // Verify first question structure
-            const firstQuestion = askUserInputChunks[0] as {
+            // Verify question structure (no allowFreeform - options only)
+            const question = askUserInputChunks[0] as {
                 type: string;
                 data: {
                     question: string;
                     options: Array<{ label: string; value: string }>;
-                    allowFreeform: boolean;
                 };
             };
-            expect(firstQuestion.data.question).toBe(
+            expect(question.data.question).toBe(
                 "What programming language are you using?"
             );
-            expect(firstQuestion.data.options).toHaveLength(3);
-            expect(firstQuestion.data.allowFreeform).toBe(true);
-
-            // Verify second question
-            const secondQuestion = askUserInputChunks[1] as {
-                type: string;
-                data: {
-                    question: string;
-                    options: Array<{ label: string; value: string }>;
-                    allowFreeform: boolean;
-                };
-            };
-            expect(secondQuestion.data.question).toBe("What framework?");
-            expect(secondQuestion.data.allowFreeform).toBe(false);
+            expect(question.data.options).toHaveLength(3);
+            // allowFreeform is no longer sent
+            expect(question.data).not.toHaveProperty("allowFreeform");
         });
 
         it("marks connection as completed immediately", async () => {
@@ -715,8 +693,8 @@ describe("Connection API Response Paths", () => {
             // The response should not contain LLM-generated content
             const text = await readStreamAsText(response);
 
-            // Should contain the intro text but NOT the mock LLM response
-            expect(text).toContain("Before we dive in");
+            // Should contain the askUserInput data but NOT the mock LLM response
+            expect(text).toContain("data-askUserInput");
             expect(text).not.toContain("Hello, friend!");
         });
     });

@@ -298,21 +298,29 @@ export async function POST(req: Request) {
         await updateStreamingStatus(connectionId!, "streaming");
 
         // ================================================================
-        // CLARIFYING QUESTIONS: Ask before deep research
+        // CLARIFYING QUESTIONS: Ask before deep research (first message only)
         // ================================================================
         // When concierge detects a research task, it may ask scoping questions
-        // before starting. This helps ensure we deliver what the user needs.
+        // before starting. Only on FIRST message - never interrupt follow-ups.
         //
-        // We use the existing askUserInput tool format so the client renders
-        // interactive options using AskUserInputResult (no new UI needed).
-        if (
-            conciergeResult.clarifyingQuestions &&
-            conciergeResult.clarifyingQuestions.length > 0
-        ) {
+        // Guard: Only allow clarifying questions on truly new connections.
+        // If user is continuing a conversation, just proceed with the work.
+        const isFirstMessage = isNewConnection && messages.length <= 1;
+        const clarifyingQuestions = conciergeResult.clarifyingQuestions ?? [];
+        const hasClarifyingQuestions = clarifyingQuestions.length > 0;
+
+        if (hasClarifyingQuestions && !isFirstMessage) {
+            logger.info(
+                { connectionId, messageCount: messages.length },
+                "Skipping clarifying questions on follow-up message"
+            );
+        }
+
+        if (hasClarifyingQuestions && isFirstMessage) {
             logger.info(
                 {
                     connectionId,
-                    questionCount: conciergeResult.clarifyingQuestions.length,
+                    questionCount: clarifyingQuestions.length,
                 },
                 "Returning clarifying questions before research"
             );
@@ -349,19 +357,18 @@ export async function POST(req: Request) {
                     writer.write({
                         type: "text-delta",
                         id: textId,
-                        delta: "Before we dive in, let me ask a few questions to make sure I research exactly what you need:",
+                        delta: "", // Question renders inline, no intro needed
                     });
                     writer.write({ type: "text-end", id: textId });
 
                     // Write each question as a data-askUserInput part
-                    // AskUserInputResult already renders these as interactive options
-                    for (const question of conciergeResult.clarifyingQuestions!) {
+                    // Clarifying questions are clickable options only - no freeform
+                    for (const question of clarifyingQuestions) {
                         writer.write({
                             type: "data-askUserInput",
                             data: {
                                 question: question.question,
                                 options: question.options,
-                                allowFreeform: question.allowFreeform ?? true,
                             },
                         });
                     }

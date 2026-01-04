@@ -205,18 +205,18 @@ export interface KBSearchConfig {
 
 /**
  * A clarifying question the concierge wants to ask before proceeding.
- * Used to scope deep research or resolve ambiguity.
+ * Used ONLY for discrete choices where clicking is faster than typing.
+ *
+ * If you need open-ended input, ask conversationally instead.
  */
 export interface ClarifyingQuestion {
-    /** The question to ask the user */
+    /** Short question - keep it warm and direct */
     question: string;
-    /** Predefined options for quick selection */
+    /** 3-5 clickable options covering distinct approaches */
     options: Array<{
         label: string;
         value: string;
     }>;
-    /** Whether to allow free-form text input alongside options */
-    allowFreeform?: boolean;
 }
 
 /**

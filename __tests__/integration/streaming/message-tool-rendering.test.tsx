@@ -342,11 +342,11 @@ describe("Message-Level Tool Rendering", () => {
                             { label: "Vue", value: "vue" },
                             { label: "Angular", value: "angular" },
                         ],
-                        allowFreeform: true,
                     }}
                 />
             );
 
+            // Component renders question text and buttons
             expect(
                 screen.getByText("Which framework do you prefer?")
             ).toBeInTheDocument();
@@ -373,7 +373,6 @@ describe("Message-Level Tool Rendering", () => {
                                 { label: "Pain", value: "pain" },
                                 { label: "Swelling", value: "swelling" },
                             ],
-                            allowFreeform: true,
                         },
                     },
                 ] as unknown as UIMessage["parts"],
@@ -402,7 +401,6 @@ describe("Message-Level Tool Rendering", () => {
                                         label: string;
                                         value: string;
                                     }>;
-                                    allowFreeform?: boolean;
                                 }
                             }
                         />
@@ -410,6 +408,7 @@ describe("Message-Level Tool Rendering", () => {
                 </>
             );
 
+            // Component renders question text and buttons
             expect(screen.getByText("What's your main concern?")).toBeInTheDocument();
             expect(screen.getByText("Pain")).toBeInTheDocument();
             expect(screen.getByText("Swelling")).toBeInTheDocument();
