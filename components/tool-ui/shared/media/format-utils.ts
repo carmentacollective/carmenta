@@ -19,8 +19,9 @@ export function formatDuration(durationMs: number): string {
 
 /**
  * Format file size in bytes to human-readable string.
+ * Rounds to whole numbers - "107 KB" not "107.34 KB"
  * @example formatFileSize(1024) => "1 KB"
- * @example formatFileSize(1536000) => "1.5 MB"
+ * @example formatFileSize(1536000) => "2 MB"
  */
 export function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -31,5 +32,5 @@ export function formatFileSize(bytes: number): string {
         size /= 1024;
         unit += 1;
     }
-    return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unit]}`;
+    return `${Math.round(size)} ${units[unit]}`;
 }

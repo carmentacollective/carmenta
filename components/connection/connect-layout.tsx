@@ -35,6 +35,7 @@ import { ConnectionChooser } from "./connection-chooser";
 import { OracleMenu } from "@/components/ui/oracle-menu";
 import { UserAuthButton } from "@/components/ui";
 import { FileExplorer } from "@/components/code-mode";
+import { SessionChangesPanel } from "@/components/tools/code/session-changes-panel";
 import type {
     PublicConnection,
     PersistedConciergeData,
@@ -241,12 +242,13 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     </header>
 
                     {/* ═══════════════════════════════════════════════════════════
-                        FILE EXPLORER (Code Mode Only)
+                        CODE MODE PANELS
 
-                        Collapsible panel for browsing project files.
+                        Collapsible panels for code-related features.
                         Only renders when in code mode with an active project.
                     ═══════════════════════════════════════════════════════════ */}
                     <FileExplorer />
+                    <SessionChangesPanel className="mx-4 mb-3" />
 
                     {/* ═══════════════════════════════════════════════════════════
                         MAIN CONTENT AREA

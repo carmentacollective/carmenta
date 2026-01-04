@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui/copy-button";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
+import { DiffViewer, FileViewer, TerminalOutput } from "@/components/tools/code";
 import type { TransientMessage } from "@/lib/streaming";
 import {
     useToolsArray,
@@ -375,7 +376,7 @@ function InlineTool({
             </button>
 
             <AnimatePresence>
-                {expanded && output !== undefined && output !== null && (
+                {expanded && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -383,31 +384,80 @@ function InlineTool({
                         transition={{ duration: 0.15, ease: "easeOut" }}
                         className="overflow-hidden"
                     >
-                        <div className="tool-inline-output relative">
-                            <CopyButton
-                                text={outputText}
-                                variant="ghost"
-                                size="sm"
-                                className="absolute top-1.5 right-1.5"
+                        {/* Use beautiful tool-specific renderers */}
+                        {toolName === "Edit" && (
+                            <DiffViewer
+                                oldString={input.old_string as string | undefined}
+                                newString={input.new_string as string | undefined}
+                                filePath={input.file_path as string | undefined}
+                                replaceAll={input.replace_all as boolean | undefined}
+                                error={isError ? part.errorText : undefined}
                             />
+                        )}
 
-                            <div className="overflow-x-auto p-2 pr-9">
-                                <pre className="tool-output-text">
-                                    {(() => {
-                                        const formatted = formatTerminalOutput(
-                                            outputText,
-                                            toolName
-                                        );
-                                        const truncated =
-                                            formatted.length > 2000
-                                                ? formatted.slice(0, 2000) +
-                                                  "\n\n... (truncated)"
-                                                : formatted;
-                                        return truncated;
-                                    })()}
-                                </pre>
-                            </div>
-                        </div>
+                        {toolName === "Read" && (
+                            <FileViewer
+                                toolCallId={part.toolCallId}
+                                status={isError ? "error" : "completed"}
+                                filePath={input.file_path as string | undefined}
+                                content={output as string | undefined}
+                                offset={input.offset as number | undefined}
+                                limit={input.limit as number | undefined}
+                                error={isError ? part.errorText : undefined}
+                            />
+                        )}
+
+                        {toolName === "Bash" && (
+                            <TerminalOutput
+                                toolCallId={part.toolCallId}
+                                status={isError ? "error" : "completed"}
+                                command={input.command as string | undefined}
+                                description={input.description as string | undefined}
+                                output={
+                                    typeof output === "string"
+                                        ? output
+                                        : (output as { stdout?: string } | undefined)
+                                              ?.stdout
+                                }
+                                exitCode={
+                                    typeof output === "object" && output !== null
+                                        ? (output as { exitCode?: number }).exitCode
+                                        : undefined
+                                }
+                                error={isError ? part.errorText : undefined}
+                            />
+                        )}
+
+                        {/* Fallback to raw output for other tools */}
+                        {!["Edit", "Read", "Bash"].includes(toolName) &&
+                            output !== undefined &&
+                            output !== null && (
+                                <div className="tool-inline-output relative">
+                                    <CopyButton
+                                        text={outputText}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute top-1.5 right-1.5"
+                                    />
+
+                                    <div className="overflow-x-auto p-2 pr-9">
+                                        <pre className="tool-output-text">
+                                            {(() => {
+                                                const formatted = formatTerminalOutput(
+                                                    outputText,
+                                                    toolName
+                                                );
+                                                const truncated =
+                                                    formatted.length > 2000
+                                                        ? formatted.slice(0, 2000) +
+                                                          "\n\n... (truncated)"
+                                                        : formatted;
+                                                return truncated;
+                                            })()}
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
                     </motion.div>
                 )}
             </AnimatePresence>

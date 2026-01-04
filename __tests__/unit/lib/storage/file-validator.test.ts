@@ -94,7 +94,7 @@ describe("validateFile", () => {
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("10 MB");
+            expect(result.error).toContain("10.0 MB");
         });
 
         it("accepts images under 10MB", () => {
@@ -111,7 +111,7 @@ describe("validateFile", () => {
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("25 MB");
+            expect(result.error).toContain("25.0 MB");
         });
 
         it("rejects PDFs over 25MB", () => {
@@ -120,7 +120,7 @@ describe("validateFile", () => {
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("25 MB");
+            expect(result.error).toContain("25.0 MB");
         });
 
         it("includes file category in size error", () => {
@@ -136,7 +136,8 @@ describe("validateFile", () => {
                 type: "image/jpeg",
             });
             const result = validateFile(bigFile);
-            expect(result.error).toContain("15 MB");
+            // Uses detailed formatting (one decimal) to prevent ambiguity
+            expect(result.error).toContain("15.0 MB");
         });
     });
 });
