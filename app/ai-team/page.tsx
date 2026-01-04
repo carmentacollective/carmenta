@@ -10,8 +10,6 @@ import {
     Lightning,
     Gear,
     Plus,
-    ToggleLeft,
-    ToggleRight,
     Clock,
     WarningCircle,
     CheckCircle,
@@ -21,6 +19,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
+import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { logger } from "@/lib/client-logger";
 
@@ -474,27 +473,16 @@ function AITeamContent() {
                                                         : "Paused"}
                                                 </p>
                                             </a>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handleToggleAutomation(automation);
-                                                }}
+                                            <LabelToggle
+                                                checked={automation.isActive}
+                                                onChange={() =>
+                                                    handleToggleAutomation(automation)
+                                                }
                                                 disabled={togglingJobs.has(
                                                     automation.id
                                                 )}
-                                                className="text-foreground/70 hover:text-foreground p-1 transition-colors disabled:opacity-50"
-                                                title={
-                                                    automation.isActive
-                                                        ? "Pause"
-                                                        : "Resume"
-                                                }
-                                            >
-                                                {automation.isActive ? (
-                                                    <ToggleRight className="text-primary h-6 w-6" />
-                                                ) : (
-                                                    <ToggleLeft className="h-6 w-6" />
-                                                )}
-                                            </button>
+                                                size="sm"
+                                            />
                                         </div>
                                     </div>
                                 ))}

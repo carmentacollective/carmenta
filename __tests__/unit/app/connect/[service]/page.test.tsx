@@ -13,7 +13,7 @@ describe("ConnectServicePage", () => {
         const connectServicePageModule = await import("@/app/connect/[service]/page");
         expect(connectServicePageModule.default).toBeDefined();
         expect(typeof connectServicePageModule.default).toBe("function");
-    });
+    }, 15000); // Module import can be slow on cold cache
 
     it("imports required dependencies", async () => {
         // Verify component can be imported without errors
