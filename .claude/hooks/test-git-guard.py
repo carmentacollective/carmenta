@@ -74,24 +74,6 @@ def test_ask_user_violations():
         "git push origin master → asks for confirmation"
     )
 
-    # git push --no-verify
-    exit_code, stdout, _ = run_hook("git push --no-verify origin feature")
-    response = parse_ask_response(stdout)
-    results.check(
-        exit_code == 0 and response and
-        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
-        "git push --no-verify → asks for confirmation"
-    )
-
-    # git commit --no-verify
-    exit_code, stdout, _ = run_hook("git commit --no-verify -m 'test'")
-    response = parse_ask_response(stdout)
-    results.check(
-        exit_code == 0 and response and
-        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
-        "git commit --no-verify → asks for confirmation"
-    )
-
     # gh pr merge
     exit_code, stdout, _ = run_hook("gh pr merge 123")
     response = parse_ask_response(stdout)
@@ -101,15 +83,6 @@ def test_ask_user_violations():
         "gh pr merge → asks for confirmation"
     )
 
-    # Combined: push to main with --no-verify (both are ASK_USER)
-    exit_code, stdout, _ = run_hook("git push --no-verify origin main")
-    response = parse_ask_response(stdout)
-    results.check(
-        exit_code == 0 and response and
-        response.get("hookSpecificOutput", {}).get("permissionDecision") == "ask",
-        "git push --no-verify origin main → asks for confirmation (combined)"
-    )
-
     return results
 
 
@@ -117,27 +90,6 @@ def test_hard_block_violations():
     """Test operations that should be hard blocked (exit 2)."""
     print("\n🚫 Testing HARD_BLOCK violations (should exit 2)")
     results = TestResults()
-
-    # git add .
-    exit_code, _, stderr = run_hook("git add .")
-    results.check(
-        exit_code == 2 and "git add . is forbidden" in stderr,
-        "git add . → hard blocked"
-    )
-
-    # git add -A
-    exit_code, _, stderr = run_hook("git add -A")
-    results.check(
-        exit_code == 2 and "git add -A/--all is forbidden" in stderr,
-        "git add -A → hard blocked"
-    )
-
-    # git add --all
-    exit_code, _, stderr = run_hook("git add --all")
-    results.check(
-        exit_code == 2 and "git add -A/--all is forbidden" in stderr,
-        "git add --all → hard blocked"
-    )
 
     # git commit -a
     exit_code, _, stderr = run_hook("git commit -a -m 'test'")
@@ -153,6 +105,20 @@ def test_hard_block_violations():
         "git commit -am → hard blocked (combined flags)"
     )
 
+    # git push --no-verify
+    exit_code, _, stderr = run_hook("git push --no-verify origin feature")
+    results.check(
+        exit_code == 2 and "git push --no-verify is forbidden" in stderr,
+        "git push --no-verify → hard blocked"
+    )
+
+    # git commit --no-verify
+    exit_code, _, stderr = run_hook("git commit --no-verify -m 'test'")
+    results.check(
+        exit_code == 2 and "git commit --no-verify is forbidden" in stderr,
+        "git commit --no-verify → hard blocked"
+    )
+
     return results
 
 
@@ -161,19 +127,28 @@ def test_hard_block_priority():
     print("\n⚡ Testing hard block priority (hard block wins over ask)")
     results = TestResults()
 
-    # git commit -a --no-verify: -a is HARD_BLOCK, --no-verify is ASK_USER
-    # Should hard block, not ask
+    # git commit -a --no-verify: both are HARD_BLOCK now
+    # Should hard block with -a message (whichever is checked first)
     exit_code, stdout, stderr = run_hook("git commit -a --no-verify -m 'test'")
     results.check(
-        exit_code == 2 and "git commit -a is forbidden" in stderr,
-        "git commit -a --no-verify → hard blocks (not asks)"
+        exit_code == 2,
+        "git commit -a --no-verify → hard blocks"
     )
 
     # git commit -am --no-verify
     exit_code, stdout, stderr = run_hook("git commit -am --no-verify 'test'")
     results.check(
-        exit_code == 2 and "git commit -a is forbidden" in stderr,
-        "git commit -am --no-verify → hard blocks (not asks)"
+        exit_code == 2,
+        "git commit -am --no-verify → hard blocks"
+    )
+
+    # git push --no-verify origin main: both violations are present
+    # --no-verify is HARD_BLOCK, push to main is ASK_USER
+    # Hard block should win
+    exit_code, stdout, stderr = run_hook("git push --no-verify origin main")
+    results.check(
+        exit_code == 2 and "git push --no-verify is forbidden" in stderr,
+        "git push --no-verify origin main → hard blocks (--no-verify wins over main)"
     )
 
     return results
@@ -210,6 +185,41 @@ def test_allowed_operations():
     results.check(
         exit_code == 0 and not stdout.strip(),
         "git add src/file.ts → allowed"
+    )
+
+    # git add -A (now allowed)
+    exit_code, stdout, _ = run_hook("git add -A")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git add -A → allowed"
+    )
+
+    # git add . (now allowed)
+    exit_code, stdout, _ = run_hook("git add .")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git add . → allowed"
+    )
+
+    # git add --all (now allowed)
+    exit_code, stdout, _ = run_hook("git add --all")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git add --all → allowed"
+    )
+
+    # git commit -n (dry-run flag, NOT --no-verify)
+    exit_code, stdout, _ = run_hook("git commit -n -m 'test'")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git commit -n → allowed (dry-run, not no-verify)"
+    )
+
+    # git push -n (dry-run flag, NOT --no-verify)
+    exit_code, stdout, _ = run_hook("git push -n origin feature")
+    results.check(
+        exit_code == 0 and not stdout.strip(),
+        "git push -n → allowed (dry-run, not no-verify)"
     )
 
     # git status (read operation)
