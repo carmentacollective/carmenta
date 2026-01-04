@@ -59,9 +59,9 @@ export function AskUserInputResult({
         <div className="mt-3">
             <p className="text-muted-foreground mb-2 text-sm">{output.question}</p>
             <div className="flex flex-wrap gap-2">
-                {output.options!.map((option) => (
+                {output.options!.map((option, index) => (
                     <Button
-                        key={option.value}
+                        key={`${option.value}-${index}`}
                         variant="outline"
                         size="sm"
                         onClick={() => handleOptionClick(option)}

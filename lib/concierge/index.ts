@@ -299,10 +299,6 @@ const conciergeSchema = z.object({
                     .min(2)
                     .max(5)
                     .describe("Quick selection options (2-5)"),
-                allowFreeform: z
-                    .boolean()
-                    .optional()
-                    .describe("Whether to allow custom text input"),
             })
         )
         .optional()
