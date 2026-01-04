@@ -108,16 +108,6 @@ services:
         fromDatabase:
           name: carmenta-db
           property: connectionString
-      - key: OPENROUTER_API_KEY
-        fromService:
-          name: carmenta-web
-          type: web
-          envVarKey: OPENROUTER_API_KEY # Shared from main service (single source of truth)
-      - key: SENTRY_DSN
-        fromService:
-          name: carmenta-web
-          type: web
-          envVarKey: SENTRY_DSN # Shared from main service for error tracking
       - key: REDIS_URL
         fromService:
           name: carmenta-redis
