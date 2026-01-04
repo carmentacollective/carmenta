@@ -292,10 +292,41 @@ function* processSDKMessage(
         case "user": {
             // User message - check for tool results
             const userMsg = message as UserMessage;
+
+            // SDK provides tool_use_result for convenience, but parent_tool_use_id
+            // may be null. In that case, extract the tool_use_id from message.content.
             if (userMsg.tool_use_result !== undefined) {
-                const parentId = userMsg.parent_tool_use_id;
-                if (parentId) {
-                    const toolName = toolNames.get(parentId) ?? "unknown";
+                // Try parent_tool_use_id first, then fall back to message.content
+                let toolCallId = userMsg.parent_tool_use_id;
+
+                // If parent_tool_use_id is null, look in message.content for tool_result block
+                if (!toolCallId) {
+                    const msgContent = (
+                        message as { message?: { content?: unknown[] } }
+                    ).message?.content;
+                    if (Array.isArray(msgContent)) {
+                        const toolResultBlock = msgContent.find(
+                            (
+                                block
+                            ): block is { type: "tool_result"; tool_use_id: string } =>
+                                typeof block === "object" &&
+                                block !== null &&
+                                (block as { type?: string }).type === "tool_result" &&
+                                typeof (block as { tool_use_id?: unknown })
+                                    .tool_use_id === "string"
+                        );
+                        if (toolResultBlock) {
+                            toolCallId = toolResultBlock.tool_use_id;
+                        }
+                    }
+                }
+
+                if (toolCallId) {
+                    const toolName = toolNames.get(toolCallId) ?? "unknown";
+                    logger.debug(
+                        { toolCallId, toolName },
+                        "SDK adapter: yielding tool-result"
+                    );
 
                     // Detect errors from multiple formats:
                     // 1. String output starting with "Error:"
@@ -317,7 +348,7 @@ function* processSDKMessage(
 
                     yield {
                         type: "tool-result",
-                        toolCallId: parentId,
+                        toolCallId,
                         toolName,
                         output: userMsg.tool_use_result,
                         isError,
