@@ -55,6 +55,7 @@ const createJobSchema = z.object({
         message:
             "Invalid cron expression. Format: 'minute hour day month weekday'. Minimum frequency: once per minute.",
     }),
+    scheduleDisplayText: z.string().optional(),
     timezone: z.string().default("UTC"),
     integrations: z.array(z.string()).default([]),
 });
@@ -167,7 +168,8 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const { name, prompt, scheduleCron, timezone, integrations } = parsed.data;
+    const { name, prompt, scheduleCron, scheduleDisplayText, timezone, integrations } =
+        parsed.data;
 
     // Create job in database
     const [job] = await db
@@ -177,6 +179,7 @@ export async function POST(request: NextRequest) {
             name,
             prompt,
             scheduleCron,
+            scheduleDisplayText,
             timezone,
             integrations,
             memory: {},

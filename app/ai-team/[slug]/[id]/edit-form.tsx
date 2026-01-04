@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Save, Trash2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Trash2, AlertCircle } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
+import { ScheduleEditor } from "@/components/ai-team/schedule-editor";
 import {
     Dialog,
     DialogContent,
@@ -34,12 +35,32 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const [deleting, setDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [developerMode, setDeveloperMode] = useState(false);
 
     // Form state initialized from server data
     const [name, setName] = useState(job.name);
     const [prompt, setPrompt] = useState(job.prompt);
     const [scheduleCron, setScheduleCron] = useState(job.scheduleCron);
+    const [scheduleDisplayText, setScheduleDisplayText] = useState(
+        job.scheduleDisplayText
+    );
     const [timezone, setTimezone] = useState(job.timezone);
+
+    // Load developer mode preference from localStorage
+    useEffect(() => {
+        const stored = localStorage.getItem("carmenta:developer-mode");
+        setDeveloperMode(stored === "true");
+    }, []);
+
+    const handleScheduleChange = (schedule: {
+        cron: string;
+        displayText: string;
+        timezone: string;
+    }) => {
+        setScheduleCron(schedule.cron);
+        setScheduleDisplayText(schedule.displayText);
+        setTimezone(schedule.timezone);
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -54,6 +75,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                     name,
                     prompt,
                     scheduleCron,
+                    scheduleDisplayText,
                     timezone,
                 }),
             });
@@ -115,6 +137,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
         name !== job.name ||
         prompt !== job.prompt ||
         scheduleCron !== job.scheduleCron ||
+        scheduleDisplayText !== job.scheduleDisplayText ||
         timezone !== job.timezone;
 
     return (
@@ -186,55 +209,14 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                         />
                     </div>
 
-                    {/* Schedule */}
-                    <div className="space-y-2">
-                        <label
-                            htmlFor="schedule"
-                            className="text-foreground/70 text-sm font-medium"
-                        >
-                            Schedule (Cron Expression)
-                        </label>
-                        <div className="relative">
-                            <Clock className="text-foreground/40 absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2" />
-                            <input
-                                id="schedule"
-                                type="text"
-                                value={scheduleCron}
-                                onChange={(e) => setScheduleCron(e.target.value)}
-                                className="border-foreground/10 bg-foreground/[0.02] text-foreground placeholder:text-foreground/40 focus:border-primary w-full rounded-xl border py-3 pr-4 pl-11 transition-colors outline-none"
-                                placeholder="0 9 * * 1-5"
-                            />
-                        </div>
-                        <p className="text-foreground/50 text-xs">
-                            Examples: &quot;0 9 * * 1-5&quot; (weekdays at 9am), &quot;0
-                            */2 * * *&quot; (every 2 hours)
-                        </p>
-                    </div>
-
-                    {/* Timezone */}
-                    <div className="space-y-2">
-                        <label
-                            htmlFor="timezone"
-                            className="text-foreground/70 text-sm font-medium"
-                        >
-                            Timezone
-                        </label>
-                        <select
-                            id="timezone"
-                            value={timezone}
-                            onChange={(e) => setTimezone(e.target.value)}
-                            className="border-foreground/10 bg-foreground/[0.02] text-foreground focus:border-primary w-full rounded-xl border px-4 py-3 transition-colors outline-none"
-                        >
-                            <option value="UTC">UTC</option>
-                            <option value="America/New_York">Eastern Time</option>
-                            <option value="America/Chicago">Central Time</option>
-                            <option value="America/Denver">Mountain Time</option>
-                            <option value="America/Los_Angeles">Pacific Time</option>
-                            <option value="Europe/London">London</option>
-                            <option value="Europe/Paris">Paris</option>
-                            <option value="Asia/Tokyo">Tokyo</option>
-                        </select>
-                    </div>
+                    {/* Schedule - using new ScheduleEditor component */}
+                    <ScheduleEditor
+                        scheduleCron={scheduleCron}
+                        scheduleDisplayText={scheduleDisplayText}
+                        timezone={timezone}
+                        onScheduleChange={handleScheduleChange}
+                        showCron={developerMode}
+                    />
 
                     {/* Actions */}
                     <div className="border-foreground/10 flex items-center justify-between border-t pt-6">

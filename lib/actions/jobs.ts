@@ -24,6 +24,7 @@ export interface PublicJob {
     name: string;
     prompt: string;
     scheduleCron: string;
+    scheduleDisplayText: string | null;
     timezone: string;
     isActive: boolean;
     integrations: string[];
@@ -82,6 +83,7 @@ export async function loadJob(encodedId: string): Promise<PublicJob | null> {
         name: job.name,
         prompt: job.prompt,
         scheduleCron: job.scheduleCron,
+        scheduleDisplayText: job.scheduleDisplayText,
         timezone: job.timezone,
         isActive: job.isActive,
         integrations: job.integrations,
