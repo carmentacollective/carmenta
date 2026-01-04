@@ -88,7 +88,6 @@ function AITeamContent() {
         const hired = searchParams.get("hired");
         const updated = searchParams.get("updated");
         const deleted = searchParams.get("deleted");
-        const triggered = searchParams.get("triggered");
 
         if (hired === "true") {
             setSuccessMessage("New team member hired successfully!");
@@ -96,12 +95,10 @@ function AITeamContent() {
             setSuccessMessage("Automation updated successfully!");
         } else if (deleted === "true") {
             setSuccessMessage("Automation deleted.");
-        } else if (triggered === "true") {
-            setSuccessMessage("Automation started! Watch for it in the activity feed.");
         }
 
         // Clear the query params without triggering a refresh
-        if (hired || updated || deleted || triggered) {
+        if (hired || updated || deleted) {
             router.replace("/ai-team", { scroll: false });
         }
     }, [searchParams, router]);

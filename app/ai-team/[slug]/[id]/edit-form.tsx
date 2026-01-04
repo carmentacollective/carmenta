@@ -137,10 +137,10 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     };
 
     /**
-     * Poll for a new run with "running" status after triggering.
-     * The workflow creates the run almost immediately as its first activity.
+     * Poll for the run created by a specific workflow.
+     * Matches by workflowId to handle fast-completing runs and avoid clock skew issues.
      */
-    const pollForNewRun = async (triggeredAfter: Date): Promise<string | null> => {
+    const pollForNewRun = async (workflowId: string): Promise<string | null> => {
         const maxAttempts = 20; // 10 seconds total
         const pollInterval = 500;
         let consecutiveErrors = 0;
@@ -170,16 +170,14 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 consecutiveErrors = 0;
                 const data = await response.json();
 
-                // Find a run that started after we triggered
-                const runningRun = data.job?.runs?.find(
-                    (run: { status: string; startedAt: string | null }) =>
-                        run.status === "running" &&
-                        run.startedAt &&
-                        new Date(run.startedAt) >= triggeredAfter
+                // Find run by workflow ID - works for any status (running, completed, failed)
+                const matchingRun = data.job?.runs?.find(
+                    (run: { temporalWorkflowId: string | null }) =>
+                        run.temporalWorkflowId === workflowId
                 );
 
-                if (runningRun) {
-                    return runningRun.id;
+                if (matchingRun) {
+                    return matchingRun.id;
                 }
             } catch (error) {
                 consecutiveErrors++;
@@ -199,8 +197,6 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
         setTriggering(true);
         setError(null);
 
-        const triggeredAt = new Date();
-
         try {
             const response = await fetch(`/api/jobs/${job.internalId}/trigger`, {
                 method: "POST",
@@ -213,8 +209,10 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 );
             }
 
-            // Poll for the new run to appear
-            const runId = await pollForNewRun(triggeredAt);
+            const { workflowId } = await response.json();
+
+            // Poll for the new run by workflow ID
+            const runId = await pollForNewRun(workflowId);
 
             if (runId) {
                 setViewingRun({ id: runId });
