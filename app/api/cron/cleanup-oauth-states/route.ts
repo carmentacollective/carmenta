@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { cleanupExpiredStates } from "@/lib/integrations/oauth/state";
+import { serverErrorResponse, unauthorizedResponse } from "@/lib/api/responses";
 
 /**
  * Cron job to clean up expired OAuth state tokens.
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
                 { endpoint: "cleanup-oauth-states" },
                 "Unauthorized cron request"
             );
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return unauthorizedResponse("Unauthorized");
         }
     }
 
@@ -36,14 +37,6 @@ export async function GET(request: NextRequest) {
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        logger.error({ error }, "Failed to clean up OAuth states");
-
-        return NextResponse.json(
-            {
-                success: false,
-                error: error instanceof Error ? error.message : "Unknown error",
-            },
-            { status: 500 }
-        );
+        return serverErrorResponse(error, { route: "cron/cleanup-oauth-states" });
     }
 }

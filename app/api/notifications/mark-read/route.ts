@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { markNotificationRead, findUserByClerkId } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import {
+    serverErrorResponse,
+    unauthorizedResponse,
+    notFoundResponse,
+    validationErrorResponse,
+} from "@/lib/api/responses";
 
 /**
  * Mark a notification as read
@@ -10,39 +16,32 @@ export async function POST(request: NextRequest) {
     try {
         const { userId: clerkId } = await auth();
         if (!clerkId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return unauthorizedResponse();
         }
 
         const user = await findUserByClerkId(clerkId);
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return notFoundResponse("User");
         }
 
         const { notificationId } = await request.json();
         if (!notificationId || typeof notificationId !== "string") {
-            return NextResponse.json(
-                { error: "notificationId is required" },
-                { status: 400 }
+            return validationErrorResponse(
+                { notificationId: "required" },
+                "notificationId is required"
             );
         }
 
         const notification = await markNotificationRead(user.id, notificationId);
 
         if (!notification) {
-            return NextResponse.json(
-                { error: "Notification not found" },
-                { status: 404 }
-            );
+            return notFoundResponse("Notification");
         }
 
         logger.info({ notificationId }, "Notification marked as read");
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        logger.error({ error }, "Failed to mark notification as read");
-        return NextResponse.json(
-            { error: "Failed to mark notification as read" },
-            { status: 500 }
-        );
+        return serverErrorResponse(error, { route: "notifications/mark-read" });
     }
 }

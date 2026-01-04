@@ -35,9 +35,24 @@ export default function Error({
 
         const lastRefresh = sessionStorage.getItem(REFRESH_KEY);
         const now = Date.now();
+        const isPersistentError =
+            lastRefresh && now - parseInt(lastRefresh) <= REFRESH_WINDOW_MS;
 
-        // If we haven't tried a refresh in the last 30 seconds, try once
-        if (!lastRefresh || now - parseInt(lastRefresh) > REFRESH_WINDOW_MS) {
+        // ALWAYS capture to Sentry - we want visibility into all errors
+        // Use different levels: persistent errors are more severe
+        Sentry.captureException(error, {
+            level: isPersistentError ? "error" : "warning",
+            tags: {
+                errorBoundary: "app",
+                persistent: isPersistentError ? "true" : "false",
+            },
+            extra: {
+                digest: error.digest,
+                willAutoRefresh: !isPersistentError,
+            },
+        });
+
+        if (!isPersistentError) {
             sessionStorage.setItem(REFRESH_KEY, now.toString());
 
             // Use setTimeout to avoid lint rule about setState in useEffect
@@ -53,12 +68,6 @@ export default function Error({
                 clearTimeout(stateTimer);
                 clearTimeout(refreshTimer);
             };
-        } else {
-            // Second error within 30s - log to Sentry
-            Sentry.captureException(error, {
-                tags: { errorBoundary: "app" },
-                extra: { digest: error.digest },
-            });
         }
     }, [error]);
 
