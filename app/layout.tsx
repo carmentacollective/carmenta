@@ -10,7 +10,6 @@ import { InstallPrompt, WcoTitlebar } from "@/components/pwa";
 import { StructuredData } from "@/components/seo/structured-data";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
-import { MarkerProvider } from "@/components/feedback/marker-provider";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 import { Toaster } from "sonner";
 import { GlobalTooltip } from "@/components/ui/global-tooltip";
@@ -150,17 +149,15 @@ export default function RootLayout({
                             </head>
                             <body className="bg-background min-h-screen font-sans antialiased">
                                 <ThemeProvider>
-                                    <MarkerProvider>
-                                        <FloatingEmojiProvider>
-                                            <PWARegistration />
-                                            <InstallPrompt />
-                                            <WcoTitlebar />
-                                            <StructuredData />
-                                            <Toaster />
-                                            <GlobalTooltip />
-                                            {children}
-                                        </FloatingEmojiProvider>
-                                    </MarkerProvider>
+                                    <FloatingEmojiProvider>
+                                        <PWARegistration />
+                                        <InstallPrompt />
+                                        <WcoTitlebar />
+                                        <StructuredData />
+                                        <Toaster />
+                                        <GlobalTooltip />
+                                        {children}
+                                    </FloatingEmojiProvider>
                                 </ThemeProvider>
                             </body>
                         </html>
