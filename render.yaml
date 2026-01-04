@@ -4,6 +4,42 @@
 # This file defines the Carmenta infrastructure on Render.
 # To use: Connect repo in Render dashboard, it will detect this file.
 
+# Shared environment variables for secrets that need to be available to multiple services.
+# Set these values once in the Render Dashboard under Environment Groups.
+# The web service and temporal worker both need these for integrations to work.
+envVarGroups:
+  - name: carmenta-oauth-credentials
+    envVars:
+      # AI Gateway
+      - key: AI_GATEWAY_API_KEY
+      - key: OPENROUTER_API_KEY
+      # Credential encryption for API key integrations
+      - key: ENCRYPTION_KEY
+      # OAuth - Notion
+      - key: NOTION_CLIENT_ID
+      - key: NOTION_CLIENT_SECRET
+      # OAuth - Slack
+      - key: SLACK_CLIENT_ID
+      - key: SLACK_CLIENT_SECRET
+      # OAuth - ClickUp
+      - key: CLICKUP_CLIENT_ID
+      - key: CLICKUP_CLIENT_SECRET
+      # OAuth - Dropbox
+      - key: DROPBOX_CLIENT_ID
+      - key: DROPBOX_CLIENT_SECRET
+      # OAuth - Google Calendar/Contacts (sensitive scopes)
+      - key: GOOGLE_SENSITIVE_CLIENT_ID
+      - key: GOOGLE_SENSITIVE_CLIENT_SECRET
+      # OAuth - Gmail (restricted scopes)
+      - key: GOOGLE_RESTRICTED_CLIENT_ID
+      - key: GOOGLE_RESTRICTED_CLIENT_SECRET
+      # OAuth - Twitter/X
+      - key: TWITTER_CLIENT_ID
+      - key: TWITTER_CLIENT_SECRET
+      # Monitoring and auth
+      - key: SENTRY_DSN
+      - key: CLERK_SECRET_KEY
+
 services:
   # Main web application
   - type: web
@@ -21,6 +57,7 @@ services:
       ignoredPaths:
         - knowledge/** # Don't rebuild for docs-only changes
     envVars:
+      - fromGroup: carmenta-oauth-credentials
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -87,6 +124,8 @@ services:
         value: "http://localhost:3000,https://carmenta.ai"
 
   # Temporal Worker - executes scheduled agent workflows
+  # IMPORTANT: Uses carmenta-oauth-credentials env group for OAuth credentials and encryption keys.
+  # Without these, integration tools (Gmail, Notion, etc.) will silently fail to load.
   - type: worker
     name: carmenta-temporal-worker
     runtime: node
@@ -96,6 +135,7 @@ services:
     startCommand: node dist/worker/index.js
     autoDeploy: true
     envVars:
+      - fromGroup: carmenta-oauth-credentials
       - key: NODE_ENV
         value: production
       # Uses fromService to get the actual internal hostname (Render adds unique suffix)
