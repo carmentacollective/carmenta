@@ -432,6 +432,32 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick send!", "Sent!"],
         },
     },
+    spotify: {
+        displayName: "Spotify",
+        icon: "/logos/spotify.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "search") {
+                const query = args.params as { query?: string } | undefined;
+                return query?.query ? truncate(query.query, 30) : "searching";
+            }
+            if (action === "get_currently_playing") return "now playing";
+            if (action === "play") return "playing";
+            if (action === "pause") return "pausing";
+            if (action === "next" || action === "previous") return "skipping";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Connecting to Spotify...",
+            completed: "Spotify ready",
+            error: "Couldn't complete Spotify operation",
+        },
+        delightMessages: {
+            completed: ["Music flowing", "Tuned in", "Sound check done", "Vibes ready"],
+            fast: ["Quick beats!", "Instant tune"],
+        },
+    },
     twitter: {
         displayName: "X (Twitter)",
         icon: "/logos/twitter.svg",

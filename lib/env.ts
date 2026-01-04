@@ -54,6 +54,9 @@ export const env = createEnv({
         // In-house OAuth credentials - Google Restricted (Gmail)
         GOOGLE_RESTRICTED_CLIENT_ID: z.string().min(1).optional(),
         GOOGLE_RESTRICTED_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Spotify
+        SPOTIFY_CLIENT_ID: z.string().min(1).optional(),
+        SPOTIFY_CLIENT_SECRET: z.string().min(1).optional(),
         // In-house OAuth credentials - Twitter/X
         TWITTER_CLIENT_ID: z.string().min(1).optional(),
         TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
@@ -112,6 +115,8 @@ export const env = createEnv({
         GOOGLE_SENSITIVE_CLIENT_SECRET: process.env.GOOGLE_SENSITIVE_CLIENT_SECRET,
         GOOGLE_RESTRICTED_CLIENT_ID: process.env.GOOGLE_RESTRICTED_CLIENT_ID,
         GOOGLE_RESTRICTED_CLIENT_SECRET: process.env.GOOGLE_RESTRICTED_CLIENT_SECRET,
+        SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+        SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
         TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
         TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
