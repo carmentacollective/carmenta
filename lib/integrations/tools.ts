@@ -234,6 +234,8 @@ export async function getIntegrationTools(
                     errorMessage.includes("environment variable") ||
                     errorMessage.includes("ENCRYPTION_KEY") ||
                     errorMessage.includes("encryption key") || // Matches actual error from decryptCredentials
+                    errorMessage.includes("CLIENT_ID") || // OAuth client credentials
+                    errorMessage.includes("CLIENT_SECRET") ||
                     errorMessage.includes("data is corrupted");
 
                 if (isConfigError) {

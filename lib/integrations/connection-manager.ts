@@ -173,12 +173,27 @@ export async function getCredentials(
                 isDefault: integration.isDefault,
             };
         } catch (error) {
+            const errMsg = error instanceof Error ? error.message : String(error);
+
+            // Config errors (missing env vars) - re-throw to preserve message for upstream detection
+            // These need to bubble up so tools.ts can identify them as config issues
+            const isConfigError =
+                errMsg.includes("environment variable") ||
+                errMsg.includes("CLIENT_ID") ||
+                errMsg.includes("CLIENT_SECRET");
+
+            if (isConfigError) {
+                logger.error(
+                    { service, userEmail, error: errMsg },
+                    "🚨 OAuth config error - missing environment variable"
+                );
+                throw error; // Re-throw original to preserve the message
+            }
+
             logger.error(
                 { service, userEmail, error },
                 "Failed to get OAuth access token"
             );
-
-            const errMsg = error instanceof Error ? error.message : String(error);
 
             // Network/server errors are transient - don't tell user to reconnect
             // Use word boundaries to avoid false positives (e.g., port :5000, code 15003)
