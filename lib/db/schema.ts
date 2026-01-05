@@ -1772,3 +1772,220 @@ export type NewUnknownSmsSender = typeof unknownSmsSenders.$inferInsert;
 
 export type SmsInboundMessage = typeof smsInboundMessages.$inferSelect;
 export type NewSmsInboundMessage = typeof smsInboundMessages.$inferInsert;
+
+// ============================================================================
+// USER PHONE NUMBERS (SMS Opt-in)
+// ============================================================================
+
+/**
+ * User Phone Numbers - verified phone numbers for SMS notifications
+ *
+ * Users must verify their phone number and explicitly opt-in to SMS
+ * notifications (TCPA compliance). Carmenta uses this to send proactive
+ * notifications and receive replies.
+ *
+ * Design decisions:
+ * - userEmail FK (matches integrations pattern)
+ * - E.164 phone number format (validated before storage)
+ * - Explicit opt-in tracking for TCPA compliance
+ * - One primary number per user (for notification delivery)
+ */
+export const userPhoneNumbers = pgTable(
+    "user_phone_numbers",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** Owner's email - direct FK to users.email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Phone number in E.164 format (e.g., +14155551234) */
+        phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
+
+        /** Whether verification is completed */
+        verified: boolean("verified").notNull().default(false),
+
+        /** When verification was completed */
+        verifiedAt: timestamp("verified_at", { withTimezone: true }),
+
+        /** Whether this is the primary notification number */
+        isPrimary: boolean("is_primary").notNull().default(false),
+
+        /** TCPA: explicit opt-in for SMS notifications */
+        smsOptIn: boolean("sms_opt_in").notNull().default(false),
+
+        /** TCPA: when user opted in (audit trail) */
+        optedInAt: timestamp("opted_in_at", { withTimezone: true }),
+
+        /** TCPA: where the opt-in came from (audit trail) */
+        optInSource: varchar("opt_in_source", { length: 100 }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdate(() => new Date()),
+    },
+    (table) => [
+        /** Webhook lookup: find user by phone number */
+        index("user_phone_numbers_phone_idx").on(table.phoneNumber),
+        /** User queries: find user's phone numbers */
+        index("user_phone_numbers_user_email_idx").on(table.userEmail),
+        /** Unique phone number per user */
+        uniqueIndex("user_phone_numbers_user_phone_idx").on(
+            table.userEmail,
+            table.phoneNumber
+        ),
+    ]
+);
+
+export type UserPhoneNumber = typeof userPhoneNumbers.$inferSelect;
+export type NewUserPhoneNumber = typeof userPhoneNumbers.$inferInsert;
+
+// ============================================================================
+// SMS OUTBOUND MESSAGES (Proactive Notifications)
+// ============================================================================
+
+/**
+ * Notification source types for outbound SMS
+ */
+export const smsNotificationSourceEnum = pgEnum("sms_notification_source", [
+    "scheduled_agent", // From scheduled job completion
+    "alert", // System alerts
+    "briefing", // Daily/scheduled briefings
+    "reminder", // User reminders
+    "verification", // Phone verification codes
+]);
+
+/**
+ * SMS Outbound Messages - tracking for Carmenta → User notifications
+ *
+ * Every outbound SMS notification is logged here for:
+ * - Delivery tracking
+ * - Rate limiting
+ * - Context routing (linking replies to conversations)
+ * - Audit trail
+ *
+ * Design decisions:
+ * - Queue pattern: status transitions from queued → sent → delivered/failed
+ * - Retry tracking with exponential backoff
+ * - Context window for reply routing (4 hours default)
+ */
+export const smsOutboundMessages = pgTable(
+    "sms_outbound_messages",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** Quo's message ID (after send) - idempotency for delivery webhooks */
+        quoMessageId: varchar("quo_message_id", { length: 100 }),
+
+        /** Recipient user's email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Recipient phone number (E.164) */
+        toPhone: varchar("to_phone", { length: 20 }).notNull(),
+
+        /** Carmenta's phone number (E.164) */
+        fromPhone: varchar("from_phone", { length: 20 }).notNull(),
+
+        /** Message content */
+        content: text("content").notNull(),
+
+        /** What triggered this notification */
+        source: smsNotificationSourceEnum("source").notNull(),
+
+        /** Optional link to conversation for context routing */
+        conversationId: integer("conversation_id").references(() => connections.id, {
+            onDelete: "set null",
+        }),
+
+        /** Optional link to scheduled job run */
+        jobRunId: uuid("job_run_id").references(() => jobRuns.id, {
+            onDelete: "set null",
+        }),
+
+        /** Delivery status */
+        deliveryStatus: smsDeliveryStatusEnum("delivery_status")
+            .notNull()
+            .default("queued"),
+
+        /** Number of retry attempts */
+        retryCount: integer("retry_count").notNull().default(0),
+
+        /** Next retry time (for exponential backoff) */
+        nextRetryAt: timestamp("next_retry_at", { withTimezone: true }),
+
+        /** Error message if failed */
+        errorMessage: text("error_message"),
+
+        /** When the context window expires (for reply routing) */
+        contextWindowEnds: timestamp("context_window_ends", { withTimezone: true }),
+
+        /** When user replied (null if no reply) */
+        repliedAt: timestamp("replied_at", { withTimezone: true }),
+
+        /** When we queued the message */
+        queuedAt: timestamp("queued_at", { withTimezone: true }).notNull().defaultNow(),
+
+        /** When Quo accepted the message */
+        sentAt: timestamp("sent_at", { withTimezone: true }),
+
+        /** When Quo confirmed delivery */
+        deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Find messages by Quo ID for delivery webhooks */
+        index("sms_outbound_quo_message_idx").on(table.quoMessageId),
+        /** User's outbound messages */
+        index("sms_outbound_user_email_idx").on(table.userEmail),
+        /** Context routing: find recent outbound for reply matching */
+        index("sms_outbound_context_window_idx").on(
+            table.userEmail,
+            table.contextWindowEnds
+        ),
+        /** Retry queue: find messages needing retry */
+        index("sms_outbound_retry_idx").on(table.deliveryStatus, table.nextRetryAt),
+    ]
+);
+
+export type SmsOutboundMessage = typeof smsOutboundMessages.$inferSelect;
+export type NewSmsOutboundMessage = typeof smsOutboundMessages.$inferInsert;
+
+// ============================================================================
+// SMS RELATIONS
+// ============================================================================
+
+export const userPhoneNumbersRelations = relations(userPhoneNumbers, ({ one }) => ({
+    user: one(users, {
+        fields: [userPhoneNumbers.userEmail],
+        references: [users.email],
+    }),
+}));
+
+export const smsOutboundMessagesRelations = relations(
+    smsOutboundMessages,
+    ({ one }) => ({
+        user: one(users, {
+            fields: [smsOutboundMessages.userEmail],
+            references: [users.email],
+        }),
+        connection: one(connections, {
+            fields: [smsOutboundMessages.conversationId],
+            references: [connections.id],
+        }),
+        jobRun: one(jobRuns, {
+            fields: [smsOutboundMessages.jobRunId],
+            references: [jobRuns.id],
+        }),
+    })
+);
