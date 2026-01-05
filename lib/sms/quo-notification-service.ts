@@ -385,15 +385,37 @@ export async function processRetryQueue(): Promise<number> {
                 })
                 .json<{ id: string }>();
 
-            await db
-                .update(schema.smsOutboundMessages)
-                .set({
-                    quoMessageId: response.id,
-                    deliveryStatus: "sent",
-                    sentAt: new Date(),
-                    nextRetryAt: null,
-                })
-                .where(eq(schema.smsOutboundMessages.id, message.id));
+            // Update record with Quo message ID and sent status
+            // If this fails, SMS was still sent - log but don't re-queue for retry
+            try {
+                await db
+                    .update(schema.smsOutboundMessages)
+                    .set({
+                        quoMessageId: response.id,
+                        deliveryStatus: "sent",
+                        sentAt: new Date(),
+                        nextRetryAt: null,
+                    })
+                    .where(eq(schema.smsOutboundMessages.id, message.id));
+            } catch (updateError) {
+                // SMS was sent but tracking failed - log but don't re-queue
+                logger.error(
+                    {
+                        error: updateError,
+                        messageId: message.id,
+                        quoMessageId: response.id,
+                    },
+                    "⚠️ SMS sent but tracking update failed in processRetryQueue"
+                );
+                Sentry.captureException(updateError, {
+                    level: "warning",
+                    tags: { component: "sms", action: "retry_tracking_failed" },
+                    extra: {
+                        messageId: message.id,
+                        quoMessageId: response.id,
+                    },
+                });
+            }
 
             logger.info(
                 { messageId: message.id, quoMessageId: response.id },
@@ -401,7 +423,7 @@ export async function processRetryQueue(): Promise<number> {
             );
             processed++;
         } catch (error) {
-            // Log failure and queue for another retry
+            // API call failed - log and queue for another retry
             logger.error(
                 { error, messageId: message.id, retryCount: message.retryCount },
                 "❌ SMS retry attempt failed"

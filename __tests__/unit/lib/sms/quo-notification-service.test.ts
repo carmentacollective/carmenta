@@ -29,7 +29,7 @@ vi.mock("@/lib/env", async (importOriginal) => {
         env: {
             ...original.env,
             QUO_NOTIFICATION_API_KEY: "test_api_key",
-            QUO_PHONE_NUMBER_ID: "test_phone_id",
+            QUO_PHONE_NUMBER: "+17373773499",
         },
         assertEnv: vi.fn(),
     };
