@@ -132,6 +132,9 @@ function storeConnection(connection: Omit<LastConnection, "timestamp">): void {
         };
         const value = JSON.stringify(data);
         localStorage.setItem(STORAGE_KEY, value);
+        // Update cache immediately to prevent stale reads
+        cachedRawValue = value;
+        cachedConnection = data;
         // Dispatch storage event so useSyncExternalStore picks up the change
         try {
             window.dispatchEvent(
@@ -247,11 +250,15 @@ export function useLastConnection({
     useEffect(() => {
         if (currentConnection?.id) {
             const stored = getStoredConnection();
-            // Write if ID differs OR if title/slug changed for same connection
+            // Always update to refresh timestamp (tracks "last activity" not "last change")
+            // Even if ID/title/slug unchanged, we want to extend the 7-day expiration
             const needsUpdate =
                 stored?.id !== currentConnection.id ||
                 stored?.title !== currentConnection.title ||
-                stored?.slug !== currentConnection.slug;
+                stored?.slug !== currentConnection.slug ||
+                // Refresh if same connection but timestamp is getting stale (> 1 day old)
+                (stored?.id === currentConnection.id &&
+                    Date.now() - stored.timestamp > 24 * 60 * 60 * 1000);
 
             if (needsUpdate) {
                 storeConnection({
