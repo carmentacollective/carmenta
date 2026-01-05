@@ -165,7 +165,8 @@ export async function sendNotification(
                 const apiKey = env.QUO_NOTIFICATION_API_KEY;
 
                 // Get Carmenta's phone number from env
-                const fromPhone = env.QUO_PHONE_NUMBER || "+17373773499";
+                assertEnv(env.QUO_PHONE_NUMBER, "QUO_PHONE_NUMBER");
+                const fromPhone = env.QUO_PHONE_NUMBER;
 
                 // Calculate context window end
                 const contextWindowEnds = new Date(Date.now() + CONTEXT_WINDOW_MS);
