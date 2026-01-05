@@ -1,6 +1,11 @@
 "use client";
 
-import { ThemeSwitcher, UserAuthButton, OracleMenu } from "@/components/ui";
+import {
+    ThemeSwitcher,
+    UserAuthButton,
+    OracleMenu,
+    ChatReturnNav,
+} from "@/components/ui";
 import { useWindowControlsOverlay } from "@/lib/hooks/use-window-controls-overlay";
 
 interface SiteHeaderProps {
@@ -24,6 +29,7 @@ interface SiteHeaderProps {
  * Maintains pixel-perfect alignment and spacing.
  *
  * Left side: Oracle menu (Carmenta - product, help, philosophy)
+ * Center: Return-to-chat breadcrumb (when user has an active chat)
  * Right side: User menu (account, integrations, settings)
  *
  * When WCO (Window Controls Overlay) is active, this header is hidden
@@ -45,6 +51,9 @@ export function SiteHeader({
         <header className="flex items-center justify-between px-6 py-4">
             {/* Left: Oracle menu with Carmenta label */}
             <OracleMenu showLabel />
+
+            {/* Center: Return to chat breadcrumb (when navigating away from an active chat) */}
+            <ChatReturnNav />
 
             {/* Right: User controls */}
             <div className="flex items-center gap-4">
