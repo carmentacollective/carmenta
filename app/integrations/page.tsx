@@ -9,6 +9,7 @@ import {
     XCircle,
     X,
     ArrowCounterClockwise,
+    ChatCircle,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -28,6 +29,7 @@ import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
+import { CarmentaConcierge, useConcierge } from "@/components/carmenta-concierge";
 
 /**
  * IntegrationsContent - Component that uses useSearchParams()
@@ -37,6 +39,9 @@ function IntegrationsContent() {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Concierge state
+    const concierge = useConcierge();
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -437,18 +442,29 @@ function IntegrationsContent() {
         <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
             {/* Header */}
             <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="bg-primary/20 rounded-xl p-3">
-                        <Plug className="text-primary h-6 w-6" />
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary/20 rounded-xl p-3">
+                            <Plug className="text-primary h-6 w-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-foreground text-3xl font-light tracking-tight">
+                                Integrations
+                            </h1>
+                            <p className="text-foreground/70">
+                                Connect your tools. We'll remember how to use them.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-foreground text-3xl font-light tracking-tight">
-                            Integrations
-                        </h1>
-                        <p className="text-foreground/70">
-                            Connect your tools. We'll remember how to use them.
-                        </p>
-                    </div>
+
+                    {/* Ask Carmenta button */}
+                    <button
+                        onClick={concierge.open}
+                        className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
+                    >
+                        <ChatCircle className="text-primary h-5 w-5" weight="duotone" />
+                        <span className="text-sm font-medium">Connect with us</span>
+                    </button>
                 </div>
             </section>
 
@@ -607,6 +623,14 @@ function IntegrationsContent() {
                     }
                 }}
                 onSubmit={handleConnectSubmit}
+            />
+
+            {/* Carmenta Concierge */}
+            <CarmentaConcierge
+                isOpen={concierge.isOpen}
+                onClose={concierge.close}
+                pageContext="We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues."
+                placeholder="What should we connect?"
             />
         </StandardPageLayout>
     );

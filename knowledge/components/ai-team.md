@@ -66,11 +66,13 @@ How agents work together:
 
 ## Integration Points
 
+- **[DCOS Architecture](./dcos-architecture.md)**: The supervisor pattern that
+  orchestrates all team members through agents-as-tools
 - **Concierge**: Routes complex requests to appropriate team members
 - **Memory**: All agents read from and write to shared context
 - **Service Connectivity**: Agents use external services to complete tasks
 - **Scheduled Agents**: Some team member work happens on schedules
-- **Interface**: We see which agent is working, can direct requests
+- **Interface**: Universal Carmenta modal from any page, plus deep-dive pages
 - **[God Mode](./god-mode.md)**: Premium tier where AI Team can act AS the user
 
 ## Evolution: God Mode
@@ -205,38 +207,42 @@ These are internal constraints, not user-facing concepts.
 
 ## Open Questions
 
-### Architecture
+> **Note**: Many architecture questions are now resolved in
+> [DCOS Architecture](./dcos-architecture.md).
 
-- **Agent framework**: Build custom agent orchestration or use existing (LangGraph,
-  CrewAI, AutoGen)? What's the right level of control vs. speed?
-- **Agent identity**: Are agents truly separate entities or personas on the same model?
-  Does it matter technically? Experientially?
-- **State management**: How do agents maintain state across sessions? Separate from user
-  Memory?
-- **Concurrency**: Can multiple agents work simultaneously? How do we handle conflicts?
+### Architecture (Resolved)
 
-### Product Decisions
+- ✅ **Agent framework**: Vercel AI SDK v6 ToolLoopAgent + agents-as-tools pattern
+- ✅ **Agent identity**: Agents are specialized tools invoked by DCOS. Users see
+  Carmenta.
+- ✅ **State management**: Each agent manages task-specific state. DCOS maintains
+  conversation state. Shared memory via Knowledge Base.
+- ✅ **Concurrency**: DCOS can invoke multiple tools in parallel. Conflicts resolved by
+  DCOS synthesizing results.
+
+### Product Decisions (Open)
 
 - **Team composition**: Is DCOS + 4 specialists right? Too many? Too few? Can we
   customize our team?
 - **Agent visibility**: Do we see agent names, personalities? Or is it abstracted as
-  "the team"?
+  "the team"? (Leaning: abstracted, with optional deep-dive)
 - **Autonomy levels**: What can agents do without asking? What requires confirmation?
   Configurable preferences?
 - **DCOS personality**: How does she communicate? What's her voice? The vision mentions
   "she" - is gendering right?
 
-### Technical Specifications Needed
+### Technical Specifications (Partially Resolved)
 
-- Agent definition schema (capabilities, tools, prompts)
-- Orchestration protocol for multi-agent tasks
-- State persistence model per agent
-- Handoff protocol between agents
-- Escalation triggers and human-in-the-loop patterns
+- ✅ Agent definition schema - See [DCOS Architecture](./dcos-architecture.md) registry
+- ✅ Orchestration protocol - Agents-as-tools pattern
+- State persistence model per agent - Partially addressed
+- Handoff protocol between agents - Via tool results
+- Escalation triggers and human-in-the-loop patterns - Needs spec
 
-### Research Needed
+### Research Completed
 
-- Evaluate agent frameworks (LangGraph, CrewAI, AutoGen, Agency Swarm)
+- ✅ Evaluated agent frameworks - Vercel AI SDK v6 chosen over LangGraph/CrewAI
+- ✅ Industry patterns - Azure, AWS, Databricks supervisor patterns
 - Study how people relate to named AI agents vs. generic assistants
 - Research commitment tracking and follow-up patterns (GTD, executive assistant
   practices)

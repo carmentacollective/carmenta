@@ -31,7 +31,10 @@ import {
     Lock,
     ArrowSquareOut,
     House,
+    Sparkle,
 } from "@phosphor-icons/react";
+
+import { useCarmentaModal } from "@/hooks/use-carmenta-modal";
 
 import { cn } from "@/lib/utils";
 import { glassOrbPreset } from "@/lib/design-tokens";
@@ -59,6 +62,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
     const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const { open: openCarmenta } = useCarmentaModal();
 
     // Update dropdown position when opening
     useEffect(() => {
@@ -177,6 +181,27 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                               New Connection
                                           </span>
                                       </Link>
+
+                                      {/* Ask Carmenta - quick access */}
+                                      <button
+                                          onClick={() => {
+                                              setIsOpen(false);
+                                              openCarmenta();
+                                          }}
+                                          className="group text-foreground relative flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium transition-all"
+                                      >
+                                          <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <span className="relative flex items-center gap-3">
+                                              <Sparkle
+                                                  className="text-primary h-4 w-4"
+                                                  weight="duotone"
+                                              />
+                                              Ask Carmenta
+                                          </span>
+                                          <kbd className="bg-foreground/5 text-foreground/50 relative rounded px-1.5 py-0.5 font-mono text-[10px]">
+                                              ⌘K
+                                          </kbd>
+                                      </button>
 
                                       <div className="border-foreground/10 my-1 border-t" />
 

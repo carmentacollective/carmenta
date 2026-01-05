@@ -9,10 +9,11 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkle } from "@phosphor-icons/react";
+import { Sparkle, ChatCircle } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { LibrarianTaskBar } from "./librarian-task-bar";
+import { CarmentaConcierge, useConcierge } from "@/components/carmenta-concierge";
 import type { KBFolder } from "@/lib/kb/actions";
 
 interface KBPageContentProps {
@@ -21,6 +22,7 @@ interface KBPageContentProps {
 
 export function KBPageContent({ initialFolders }: KBPageContentProps) {
     const router = useRouter();
+    const concierge = useConcierge();
 
     // Refresh the page when librarian makes changes
     const handleChangesComplete = useCallback(() => {
@@ -29,11 +31,23 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
 
     return (
         <>
-            {/* Librarian Task Bar */}
-            <LibrarianTaskBar
-                onChangesComplete={handleChangesComplete}
-                className="mb-4"
-            />
+            {/* Librarian Task Bar + Concierge Button */}
+            <div className="mb-4 flex items-start gap-3">
+                <LibrarianTaskBar
+                    onChangesComplete={handleChangesComplete}
+                    className="flex-1"
+                />
+                <button
+                    onClick={concierge.open}
+                    className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
+                    title="Open concierge chat"
+                >
+                    <ChatCircle className="text-primary h-5 w-5" weight="duotone" />
+                    <span className="hidden text-sm font-medium sm:inline">
+                        Search together
+                    </span>
+                </button>
+            </div>
 
             {/* Knowledge Viewer */}
             <section className="min-h-[500px] flex-1">
@@ -51,6 +65,14 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                     <KnowledgeViewer initialFolders={initialFolders} />
                 )}
             </section>
+
+            {/* Carmenta Concierge */}
+            <CarmentaConcierge
+                isOpen={concierge.isOpen}
+                onClose={concierge.close}
+                pageContext="We're in the knowledge base together. We can search, organize, or extract new knowledge here."
+                placeholder="What are we looking for?"
+            />
         </>
     );
 }
