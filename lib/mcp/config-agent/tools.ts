@@ -67,7 +67,19 @@ export function createMcpConfigTools(userEmail: string) {
                                     config.transport || detectTransportType(config.url),
                                 authType: config.authType || "none",
                                 hasCredentials: !!config.token,
+                                token: config.token, // Include token for testConnection/saveServer
+                                headerName: config.headerName,
                             },
+                        };
+                    }
+
+                    // Special handling for Smithery URLs (not yet supported)
+                    if (input.includes("smithery.ai")) {
+                        return {
+                            success: false,
+                            error: "Smithery server marketplace not yet supported",
+                            suggestion:
+                                "Smithery support coming in a future update. For now, please provide the direct MCP server URL from your Smithery deployment.",
                         };
                     }
 

@@ -59,49 +59,50 @@ interface McpServerSummary {
 interface ToolPart {
     type: string;
     toolCallId?: string;
+    toolName?: string; // Actual tool name from AI SDK
     state?: "input-streaming" | "input-available" | "output-available" | "output-error";
     input?: Record<string, unknown>;
     output?: unknown;
     errorText?: string;
 }
 
-function getToolDisplay(toolType: string): {
+function getToolDisplay(toolName: string): {
     icon: typeof Plug;
     label: string;
     verb: string;
 } {
-    switch (toolType) {
-        case "tool-parseConfig":
+    switch (toolName) {
+        case "parseConfig":
             return {
                 icon: Plug,
                 label: "Parse",
                 verb: "Parsing configuration",
             };
-        case "tool-testConnection":
+        case "testConnection":
             return {
                 icon: PlugsConnected,
                 label: "Test",
                 verb: "Testing connection",
             };
-        case "tool-saveServer":
+        case "saveServer":
             return {
                 icon: Check,
                 label: "Save",
                 verb: "Saving server",
             };
-        case "tool-listServers":
+        case "listServers":
             return {
                 icon: Plugs,
                 label: "List",
                 verb: "Listing servers",
             };
-        case "tool-removeServer":
+        case "removeServer":
             return {
                 icon: Trash,
                 label: "Remove",
                 verb: "Removing server",
             };
-        case "tool-updateServer":
+        case "updateServer":
             return {
                 icon: Power,
                 label: "Update",
@@ -117,7 +118,7 @@ function getToolDisplay(toolType: string): {
 }
 
 function McpToolActivityItem({ part }: { part: ToolPart }) {
-    const { icon: Icon, verb } = getToolDisplay(part.type);
+    const { icon: Icon, verb } = getToolDisplay(part.toolName || "unknown");
     const isComplete = part.state === "output-available";
     const hasError = !!part.errorText;
 
