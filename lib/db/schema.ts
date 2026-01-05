@@ -1086,6 +1086,30 @@ export const jobRunStatusEnum = pgEnum("job_run_status", [
     "failed",
 ]);
 
+// ============================================================================
+// SMS Messaging Enums
+// ============================================================================
+
+/**
+ * SMS message processing status for webhook idempotency
+ */
+export const smsProcessingStatusEnum = pgEnum("sms_processing_status", [
+    "pending",
+    "processing",
+    "completed",
+    "failed",
+]);
+
+/**
+ * SMS delivery status for outbound messages
+ */
+export const smsDeliveryStatusEnum = pgEnum("sms_delivery_status", [
+    "queued",
+    "sent",
+    "delivered",
+    "failed",
+]);
+
 /**
  * Scheduled Jobs - user-defined automated agent tasks
  *
@@ -1390,3 +1414,108 @@ export type NewJobRun = typeof jobRuns.$inferInsert;
 
 export type JobNotification = typeof jobNotifications.$inferSelect;
 export type NewJobNotification = typeof jobNotifications.$inferInsert;
+
+// ============================================================================
+// SMS Messaging Tables
+// ============================================================================
+
+/**
+ * Unknown SMS Senders - spam protection for inbound webhooks
+ *
+ * Tracks phone numbers that text us but aren't associated with any user.
+ * Used for rate limiting and preventing SMS bombing attacks.
+ */
+export const unknownSmsSenders = pgTable(
+    "unknown_sms_senders",
+    {
+        id: serial("id").primaryKey(),
+
+        /** Phone number in E.164 format */
+        phoneNumber: varchar("phone_number", { length: 20 }).notNull().unique(),
+
+        /** When we first received a message from this number */
+        firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** When we last sent "Who is this?" prompt */
+        lastPromptedAt: timestamp("last_prompted_at", { withTimezone: true }),
+
+        /** Count of messages received (for rate limiting) */
+        messageCount: integer("message_count").notNull().default(0),
+
+        /** If rate limit exceeded, when we blocked this number */
+        blockedAt: timestamp("blocked_at", { withTimezone: true }),
+
+        /** Last message received timestamp (for rate window) */
+        lastMessageAt: timestamp("last_message_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [index("unknown_sms_senders_phone_idx").on(table.phoneNumber)]
+);
+
+/**
+ * SMS Inbound Messages - raw webhook events from Quo
+ *
+ * Stores all inbound SMS messages for audit trail and debugging.
+ * Milestone 1: Just logging. Later milestones add routing to conversations.
+ */
+export const smsInboundMessages = pgTable(
+    "sms_inbound_messages",
+    {
+        id: serial("id").primaryKey(),
+
+        /** Quo's message ID - idempotency key */
+        quoMessageId: varchar("quo_message_id", { length: 100 }).notNull().unique(),
+
+        /** Phone number message came from (E.164) */
+        fromPhone: varchar("from_phone", { length: 20 }).notNull(),
+
+        /** Phone number message was sent to (Carmenta's number, E.164) */
+        toPhone: varchar("to_phone", { length: 20 }).notNull(),
+
+        /** Message text content */
+        content: text("content").notNull(),
+
+        /** Quo's phone number ID */
+        quoPhoneNumberId: varchar("quo_phone_number_id", { length: 100 }),
+
+        /** Processing status for idempotency */
+        processingStatus: smsProcessingStatusEnum("processing_status")
+            .notNull()
+            .default("pending"),
+
+        /** Associated user email (null if unknown sender) */
+        userEmail: varchar("user_email", { length: 255 }).references(
+            () => users.email,
+            { onDelete: "set null" }
+        ),
+
+        /** Error message if processing failed */
+        errorMessage: text("error_message"),
+
+        /** When Quo says the message was created */
+        quoCreatedAt: timestamp("quo_created_at", { withTimezone: true }),
+
+        /** When we received the webhook */
+        receivedAt: timestamp("received_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** When we finished processing */
+        processedAt: timestamp("processed_at", { withTimezone: true }),
+    },
+    (table) => [
+        index("sms_inbound_quo_message_idx").on(table.quoMessageId),
+        index("sms_inbound_from_phone_idx").on(table.fromPhone),
+        index("sms_inbound_user_email_idx").on(table.userEmail),
+        index("sms_inbound_received_at_idx").on(table.receivedAt),
+    ]
+);
+
+export type UnknownSmsSender = typeof unknownSmsSenders.$inferSelect;
+export type NewUnknownSmsSender = typeof unknownSmsSenders.$inferInsert;
+
+export type SmsInboundMessage = typeof smsInboundMessages.$inferSelect;
+export type NewSmsInboundMessage = typeof smsInboundMessages.$inferInsert;

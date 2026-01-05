@@ -105,6 +105,7 @@ vi.mock("./lib/env", () => ({
         NEXT_PUBLIC_SENTRY_DSN: undefined,
         CLERK_SECRET_KEY: undefined,
         CLERK_WEBHOOK_SECRET: "test_webhook_secret",
+        QUO_WEBHOOK_SECRET: "test_quo_webhook_secret",
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: undefined,
         PARALLEL_API_KEY: undefined,
         ENCRYPTION_KEY: "S0tXSmJVKHdxrV2xqxoqWY3XzPoNCtHo6HATTeFypvE=", // random 32 bytes
