@@ -392,3 +392,58 @@ export async function getConnectionMetadata(
         slug: connection.slug,
     };
 }
+
+/**
+ * Result from polling background mode status.
+ * Used by frontend to detect when background work completes.
+ */
+export interface BackgroundModeStatus {
+    /** Current streaming status */
+    status: "idle" | "streaming" | "completed" | "failed";
+    /** Messages if status is completed or failed (for UI refresh) */
+    messages: UIMessageLike[] | null;
+    /** Title (may have been updated during background work) */
+    title: string | null;
+    /** Slug (may have changed if title changed) */
+    slug: string;
+}
+
+/**
+ * Polls background mode status for a connection.
+ * Used by frontend when in background mode to detect completion.
+ *
+ * @param connectionId - Public Sqid string from the client
+ * @returns Status and messages if work is complete, null if unauthorized
+ */
+export async function pollBackgroundModeStatus(
+    connectionId: string
+): Promise<BackgroundModeStatus | null> {
+    const dbUser = await getDbUser();
+    if (!dbUser) {
+        return null;
+    }
+
+    const connection = await validateConnectionAccess(connectionId, dbUser.id);
+    if (!connection) {
+        return null;
+    }
+
+    // If still streaming, don't load messages (saves DB query)
+    if (connection.streamingStatus === "streaming") {
+        return {
+            status: "streaming",
+            messages: null,
+            title: connection.title,
+            slug: connection.slug,
+        };
+    }
+
+    // Work is done (completed or failed) - include messages for UI refresh
+    const messages = mapConnectionMessagesToUI(connection);
+    return {
+        status: connection.streamingStatus,
+        messages,
+        title: connection.title,
+        slug: connection.slug,
+    };
+}
