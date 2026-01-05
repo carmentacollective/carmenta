@@ -37,8 +37,8 @@ export const env = createEnv({
         // Quo API key for system-level SMS notifications (Carmenta → User)
         // Separate from user API keys for their own tool calls
         QUO_NOTIFICATION_API_KEY: z.string().min(1).optional(),
-        // Carmenta's Quo phone number ID for sending notifications
-        QUO_PHONE_NUMBER_ID: z.string().min(1).optional(),
+        // Carmenta's Quo phone number (E.164) for sending notifications
+        QUO_PHONE_NUMBER: z.string().min(1).optional(),
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
         // Credential encryption for API key integrations
@@ -108,7 +108,7 @@ export const env = createEnv({
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
         QUO_WEBHOOK_SECRET: process.env.QUO_WEBHOOK_SECRET,
         QUO_NOTIFICATION_API_KEY: process.env.QUO_NOTIFICATION_API_KEY,
-        QUO_PHONE_NUMBER_ID: process.env.QUO_PHONE_NUMBER_ID,
+        QUO_PHONE_NUMBER: process.env.QUO_PHONE_NUMBER,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
