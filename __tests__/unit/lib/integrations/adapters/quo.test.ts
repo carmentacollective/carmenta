@@ -52,9 +52,7 @@ describe("QuoAdapter", () => {
             expect(help.service).toBe("Quo");
             expect(help.operations).toBeDefined();
             expect(help.operations.length).toBeGreaterThan(5);
-            expect(help.docsUrl).toBe(
-                "https://www.quo.com/docs/mdx/api-reference/introduction"
-            );
+            expect(help.docsUrl).toBe("https://my.quo.com/settings/api");
             expect(help.commonOperations).toEqual([
                 "list_messages",
                 "send_message",

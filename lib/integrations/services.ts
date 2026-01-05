@@ -213,10 +213,10 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         logo: "/logos/quo.svg",
         authMethod: "api_key",
         status: "beta",
-        getApiKeyUrl: "https://www.quo.com/docs/mdx/api-reference/introduction",
+        getApiKeyUrl: "https://my.quo.com/settings/api",
         apiKeyPlaceholder: "Enter your Quo API key",
         supportsMultipleAccounts: false,
-        docsUrl: "https://www.quo.com/docs/mdx/api-reference/introduction",
+        docsUrl: "https://my.quo.com/settings/api",
         capabilities: [
             "list_messages",
             "send_message",

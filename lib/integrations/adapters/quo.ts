@@ -11,7 +11,7 @@
  * - SMS only (no MMS support)
  * - Messages require prepaid credits
  *
- * @see https://www.quo.com/docs/mdx/api-reference/introduction
+ * @see https://my.quo.com/settings/api
  */
 
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
@@ -469,7 +469,7 @@ export class QuoAdapter extends ServiceAdapter {
                 },
             ],
             commonOperations: ["list_messages", "send_message", "list_phone_numbers"],
-            docsUrl: "https://www.quo.com/docs/mdx/api-reference/introduction",
+            docsUrl: "https://my.quo.com/settings/api",
         };
     }
 
