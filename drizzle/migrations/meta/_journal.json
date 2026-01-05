@@ -85,6 +85,13 @@
       "when": 1767589201244,
       "tag": "0023_quick_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1767646942336,
+      "tag": "0024_wise_wallflower",
+      "breakpoints": true
     }
   ]
 }
