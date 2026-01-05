@@ -12,6 +12,7 @@
  */
 
 import { tool } from "ai";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -111,36 +112,53 @@ interface ListData {
 async function executeList(
     context: SubagentContext
 ): Promise<SubagentResult<ListData>> {
-    // Pass explicit userEmail - don't rely on Clerk session in agent context
-    const services = await getServicesWithStatus(context.userEmail);
+    try {
+        // Pass explicit userEmail - don't rely on Clerk session in agent context
+        const services = await getServicesWithStatus(context.userEmail);
 
-    const data: ListData = {
-        connected: services.connected.map((s) => ({
-            serviceId: s.service.id,
-            serviceName: s.service.name,
-            status: s.status,
-            accountId: s.accountId,
-            accountDisplayName: s.accountDisplayName,
-            isDefault: s.isDefault,
-        })),
-        available: services.available.map((s) => ({
-            id: s.id,
-            name: s.name,
-            description: s.description,
-            authMethod: s.authMethod,
-        })),
-    };
+        const data: ListData = {
+            connected: services.connected.map((s) => ({
+                serviceId: s.service.id,
+                serviceName: s.service.name,
+                status: s.status,
+                accountId: s.accountId,
+                accountDisplayName: s.accountDisplayName,
+                isDefault: s.isDefault,
+            })),
+            available: services.available.map((s) => ({
+                id: s.id,
+                name: s.name,
+                description: s.description,
+                authMethod: s.authMethod,
+            })),
+        };
 
-    logger.info(
-        {
-            userEmail: context.userEmail,
-            connectedCount: data.connected.length,
-            availableCount: data.available.length,
-        },
-        "🔧 Listed integrations"
-    );
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                connectedCount: data.connected.length,
+                availableCount: data.available.length,
+            },
+            "🔧 Listed integrations"
+        );
 
-    return successResult(data);
+        return successResult(data);
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail },
+            "🔧 Failed to list integrations"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "list" },
+            extra: { userEmail: context.userEmail },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Failed to list integrations"
+        );
+    }
 }
 
 /**
@@ -162,38 +180,60 @@ async function executeTest(
 ): Promise<SubagentResult<TestData>> {
     const { serviceId, accountId } = params;
 
-    // Check if service is connected
-    const connected = await getConnectedServices(context.userEmail);
+    try {
+        // Check if service is connected
+        const connected = await getConnectedServices(context.userEmail);
 
-    if (!connected.includes(serviceId)) {
+        if (!connected.includes(serviceId)) {
+            logger.warn(
+                { userEmail: context.userEmail, serviceId },
+                "🔧 Service not connected for test"
+            );
+
+            return successResult<TestData>({
+                success: false,
+                serviceId,
+                accountId,
+                error: `Service '${serviceId}' is not connected. Use the integrations page to connect it first.`,
+            });
+        }
+
+        // Dynamic import to avoid circular deps
+        const { testIntegration } = await import("@/lib/actions/integrations");
+        const result = await testIntegration(serviceId, accountId);
+
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                serviceId,
+                accountId,
+                success: result.success,
+            },
+            result.success ? "✅ Integration test passed" : "❌ Integration test failed"
+        );
+
         return successResult<TestData>({
-            success: false,
-            serviceId,
-            accountId,
-            error: `Service '${serviceId}' is not connected. Use the integrations page to connect it first.`,
-        });
-    }
-
-    // Dynamic import to avoid circular deps
-    const { testIntegration } = await import("@/lib/actions/integrations");
-    const result = await testIntegration(serviceId, accountId);
-
-    logger.info(
-        {
-            userEmail: context.userEmail,
-            serviceId,
-            accountId,
             success: result.success,
-        },
-        result.success ? "✅ Integration test passed" : "❌ Integration test failed"
-    );
+            serviceId,
+            accountId,
+            error: result.error,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail, serviceId, accountId },
+            "🔧 Integration test failed with exception"
+        );
 
-    return successResult<TestData>({
-        success: result.success,
-        serviceId,
-        accountId,
-        error: result.error,
-    });
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "test" },
+            extra: { userEmail: context.userEmail, serviceId, accountId },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Test failed"
+        );
+    }
 }
 
 /**
@@ -216,48 +256,70 @@ async function executeGuide(
 ): Promise<SubagentResult<GuideData>> {
     const { serviceId } = params;
 
-    // Get service definition
-    const { getServiceById } = await import("@/lib/integrations/services");
-    const service = getServiceById(serviceId);
+    try {
+        // Get service definition
+        const { getServiceById } = await import("@/lib/integrations/services");
+        const service = getServiceById(serviceId);
 
-    if (!service) {
-        return errorResult(
-            "VALIDATION",
-            `Unknown service: '${serviceId}'. Use action='list' to see available services.`
-        );
-    }
+        if (!service) {
+            logger.warn(
+                { userEmail: context.userEmail, serviceId },
+                "🔧 Unknown service requested for guide"
+            );
 
-    const isOAuth = service.authMethod === "oauth";
+            return errorResult(
+                "VALIDATION",
+                `Unknown service: '${serviceId}'. Use action='list' to see available services.`
+            );
+        }
 
-    const instructions = isOAuth
-        ? `To connect ${service.name}:
+        const isOAuth = service.authMethod === "oauth";
+
+        const instructions = isOAuth
+            ? `To connect ${service.name}:
 1. Navigate to the integrations page
 2. Click on ${service.name}
 3. We'll redirect you to ${service.name} to authorize access
 4. Grant the requested permissions
 5. You'll be redirected back once connected`
-        : `To connect ${service.name}:
+            : `To connect ${service.name}:
 1. Navigate to the integrations page
 2. Click on ${service.name}
 3. Enter your API key (find this in your ${service.name} account settings)
 4. Click Connect
 5. We'll test the connection automatically`;
 
-    logger.info(
-        {
-            userEmail: context.userEmail,
-            serviceId,
-        },
-        "📖 Generated setup guide"
-    );
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                serviceId,
+            },
+            "📖 Generated setup guide"
+        );
 
-    return successResult<GuideData>({
-        serviceId,
-        name: service.name,
-        authMethod: service.authMethod,
-        setupUrl: `/integrations`,
-        instructions,
-    });
+        return successResult<GuideData>({
+            serviceId,
+            name: service.name,
+            authMethod: service.authMethod,
+            setupUrl: `/integrations`,
+            instructions,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail, serviceId },
+            "🔧 Failed to generate setup guide"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "guide" },
+            extra: { userEmail: context.userEmail, serviceId },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Failed to generate guide"
+        );
+    }
 }
 
 /**

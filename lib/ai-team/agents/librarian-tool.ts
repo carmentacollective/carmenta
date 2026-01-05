@@ -12,6 +12,7 @@
  */
 
 import { tool } from "ai";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -127,32 +128,49 @@ async function executeSearch(
 ): Promise<SubagentResult<SearchData>> {
     const { query, maxResults = 5 } = params;
 
-    const response = await searchKnowledge(context.userId, query, {
-        maxResults,
-        includeContent: true,
-    });
+    try {
+        const response = await searchKnowledge(context.userId, query, {
+            maxResults,
+            includeContent: true,
+        });
 
-    const data: SearchData = {
-        results: response.results.map((r) => ({
-            path: r.path,
-            name: r.name,
-            content: r.content,
-            description: r.description,
-            relevance: r.relevance,
-        })),
-        totalFound: response.metadata.totalBeforeFiltering,
-    };
+        const data: SearchData = {
+            results: response.results.map((r) => ({
+                path: r.path,
+                name: r.name,
+                content: r.content,
+                description: r.description,
+                relevance: r.relevance,
+            })),
+            totalFound: response.metadata.totalBeforeFiltering,
+        };
 
-    logger.info(
-        {
-            userId: context.userId,
-            query,
-            resultCount: data.results.length,
-        },
-        "📚 Librarian search completed"
-    );
+        logger.info(
+            {
+                userId: context.userId,
+                query,
+                resultCount: data.results.length,
+            },
+            "📚 Librarian search completed"
+        );
 
-    return successResult(data);
+        return successResult(data);
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, query, maxResults },
+            "📚 Librarian search failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "search" },
+            extra: { userId: context.userId, query, maxResults },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Search failed"
+        );
+    }
 }
 
 /**
@@ -173,14 +191,15 @@ async function executeExtract(
 ): Promise<SubagentResult<ExtractionData>> {
     const { conversationContent, conversationTitle } = params;
 
-    const agent = createLibrarianAgent();
+    try {
+        const agent = createLibrarianAgent();
 
-    const titleContext = conversationTitle
-        ? `<conversation-topic>${conversationTitle}</conversation-topic>\n\n`
-        : "";
+        const titleContext = conversationTitle
+            ? `<conversation-topic>${conversationTitle}</conversation-topic>\n\n`
+            : "";
 
-    const result = await agent.generate({
-        prompt: `<user-id>${context.userId}</user-id>
+        const result = await agent.generate({
+            prompt: `<user-id>${context.userId}</user-id>
 
 ${titleContext}<conversation>
 ${conversationContent}
@@ -189,63 +208,106 @@ ${conversationContent}
 Analyze this conversation and extract any worth-preserving knowledge to the knowledge base. Start by listing the current knowledge base to understand what already exists.
 
 Focus on durable information: facts about the user, decisions made, people mentioned, preferences expressed, or explicit "remember this" requests. Skip transient task help, general knowledge questions, and greetings.`,
-    });
+            abortSignal: context.abortSignal,
+        });
 
-    const stepsUsed = result.steps.length;
+        const stepsUsed = result.steps.length;
 
-    // Check for explicit completion
-    const completeCall = result.steps
-        .flatMap((step) => step.toolCalls ?? [])
-        .find((call) => call.toolName === "completeExtraction");
+        // Check for explicit completion
+        const completeCall = result.steps
+            .flatMap((step) => step.toolCalls ?? [])
+            .find((call) => call.toolName === "completeExtraction");
 
-    const completedExplicitly = !!completeCall;
+        const completedExplicitly = !!completeCall;
 
-    // Detect step exhaustion
-    const exhaustion = detectStepExhaustion(
-        stepsUsed,
-        MAX_EXTRACTION_STEPS,
-        completedExplicitly
-    );
-
-    if (exhaustion.exhausted) {
-        logger.warn(
-            { userId: context.userId, stepsUsed },
-            "📚 Librarian extraction hit step limit without completing"
+        // Detect step exhaustion
+        const exhaustion = detectStepExhaustion(
+            stepsUsed,
+            MAX_EXTRACTION_STEPS,
+            completedExplicitly
         );
 
-        return degradedResult<ExtractionData>(
+        if (exhaustion.exhausted) {
+            logger.warn(
+                { userId: context.userId, stepsUsed },
+                "📚 Librarian extraction hit step limit without completing"
+            );
+
+            Sentry.captureMessage("Librarian extraction exhausted steps", {
+                level: "warning",
+                tags: {
+                    component: "librarian",
+                    action: "extract",
+                    quality: "degraded",
+                },
+                extra: {
+                    userId: context.userId,
+                    stepsUsed,
+                    maxSteps: MAX_EXTRACTION_STEPS,
+                },
+            });
+
+            return degradedResult<ExtractionData>(
+                {
+                    extracted: true,
+                    summary: result.text || "Extraction completed but may be partial.",
+                    stepsUsed,
+                },
+                exhaustion.message ?? "Step limit reached",
+                { stepsUsed }
+            );
+        }
+
+        // Extract completion summary
+        const args = completeCall
+            ? (
+                  completeCall as unknown as {
+                      args: { extracted: boolean; summary: string };
+                  }
+              ).args
+            : null;
+
+        const data: ExtractionData = {
+            extracted: args?.extracted ?? false,
+            summary: args?.summary || result.text || "No extraction summary provided.",
+            stepsUsed,
+        };
+
+        logger.info(
             {
-                extracted: true,
-                summary: result.text || "Extraction completed but may be partial.",
+                userId: context.userId,
+                extracted: data.extracted,
                 stepsUsed,
             },
-            exhaustion.message ?? "Step limit reached",
-            { stepsUsed }
+            data.extracted
+                ? "✅ Librarian extraction completed"
+                : "⏭️ No extraction needed"
+        );
+
+        return successResult(data, { stepsUsed });
+    } catch (error) {
+        logger.error(
+            {
+                error,
+                userId: context.userId,
+                conversationLength: conversationContent.length,
+            },
+            "📚 Librarian extraction failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "extract" },
+            extra: {
+                userId: context.userId,
+                conversationLength: conversationContent.length,
+            },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Extraction failed"
         );
     }
-
-    // Extract completion summary
-    const args = completeCall
-        ? (completeCall as unknown as { args: { extracted: boolean; summary: string } })
-              .args
-        : null;
-
-    const data: ExtractionData = {
-        extracted: args?.extracted ?? false,
-        summary: args?.summary || result.text || "No extraction summary provided.",
-        stepsUsed,
-    };
-
-    logger.info(
-        {
-            userId: context.userId,
-            extracted: data.extracted,
-            stepsUsed,
-        },
-        data.extracted ? "✅ Librarian extraction completed" : "⏭️ No extraction needed"
-    );
-
-    return successResult(data, { stepsUsed });
 }
 
 /**
@@ -268,21 +330,43 @@ async function executeRetrieve(
     params: { path: string },
     context: SubagentContext
 ): Promise<SubagentResult<RetrieveData>> {
-    const doc = await kb.read(context.userId, params.path);
+    try {
+        const doc = await kb.read(context.userId, params.path);
 
-    if (!doc) {
-        return successResult<RetrieveData>({ found: false });
+        if (!doc) {
+            return successResult<RetrieveData>({ found: false });
+        }
+
+        logger.info(
+            { userId: context.userId, path: params.path },
+            "📚 Librarian retrieve completed"
+        );
+
+        return successResult<RetrieveData>({
+            found: true,
+            document: {
+                path: doc.path,
+                name: doc.name,
+                content: doc.content,
+                description: doc.description,
+            },
+        });
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, path: params.path },
+            "📚 Librarian retrieve failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "retrieve" },
+            extra: { userId: context.userId, path: params.path },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Retrieve failed"
+        );
     }
-
-    return successResult<RetrieveData>({
-        found: true,
-        document: {
-            path: doc.path,
-            name: doc.name,
-            content: doc.content,
-            description: doc.description,
-        },
-    });
 }
 
 /**

@@ -48,11 +48,15 @@ export async function POST(req: Request) {
     try {
         // Authentication
         const user = await currentUser();
-        if (!user && process.env.NODE_ENV === "production") {
+        if (!user) {
             return unauthorizedResponse();
         }
 
-        userEmail = user?.emailAddresses[0]?.emailAddress ?? "dev-user@local";
+        userEmail = user.emailAddresses[0]?.emailAddress;
+        if (!userEmail) {
+            logger.error({ userId: user.id }, "User has no email address");
+            return validationErrorResponse(null, "Account missing email address");
+        }
 
         // Validate request body
         const body = await req.json();
@@ -66,19 +70,14 @@ export async function POST(req: Request) {
             return validationErrorResponse(parseResult.error.flatten());
         }
 
-        const { messages, pageContext, channel, modelOverride } = parseResult.data as {
-            messages: UIMessage[];
-            pageContext?: string;
-            channel: "web" | "sms" | "voice";
-            modelOverride?: string;
-        };
+        const { messages, pageContext, channel, modelOverride } = parseResult.data;
 
         // Get or create user in database
-        const dbUser = await getOrCreateUser(user?.id ?? "dev-user-id", userEmail!, {
-            firstName: user?.firstName ?? null,
-            lastName: user?.lastName ?? null,
-            displayName: user?.fullName ?? null,
-            imageUrl: user?.imageUrl ?? null,
+        const dbUser = await getOrCreateUser(user.id, userEmail, {
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            displayName: user.fullName ?? null,
+            imageUrl: user.imageUrl ?? null,
         });
 
         logger.info(
