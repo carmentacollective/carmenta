@@ -23,9 +23,6 @@ import { logger } from "@/lib/logger";
 
 const QUO_API_BASE = "https://api.openphone.com/v1";
 
-// Carmenta's phone number
-const CARMENTA_PHONE_NUMBER = "+17373773499";
-
 // Context window for reply routing (4 hours)
 const CONTEXT_WINDOW_MS = 4 * 60 * 60 * 1000;
 
@@ -167,8 +164,9 @@ export async function sendNotification(
                 assertEnv(env.QUO_NOTIFICATION_API_KEY, "QUO_NOTIFICATION_API_KEY");
                 const apiKey = env.QUO_NOTIFICATION_API_KEY;
 
-                // Get Carmenta's phone number (use env or default)
-                const fromPhone = CARMENTA_PHONE_NUMBER;
+                // Get Carmenta's phone number from env
+                assertEnv(env.QUO_PHONE_NUMBER_ID, "QUO_PHONE_NUMBER_ID");
+                const fromPhone = env.QUO_PHONE_NUMBER_ID;
 
                 // Calculate context window end
                 const contextWindowEnds = new Date(Date.now() + CONTEXT_WINDOW_MS);
@@ -438,12 +436,20 @@ export async function updateDeliveryStatus(
         updates.errorMessage = errorMessage;
     }
 
-    await db
+    const result = await db
         .update(schema.smsOutboundMessages)
         .set(updates)
-        .where(eq(schema.smsOutboundMessages.quoMessageId, quoMessageId));
+        .where(eq(schema.smsOutboundMessages.quoMessageId, quoMessageId))
+        .returning({ id: schema.smsOutboundMessages.id });
 
-    logger.info({ quoMessageId, status }, `📬 SMS delivery status updated`);
+    if (result.length === 0) {
+        logger.warn(
+            { quoMessageId, status },
+            "📬 Delivery webhook for unknown message (no matching quoMessageId)"
+        );
+    } else {
+        logger.info({ quoMessageId, status }, `📬 SMS delivery status updated`);
+    }
 }
 
 /**
