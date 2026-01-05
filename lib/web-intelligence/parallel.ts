@@ -408,6 +408,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
         if (!createResponse || !createResponse.run_id) {
             logger.warn({ objective }, "Failed to create research task");
+            Sentry.captureMessage("Research task creation failed", {
+                level: "warning",
+                tags: { component: "web-intelligence", provider: this.name },
+                extra: { objective, depth, processor },
+            });
             return null;
         }
 
@@ -439,6 +444,17 @@ export class ParallelProvider implements WebIntelligenceProvider {
                         { runId, objective, consecutiveFailures },
                         "Too many consecutive status check failures"
                     );
+                    Sentry.captureMessage("Research status check failed repeatedly", {
+                        level: "error",
+                        tags: { component: "web-intelligence", provider: this.name },
+                        extra: {
+                            runId,
+                            objective,
+                            depth,
+                            consecutiveFailures,
+                            elapsed,
+                        },
+                    });
                     return null;
                 }
 
@@ -456,6 +472,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
                 if (!resultResponse) {
                     logger.error({ runId, objective }, "Failed to fetch task result");
+                    Sentry.captureMessage("Research result fetch failed", {
+                        level: "error",
+                        tags: { component: "web-intelligence", provider: this.name },
+                        extra: { runId, objective, depth },
+                    });
                     return null;
                 }
 
@@ -525,6 +546,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
             if (statusResponse.status === "failed") {
                 logger.error({ runId, objective }, "Research task failed");
+                Sentry.captureMessage("Research task returned failed status", {
+                    level: "error",
+                    tags: { component: "web-intelligence", provider: this.name },
+                    extra: { runId, objective, depth, elapsed },
+                });
                 return null;
             }
 
@@ -534,6 +560,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
         }
 
         logger.warn({ runId, objective, elapsed }, "Research task timed out");
+        Sentry.captureMessage("Research task timed out", {
+            level: "warning",
+            tags: { component: "web-intelligence", provider: this.name },
+            extra: { runId, objective, depth, elapsed, maxWaitMs },
+        });
         return null;
     }
 

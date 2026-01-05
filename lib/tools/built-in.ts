@@ -178,6 +178,12 @@ export const builtInTools = {
             const result = await provider.research(objective, { depth, focusAreas });
 
             if (!result) {
+                // Capture at tool level as backup - the provider should also capture
+                Sentry.captureMessage("Deep research returned no results", {
+                    level: "warning",
+                    tags: { component: "tools", tool: "deepResearch" },
+                    extra: { objective, depth, focusAreas },
+                });
                 return {
                     error: true,
                     message:
