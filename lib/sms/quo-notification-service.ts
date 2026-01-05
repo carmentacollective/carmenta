@@ -272,7 +272,15 @@ export async function sendNotification(
 
                 // Queue for retry if message was created before failure
                 if (createdMessageId) {
-                    await queueForRetry(createdMessageId);
+                    try {
+                        await queueForRetry(createdMessageId);
+                    } catch (retryError) {
+                        // If retry queueing fails, log but don't throw
+                        requestLogger.error(
+                            { error: retryError, messageId: createdMessageId },
+                            "Failed to queue message for retry"
+                        );
+                    }
                 }
 
                 span.setStatus({ code: 2, message: "error" });
@@ -409,7 +417,15 @@ export async function processRetryQueue(): Promise<number> {
                 },
             });
 
-            await queueForRetry(message.id);
+            // Queue for retry - don't let this block processing other messages
+            try {
+                await queueForRetry(message.id);
+            } catch (retryError) {
+                logger.error(
+                    { error: retryError, messageId: message.id },
+                    "Failed to queue message for retry in processRetryQueue"
+                );
+            }
         }
     }
 
