@@ -10,6 +10,9 @@ import {
     XCircle,
     Plus,
     Star,
+    ShieldCheck,
+    LinkBreak,
+    ArrowsClockwise,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
@@ -165,7 +168,7 @@ export function MultiAccountServiceCard({
                 </div>
             </div>
 
-            {/* Accounts List */}
+            {/* Accounts List - Two-line row pattern */}
             {hasAccounts && (
                 <div className="mt-4 space-y-2">
                     {accounts.map((account) => {
@@ -184,16 +187,16 @@ export function MultiAccountServiceCard({
                             <div
                                 key={account.accountId}
                                 className={cn(
-                                    "bg-muted/30 flex items-center justify-between rounded-xl px-4 py-3",
-                                    needsAttention && "bg-amber-500/5"
+                                    "bg-muted/30 rounded-xl px-4 py-3",
+                                    needsAttention && "bg-amber-500/10"
                                 )}
                             >
-                                <div className="flex min-w-0 flex-1 items-center gap-3">
-                                    {/* Status indicator */}
+                                {/* Line 1: Status + Full email (no truncation competition) */}
+                                <div className="flex items-center gap-2">
                                     {statusIndicator && (
                                         <div
                                             className={cn(
-                                                "flex items-center justify-center rounded-full p-1",
+                                                "flex flex-shrink-0 items-center justify-center rounded-full p-1",
                                                 statusIndicator.bgColor
                                             )}
                                         >
@@ -205,115 +208,154 @@ export function MultiAccountServiceCard({
                                             />
                                         </div>
                                     )}
-                                    {/* Account label */}
-                                    <span className="text-foreground truncate text-sm font-medium">
+                                    <span className="text-foreground text-sm font-medium">
                                         {getAccountLabel(account)}
                                     </span>
-                                    {/* Default badge */}
-                                    {account.isDefault && (
-                                        <span className="bg-primary/10 text-primary flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
-                                            <Star className="h-3 w-3" />
-                                            default
-                                        </span>
-                                    )}
                                 </div>
 
-                                {/* Account actions */}
-                                <div className="flex shrink-0 items-center gap-2">
-                                    {/* Status message for this account */}
-                                    {statusMessage?.accountId === account.accountId && (
-                                        <div
-                                            className={cn(
-                                                "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium",
-                                                statusMessage.type === "success"
-                                                    ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                                                    : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                                            )}
-                                        >
-                                            {statusMessage.type === "success" ? (
-                                                <CheckCircle className="h-3 w-3" />
-                                            ) : (
-                                                <XCircle className="h-3 w-3" />
-                                            )}
-                                            {statusMessage.text}
-                                        </div>
-                                    )}
+                                {/* Line 2: Status text/badge + Actions */}
+                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                    {/* Left: Status or default badge */}
+                                    <div className="flex items-center gap-2">
+                                        {needsAttention ? (
+                                            <span className="text-xs text-amber-600 dark:text-amber-400">
+                                                {account.status === "expired"
+                                                    ? "Authorization expired"
+                                                    : "Needs attention"}
+                                            </span>
+                                        ) : account.isDefault ? (
+                                            <span className="text-primary flex items-center gap-1 text-xs font-medium">
+                                                <Star
+                                                    className="h-3 w-3"
+                                                    weight="fill"
+                                                />
+                                                Default account
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground text-xs">
+                                                Connected
+                                            </span>
+                                        )}
 
-                                    {needsAttention ? (
-                                        <button
-                                            onClick={() =>
-                                                onReconnect?.(account.accountId)
-                                            }
-                                            disabled={isLoading}
-                                            className="rounded-lg border border-amber-400/60 bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
-                                        >
-                                            {isReconnecting ? (
-                                                <CircleNotch className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                                "Reconnect"
-                                            )}
-                                        </button>
-                                    ) : (
-                                        <>
-                                            {!account.isDefault && onSetDefault && (
-                                                <button
-                                                    onClick={() =>
-                                                        onSetDefault(account.accountId)
-                                                    }
-                                                    disabled={isLoading}
-                                                    className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50"
-                                                >
-                                                    Set default
-                                                </button>
-                                            )}
+                                        {/* Status message inline */}
+                                        {statusMessage?.accountId ===
+                                            account.accountId && (
+                                            <span
+                                                className={cn(
+                                                    "flex items-center gap-1 text-xs font-medium",
+                                                    statusMessage.type === "success"
+                                                        ? "text-green-600 dark:text-green-400"
+                                                        : "text-red-600 dark:text-red-400"
+                                                )}
+                                            >
+                                                {statusMessage.type === "success" ? (
+                                                    <CheckCircle className="h-3 w-3" />
+                                                ) : (
+                                                    <XCircle className="h-3 w-3" />
+                                                )}
+                                                {statusMessage.text}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Right: Action buttons with icons */}
+                                    <div className="flex items-center gap-1">
+                                        {needsAttention ? (
                                             <button
                                                 onClick={() =>
-                                                    onTest?.(account.accountId)
+                                                    onReconnect?.(account.accountId)
                                                 }
                                                 disabled={isLoading}
-                                                className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50"
+                                                className="flex items-center gap-1.5 rounded-lg border border-amber-400/60 bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
                                             >
-                                                {isTesting ? (
-                                                    <CircleNotch className="h-3 w-3 animate-spin" />
+                                                {isReconnecting ? (
+                                                    <CircleNotch className="h-3.5 w-3.5 animate-spin" />
                                                 ) : (
-                                                    "Verify"
+                                                    <ArrowsClockwise className="h-3.5 w-3.5" />
                                                 )}
+                                                <span className="hidden sm:inline">
+                                                    Reconnect
+                                                </span>
                                             </button>
-                                        </>
-                                    )}
-                                    {confirmingDisconnect === account.accountId ? (
-                                        <div className="flex items-center gap-1">
+                                        ) : (
+                                            <>
+                                                {!account.isDefault && onSetDefault && (
+                                                    <button
+                                                        onClick={() =>
+                                                            onSetDefault(
+                                                                account.accountId
+                                                            )
+                                                        }
+                                                        disabled={isLoading}
+                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50"
+                                                    >
+                                                        <Star className="h-3.5 w-3.5" />
+                                                        <span className="hidden sm:inline">
+                                                            Set default
+                                                        </span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() =>
+                                                        onTest?.(account.accountId)
+                                                    }
+                                                    disabled={isLoading}
+                                                    className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50"
+                                                >
+                                                    {isTesting ? (
+                                                        <CircleNotch className="h-3.5 w-3.5 animate-spin" />
+                                                    ) : (
+                                                        <ShieldCheck className="h-3.5 w-3.5" />
+                                                    )}
+                                                    <span className="hidden sm:inline">
+                                                        Verify
+                                                    </span>
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {/* Disconnect with confirmation */}
+                                        {confirmingDisconnect === account.accountId ? (
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() =>
+                                                        setConfirmingDisconnect(null)
+                                                    }
+                                                    className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        onDisconnect?.(
+                                                            account.accountId
+                                                        );
+                                                        setConfirmingDisconnect(null);
+                                                    }}
+                                                    disabled={isLoading}
+                                                    className="flex items-center gap-1 rounded-lg bg-red-500/15 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 disabled:opacity-50 dark:text-red-400"
+                                                >
+                                                    <LinkBreak className="h-3.5 w-3.5" />
+                                                    Confirm
+                                                </button>
+                                            </div>
+                                        ) : (
                                             <button
                                                 onClick={() =>
-                                                    setConfirmingDisconnect(null)
+                                                    setConfirmingDisconnect(
+                                                        account.accountId
+                                                    )
                                                 }
-                                                className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 text-xs transition-colors"
+                                                disabled={isLoading}
+                                                className="text-muted-foreground flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors hover:bg-red-500/10 hover:text-red-600 disabled:opacity-50"
                                             >
-                                                Cancel
+                                                <LinkBreak className="h-3.5 w-3.5" />
+                                                <span className="hidden sm:inline">
+                                                    Disconnect
+                                                </span>
                                             </button>
-                                            <button
-                                                onClick={() => {
-                                                    onDisconnect?.(account.accountId);
-                                                    setConfirmingDisconnect(null);
-                                                }}
-                                                className="rounded-lg bg-red-500/15 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 dark:text-red-400"
-                                            >
-                                                Confirm
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() =>
-                                                setConfirmingDisconnect(
-                                                    account.accountId
-                                                )
-                                            }
-                                            disabled={isLoading}
-                                            className="text-muted-foreground rounded-lg px-2 py-1 text-xs transition-colors hover:text-red-600 disabled:opacity-50"
-                                        >
-                                            Disconnect
-                                        </button>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -328,7 +370,7 @@ export function MultiAccountServiceCard({
                     <button
                         onClick={onConnect}
                         disabled={isConnecting}
-                        className="interactive-focus-offset interactive-press bg-primary text-primary-foreground rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-50"
+                        className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all hover:shadow-md disabled:opacity-50"
                     >
                         {isConnecting ? (
                             <CircleNotch className="h-4 w-4 animate-spin" />
