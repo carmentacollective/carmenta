@@ -243,6 +243,8 @@ export function useLastConnection({
         lastConnection !== null && !isOnSameConnection && !isOnConnectionPage;
 
     const clearLastConnection = useCallback(() => {
+        if (typeof window === "undefined") return;
+
         clearStoredConnection();
         // Dispatch storage event so useSyncExternalStore picks up the change
         window.dispatchEvent(
