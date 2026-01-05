@@ -101,12 +101,17 @@ async function checkUnknownSenderRateLimit(phoneNumber: string): Promise<{
 
     if (!existing) {
         // First message from this number - set lastPromptedAt to enforce 24hr cooldown
-        await db.insert(schema.unknownSmsSenders).values({
-            phoneNumber,
-            messageCount: 1,
-            lastMessageAt: now,
-            lastPromptedAt: now,
-        });
+        // Use onConflictDoNothing to handle race condition where concurrent webhooks
+        // from the same new sender both try to insert
+        await db
+            .insert(schema.unknownSmsSenders)
+            .values({
+                phoneNumber,
+                messageCount: 1,
+                lastMessageAt: now,
+                lastPromptedAt: now,
+            })
+            .onConflictDoNothing();
 
         return { allowed: true, shouldPrompt: true, isNewSender: true };
     }
@@ -211,16 +216,20 @@ async function handleMessageReceived(message: QuoMessageData): Promise<void> {
 
         if (!rateCheck.allowed) {
             // Still store the message for audit trail, but mark as blocked
-            await db.insert(schema.smsInboundMessages).values({
-                quoMessageId: message.id,
-                fromPhone: message.from,
-                toPhone: message.to[0] ?? "",
-                content: message.text,
-                quoPhoneNumberId: message.phoneNumberId,
-                processingStatus: "failed",
-                errorMessage: "Rate limited: unknown sender blocked",
-                quoCreatedAt: new Date(message.createdAt),
-            });
+            // Use onConflictDoNothing to handle race condition on duplicate webhooks
+            await db
+                .insert(schema.smsInboundMessages)
+                .values({
+                    quoMessageId: message.id,
+                    fromPhone: message.from,
+                    toPhone: message.to[0] ?? "",
+                    content: message.text,
+                    quoPhoneNumberId: message.phoneNumberId,
+                    processingStatus: "failed",
+                    errorMessage: "Rate limited: unknown sender blocked",
+                    quoCreatedAt: new Date(message.createdAt),
+                })
+                .onConflictDoNothing();
 
             requestLogger.warn("Message from rate-limited unknown sender stored");
             return;
@@ -236,16 +245,20 @@ async function handleMessageReceived(message: QuoMessageData): Promise<void> {
     }
 
     // Store the message
-    await db.insert(schema.smsInboundMessages).values({
-        quoMessageId: message.id,
-        fromPhone: message.from,
-        toPhone: message.to[0] ?? "",
-        content: message.text,
-        quoPhoneNumberId: message.phoneNumberId,
-        processingStatus: "pending", // Will be 'completed' after Milestone 3 routing
-        userEmail,
-        quoCreatedAt: new Date(message.createdAt),
-    });
+    // Use onConflictDoNothing to handle race condition on duplicate webhooks
+    await db
+        .insert(schema.smsInboundMessages)
+        .values({
+            quoMessageId: message.id,
+            fromPhone: message.from,
+            toPhone: message.to[0] ?? "",
+            content: message.text,
+            quoPhoneNumberId: message.phoneNumberId,
+            processingStatus: "pending", // Will be 'completed' after Milestone 3 routing
+            userEmail,
+            quoCreatedAt: new Date(message.createdAt),
+        })
+        .onConflictDoNothing();
 
     requestLogger.info(
         { contentLength: message.text.length },
