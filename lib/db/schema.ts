@@ -739,6 +739,259 @@ export const integrationHistoryRelations = relations(integrationHistory, ({ one 
 }));
 
 // ============================================================================
+// MCP SERVERS TABLE
+// ============================================================================
+
+/**
+ * MCP server status
+ * - connected: Active and working
+ * - disconnected: User disabled or removed
+ * - error: Connection failed
+ * - expired: Auth token expired (for OAuth servers)
+ */
+export const mcpServerStatusEnum = pgEnum("mcp_server_status", [
+    "connected",
+    "disconnected",
+    "error",
+    "expired",
+]);
+
+/**
+ * MCP server auth type
+ * - none: Public server, no auth required
+ * - bearer: Bearer token authentication
+ * - header: Custom header authentication
+ * - oauth: OAuth 2.1 (Phase 2)
+ */
+export const mcpServerAuthTypeEnum = pgEnum("mcp_server_auth_type", [
+    "none",
+    "bearer",
+    "header",
+    "oauth",
+]);
+
+/**
+ * MCP server transport type
+ * - sse: Server-Sent Events
+ * - http: Streamable HTTP
+ */
+export const mcpServerTransportEnum = pgEnum("mcp_server_transport", ["sse", "http"]);
+
+/**
+ * MCP connection event types for audit trail
+ */
+export const mcpConnectionEventTypeEnum = pgEnum("mcp_connection_event_type", [
+    "connected",
+    "disconnected",
+    "reconnected",
+    "token_expired",
+    "connection_error",
+    "tools_discovered",
+]);
+
+/**
+ * MCP connection event sources
+ */
+export const mcpConnectionEventSourceEnum = pgEnum("mcp_connection_event_source", [
+    "user",
+    "system",
+    "agent",
+]);
+
+/**
+ * Server manifest cached from MCP server
+ */
+export interface McpServerManifest {
+    name: string;
+    version?: string;
+    description?: string;
+    toolCount: number;
+    tools?: string[];
+}
+
+/**
+ * User-configured MCP servers
+ *
+ * Remote-only MCP servers that users connect to Carmenta.
+ * Phase 1: No auth or bearer token auth.
+ * Phase 2: OAuth 2.1 support.
+ *
+ * Following mcp-hubby patterns:
+ * - userEmail as FK for simpler lookups
+ * - accountId for multi-account support
+ * - isDefault for default selection
+ * - Encrypted credentials
+ */
+export const mcpServers = pgTable(
+    "mcp_servers",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** Owner's email - direct FK to users.email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /**
+         * Server identifier - registry ID or user-provided name
+         * For registry servers: "io.github.org/server"
+         * For custom servers: user-provided slug
+         */
+        identifier: varchar("identifier", { length: 255 }).notNull(),
+
+        /**
+         * Account ID for multi-account support
+         * Same user might connect to same server with different credentials
+         */
+        accountId: varchar("account_id", { length: 255 }).notNull().default("default"),
+
+        /** User-facing display name */
+        displayName: varchar("display_name", { length: 255 }).notNull(),
+
+        /** Account display name from server (e.g., username) */
+        accountDisplayName: varchar("account_display_name", { length: 255 }),
+
+        /** MCP endpoint URL */
+        url: varchar("url", { length: 2048 }).notNull(),
+
+        /** Transport type */
+        transport: mcpServerTransportEnum("transport").notNull().default("sse"),
+
+        /** Authentication type */
+        authType: mcpServerAuthTypeEnum("auth_type").notNull().default("none"),
+
+        /** Encrypted credentials (bearer token or custom header value) */
+        encryptedCredentials: text("encrypted_credentials"),
+
+        /** Custom header name (for header auth type) */
+        authHeaderName: varchar("auth_header_name", { length: 255 }),
+
+        /** Whether this is the default account for this server identifier */
+        isDefault: boolean("is_default").notNull().default(true),
+
+        /** Whether this server is enabled for use */
+        enabled: boolean("enabled").notNull().default(true),
+
+        /** Connection status */
+        status: mcpServerStatusEnum("status").notNull().default("connected"),
+
+        /** Error message if status is 'error' */
+        errorMessage: text("error_message"),
+
+        /** Cached server manifest */
+        serverManifest: jsonb("server_manifest").$type<McpServerManifest>(),
+
+        /** When the server was connected */
+        connectedAt: timestamp("connected_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** Last successful connection time */
+        lastConnectedAt: timestamp("last_connected_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdate(() => new Date()),
+    },
+    (table) => [
+        /** Primary query: user's servers */
+        index("mcp_servers_user_email_idx").on(table.userEmail),
+        /** Filter by identifier */
+        index("mcp_servers_user_email_identifier_idx").on(
+            table.userEmail,
+            table.identifier
+        ),
+        /** Unique constraint: one account per user/identifier/accountId */
+        uniqueIndex("mcp_servers_user_email_identifier_account_idx").on(
+            table.userEmail,
+            table.identifier,
+            table.accountId
+        ),
+    ]
+);
+
+/**
+ * MCP connection events - audit trail for server connections
+ */
+export const mcpConnectionEvents = pgTable(
+    "mcp_connection_events",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** User's email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Server identifier */
+        serverIdentifier: varchar("server_identifier", { length: 255 }).notNull(),
+
+        /** Account ID (may be null for some events) */
+        accountId: varchar("account_id", { length: 255 }),
+
+        /** Event type */
+        eventType: mcpConnectionEventTypeEnum("event_type").notNull(),
+
+        /** Event source */
+        eventSource: mcpConnectionEventSourceEnum("event_source").notNull(),
+
+        /** When the event occurred */
+        occurredAt: timestamp("occurred_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** Error message (if applicable) */
+        errorMessage: text("error_message"),
+
+        /** Additional metadata */
+        metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("mcp_connection_events_user_email_occurred_at_idx").on(
+            table.userEmail,
+            table.occurredAt
+        ),
+        index("mcp_connection_events_server_identifier_idx").on(table.serverIdentifier),
+    ]
+);
+
+// ============================================================================
+// MCP SERVERS RELATIONS
+// ============================================================================
+
+export const mcpServersRelations = relations(mcpServers, ({ one }) => ({
+    user: one(users, {
+        fields: [mcpServers.userEmail],
+        references: [users.email],
+    }),
+}));
+
+export const mcpConnectionEventsRelations = relations(
+    mcpConnectionEvents,
+    ({ one }) => ({
+        user: one(users, {
+            fields: [mcpConnectionEvents.userEmail],
+            references: [users.email],
+        }),
+    })
+);
+
+// Type exports for MCP servers
+export type McpServer = typeof mcpServers.$inferSelect;
+export type NewMcpServer = typeof mcpServers.$inferInsert;
+export type McpConnectionEvent = typeof mcpConnectionEvents.$inferSelect;
+export type NewMcpConnectionEvent = typeof mcpConnectionEvents.$inferInsert;
+
+// ============================================================================
 // OAUTH STATE TABLE
 // ============================================================================
 
