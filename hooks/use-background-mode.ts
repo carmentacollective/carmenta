@@ -16,6 +16,7 @@ import { logger } from "@/lib/client-logger";
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_CONSECUTIVE_FAILURES = 5;
+const MAX_POLL_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 interface UseBackgroundModeOptions {
     /** Called when background work completes with the updated messages */
@@ -43,6 +44,7 @@ export function useBackgroundMode({
     const connectionIdRef = useRef<string | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const failureCountRef = useRef(0);
+    const startTimeRef = useRef<number>(0);
 
     // Store callbacks in refs to avoid dependency issues
     const onCompleteRef = useRef(onComplete);
@@ -59,6 +61,7 @@ export function useBackgroundMode({
         }
         connectionIdRef.current = null;
         failureCountRef.current = 0;
+        startTimeRef.current = 0;
         setIsBackgroundMode(false);
     }, []);
 
@@ -67,8 +70,35 @@ export function useBackgroundMode({
         const connId = connectionIdRef.current;
         if (!connId) return;
 
+        // Check if polling has exceeded max duration
+        if (
+            startTimeRef.current &&
+            Date.now() - startTimeRef.current > MAX_POLL_DURATION_MS
+        ) {
+            logger.warn(
+                { connectionId: connId },
+                "Polling exceeded max duration - stopping"
+            );
+            stopPolling();
+            onFailedRef.current();
+            return;
+        }
+
         try {
             const result = await pollBackgroundModeStatus(connId);
+
+            // Verify connection hasn't changed during async call (race condition protection)
+            if (connectionIdRef.current !== connId) {
+                logger.info(
+                    {
+                        oldConnectionId: connId,
+                        newConnectionId: connectionIdRef.current,
+                    },
+                    "Connection changed during poll - discarding result"
+                );
+                return;
+            }
+
             if (!result) {
                 // Increment failure counter - stop after too many consecutive failures
                 failureCountRef.current++;
@@ -102,6 +132,11 @@ export function useBackgroundMode({
                 logger.warn({ connectionId: connId }, "Background work failed");
                 stopPolling();
                 onFailedRef.current();
+            } else if (result.status === "idle") {
+                // Idle means work hasn't started yet - treat as failure
+                logger.warn({ connectionId: connId }, "Background work never started");
+                stopPolling();
+                onFailedRef.current();
             }
             // If still streaming, continue polling
         } catch (error) {
@@ -130,6 +165,7 @@ export function useBackgroundMode({
             // Set connection ID synchronously via ref
             connectionIdRef.current = connId;
             failureCountRef.current = 0;
+            startTimeRef.current = Date.now();
             setIsBackgroundMode(true);
 
             // Start polling immediately
