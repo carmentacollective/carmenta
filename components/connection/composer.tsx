@@ -527,15 +527,17 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             // If interrupting with a queued message, send it
             if (message) {
-                removeFromQueue(message.id);
                 try {
                     await append({
                         role: "user",
                         content: message.content,
                         files: message.files,
                     });
+                    // Only remove from queue after successful send
+                    removeFromQueue(message.id);
                 } catch (error) {
                     logger.error({ error }, "Failed to send interrupt message");
+                    // Message stays in queue on failure so user can retry
                 }
             }
             // If interrupting with current input, send that

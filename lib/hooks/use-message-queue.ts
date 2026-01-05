@@ -163,8 +163,24 @@ export function useMessageQueue({
         };
     }, [effectiveKey]);
 
+    // Track previous key to detect connection switches
+    const prevKeyForSaveRef = useRef(effectiveKey);
+
     // Debounced save to localStorage
     useEffect(() => {
+        // If connection changed, flush pending save for old connection before switching
+        if (prevKeyForSaveRef.current !== effectiveKey && debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            // Flush the pending save immediately for the old connection
+            // Note: This uses the closure's queue which is correct - it's the queue
+            // state from when the effect was scheduled, before the connection changed
+            const oldKey = prevKeyForSaveRef.current;
+            saveQueue(oldKey, queue);
+            debounceRef.current = null;
+        }
+        prevKeyForSaveRef.current = effectiveKey;
+
+        // Clear any existing timer and schedule new save
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
         }

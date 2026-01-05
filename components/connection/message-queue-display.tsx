@@ -147,14 +147,15 @@ export function MessageQueueDisplay({
                                 </p>
                             )}
 
-                            {/* Action buttons - visible on hover or touch */}
+                            {/* Action buttons - visible on hover or always on touch */}
                             {!isEditing && !isProcessing && (
                                 <div
                                     className={cn(
                                         "flex shrink-0 items-center gap-0.5",
+                                        // Hidden by default, visible on hover (desktop)
                                         "opacity-0 transition-opacity group-hover:opacity-100",
-                                        // Always visible on touch devices
-                                        "touch-action:opacity-100"
+                                        // Always visible on touch devices (no hover support)
+                                        "[@media(hover:none)]:opacity-100"
                                     )}
                                 >
                                     {/* Interrupt button - send this now */}
