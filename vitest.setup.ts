@@ -106,6 +106,7 @@ vi.mock("./lib/env", () => ({
         CLERK_SECRET_KEY: undefined,
         CLERK_WEBHOOK_SECRET: "test_webhook_secret",
         QUO_WEBHOOK_SECRET: "test_quo_webhook_secret",
+        QUO_NOTIFICATION_API_KEY: "test_quo_api_key",
         QUO_PHONE_NUMBER: "+17373773499",
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: undefined,
         PARALLEL_API_KEY: undefined,
