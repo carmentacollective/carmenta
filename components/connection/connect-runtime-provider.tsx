@@ -790,45 +790,57 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Background mode polling hook
     // When background work completes, refreshes messages from database
-    const { startPolling: startBackgroundPolling } = useBackgroundMode({
-        onComplete: useCallback(
-            (messages, title, slug) => {
-                // Convert to AI SDK format and update messages
-                const aiMessages = messages.map(toAIMessage);
-                setMessagesRef.current(aiMessages);
+    const { startPolling: startBackgroundPolling, stopPolling: stopBackgroundPolling } =
+        useBackgroundMode({
+            onComplete: useCallback(
+                (messages, title, slug) => {
+                    // Convert to AI SDK format and update messages
+                    const aiMessages = messages.map(toAIMessage);
+                    setMessagesRef.current(aiMessages);
 
-                // Update title and URL if changed
-                if (title) {
-                    document.title = `${title} | Carmenta`;
-                }
-                const currentPath = window.location.pathname;
-                if (slug && currentPath.includes("/connection/")) {
-                    const pathParts = currentPath.split("/");
-                    const id = pathParts[pathParts.length - 1];
-                    if (id) {
-                        window.history.replaceState(
-                            { ...window.history.state },
-                            "",
-                            `/connection/${slug}/${id}`
-                        );
+                    // Update title and URL if changed
+                    if (title) {
+                        document.title = `${title} | Carmenta`;
                     }
-                }
 
-                // Show completion toast
-                toast.success("We finished while you were away!", {
-                    description: "Your research is ready to review.",
-                    duration: 5000,
-                });
+                    // Update URL based on mode (connection vs code)
+                    const currentPath = window.location.pathname;
+                    if (slug) {
+                        if (currentPath.startsWith("/code/")) {
+                            // Code mode URL: /code/[repo]/[slug]/[id]
+                            const pathParts = currentPath.split("/");
+                            const repo = pathParts[2];
+                            const id = pathParts[pathParts.length - 1];
+                            if (repo && id) {
+                                window.history.replaceState(
+                                    { ...window.history.state },
+                                    "",
+                                    `/code/${repo}/${slug}/${id}`
+                                );
+                            }
+                        } else if (currentPath.includes("/connection/")) {
+                            // Standard connection URL: /connection/[slug]/[id]
+                            const pathParts = currentPath.split("/");
+                            const id = pathParts[pathParts.length - 1];
+                            if (id) {
+                                window.history.replaceState(
+                                    { ...window.history.state },
+                                    "",
+                                    `/connection/${slug}/${id}`
+                                );
+                            }
+                        }
+                    }
 
+                    clearTransientMessages();
+                },
+                [clearTransientMessages]
+            ),
+            onFailed: useCallback(() => {
+                setDisplayError(new Error("Background work failed"));
                 clearTransientMessages();
-            },
-            [clearTransientMessages]
-        ),
-        onFailed: useCallback(() => {
-            setDisplayError(new Error("Background work failed"));
-            clearTransientMessages();
-        }, [clearTransientMessages]),
-    });
+            }, [clearTransientMessages]),
+        });
 
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
@@ -1054,6 +1066,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         if (prevId !== currentId) {
             prevConnectionIdRef.current = currentId;
 
+            // Stop any background polling for the previous connection
+            // Prevents old connection's messages from overwriting new connection's messages
+            if (prevId) {
+                stopBackgroundPolling();
+            }
+
             if (currentId && initialAIMessages && initialAIMessages.length > 0) {
                 // Navigated to existing connection - load its messages
                 setMessages(initialAIMessages);
@@ -1065,7 +1083,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             // If prevId was null (new) and currentId is now set (connection created),
             // don't clear - the messages are already in state from streaming
         }
-    }, [activeConnectionId, initialAIMessages, setMessages]);
+    }, [activeConnectionId, initialAIMessages, setMessages, stopBackgroundPolling]);
 
     // Sync display error with SDK error
     useEffect(() => {
