@@ -34,6 +34,7 @@ import {
 } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/client-logger";
+import { useLastConnection } from "@/lib/hooks/use-last-connection";
 
 interface ConnectionContextValue {
     connections: PublicConnection[];
@@ -120,6 +121,18 @@ export function ConnectionProvider({
     const [error, setError] = useState<Error | null>(null);
 
     const clearError = useCallback(() => setError(null), []);
+
+    // Track last connection for return-to-chat navigation
+    // This persists to localStorage so users can return after visiting other pages
+    useLastConnection({
+        currentConnection: activeConnection
+            ? {
+                  id: activeConnection.id,
+                  slug: activeConnection.slug,
+                  title: activeConnection.title,
+              }
+            : null,
+    });
 
     // Simple: server prop is truth. That's it.
     const activeConnectionId = activeConnection?.id ?? null;

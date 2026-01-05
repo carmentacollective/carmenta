@@ -8,6 +8,7 @@
  *
  * Features:
  * - App logo and wordmark
+ * - Return-to-chat breadcrumb (when navigating away from active chat)
  * - Theme toggle
  * - User avatar/settings
  * - Draggable titlebar area for window movement
@@ -21,6 +22,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { UserAuthButton } from "@/components/ui/user-auth-button";
+import { ChatReturnNav } from "@/components/ui/chat-return-nav";
 import { useWindowControlsOverlay } from "@/lib/hooks/use-window-controls-overlay";
 
 interface WcoTitlebarProps {
@@ -85,6 +87,14 @@ export function WcoTitlebar({ className }: WcoTitlebarProps) {
                     Carmenta
                 </span>
             </Link>
+
+            {/* Center section: Return to chat breadcrumb */}
+            <div
+                className="flex flex-1 items-center justify-center"
+                style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            >
+                <ChatReturnNav compact />
+            </div>
 
             {/* Right section: Theme toggle and user menu */}
             <div
