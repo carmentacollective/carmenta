@@ -68,6 +68,8 @@ export interface DCOSExecutionInput {
     input?: DCOSInput;
     /** Model override (optional) */
     modelOverride?: string;
+    /** Abort signal for cancellation (optional) */
+    abortSignal?: AbortSignal;
 }
 
 /**
@@ -111,6 +113,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
         writer,
         input: dcosInput,
         modelOverride,
+        abortSignal,
     } = input;
 
     const modelId = modelOverride ?? DCOS_DEFAULT_MODEL;
@@ -120,6 +123,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
         userId,
         userEmail,
         writer,
+        abortSignal,
     };
 
     // Create subagent tools
@@ -183,6 +187,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
         messages: modelMessages,
         tools: allTools,
         stopWhen: stepCountIs(DCOS_MAX_STEPS),
+        abortSignal,
         providerOptions,
         onChunk: ({ chunk }) => {
             // Emit status when a tool call starts

@@ -96,10 +96,6 @@ export async function invokeWithTimeout<T>(
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
-        // If we didn't timeout but are cleaning up, don't leave the controller dangling
-        if (!timedOut && !abortController.signal.aborted) {
-            // Operation completed normally - no need to abort
-        }
     }
 }
 

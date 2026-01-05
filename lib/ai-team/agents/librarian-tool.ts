@@ -258,18 +258,34 @@ Focus on durable information: facts about the user, decisions made, people menti
             );
         }
 
-        // Extract completion summary
-        const args = completeCall
-            ? (
-                  completeCall as unknown as {
-                      args: { extracted: boolean; summary: string };
-                  }
-              ).args
-            : null;
+        // Extract completion summary with runtime validation
+        let extractedFlag = false;
+        let summaryText = result.text || "No extraction summary provided.";
+
+        if (
+            completeCall &&
+            typeof completeCall === "object" &&
+            "args" in completeCall
+        ) {
+            const args = completeCall.args;
+            if (
+                typeof args === "object" &&
+                args !== null &&
+                "extracted" in args &&
+                "summary" in args
+            ) {
+                if (typeof args.extracted === "boolean") {
+                    extractedFlag = args.extracted;
+                }
+                if (typeof args.summary === "string") {
+                    summaryText = args.summary;
+                }
+            }
+        }
 
         const data: ExtractionData = {
-            extracted: args?.extracted ?? false,
-            summary: args?.summary || result.text || "No extraction summary provided.",
+            extracted: extractedFlag,
+            summary: summaryText,
             stepsUsed,
         };
 

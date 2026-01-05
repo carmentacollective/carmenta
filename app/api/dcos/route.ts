@@ -30,10 +30,20 @@ import { executeDCOS } from "@/lib/ai-team/dcos";
 export const maxDuration = 60;
 
 /**
+ * UIMessage schema for request validation
+ * Validates minimal structure at system boundary
+ */
+const messageSchema = z.object({
+    id: z.string(),
+    role: z.enum(["user", "assistant", "system"]),
+    parts: z.array(z.unknown()).min(1),
+}) as z.ZodType<UIMessage>;
+
+/**
  * Request body schema
  */
 const requestSchema = z.object({
-    messages: z.array(z.any()).min(1, "At least one message is required"),
+    messages: z.array(messageSchema).min(1, "At least one message is required"),
     /** Current page context for routing hints */
     pageContext: z.string().optional(),
     /** Channel the request originated from */
@@ -58,8 +68,16 @@ export async function POST(req: Request) {
             return validationErrorResponse(null, "Account missing email address");
         }
 
+        // Parse JSON with proper error handling
+        let body: unknown;
+        try {
+            body = await req.json();
+        } catch (error) {
+            logger.warn({ userEmail, error }, "Invalid JSON in request body");
+            return validationErrorResponse(null, "Invalid JSON in request body");
+        }
+
         // Validate request body
-        const body = await req.json();
         const parseResult = requestSchema.safeParse(body);
 
         if (!parseResult.success) {
