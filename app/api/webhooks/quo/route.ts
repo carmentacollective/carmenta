@@ -22,7 +22,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 
 import { db, schema } from "@/lib/db";
@@ -100,11 +100,12 @@ async function checkUnknownSenderRateLimit(phoneNumber: string): Promise<{
         .limit(1);
 
     if (!existing) {
-        // First message from this number
+        // First message from this number - set lastPromptedAt to enforce 24hr cooldown
         await db.insert(schema.unknownSmsSenders).values({
             phoneNumber,
             messageCount: 1,
             lastMessageAt: now,
+            lastPromptedAt: now,
         });
 
         return { allowed: true, shouldPrompt: true, isNewSender: true };
