@@ -375,6 +375,22 @@ export async function POST(req: Request) {
                 },
             });
 
+            // Persist the assistant message with clarifying questions
+            // Without this, the question UI disappears on page reload
+            const assistantMessageId = nanoid();
+            const assistantMessage: UIMessageLike = {
+                id: assistantMessageId,
+                role: "assistant",
+                parts: clarifyingQuestions.map((question) => ({
+                    type: "data-askUserInput",
+                    data: {
+                        question: question.question,
+                        options: question.options,
+                    },
+                })),
+            };
+            await upsertMessage(connectionId!, assistantMessage);
+
             // Mark as completed since we're just asking a question
             await updateStreamingStatus(connectionId!, "completed");
 

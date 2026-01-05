@@ -31,6 +31,7 @@ import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
 import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
+import { useBackgroundMode } from "@/hooks/use-background-mode";
 import {
     ConciergeProvider,
     useConcierge,
@@ -555,7 +556,8 @@ function createFetchWrapper(
         title: string | null,
         slug: string | null,
         id: string | null
-    ) => void
+    ) => void,
+    onBackgroundMode: (connectionId: string) => void
 ) {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         // Extract URL from various input types
@@ -705,6 +707,17 @@ function createFetchWrapper(
                     // use this connection instead of creating new ones
                     connectionIdRef.current = connectionId;
                 }
+
+                // Handle background mode - start polling for completion
+                const isBackgroundMode =
+                    response.headers.get("X-Background-Mode") === "true";
+                if (isBackgroundMode && connectionId) {
+                    logger.info(
+                        { connectionId },
+                        "Background mode detected - starting polling"
+                    );
+                    onBackgroundMode(connectionId);
+                }
             }
 
             return response;
@@ -760,6 +773,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const overridesRef = useRef(overrides);
     const connectionIdRef = useRef(activeConnectionId);
     const projectPathRef = useRef(projectPath);
+    // Ref to hold setMessages callback (needed for background mode hook)
+    const setMessagesRef = useRef<(messages: UIMessage[]) => void>(() => {});
 
     useEffect(() => {
         overridesRef.current = overrides;
@@ -772,6 +787,48 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     useEffect(() => {
         projectPathRef.current = projectPath;
     }, [projectPath]);
+
+    // Background mode polling hook
+    // When background work completes, refreshes messages from database
+    const { startPolling: startBackgroundPolling } = useBackgroundMode({
+        onComplete: useCallback(
+            (messages, title, slug) => {
+                // Convert to AI SDK format and update messages
+                const aiMessages = messages.map(toAIMessage);
+                setMessagesRef.current(aiMessages);
+
+                // Update title and URL if changed
+                if (title) {
+                    document.title = `${title} | Carmenta`;
+                }
+                const currentPath = window.location.pathname;
+                if (slug && currentPath.includes("/connection/")) {
+                    const pathParts = currentPath.split("/");
+                    const id = pathParts[pathParts.length - 1];
+                    if (id) {
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/connection/${slug}/${id}`
+                        );
+                    }
+                }
+
+                // Show completion toast
+                toast.success("We finished while you were away!", {
+                    description: "Your research is ready to review.",
+                    duration: 5000,
+                });
+
+                clearTransientMessages();
+            },
+            [clearTransientMessages]
+        ),
+        onFailed: useCallback(() => {
+            setDisplayError(new Error("Background work failed"));
+            clearTransientMessages();
+        }, [clearTransientMessages]),
+    });
 
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
@@ -827,7 +884,8 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     connectionIdRef,
                     projectPathRef,
                     addNewConnection,
-                    handleNewConnectionCreated
+                    handleNewConnectionCreated,
+                    startBackgroundPolling
                 ),
                 /* eslint-enable react-hooks/refs */
                 prepareSendMessagesRequest(request) {
@@ -841,7 +899,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     };
                 },
             }),
-        [setConcierge, addNewConnection, handleNewConnectionCreated]
+        [
+            setConcierge,
+            addNewConnection,
+            handleNewConnectionCreated,
+            startBackgroundPolling,
+        ]
     );
 
     // Chat hook with AI SDK 5.0
@@ -949,6 +1012,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         },
         experimental_throttle: 50,
     });
+
+    // Update setMessagesRef so background mode hook can update messages
+    useEffect(() => {
+        setMessagesRef.current = setMessages;
+    }, [setMessages]);
 
     // Derive loading states from status
     const isLoading = status === "streaming" || status === "submitted";
