@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 
 const STORAGE_KEY = "carmenta:last-connection";
 
@@ -74,19 +75,43 @@ function getStoredConnection(): LastConnection | null {
             return null;
         }
 
-        const parsed = JSON.parse(stored) as LastConnection;
+        const parsed = JSON.parse(stored);
 
-        // Expire after 7 days of inactivity
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-        if (Date.now() - parsed.timestamp > SEVEN_DAYS) {
+        // Validate shape before using - corrupted data should be discarded
+        if (
+            !parsed ||
+            typeof parsed.id !== "string" ||
+            typeof parsed.slug !== "string" ||
+            typeof parsed.timestamp !== "number" ||
+            (parsed.title !== null && typeof parsed.title !== "string")
+        ) {
             localStorage.removeItem(STORAGE_KEY);
             cachedConnection = null;
             cachedRawValue = null;
             return null;
         }
 
-        cachedConnection = parsed;
-        return parsed;
+        const validated = parsed as LastConnection;
+
+        // Expire after 7 days of inactivity
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - validated.timestamp > SEVEN_DAYS) {
+            localStorage.removeItem(STORAGE_KEY);
+            cachedConnection = null;
+            cachedRawValue = null;
+            // Notify other tabs about expiration
+            try {
+                window.dispatchEvent(
+                    new StorageEvent("storage", { key: STORAGE_KEY, newValue: null })
+                );
+            } catch {
+                // Non-critical - other tabs will sync on next read
+            }
+            return null;
+        }
+
+        cachedConnection = validated;
+        return validated;
     } catch {
         cachedConnection = null;
         cachedRawValue = null;
@@ -108,9 +133,18 @@ function storeConnection(connection: Omit<LastConnection, "timestamp">): void {
         const value = JSON.stringify(data);
         localStorage.setItem(STORAGE_KEY, value);
         // Dispatch storage event so useSyncExternalStore picks up the change
-        window.dispatchEvent(
-            new StorageEvent("storage", { key: STORAGE_KEY, newValue: value })
-        );
+        try {
+            window.dispatchEvent(
+                new StorageEvent("storage", { key: STORAGE_KEY, newValue: value })
+            );
+        } catch (error) {
+            // Storage event dispatch failed - UI will update on next page load
+            // This is non-critical since the data IS persisted
+            Sentry.captureException(error, {
+                level: "warning",
+                tags: { component: "last-connection", action: "store-event-dispatch" },
+            });
+        }
     } catch {
         // localStorage might be unavailable
     }
@@ -237,7 +271,9 @@ export function useLastConnection({
     // Should we show the return nav?
     // Yes if: there's a last connection AND we're not currently on that connection
     const isOnSameConnection =
-        isOnConnectionPage && lastConnection && pathname?.includes(lastConnection.id);
+        isOnConnectionPage &&
+        lastConnection &&
+        pathname === `/connection/${lastConnection.slug}/${lastConnection.id}`;
 
     const shouldShowReturn =
         lastConnection !== null && !isOnSameConnection && !isOnConnectionPage;
@@ -247,9 +283,18 @@ export function useLastConnection({
 
         clearStoredConnection();
         // Dispatch storage event so useSyncExternalStore picks up the change
-        window.dispatchEvent(
-            new StorageEvent("storage", { key: STORAGE_KEY, newValue: null })
-        );
+        try {
+            window.dispatchEvent(
+                new StorageEvent("storage", { key: STORAGE_KEY, newValue: null })
+            );
+        } catch (error) {
+            // Storage event dispatch failed - UI will update on next page load
+            // This is non-critical since the data IS cleared
+            Sentry.captureException(error, {
+                level: "warning",
+                tags: { component: "last-connection", action: "clear-event-dispatch" },
+            });
+        }
     }, []);
 
     return {
