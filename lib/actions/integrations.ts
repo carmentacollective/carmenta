@@ -232,16 +232,16 @@ export async function connectApiKeyService(
 
     // Test the API key before saving it
     try {
-        const adapter = await import(`@/lib/integrations/adapters/${serviceId}`).then(
-            (mod) => {
-                // Get adapter class - handle different export patterns
-                const AdapterClass =
-                    mod[
-                        `${serviceId.charAt(0).toUpperCase() + serviceId.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase())}Adapter`
-                    ] || mod.default;
-                return new AdapterClass();
-            }
-        );
+        const adapter = await import(
+            `@/lib/integrations/adapters/${serviceId}.ts`
+        ).then((mod) => {
+            // Get adapter class - handle different export patterns
+            const AdapterClass =
+                mod[
+                    `${serviceId.charAt(0).toUpperCase() + serviceId.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase())}Adapter`
+                ] || mod.default;
+            return new AdapterClass();
+        });
 
         const testResult = await adapter.testConnection(apiKey.trim());
         if (!testResult.success) {

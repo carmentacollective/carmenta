@@ -12,7 +12,12 @@
 import { useRef, useState, useEffect } from "react";
 import { Sparkle, Check, Info, CircleNotch } from "@phosphor-icons/react";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     MODELS,
     TEMPERATURE_PRESETS,
@@ -183,8 +188,11 @@ export function ModelSelectorModal({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0">
-                {/* Hidden title for accessibility */}
+                {/* Hidden title and description for accessibility */}
                 <DialogTitle className="sr-only">Select Model</DialogTitle>
+                <DialogDescription className="sr-only">
+                    Choose a model or let Carmenta decide automagically
+                </DialogDescription>
 
                 {/* HERO: Automagically Selection */}
                 <div className="from-primary/8 via-primary/12 to-primary/6 shrink-0 bg-gradient-to-br p-6">
