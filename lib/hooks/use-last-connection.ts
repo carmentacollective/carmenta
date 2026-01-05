@@ -124,6 +124,9 @@ function clearStoredConnection(): void {
 
     try {
         localStorage.removeItem(STORAGE_KEY);
+        // Reset cache to prevent stale reads
+        cachedConnection = null;
+        cachedRawValue = null;
     } catch {
         // localStorage might be unavailable
     }
@@ -210,8 +213,13 @@ export function useLastConnection({
     useEffect(() => {
         if (currentConnection?.id) {
             const stored = getStoredConnection();
-            // Only write if different to avoid unnecessary writes
-            if (stored?.id !== currentConnection.id) {
+            // Write if ID differs OR if title/slug changed for same connection
+            const needsUpdate =
+                stored?.id !== currentConnection.id ||
+                stored?.title !== currentConnection.title ||
+                stored?.slug !== currentConnection.slug;
+
+            if (needsUpdate) {
                 storeConnection({
                     id: currentConnection.id,
                     slug: currentConnection.slug,
