@@ -32,6 +32,8 @@ export const env = createEnv({
         CLERK_SECRET_KEY: z.string().min(1).optional(),
         // Clerk webhook signing secret for verifying webhook payloads
         CLERK_WEBHOOK_SECRET: z.string().min(1).optional(),
+        // Quo (OpenPhone) webhook signing secret for SMS webhooks
+        QUO_WEBHOOK_SECRET: z.string().min(1).optional(),
         // Parallel Web Systems API key for web intelligence
         PARALLEL_API_KEY: z.string().min(1).optional(),
         // Credential encryption for API key integrations
@@ -99,6 +101,7 @@ export const env = createEnv({
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
+        QUO_WEBHOOK_SECRET: process.env.QUO_WEBHOOK_SECRET,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
         PARALLEL_API_KEY: process.env.PARALLEL_API_KEY,
