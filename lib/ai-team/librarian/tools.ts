@@ -98,7 +98,11 @@ export const createDocumentTool = tool({
             .describe(
                 "Document path in dot notation. Follow conventions: 'profile.identity' for core identity facts, 'knowledge.people.{Name}' for people, 'knowledge.preferences.{category}' for preferences, 'knowledge.projects.{name}' for projects, 'knowledge.decisions.{topic}' for decisions."
             ),
-        name: z.string().describe("Human-readable document name"),
+        name: z
+            .string()
+            .describe(
+                'Human-readable document name (like a filename). Must not contain ".." or "/" characters. Simple names like "Identity", "Sarah", "Carmenta Project" work well.'
+            ),
         content: z.string().describe("Document content in plain text"),
         description: z
             .string()
