@@ -22,9 +22,10 @@ import {
     type ComponentProps,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Square, ArrowElbowDownLeft } from "@phosphor-icons/react";
+import { Square, ArrowElbowDownLeft, Plus } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { useMessageQueue, type QueuedMessage } from "@/lib/hooks/use-message-queue";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
 import { getModel } from "@/lib/model-config";
@@ -43,6 +44,7 @@ import { FilePickerButton } from "./file-picker-button";
 import { useConnection } from "./connection-context";
 import { DraftRecoveryBanner } from "./draft-recovery-banner";
 import { UploadProgressDisplay } from "./upload-progress";
+import { MessageQueueDisplay } from "./message-queue-display";
 
 export interface ComposerProps {
     /** Callback to mark a message as stopped (for visual indicator) */
@@ -81,6 +83,20 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             input,
             setInput,
         });
+
+    // Message queue - allows queuing messages while AI is streaming
+    const {
+        queue: messageQueue,
+        enqueue: enqueueMessage,
+        remove: removeFromQueue,
+        edit: editQueuedMessage,
+        isFull: isQueueFull,
+        isProcessing: isQueueProcessing,
+    } = useMessageQueue({
+        connectionId: activeConnectionId,
+        isStreaming: isLoading,
+        sendMessage: append,
+    });
 
     // IME composition state
     const [isComposing, setIsComposing] = useState(false);
@@ -496,6 +512,69 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         setInput,
     ]);
 
+    // Interrupt: stop current generation and send this message immediately
+    const handleInterrupt = useCallback(
+        async (message?: QueuedMessage) => {
+            // Stop current generation
+            stop();
+            setConcierge(null);
+
+            // Mark last assistant message as stopped
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage?.role === "assistant") {
+                onMarkMessageStopped(lastMessage.id);
+            }
+
+            // If interrupting with a queued message, send it
+            if (message) {
+                try {
+                    await append({
+                        role: "user",
+                        content: message.content,
+                        files: message.files,
+                    });
+                    // Only remove from queue after successful send
+                    removeFromQueue(message.id);
+                } catch (error) {
+                    logger.error({ error }, "Failed to send interrupt message");
+                    // Message stays in queue on failure so user can retry
+                }
+            }
+            // If interrupting with current input, send that
+            else if (input.trim()) {
+                const messageContent = input.trim();
+                setInput("");
+                try {
+                    await append({
+                        role: "user",
+                        content: messageContent,
+                        files: completedFiles.map((f) => ({
+                            url: f.url,
+                            mediaType: f.mediaType,
+                            name: f.name,
+                        })),
+                    });
+                    clearFiles();
+                } catch (error) {
+                    logger.error({ error }, "Failed to send interrupt message");
+                    setInput(messageContent);
+                }
+            }
+        },
+        [
+            stop,
+            setConcierge,
+            messages,
+            onMarkMessageStopped,
+            removeFromQueue,
+            append,
+            input,
+            setInput,
+            completedFiles,
+            clearFiles,
+        ]
+    );
+
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (isComposing) return;
@@ -507,23 +586,54 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 return;
             }
 
-            // Enter sends if not loading and has content
-            // During loading, let Enter insert newline naturally (user drafts next message)
-            if (e.key === "Enter" && !e.shiftKey) {
-                if (isLoading) {
-                    // Let default behavior insert newline while streaming
-                    return;
+            // Shift+Enter during streaming = interrupt (stop + send now)
+            if (e.key === "Enter" && e.shiftKey && isLoading && input.trim()) {
+                e.preventDefault();
+                handleInterrupt();
+                return;
+            }
+
+            // Enter during streaming = queue message
+            if (e.key === "Enter" && !e.shiftKey && isLoading) {
+                if (input.trim() && !isQueueFull) {
+                    e.preventDefault();
+                    enqueueMessage(
+                        input.trim(),
+                        completedFiles.map((f) => ({
+                            url: f.url,
+                            mediaType: f.mediaType,
+                            name: f.name,
+                        }))
+                    );
+                    setInput("");
+                    clearFiles();
                 }
+                return;
+            }
+
+            // Enter when not streaming = send immediately
+            if (e.key === "Enter" && !e.shiftKey) {
                 if (input.trim() || completedFiles.length > 0) {
                     e.preventDefault();
                     handleSubmit(e as unknown as FormEvent);
                 }
             }
         },
-        [isComposing, isLoading, input, completedFiles, handleStop, handleSubmit]
+        [
+            isComposing,
+            isLoading,
+            input,
+            completedFiles,
+            isQueueFull,
+            handleStop,
+            handleInterrupt,
+            handleSubmit,
+            enqueueMessage,
+            setInput,
+            clearFiles,
+        ]
     );
 
-    const showStop = isLoading;
     const hasPendingFiles = pendingFiles.length > 0;
 
     // Track "complete" state for exhale animation
@@ -652,9 +762,50 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                         />
                     </div>
 
-                    {/* Right group: Send + Voice */}
+                    {/* Right group: Send/Queue/Stop + Voice */}
                     <div className="flex items-center gap-2 sm:order-first sm:gap-1.5">
-                        {showStop ? (
+                        {/* Button transforms based on state:
+                            - Not streaming → Send (arrow)
+                            - Streaming + empty input → Stop (square)
+                            - Streaming + has input → Queue (plus) */}
+                        {!isLoading ? (
+                            <ComposerButton
+                                type="submit"
+                                variant="send"
+                                aria-label="Send message"
+                                disabled={isUploading}
+                                data-testid="send-button"
+                                className={isMobile === true ? "h-11 w-11" : ""}
+                            >
+                                <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </ComposerButton>
+                        ) : input.trim() ? (
+                            <ComposerButton
+                                type="button"
+                                variant="queue"
+                                pipelineState={pipelineState}
+                                aria-label="Queue message"
+                                onClick={() => {
+                                    if (!isQueueFull) {
+                                        enqueueMessage(
+                                            input.trim(),
+                                            completedFiles.map((f) => ({
+                                                url: f.url,
+                                                mediaType: f.mediaType,
+                                                name: f.name,
+                                            }))
+                                        );
+                                        setInput("");
+                                        clearFiles();
+                                    }
+                                }}
+                                disabled={isQueueFull}
+                                data-testid="queue-button"
+                                className={isMobile === true ? "h-11 w-11" : ""}
+                            >
+                                <Plus className="h-5 w-5 sm:h-6 sm:w-6" weight="bold" />
+                            </ComposerButton>
+                        ) : (
                             <ComposerButton
                                 type="button"
                                 variant="stop"
@@ -665,17 +816,6 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
                                 <Square className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </ComposerButton>
-                        ) : (
-                            <ComposerButton
-                                type="submit"
-                                variant="send"
-                                aria-label="Send message"
-                                disabled={isUploading}
-                                data-testid="send-button"
-                                className={isMobile === true ? "h-11 w-11" : ""}
-                            >
-                                <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton
@@ -688,6 +828,18 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
                 </div>
             </form>
+
+            {/* Message queue display - shows queued messages during streaming */}
+            {messageQueue.length > 0 && (
+                <MessageQueueDisplay
+                    queue={messageQueue}
+                    onRemove={removeFromQueue}
+                    onEdit={editQueuedMessage}
+                    onInterrupt={handleInterrupt}
+                    canInterrupt={isLoading}
+                    processingIndex={isQueueProcessing ? 0 : undefined}
+                />
+            )}
 
             {/* Tip zone - shows below input when focused (one-time hint for new users) */}
             <AnimatePresence>
@@ -730,7 +882,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 type PipelineState = "idle" | "concierge" | "streaming" | "complete";
 
 interface ComposerButtonProps extends ComponentProps<"button"> {
-    variant?: "ghost" | "send" | "stop";
+    variant?: "ghost" | "send" | "stop" | "queue";
     pipelineState?: PipelineState;
     "data-testid"?: string;
 }
@@ -809,12 +961,12 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
 
         // Determine which icon to show based on variant
         // Stop button always shows Square (universal stop symbol)
-        // Ring color varies by state, but icon stays consistent for clear affordance
+        // Queue and Send variants use children (passed as props)
         const getIcon = () => {
             if (variant === "stop") {
                 return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
             }
-            // Send and ghost variants use children
+            // Send, queue, and ghost variants use children
             return children;
         };
 
@@ -906,8 +1058,11 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                         "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
                         "focus:ring-primary/40 focus:shadow-2xl focus:ring-[3px] focus:outline-none",
-                        // Send variant
+                        // Send variant - vibrant gradient
                         variant === "send" && "btn-cta ring-transparent",
+                        // Queue variant - accent color with subtle pulse
+                        variant === "queue" &&
+                            "bg-primary/20 text-primary ring-primary/30 hover:bg-primary/30",
                         // Stop variant - base styles
                         variant === "stop" &&
                             "bg-muted text-muted-foreground ring-muted/20 hover:bg-muted/90",
