@@ -244,7 +244,7 @@ export async function deleteMcpServer(id: number): Promise<boolean> {
                 eq(mcpServers.userEmail, server.userEmail),
                 eq(mcpServers.identifier, server.identifier)
             ),
-            orderBy: [desc(mcpServers.connectedAt)],
+            orderBy: [desc(mcpServers.lastConnectedAt)],
         });
 
         if (remaining) {

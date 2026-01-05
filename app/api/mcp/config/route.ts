@@ -41,15 +41,13 @@ const requestSchema = z.object({
 });
 
 export async function POST(req: Request) {
-    let userEmail: string | null = null;
-
     try {
         // Authenticate user
         const user = await currentUser();
         if (!user) {
             return unauthorizedResponse();
         }
-        userEmail = user.primaryEmailAddress?.emailAddress ?? null;
+        const userEmail = user.primaryEmailAddress?.emailAddress ?? null;
 
         // Get database user for email
         const dbUser = await findUserByClerkId(user.id);

@@ -445,11 +445,10 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
 interface ServerListProps {
     servers: McpServerSummary[];
     loading: boolean;
-    onRefresh: () => void;
     className?: string;
 }
 
-function ServerList({ servers, loading, onRefresh, className }: ServerListProps) {
+function ServerList({ servers, loading, className }: ServerListProps) {
     const getStatusColor = (status: string, enabled: boolean) => {
         if (!enabled) return "text-foreground/30";
         switch (status) {
@@ -565,6 +564,8 @@ export default function McpConfigPage() {
             if (response.ok) {
                 const data = await response.json();
                 setServers(data.servers ?? []);
+            } else {
+                logger.warn({ status: response.status }, "Failed to fetch MCP servers");
             }
         } catch (error) {
             logger.error({ error }, "Failed to load MCP servers");
@@ -617,11 +618,7 @@ export default function McpConfigPage() {
                 <h2 className="text-foreground/80 text-sm font-medium">
                     Connected Servers
                 </h2>
-                <ServerList
-                    servers={servers}
-                    loading={loading}
-                    onRefresh={loadServers}
-                />
+                <ServerList servers={servers} loading={loading} />
             </section>
 
             {/* Help text */}
