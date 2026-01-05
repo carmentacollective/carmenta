@@ -1,6 +1,6 @@
-# Librarian Agent
+# MCP Configuration Agent
 
-Knowledge retrieval agent that searches the user's knowledge base.
+Helps users connect to MCP servers through natural conversation.
 
 @.cursor/rules/prompt-engineering.mdc
 

@@ -11,9 +11,11 @@ reference `lib/model-config.ts` or fetch from live endpoints. See `lib/ai/CLAUDE
 
 ## Always Apply Rules
 
-@.cursor/rules/heart-centered-ai-philosophy.mdc
-@.cursor/rules/trust-and-decision-making.mdc @.cursor/rules/personalities/carmenta.mdc
-@.cursor/rules/frontend/typescript-coding-standards.mdc
+- @.cursor/rules/heart-centered-ai-philosophy.mdc
+- @.cursor/rules/trust-and-decision-making.mdc
+- @.cursor/rules/personalities/carmenta.mdc
+- @.cursor/rules/frontend/typescript-coding-standards.mdc
+- @.cursor/rules/git-interaction.mdc
 
 ## Project Overview
 
@@ -38,9 +40,7 @@ specs. The specification is the IP.
 
 Use "we" language throughout all interfaces, not "I" or "the user".
 
-Never give time estimates for software work. "This will take 2-3 weeks" is based on
-humans writing code and meaningless for AI-assisted development. Focus on what needs to
-be done, not when.
+Never give time estimates for software work. Focus on what needs to be done, not when.
 
 ## Package Manager
 
@@ -62,12 +62,8 @@ The app requires authentication for most features. Test credentials are availabl
 
 ### Dev Server
 
-When browser testing or verifying functionality, start a dev server with `pnpm dev`.
-
-+**NEVER kill processes on ports.** Other processes (evals, other projects, long-running
-jobs) may be using those ports. If port 3000 is taken, Next.js will automatically use
-the next available port (3001, 3002, etc.). Just run `pnpm dev` and read the output to
-see which port it's using.
+**NEVER kill processes on ports.** If port 3000 is taken, Next.js auto-uses 3001, 3002,
+etc. Just run `pnpm dev` and read the output for the port.
 
 Don't assume a server already running on port 3000 is serving the current working
 directory—it may be serving a different copy of the repo. If the lock file error
@@ -75,40 +71,6 @@ appears, a dev server for THIS repo is already running—use that one.
 
 ## Context Management
 
-### Compaction Strategy
-
-When compacting this session, prioritize:
-
-- Recent test output and failures with their fixes
-- Component implementations and API contract changes
-- Architecture refactoring decisions
-- Performance optimizations and their measurements
-- Outstanding issues or TODOs
-
-Manual `/compact` at task boundaries rather than letting auto-compact interrupt flow.
-
-### Preserve Development Environment State
-
-When compacting, preserve the current working state:
-
-- **Git context**: Current branch name, which worktree you're in, any uncommitted
-  changes
-- **Running processes**: Dev server port (typically 3000), database connections,
-  background jobs
-- **Environment**: Which `.env` file is active, API keys loaded, feature flags enabled
-- **Build state**: Last successful build, any compilation errors, test run status
-- **File system**: Open files, recent edits, files staged for commit
-
-LLMs frequently lose track of operational context after compaction. Explicitly
-preserving this state prevents confusion about "which server is running?" or "what
-branch am I on?"
-
-### Session Boundaries
-
-One focused task per session. For complex features:
-
-- Start fresh session for that feature
-- Run 45-90 minutes to natural checkpoint
-- Manual `/compact` at 60%+ usage (check with `/cost`)
-- Begin next phase with compacted context
-- New session for unrelated work
+When compacting, preserve operational state: current branch, worktree location,
+uncommitted changes, running dev server port, active `.env` file. LLMs frequently lose
+track of "which server is running?" or "what branch am I on?" after compaction.
