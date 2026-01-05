@@ -29,11 +29,9 @@ import {
 } from "@/lib/integrations/connection-manager";
 import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
 import { logger } from "@/lib/logger";
-import type { IntegrationStatus } from "@/lib/integrations/types";
 import {
     categorizeService,
     groupServiceAccounts,
-    type ServiceAccount,
     type ConnectedService,
     type GroupedService,
 } from "./integration-utils";
@@ -101,13 +99,16 @@ async function getUserPermissions(): Promise<{
 }
 
 /**
- * Get all available services with their connection status for the current user
+ * Get all available services with their connection status for a user
+ *
+ * @param explicitUserEmail - Optional user email for server-side calls (e.g., from DCOS).
+ *                           If not provided, falls back to Clerk session.
  */
-export async function getServicesWithStatus(): Promise<{
+export async function getServicesWithStatus(explicitUserEmail?: string): Promise<{
     connected: ConnectedService[];
     available: ServiceDefinition[];
 }> {
-    const userEmail = await getUserEmail();
+    const userEmail = explicitUserEmail ?? (await getUserEmail());
 
     if (!userEmail) {
         return { connected: [], available: [] };

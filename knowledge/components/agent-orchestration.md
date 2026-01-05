@@ -1,8 +1,7 @@
 # Agent Orchestration
 
-> **⚠️ Research Needed**: This document captures initial principles from research on
-> Google ADK, Anthropic ACE, and Manus papers. Requires deeper research and practical
-> validation before implementation.
+> **✅ Implementation Spec Available**: See [DCOS Architecture](./dcos-architecture.md)
+> for the concrete supervisor pattern using Vercel AI SDK v6 agents-as-tools.
 
 How multiple agents collaborate in Carmenta without cross-talk, drift, or chaos.
 
@@ -58,13 +57,15 @@ more agent freedom to allocate compute toward actual workflows.
 When you have a clearly orthogonal set of tools, the agent is more free to understand
 what's in the box and can allocate more compute toward creative composition.
 
-## Research Questions
+## Research Questions (Resolved)
 
-- How to handle handoff between sub-agents? Direct structured output or shared state?
-- What's the right granularity for agent isolation?
-- When should a single agent handle multiple steps vs spawning sub-agents?
-- How to debug multi-agent failures when state is distributed?
-- Performance implications of multiple agent calls vs single complex agent?
+See [DCOS Architecture](./dcos-architecture.md) for detailed answers:
+
+- ✅ **Handoff**: Direct structured output via tool results
+- ✅ **Granularity**: Coarse-grained agent tools (not fine-grained actions)
+- ✅ **Single vs. sub-agents**: DCOS delegates; sub-agents handle multi-step internally
+- Debugging multi-agent failures - Observability via Sentry spans per agent
+- ✅ **Performance**: Parallel tool invocation when tasks are independent
 
 ## Integration Points
 

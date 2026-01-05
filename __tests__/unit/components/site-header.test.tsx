@@ -3,10 +3,15 @@ import { describe, it, expect } from "vitest";
 
 import { SiteHeader } from "@/components/site-header";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
+import { CarmentaModalProvider } from "@/hooks/use-carmenta-modal";
 
 // Wrapper to provide required context
 function renderWithProviders(ui: React.ReactNode) {
-    return render(<FloatingEmojiProvider>{ui}</FloatingEmojiProvider>);
+    return render(
+        <CarmentaModalProvider>
+            <FloatingEmojiProvider>{ui}</FloatingEmojiProvider>
+        </CarmentaModalProvider>
+    );
 }
 
 describe("SiteHeader", () => {
