@@ -217,19 +217,19 @@ export function MultiAccountServiceCard({
                                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                                     {/* Left: Status or default badge */}
                                     <div className="flex items-center gap-2">
-                                        {account.isDefault ? (
+                                        {needsAttention ? (
+                                            <span className="text-xs text-amber-600 dark:text-amber-400">
+                                                {account.status === "expired"
+                                                    ? "Authorization expired"
+                                                    : "Needs attention"}
+                                            </span>
+                                        ) : account.isDefault ? (
                                             <span className="text-primary flex items-center gap-1 text-xs font-medium">
                                                 <Star
                                                     className="h-3 w-3"
                                                     weight="fill"
                                                 />
                                                 Default account
-                                            </span>
-                                        ) : needsAttention ? (
-                                            <span className="text-xs text-amber-600 dark:text-amber-400">
-                                                {account.status === "expired"
-                                                    ? "Authorization expired"
-                                                    : "Needs attention"}
                                             </span>
                                         ) : (
                                             <span className="text-muted-foreground text-xs">
