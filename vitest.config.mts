@@ -16,29 +16,34 @@ import os from "os";
  * Testing showed optimal results at ~50-55% of cores when load ≈ cores.
  * At low load, using all cores is optimal.
  */
-function calculateOptimalWorkers(): number {
+function calculateOptimalWorkers(): { workers: number; cpuCount: number; loadAvg: number } {
     const cpuCount = os.cpus().length;
     const MIN_WORKERS = 2;
 
+    // Guard against containerized environments where cpuCount may be 0
+    if (cpuCount === 0) {
+        return { workers: MIN_WORKERS, cpuCount: 0, loadAvg: 0 };
+    }
+
+    // Get 1-minute load average (lightweight kernel read)
+    // Note: Windows returns [0,0,0], so we'll use all cores there (same as CI)
+    const [loadAvg] = os.loadavg();
+
     // CI: Always use all cores (dedicated environment)
     if (process.env.CI) {
-        return cpuCount;
+        return { workers: cpuCount, cpuCount, loadAvg };
     }
 
     // Manual override via environment variable
     if (process.env.VITEST_WORKERS) {
         const manual = parseInt(process.env.VITEST_WORKERS, 10);
         if (!isNaN(manual) && manual > 0) {
-            return Math.min(manual, cpuCount);
+            return { workers: Math.min(manual, cpuCount), cpuCount, loadAvg };
         }
     }
 
-    // Get 1-minute load average (lightweight kernel read)
-    // Note: Windows returns [0,0,0], so we'll use all cores there (same as CI)
-    const [loadAvg1m] = os.loadavg();
-
     // Calculate load ratio (0 = idle, 1 = fully loaded, >1 = overloaded)
-    const loadRatio = Math.min(1.5, loadAvg1m / cpuCount);
+    const loadRatio = Math.min(1.5, loadAvg / cpuCount);
 
     // Scale workers inversely with load:
     // - loadRatio 0 → use 100% of cores
@@ -46,18 +51,17 @@ function calculateOptimalWorkers(): number {
     // - loadRatio 1.0 → use 50% of cores
     // - loadRatio 1.5 → use 25% of cores
     const scaleFactor = 1 - loadRatio * 0.5;
-    const workers = Math.floor(cpuCount * scaleFactor);
+    const workers = Math.max(MIN_WORKERS, Math.floor(cpuCount * scaleFactor));
 
-    return Math.max(MIN_WORKERS, workers);
+    return { workers, cpuCount, loadAvg };
 }
 
-const maxWorkers = calculateOptimalWorkers();
+const { workers: maxWorkers, cpuCount, loadAvg } = calculateOptimalWorkers();
 
 // Log the decision for visibility (only in non-CI, when not silent)
 if (!process.env.CI && !process.argv.includes("--silent")) {
-    const [loadAvg] = os.loadavg();
     console.log(
-        `\x1b[36m⚡ Vitest workers: ${maxWorkers}/${os.cpus().length} cores (load: ${loadAvg.toFixed(1)})\x1b[0m`
+        `\x1b[36m⚡ Vitest workers: ${maxWorkers}/${cpuCount} cores (load: ${loadAvg.toFixed(1)})\x1b[0m`
     );
 }
 
